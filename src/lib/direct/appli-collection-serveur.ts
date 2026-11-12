@@ -310,9 +310,11 @@ export type BilanDuJour = { jour: string; personnes: number; envoyes: number; mo
 
 /**
  * 🔥 LE MÈME DU JOUR, À CEUX QUI L'ONT DEMANDÉ. Une fois par jour (`notif/envois/<jour>.json`) ; `force` (les essais)
- * passe outre. Par paquets de vingt : une fonction a une minute, pas plus.
+ * passe outre. Par paquets de vingt : une fonction a une minute, pas plus. `adapter` (« Mon vœu », 12 novembre 2026,
+ * `annonceDeLaMission`) : la notification de chacun peut parler de sa mission du jour — même s'il a déjà répondu au mème
+ * du jour (on lui passe alors `null`).
  */
-export async function envoyerLeMemeDuJour(supabase: Supabase, o: { force?: boolean } = {}): Promise<BilanDuJour> {
+export async function envoyerLeMemeDuJour(supabase: Supabase, o: { force?: boolean; adapter?: (h: string, n: Notif | null) => Promise<Notif | null> } = {}): Promise<BilanDuJour> {
   const jour = jourParis();
   const bilan: BilanDuJour = { jour, personnes: 0, envoyes: 0, morts: 0, dejaRepondu: 0 };
   if (!vapid()) return { ...bilan, sansCles: true };
@@ -342,9 +344,12 @@ export async function envoyerLeMemeDuJour(supabase: Supabase, o: { force?: boole
         const abs = sesAbonnements(f);
         if (!s(f.h) || !abs.length) return;
         bilan.personnes++;
-        // (il a déjà répondu aujourd'hui : rien à lui rappeler)
-        if (await telecharger(supabase, `${s(f.h)}/du-jour/${jour}.json`)) return void bilan.dejaRepondu++;
-        const n = notifDuJour(jour, s(f.ville), await reponses(s(f.ville)));
+        // (il a déjà répondu aujourd'hui : rien à lui rappeler — sauf sa mission du jour, s'il en a une)
+        const dejaRepondu = Boolean(await telecharger(supabase, `${s(f.h)}/du-jour/${jour}.json`));
+        const base = dejaRepondu ? null : notifDuJour(jour, s(f.ville), await reponses(s(f.ville)));
+        const n = o.adapter ? await o.adapter(s(f.h), base).catch(() => base) : base;
+        if (dejaRepondu && !n) return void bilan.dejaRepondu++;
+        if (!n) return;
         const issues = await Promise.all(abs.map((ab) => envoyer(ab, n)));
         bilan.envoyes += issues.filter((x) => x === "ok").length;
         const morts = abs.filter((_, i) => issues[i] === "mort");

@@ -15,6 +15,8 @@
 // POST { action: "signaler-reponse", vue } : l'auteur signale une réponse (elle ne s'affiche plus).
 // POST { action: "aide-reponse", vue, oui } → { cle?, prenom?, etat } : ✋ il répond à une aide — « Lui répondre avec ma
 //      figurine » (ils deviennent proches : `cle` ouvre leur conversation) ou « Pas pour moi » (l'autre ne le saura pas).
+// POST { action: "repondre-tete", vue, tete } : 🙂 l'auteur répond à une réponse avec sa tête (merci, mdr, grave, tropbien).
+// POST { action: "retours-vus" } : ↩️ il a vu les têtes qu'on lui a répondues.
 // Toutes les réponses : `{ ok: true, etat }` (l'état à jour), sauf mention.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -25,11 +27,13 @@ import {
   annulerVoeu,
   gesteSurVoeu,
   marquerReponsesVues,
+  marquerRetoursVus,
   modifierVoeu,
   pauseVoeu,
   phrasesPourAider,
   publierVoeu,
   repondreAide,
+  repondreAvecSaTete,
   signalerReponse,
   voeuSurprise,
 } from "@/lib/direct/voeu-serveur";
@@ -97,6 +101,14 @@ export async function POST(request: Request) {
     }
     case "vues": {
       await marquerReponsesVues(supabase, moi);
+      return NextResponse.json({ ok: true }, { headers: sansCache });
+    }
+    case "repondre-tete": {
+      const r = await repondreAvecSaTete(supabase, moi, p.vue, p.tete);
+      return r.error ? erreur(r) : etat();
+    }
+    case "retours-vus": {
+      await marquerRetoursVus(supabase, moi);
       return NextResponse.json({ ok: true }, { headers: sansCache });
     }
     case "aide-reponse": {

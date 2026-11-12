@@ -22,6 +22,7 @@ import { parleDAlcool } from "./meme-surprise";
 import { GOUTS, reponsesEnMots, reponsesValides } from "./personnage";
 import { cheminCarte, lire, type Gardee } from "./personnage-serveur";
 import { poserProfil, sonDe, transcrire } from "./talkie-serveur";
+import { habitantsAbonnes, prevenirUneFoisParJour, prevenuDesReponses, type Notif } from "./appli-collection-serveur";
 import { nomVille } from "./theme-du-jour";
 import {
   CATEGORIES_VOEU,
@@ -30,6 +31,7 @@ import {
   PHRASES_AIDE,
   TEXTE_VOEU_MAX,
   TETES_ENCOURAGER,
+  TETES_REPONDRE,
   VOCAL_AIDE_MAX,
   VOEUX_PRETS,
   categorieDe,
@@ -45,6 +47,7 @@ import {
   type Mission,
   type MonVoeu,
   type ReponseVoeu,
+  type RetourVoeu,
   type StatutVoeu,
 } from "./voeu";
 
@@ -476,27 +479,29 @@ export async function voeuSurprise(supabase: Supabase, habitant: Habitant, sauf:
 // ─── ce que l'auteur voit ────────────────────────────────────────────────────────────────────────────────────────────
 /** 🙂 TOUT « MON VŒU » : sa figurine est prête, son âge, son vœu et ses réponses, sa mission du jour. */
 export async function etatVoeu(supabase: Supabase, habitant: Habitant | null): Promise<EtatVoeu> {
-  const vide: EtatVoeu = { figurine: false, adulte: null, voeu: null, reponses: [], nonVues: 0, mission: null };
+  const vide: EtatVoeu = { figurine: false, adulte: null, voeu: null, reponses: [], nonVues: 0, retours: [], mission: null };
   if (!habitant) return vide;
   const [{ ligne }, adulte, { v, indisponible }] = await Promise.all([lireLigne(supabase, habitant.id), sesDixHuitAns(supabase, habitant.id), sonVoeu(supabase, habitant.id)]);
   const figurine = Boolean(ligne?.prete_le && s(ligne.neutre));
   if (indisponible) return { ...vide, figurine, adulte, indisponible: true };
   if (!figurine) return { ...vide, adulte };
-  const [voeu, reponses, mission, figs] = await Promise.all([
+  const [voeu, reponses, mission, figs, retours] = await Promise.all([
     v ? leVoeu(supabase, v) : Promise.resolve(null),
     v ? sesReponses(supabase, s(v.id), habitant.id) : Promise.resolve([] as ReponseVoeu[]),
     adulte === null ? Promise.resolve(null) : missionDuJour(supabase, habitant, adulte),
     figurines(supabase, [habitant.id], true),
+    sesRetours(supabase, habitant.id),
   ]);
   const f = figs.get(habitant.id);
-  const moi = f ? { prenom: f.prenom, neutre: f.neutre, parle: f.parle, tetes: Object.fromEntries(TETES_ENCOURAGER.map((t) => [t.cle, f.expressions[t.visage]?.n ?? ""]).filter(([, u]) => u)) } : undefined;
-  return { figurine, moi, ville: nomVille(habitant.villeSlug || ""), adulte, voeu, reponses, nonVues: reponses.filter((r) => !r.vue).length, mission };
+  const moi = f ? { prenom: f.prenom, neutre: f.neutre, parle: f.parle, tetes: Object.fromEntries([...TETES_ENCOURAGER, ...TETES_REPONDRE].map((t) => [t.cle, f.expressions[t.visage]?.n ?? ""]).filter(([, u]) => u)) } : undefined;
+  return { figurine, moi, ville: nomVille(habitant.villeSlug || ""), adulte, voeu, reponses, nonVues: reponses.filter((r) => !r.vue).length, retours, mission };
 }
 
 async function leVoeu(supabase: Supabase, v: Ligne): Promise<MonVoeu> {
   const { data } = await supabase.from("clik_voeu_vue").select("destinataire_id, geste, geste_le, signale_le").eq("voeu_id", s(v.id)).limit(10000);
   const vues = lignes(data);
-  const croient = vues.filter((x) => s(x.geste) === "encourage" && !x.signale_le).sort((a, b) => Date.parse(s(b.geste_le)) - Date.parse(s(a.geste_le)));
+  // (une aide y croit aussi)
+  const croient = vues.filter((x) => (s(x.geste) === "encourage" || s(x.geste) === "aide") && !x.signale_le).sort((a, b) => Date.parse(s(b.geste_le)) - Date.parse(s(a.geste_le)));
   const figs = await figurines(supabase, croient.slice(0, 12).map((x) => s(x.destinataire_id)), false);
   return {
     id: s(v.id),
@@ -545,15 +550,18 @@ export async function repondreAide(supabase: Supabase, habitant: Habitant, vue: 
   }
   if (!(await ecrireJson(supabase, chemin, { ...decisions, [String(id)]: { choix: oui ? "accepte" : "refuse", le: new Date().toISOString() } })))
     return { error: "Ça n’est pas passé. Réessaie.", statut: 502 };
+  // (il y a répondu : elle est vue — la notification de 19 h ne l'annonce plus)
+  if (!l.vu_le) await supabase.from("clik_voeu_vue").update({ vu_le: new Date().toISOString() }).eq("id", id);
   const figs = await figurines(supabase, [lui], false);
   return oui ? { cle: await poserProfil(supabase, lui), prenom: figs.get(lui)?.prenom ?? "" } : {};
 }
 
 /** Ses réponses (les têtes et les aides ; jamais ceux qui ont passé leur tour), les plus récentes d'abord. */
 async function sesReponses(supabase: Supabase, voeu: string, auteur: string): Promise<ReponseVoeu[]> {
-  const [{ data }, decisions] = await Promise.all([
+  const [{ data }, decisions, mercis] = await Promise.all([
     supabase.from("clik_voeu_vue").select("*").eq("voeu_id", voeu).in("geste", ["encourage", "aide"]).is("signale_le", null).order("geste_le", { ascending: false }).limit(60),
     lireJson<Decisions>(supabase, cheminAides(auteur, voeu)),
+    lireJson<Record<string, string>>(supabase, cheminMercis(auteur, voeu)),
   ]);
   const rs = lignes(data);
   const figs = await figurines(supabase, rs.map((x) => s(x.destinataire_id)), true);
@@ -574,6 +582,7 @@ async function sesReponses(supabase: Supabase, voeu: string, auteur: string): Pr
         ...(s(x.son) ? { son: await signer(supabase, s(x.son), 3600) } : {}),
         le: s(x.geste_le),
         vue: Boolean(x.vu_le),
+        ...(teteDe(mercis[String(x.id)], TETES_REPONDRE) ? { merci: s(mercis[String(x.id)]) } : {}),
         ...(genre === "aide" && (decisions[String(x.id)]?.choix === "accepte" || decisions[String(x.id)]?.choix === "refuse")
           ? { decision: decisions[String(x.id)]?.choix as "accepte" | "refuse", ...(decisions[String(x.id)]?.choix === "accepte" ? { cle: await poserProfil(supabase, s(x.destinataire_id)) } : {}) }
           : {}),
@@ -581,6 +590,143 @@ async function sesReponses(supabase: Supabase, voeu: string, auteur: string): Pr
     }),
   );
   return out.filter((x): x is ReponseVoeu => Boolean(x));
+}
+
+// ─── 🙂 répondre avec sa tête (le lot 2, la maquette 4a : « Réponds avec ta tête ») ─────────────────────────────────
+/** Les têtes qu'il a répondues sur son vœu : `<auteur>/voeux/merci-<vœu>.json`, `{ <vue>: <tête> }`. */
+const cheminMercis = (auteur: string, voeu: string) => `${auteur}/voeux/merci-${voeu}.json`;
+/** ↩️ Ce qu'on lui a répondu, à lui (les retours) : `<habitant>/voeux/retours.json`, `{ liste: [...] }`, les 40 derniers. */
+const cheminRetours = (h: string) => `${h}/voeux/retours.json`;
+type RetourGarde = { vue: number; auteur: string; tete: string; voeu: string; le: string; vu?: boolean };
+
+/**
+ * 🙂 L'AUTEUR RÉPOND AVEC SA TÊTE à une réponse (une tête d'encouragement, ou une aide) : « Merci ! », « Mort de rire »,
+ * « Grave ! », « Trop bien ! » — ses visages déjà faits. Celui qui avait répondu la retrouve dans ses bulles (« ↩️ Léa
+ * t'a répondu »). Une par réponse (il peut la changer).
+ */
+export async function repondreAvecSaTete(supabase: Supabase, habitant: Habitant, vue: unknown, tete: unknown): Promise<Resultat> {
+  const id = Number(vue);
+  const t = teteDe(tete, TETES_REPONDRE);
+  if (!Number.isInteger(id) || id <= 0 || !t) return { error: "Choisis une tête.", statut: 400 };
+  const { data } = await supabase.from("clik_voeu_vue").select("*").eq("id", id).eq("auteur_id", habitant.id).limit(1);
+  const l = lignes(data)[0];
+  if (!l || !["encourage", "aide"].includes(s(l.geste)) || l.signale_le) return { error: "Cette réponse n’est plus là.", statut: 404 };
+  const { data: lv } = await supabase.from("clik_voeu").select("texte").eq("id", s(l.voeu_id)).limit(1);
+  const lui = s(l.destinataire_id);
+  const [mercis, retours] = await Promise.all([lireJson<Record<string, string>>(supabase, cheminMercis(habitant.id, s(l.voeu_id))), lireJson<{ liste?: RetourGarde[] }>(supabase, cheminRetours(lui))]);
+  const liste = (Array.isArray(retours.liste) ? retours.liste : []).filter((x) => Number(x.vue) !== id);
+  const ok = await Promise.all([
+    ecrireJson(supabase, cheminMercis(habitant.id, s(l.voeu_id)), { ...mercis, [String(id)]: t.cle }),
+    ecrireJson(supabase, cheminRetours(lui), { liste: [{ vue: id, auteur: habitant.id, tete: t.cle, voeu: s(lignes(lv)[0]?.texte), le: new Date().toISOString() }, ...liste].slice(0, 40) }),
+  ]);
+  return ok.every(Boolean) ? {} : { error: "Ta tête n’est pas partie. Réessaie.", statut: 502 };
+}
+
+/** ↩️ Ses retours, prêts pour l'écran : la tête de l'auteur (le visage de cette réponse), son mot, son vœu. */
+async function sesRetours(supabase: Supabase, h: string): Promise<RetourVoeu[]> {
+  const r = await lireJson<{ liste?: RetourGarde[] }>(supabase, cheminRetours(h));
+  const liste = (Array.isArray(r.liste) ? r.liste : []).slice(0, 20);
+  if (!liste.length) return [];
+  const figs = await figurines(supabase, liste.map((x) => s(x.auteur)), true);
+  return liste.flatMap((x) => {
+    const f = figs.get(s(x.auteur));
+    const t = teteDe(x.tete, TETES_REPONDRE);
+    if (!f || !t) return [];
+    return [{ id: Number(x.vue), prenom: f.prenom, tete: f.expressions[t.visage]?.n || f.neutre, mot: t.mot, emoji: t.emoji, voeu: s(x.voeu), le: s(x.le), vu: Boolean(x.vu) }];
+  });
+}
+
+/** Il a vu ses retours (le badge s'éteint). */
+export async function marquerRetoursVus(supabase: Supabase, habitant: Habitant): Promise<Resultat> {
+  const r = await lireJson<{ liste?: RetourGarde[] }>(supabase, cheminRetours(habitant.id));
+  const liste = Array.isArray(r.liste) ? r.liste : [];
+  if (liste.some((x) => !x.vu)) await ecrireJson(supabase, cheminRetours(habitant.id), { liste: liste.map((x) => ({ ...x, vu: true })) });
+  return {};
+}
+
+// ─── 🔔 les notifications du vœu (le lot 2) ──────────────────────────────────────────────────────────────────────────
+/**
+ * 🎯 POUR LA NOTIFICATION DE 11 H 30 (celle du mème du jour, `envoyerLeMemeDuJour`) : elle parle aussi de SA MISSION quand
+ * il a déjà commencé « Mon vœu » (son âge est dit), qu'il ne l'a pas faite aujourd'hui, et que quelqu'un d'autre de sa
+ * tranche d'âge a un vœu en route — une seule notification, pas deux à une demi-heure d'écart. Sa série, s'il en a une.
+ * Rend de quoi adapter la notification de chacun (une lecture des vœux et des séries pour tous).
+ */
+export async function annonceDeLaMission(supabase: Supabase): Promise<(h: string, n: Notif | null) => Promise<Notif | null>> {
+  const jour = jourDe();
+  const [{ data: vs, error }, { data: ss }] = await Promise.all([
+    supabase.from("clik_voeu").select("habitant_id, adulte").eq("statut", "en_route").is("signale_le", null).limit(5000),
+    supabase.from("clik_voeu_serie").select("habitant_id, jours, dernier_jour").gte("dernier_jour", hier(jour)).limit(20000),
+  ]);
+  // (la migration n'est pas passée : la notification reste celle du mème du jour)
+  if (error) return async (_h, n) => n;
+  const auteurs = { adultes: new Set<string>(), jeunes: new Set<string>() };
+  for (const v of lignes(vs)) (v.adulte ? auteurs.adultes : auteurs.jeunes).add(s(v.habitant_id));
+  const series = new Map(lignes(ss).map((x) => [s(x.habitant_id), { jours: Number(x.jours) || 0, dernier: s(x.dernier_jour).slice(0, 10) }]));
+  return async (h, n) => {
+    const serie = series.get(h);
+    if (serie?.dernier === jour) return n;
+    const adulte = await sesDixHuitAns(supabase, h);
+    if (adulte === null) return n;
+    const autres = adulte ? auteurs.adultes : auteurs.jeunes;
+    if (![...autres].some((x) => x !== h)) return n;
+    const garde = serie && serie.dernier === hier(jour) && serie.jours > 0 ? ` 🔥 Garde ta série de ${serie.jours} jour${serie.jours > 1 ? "s" : ""} !` : "";
+    return {
+      titre: "🎯 Ta mission du jour t’attend",
+      corps: n ? `Des vœux à encourager en une minute, et le mème du jour : ${n.titre}.${garde}` : `Des vœux à encourager, en une minute.${garde}`,
+      url: "/collection#voeu",
+      tag: "meme-du-jour",
+    };
+  };
+}
+
+export type BilanDuSoir = { jour: string; personnes: number; envoyes: number };
+/**
+ * 🌙 19 H : LES RÉPONSES DE LA JOURNÉE (décidé le 11 novembre 2026 : « au fil de la journée, avec une notification à
+ * 19 h »). À chacun qui a les notifications (et « Quand on répond à tes mèmes » allumé) : les réponses à son vœu reçues
+ * aujourd'hui et pas encore vues (« ✨ 3 réponses à ton vœu, dont une aide ») ; sinon, les têtes qu'on lui a répondues
+ * aujourd'hui (« ↩️ Léa t'a répondu »). Une fois par jour (`notif/voeu-soir/<habitant>/<jour>.json`). Le lien ouvre ses
+ * réponses en grand (`#reponses`).
+ */
+export async function envoyerLeSoirDuVoeu(supabase: Supabase): Promise<BilanDuSoir> {
+  const jour = jourDe();
+  const bilan: BilanDuSoir = { jour, personnes: 0, envoyes: 0 };
+  const depuis = new Date(Date.now() - 26 * 3600_000).toISOString();
+  const { data, error } = await supabase.from("clik_voeu_vue").select("auteur_id, destinataire_id, geste, geste_le, vu_le, signale_le").gte("geste_le", depuis).in("geste", ["encourage", "aide"]).limit(20000);
+  if (error) return bilan;
+  const parAuteur = new Map<string, { n: number; aides: string[] }>();
+  for (const x of lignes(data)) {
+    if (x.vu_le || x.signale_le || jourDe(s(x.geste_le)) !== jour) continue;
+    const a = parAuteur.get(s(x.auteur_id)) ?? { n: 0, aides: [] };
+    a.n++;
+    if (s(x.geste) === "aide") a.aides.push(s(x.destinataire_id));
+    parAuteur.set(s(x.auteur_id), a);
+  }
+  const ids = await habitantsAbonnes(supabase);
+  for (let k = 0; k < ids.length; k += 20) {
+    await Promise.all(
+      ids.slice(k, k + 20).map(async (h) => {
+        if ((await prevenuDesReponses(supabase, { id: h } as Habitant)) !== true) return;
+        const a = parAuteur.get(h);
+        let n: Notif | null = null;
+        if (a?.n) {
+          const aidant = a.aides.length ? (await figurines(supabase, [a.aides[0]], false)).get(a.aides[0])?.prenom : "";
+          n = {
+            titre: `✨ ${a.n} réponse${a.n > 1 ? "s" : ""} à ton vœu`,
+            corps: a.aides.length ? `Dont ${a.aides.length > 1 ? `${a.aides.length} aides` : "une aide"} : ${aidant || "quelqu’un"} peut t’aider. Viens voir 👀` : "Leurs figurines t’encouragent. Viens voir 👀",
+            url: "/collection#reponses",
+            tag: "voeu-soir",
+          };
+        } else {
+          const r = (await sesRetours(supabase, h)).find((x) => !x.vu && jourDe(x.le) === jour);
+          if (r) n = { titre: `↩️ ${r.prenom} t’a répondu`, corps: `« ${r.mot} », avec sa figurine, sur son vœu.`, url: "/collection#reponses", tag: "voeu-soir" };
+        }
+        if (!n) return;
+        bilan.personnes++;
+        if ((await prevenirUneFoisParJour(supabase, h, "voeu-soir", n)) === "envoye") bilan.envoyes++;
+      }),
+    );
+  }
+  return bilan;
 }
 
 /** Il a vu ses réponses (le badge s'éteint). */

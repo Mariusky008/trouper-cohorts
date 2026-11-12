@@ -10,9 +10,12 @@
 // la réponse en grand, la page de son vœu) ; Hugo, l'aide ; Zoé ne saura jamais qu'Inès a passé. Léa fait évoluer son
 // vœu : le reformuler, la pause, l'annuler. Tom (15-17 ans) ne croise aucun vœu d'adulte et n'a pas « Du monde ». Sam
 // signale le vœu de Hugo : il quitte la distribution. Rien ne déborde, jamais le mot interdit.
+// LE LOT 2 (12 novembre 2026) : Léa répond à la tête d'Inès avec la sienne (« MERCI ! ») ; Inès le retrouve dans ses
+// bulles (« ↩️ ») ; la notification de 11 h 30 parle de la mission de Noa ; celle de 19 h annonce à Zoé l'aide de Noa,
+// à Max la tête de Noa, à Inès le merci de Léa — et leur lien (`#reponses`) ouvre tout cela en grand.
 import crypto from "node:crypto";
 import fs from "node:fs";
-import { BASE, D, F, fermerPablito, lancer, repondreFenetre } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer, recus, repondreFenetre, telephone } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -199,6 +202,14 @@ await bulleInes.click();
 await lea.waitForSelector(".vx-story", { timeout: 10000 });
 ok((await texte(lea, ".vx-story .vx-sticker")) === "J’Y CROIS !" && (await texte(lea, ".vx-story-tete")).includes("Inès") && (await lea.locator(".vx-story .vx-story-fig").getAttribute("src")).includes("euphorie-n"), "la réponse en grand : la tête d'euphorie d'Inès, « J'Y CROIS ! »");
 await lea.screenshot({ path: `${D}/voeu-8-reponse.png` });
+// 🙂 « Réponds avec ta tête » (la maquette 4a) : ses visages, quatre mots
+const tetesRep = (await lea.locator(".vx-story .vx-story-tetes button small").allInnerTexts()).map((x) => x.trim());
+ok(tetesRep.join("|") === "Merci !|Mort de rire|Grave|Trop bien" && (await texte(lea, ".vx-story .vx-story-repondre > small")) === "Réponds avec ta tête", `« Réponds avec ta tête » : ${tetesRep.join(" · ")}`);
+await lea.locator(".vx-story .vx-story-tetes button").first().click();
+await lea.waitForFunction(() => document.querySelector(".vx-story .vx-story-repondre > small")?.textContent?.startsWith("✓"), null, { timeout: 10000 });
+const retoursInes = await lireStock(`${INES.id}/voeux/retours.json`);
+ok((await texte(lea, ".vx-story .vx-story-repondre > small")) === "✓ Tu lui as répondu : MERCI !" && retoursInes?.liste?.[0]?.tete === "merci" && retoursInes.liste[0].auteur === LEA.id, "« Merci ! » : « ✓ Tu lui as répondu : MERCI ! » — et Inès le reçoit (ses retours)");
+await lea.screenshot({ path: `${D}/voeu-8a-merci.png` });
 await lea.locator(".vx-story-fermer").click();
 let nonVues = 1;
 for (let k = 0; k < 20 && nonVues; k++) {
@@ -250,7 +261,7 @@ ok((await texte(hugo, ".vx-proches .vx-proches-titre")) === "Inès et toi, proch
 await hugo.screenshot({ path: `${D}/voeu-8c-proches.png` });
 await hugo.locator(".vx-proches .tj-go").click();
 await hugo.waitForSelector(".pr-plein .pr-qui", { timeout: 30000 });
-ok(!(await hugo.locator("#o-proches").isHidden()) && (await texte(hugo, ".pr-plein .pr-qui")).includes("Inès"), "« 🎙️ Parler à Inès » : leur conversation s'ouvre dans « Proches », avec leurs figurines");
+ok(!(await hugo.locator("#o-proches").isHidden()) && (await texte(hugo, ".pr-plein .pr-qui")).includes("Inès") && (await hugo.locator(".pr-plein.pr-parler").count()) === 1, "« 🎙️ Parler à Inès » : leur conversation s'ouvre dans « Proches », le micro prêt (la maquette 4c)");
 await ouvrir(hugo, "#voeu");
 ok((await hugo.locator("#voeu .vx-aide-carte").count()) === 0 && (await etat(hugo)).reponses.find((r) => r.genre === "aide")?.decision === "accepte", "sa page : l'aide n'attend plus de réponse (« PROCHE » dans ses réponses)");
 const zoe = await tel(ZOE);
@@ -346,6 +357,53 @@ await noa.locator(`#mission-${kMax} .vx-tetes button`).nth(2).click();
 await noa.waitForSelector(`#mission-${kMax} .vx-pose .vx-sticker`, { timeout: 10000 });
 ok((await texte(noa, `#mission-${kMax} .vx-pose .vx-sticker`)) === "COURAGE !", "sa tête, oui : « COURAGE ! »");
 await noa.screenshot({ path: `${D}/voeu-10-loin.png` });
+// ✋ Noa propose son aide à Zoé (de Vevey, mais un vœu qui peut être exaucé de loin)
+const kZoe = (await noa.locator("#voeu .vx-minis small").allInnerTexts()).findIndex((x) => x.startsWith("Des conseils pour lancer"));
+await noa.evaluate((k) => document.getElementById(`mission-${k}`)?.scrollIntoView(), kZoe);
+await noa.locator(`#mission-${kZoe} .vx-aide`).click();
+await noa.waitForSelector(".vx-aider.ouverte .vx-phrases button", { timeout: 10000 });
+const phraseNoa = (await noa.locator(".vx-aider .vx-phrases button:not(.vx-libre)").first().innerText()).trim();
+await noa.locator(".vx-aider .vx-phrases button:not(.vx-libre)").first().click();
+await noa.locator(".vx-aider .vx-envoyer").click();
+await noa.waitForSelector(".vx-aider:not(.ouverte)", { state: "attached", timeout: 10000 });
+
+// ═══ 🔔 LES NOTIFICATIONS DU VŒU (le lot 2) ═══
+const abonner = async (p, t) =>
+  p.evaluate(async (abonnement) => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "notif", abonnement }) })).status, t.abonnement);
+const telNoa = telephone("noa");
+const telZoe = telephone("zoe");
+const telMax = telephone("max");
+const telInes = telephone("ines");
+const max = await tel(MAX);
+await max.goto(`${BASE}/collection#voeu`, { waitUntil: "networkidle" });
+const statuts = [await abonner(noa, telNoa), await abonner(zoe, telZoe), await abonner(max, telMax), await abonner(ines, telInes)];
+ok(statuts.every((x) => x === 200), "Noa, Zoé, Max et Inès ont les notifications");
+// 🎯 11 h 30 : la notification du mème du jour parle aussi de sa mission (Noa ne l'a pas finie ; Inès, si)
+const midi = await (await fetch(`${BASE}/api/cron/meme-du-jour?force=1`)).json();
+const midiNoa = (await recus(telNoa)).find((x) => x.tag === "meme-du-jour");
+const midiInes = (await recus(telInes)).find((x) => x.tag === "meme-du-jour");
+ok(midi.ok && midiNoa?.title === "🎯 Ta mission du jour t’attend" && midiNoa.body.startsWith("Des vœux à encourager en une minute, et le mème du jour :") && midiNoa.url === "/collection#voeu", `11 h 30, chez Noa : « ${midiNoa?.title} » — ${midiNoa?.body}`);
+ok(midiInes && !midiInes.title.startsWith("🎯") && midiInes.url === "/collection#jour", `chez Inès (sa mission est faite) : le mème du jour seulement (« ${midiInes?.title} »)`);
+// 🌙 19 h : les réponses de la journée
+const soir = await (await fetch(`${BASE}/api/cron/voeu-soir?force=1`)).json();
+const soirZoe = (await recus(telZoe)).find((x) => x.tag === "voeu-soir");
+const soirMax = (await recus(telMax)).find((x) => x.tag === "voeu-soir");
+const soirInes = (await recus(telInes)).find((x) => x.tag === "voeu-soir");
+ok(soir.ok && soirZoe?.title === "✨ 1 réponse à ton vœu" && soirZoe.body === "Dont une aide : Noa peut t’aider. Viens voir 👀" && soirZoe.url === "/collection#reponses", `19 h, chez Zoé : « ${soirZoe?.title} » — ${soirZoe?.body}`);
+ok(soirMax?.title === "✨ 1 réponse à ton vœu" && soirMax.body === "Leurs figurines t’encouragent. Viens voir 👀", `chez Max : « ${soirMax?.title} » — ${soirMax?.body}`);
+ok(soirInes?.title === "↩️ Léa t’a répondu" && soirInes.body === "« MERCI ! », avec sa figurine, sur son vœu." && (await recus(telNoa)).every((x) => x.tag !== "voeu-soir"), `chez Inès (l'aide de Sam a déjà sa réponse) : « ${soirInes?.title} » — ${soirInes?.body} ; rien pour Noa`);
+await fetch(`${BASE}/api/cron/voeu-soir?force=1`);
+ok((await recus(telZoe)).filter((x) => x.tag === "voeu-soir").length === 1, "une fois par jour, pas deux");
+// 👀 le lien de la notification (`#reponses`) : ses réponses en grand
+await zoe.goto(`${BASE}/collection?v=${Date.now()}#reponses`, { waitUntil: "networkidle" });
+await zoe.waitForSelector(".vx-story", { timeout: 30000 });
+ok((await texte(zoe, ".vx-story .vx-story-dit")) === phraseNoa && (await texte(zoe, ".vx-story-tete")).includes("Noa") && (await zoe.locator(".vx-story .vx-story-gestes .tj-go").count()) === 1, `chez Zoé, le lien ouvre l'aide de Noa en grand (« ${phraseNoa} »), et « Lui répondre avec ma figurine »`);
+await ines.goto(`${BASE}/collection?v=${Date.now()}#reponses`, { waitUntil: "networkidle" });
+await ines.waitForSelector(".vx-story-retour", { timeout: 30000 });
+ok((await texte(ines, ".vx-story-retour .vx-sticker")) === "MERCI !" && (await texte(ines, ".vx-story-retour .vx-story-tete")).includes("Léa t’a répondu") && (await texte(ines, ".vx-story-retour .vx-story-dit")).includes("Quelqu’un pour courir avec moi le dimanche matin"), "chez Inès, le lien ouvre le merci de Léa en grand : sa tête, « MERCI ! », son vœu");
+await ines.screenshot({ path: `${D}/voeu-11-retour.png` });
+await ines.locator(".vx-story-retour .vx-story-fermer").click();
+ok((await texte(ines, "#voeu .vx-bulle.retour")).includes("Léa") && (await ines.locator("#voeu .vx-bulle.retour.neuve").count()) === 0 && (await lireStock(`${INES.id}/voeux/retours.json`))?.liste?.[0]?.vu === true, "sa bulle « ↩️ MERCI ! » reste, vue");
 
 // ═══ PARTOUT : PAS D'ERREUR, RIEN QUI DÉBORDE, JAMAIS LE MOT INTERDIT ═══
 for (const [nom, p] of [["Inès", ines], ["Léa", lea], ["Hugo", hugo], ["Tom", tom], ["Sam", sam], ["Noa", noa]]) {

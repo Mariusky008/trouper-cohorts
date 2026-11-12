@@ -215,6 +215,24 @@ export type ReponseVoeu = {
   decision?: "accepte" | "refuse";
   /** (acceptée : la clé de son profil, pour ouvrir leur conversation dans « Proches ») */
   cle?: string;
+  /** 🙂 la tête que l'auteur lui a répondue (`TETES_REPONDRE` : merci, mdr, grave, tropbien) */
+  merci?: string;
+};
+/**
+ * ↩️ UN RETOUR : l'auteur d'un vœu a répondu avec SA tête à la tête (ou à l'aide) qu'on lui avait envoyée (le lot 2,
+ * 12 novembre 2026) — « Léa t'a répondu : MERCI ! ».
+ */
+export type RetourVoeu = {
+  id: number;
+  prenom: string;
+  /** sa tête (le visage de cette réponse, s'il est fait ; sinon sa figurine) */
+  tete: string;
+  mot: string;
+  emoji: string;
+  /** son vœu (ce à quoi on avait répondu) */
+  voeu: string;
+  le: string;
+  vu: boolean;
 };
 /** Un vœu à encourager (une carte de la mission). */
 export type CarteVoeu = {
@@ -244,6 +262,8 @@ export type EtatVoeu = {
   voeu: MonVoeu | null;
   reponses: ReponseVoeu[];
   nonVues: number;
+  /** ↩️ les têtes qu'on lui a répondues (à ses encouragements, à ses aides) */
+  retours: RetourVoeu[];
   mission: Mission | null;
   /** (la migration n'est pas encore passée : « Mon vœu » arrive bientôt) */
   indisponible?: boolean;

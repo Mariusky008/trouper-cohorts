@@ -20,6 +20,7 @@ import {
   MOT_AIDE_MAX,
   PHRASES_AIDE,
   TETES_ENCOURAGER,
+  TETES_REPONDRE,
   TEXTE_VOEU_MAX,
   VOCAL_AIDE_MAX,
   VOEUX_PRETS,
@@ -30,6 +31,7 @@ import {
   type EtatVoeu,
   type Mission,
   type ReponseVoeu,
+  type RetourVoeu,
 } from "@/lib/direct/voeu";
 import { OngletVisible } from "./guide";
 import { Feuille } from "./ma-figurine";
@@ -500,8 +502,27 @@ function FaisUnVoeu({ ouverte, remplacer, etat, onFermer, onEtat }: { ouverte: b
 }
 
 // ─── 🙂 une réponse, en grand (les réponses défilent) ────────────────────────────────────────────────────────────────
-function Reponses({ liste, depart, onFermer, onSignaler, onRepondre, onParler }: { liste: ReponseVoeu[]; depart: number | null; onFermer: () => void; onSignaler: (r: ReponseVoeu) => void; onRepondre: (r: ReponseVoeu, oui: boolean) => void; onParler: (r: ReponseVoeu) => void }) {
+function Reponses({
+  liste,
+  depart,
+  moi,
+  onFermer,
+  onSignaler,
+  onRepondre,
+  onParler,
+  onTete,
+}: {
+  liste: ReponseVoeu[];
+  depart: number | null;
+  moi: EtatVoeu["moi"];
+  onFermer: () => void;
+  onSignaler: (r: ReponseVoeu) => void;
+  onRepondre: (r: ReponseVoeu, oui: boolean) => void;
+  onParler: (r: ReponseVoeu) => void;
+  onTete: (r: ReponseVoeu, tete: string) => Promise<boolean>;
+}) {
   const [i, setI] = useState(depart ?? 0);
+  const [envoi, setEnvoi] = useState("");
   const r = depart === null ? null : liste[i];
   useEffect(() => {
     if (depart === null) return;
@@ -559,11 +580,86 @@ function Reponses({ liste, depart, onFermer, onSignaler, onRepondre, onParler }:
         </div>
       )}
       {r.decision === "refuse" && <small className="vx-story-pas">Pas pour toi : {r.prenom} ne le saura pas.</small>}
+      {/* 🙂 RÉPONDS AVEC TA TÊTE (la maquette 4a) : à une tête qui t'encourage, tes visages déjà faits et un mot */}
+      {r.genre === "encourage" && (
+        <div className="vx-story-repondre">
+          <small>{r.merci ? `✓ Tu lui as répondu : ${TETES_REPONDRE.find((x) => x.cle === r.merci)?.mot ?? ""}` : "Réponds avec ta tête"}</small>
+          <div className="vx-story-tetes">
+            {TETES_REPONDRE.map((x) => (
+              <button
+                key={x.cle}
+                type="button"
+                className={r.merci === x.cle ? "pris" : ""}
+                disabled={Boolean(envoi)}
+                aria-label={`${x.nom} : lui répondre avec ma tête`}
+                onClick={async () => {
+                  setEnvoi(x.cle);
+                  await onTete(r, x.cle);
+                  setEnvoi("");
+                }}
+              >
+                <span className="vx-tete-im">
+                  {moi && <Im src={moi.tetes[x.cle] || moi.neutre} />}
+                  {!moi?.tetes[x.cle] && <i aria-hidden="true">{x.emoji}</i>}
+                </span>
+                <small>{x.nom}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {r.genre === "aide" && (
         <button type="button" className="vx-lien vx-story-signaler" onClick={() => onSignaler(r)}>
           Signaler
         </button>
       )}
+    </div>
+  );
+}
+
+// ─── ↩️ les têtes qu'on lui a répondues, en grand ─────────────────────────────────────────────────────────────────────
+function Retours({ liste, depart, onFermer }: { liste: RetourVoeu[]; depart: number; onFermer: () => void }) {
+  const [i, setI] = useState(depart);
+  const r = liste[i];
+  useEffect(() => {
+    const echap = (e: KeyboardEvent) => e.key === "Escape" && onFermer();
+    window.addEventListener("keydown", echap);
+    return () => window.removeEventListener("keydown", echap);
+  }, [onFermer]);
+  if (!r) return null;
+  const suivant = () => (i + 1 < liste.length ? setI(i + 1) : onFermer());
+  return (
+    <div className="vx-story vx-story-retour" role="dialog" aria-modal="true" aria-label={`${r.prenom} t’a répondu`}>
+      <div className="vx-story-traits" aria-hidden="true">
+        {liste.map((x, k) => (
+          <i key={x.id} className={k <= i ? "plein" : ""} />
+        ))}
+      </div>
+      <header className="vx-story-tete">
+        <Im src={r.tete} />
+        <span>
+          <b>{r.prenom} t’a répondu</b>
+          <small>{ilYA(r.le)}</small>
+        </span>
+        <button type="button" className="vx-story-fermer" aria-label="Fermer" onClick={onFermer}>
+          ✕
+        </button>
+      </header>
+      <button type="button" className="vx-story-gauche" aria-label="Le retour d’avant" onClick={() => setI(Math.max(0, i - 1))} />
+      <button type="button" className="vx-story-droite" aria-label="Le retour suivant" onClick={suivant} />
+      {r.voeu && (
+        <p className="vx-dit vx-story-dit">
+          <small>Son vœu</small>
+          {r.voeu}
+        </p>
+      )}
+      <div className="vx-story-scene">
+        <span className="vx-story-cadre">
+          <Im src={r.tete} className="vx-story-fig" alt={`La figurine de ${r.prenom}`} />
+          <span className="vx-sticker">{r.mot}</span>
+        </span>
+      </div>
+      <small className="vx-story-pas">Sa figurine te répond, pour ta tête sur son vœu.</small>
     </div>
   );
 }
@@ -710,6 +806,7 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
   const [page, setPage] = useState(false);
   const [aider, setAider] = useState<CarteVoeu | null>(null);
   const [story, setStory] = useState<number | null>(null);
+  const [retour, setRetour] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   // 👯 il vient de répondre à une aide : « Marius et toi, proches ! » (la maquette 4d)
   const [proche, setProche] = useState<{ cle: string; prenom: string; tete: string } | null>(null);
@@ -718,7 +815,23 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
     let fini = false;
     fetch("/api/direct/voeu", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j: { etat?: EtatVoeu }) => !fini && j.etat && setEtat(j.etat))
+      .then((j: { etat?: EtatVoeu }) => {
+        if (fini || !j.etat) return;
+        const e = j.etat;
+        // 🔔 la notification de 19 h (`#reponses`) : ses réponses en grand, la première pas encore vue ; sinon, ses retours
+        // (ouvertes ainsi, elles sont vues : le badge s'éteint)
+        const k = window.location.hash === "#reponses" ? e.reponses.findIndex((r) => !r.vue) : -1;
+        const kr = window.location.hash === "#reponses" && k < 0 ? e.retours.findIndex((r) => !r.vu) : -1;
+        if (k >= 0) {
+          setEtat({ ...e, nonVues: 0, reponses: e.reponses.map((x) => ({ ...x, vue: true })) });
+          setStory(k);
+          void demander({ action: "vues" }).catch(() => undefined);
+        } else if (kr >= 0) {
+          setEtat({ ...e, retours: e.retours.map((x) => ({ ...x, vu: true })) });
+          setRetour(kr);
+          void demander({ action: "retours-vus" }).catch(() => undefined);
+        } else setEtat(e);
+      })
       .catch(() => undefined);
     return () => {
       fini = true;
@@ -764,6 +877,26 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
     setStory(Math.max(0, etat.reponses.findIndex((x) => x.id === r.id)));
     if (nouvelles.length) void voirLesReponses();
   };
+  /** 🙂 Il répond avec sa tête à une réponse (« Merci ! »…). */
+  async function repondreAvecSaTete(r: ReponseVoeu, tete: string): Promise<boolean> {
+    setMessage("");
+    try {
+      const j = await demander({ action: "repondre-tete", vue: r.id, tete });
+      if (j.etat) setEtat(j.etat);
+      return true;
+    } catch (e) {
+      setMessage((e as Error).message);
+      return false;
+    }
+  }
+  /** ↩️ Ses retours, en grand (le badge s'éteint). */
+  function ouvrirRetour(k: number) {
+    setRetour(k);
+    if (etat?.retours.some((x) => !x.vu)) {
+      setEtat((e) => (e ? { ...e, retours: e.retours.map((x) => ({ ...x, vu: true })) } : e));
+      void demander({ action: "retours-vus" }).catch(() => undefined);
+    }
+  }
   /** ✋ Il répond à une aide : « Lui répondre avec ma figurine » (ils deviennent proches), ou « Pas pour moi ». */
   async function repondreAide(r: ReponseVoeu, oui: boolean) {
     setMessage("");
@@ -783,7 +916,8 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
     setStory(null);
     setPage(false);
     allerA("proches");
-    ouvrirConversation(cle);
+    // (le micro prêt : la maquette 4c, « Ta figurine répond à Marius »)
+    ouvrirConversation(cle, true);
   }
   /** 📲 « Inviter mes amis » (sa mission est vide : personne d'autre n'a de vœu dans sa ville) — le partage du téléphone,
    *  sinon le lien copié. */
@@ -866,14 +1000,26 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
                 </span>
               </button>
             )}
-            {bulles.length > 0 && (
-              <ul className="vx-bulles" aria-label="Les réponses à ton vœu">
+            {(bulles.length > 0 || etat.retours.length > 0) && (
+              <ul className="vx-bulles" aria-label="Les réponses à ton vœu, et ce qu'on t'a répondu">
                 {bulles.map((r) => (
                   <li key={r.id}>
                     <button type="button" className={`vx-bulle${r.vue ? "" : " neuve"}${r.genre === "aide" ? " aide" : ""}`} onClick={() => ouvrirReponse(r)} aria-label={`La réponse de ${r.prenom}`}>
                       <span className="vx-rond">
                         <Im src={r.tete} />
                         {(r.genre === "aide" || !r.vue) && <em>{r.genre === "aide" ? "AIDE" : "NEW"}</em>}
+                      </span>
+                      <small>{r.prenom}</small>
+                    </button>
+                  </li>
+                ))}
+                {/* ↩️ ce qu'on lui a répondu, à lui (ses encouragements, ses aides) */}
+                {etat.retours.slice(0, 8).map((r, k) => (
+                  <li key={`retour-${r.id}`}>
+                    <button type="button" className={`vx-bulle retour${r.vu ? "" : " neuve"}`} onClick={() => ouvrirRetour(k)} aria-label={`${r.prenom} t’a répondu : ${r.mot}`}>
+                      <span className="vx-rond">
+                        <Im src={r.tete} />
+                        <em>↩️ {r.mot}</em>
                       </span>
                       <small>{r.prenom}</small>
                     </button>
@@ -1049,12 +1195,15 @@ export function MonVoeuDansDecouvrir({ allerA }: { allerA: (o: string) => void }
           key={story}
           liste={etat.reponses}
           depart={story}
+          moi={etat.moi}
+          onTete={repondreAvecSaTete}
           onFermer={() => setStory(null)}
           onSignaler={(r) => void signalerReponse(r)}
           onRepondre={(r, oui) => void repondreAide(r, oui)}
           onParler={(r) => r.cle && parlerA(r.cle)}
         />
       )}
+      {retour !== null && <Retours key={retour} liste={etat.retours} depart={retour} onFermer={() => setRetour(null)} />}
       {/* 👯 « Marius et toi, proches ! » (la maquette 4d) */}
       <Feuille ouverte={proche !== null} onFermer={() => setProche(null)} titre="Vous êtes proches" className="vx-feuille vx-proches">
         {proche && (
@@ -1125,6 +1274,16 @@ export const STYLES_VOEU = `
 .vx-aide-tete{flex:none;width:56px;height:56px;border-radius:16px;object-fit:cover;object-position:50% 14%;background:#FF2E9A}
 .vx-aide-carte .vx-dit{font-size:16px}
 .vx-aide-carte audio{width:100%;height:40px}
+.vx-story-repondre{position:relative;z-index:2;display:flex;flex-direction:column;gap:6px}
+.vx-story-repondre>small{font-size:13px;font-weight:800;text-align:center}
+.vx-story-tetes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.vx-story-tetes button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px 7px;border:0;border-radius:16px;background:rgba(0,0,0,.18);color:#fff;font:inherit;cursor:pointer}
+.vx-story-tetes button.pris{background:rgba(255,46,154,.55);box-shadow:inset 0 0 0 2px #fff}
+.vx-story-tetes small{font-size:11.5px;font-weight:800;white-space:nowrap}
+.vx-story.vx-story-retour{background:linear-gradient(180deg,#F2A65A,#D9653B)}
+.vx-story-dit small{display:block;font-size:11px;font-weight:900;letter-spacing:.06em;color:#A0607A;text-transform:uppercase}
+.vx-bulle.retour .vx-rond{background:linear-gradient(135deg,#F2C46B,#FF7A59)}
+.vx-bulle.retour .vx-rond em{background:#F2C46B;color:#2A1220}
 .vx-story-gestes{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px}
 .vx-story-gestes .tj-go{margin:0}
 .vx-story-gestes .vx-second{width:100%;background:rgba(0,0,0,.18)}
