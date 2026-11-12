@@ -2411,6 +2411,42 @@ elle fait maintenant la tête de chaque réplique, comme sa figurine d'aujourd'h
 - **L'essai** : `scripts/navigateur/talkie-chez-moi.mjs` (ses têtes de départ faites sur sa figurine assise, la
   conversation qui les reçoit).
 
+### 9.0 sexatricies ☀️ Ma figurine me répond : l'humeur du matin (12 novembre) — lot R3
+
+Le propriétaire : « quand je donne le matin ma mood, mon état d'esprit, avec une de mes figurines, est-ce qu'en fonction
+de ce que je donne on pourrait avoir quelque chose : notre figurine qui nous dirait quelque chose ? » ; la proposition
+acceptée (« oui, tout est bien, vas-y ») : feuille de route, lot R, point 4.
+
+- **Tout de suite** : il choisit son humeur (la feuille du matin, ou en haut de « Proches ») et SA figurine prend ce
+  visage (sa figurine et l'emoji tant qu'il n'est pas fait ; la page le reprend dès qu'il l'est) et lui dit une phrase,
+  dans une bulle (« Ta figurine »), écrite, sans voix. La route `humeur` la rend avec l'humeur (`reponse`) : aucune IA,
+  aucune attente ; `GET` la rend aussi (la page rechargée la retrouve).
+- **Le geste** au bout de la phrase (`GESTES_HUMEUR`) : « 📲 Envoyer ma tête du jour » (joie, euphorie : le studio
+  s'ouvre avec ce visage et « Ma tête du jour ☀️ Et toi, ça va ? ») ; « 💬 Raconter à un proche » (fou rire :
+  « Proches ») ; « 😍 Le mème « Je t'aime » » (amour : le studio, ce mème prêt, son visage d'amour) ; « 🎭 Un mème avec
+  cette tête » (grimace) ; « ✨ Faire un vœu » (tristesse, colère, « oh non » : « Mon vœu » ; « 💬 Écrire à un proche »
+  s'il a déjà un vœu en route), en discret. Le studio reçoit le visage par `versLeStudio({ visage })` (un visage pas
+  encore fait part à l'atelier, comme s'il l'avait touché).
+- **Les phrases** (`PHRASES_HUMEUR`, `humeur-reponse.ts`) : dix par humeur, validées par le propriétaire ; jamais
+  redites avant d'avoir tout dit ; la même humeur redemandée le même jour, la même phrase.
+- **Le souvenir de la veille** (`SOUVENIRS`), prioritaire : hier une humeur douce, aujourd'hui une bonne — « Hier la
+  colère, aujourd'hui le fou rire : belle remontée ! » (ou « Quelle remontée depuis hier ! ») ; l'inverse — « Hier tu
+  rayonnais, aujourd'hui c'est plus lourd. Je reste là. » ; 3, 5, 7, 10, 14 ou 21 jours de bonne humeur — « 3 jours de
+  bonne humeur d'affilée. Tu as un secret ? » ; deux jours difficiles — « Encore une journée pas facile… » ; un simple
+  changement — « Hier la grimace, aujourd'hui la joie : tu ne t'ennuies jamais, toi. » (pas deux jours de suite).
+- **Le troisième jour difficile d'affilée** : « Trois jours que c'est lourd. Je reste là, tout près, aussi longtemps
+  qu'il faut. », et en petit « Si ça ne va vraiment pas, le 3114 répond jour et nuit » (un toucher l'appelle) ; le 3114
+  reste les jours suivants, tant que les jours difficiles durent ; une bonne journée l'efface.
+- **Le dimanche, « Ta semaine en visages »** : ses têtes du lundi au dimanche (un rond vide les jours sans humeur ;
+  dès deux jours donnés), « Une semaine plutôt soleil ☀️ », « en montagnes russes 🎢 » ou « pas facile » (le bouton de
+  partage, alors discret) ; « 📤 Partager » : une image faite dans le téléphone (la feuille de partage, sinon
+  l'enregistrement).
+- **Le seau** : `<habitant>/humeurs.json` (ses humeurs des 21 derniers jours, les phrases déjà dites, la dernière
+  réponse) — pas de table, pas de migration (`humeur-reponse-serveur.ts`).
+- **Les essais** : `scripts/verifier-humeur.mjs`, sans téléphone (les phrases, la veille, les jours difficiles, le
+  dimanche) ; `scripts/navigateur/humeur-reponse.mjs` (Léa et sa remontée, le studio et sa tête du jour ; Hugo et le
+  3114, « Faire un vœu » ; Max et son vœu en route ; Zoé en haut de « Proches », « Je t'aime »).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

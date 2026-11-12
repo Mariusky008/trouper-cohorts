@@ -291,6 +291,8 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   const [look, setLook] = useState("");
   const [lookCours, setLookCours] = useState("");
   const [lookVoulu, setLookVoulu] = useState("");
+  // ☀️ un visage demandé d'un autre onglet (son humeur du matin : « Ma tête du jour », « Un mème avec cette tête »)
+  const [visageVoulu, setVisageVoulu] = useState<Sentiment | null>(null);
   const sonLook = look ? (looks.find((f) => f.mois === look) ?? null) : null;
   const visible = useContext(OngletVisible);
   // (un visage demandé, pas encore fait : il s'affichera tout seul dès qu'il sera prêt)
@@ -385,6 +387,12 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
     setSentiment(s);
     setRejoue((n) => n + 1);
   }
+  // ☀️ le visage demandé d'un autre onglet : comme s'il l'avait touché (pas encore fait : l'atelier le fabrique)
+  if (visageVoulu) {
+    const v = visageVoulu;
+    setVisageVoulu(null);
+    choisirVisage(v);
+  }
 
   // 🗓️ UN LOOK : il parle tout de suite s'il sait déjà parler ; sinon, il apprend (une minute environ), puis il s'affiche
   function choisirLook(m: string) {
@@ -448,6 +456,12 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
         setTexte(x.texte.trim().slice(0, TEXTE_MAX));
       }
       if (typeof x.look === "string") setLookVoulu(x.look);
+      const v = typeof x.visage === "string" ? (sentimentDe(x.visage)?.cle ?? null) : null;
+      if (v) {
+        setMode("ecrire");
+        if (typeof x.texte !== "string" || !x.texte.trim()) setTexte("");
+        setVisageVoulu(v);
+      }
       if (typeof x.theme === "string" && x.theme === themeDuJour().cle) {
         setMode("ecrire");
         setTexte("");

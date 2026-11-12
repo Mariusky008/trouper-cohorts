@@ -128,6 +128,8 @@ parle qu'avec des voix enregistrées, jamais avec une voix de synthèse.
 
 ## 4. Pourquoi on revient
 
+- **Ton humeur du matin** : tu choisis une de tes têtes, ta figurine te répond tout de suite (et se souvient d'hier),
+  les figurines de tes proches te laissent un mot ; le dimanche, « Ta semaine en visages » à partager.
 - **Ta mission du jour** (trois vœux à encourager, rappelée avec le mème du jour vers 11 h 30) et **les réponses à ton
   vœu** (une notification vers 19 h).
 - **Le mème du jour**, chaque jour, vers 11 h 30.
