@@ -6,8 +6,9 @@
 // son décor, sa figurine assise à sa place ; « 🪑 Ton fauteuil a pris les couleurs de ton monde » (lot 4b) : avant,
 // après, « Il me plaît ! » ; « L'image à partager » ; « 🔑 Les clés de ton univers » : « Tu m'as dit : « … » » ; une
 // retouche avec une idée toute prête : la version 2, « Revenir à la version d'avant ». « MON UNIVERS », L'ACCUEIL
-// (`/univers`, lot 4b) : son univers, le menu de demain ; Sam, sans figurine, y est mené à sa figurine. Rien ne
-// déborde, jamais le mot interdit, aucune erreur dans la page.
+// (`/univers`, lot 4b) : son univers, le menu de demain ; Sam, sans figurine, y est mené à sa figurine. 🎵 La musique
+// d'ambiance, lancée par « Créer mon univers », se coupe d'un toucher ; sa figurine est grande chez elle (« je suis
+// tout petit », le propriétaire). Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import { BASE, D, F, lancer } from "./commun.mjs";
 
 let echecs = 0;
@@ -101,6 +102,7 @@ if (chantier) {
 
 // ═══ LA DÉCOUVERTE ═══
 await p.waitForSelector(".um-decouverte .um-decor", { timeout: 60000 }).catch(() => null);
+ok((await p.locator('.um-musique[aria-pressed="true"]').count()) === 1, "🎵 « Créer mon univers » a lancé la musique d'ambiance");
 const brume = await p.waitForSelector(".um-brume", { timeout: 3000 }).then(() => true).catch(() => false);
 ok((await p.locator(".um-decouverte .um-decor").count()) === 1 && (await p.locator(".um-place .um-figurine").count()) === 1, `la découverte : son décor, sa figurine assise à sa place${chantier ? " (après le chantier)" : ""}`);
 ok(brume, "la première fois, la brume se lève");
@@ -108,8 +110,16 @@ await p.waitForSelector(".um-brume", { state: "detached", timeout: 6000 }).catch
 await p.waitForSelector(".um-fauteuil", { timeout: 6000 }).catch(() => null);
 ok((await texte(".um-fauteuil")).includes("Ton fauteuil a pris les couleurs de ton monde") && (await p.locator(".um-fauteuil img").count()) === 2, "« 🪑 Ton fauteuil a pris les couleurs de ton monde » : avant, après");
 await p.screenshot({ path: `${D}/univers-monde-3-decouverte.png` });
+const proportion = await p.evaluate(() => {
+  const place = document.querySelector(".um-place")?.getBoundingClientRect();
+  const scene = document.querySelector(".um-scene")?.getBoundingClientRect();
+  return place && scene ? place.height / scene.height : 0;
+});
+ok(proportion >= 0.35 && proportion <= 0.5, `sa figurine est grande chez elle (${Math.round(proportion * 100)} % de la scène)`);
 await p.locator(".um-fauteuil .um-lien", { hasText: "Il me plaît" }).click();
 ok((await p.locator(".um-fauteuil").count()) === 0, "« Il me plaît ! » : l'annonce se range");
+await p.locator(".um-musique").click();
+ok((await p.locator('.um-musique[aria-pressed="false"]').innerText()) === "🔇", "la musique se coupe d'un toucher");
 await p.locator(".um-onglets button", { hasText: "L’image à partager" }).click();
 ok((await p.locator(".um-place").count()) === 0 && (await p.locator(".um-gestes .um-bouton", { hasText: "Partager mon univers" }).count()) === 1, "« L'image à partager » : sa figurine chez elle, « 📤 Partager mon univers »");
 await p.locator(".um-onglets button", { hasText: "Chez moi" }).click();

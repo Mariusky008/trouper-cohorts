@@ -10,6 +10,8 @@
  *     objet et voit pourquoi il est là (« tu m'as dit : … » ou « j'ai imaginé : … ») ; les retouches avec ses mots
  *     (trois offertes, puis une par jour) ; revenir à la version d'avant ;
  *   · 🪑 SON FAUTEUIL a pris les couleurs de son monde (lot 4b) : avant, après, une fois ;
+ *   · 🎵 UNE MUSIQUE D'AMBIANCE (`musique-univers.ts`, composée dans le téléphone), lancée par « Créer mon univers » ou
+ *     une retouche (le son ne démarre que dans un toucher), et le bouton 🎵 pour la mettre ou la couper ;
  *   · « MON UNIVERS », L'ACCUEIL (`accueil`, à `/univers`, lot 4b) : son univers en grand, et le menu de demain
  *     (Découvrir · Autour · Créer · Proches · Mon univers) ; tant qu'il n'est pas créé, l'étape où il en est (sa
  *     figurine, la conversation avec Pablito, la création).
@@ -18,6 +20,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { imageVisage } from "@/lib/direct/guide";
+import { lancerMusiqueUnivers, musiqueCoupee, type MusiqueUnivers } from "@/lib/direct/musique-univers";
 import { IDEES_RETOUCHE_UNIVERS, RETOUCHE_UNIVERS_MAX, type CleUnivers, type EtatUnivers } from "@/lib/direct/univers-creation";
 
 const ROUTE = "/api/direct/univers";
@@ -58,6 +61,20 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
   const [etat, setEtat] = useState<EtatUnivers | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
+  // 🎵 la musique d'ambiance : lancée dans un toucher, arrêtée en quittant la page
+  const musique = useRef<MusiqueUnivers | null>(null);
+  const [enMusique, setEnMusique] = useState(false);
+  const mettreLaMusique = useCallback((auto = false) => {
+    if (musique.current || (auto && musiqueCoupee())) return;
+    musique.current = lancerMusiqueUnivers();
+    setEnMusique(true);
+  }, []);
+  const couperLaMusique = useCallback(() => {
+    musique.current?.arreter();
+    musique.current = null;
+    setEnMusique(false);
+  }, []);
+  useEffect(() => () => musique.current?.arreter(), []);
   const charger = useCallback(async () => {
     try {
       const r = await fetch(ROUTE, { cache: "no-store" });
@@ -124,7 +141,15 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
           <p className="um-titre">Ton univers est prêt à être créé ✨</p>
           {etat.proposition && <p className="um-texte">{etat.proposition}</p>}
           {etat.erreur && <p className="um-erreur">{etat.erreur}</p>}
-          <button type="button" className="um-bouton" disabled={occupe || !etat.branche} onClick={() => void faire({ action: "creer" })}>
+          <button
+            type="button"
+            className="um-bouton"
+            disabled={occupe || !etat.branche}
+            onClick={() => {
+              mettreLaMusique(true);
+              void faire({ action: "creer" });
+            }}
+          >
             {occupe ? "…" : etat.erreur ? "Relancer la création" : "Créer mon univers"}
           </button>
           {!etat.branche && <p className="um-doux">Le moteur d’image n’est pas branché ici.</p>}
@@ -132,7 +157,18 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
       ) : etat.etape === "creation" ? (
         <Chantier etat={etat} />
       ) : (
-        <Decouverte etat={etat} occupe={occupe} faire={faire} />
+        <Decouverte etat={etat} occupe={occupe} faire={faire} enRetouche={() => mettreLaMusique(true)} />
+      )}
+      {(etat?.etape === "creation" || etat?.etape === "decouverte") && (
+        <button
+          type="button"
+          className={`um-musique${enMusique ? " joue" : ""}`}
+          aria-pressed={enMusique}
+          aria-label={enMusique ? "Couper la musique" : "Mettre la musique"}
+          onClick={() => (enMusique ? couperLaMusique() : mettreLaMusique())}
+        >
+          {enMusique ? "🎵" : "🔇"}
+        </button>
       )}
       {erreur && etat && (
         <p className="um-erreur" role="alert">
@@ -200,7 +236,9 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
 }
 
 // ─── la découverte ────────────────────────────────────────────────────────────────────────────────
-function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolean; faire: (c: Record<string, unknown>) => Promise<boolean> }) {
+/** La hauteur de sa figurine chez elle, en % de la scène. */
+const TAILLE_FIGURINE = 40;
+function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; occupe: boolean; faire: (c: Record<string, unknown>) => Promise<boolean>; enRetouche: () => void }) {
   const [vue, setVue] = useState<"chez-moi" | "vedette">("chez-moi");
   const [cles, setCles] = useState(false);
   const [cle, setCle] = useState<CleUnivers | null>(null);
@@ -234,6 +272,9 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
     };
   }, [parle]);
   const hote = etat.scene?.places.find((p) => p.id === "hote") ?? { x: 0.36, y: 0.8, echelle: 1 };
+  // (sa taille chez elle : 40 % de la hauteur de la scène, à peine nuancée par sa place — le propriétaire, le 12
+  // novembre, sur son univers : « je suis tout petit » ; c'était 26 %)
+  const taille = TAILLE_FIGURINE * Math.min(1.15, Math.max(0.9, hote.echelle));
   const figurine = bouche && etat.figurine?.parle ? etat.figurine.parle : etat.figurine?.assise;
   const partager = useRef(false);
   async function partagerVedette() {
@@ -275,7 +316,7 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="um-decor" src={vue === "vedette" && etat.vedette ? etat.vedette : etat.decor} alt={vue === "vedette" ? "Ta figurine chez elle" : "Ton univers"} />
         {vue === "chez-moi" && figurine && (
-          <span className="um-place" style={{ left: `${hote.x * 100}%`, top: `${hote.y * 100}%`, height: `${26 * hote.echelle}%` }}>
+          <span className="um-place" style={{ left: `${hote.x * 100}%`, top: `${Math.max(hote.y, taille / 100 + 0.04) * 100}%`, height: `${taille}%` }}>
             <span className="um-ombre" aria-hidden="true" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="um-figurine" src={figurine} alt="Ta figurine, chez elle" />
@@ -391,6 +432,7 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
             disabled={occupe || mots.trim().length < 3}
             onClick={() => {
               setRetouche(false);
+              enRetouche();
               void faire({ action: "retoucher", texte: mots }).then((ok) => ok && setMots(""));
             }}
           >
@@ -442,6 +484,9 @@ const STYLES = `
 .um-menu a small{font-size:11px;font-weight:800;white-space:nowrap}
 .um-menu a.pris{color:#fff6e6}
 .um-menu a.pris span{transform:translateY(-2px)}
+.um-musique{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:21;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,250,240,.8);font-size:20px;box-shadow:0 4px 12px rgba(43,26,12,.25)}
+.um-musique.joue{animation:um-note 2.4s ease-in-out infinite}
+@keyframes um-note{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 .um-fauteuil{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 14px;border-radius:16px;background:rgba(255,253,248,.95);box-shadow:0 6px 18px rgba(43,26,12,.2);text-align:center}
 .um-avant-apres{display:flex;align-items:center;gap:10px;font-size:22px}
 .um-avant-apres img{width:84px;height:110px;object-fit:contain}

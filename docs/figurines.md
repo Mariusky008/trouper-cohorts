@@ -2334,9 +2334,18 @@ d'aujourd'hui jusqu'à son feu vert.
   univers n'est pas créé, l'accueil montre l'étape où il en est : sans figurine, « Ton univers commence par toi »
   (« Créer ma figurine ») ; sans univers, la conversation avec Pablito ; puis la création. **Une seule adresse à
   retenir pour tout le parcours.**
+- **Ses retours sur son univers créé (12 novembre)**, avec la capture de son atelier : « peut-être pourrions-nous
+  rajouter pendant cette étape une petite musique d'ambiance ? » et « je suis tout petit sur mon univers ».
+  - **🎵 La musique d'ambiance** (`musique-univers.ts`) : une boucle de 32 secondes composée dans le téléphone (comme
+    celle de la danse : ni voix, ni échantillon), lente et chaude — des accords tenus en ré majeur, une basse ronde,
+    une boîte à musique, un peu d'écho de pièce. Elle se lance avec « Créer mon univers » ou une retouche (le son ne
+    démarre que dans un toucher), continue pendant le chantier et la découverte ; le bouton 🎵 (en haut à droite) la
+    met ou la coupe ; elle respecte le son coupé de l'appli, et se tait quand la page est cachée.
+  - **Sa figurine, plus grande chez elle** : 40 % de la hauteur de la scène (c'était 26 %), à peine nuancée par sa
+    place (de 0,9 à 1,15).
 - **Le coût** : une image haute et une moyenne de plus à la création (environ 5 centimes).
 - **Les essais** : `scripts/essai-univers-route.mjs` (le fauteuil refait, signé, refaisable ; pas refait à la retouche),
-  `scripts/navigateur/univers-monde.mjs` (l'annonce, l'accueil, le menu, Sam sans figurine),
+  `scripts/navigateur/univers-monde.mjs` (l'annonce, l'accueil, le menu, Sam sans figurine, la musique, sa taille),
   `scripts/verifier-fiches.mjs` (`fauteuilAuxCouleurs`).
 
 **La suite** : son avis sur tout le parcours, puis le feu vert pour tout le monde (l'accueil de `/collection` devient
