@@ -544,8 +544,12 @@ visite.
 
 **Construit (12 novembre 2026) — 5a** ; le détail : `docs/figurines.md`, 9.0 tretricies 🚪. La conversation du
 talkie-walkie se joue chez moi quand mon univers est créé : mon décor, ma figurine à ma place, le proche qui entre et
-s'assoit à la place de l'invité, qui parle avec sa voix. **Reste** : 5b (la vidéo WhatsApp dans mon univers), 5c (le
-lien d'invitation qui ouvre mon univers ; l'invité y répond).
+s'assoit à la place de l'invité, qui parle avec sa voix.
+
+**Construit (12 novembre 2026) — 5b et 5c** ; le détail : `docs/figurines.md`, 9.0 quattuortricies 🎬🔗. La vidéo
+qui part sur WhatsApp se passe chez moi (mon décor à la place du fond rose) ; le lien d'invitation ouvre mon univers
+(« 👋 Bienvenue chez moi ! », l'aperçu du lien : mon image vedette) ; l'invité y répond, et nos deux figurines sont
+chez moi. **Reste** : son avis, puis le feu vert pour tout le monde.
 
 ### Lot 6 — Les visites et les souvenirs
 

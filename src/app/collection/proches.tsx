@@ -771,7 +771,7 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
  * figurine s'y assoit (le bas de son image sur la place), à 36 % de la hauteur du décor. `invite` : tournée vers moi.
  */
 const HAUTEUR_DECOR = 1.5; // (hauteur du décor / largeur de la scène)
-function styleDePlace(p: PlaceChezMoi, invite: boolean): React.CSSProperties {
+export function styleDePlace(p: PlaceChezMoi, invite: boolean): React.CSSProperties {
   const echelle = Math.min(1.15, Math.max(0.9, p.echelle));
   return {
     left: `${p.x * 100}%`,
@@ -1298,11 +1298,14 @@ function LeMessagePret({ pret, lienWhatsApp, copie, onCopier }: { pret: MessageP
   useEffect(() => {
     if (!voulue || !parole || !moi || !ctx || !toile.current || videosCommencees.has(ctx)) return;
     videosCommencees.add(ctx);
-    const tete = (t: Sentiment | null) => (t && moi.expressions[t]) || { n: moi.neutre, p: moi.parle };
+    // 🏡 « Univers », lot 5b : chez lui (son décor, sa figurine assise, sans têtes — elles ne sont pas encore faites)
+    const chez = moi.chez && moi.assise ? { assise: moi.assise, chez: moi.chez } : null;
+    const tete = (t: Sentiment | null) => (chez ? chez.assise : (t && moi.expressions[t]) || { n: moi.neutre, p: moi.parle });
     fabriquerMeme({
       ctx,
       toile: toile.current,
-      images: { n: moi.neutre, p: moi.parle },
+      images: chez ? chez.assise : { n: moi.neutre, p: moi.parle },
+      ...(chez ? { chezMoi: { decor: chez.chez.decor, ...chez.chez.hote } } : {}),
       son: parole.son,
       repliques: parole.repliques.map((r) => ({ de: r.de, a: r.a, texte: r.texte, images: tete(r.tete), emoji: r.tete ? (sentimentDe(r.tete)?.emoji ?? "") : "" })),
       message: { de: moi.prenom, pour: parole.pour },

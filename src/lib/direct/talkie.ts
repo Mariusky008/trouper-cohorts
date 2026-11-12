@@ -43,7 +43,7 @@ export type MessageFil = { id: string; moi: boolean; le: string; duree: number; 
  * `assise` (chantier « Univers », lot 5) : sa figurine du nouveau style, détourée, assise dans son fauteuil (`n` bouche
  * fermée, `p` ouverte), quand il l'a faite — c'est elle qui entre chez l'autre.
  */
-export type FigurineVue = { prenom: string; neutre: string; parle: string; expressions: Expressions; assise?: { n: string; p: string } };
+export type FigurineVue = { prenom: string; neutre: string; parle: string; expressions: Expressions; assise?: { n: string; p: string }; chez?: ChezMoi };
 /**
  * Un proche, dans l'onglet : sa clé (jamais son identifiant), son prénom, sa figurine, s'il est là, ses messages non
  * lus, la dernière chose dite. `lien` : « proches » (ils se sont ajoutés tous les deux : ils se parlent), « attend »
@@ -72,6 +72,7 @@ export type PlaceChezMoi = { x: number; y: number; echelle: number };
  * chacun voit la conversation chez soi, l'autre lui rend visite) : son décor, sa place, celle de l'invité.
  */
 export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi };
+// (`FigurineVue.chez` : seulement la sienne, pour la vidéo qu'il envoie par WhatsApp — « chez celui qui envoie », lot 5b)
 export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi };
 
 export const cleValide = (x: unknown): string | null => (typeof x === "string" && /^[a-f0-9]{16}$/.test(x) ? x : null);

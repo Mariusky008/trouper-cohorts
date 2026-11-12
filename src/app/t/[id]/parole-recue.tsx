@@ -9,11 +9,15 @@
  *     (`Parler`, celui de l'onglet « Proches » : son selfie à l'écran, puis « Ta figurine a compris ça ») ;
  *   · « C'est parti ! » : ils sont proches ; « Ne perds jamais ta figurine » (son e-mail, s'il veut) ; « Ouvrir ClikMe ».
  * Qui a déjà sa figurine répond tout de suite ; son auteur voit « C'est ton message » (et peut le renvoyer).
+ *
+ * 🏡 « UNIVERS », LOT 5c — « le lien d'invitation ouvre l'univers de celui qui invite » : quand son univers est créé,
+ * le message se passe CHEZ LUI (son décor, sa figurine assise à sa place, « 👋 Bienvenue chez moi ! ») ; la réponse
+ * aussi : à la fin, les deux figurines chez lui, celle de l'invité à la place de l'invité.
  */
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { FigurineQuiParle, STYLES_FIGURINE_QUI_PARLE, type FigurineHandle } from "@/app/collection/figurine-qui-parle";
-import { Parler, STYLES_PROCHES, depuis } from "@/app/collection/proches";
+import { Parler, STYLES_PROCHES, depuis, styleDePlace } from "@/app/collection/proches";
 import { ProtegerFigurine, STYLES_CONNAITRE } from "@/app/collection/connaitre";
 import { reduireImage } from "@/lib/direct/reduire-image";
 import { sentimentDe, type EtatMaFigurine } from "@/lib/direct/ma-figurine";
@@ -68,6 +72,8 @@ export function ParoleRecue({ lien }: { lien: LienVu }) {
   const fig = useRef<FigurineHandle>(null);
   const irRef = useRef(0);
   const de = lien.de;
+  // 🏡 chez lui (son univers créé) : sa figurine du nouveau style, assise à sa place, sans têtes (pas encore faites)
+  const chez = de.chez && de.assise ? { ...de.chez, assise: de.assise } : null;
   const r = lien.repliques[Math.min(ir, Math.max(0, lien.repliques.length - 1))];
   const tete = r?.tete ?? null;
   const s = sentimentDe(tete);
@@ -139,13 +145,32 @@ export function ParoleRecue({ lien }: { lien: LienVu }) {
         </span>
         <h1>C’est parti !</h1>
         <p>{de.prenom} va entendre ta réponse.</p>
-        <section className="pt-duo" aria-label="Vos deux figurines">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {moi && <img src={moi.neutre} alt="Ta figurine" draggable={false} />}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="lui" src={de.neutre} alt={`La figurine de ${de.prenom}`} draggable={false} />
-          <span className="pt-pill">👯 Proches</span>
-        </section>
+        {chez ? (
+          // 🏡 vos deux figurines chez lui : la sienne à sa place, la tienne à celle de l'invité
+          <section className="pt-scene pr-scene chez pt-chez-duo" aria-label={`Vos deux figurines, chez ${de.prenom}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="pr-decor" src={chez.decor} alt="" draggable={false} />
+            <span className="pr-ecoute-chez assise" style={styleDePlace(chez.hote, false)}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={chez.assise.n} alt={`La figurine de ${de.prenom}`} draggable={false} />
+            </span>
+            {moi && (
+              <span className={`pr-ecoute-chez invite${moi.assise ? " assise" : ""}`} style={styleDePlace(chez.invite, true)}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={moi.assise?.n ?? moi.neutre} alt="Ta figurine, chez elle" draggable={false} />
+              </span>
+            )}
+            <span className="pt-pill">👯 Proches</span>
+          </section>
+        ) : (
+          <section className="pt-duo" aria-label="Vos deux figurines">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {moi && <img src={moi.neutre} alt="Ta figurine" draggable={false} />}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="lui" src={de.neutre} alt={`La figurine de ${de.prenom}`} draggable={false} />
+            <span className="pt-pill">👯 Proches</span>
+          </section>
+        )}
         <p className="pt-doux">Vous êtes proches maintenant : vos figurines peuvent se parler quand vous voulez.</p>
         {lien.visiteur !== "prete" && <ProtegerFigurine mode="proteger" />}
         <Link className="pr-bouton grand pt-ouvrir" href={`/collection?parler=${cle}#proches`}>
@@ -164,15 +189,32 @@ export function ParoleRecue({ lien }: { lien: LienVu }) {
         </span>
         <h1>
           {lien.pour ? `${lien.pour}, ` : ""}
-          {de.prenom} t’a laissé un message avec sa figurine
+          {chez ? `${de.prenom} t’accueille dans son univers` : `${de.prenom} t’a laissé un message avec sa figurine`}
         </h1>
         <small>{depuis(lien.le)}</small>
       </header>
 
       {/* sa figurine lui parle : la tête de chaque réplique au bon moment, les sous-titres */}
-      <section className="pt-scene" aria-label={`Le message de ${de.prenom}`} data-tete={tete ?? ""} data-replique={ir}>
-        <FigurineQuiParle ref={fig} neutre={de.neutre} parle={de.parle} expressions={de.expressions} sentiment={tete} onTemps={surTemps} onJoue={setJoue} className="pt-fqp" />
-        {s && (
+      <section
+        className={`pt-scene${chez ? " pr-scene chez" : ""}${chez && joue ? " joue" : ""}`}
+        aria-label={chez ? `Chez ${de.prenom} : son message` : `Le message de ${de.prenom}`}
+        data-tete={tete ?? ""}
+        data-replique={ir}
+      >
+        {chez ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="pr-decor" src={chez.decor} alt="" draggable={false} />
+            <div className="pr-parleur assise" style={styleDePlace(chez.hote, false)}>
+              <FigurineQuiParle ref={fig} neutre={chez.assise.n} parle={chez.assise.p} expressions={{}} decoupe sentiment={null} onTemps={surTemps} onJoue={setJoue} className="pr-fqp" />
+            </div>
+            {/* (sa figurine dit bonjour) */}
+            {!joue && ir === 0 && <p className="pt-bonjour">👋 Bienvenue chez moi !</p>}
+          </>
+        ) : (
+          <FigurineQuiParle ref={fig} neutre={de.neutre} parle={de.parle} expressions={de.expressions} sentiment={tete} onTemps={surTemps} onJoue={setJoue} className="pt-fqp" />
+        )}
+        {s && !chez && (
           <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
             <span aria-hidden="true">{s.emoji}</span>
             <small>{s.court}</small>
@@ -325,6 +367,7 @@ body{background:#12060F}
 .pt-fqp{height:96%}
 .pt-fqp .fqp-fig{width:auto;height:100%;max-width:88vw;border-radius:24px}
 .pt-lire{right:auto;bottom:auto;left:50%;top:40%;margin:-33px 0 0 -33px}
+.pt-scene.pr-scene.chez .pt-lire{top:42%;left:50%;width:66px;height:66px;margin:-33px 0 0 -33px}
 .pt-note{margin:0;font-size:12px;color:#B49AA8;text-align:center}
 .pt-bas{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:auto;text-align:center}
 .pt-bas small{font-size:12.5px;line-height:1.4;color:#CDB4C0}
@@ -347,6 +390,10 @@ a.pr-bouton{color:#fff;text-decoration:none}
 .pt-ok{display:grid;place-items:center;width:70px;height:70px;margin-top:18px;border-radius:50%;background:#3DDC84;color:#12060F}
 .pt-fini h1{margin:6px 0 0;font-size:26px;font-weight:900;line-height:1.15}
 .pt-fini p{margin:0;font-size:14px;color:#D9C3CB}
+.pt-bonjour{position:absolute;z-index:2;top:16px;right:14px;margin:0;padding:9px 16px;border-radius:18px 18px 4px 18px;background:#FFF4E6;color:#2A0F1F;font-weight:900;font-size:16px;white-space:nowrap;box-shadow:0 10px 22px rgba(0,0,0,.35);animation:pt-bonjour 1.6s ease-in-out infinite}
+@keyframes pt-bonjour{0%,100%{translate:0 0}50%{translate:0 -4px}}
+.pt-chez-duo{width:100%;height:min(320px,42dvh)}
+.pt-chez-duo .pt-pill{z-index:3}
 .pt-duo{position:relative;display:flex;align-items:flex-end;justify-content:space-between;width:100%;height:210px;padding:0 8px;box-sizing:border-box;border-radius:26px;overflow:hidden;background:#2A1022}
 .pt-duo img{width:46%;height:90%;object-fit:cover;object-position:50% 20%;border-radius:20px 20px 0 0}
 .pt-duo img.lui{margin-left:auto;transform:scaleX(-1)}

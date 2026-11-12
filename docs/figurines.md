@@ -2367,7 +2367,26 @@ visite.
 - **L'essai** : `scripts/navigateur/talkie-chez-moi.mjs` (Marc a son univers, Inès non) ; `talkie.mjs` inchangé.
 
 **La suite (5b, 5c)** : la vidéo qui part sur WhatsApp, dans mon univers (le décor à la place du fond rose) ; le lien
-d'invitation qui ouvre mon univers, où ma figurine dit bonjour, et l'invité qui y répond.
+d'invitation qui ouvre mon univers, où ma figurine dit bonjour, et l'invité qui y répond — construits juste après
+(ci-dessous).
+
+### 9.0 quattuortricies 🎬🔗 Sur WhatsApp, chez celui qui envoie (12 novembre) — lots 5b et 5c
+
+- **5b — la vidéo qui part sur WhatsApp se passe chez moi** (« Lui parler par WhatsApp », `proches.tsx`) : quand mon
+  univers est créé, `fabriquerMeme` reçoit `chezMoi` (`meme.ts`) — mon décor couvre le cadre à la place du fond rose,
+  ma figurine du nouveau style, détourée, assise à ma place (40 % de la hauteur du décor, son ombre), mes mots
+  au-dessus d'elle ; le bandeau « 🎙️ Message de Marc », l'emoji, la fin ne changent pas. `maFigurineVue` donne ma
+  figurine assise et mon univers, à moi seul.
+- **5c — le lien d'invitation ouvre mon univers** (`/t/<id>`, `parole-recue.tsx`) : « Marc t'accueille dans son
+  univers » ; mon décor, ma figurine assise à ma place qui dit « 👋 Bienvenue chez moi ! », puis parle (ma voix, les
+  sous-titres) ; l'aperçu du lien dans WhatsApp montre mon image vedette (ma figurine chez elle). **L'invité répond
+  chez moi** : à « C'est parti ! », nos deux figurines dans mon décor, la sienne à la place de l'invité. `lireLien`
+  et `apercuDuLien` (`talkie-serveur.ts`) donnent mon univers (le décor et les places ; jamais mes clés).
+- **L'essai** : `scripts/navigateur/talkie-chez-moi.mjs` (la vidéo : mon décor, pas le rose ; le lien ; la réponse
+  d'Inès, chez moi) ; `talkie-whatsapp.mjs` inchangé.
+
+**Le lot 5 est construit.** La suite : son avis ; le feu vert pour tout le monde ; le lot 6 (les visites et les
+souvenirs : ce que voit un inconnu de mon univers, à confirmer).
 
 ### 9.1 L'idée en une phrase
 
