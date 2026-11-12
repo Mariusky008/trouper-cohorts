@@ -47,7 +47,8 @@ const sansMotInterdit = async () => !/exemple/i.test(await p.evaluate(() => docu
 // ═══ LE SELFIE ═══
 await p.goto(`${BASE}/univers/figurine`, { waitUntil: "networkidle" });
 await p.waitForSelector(".nf-selfie", { timeout: 60000 }).catch(() => null);
-ok((await texte(".nf-selfie h1")) === "Créons ta figurine !", "« Créons ta figurine ! »");
+const ici = `${new URL(p.url()).pathname} — ${(await p.evaluate(() => document.body.innerText)).replace(/\s+/g, " ").slice(0, 120)}`;
+ok((await texte(".nf-selfie h1")) === "Créons ta figurine !", `« Créons ta figurine ! »${(await p.locator(".nf-selfie").count()) ? "" : ` (${ici})`}`);
 const creer = p.locator(".nf-selfie .nf-bouton");
 ok(await creer.isDisabled(), "« Créer ma figurine » attend sa photo et ses deux cases");
 await p.locator('.nf-selfie input[name="photo"]').setInputFiles("public/direct/double/content.webp");

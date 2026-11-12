@@ -255,10 +255,11 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatNouvelleFigurine; occup
         </button>
       </section>
     );
-  const premiere = faites.length === 1 && !vue.demande;
+  // (la toute première, d'après son selfie : « La voilà ! » ; une retouche ; ou une autre, refaite d'après le selfie)
+  const premiere = vue.id === faites[faites.length - 1].id && !vue.demande;
   return (
     <section className="nf-decouverte" aria-label="Ta figurine" data-proposition={vue.id}>
-      <p className="nf-titre">{premiere ? "La voilà !" : vue.demande ? "Retouchée" : "Une nouvelle"}</p>
+      <p className="nf-titre">{vue.demande ? "Retouchée" : premiere ? "La voilà !" : "Une nouvelle"}</p>
       {vue.demande && <p className="nf-demande">« {vue.demande} »</p>}
       <Scene key={vue.id} image={vue.image} alt="Ta figurine, assise dans son fauteuil" apparait />
       {derniere?.etat === "erreur" && derniere.id !== vue.id && <p className="nf-erreur">La dernière retouche a raté : {derniere.erreur}</p>}
