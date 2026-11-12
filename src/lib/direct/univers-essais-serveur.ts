@@ -32,11 +32,16 @@ import {
   NOTE_MAX,
   RETOUCHE_MAX,
   RETOUCHE_PAR_DEFAUT,
+  SITUATION_DEUX,
+  SITUATION_MAX,
+  SITUATION_UNE,
   consigneConstance,
   consigneDecor,
   consigneFigurineCollection,
   consigneRetouche,
-  consigneVedette,
+  consigneScene,
+  estDetouree,
+  fideliteDe,
   directionUnivers,
   ficheUnivers,
   varianteConstance,
@@ -81,6 +86,22 @@ async function lister(supabase: Supabase, dossier: string): Promise<string[]> {
   return noms;
 }
 
+/**
+ * LES ADRESSES SIGNÉES, PAR PETITS GROUPES, AVEC UN SECOND ESSAI (11 novembre 2026 : sur la page, deux images faites
+ * s'affichaient « Ratée » ou cassées — des dizaines de signatures parties d'un coup, et une qui échoue). Rien : « ».
+ */
+async function signerTout(supabase: Supabase, chemins: string[]): Promise<string[]> {
+  const l: string[] = new Array(chemins.length).fill("");
+  for (let k = 0; k < chemins.length; k += 8)
+    await Promise.all(
+      chemins.slice(k, k + 8).map(async (c, i) => {
+        if (!c) return;
+        l[k + i] = (await signer(supabase, c, 3600)) || (await signer(supabase, c, 3600));
+      }),
+    );
+  return l;
+}
+
 // ─── ce que la page voit ──────────────────────────────────────────────────────────────────────────
 /** 🧪 Tout : les personnes (leur selfie signé), les images (signées), les images du jour. */
 export async function etatEssais(supabase: Supabase): Promise<EtatEssais> {
@@ -92,7 +113,7 @@ export async function etatEssais(supabase: Supabase): Promise<EtatEssais> {
         .map(async (n): Promise<PersonneEssai | null> => {
           const f = await lireJson<FichePersonne>(supabase, `${DOSSIER}/personnes/${n}`);
           if (!f.id) return null;
-          return { id: f.id, nom: s(f.nom), accordLe: s(f.accordLe), le: s(f.le), selfie: await signer(supabase, cheminSelfie(f.id), 3600), traits: traitsEnMots(f.traits ?? null).map((l) => l.replace(/^- /, "")) };
+          return { id: f.id, nom: s(f.nom), accordLe: s(f.accordLe), le: s(f.le), selfie: cheminSelfie(f.id), traits: traitsEnMots(f.traits ?? null).map((l) => l.replace(/^- /, "")) };
         }),
     )
   )
@@ -109,13 +130,17 @@ export async function etatEssais(supabase: Supabase): Promise<EtatEssais> {
           return {
             ...(r as ResultatEssai),
             ...(perimee ? { etat: "erreur" as const, erreur: "Interrompue en chemin (la fonction s'est arrêtée). Relancez." } : {}),
-            image: r.etat === "fait" ? await signer(supabase, cheminImage(r.id), 3600) : undefined,
+            image: r.etat === "fait" ? cheminImage(r.id) : undefined,
           };
         }),
     )
   )
     .filter((x): x is ResultatEssai => Boolean(x))
     .sort((a, b) => a.le.localeCompare(b.le));
+  // (les adresses signées, toutes ensemble, par petits groupes)
+  const [selfies, images] = await Promise.all([signerTout(supabase, personnes.map((p) => p.selfie)), signerTout(supabase, resultats.map((r) => r.image ?? ""))]);
+  personnes.forEach((p, i) => (p.selfie = selfies[i]));
+  resultats.forEach((r, i) => (r.image = r.image ? images[i] || undefined : undefined));
   return { personnes, resultats, imagesDuJour: Number(jour.n) || 0, plafond: IMAGES_PAR_JOUR, branche: moteurBranche() };
 }
 
@@ -167,7 +192,7 @@ export async function effacerPersonne(supabase: Supabase, id: unknown): Promise<
       .filter((n) => /^[a-z0-9]{12}\.json$/.test(n))
       .map(async (n) => {
         const r = await lireJson<ResultatEssai>(supabase, `${DOSSIER}/resultats/${n}`);
-        if (r.personne === p && r.id) siens.push(cheminResultat(r.id), cheminImage(r.id));
+        if (r.id && (r.personne === p || (Array.isArray(r.personnes) && r.personnes.includes(p)))) siens.push(cheminResultat(r.id), cheminImage(r.id));
       }),
   );
   const { error } = await supabase.storage.from(SEAU_FIGURINES).remove([cheminPersonne(p), cheminSelfie(p), ...siens]);
@@ -199,6 +224,11 @@ type Demande = {
   entrees: string[];
   /** une figurine détourée (fond transparent), ou une image pleine (un décor, une photo) */
   transparent: boolean;
+  /** le réglage du moteur : « high » garde la photo, « low » la réinterprète */
+  fidelite?: "high" | "low";
+  figurines?: string[];
+  personnes?: string[];
+  situation?: string;
 };
 
 /**
@@ -211,11 +241,20 @@ export async function demanderFigurines(supabase: Supabase, personne: unknown, v
   const f = await lireJson<FichePersonne>(supabase, cheminPersonne(p));
   if (!f.id) return { error: "Cette personne n’existe pas.", statut: 404 };
   if (!moteurBranche()) return { error: "Le moteur d’image n’est pas branché ici (OPENAI_API_KEY).", statut: 503 };
-  const l = (Array.isArray(variantes) && variantes.length ? variantes : ["collection", "collection-photo", "collection-douce"]).map(varianteFigurine).filter((v): v is VarianteFigurine => Boolean(v));
+  const l = (Array.isArray(variantes) && variantes.length ? variantes : ["sculptee", "sculptee-libre", "sculptee-photo"]).map(varianteFigurine).filter((v): v is VarianteFigurine => Boolean(v));
   const vs = [...new Set(l)];
   if (!vs.length) return { error: "Choisissez une variante.", statut: 400 };
   if (!(await reserver(supabase, vs.length))) return { error: `Assez d’images pour aujourd’hui (${IMAGES_PAR_JOUR}).`, statut: 429 };
-  const demandes: Demande[] = vs.map((v) => ({ id: nouvelId(), personne: p, type: "figurine", variante: v, consigne: consigneFigurineCollection(v, f.traits ?? null), entrees: [cheminSelfie(p)], transparent: v !== "collection-photo" }));
+  const demandes: Demande[] = vs.map((v) => ({
+    id: nouvelId(),
+    personne: p,
+    type: "figurine",
+    variante: v,
+    consigne: consigneFigurineCollection(v, f.traits ?? null),
+    entrees: [cheminSelfie(p)],
+    transparent: estDetouree(v),
+    fidelite: fideliteDe(v),
+  }));
   await Promise.all(demandes.map((d) => poserEnCours(supabase, d)));
   return { demandes };
 }
@@ -245,6 +284,9 @@ function poserEnCours(supabase: Supabase, d: Demande) {
     ...(d.fiche ? { fiche: d.fiche } : {}),
     ...(d.figurine ? { figurine: d.figurine } : {}),
     ...(d.retouche ? { retouche: d.retouche } : {}),
+    ...(d.figurines ? { figurines: d.figurines } : {}),
+    ...(d.personnes ? { personnes: d.personnes } : {}),
+    ...(d.situation ? { situation: d.situation } : {}),
     etat: "en-cours",
     qualite: qualite(),
     taille: "1024x1536",
@@ -266,7 +308,7 @@ async function fabriquerUne(supabase: Supabase, d: Demande, avant: number): Prom
   const entrees = await Promise.all(d.entrees.map((c) => telecharger(supabase, c)));
   if (entrees.some((x) => !x)) return void (await finir({ etat: "erreur", erreur: "L’image de départ est introuvable." }));
   const t0 = Date.now();
-  const rendu = await demanderAuMoteur({ images: entrees as Buffer[], consigne: d.consigne, transparent: d.transparent, avant });
+  const rendu = await demanderAuMoteur({ images: entrees as Buffer[], consigne: d.consigne, transparent: d.transparent, fidelite: d.fidelite ?? "high", avant });
   const dureeS = Math.round((Date.now() - t0) / 100) / 10;
   if ("erreur" in rendu) return void (await finir({ etat: "erreur", erreur: rendu.erreur, dureeS }));
   if (!(await deposer(supabase, cheminImage(d.id), rendu.png, "image/png"))) return void (await finir({ etat: "erreur", erreur: "L’image n’a pas pu être rangée.", dureeS }));
@@ -278,7 +320,7 @@ async function fabriquerUne(supabase: Supabase, d: Demande, avant: number): Prom
  * (`/v1/images/generations`, un décor) : les replis de moteur (un modèle refusé : le suivant) et de réglages (un réglage
  * inconnu : on le retire et on rejoue), comme pour les figurines d'aujourd'hui.
  */
-async function demanderAuMoteur(o: { images: Buffer[]; consigne: string; transparent: boolean; avant: number }): Promise<{ png: Buffer; modele: string; jetons?: number } | { erreur: string }> {
+async function demanderAuMoteur(o: { images: Buffer[]; consigne: string; transparent: boolean; fidelite: "high" | "low"; avant: number }): Promise<{ png: Buffer; modele: string; jetons?: number } | { erreur: string }> {
   const k = cle();
   if (!k) return { erreur: "Le moteur d’image n’est pas branché ici." };
   const b = base();
@@ -291,7 +333,7 @@ async function demanderAuMoteur(o: { images: Buffer[]; consigne: string; transpa
     const reglages: Record<string, string> = {
       size: "1024x1536",
       quality: qualite(),
-      ...(dessin ? {} : { input_fidelity: "high" }),
+      ...(dessin ? {} : { input_fidelity: o.fidelite }),
       ...(o.transparent ? { background: "transparent" } : {}),
       output_format: "png",
     };
@@ -393,17 +435,38 @@ export async function demanderRetouche(supabase: Supabase, decor: unknown, texte
   return { demandes };
 }
 
-/** ⭐ LA VEDETTE : le moteur pose une figurine détourée dans un décor (à comparer à la scène composée). */
-export async function demanderVedette(supabase: Supabase, decor: unknown, figurine: unknown): Promise<{ demandes?: Demande[]; error?: string; statut?: number }> {
+/**
+ * 🎬 LA SCÈNE : le moteur met en scène une ou deux figurines détourées dans un décor, d'après une situation (une par
+ * défaut). Elle appartient aux personnes dont les figurines y jouent : elle s'efface avec elles.
+ */
+export async function demanderScene(supabase: Supabase, decor: unknown, figurines: unknown, situation: unknown): Promise<{ demandes?: Demande[]; error?: string; statut?: number }> {
   const d = await decorFini(supabase, decor);
   if (!d) return { error: "Ce décor n’existe pas (ou n’est pas fini).", statut: 404 };
-  const fid = idValide(figurine);
-  const f = fid ? await lireJson<ResultatEssai>(supabase, cheminResultat(fid)) : {};
-  if (!fid || !f.id || f.etat !== "fait" || (f.type !== "figurine" && f.type !== "constance") || f.variante === "collection-photo") return { error: "Choisissez une figurine détourée.", statut: 400 };
+  const ids = [...new Set((Array.isArray(figurines) ? figurines : []).map(idValide).filter((x): x is string => Boolean(x)))].slice(0, 2);
+  const fs = await Promise.all(ids.map((id) => lireJson<ResultatEssai>(supabase, cheminResultat(id))));
+  const bonnes = fs.filter((f) => f.id && f.etat === "fait" && ((f.type === "figurine" && estDetouree(s(f.variante))) || f.type === "constance")) as ResultatEssai[];
+  if (!bonnes.length || bonnes.length !== ids.length) return { error: "Choisissez une ou deux figurines détourées.", statut: 400 };
   if (!moteurBranche()) return { error: "Le moteur d’image n’est pas branché ici (OPENAI_API_KEY).", statut: 503 };
+  const nb = bonnes.length as 1 | 2;
+  const sit = s(situation).replace(/\s+/g, " ").slice(0, SITUATION_MAX) || (nb === 2 ? SITUATION_DEUX : SITUATION_UNE);
   if (!(await reserver(supabase, 1))) return { error: `Assez d’images pour aujourd’hui (${IMAGES_PAR_JOUR}).`, statut: 429 };
+  const personnes = [...new Set(bonnes.map((f) => s(f.personne)).filter(Boolean))];
   const demandes: Demande[] = [
-    { id: nouvelId(), personne: s(f.personne), type: "vedette", variante: "vedette", source: d.id, fiche: d.fiche, figurine: fid, consigne: consigneVedette(), entrees: [cheminImage(d.id), cheminImage(fid)], transparent: false },
+    {
+      id: nouvelId(),
+      personne: personnes[0] ?? "",
+      personnes,
+      type: "scene",
+      variante: "scene",
+      source: d.id,
+      fiche: d.fiche,
+      figurines: bonnes.map((f) => f.id),
+      situation: sit,
+      consigne: consigneScene(nb, sit),
+      entrees: [cheminImage(d.id), ...bonnes.map((f) => cheminImage(f.id))],
+      transparent: false,
+      fidelite: "high",
+    },
   ];
   await poserEnCours(supabase, demandes[0]);
   return { demandes };

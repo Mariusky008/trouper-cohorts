@@ -2095,6 +2095,45 @@ la carte de personnage, « Mes vœux » dans « Moi »), la reformulation propos
 de la question du jour (après avoir changé la source de la phrase du mois et de l'étape qui s'en servent). Et une
 bulle du tuto pour « Mon vœu », à enregistrer par le propriétaire.
 
+### 9.0 duodetricies 🗂️ Le socle « Univers » : la fiche de chaque figurine (12 novembre) — lot 1
+
+Le chantier « Univers » (`docs/univers/feuille-de-route.md`) commence par ce qui ne se voit pas : **une fiche, pas
+une image**. Rien ne change à l'écran ; l'appli marche exactement comme avant.
+
+- **La fiche du personnage** (`lib/direct/perso.ts`) : son style (`ressort-1`, la figurine d'aujourd'hui ;
+  `collection-1`, la « Sculptée, détourée » validée au lot 0), ses traits, son habit (son métier ou sa passion), sa
+  tenue, son **fauteuil** (de départ, puis aux couleurs de son univers : décidé le 12 novembre), ses **images de
+  référence** (`neutre`/`parle` aujourd'hui ; `assise`, `assise_parle`, `debout` demain), le dossier de ses visages,
+  son selfie s'il l'a laissé, et son historique.
+- **La signature de chaque image** (`signature-serveur.ts`) : le moteur, la consigne mot pour mot, la qualité, la
+  fidélité, le fond, les images données en entrée, la date, la durée, l'empreinte des octets. **Depuis ce lot, la
+  fabrication d'aujourd'hui garde ses traits** (avant, ils servaient une fois puis étaient perdus) **et la signature de
+  ses deux images**, à côté d'elles (`traits.json`, `fig-n.signature.json`, `fig-p.signature.json` ;
+  `ma-figurine-fabrique-serveur.ts`, `editer` dit quel moteur a répondu).
+- **La version 0** : la figurine d'aujourd'hui n'a rien à ranger ; sa fiche se lit dans `clik_ma_figurine` et le
+  dossier de sa fabrication (`fiches-serveur.ts`, `lireFichePerso`). Elle suit quand il refait sa figurine.
+- **Les versions** (`<habitant>/perso/fiche.json`, `<habitant>/perso/v<n>/`) : une nouvelle figurine est une
+  nouvelle version ; revenir en arrière aussi (on recopie la fiche d'avant, ses images ne sont pas refaites) ; « C'est
+  moi ! » la valide. Une fiche qui désigne les images d'un autre n'est pas crue.
+- **Refaire à l'identique** : la consigne de chaque image se recalcule à partir de la fiche (`consigneAttendue`) ;
+  mot pour mot celle de sa signature, l'image est « refaisable ».
+- **La fiche de l'univers** (`lib/direct/monde.ts`, rangée dans `<habitant>/monde/`) : sa proposition, l'ambiance,
+  les éléments et la raison de chacun, les règles, ce qu'on ne sait pas, les places, la lumière, qui peut entrer
+  (« mes proches » par défaut), les souvenirs (visibles une fois acceptés). **Ne jamais inventer** : un élément « dit »
+  dont la phrase n'est pas dans ses messages redevient une interprétation (`elementsVerifies`).
+- **Une scène** (`lib/direct/scene.ts`) : un décor, une à quatre figurines (chacune sa version, sa place, sa pose, son
+  visage), le moment de la journée ; la rencontre générée garde son image, signée.
+- **Les routes** : `GET /api/direct/perso` (sa fiche telle qu'il la voit : ses images, ni chemins ni consignes) ;
+  `GET /api/admin/direct/fiches?h=…` (tout, et ce qui est refaisable) et `POST { action: "revenir", h, genre,
+  version }` (l'admin revient à une version).
+- **Les essais** : `scripts/verifier-fiches.mjs` (les formats, sans téléphone, dans la CI) et
+  `scripts/essai-fiches-route.mjs` (la version 0, la signature, refaisable ou non, les versions, une fiche qui montre
+  les images d'un autre, l'univers).
+
+**La suite** : le lot 2, la nouvelle figurine (le selfie, la fabrication « Sculptée, détourée » et ses références,
+la découverte dans son fauteuil, les retouches avec ses mots, « C'est moi ! »), à une adresse d'essai réservée au
+propriétaire.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

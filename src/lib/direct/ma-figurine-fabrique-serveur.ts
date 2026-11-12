@@ -22,6 +22,7 @@ import sharp from "sharp";
 import { consigneFigurineClient } from "./figurine-pro";
 import { decrireTraits } from "./figurine-pro-serveur";
 import { consigneBoucheNeutre, editer, poserAuFormat, qualiteFigurine, reprendre, type Depot } from "./figurine-expressions-serveur";
+import { signatureDe } from "./signature-serveur";
 
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
@@ -31,6 +32,15 @@ export const fabricationsParJourPourTous = () => Math.max(0, Math.floor(Number(p
 
 export const NOM_NEUTRE = "fig-n.webp";
 export const NOM_PARLE = "fig-p.webp";
+/**
+ * 🧾 LE SOCLE « UNIVERS » (lot 1, 12 novembre 2026) : à côté de ses deux images, SES TRAITS (avant, ils servaient une
+ * fois puis étaient perdus) et la SIGNATURE de chaque image (le moteur, la consigne, les réglages, l'entrée) — c'est ce
+ * que lit sa fiche « version 0 » (`fiches-serveur.ts`). Dans `entrees`, « photo » désigne son selfie.
+ */
+export const NOM_TRAITS = "traits.json";
+export const NOM_SIGNATURE_NEUTRE = "fig-n.signature.json";
+export const NOM_SIGNATURE_PARLE = "fig-p.signature.json";
+const ecrireJsonDans = (depot: Depot, nom: string, x: unknown) => depot.ecrire(nom, Buffer.from(JSON.stringify(x)), "application/json");
 const VERROU = "verrou.json";
 const DUREE_VERROU = 4 * 60_000;
 
@@ -70,14 +80,24 @@ export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number,
         return { fini: false, erreur: "Ta photo ne s'ouvre pas. Essaie une autre photo." };
       }
       const traits = await decrireTraits(png);
+      if (traits) await ecrireJsonDans(depot, NOM_TRAITS, traits);
       // EN FIDÉLITÉ HAUTE AU VISAGE (6 novembre 2026 : en basse, « c'est joli mais ça ne me ressemble plus du tout ») ;
       // c'est la consigne qui la rend dessin animé, et caricature SES traits (`consigneFigurineClient`) —
       // `FIGURINE_CLIENT_FIDELITE=low` pour revenir à la basse (le 5 novembre : « encore plus réaliste qu'avant »)
       // (la seule image en qualité haute : c'est ici que la ressemblance se joue — `qualiteFigurine`)
-      const r = await editer(png, consigneFigurineClient(traits, univers), avant, s(process.env.FIGURINE_CLIENT_FIDELITE) === "low" ? "low" : "high", { quality: qualiteFigurine() });
+      const consigne = consigneFigurineClient(traits, univers);
+      const fidelite = s(process.env.FIGURINE_CLIENT_FIDELITE) === "low" ? "low" : "high";
+      const debut = Date.now();
+      let moteur = "";
+      let reglages: Record<string, string> = {};
+      const r = await editer(png, consigne, avant, fidelite, { quality: qualiteFigurine() }, (m, rg) => {
+        moteur = m;
+        reglages = rg;
+      });
       if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, detail: r.detail, nouvelle };
       const webp = await sharp(r).resize({ width: 900, withoutEnlargement: true }).webp({ quality: 88 }).toBuffer();
       if (!(await depot.ecrire(NOM_NEUTRE, webp, "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };
+      await ecrireJsonDans(depot, NOM_SIGNATURE_NEUTRE, signatureDe(webp, { moteur, consigne, reglages, fidelite, fond: "opaque", entrees: ["photo"], debut }));
       noms = [...noms, NOM_NEUTRE];
       // la bouche ouverte, tout de suite, s'il reste assez de temps (une image du moteur : une minute environ)
       if (avant - Date.now() < 120_000) return { fini: false, nouvelle };
@@ -86,9 +106,17 @@ export async function fabriquerUnPas(depot: Depot, photo: Buffer, avant: number,
     const neutre = await depot.lire(NOM_NEUTRE);
     if (!neutre) return { fini: false, erreur: "Ta figurine est introuvable.", nouvelle };
     const { png, cadre } = await poserAuFormat(neutre);
-    const r = await editer(png, consigneBoucheNeutre(), avant);
+    const debut = Date.now();
+    let moteur = "";
+    let reglages: Record<string, string> = {};
+    const r = await editer(png, consigneBoucheNeutre(), avant, "high", {}, (m, rg) => {
+      moteur = m;
+      reglages = rg;
+    });
     if (!Buffer.isBuffer(r)) return { fini: false, erreur: r.erreur, detail: `(la bouche ouverte) ${r.detail ?? ""}`.trim(), nouvelle };
-    if (!(await depot.ecrire(NOM_PARLE, await reprendre(r, cadre), "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };
+    const parle = await reprendre(r, cadre);
+    if (!(await depot.ecrire(NOM_PARLE, parle, "image/webp"))) return { fini: false, erreur: "Ta figurine n'a pas pu être rangée.", nouvelle };
+    await ecrireJsonDans(depot, NOM_SIGNATURE_PARLE, signatureDe(parle, { moteur, consigne: consigneBoucheNeutre(), reglages, fond: "opaque", entrees: [NOM_NEUTRE], debut }));
     return { fini: true, nouvelle };
   } finally {
     if ((await lireVerrou()).qui === qui) await depot.effacer(VERROU);

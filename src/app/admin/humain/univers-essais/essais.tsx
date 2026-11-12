@@ -8,8 +8,13 @@ import {
   FICHE_MAX,
   RETOUCHE_MAX,
   RETOUCHE_PAR_DEFAUT,
+  SITUATION_DEUX,
+  SITUATION_MAX,
+  SITUATION_UNE,
   VARIANTES_CONSTANCE,
   VARIANTES_FIGURINE,
+  VERSION_PAGE_ESSAIS,
+  estDetouree,
   nomDeFiche,
   nomDeVariante,
   type EtatEssais,
@@ -18,10 +23,13 @@ import {
 } from "@/lib/direct/univers-essais";
 
 const ROUTE = "/api/admin/direct/univers-essais";
+const EVT_RECHARGER = "ue-recharger";
+const recharger = () => window.dispatchEvent(new Event(EVT_RECHARGER));
 type Reponse = { ok?: boolean; error?: string };
 
+/** (chaque demande dit la version de cette page : si le serveur a changé depuis, il répond « rechargez-la ») */
 async function demander<T>(corps: Record<string, unknown>): Promise<T> {
-  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
+  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...corps, version: VERSION_PAGE_ESSAIS }) });
   const j = (await r.json().catch(() => ({}))) as T & Reponse;
   if (!r.ok || j.error) throw new Error(j.error || "Ça n’a pas marché. Réessayez.");
   return j;
@@ -53,12 +61,15 @@ export function EssaisUnivers() {
   const [etat, setEtat] = useState<EtatEssais | null>(null);
   const [erreur, setErreur] = useState("");
   const [geste, setGeste] = useState("");
+  // (le serveur a changé depuis que la page est ouverte : ses boutons ne sont peut-être plus les bons)
+  const [perimee, setPerimee] = useState(false);
 
   const charger = useCallback(async () => {
     try {
       const r = await fetch(ROUTE, { cache: "no-store" });
-      const j = (await r.json().catch(() => ({}))) as Partial<EtatEssais> & Reponse;
+      const j = (await r.json().catch(() => ({}))) as Partial<EtatEssais> & Reponse & { version?: number };
       if (!r.ok) throw new Error(j.error || "La page ne s’est pas chargée.");
+      if (typeof j.version === "number" && j.version !== VERSION_PAGE_ESSAIS) setPerimee(true);
       setEtat({ personnes: j.personnes ?? [], resultats: j.resultats ?? [], imagesDuJour: Number(j.imagesDuJour) || 0, plafond: Number(j.plafond) || 0, branche: Boolean(j.branche) });
     } catch (e) {
       setErreur(message(e));
@@ -66,6 +77,17 @@ export function EssaisUnivers() {
   }, []);
   useEffect(() => {
     void Promise.resolve().then(charger);
+  }, [charger]);
+  // (une image faite qui ne s'affiche pas — une adresse signée ratée ou expirée : on relit, une fois toutes les 10 s)
+  useEffect(() => {
+    let dernier = 0;
+    const relire = () => {
+      if (Date.now() - dernier < 10_000) return;
+      dernier = Date.now();
+      void charger();
+    };
+    window.addEventListener(EVT_RECHARGER, relire);
+    return () => window.removeEventListener(EVT_RECHARGER, relire);
   }, [charger]);
   // (des images en cours : on relit toutes les cinq secondes)
   const enCours = Boolean(etat?.resultats.some((r) => r.etat === "en-cours"));
@@ -83,6 +105,7 @@ export function EssaisUnivers() {
       await charger();
     } catch (e) {
       setErreur(message(e));
+      void charger();
     } finally {
       setGeste("");
     }
@@ -99,6 +122,14 @@ export function EssaisUnivers() {
   const jetons = faites.reduce((n, r) => n + (r.jetons ?? 0), 0);
   return (
     <div className="ue">
+      {perimee && (
+        <p className="ue-perimee" role="alert">
+          Cette page a été mise à jour depuis que vous l’avez ouverte.
+          <button type="button" className="ue-bouton" onClick={() => window.location.reload()}>
+            Recharger la page
+          </button>
+        </p>
+      )}
       <section className="ue-bilan" aria-label="Le bilan">
         <span>
           <b>{etat.imagesDuJour}</b> / {etat.plafond} images aujourd’hui
@@ -119,7 +150,7 @@ export function EssaisUnivers() {
       <AjouterPersonne onAjoutee={charger} />
 
       {etat.personnes.map((p) => (
-        <Personne key={p.id} p={p} resultats={etat.resultats.filter((r) => r.personne === p.id && r.type !== "vedette")} geste={geste} faire={faire} />
+        <Personne key={p.id} p={p} resultats={etat.resultats.filter((r) => r.personne === p.id && r.type !== "vedette" && r.type !== "scene")} geste={geste} faire={faire} />
       ))}
 
       <LesUnivers etat={etat} geste={geste} faire={faire} />
@@ -237,7 +268,20 @@ function Personne({ p, resultats, geste, faire }: { p: PersonneEssai; resultats:
   );
 }
 
-function Resultat({ r, geste, faire, petit = false }: { r: ResultatEssai; geste: string; faire: (cle: string, corps: Record<string, unknown>) => Promise<void>; petit?: boolean }) {
+function Resultat({
+  r,
+  geste,
+  faire,
+  petit = false,
+  bulles,
+}: {
+  r: ResultatEssai;
+  geste: string;
+  faire: (cle: string, corps: Record<string, unknown>) => Promise<void>;
+  petit?: boolean;
+  /** (une scène) deux répliques, en bulles par-dessus l'image : pour juger le rendu final */
+  bulles?: string[];
+}) {
   const [note, setNote] = useState(r.note ?? "");
   const variante = VARIANTES_FIGURINE.find((v) => v.cle === r.variante);
   return (
@@ -246,17 +290,30 @@ function Resultat({ r, geste, faire, petit = false }: { r: ResultatEssai; geste:
         {r.etat === "fait" && r.image ? (
           <a href={r.image} target="_blank" rel="noreferrer" aria-label="Voir en grand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={r.image} alt={nomDeVariante(r.variante)} />
+            <img src={r.image} alt={nomDeVariante(r.variante)} onError={recharger} />
           </a>
         ) : r.etat === "en-cours" ? (
           <span className="ue-attente">En cours… (1 à 2 min)</span>
+        ) : r.etat === "fait" ? (
+          <button type="button" className="ue-mini" onClick={recharger}>
+            L’image ne s’est pas chargée : recharger
+          </button>
         ) : (
           <span className="ue-rate">{r.erreur || "Ratée"}</span>
         )}
+        {r.etat === "fait" &&
+          bulles?.map((b, i) =>
+            b.trim() ? (
+              <span key={i} className={`ue-bulle b${i + 1}`}>
+                {b.replace(/\s+([!?:;])/g, "\u202f$1")}
+              </span>
+            ) : null,
+          )}
       </div>
       <b>{nomDeVariante(r.variante)}</b>
       {r.fiche && r.type === "univers" && <small>{nomDeFiche(r.fiche)}</small>}
       {r.retouche && <small className="ue-gris">« {r.retouche} »</small>}
+      {r.situation && <small className="ue-gris">« {r.situation} »</small>}
       {!petit && variante && <small className="ue-gris">{variante.dit}</small>}
       {r.etat === "fait" && (
         <small className="ue-meta">
@@ -313,23 +370,23 @@ function Resultat({ r, geste, faire, petit = false }: { r: ResultatEssai; geste:
 // ─── l'étape 2 : les univers ──────────────────────────────────────────────────────────────────────
 type Faire = (cle: string, corps: Record<string, unknown>) => Promise<void>;
 
-/** Les figurines détourées (prêtes à poser dans un décor). */
-const detourees = (l: ResultatEssai[]) => l.filter((r) => r.etat === "fait" && r.image && ((r.type === "figurine" && r.variante !== "collection-photo") || r.type === "constance"));
+/** Les figurines détourées (prêtes à mettre en scène dans un décor). */
+const detourees = (l: ResultatEssai[]) => l.filter((r) => r.etat === "fait" && r.image && ((r.type === "figurine" && estDetouree(r.variante)) || r.type === "constance"));
 
 function LesUnivers({ etat, geste, faire }: { etat: EtatEssais; geste: string; faire: Faire }) {
   const [fiche, setFiche] = useState<string>(FICHES_UNIVERS[0].cle);
   const [texte, setTexte] = useState("");
   const [direction, setDirection] = useState<string>(DIRECTIONS_UNIVERS[0].cle);
-  const [scene, setScene] = useState("");
   const decors = etat.resultats.filter((r) => r.type === "univers");
   const figurines = detourees(etat.resultats);
   const nomDe = (r: ResultatEssai) => `${etat.personnes.find((p) => p.id === r.personne)?.nom ?? "?"} · ${nomDeVariante(r.variante)}`;
+  const enfants = (id: string) => etat.resultats.filter((x) => x.source === id && x.type !== "constance");
   return (
     <section className="ue-univers" aria-label="Les univers">
       <h2>Les univers</h2>
       <p className="ue-gris">
-        Le décor d’un univers, sans figurine : une scène dégagée en bas, pour deux fauteuils. D’abord le style (une fiche, trois directions), puis la variété (la direction choisie, sur trois fiches
-        très différentes). Ensuite : une retouche, la figurine posée dedans (« La scène », composée dans le téléphone, sans rien générer), et la même par le moteur (« La vedette »), pour comparer.
+        Le décor d’un univers, sans figurine, comme un plateau de film d’animation. D’abord le style (une fiche, trois directions), puis la variété (la direction choisie, sur trois fiches très
+        différentes). Ensuite, sur un décor : une retouche, et « La scène » — le moteur y met en scène une ou deux figurines, d’après la situation que vous écrivez.
       </p>
       <div className="ue-choix" role="radiogroup" aria-label="La fiche">
         {[...FICHES_UNIVERS.map((f) => ({ cle: f.cle as string, nom: f.nom })), { cle: "perso", nom: "Ma fiche" }].map((f) => (
@@ -344,7 +401,7 @@ function LesUnivers({ etat, geste, faire }: { etat: EtatEssais; geste: string; f
           name="fiche"
           rows={4}
           maxLength={FICHE_MAX}
-          placeholder="Le lieu, en quelques phrases : ce qu’on y voit, ce qu’on y fait, la lumière…"
+          placeholder="Le lieu, en quelques phrases : ce qu’on y voit, les objets qui racontent la personne, la lumière…"
           value={texte}
           onChange={(e) => setTexte(e.target.value)}
         />
@@ -381,25 +438,18 @@ function LesUnivers({ etat, geste, faire }: { etat: EtatEssais; geste: string; f
           {decors.map((d) => (
             <div key={d.id} className="ue-colonne">
               <Resultat r={d} geste={geste} faire={faire} />
-              {d.etat === "fait" && (
-                <GestesDuDecor d={d} figurines={figurines} nomDe={nomDe} geste={geste} faire={faire} onScene={() => setScene(scene === d.id ? "" : d.id)} ouverte={scene === d.id} />
-              )}
-              {scene === d.id && d.image && <Scene decor={d.image} figurines={figurines} tous={etat.resultats} nomDe={nomDe} />}
-              {etat.resultats.some((x) => x.source === d.id) && (
-                <div className="ue-constance" aria-label="Ses retouches et ses vedettes">
-                  {etat.resultats
-                    .filter((x) => x.source === d.id)
-                    .map((x) => (
-                      <div key={x.id} className="ue-colonne">
-                        <Resultat r={x} geste={geste} faire={faire} petit />
-                        {x.type === "retouche" && x.etat === "fait" && (
-                          <button type="button" className="ue-mini" onClick={() => setScene(scene === x.id ? "" : x.id)}>
-                            🎬 La scène
-                          </button>
-                        )}
-                        {scene === x.id && x.image && <Scene decor={x.image} figurines={figurines} tous={etat.resultats} nomDe={nomDe} />}
-                      </div>
-                    ))}
+              {d.etat === "fait" && <GestesDuDecor d={d} figurines={figurines} nomDe={nomDe} geste={geste} faire={faire} />}
+              {enfants(d.id).length > 0 && (
+                <div className="ue-enfants" aria-label="Ses retouches et ses scènes">
+                  {enfants(d.id).map((x) => (
+                    <div key={x.id} className="ue-colonne">
+                      {x.type === "scene" ? <SceneGeneree r={x} geste={geste} faire={faire} /> : <Resultat r={x} geste={geste} faire={faire} petit />}
+                      {x.type === "retouche" && x.etat === "fait" && <GestesDuDecor d={x} figurines={figurines} nomDe={nomDe} geste={geste} faire={faire} sansRetouche />}
+                      {enfants(x.id).map((y) => (
+                        <SceneGeneree key={y.id} r={y} geste={geste} faire={faire} />
+                      ))}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -410,43 +460,36 @@ function LesUnivers({ etat, geste, faire }: { etat: EtatEssais; geste: string; f
   );
 }
 
+/** Sur un décor : une retouche ; « La scène » (le moteur y met en scène une ou deux figurines, d'après une situation). */
 function GestesDuDecor({
   d,
   figurines,
   nomDe,
   geste,
   faire,
-  onScene,
-  ouverte,
+  sansRetouche = false,
 }: {
   d: ResultatEssai;
   figurines: ResultatEssai[];
   nomDe: (r: ResultatEssai) => string;
   geste: string;
   faire: Faire;
-  onScene: () => void;
-  ouverte: boolean;
+  sansRetouche?: boolean;
 }) {
   const [retouche, setRetouche] = useState(RETOUCHE_PAR_DEFAUT);
-  const [fig, setFig] = useState("");
-  const choisie = fig || figurines[0]?.id || "";
+  const [a, setA] = useState("");
+  const [b, setB] = useState("");
+  const [situation, setSituation] = useState("");
+  const premiere = a || figurines[0]?.id || "";
+  const ids = [premiere, b].filter((x, i, l) => x && l.indexOf(x) === i);
   return (
     <div className="ue-decor-gestes">
-      <button type="button" className="ue-bouton" aria-expanded={ouverte} onClick={onScene}>
-        🎬 La scène : la figurine posée dedans
-      </button>
-      <label>
-        ✏️ Retouche
-        <input type="text" name="retouche" value={retouche} maxLength={RETOUCHE_MAX} onChange={(e) => setRetouche(e.target.value)} />
-      </label>
-      <button type="button" className="ue-bouton clair" disabled={geste === `ret-${d.id}`} onClick={() => void faire(`ret-${d.id}`, { action: "retouche", decor: d.id, texte: retouche })}>
-        {geste === `ret-${d.id}` ? "…" : "Retoucher ce décor"}
-      </button>
-      {figurines.length > 0 && (
+      {figurines.length > 0 ? (
         <>
+          <b>🎬 La scène</b>
           <label>
-            ⭐ La vedette (le moteur pose la figurine)
-            <select name="vedette" value={choisie} onChange={(e) => setFig(e.target.value)}>
+            Figurine 1
+            <select name="figurine-1" value={premiere} onChange={(e) => setA(e.target.value)}>
               {figurines.map((f) => (
                 <option key={f.id} value={f.id}>
                   {nomDe(f)}
@@ -454,13 +497,48 @@ function GestesDuDecor({
               ))}
             </select>
           </label>
+          <label>
+            Figurine 2
+            <select name="figurine-2" value={b} onChange={(e) => setB(e.target.value)}>
+              <option value="">(aucune)</option>
+              {figurines.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {nomDe(f)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            La situation
+            <textarea
+              name="situation"
+              rows={3}
+              maxLength={SITUATION_MAX}
+              placeholder={ids.length === 2 ? SITUATION_DEUX : SITUATION_UNE}
+              value={situation}
+              onChange={(e) => setSituation(e.target.value)}
+            />
+          </label>
           <button
             type="button"
-            className="ue-bouton clair"
-            disabled={!choisie || geste === `ved-${d.id}`}
-            onClick={() => void faire(`ved-${d.id}`, { action: "vedette", decor: d.id, figurine: choisie })}
+            className="ue-bouton"
+            disabled={!premiere || geste === `scn-${d.id}`}
+            onClick={() => void faire(`scn-${d.id}`, { action: "scene", decor: d.id, figurines: ids, situation })}
           >
-            {geste === `ved-${d.id}` ? "…" : "Générer la vedette"}
+            {geste === `scn-${d.id}` ? "…" : ids.length === 2 ? "Mettre en scène les deux figurines" : "Mettre en scène la figurine"}
+          </button>
+        </>
+      ) : (
+        <small className="ue-gris">Pour la scène : faites d’abord une figurine détourée (plus haut).</small>
+      )}
+      {!sansRetouche && (
+        <>
+          <label>
+            ✏️ Retouche
+            <input type="text" name="retouche" value={retouche} maxLength={RETOUCHE_MAX} onChange={(e) => setRetouche(e.target.value)} />
+          </label>
+          <button type="button" className="ue-bouton clair" disabled={geste === `ret-${d.id}`} onClick={() => void faire(`ret-${d.id}`, { action: "retouche", decor: d.id, texte: retouche })}>
+            {geste === `ret-${d.id}` ? "…" : "Retoucher ce décor"}
           </button>
         </>
       )}
@@ -468,95 +546,25 @@ function GestesDuDecor({
   );
 }
 
-/**
- * 🎬 LA SCÈNE, COMPOSÉE DANS LE TÉLÉPHONE (rien n'est généré) : le décor, une ou deux figurines posées sur la scène,
- * leur ombre ; leur taille ; et le mouvement — la respiration, le hochement, la parole (sa « bouche ouverte », si la
- * constance l'a faite).
- */
-function Scene({ decor, figurines, tous, nomDe }: { decor: string; figurines: ResultatEssai[]; tous: ResultatEssai[]; nomDe: (r: ResultatEssai) => string }) {
-  // (d'office : une figurine qui a sa « bouche ouverte », pour que la parole se voie)
-  const [a, setA] = useState(() => (figurines.find((f) => tous.some((x) => x.source === f.id && x.variante === "parle" && x.etat === "fait")) ?? figurines[0])?.id ?? "");
-  const [b, setB] = useState("");
-  const [taille, setTaille] = useState(34);
-  const [respire, setRespire] = useState(true);
-  const [hoche, setHoche] = useState(false);
-  const [parle, setParle] = useState(false);
-  const [face, setFace] = useState(true);
-  const [ouverte, setOuverte] = useState(false);
-  useEffect(() => {
-    if (!parle) return;
-    const t = window.setInterval(() => setOuverte((x) => !x), 170);
-    return () => window.clearInterval(t);
-  }, [parle]);
-  const image = (id: string) => {
-    const f = tous.find((x) => x.id === id);
-    if (!f?.image) return "";
-    const p = tous.find((x) => x.source === id && x.variante === "parle" && x.etat === "fait")?.image;
-    return parle && ouverte && p ? p : f.image;
-  };
-  // (une figurine effacée entre-temps n'est plus sur la scène)
-  const acteurs = [a, b].filter((id) => id && tous.some((x) => x.id === id && x.image));
-  if (!figurines.length) return <p className="ue-gris">Faites d’abord une figurine détourée (plus haut), pour la poser ici.</p>;
+/** 🎬 Une scène générée, et deux répliques à poser en bulles par-dessus (rien n'est généré : pour juger le rendu). */
+function SceneGeneree({ r, geste, faire }: { r: ResultatEssai; geste: string; faire: Faire }) {
+  const [b1, setB1] = useState("");
+  const [b2, setB2] = useState("");
   return (
-    <div className="ue-scene-bloc" data-scene>
-      <div className={`ue-scene${respire ? " respire" : ""}${hoche ? " hoche" : ""}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="ue-scene-decor" src={decor} alt="Le décor" />
-        {acteurs.map((id, i) => {
-          const x = acteurs.length === 2 ? (i === 0 ? 31 : 69) : 50;
-          return (
-            <div key={`${id}-${i}`} className="ue-acteur" style={{ left: `${x}%`, height: `${taille}%` }} data-acteur={id}>
-              <i className="ue-ombre" />
-              <div className="ue-bouge" style={{ animationDelay: `${-0.8 * i}s` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image(id)} alt={nomDe(tous.find((f) => f.id === id) as ResultatEssai)} style={face && i === 1 ? { transform: "scaleX(-1)" } : undefined} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="ue-scene-reglages">
-        <label>
-          Figurine 1
-          <select value={a} onChange={(e) => setA(e.target.value)} name="acteur-1">
-            {figurines.map((f) => (
-              <option key={f.id} value={f.id}>
-                {nomDe(f)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Figurine 2
-          <select value={b} onChange={(e) => setB(e.target.value)} name="acteur-2">
-            <option value="">(aucune)</option>
-            {figurines.map((f) => (
-              <option key={f.id} value={f.id}>
-                {nomDe(f)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Taille : {taille} % de la hauteur
-          <input type="range" min={15} max={70} value={taille} onChange={(e) => setTaille(Number(e.target.value))} name="taille" />
-        </label>
-        <span className="ue-cases">
+    <div className="ue-scene-generee">
+      <Resultat r={r} geste={geste} faire={faire} bulles={[b1, b2]} />
+      {r.etat === "fait" && (
+        <div className="ue-decor-gestes">
           <label>
-            <input type="checkbox" checked={respire} onChange={(e) => setRespire(e.target.checked)} /> Respiration
+            Bulle 1
+            <input type="text" name="bulle-1" maxLength={90} placeholder="Ce que dit la première figurine" value={b1} onChange={(e) => setB1(e.target.value)} />
           </label>
           <label>
-            <input type="checkbox" checked={hoche} onChange={(e) => setHoche(e.target.checked)} /> Hochement
+            Bulle 2
+            <input type="text" name="bulle-2" maxLength={90} placeholder="Ce que répond la seconde" value={b2} onChange={(e) => setB2(e.target.value)} />
           </label>
-          <label>
-            <input type="checkbox" checked={parle} onChange={(e) => setParle(e.target.checked)} name="parle" /> Parole
-          </label>
-          <label>
-            <input type="checkbox" checked={face} onChange={(e) => setFace(e.target.checked)} /> Face à face
-          </label>
-        </span>
-        <small className="ue-gris">La parole alterne avec sa « bouche ouverte », si la constance l’a faite. Dans l’appli, la bouche suivra la voix.</small>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -582,6 +590,7 @@ const STYLES = `
 .ue-ko{color:#b3261e;font-weight:600}
 .ue-gris{color:#6e6e73}
 .ue-erreur{margin:0;padding:10px 12px;border-radius:10px;background:#fdecea;color:#8a1c14}
+.ue-perimee{position:sticky;top:8px;z-index:5;margin:0;padding:12px;border-radius:12px;background:#fff4d6;color:#5c4100;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
 .ue-ajout,.ue-personne{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid #e5e5ea;border-radius:14px;background:#fff}
 .ue-ajout h2,.ue-personne h2{margin:0;font-size:19px}
 .ue-ajout label{display:flex;flex-direction:column;gap:4px;font-size:14px}
@@ -625,22 +634,13 @@ const STYLES = `
 .ue-decor-gestes{display:flex;flex-direction:column;gap:6px}
 .ue-decor-gestes label{display:flex;flex-direction:column;gap:4px;font-size:13px}
 .ue-decor-gestes input,.ue-decor-gestes select,.ue-scene-reglages select{padding:8px;border:1px solid #c7c7cc;border-radius:10px;font:inherit;font-size:14px;max-width:100%}
-.ue-mini{min-height:34px;border:1px solid #d1d1d6;border-radius:10px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
-.ue-scene-bloc{display:flex;flex-direction:column;gap:8px}
-.ue-scene{position:relative;width:100%;aspect-ratio:2/3;border-radius:12px;overflow:hidden;background:#222}
-.ue-scene-decor{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.ue-acteur{position:absolute;bottom:7%;transform:translateX(-50%);aspect-ratio:2/3;display:flex;align-items:flex-end;justify-content:center}
-.ue-ombre{position:absolute;left:12%;right:12%;bottom:-2%;height:9%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0));filter:blur(2px)}
-.ue-bouge{position:relative;width:100%;height:100%;transform-origin:50% 100%}
-.ue-bouge img{width:100%;height:100%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(-3px 4px 4px rgba(0,0,0,.25))}
-.ue-scene.respire .ue-bouge{animation:ue-respire 3.2s ease-in-out infinite}
-.ue-scene.hoche .ue-bouge{animation:ue-hoche 2.4s ease-in-out infinite}
-.ue-scene.respire.hoche .ue-bouge{animation:ue-respire 3.2s ease-in-out infinite,ue-hoche 2.4s ease-in-out infinite}
-@keyframes ue-respire{0%,100%{scale:1 1}50%{scale:1.006 1.016}}
-@keyframes ue-hoche{0%,100%{rotate:0deg}25%{rotate:-1.6deg}75%{rotate:1.2deg}}
-.ue-scene-reglages{display:flex;flex-direction:column;gap:6px;font-size:13px}
-.ue-scene-reglages label{display:flex;flex-direction:column;gap:3px}
-.ue-cases{display:flex;flex-wrap:wrap;gap:10px}
-.ue-cases label{flex-direction:row !important;align-items:center;gap:4px !important}
-@media (prefers-reduced-motion:reduce){.ue-bouge{animation:none !important}}
+.ue-mini{min-height:34px;padding:0 10px;border:1px solid #d1d1d6;border-radius:10px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
+.ue-decor-gestes textarea{padding:8px;border:1px solid #c7c7cc;border-radius:10px;font:inherit;font-size:14px}
+.ue-enfants{display:flex;flex-direction:column;gap:12px;padding-left:10px;border-left:3px solid #e5e5ea}
+.ue-scene-generee{display:flex;flex-direction:column;gap:6px}
+.ue-image{position:relative}
+.ue-bulle{position:absolute;top:5%;max-width:58%;padding:8px 11px;border-radius:16px;background:rgba(255,250,240,.94);color:#1d1d1f;font-size:13px;font-weight:600;line-height:1.3;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.ue-bulle.b1{left:4%;border-bottom-left-radius:4px}
+.ue-bulle.b2{right:4%;top:17%;border-bottom-right-radius:4px}
+
 `;

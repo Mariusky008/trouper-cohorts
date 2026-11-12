@@ -182,7 +182,15 @@ export const qualiteSuite = () => s(process.env.FIGURINE_QUALITE_SUITE) || "medi
  * ses expressions, sa bouche ouverte). Qualité `qualiteSuite` par défaut : l'image qui crée passe `{ quality:
  * qualiteFigurine() }` dans `plus`.
  */
-export async function editer(image: Buffer, consigne: string, avant: number, fidelite: "high" | "low" = "high", plus: Record<string, string> = {}): Promise<Buffer | { erreur: string; detail?: string }> {
+export async function editer(
+  image: Buffer,
+  consigne: string,
+  avant: number,
+  fidelite: "high" | "low" = "high",
+  plus: Record<string, string> = {},
+  /** (le socle « Univers », lot 1 : la signature de l'image — le moteur qui l'a faite, et ses réglages) */
+  noter?: (moteur: string, reglages: Record<string, string>) => void,
+): Promise<Buffer | { erreur: string; detail?: string }> {
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return { erreur: "Le moteur d'image n'est pas branché ici." };
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -208,6 +216,7 @@ export async function editer(image: Buffer, consigne: string, avant: number, fid
       }
       if (r.ok) {
         const b64 = ((await r.json().catch(() => null)) as { data?: { b64_json?: string }[] } | null)?.data?.[0]?.b64_json;
+        if (b64) noter?.(liste[m], reglages);
         return b64 ? Buffer.from(b64, "base64") : { erreur: "Le moteur d'image n'a pas rendu d'image." };
       }
       const txt = await r.text().catch(() => "");
