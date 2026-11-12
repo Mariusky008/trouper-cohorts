@@ -572,6 +572,11 @@ univers ».
 Voir la section 8. Les mèmes se jouent dans l'univers. « Découvrir » montre les figurines chez elles. Le menu change.
 La carte de personnage laisse la place à la conversation. La figurine du mois devient la saison de l'univers.
 
+**Construit (12 novembre 2026), première partie** ; le détail : `docs/figurines.md`, 9.0 septatricies 🎬🏡. Les mèmes
+se jouent dans son univers (son décor, sa figurine assise, ses visages du nouveau style) ; « Découvrir » : « 🏡 Les
+univers à visiter » (ceux ouverts à tout le monde). **Reste** : la saison de l'univers (à trancher) ; le menu et la
+carte de personnage, avec le feu vert pour tout le monde.
+
 ### Lot R — Le rituel du jour (précision du propriétaire, 11 novembre 2026)
 
 Le propriétaire : « avant toute conversation ou en début de journée, chaque utilisateur donne son état d'esprit du jour

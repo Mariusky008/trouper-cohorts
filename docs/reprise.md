@@ -79,8 +79,9 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   l'invité y répond (9.0 quattuortricies 🎬🔗). Le lot 5 est construit.
 - **Sa figurine à l'échelle de la pièce** (relevée sur l'image vedette) et **ses visages du nouveau style** (faits sur
   sa figurine assise, à la demande) : `docs/figurines.md`, 9.0 duotricies 🪑 et 9.0 quinquatricies 🎭.
-- **Le lot 6 (les visites et les souvenirs) est construit** : `docs/figurines.md`, 9.0 sexatricies 🚪. Puis le lot 7
-  (l'appli rhabillée : les mèmes dans l'univers, « Découvrir » chez elles, la saison).
+- **Le lot 6 (les visites et les souvenirs) est construit** : `docs/figurines.md`, 9.0 sexatricies 🚪.
+- **Le lot 7, première partie** : les mèmes dans l'univers, « Découvrir » montre les univers à visiter (9.0
+  septatricies 🎬🏡). Reste la saison de l'univers (à trancher), le menu et la carte de personnage (avec le feu vert).
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
