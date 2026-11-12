@@ -77,6 +77,19 @@ export const SITUATION_VEDETTE =
 export const consigneVedette = () => consigneScene(1, SITUATION_VEDETTE);
 
 /** Les places, la lumière, et où sont les éléments : relevés par un modèle qui regarde le décor. */
+/**
+ * 📏 Où le moteur a posé sa figurine sur l'image vedette, et à quelle taille : c'est ce qui la place chez elle, à
+ * l'échelle de la pièce (le propriétaire, le 12 novembre : « je suis encore petit, ça ne fait pas naturel »).
+ */
+export function questionFigurineVedette(): string {
+  return [
+    "This image shows a room with ONE collectible caricature figurine (a big head, a small body) seated in an armchair.",
+    "Answer in JSON only, with fractions of the image (0 = left/top, 1 = right/bottom):",
+    '{"x": the horizontal centre of the figurine and its armchair, "bas": the lowest point of the armchair (where it touches the floor), "haut": the top of the figurine\'s head, hair included}.',
+    "If there is no such figurine, answer {}.",
+  ].join("\n");
+}
+
 export function questionPlaces(elements: { id: string; quoi: string }[]): string {
   return [
     "This image is the decor of a small personal universe. Small figurines (about one fifth of the image height when seated) will be placed on it.",

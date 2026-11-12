@@ -1305,7 +1305,7 @@ function LeMessagePret({ pret, lienWhatsApp, copie, onCopier }: { pret: MessageP
       ctx,
       toile: toile.current,
       images: chez ? chez.assise : { n: moi.neutre, p: moi.parle },
-      ...(chez ? { chezMoi: { decor: chez.chez.decor, ...chez.chez.hote } } : {}),
+      ...(chez ? { chezMoi: { decor: chez.chez.decor, ...chez.chez.hote, ...(chez.chez.figurine ?? {}) } } : {}),
       son: parole.son,
       repliques: parole.repliques.map((r) => ({ de: r.de, a: r.a, texte: r.texte, images: tete(r.tete), emoji: r.tete ? (sentimentDe(r.tete)?.emoji ?? "") : "" })),
       message: { de: moi.prenom, pour: parole.pour },

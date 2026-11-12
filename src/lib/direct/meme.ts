@@ -148,7 +148,7 @@ type Scene = {
   /** 💬 En duo : celui à qui il répond (en haut, il parle d'abord), et leurs deux prénoms. */
   duo?: { n: HTMLImageElement; p: HTMLImageElement; fond: string; env: number[]; duree: number; sous: Mot[][]; prenom: string; moi: string };
   /** 🏡 Chez lui (« Univers », lot 5b) : son décor à la place du fond rose, et sa place (sa figurine, détourée, s'y assoit). */
-  decor?: { img: HTMLImageElement; x: number; y: number; echelle: number };
+  decor?: { img: HTMLImageElement; x: number; y: number; echelle: number; hauteur?: number };
 };
 const PAUSE_DUO = 0.35;
 /** Quand commence sa voix à lui (en duo : après celle de l'autre). */
@@ -248,7 +248,7 @@ export type MessageMeme = { de: string; pour: string };
  */
 const MESSAGE = { echelle: 0.8, decalage: 50, sousTitres: 0.73 };
 /** 🏡 La hauteur de sa figurine chez lui, en part de la hauteur de son décor (comme dans son univers, `monde.tsx`). */
-const TAILLE_CHEZ_LUI = 0.4;
+const TAILLE_CHEZ_LUI = 0.5;
 
 /**
  * 🎙️ LE BANDEAU D'UN MESSAGE ENVOYÉ PAR WHATSAPP : « 🎙️ Message de Marius », « pour Karim » — droit, posé dès la
@@ -1048,9 +1048,10 @@ function dessiner(g: CanvasRenderingContext2D, S: Scene, T: number): void {
     const ox = (W - dw) / 2;
     const oy = (H - dh) / 2;
     g.drawImage(d, ox, oy, dw, dh);
+    // (📏 relevée sur son image vedette : sa place et sa taille ; sinon, au premier plan — comme dans son univers)
     const px = ox + S.decor.x * dw;
-    const py = oy + S.decor.y * dh;
-    const fh = dh * TAILLE_CHEZ_LUI * Math.min(1.15, Math.max(0.9, S.decor.echelle));
+    const py = oy + (S.decor.hauteur ? S.decor.y + 0.02 : Math.max(S.decor.y, 0.9)) * dh;
+    const fh = dh * (S.decor.hauteur ? S.decor.hauteur / 0.93 : TAILLE_CHEZ_LUI * Math.min(1.15, Math.max(0.9, S.decor.echelle)));
     const fw = (fh * iw) / ih;
     g.save();
     g.fillStyle = "rgba(0,0,0,.32)";
@@ -1165,7 +1166,7 @@ export async function fabriquerMeme(o: {
    * 🏡 Chez lui (« Univers », lot 5b — « sur WhatsApp, la conversation se passe chez celui qui envoie ») : son décor à
    * la place du fond rose, et sa place ; `images` sont alors sa figurine détourée, assise. Pas en duo, ni avec un rendu.
    */
-  chezMoi?: { decor: string; x: number; y: number; echelle: number };
+  chezMoi?: { decor: string; x: number; y: number; echelle: number; hauteur?: number };
 }): Promise<Meme> {
   const { ctx, toile } = o;
   if (!memePossible()) throw new Error("Ce téléphone ne sait pas fabriquer de vidéo.");
@@ -1220,7 +1221,7 @@ export async function fabriquerMeme(o: {
     ...(o.annonce ? { annonce: o.annonce } : {}),
     ...(o.message ? { message: o.message } : {}),
     ...(o.fin ? { fin: o.fin } : {}),
-    ...(decor && o.chezMoi && !rendu ? { decor: { img: decor, x: o.chezMoi.x, y: o.chezMoi.y, echelle: o.chezMoi.echelle } } : {}),
+    ...(decor && o.chezMoi && !rendu ? { decor: { img: decor, x: o.chezMoi.x, y: o.chezMoi.y, echelle: o.chezMoi.echelle, ...(o.chezMoi.hauteur ? { hauteur: o.chezMoi.hauteur } : {}) } } : {}),
     ...(duo && o.duo
       ? {
           duo: {

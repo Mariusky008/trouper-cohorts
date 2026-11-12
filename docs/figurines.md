@@ -2343,6 +2343,12 @@ d'aujourd'hui jusqu'à son feu vert.
     met ou la coupe ; elle respecte le son coupé de l'appli, et se tait quand la page est cachée.
   - **Sa figurine, plus grande chez elle** : 40 % de la hauteur de la scène (c'était 26 %), à peine nuancée par sa
     place (de 0,9 à 1,15).
+  - **Puis « encore petit par rapport aux proportions de la pièce, ça ne fait pas naturel »** (sa capture, le même
+    jour) : sa figurine prend maintenant **la place et la taille que le moteur lui a données sur l'image vedette** —
+    un modèle qui voit y relève son milieu, le bas de son fauteuil et sa hauteur (`questionFigurineVedette`,
+    `scene.figurine`, `mesurerSurLaVedette`), corrigés des bords transparents de son image (`useCadreVisible`) ; un
+    univers créé avant est relevé à sa prochaine visite (`action: "mesurer"`, une fois par version). Sans relevé :
+    50 % de la scène, au premier plan. La vidéo WhatsApp suit la même règle.
 - **Le coût** : une image haute et une moyenne de plus à la création (environ 5 centimes).
 - **Les essais** : `scripts/essai-univers-route.mjs` (le fauteuil refait, signé, refaisable ; pas refait à la retouche),
   `scripts/navigateur/univers-monde.mjs` (l'annonce, l'accueil, le menu, Sam sans figurine, la musique, sa taille),

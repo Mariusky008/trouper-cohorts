@@ -167,7 +167,7 @@ export async function chezLui(supabase: Supabase, h: string): Promise<ChezMoi | 
     const p = f.scene.places.find((x) => x.id === id);
     return p ? { x: p.x, y: p.y, echelle: p.echelle } : defaut;
   };
-  return { decor, hote: place("hote", { x: 0.36, y: 0.8, echelle: 1 }), invite: place("invite", { x: 0.66, y: 0.82, echelle: 0.96 }) };
+  return { decor, hote: place("hote", { x: 0.36, y: 0.8, echelle: 1 }), invite: place("invite", { x: 0.66, y: 0.82, echelle: 0.96 }), ...(f.scene.figurine ? { figurine: f.scene.figurine } : {}) };
 }
 
 /** ☀️ Son humeur du jour (lot R : elle s'efface à minuit, l'heure de Paris). */

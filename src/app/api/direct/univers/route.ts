@@ -7,11 +7,13 @@
 //                                            se font après la réponse (l'écran relit)
 // POST { action: "retoucher", texte }    → { version } : une retouche avec ses mots (une nouvelle version)
 // POST { action: "revenir" }             → { version } : la version d'avant (rien n'est refait)
+// POST { action: "mesurer" }             → { version } : sa figurine relevée sur l'image vedette (un univers créé avant
+//                                            ce relevé ; une fois par version)
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { etatUnivers, fabriquerUnivers, lancerCreation, retoucherUnivers, revenirUnivers } from "@/lib/direct/univers-creation-serveur";
+import { etatUnivers, fabriquerUnivers, lancerCreation, mesurerSaFigurine, retoucherUnivers, revenirUnivers } from "@/lib/direct/univers-creation-serveur";
 
 export const dynamic = "force-dynamic";
 // (le décor, puis l'image vedette : une minute environ chacun, après la réponse)
@@ -42,8 +44,10 @@ export async function POST(request: Request) {
         ? await retoucherUnivers(supabase, h, p.texte)
         : p?.action === "revenir"
           ? await revenirUnivers(supabase, h)
-          : { error: "Demande incomplète.", statut: 400 };
+          : p?.action === "mesurer"
+            ? await mesurerSaFigurine(supabase, h)
+            : { error: "Demande incomplète.", statut: 400 };
   const version = r.version;
-  if (version && p?.action !== "revenir") after(() => fabriquerUnivers(supabase, h, version, avant));
+  if (version && p?.action !== "revenir" && p?.action !== "mesurer") after(() => fabriquerUnivers(supabase, h, version, avant));
   return NextResponse.json(r.error ? { error: r.error } : { ok: true, version }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
 }

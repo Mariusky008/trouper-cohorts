@@ -71,7 +71,8 @@ export type PlaceChezMoi = { x: number; y: number; echelle: number };
  * 🏡 CHEZ MOI (chantier « Univers », lot 5 — la règle « chez qui ? », tranchée le 12 novembre 2026 : dans l'appli,
  * chacun voit la conversation chez soi, l'autre lui rend visite) : son décor, sa place, celle de l'invité.
  */
-export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi };
+/** `figurine` : sa figurine relevée sur son image vedette (son milieu, le bas de son fauteuil, sa hauteur, lot 4). */
+export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi; figurine?: { x: number; y: number; hauteur: number } };
 // (`FigurineVue.chez` : seulement la sienne, pour la vidéo qu'il envoie par WhatsApp — « chez celui qui envoie », lot 5b)
 export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi };
 
