@@ -32,6 +32,7 @@ import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
 import {
   PAROLE_MAX_S,
   PAROLE_MIN_S,
+  TETES_DE_DEPART,
   cleValide,
   repliqueA,
   texteAvecVideo,
@@ -481,6 +482,8 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
   // ☀️ leurs humeurs du jour, et le mot de chaque figurine à l'autre (lot R)
   const [avec, setAvec] = useRituelAvec(cle);
 
+  // (🎭 ses visages du nouveau style, faits : la conversation se relit — `tour`)
+  const [tour, setTour] = useState(0);
   useEffect(() => {
     let fini = false;
     fetch(`${ROUTE}?fil=${cle}`, { cache: "no-store" })
@@ -494,7 +497,27 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
     return () => {
       fini = true;
     };
-  }, [cle]);
+  }, [cle, tour]);
+  // 🎭 chez moi : ses têtes de départ du nouveau style se font (une fois), puis la conversation se relit
+  const sesVisages = fil?.chezMoi && fil.moi.assise ? fil.moi.assise.expressions : null;
+  const manquentVisages = Boolean(fil?.chezMoi && fil.moi.assise) && TETES_DE_DEPART.some((t) => !sesVisages?.[t]);
+  useEffect(() => {
+    if (!manquentVisages) return;
+    let fini = false;
+    void (async () => {
+      for (let k = 0; k < 8 && !fini; k++) {
+        const j = (await (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "visages-perso" }) }).catch(() => null))
+          ?.json()
+          .catch(() => null)) as { complete?: boolean; enCours?: boolean; error?: string } | null;
+        if (!j || j.error) return;
+        if (j.complete) return void (!fini && setTour((x) => x + 1));
+        await new Promise((ok) => window.setTimeout(ok, j.enCours ? 10_000 : 1_500));
+      }
+    })();
+    return () => {
+      fini = true;
+    };
+  }, [manquentVisages]);
   useEffect(() => {
     msgs.current = fil?.messages ?? [];
   }, [fil]);
@@ -653,9 +676,9 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
             ref={fig}
             neutre={pParle?.n ?? parleur.neutre}
             parle={pParle?.p ?? parleur.parle}
-            expressions={pParle ? {} : parleur.expressions}
+            expressions={pParle ? (pParle.expressions ?? {}) : parleur.expressions}
             decoupe={Boolean(pParle)}
-            sentiment={pParle ? null : tete}
+            sentiment={pParle ? (tete && pParle.expressions?.[tete] ? tete : null) : tete}
             onTemps={surTemps}
             onFin={surFin}
             onJoue={setJoue}
@@ -1298,9 +1321,9 @@ function LeMessagePret({ pret, lienWhatsApp, copie, onCopier }: { pret: MessageP
   useEffect(() => {
     if (!voulue || !parole || !moi || !ctx || !toile.current || videosCommencees.has(ctx)) return;
     videosCommencees.add(ctx);
-    // 🏡 « Univers », lot 5b : chez lui (son décor, sa figurine assise, sans têtes — elles ne sont pas encore faites)
+    // 🏡 « Univers », lot 5b : chez lui (son décor, sa figurine assise, ses visages du nouveau style déjà faits)
     const chez = moi.chez && moi.assise ? { assise: moi.assise, chez: moi.chez } : null;
-    const tete = (t: Sentiment | null) => (chez ? chez.assise : (t && moi.expressions[t]) || { n: moi.neutre, p: moi.parle });
+    const tete = (t: Sentiment | null) => (chez ? (t && chez.assise.expressions?.[t]) || chez.assise : (t && moi.expressions[t]) || { n: moi.neutre, p: moi.parle });
     fabriquerMeme({
       ctx,
       toile: toile.current,

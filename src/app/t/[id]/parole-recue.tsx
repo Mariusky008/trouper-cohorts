@@ -206,7 +206,17 @@ export function ParoleRecue({ lien }: { lien: LienVu }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="pr-decor" src={chez.decor} alt="" draggable={false} />
             <div className="pr-parleur assise" style={styleDePlace(chez.hote, false)}>
-              <FigurineQuiParle ref={fig} neutre={chez.assise.n} parle={chez.assise.p} expressions={{}} decoupe sentiment={null} onTemps={surTemps} onJoue={setJoue} className="pr-fqp" />
+              <FigurineQuiParle
+                ref={fig}
+                neutre={chez.assise.n}
+                parle={chez.assise.p}
+                expressions={chez.assise.expressions ?? {}}
+                decoupe
+                sentiment={tete && chez.assise.expressions?.[tete] ? tete : null}
+                onTemps={surTemps}
+                onJoue={setJoue}
+                className="pr-fqp"
+              />
             </div>
             {/* (sa figurine dit bonjour) */}
             {!joue && ir === 0 && <p className="pt-bonjour">👋 Bienvenue chez moi !</p>}

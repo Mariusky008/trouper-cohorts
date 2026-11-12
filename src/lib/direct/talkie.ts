@@ -43,7 +43,7 @@ export type MessageFil = { id: string; moi: boolean; le: string; duree: number; 
  * `assise` (chantier « Univers », lot 5) : sa figurine du nouveau style, détourée, assise dans son fauteuil (`n` bouche
  * fermée, `p` ouverte), quand il l'a faite — c'est elle qui entre chez l'autre.
  */
-export type FigurineVue = { prenom: string; neutre: string; parle: string; expressions: Expressions; assise?: { n: string; p: string }; chez?: ChezMoi };
+export type FigurineVue = { prenom: string; neutre: string; parle: string; expressions: Expressions; assise?: { n: string; p: string; expressions?: Expressions }; chez?: ChezMoi };
 /**
  * Un proche, dans l'onglet : sa clé (jamais son identifiant), son prénom, sa figurine, s'il est là, ses messages non
  * lus, la dernière chose dite. `lien` : « proches » (ils se sont ajoutés tous les deux : ils se parlent), « attend »
