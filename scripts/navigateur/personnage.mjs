@@ -106,17 +106,15 @@ ok((await texte(inconnu, ".cp h1")).includes("Léa") && (await inconnu.locator('
 ok((await debordement(inconnu)) <= 0, "la carte partagée ne déborde pas");
 await inconnu.screenshot({ path: `${D}/personnage-2-partagee.png`, fullPage: true });
 
-// ❓ LA QUESTION DU JOUR, dans « Moi »
+// ✨ « MES VŒUX » dans « Moi » (12 novembre 2026 : ils y remplacent la question du jour)
 await lea.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
 await fermerPablito(lea, "#o-personnage");
-await lea.waitForSelector("#o-personnage .cn-question", { timeout: 30000 });
+await lea.waitForSelector("#o-personnage .vx-mes", { timeout: 30000 });
+const mesTxt = await texte(lea, "#o-personnage .vx-mes");
+ok(mesTxt.includes("Mes vœux") && mesTxt.includes("Pas encore de vœu") && mesTxt.includes("Faire un nouveau vœu") && (await lea.locator("#o-personnage .cn-question").count()) === 0, `« Mes vœux » dans Moi, plus de question du jour (${mesTxt.slice(0, 120)})`);
+// ❓ la question du jour reste comprise par sa figurine (on y répond par l'API : elle n'a plus d'écran dans « Moi »)
 const q0 = await api(lea, "/api/direct/connaitre");
-if (q0.question?.choix) await lea.locator("#o-personnage .cn-choix button").first().click();
-else {
-  await lea.locator("#o-personnage .cn-libre input").fill("Les crêpes du dimanche");
-  await lea.locator("#o-personnage .cn-libre .mp-bouton").click();
-}
-await lea.waitForSelector("#o-personnage .cn-reponse", { timeout: 15000 });
+await api(lea, "/api/direct/connaitre", { action: "question", cle: q0.question?.cle, texte: q0.question?.choix?.[0] ?? "Les crêpes du dimanche" });
 const q1 = await api(lea, "/api/direct/connaitre");
 ok(q1.question?.cle === q0.question?.cle && q1.question?.reponse, `la question du jour (« ${q0.question?.q} ») : sa réponse est gardée (« ${q1.question?.reponse} »)`);
 ok(((await lireSeau(`${LEA.id}/rencontres.json`))?.dit ?? []).some((x) => x.r === q1.question?.reponse), "et rejoint ce qu'elle a dit d'elle (ses premiers pas la comptent)");

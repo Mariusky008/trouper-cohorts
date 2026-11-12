@@ -21,6 +21,7 @@ import { lookDe, lookParDefautDe, lookValide } from "./look";
 import { figurinesEnTout } from "./ma-figurine";
 import { SEAU_FIGURINES, saFigurineSignee } from "./ma-figurine-serveur";
 import { motInterdit } from "./mots-interdits";
+import { cheminAidesExaucees, cheminMontrer } from "./voeu";
 import {
   GOUTS,
   caracteristiques,
@@ -97,7 +98,13 @@ export async function prenomDe(supabase: Supabase, habitant: Pick<Habitant, "id"
   return s((Array.isArray(data) ? (data[0] as { prenom?: string } | undefined) : undefined)?.prenom);
 }
 
-function carteDepuis(g: Gardee, prenom: string, image: { image: string; figurine: boolean }, p: Progres): CartePersonnage {
+/** 🌟 Les vœux qu'il a aidé à exaucer (« Mon vœu »), s'il veut le montrer sur sa carte (allumé par défaut) ; sinon 0. */
+async function exaucesAMontrer(supabase: Supabase, h: string): Promise<number> {
+  const [a, m] = await Promise.all([lire<{ liste?: unknown[] }>(supabase, cheminAidesExaucees(h)), lire<{ oui?: boolean }>(supabase, cheminMontrer(h))]);
+  return m?.oui === false ? 0 : Array.isArray(a?.liste) ? a.liste.length : 0;
+}
+
+function carteDepuis(g: Gardee, prenom: string, image: { image: string; figurine: boolean }, p: Progres, exauces = 0): CartePersonnage {
   return {
     prenom,
     ...image,
@@ -110,6 +117,7 @@ function carteDepuis(g: Gardee, prenom: string, image: { image: string; figurine
     niveau: niveauDe(p),
     rang: rangDe(p),
     ...(g.partage ? { lien: lienCarte(g.partage) } : {}),
+    ...(exauces > 0 ? { exauces } : {}),
   };
 }
 
@@ -117,8 +125,8 @@ function carteDepuis(g: Gardee, prenom: string, image: { image: string; figurine
 export async function carteDe(supabase: Supabase, habitant: Habitant): Promise<CartePersonnage | null> {
   const g = await lire<Gardee>(supabase, cheminCarte(habitant.id));
   if (!g || !reponsesValides(g.reponses)) return null;
-  const [familles, prenom, image] = await Promise.all([famillesDe(supabase, habitant.id), prenomDe(supabase, habitant), imageDe(supabase, habitant.id, 3600)]);
-  return carteDepuis(g, prenom, image, await progresDe(supabase, habitant.id, familles));
+  const [familles, prenom, image, exauces] = await Promise.all([famillesDe(supabase, habitant.id), prenomDe(supabase, habitant), imageDe(supabase, habitant.id, 3600), exaucesAMontrer(supabase, habitant.id)]);
+  return carteDepuis(g, prenom, image, await progresDe(supabase, habitant.id, familles), exauces);
 }
 
 // ─── la fiche, par l'IA ──────────────────────────────────────────────────────────────────────────
@@ -219,8 +227,8 @@ export async function creerCarte(
     ...(avant?.partage ? { partage: avant.partage } : {}),
   };
   if (!(await ecrire(supabase, cheminCarte(habitant.id), g))) return { error: "Ta carte n’a pas pu être rangée. Réessaie.", statut: 502 };
-  const [familles, image] = await Promise.all([famillesDe(supabase, habitant.id), imageDe(supabase, habitant.id, 3600)]);
-  return { carte: carteDepuis(g, prenom, image, await progresDe(supabase, habitant.id, familles)) };
+  const [familles, image, exauces] = await Promise.all([famillesDe(supabase, habitant.id), imageDe(supabase, habitant.id, 3600), exaucesAMontrer(supabase, habitant.id)]);
+  return { carte: carteDepuis(g, prenom, image, await progresDe(supabase, habitant.id, familles), exauces) };
 }
 
 /** Son lien de partage (le même à chaque fois), ou `arreter` : le lien ne marche plus. */
@@ -252,6 +260,6 @@ export async function carteParLien(supabase: Supabase, id: string): Promise<Cart
   if (!g || g.partage !== id || !reponsesValides(g.reponses)) return null;
   const { data } = await supabase.from("human_habitants").select("id, prenom").eq("id", habitantId).maybeSingle();
   const prenom = s((data as { prenom?: string } | null)?.prenom) || (await prenomDe(supabase, { id: habitantId, prenom: "" }));
-  const [familles, image] = await Promise.all([famillesDe(supabase, habitantId), imageDe(supabase, habitantId, 7200)]);
-  return carteDepuis(g, prenom, image, await progresDe(supabase, habitantId, familles, false));
+  const [familles, image, exauces] = await Promise.all([famillesDe(supabase, habitantId), imageDe(supabase, habitantId, 7200), exaucesAMontrer(supabase, habitantId)]);
+  return carteDepuis(g, prenom, image, await progresDe(supabase, habitantId, familles, false), exauces);
 }

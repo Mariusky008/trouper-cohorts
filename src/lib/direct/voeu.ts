@@ -233,7 +233,40 @@ export type RetourVoeu = {
   voeu: string;
   le: string;
   vu: boolean;
+  /** 🎉 son vœu est exaucé, grâce à lui (il gagne « A exaucé un vœu ») */
+  exauce?: boolean;
 };
+
+/**
+ * 🎉 LA FÊTE D'UN VŒU EXAUCÉ (le lot 3, la maquette 5) : sa figurine euphorique entourée des têtes qui l'ont porté,
+ * en combien de jours, grâce à qui, ses compteurs.
+ */
+export type FeteVoeu = {
+  texte: string;
+  jours: number;
+  /** combien de figurines l'ont porté (ses encouragements et ses aides) */
+  porte: number;
+  tetes: string[];
+  par: { prenom: string; tete: string; cle?: string } | null;
+  /** ses vœux exaucés, en tout */
+  exauces: number;
+  /** les vœux qu'il a aidé à exaucer */
+  aides: number;
+};
+/** 📒 « Mes vœux », dans « Moi » (la maquette « Mes vœux ») */
+export type MesVoeux = {
+  voeux: { id: string; texte: string; statut: StatutVoeu; jours: number; le: string; fini?: string; par?: string }[];
+  /** ceux qu'il a aidé à exaucer : combien, leurs prénoms, leurs têtes */
+  aides: { n: number; prenoms: string[]; tetes: string[] };
+  /** le montrer sur sa carte de personnage (« 🌟 A exaucé 2 vœux ») */
+  montrer: boolean;
+};
+/** Les vœux qu'il a aidé à exaucer : `<habitant>/voeux/aides-exaucees.json` (lu aussi par sa carte de personnage). */
+export const cheminAidesExaucees = (h: string) => `${h}/voeux/aides-exaucees.json`;
+/** Le montrer sur sa carte (allumé par défaut) : `<habitant>/voeux/montrer.json`, `{ oui }`. */
+export const cheminMontrer = (h: string) => `${h}/voeux/montrer.json`;
+/** Pablito propose de le reformuler : en route depuis 5 jours, et personne n'a encore proposé son aide. */
+export const JOURS_AVANT_REFORMULER = 5;
 /** Un vœu à encourager (une carte de la mission). */
 export type CarteVoeu = {
   vue: number;
@@ -254,7 +287,7 @@ export type EtatVoeu = {
   /** sa figurine est prête (sinon, rien à faire ici encore) */
   figurine: boolean;
   /** lui : son prénom, sa figurine, et ses têtes pour encourager (celles qu'il a déjà faites ; sinon, sa figurine) */
-  moi?: { prenom: string; neutre: string; parle: string; tetes: Record<string, string> };
+  moi?: { prenom: string; neutre: string; parle: string; tetes: Record<string, string>; fete?: { n: string; p: string } };
   /** sa ville (« Dax ») */
   ville?: string;
   /** ses 18 ans : `null` tant qu'il ne l'a pas dit (on le lui demande une fois) */

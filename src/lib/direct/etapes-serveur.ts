@@ -46,7 +46,7 @@ type Rencontres = { liste?: unknown[]; amis?: unknown[]; moi?: number; pas?: num
  */
 export async function cadeauxDe(supabase: Supabase, habitantId: string, figurines: number, noterPresence = true): Promise<Cadeaux> {
   if (!habitantId) return { cadeaux: 0, etapes: [] };
-  const [fig, carte, msg, rencontres, presence, notes, duo] = await Promise.all([
+  const [fig, carte, msg, rencontres, presence, notes, duo, voeu] = await Promise.all([
     Promise.resolve(supabase.from("clik_ma_figurine").select("prete_le").eq("habitant_id", habitantId).maybeSingle()).catch(() => ({ data: null })),
     lire<object>(supabase, `${habitantId}/personnage.json`),
     Promise.resolve(supabase.from("clik_figurine_message").select("id").eq("habitant_id", habitantId).limit(1)).catch(() => ({ data: null })),
@@ -55,6 +55,8 @@ export async function cadeauxDe(supabase: Supabase, habitantId: string, figurine
     lire<{ acquis?: number }>(supabase, `${habitantId}/cadeaux.json`),
     // (sa première réponse en duo : `ma-figurine-serveur.ts`, `cheminDuo`)
     lire<{ le?: string }>(supabase, `${habitantId}/duo.json`),
+    // (✨ son premier vœu, « Mon vœu » : la table peut manquer, la migration se passe à la main)
+    Promise.resolve(supabase.from("clik_voeu").select("id").eq("habitant_id", habitantId).limit(1)).catch(() => ({ data: null })),
   ]);
 
   // SA PRÉSENCE : aujourd'hui compte (62 jours gardés : un mois entier, pour sa figurine du mois)
@@ -76,8 +78,8 @@ export async function cadeauxDe(supabase: Supabase, habitantId: string, figurine
     figurine: Boolean(s((fig.data as { prete_le?: string } | null)?.prete_le)),
     carte: Boolean(carte),
     message: Array.isArray(msg.data) && msg.data.length > 0,
-    // (ce qu'il a dit de lui : la question du jour, « Et toi ? »)
-    questions: (Array.isArray(rencontres?.dit) ? rencontres.dit.length : 0) >= 3,
+    // (✨ « Faire un vœu », depuis le 12 novembre 2026 — ou, avant, trois réponses à la question du jour : l'acquis reste)
+    questions: (Array.isArray(voeu.data) && voeu.data.length > 0) || (Array.isArray(rencontres?.dit) ? rencontres.dit.length : 0) >= 3,
     fidele: new Set(jours).size >= 3,
     duo: Boolean(duo?.le),
   };

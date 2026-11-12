@@ -68,6 +68,9 @@ Une fois ton premier mème fait, **l'appli s'ouvre ici**.
   et vous continuez dans Proches, avec vos figurines. Ou « Pas pour moi » : il ne le saura pas.
   À chaque tête qui t'encourage, tu peux répondre avec la tienne (« Merci ! », « Mort de rire »…) : l'autre la retrouve
   dans ses bulles.
+  **Exaucé ?** « 🎉 Il est exaucé ! » : tu dis grâce à qui, et c'est la fête — tes jours, toutes les figurines qui y ont
+  cru, « Merci ! » à celui qui t'a aidé, et le mème de la victoire à partager. Celui qui t'a aidé gagne « 🌟 A exaucé un
+  vœu » sur sa carte de personnage. Cinq jours sans aide ? Pablito te propose de le dire autrement.
 - **🎯 Ta mission du jour** : trois vœux des autres à encourager, en une minute. Tu réponds **avec ta tête** (tes
   visages déjà faits, et un mot en sticker : « J'Y CROIS ! »), tu proposes ton aide (une phrase toute prête, ou ta
   voix), ou tu passes ton tour (l'autre ne le saura jamais). Mission faite : ton vœu passe en premier le lendemain, et
@@ -107,7 +110,9 @@ C'est la porte d'entrée : chaque message est une invitation, envoyée par un am
 ### 🙂 Moi
 
 - **Ta carte de personnage** : sept questions, et ClikMe devine qui tu es (ton titre, ton pouvoir, ta faiblesse).
-  C'est elle qui inspire « Surprends-moi ».
+  C'est elle qui inspire « Surprends-moi ». Les vœux que tu as aidé à exaucer s'y voient (« 🌟 A exaucé 2 vœux »), si tu
+  le veux.
+- **Mes vœux** : les tiens (exaucés, en route, en pause), et ceux que tu as aidé à exaucer.
 - **Ta figurine du mois** : dix jours sur ClikMe dans le mois, et elle gagne un nouveau look pour tes mèmes (le thème
   du mois : Halloween, Noël…).
 - **L'appli sur ton écran d'accueil**, et les notifications (le mème du jour, « Hugo t'a répondu ! »). Chacune se
