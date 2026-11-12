@@ -6,6 +6,8 @@
 // GET ?presence=1                       → { presence } (« Moi »)
 // GET ?moi=1                            → { moi } : sa figurine, de quoi la faire parler (« Envoyer par WhatsApp »)
 // GET ?fil=<clé>                        → { fil } : sa conversation avec ce proche (ils se sont ajoutés tous les deux)
+// GET ?vivant=<clé>                     → { vivant } : 🎭 la conversation vivante (lot R4a, `lib/direct/vivant.ts`) — s'il
+//                                          prépare un message, leurs panneaux et réactions, l'heure du dernier message
 // POST { action: "la" }                 → { nonLus } : 🟢 ClikMe est ouvert (toutes les minutes, page visible)
 // POST { action: "comprendre", son, duree } → { repliques, par, transcrit, dispo } : « Ta figurine a compris ça » — ses phrases,
 //      et trois têtes proposées pour chacune. Rien n'est gardé, rien ne part.
@@ -13,6 +15,10 @@
 // POST { action: "presence", oui }      → { presence } : « Montrer à mes proches quand je suis là »
 // POST { action: "proche", cle, oui }   → { ok } : « L'ajouter aussi » (ou le retirer de ses proches)
 // POST { action: "signaler", cle, id }  → { ok } : 🚩 un message qu'il ne veut plus voir (l'équipe le regarde)
+// POST { action: "prepare", cle, oui }  → { ok } : 🎭 il prépare un message (sa figurine se penche chez l'autre)
+// POST { action: "geste", cle, type: "panneau"|"reaction", quoi, message? } → { geste } : 🪧 un panneau, 👏 une réaction
+// POST { action: "aparte-effacer", cle, id } → { ok } : 🎭 il efface un aparté de leurs figurines (pour les deux)
+// (GET ?vivant= écrit aussi, après la réponse, l'aparté d'un échange qui vient de finir — lot R4b)
 // 📲 L'ÉTAPE 5, PAR WHATSAPP :
 // POST { action: "lien-creer", son, duree, repliques, pour? } → { id, url, reste } : son message, en lien (`/t/<id>`),
 //      pour quelqu'un qui n'a pas ClikMe (trois par jour)
@@ -38,6 +44,7 @@ import {
   repondreAuLien,
   signalerParole,
 } from "@/lib/direct/talkie-serveur";
+import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
@@ -55,6 +62,15 @@ export async function GET(request: Request) {
   if (q.get("moi")) {
     const f = await maFigurineVue(supabase, moi);
     return f ? NextResponse.json({ ok: true, moi: f }, { headers: sansCache }) : NextResponse.json({ error: "Ta figurine n’est pas encore prête." }, { status: 400 });
+  }
+  const vivant = q.get("vivant");
+  if (vivant) {
+    const r = await vivantAvec(supabase, moi, vivant);
+    if (!r.vivant) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    // 🎭 un échange vient de finir : leurs figurines font un aparté (après la réponse, jamais bloquant)
+    const a = r.aPreparer;
+    if (a) after(() => preparerAparte(supabase, a, moi).catch(() => undefined));
+    return NextResponse.json({ ok: true, vivant: r.vivant }, { headers: sansCache });
   }
   const fil = q.get("fil");
   if (fil) {
@@ -97,6 +113,22 @@ export async function POST(request: Request) {
     const a = r.aPrevenir;
     if (a) after(() => prevenirDeLaParole(supabase, moi, a));
     return NextResponse.json({ ok: true, message: r.message, cle: r.cle }, { headers: sansCache });
+  }
+  // 🎭 la conversation vivante (lot R4a)
+  if (p?.action === "prepare") {
+    const r = await direQuIlPrepare(supabase, moi, p.cle, p.oui);
+    return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
+  }
+  if (p?.action === "aparte-effacer") {
+    const r = await effacerAparte(supabase, moi, p.cle, p.id);
+    return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
+  }
+  if (p?.action === "geste") {
+    const r = await poserGeste(supabase, moi, p.cle, p.type, p.quoi, p.message);
+    if (!r.geste) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    const a = r.aPrevenir;
+    if (a) after(() => prevenirDuPanneau(supabase, moi, a));
+    return NextResponse.json({ ok: true, geste: r.geste }, { headers: sansCache });
   }
   if (p?.action === "presence") return NextResponse.json({ ok: true, ...(await choisirPresence(supabase, moi, p.oui)) }, { headers: sansCache });
   if (p?.action === "proche" || p?.action === "signaler") {

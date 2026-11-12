@@ -8,8 +8,10 @@
 //                                       ouverture du jour, ils se préparent après la réponse (`finsAttente`)
 // GET ?avec=<clé>                    → { avec } : le rituel avec ce proche (leurs humeurs, le mot de chaque figurine à
 //                                       l'autre), en haut de leur conversation
-// POST { action: "humeur", visage }  → { humeur, ecrire } : il choisit son humeur ; `ecrire` : les figurines de ses
-//                                       proches écrivent (après la réponse, quelques secondes)
+// POST { action: "humeur", visage }  → { humeur, ecrire, reponse } : il choisit son humeur ; `ecrire` : les figurines
+//                                       de ses proches écrivent (après la réponse, quelques secondes) ; `reponse` : ☀️ ce
+//                                       que SA figurine lui répond, tout de suite (lot R3, `humeur-reponse.ts`)
+// (GET rend aussi `reponse` : celle d'aujourd'hui, pour la relire)
 // POST { action: "effacer", cle, id } → { ok } : il efface le mot que sa figurine a écrit à ce proche
 // POST { action: "parle", oui }      → { parle } : « Ma figurine parle pour moi » (dans « Moi »)
 // POST { action: "effacer-fin", cle } → { ok } : 🌙 il efface leur mot de la fin de cette nuit (pour les deux)
@@ -18,6 +20,7 @@ import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { choisirHumeur, choisirParle, ecrireLesMots, effacerFin, effacerMot, monRituel, preparerSesFins, rituelAvec } from "@/lib/direct/rituel-serveur";
+import { repondreAHumeur, reponseDuJour } from "@/lib/direct/humeur-reponse-serveur";
 
 export const dynamic = "force-dynamic";
 // (les figurines écrivent après la réponse : le petit modèle de texte, une demande pour toutes)
@@ -36,10 +39,10 @@ export async function GET(request: Request) {
     if (!r.avec) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     return NextResponse.json({ ok: true, avec: r.avec }, { headers: sansCache });
   }
-  const { aPreparer, ...r } = await monRituel(supabase, moi);
+  const [{ aPreparer, ...r }, reponse] = await Promise.all([monRituel(supabase, moi), reponseDuJour(supabase, moi.id).catch(() => null)]);
   // 🌙 ses mots de la fin de ce matin : préparés une fois, après la réponse
   if (aPreparer) after(() => preparerSesFins(supabase, moi.id).catch(() => []));
-  return NextResponse.json({ ok: true, ...r }, { headers: sansCache });
+  return NextResponse.json({ ok: true, ...r, reponse: reponse && reponse.humeur === r.humeur ? reponse : null }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
@@ -53,7 +56,9 @@ export async function POST(request: Request) {
     const humeur = r.humeur;
     // ✍️ les figurines de ses proches écrivent : après la réponse, jamais bloquant
     if (r.ecrire) after(() => ecrireLesMots(supabase, moi, humeur).catch(() => 0));
-    return NextResponse.json({ ok: true, humeur, ecrire: Boolean(r.ecrire) }, { headers: sansCache });
+    // ☀️ et SA figurine lui répond, tout de suite (des phrases écrites d'avance : ni IA, ni attente)
+    const reponse = await repondreAHumeur(supabase, moi.id, humeur).catch(() => null);
+    return NextResponse.json({ ok: true, humeur, ecrire: Boolean(r.ecrire), reponse }, { headers: sansCache });
   }
   if (p?.action === "effacer" || p?.action === "effacer-fin") {
     const r = p.action === "effacer" ? await effacerMot(supabase, moi, p.cle, p.id) : await effacerFin(supabase, moi, p.cle);

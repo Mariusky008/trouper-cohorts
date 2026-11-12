@@ -128,12 +128,16 @@ parle qu'avec des voix enregistrées, jamais avec une voix de synthèse.
 
 ## 4. Pourquoi on revient
 
+- **Ton humeur du matin** : tu choisis une de tes têtes, ta figurine te répond tout de suite (et se souvient d'hier),
+  les figurines de tes proches te laissent un mot ; le dimanche, « Ta semaine en visages » à partager.
 - **Ta mission du jour** (trois vœux à encourager, rappelée avec le mème du jour vers 11 h 30) et **les réponses à ton
   vœu** (une notification vers 19 h).
 - **Le mème du jour**, chaque jour, vers 11 h 30.
 - **Les réponses** : « Hugo t'a répondu ! ».
 - **La figurine du mois**, qui se mérite en dix jours.
-- **Les proches**, qui te parlent par leur figurine.
+- **Les proches**, qui te parlent par leur figurine — et leur conversation vit : sa figurine se penche quand il prépare
+  un message, brandit un panneau (« J'arrive ! »), applaudit ton message, danse ou s'endort dans les silences ; après
+  un vrai échange, vos deux figurines font un aparté (écrit par l'IA, vous le voyez tous les deux).
 - **Les messages WhatsApp**, qui font entrer de nouvelles personnes.
 
 ## 5. Et les commerçants ?

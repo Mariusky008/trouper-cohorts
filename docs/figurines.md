@@ -2443,10 +2443,89 @@ Le propriétaire : « en attendant on peut faire […] le lot 7 ».
 - **« Découvrir » montre les figurines chez elles** : après « Mon vœu », une page « 🏡 Les univers à visiter » — ceux
   qu'on a ouverts à tout le monde (lot 6 ; l'index `univers/publics.json`, tenu par `choisirVisibilite`), leur figurine
   chez elle (l'image vedette) ; un toucher, et on entre (`/univers/chez/<clé>`). Rien quand il n'y en a pas.
-- **La saison de l'univers** (la figurine du mois) : voir 9.0 octotricies (le propriétaire : « les deux »).
+- **La saison de l'univers** (la figurine du mois) : voir 9.0 quadragies (le propriétaire : « les deux »).
 - **Les essais** : `scripts/navigateur/visite-univers.mjs` (« Découvrir » : Chez Marc).
 
-### 9.0 octotricies 🍂 La saison de son univers (12 novembre) — lot 7
+### 9.0 octatricies ☀️ Ma figurine me répond : l'humeur du matin (12 novembre) — lot R3
+
+Le propriétaire : « quand je donne le matin ma mood, mon état d'esprit, avec une de mes figurines, est-ce qu'en fonction
+de ce que je donne on pourrait avoir quelque chose : notre figurine qui nous dirait quelque chose ? » ; la proposition
+acceptée (« oui, tout est bien, vas-y ») : feuille de route, lot R, point 4.
+
+- **Tout de suite** : il choisit son humeur (la feuille du matin, ou en haut de « Proches ») et SA figurine prend ce
+  visage (sa figurine et l'emoji tant qu'il n'est pas fait ; la page le reprend dès qu'il l'est) et lui dit une phrase,
+  dans une bulle (« Ta figurine »), écrite, sans voix. La route `humeur` la rend avec l'humeur (`reponse`) : aucune IA,
+  aucune attente ; `GET` la rend aussi (la page rechargée la retrouve).
+- **Le geste** au bout de la phrase (`GESTES_HUMEUR`) : « 📲 Envoyer ma tête du jour » (joie, euphorie : le studio
+  s'ouvre avec ce visage et « Ma tête du jour ☀️ Et toi, ça va ? ») ; « 💬 Raconter à un proche » (fou rire :
+  « Proches ») ; « 😍 Le mème « Je t'aime » » (amour : le studio, ce mème prêt, son visage d'amour) ; « 🎭 Un mème avec
+  cette tête » (grimace) ; « ✨ Faire un vœu » (tristesse, colère, « oh non » : « Mon vœu » ; « 💬 Écrire à un proche »
+  s'il a déjà un vœu en route), en discret. Le studio reçoit le visage par `versLeStudio({ visage })` (un visage pas
+  encore fait part à l'atelier, comme s'il l'avait touché).
+- **Les phrases** (`PHRASES_HUMEUR`, `humeur-reponse.ts`) : dix par humeur, validées par le propriétaire ; jamais
+  redites avant d'avoir tout dit ; la même humeur redemandée le même jour, la même phrase.
+- **Le souvenir de la veille** (`SOUVENIRS`), prioritaire : hier une humeur douce, aujourd'hui une bonne — « Hier la
+  colère, aujourd'hui le fou rire : belle remontée ! » (ou « Quelle remontée depuis hier ! ») ; l'inverse — « Hier tu
+  rayonnais, aujourd'hui c'est plus lourd. Je reste là. » ; 3, 5, 7, 10, 14 ou 21 jours de bonne humeur — « 3 jours de
+  bonne humeur d'affilée. Tu as un secret ? » ; deux jours difficiles — « Encore une journée pas facile… » ; un simple
+  changement — « Hier la grimace, aujourd'hui la joie : tu ne t'ennuies jamais, toi. » (pas deux jours de suite).
+- **Le troisième jour difficile d'affilée** : « Trois jours que c'est lourd. Je reste là, tout près, aussi longtemps
+  qu'il faut. », et en petit « Si ça ne va vraiment pas, le 3114 répond jour et nuit » (un toucher l'appelle) ; le 3114
+  reste les jours suivants, tant que les jours difficiles durent ; une bonne journée l'efface.
+- **Le dimanche, « Ta semaine en visages »** : ses têtes du lundi au dimanche (un rond vide les jours sans humeur ;
+  dès deux jours donnés), « Une semaine plutôt soleil ☀️ », « en montagnes russes 🎢 » ou « pas facile » (le bouton de
+  partage, alors discret) ; « 📤 Partager » : une image faite dans le téléphone (la feuille de partage, sinon
+  l'enregistrement).
+- **Le seau** : `<habitant>/humeurs.json` (ses humeurs des 21 derniers jours, les phrases déjà dites, la dernière
+  réponse) — pas de table, pas de migration (`humeur-reponse-serveur.ts`).
+- **Les essais** : `scripts/verifier-humeur.mjs`, sans téléphone (les phrases, la veille, les jours difficiles, le
+  dimanche) ; `scripts/navigateur/humeur-reponse.mjs` (Léa et sa remontée, le studio et sa tête du jour ; Hugo et le
+  3114, « Faire un vœu » ; Max et son vœu en route ; Zoé en haut de « Proches », « Je t'aime »).
+
+### 9.0 novatricies 🎭 La conversation vivante (12 novembre) — lots R4a et R4b
+
+Le propriétaire : « durant notre discussion entre proches, qu'est-ce qui va être différenciant, mis à part nos
+figurines qui parlent et qui bougent ? […] il faut qu'il y ait une utilité et du dynamisme dans cette scène » ; la
+proposition acceptée (« oui »), puis « on attaque le lot R4 » : feuille de route, lot R, point 5. Rien ne change à la
+façon de parler : la scène de leur conversation (`proches.tsx`) s'anime, et la conversation se relit d'elle-même.
+
+- **La conversation se relit toutes les 4 s** (page visible ; `GET /api/direct/proches?vivant=<clé>`,
+  `useVivant`) : s'il prépare un message, leurs gestes des sept derniers jours, l'heure de leur dernier message — un
+  message arrivé pendant qu'elle est ouverte : elle se relit, le montre, et leurs figurines sursautent.
+- **« Il prépare un message »** : quand l'autre ouvre « Lui répondre », sa figurine se penche vers la mienne, « … »
+  (la page le redit toutes les 5 s, `action: "prepare"` ; au-delà de 9 s sans nouvelles, c'est fini).
+- **Les silences** (`postureDe`, `vivant.ts`) : après 20 s, elles s'occupent (s'étirer, regarder leur téléphone) ;
+  après une minute, selon leur humeur du jour, elles se lèvent et dansent (joie, euphorie, fou rire, amour, grimace),
+  s'affalent (tristesse, « oh non »), croisent les bras 😤 (colère), ou continuent de s'occuper (pas d'humeur) ; après
+  trois minutes, elles s'endorment, zZz. Une parole, un geste, un message : le silence repart de zéro. (Les postures
+  passent par `rotate`/`translate`, qui s'ajoutent aux transformations de la scène sans les défaire.)
+- **Les réactions avec le corps** : un appui long (ou le clic droit) sur un message, six gestes — 👏 Applaudir, 😂 Mort
+  de rire, ❤️ Cœur, ✋ Check, 🤦 Se taper le front, 😮 Waouh ; sa figurine le fait tout de suite chez lui, chez l'autre
+  quelques secondes après ; l'emoji s'accroche au message. Une réaction par personne et par message (la nouvelle
+  remplace l'ancienne). L'astuce « 👆 Appui long sur un message : ta figurine réagit » s'en va à sa première réaction.
+- **Les panneaux** (🪧, à côté de « Lui répondre ») : « MDR » · « J'arrive ! » · « Rappelle-moi » · « Bravo ! » · « Pas
+  dispo 😴 » · « Je pense à toi » · « Merci ! » · « Ce soir ? » (validés). Sa figurine le brandit, chez les deux ; il
+  reste dans leur fil ; l'autre est prévenu (« 🪧 Zoé : « J'arrive ! » », les mêmes règles qu'une parole :
+  `prevenirDUneParole`, `panneau`). À l'ouverture, son dernier panneau des douze dernières heures se brandit encore.
+- **🎭 L'aparté (R4b)** : après un vrai échange (quatre messages au moins en un quart d'heure, des deux) et deux minutes
+  de silence, la relecture d'après prépare l'aparté (après la réponse, jamais bloquant ; un verrou d'une minute et
+  demie) : le petit modèle du mot de la fin écrit une réplique par figurine (90 signes), sur cet échange et rien
+  d'autre — celle de qui a parlé le premier commence. Visible des deux, sans demande d'accord (le propriétaire) ; leurs
+  deux bulles dans la scène (neuf secondes) et, dans leur fil, « 🎭 Vos figurines, en aparté », « Écrit par vos
+  figurines · IA », « Effacer » (pour les deux). Une fois par échange, une fois par heure et par paire, trois par jour.
+  Pas d'aparté si l'un des deux a coupé « Ma figurine parle pour moi », si un message de l'échange a été signalé, si le
+  sujet est sensible (le modèle le dit), si une réplique ne passe pas les mots interdits ou parle d'alcool. Jamais de
+  commentaire sur ce que l'un pense en secret, jamais d'accord au masculin ou au féminin.
+- **Le seau** (`vivant-serveur.ts`), pas de table, pas de migration : `fils/<paire>/gestes.json` (les 80 derniers
+  gestes), `fils/<paire>/prepare.json`, `fils/<paire>/apartes.json`, `<habitant>/gestes-jour.json` (300 gestes par
+  jour) — qui l'a fait : 8 signes tirés de son identifiant, jamais l'identifiant.
+- **Plus tard** : le résumé au retour (« Pendant ton absence, Léa t'a laissé 4 vocaux : … ») ; un panneau compté dans
+  les non-lus de « Proches » (aujourd'hui, la notification le dit) ; le lieu qui garde la mémoire (lot 6).
+- **L'essai** : `scripts/navigateur/conversation-vivante.mjs` (Léa et Zoé, chacune sur son téléphone : « … », « J'arrive
+  ! » et la notification, 👏 puis ❤️, un message qui arrive, le silence à l'horloge avancée — s'occuper, danser,
+  dormir ; l'aparté de Léa et Nico, une seule fois, effacé ; pas d'aparté avec Eva ni avec Sam ; les refus).
+
+### 9.0 quadragies 🍂 La saison de son univers (12 novembre) — lot 7
 
 Le propriétaire, à qui l'on proposait « son univers change avec le mois » ou « sa figurine s'habille selon le mois » :
 « les deux, ça serait sympa non ? ». Le code : `saison-serveur.ts`.

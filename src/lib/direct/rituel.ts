@@ -14,6 +14,7 @@
  * Voir `docs/univers/feuille-de-route.md` (lot R) et `docs/figurines.md` (9.0). Ce fichier est partagé (page et serveur).
  */
 import { SENTIMENTS, type Sentiment } from "./ma-figurine";
+import type { ReponseHumeur } from "./humeur-reponse";
 
 /** Les humeurs qu'on peut choisir : ses visages, et « la tête dans les mains ». Les plus gaies d'abord. */
 export const HUMEURS: readonly Sentiment[] = ["joie", "rire", "euphorie", "amour", "grimace", "tete", "tristesse", "colere"];
@@ -60,6 +61,8 @@ export type EtatRituel = {
   proches: number;
   fins: FinVue[];
   finsAttente: boolean;
+  /** ☀️ Ce que SA figurine lui a répondu sur son humeur aujourd'hui (lot R3, `humeur-reponse.ts`). */
+  reponse?: ReponseHumeur | null;
 };
 /** Le rituel avec un proche, en haut de leur conversation (et leur mot de la fin de cette nuit). */
 export type RituelAvec = { jour: string; sienne: Sentiment | null; mienne: Sentiment | null; pourLui: MotEcrit | null; pourMoi: MotRecu | null; fin: FinVue | null };

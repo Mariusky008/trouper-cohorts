@@ -81,7 +81,7 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   sa figurine assise, à la demande) : `docs/figurines.md`, 9.0 duotricies 🪑 et 9.0 quinquatricies 🎭.
 - **Le lot 6 (les visites et les souvenirs) est construit** : `docs/figurines.md`, 9.0 sexatricies 🚪.
 - **Le lot 7, première partie** : les mèmes dans l'univers, « Découvrir » montre les univers à visiter (9.0
-  septatricies 🎬🏡). **La saison** : son décor du mois et sa tenue du mois (« les deux », 9.0 octotricies 🍂).
+  septatricies 🎬🏡). **La saison** : son décor du mois et sa tenue du mois (« les deux », 9.0 quadragies 🍂).
   Reste le menu et la carte de personnage : le feu vert pour tout le monde est donné (le 12 novembre).
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
@@ -89,6 +89,18 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
+
+## 0 ter. Le rituel du jour, la suite : R3 et R4 (12 novembre 2026)
+
+Deux lots validés par le propriétaire (feuille de route « Univers », lot R, points 4 et 5) :
+
+- **R3, ma figurine me répond** : son humeur du matin choisie, SA figurine lui dit une phrase (écrite d'avance,
+  validée) et un geste utile la suit ; la veille, le 3114 au troisième jour difficile, « Ta semaine en visages » le
+  dimanche. **Fusionné** (#141 ; `docs/figurines.md`, 9.0 octatricies ☀️).
+- **R4, la conversation vivante** : les figurines vivantes (silences, « il prépare un message », réactions avec le
+  corps), les panneaux, et l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Construit, en
+  PR** (`docs/figurines.md`, 9.0 novatricies 🎭) ; il touche `proches.tsx`, que la session « Univers » modifie aussi :
+  une seule session à la fois.
 
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 

@@ -12,7 +12,9 @@
  *   · DANS « MOI » (`MaFigurineParle`) : « Ma figurine parle pour moi » ;
  *   · 🌙 LE MOT DE LA FIN (lot R2, `LesMotsDeLaFin`) : « Cette nuit, vos figurines se sont parlé » — fermé, à ouvrir ;
  *     leurs deux répliques face à face, « Lui répondre », « Effacer » ; dans la feuille du matin, en haut de « Proches »
- *     et en haut de leur conversation.
+ *     et en haut de leur conversation ;
+ *   · ☀️ MA FIGURINE ME RÉPOND (lot R3, `humeur-reponse.tsx`) : son humeur choisie, SA figurine lui dit une phrase et un
+ *     geste la suit — dans la feuille du matin, et en haut de « Proches » quand il la choisit là.
  * Un mot est toujours dit « écrit par la figurine de Léa · IA » : jamais présenté comme les mots de Léa.
  */
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -21,6 +23,8 @@ import { jourParis } from "@/lib/jour-paris";
 import type { Sentiment } from "@/lib/direct/ma-figurine";
 import { HUMEURS, humeurDe, type EtatRituel, type FinVue, type MotEcrit, type MotRecu, type RituelAvec } from "@/lib/direct/rituel";
 import type { FigurineVue } from "@/lib/direct/talkie";
+import type { ReponseHumeur } from "@/lib/direct/humeur-reponse";
+import { ReponseDeMaFigurine } from "./humeur-reponse";
 
 type Reponse = { ok?: boolean; error?: string };
 const ROUTE = "/api/direct/rituel";
@@ -91,6 +95,7 @@ export function chargerRituel(): Promise<EtatRituel | null> {
         proches: Number(j.proches) || 0,
         fins: j.fins ?? [],
         finsAttente: Boolean(j.finsAttente),
+        reponse: j.reponse ?? null,
       };
       poser(x);
       return x;
@@ -174,6 +179,36 @@ function chargerMaFigurine(): Promise<FigurineVue | null> {
   return maFigurine;
 }
 
+/**
+ * Sa figurine, pour la réponse du matin (lot R3) : relue tant que le visage de son humeur se fabrique (toutes les 8 s,
+ * trois minutes au plus) — il s'affiche dès qu'il est fait.
+ */
+function useMaFigurine(voulu: Sentiment | null): FigurineVue | null {
+  const [fig, setFig] = useState<FigurineVue | null>(null);
+  useEffect(() => {
+    if (!voulu) return;
+    let fini = false;
+    let n = 0;
+    let t = 0;
+    const lire = () =>
+      void chargerMaFigurine().then((f) => {
+        if (fini) return;
+        setFig(f);
+        if (f && !f.expressions[voulu] && ++n < 22)
+          t = window.setTimeout(() => {
+            maFigurine = null;
+            lire();
+          }, 8000);
+      });
+    lire();
+    return () => {
+      fini = true;
+      window.clearTimeout(t);
+    };
+  }, [voulu]);
+  return fig;
+}
+
 /** 🎭 Ses visages qui manquent, faits par le moteur (en arrière-plan, une fois) : ses premières têtes, son humeur. */
 let tetesEnCours = false;
 export function fabriquerMesTetes() {
@@ -207,7 +242,7 @@ export function fabriquerMesTetes() {
 
 /** Il choisit son humeur : le serveur la garde ; les figurines de ses proches écrivent ; son visage se fait s'il manque. */
 async function choisir(visage: Sentiment): Promise<void> {
-  const j = await demander<{ humeur: Sentiment; ecrire: boolean }>({
+  const j = await demander<{ humeur: Sentiment; ecrire: boolean; reponse?: ReponseHumeur | null }>({
     action: "humeur",
     visage,
   });
@@ -215,6 +250,8 @@ async function choisir(visage: Sentiment): Promise<void> {
     poser({
       ...etat,
       humeur: j.humeur,
+      // ☀️ SA figurine lui répond, tout de suite (lot R3)
+      reponse: j.reponse ?? null,
       ...(j.ecrire ? { mots: [], attente: true } : {}),
     });
   void chargerRituel();
@@ -267,6 +304,7 @@ export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondr
   const [erreur, setErreur] = useState("");
   const [envoi, setEnvoi] = useState(false);
   useAttente(ouverte && Boolean(r?.attente || r?.finsAttente));
+  const fig = useMaFigurine(ouverte ? (r?.reponse?.humeur ?? null) : null);
 
   useEffect(() => {
     if (!actif || vue) return;
@@ -318,6 +356,7 @@ export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondr
             <b className="rt-question">
               Ton humeur : {humeurDe(r.humeur)?.emoji} {humeurDe(r.humeur)?.court}
             </b>
+            {r.reponse && <ReponseDeMaFigurine reponse={r.reponse} fig={fig} onAller={() => setOuverte(false)} />}
             <MotsDesFigurines r={r} onRepondre={(cle) => (setOuverte(false), onRepondre(cle))} />
             <button type="button" className="pr-bouton grand" onClick={() => setOuverte(false)}>
               C’est parti
@@ -459,7 +498,10 @@ export function MonHumeur({ visible, onRepondre }: { visible: boolean; onRepondr
   const [changer, setChanger] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
+  // ☀️ il vient de la choisir ici : sa figurine lui répond (lot R3)
+  const [repondu, setRepondu] = useState(false);
   useAttente(visible && Boolean(r?.attente || r?.finsAttente));
+  const fig = useMaFigurine(repondu ? (r?.reponse?.humeur ?? null) : null);
   useEffect(() => {
     if (visible) void chargerRituel();
   }, [visible]);
@@ -471,6 +513,7 @@ export function MonHumeur({ visible, onRepondre }: { visible: boolean; onRepondr
     try {
       await choisir(v);
       setChanger(false);
+      setRepondu(true);
     } catch (e) {
       setErreur(message(e));
     } finally {
@@ -501,6 +544,7 @@ export function MonHumeur({ visible, onRepondre }: { visible: boolean; onRepondr
                 Changer
               </button>
             </div>
+            {repondu && r.reponse && <ReponseDeMaFigurine reponse={r.reponse} fig={fig} petit />}
             <MotsDesFigurines r={r} onRepondre={onRepondre} />
           </>
         )}

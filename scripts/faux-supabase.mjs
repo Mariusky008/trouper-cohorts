@@ -717,6 +717,14 @@ http
           const fin = { sensible: false, premiere: `Hier, c’était « ${sujet}… » 😄 On en reparle ?`, seconde: "Je garde la suite pour ce soir. Tu commences ?" };
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify(fin) } }] });
         }
+        // 🎭 l'aparté de deux figurines (lot R4b) : deux répliques sur l'échange qui vient de finir — « sensible » quand l'un est malade
+        if (consigne.includes("FONT UN APARTÉ")) {
+          const msgs = JSON.parse(/Leurs messages, dans l'ordre \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
+          if (msgs.some((m) => /malade/i.test(m.texte))) return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ sensible: true }) } }] });
+          const sujet = String(msgs[0]?.texte ?? "").split(/\s+/).slice(0, 3).join(" ");
+          const aparte = { sensible: false, premiere: `Ça parle de « ${sujet}… » ici 👀`, seconde: "Moi j’écoute, et je prends des notes 📝" };
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify(aparte) } }] });
+        }
         // ☀️ le rituel du jour : un mot par figurine sur son humeur — le deuxième parle d'apéro (le filtre doit le refuser)
         if (consigne.includes("UN petit mot sur cette humeur")) {
           const figs = JSON.parse(/Les figurines \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");

@@ -576,7 +576,7 @@ La carte de personnage laisse la place à la conversation. La figurine du mois d
 se jouent dans son univers (son décor, sa figurine assise, ses visages du nouveau style) ; « Découvrir » : « 🏡 Les
 univers à visiter » (ceux ouverts à tout le monde). **La saison** (le propriétaire, le 12 novembre : « les deux ») :
 son décor du mois (fait à sa première visite du mois) et sa tenue du mois (méritée, au nouveau style, assise chez lui) ;
-le détail : 9.0 octotricies 🍂. **Reste** : le menu et la carte de personnage, avec le feu vert pour tout le monde
+le détail : 9.0 quadragies 🍂. **Reste** : le menu et la carte de personnage, avec le feu vert pour tout le monde
 (donné le 12 novembre).
 
 ### Lot R — Le rituel du jour (précision du propriétaire, 11 novembre 2026)
@@ -640,6 +640,49 @@ façon de parler), la petite scène des deux figurines face à face.
 
 **On a réussi si** les gens choisissent leur humeur le matin, ouvrent ce que les figurines ont dit, et répondent
 ensuite à leur proche.
+
+**4. Ma figurine me répond — lot R3** (le propriétaire, le 12 novembre 2026 : « quand je donne ma mood le matin, est-ce
+qu'on pourrait avoir quelque chose : notre figurine qui nous dirait quelque chose ? » ; puis « oui, tout est bien,
+vas-y »). Aujourd'hui, ce sont les figurines de ses proches qui lui écrivent, et plus tard : lui, sur le moment, n'a rien
+(et quelqu'un sans proches n'a rien du tout).
+- **Tout de suite**, SA figurine prend le visage choisi et lui dit une phrase, écrite, sans voix ; **la phrase finit sur
+  un geste utile** : la joie et l'euphorie, « 📲 Envoyer ma tête du jour » (le studio, ce visage, « Ma tête du jour ») ;
+  le fou rire, « 💬 Raconter à un proche » ; l'amour, « 😍 Le mème « Je t'aime » » ; la grimace, « 🎭 Un mème avec
+  cette tête » ; la tristesse, la colère, « oh non » : un mot doux, sans blague ni conseil, et « ✨ Faire un vœu » (ou
+  « 💬 Écrire à un proche » s'il en a un en route), en discret.
+- **Elle se souvient de la veille** : une remontée, une descente, une série de bonne humeur, deux jours difficiles, un
+  changement (pas deux jours de suite).
+- **Au troisième jour difficile d'affilée** : un mot doux à part, et en petit « Si ça ne va vraiment pas, le 3114 répond
+  jour et nuit » (qui reste tant que les jours difficiles durent).
+- **Le dimanche, « Ta semaine en visages »** : ses sept têtes, une phrase (soleil, montagnes russes, ou pas facile), à
+  partager en image.
+- **Les phrases** : une dizaine par humeur, écrites d'avance et validées par le propriétaire (instantané, sans coût,
+  sans risque) ; l'IA pourra les personnaliser plus tard, dans le style de sa carte de personnage.
+
+**Construit (12 novembre 2026)** — `docs/figurines.md`, 9.0 octatricies ☀️. **Reste** : que sa figurine garde son
+humeur toute la journée dans son univers et dans les conversations (affalée, ou en train de danser) : avec le lot R4.
+
+**5. La conversation vivante — lot R4** (le propriétaire, le 12 novembre 2026 : « qu'est-ce qui va être différenciant,
+mis à part nos figurines qui parlent et qui bougent ? Il faut qu'il y ait une utilité et du dynamisme dans cette
+scène » ; puis « oui » au premier lot proposé, et « on attaque le lot R4 »). **Construit (12 novembre 2026), R4a et
+R4b** — `docs/figurines.md`, 9.0 novatricies 🎭. Il touche la scène de la conversation (`proches.tsx`), qu'une seule
+session doit reprendre à la fois.
+- **R4a, sans IA — les figurines vivantes** : quand l'autre enregistre, sa figurine se penche, main levée, « … » ;
+  pendant les silences, elles s'étirent, regardent leur téléphone (20 s), puis selon l'humeur du jour se lèvent et
+  dansent (sur la musique de l'univers), s'affalent ou croisent les bras (1 min), puis s'endorment, zZz (3 min) ; un
+  message arrive : elles sursautent. **Les réactions avec le corps** (un appui long sur un message : applaudir, mort de
+  rire, cœur, check, se taper le front, waouh), dans les deux scènes. **Les panneaux** (un toucher, sa figurine brandit
+  une pancarte, vue des deux) : « MDR » · « J'arrive ! » · « Rappelle-moi » · « Bravo ! » · « Pas dispo 😴 » · « Je
+  pense à toi » · « Merci ! » · « Ce soir ? » (liste validée). Son humeur du jour se voit dans la scène toute la journée.
+- **R4b — l'aparté des deux figurines** : après un vrai échange (chacun a parlé, au moins quatre messages en un quart
+  d'heure) et deux minutes de silence, elles se tournent l'une vers l'autre, une bulle chacune, « écrit par vos
+  figurines · IA ». **Visibles des deux, sans demande d'accord** (le propriétaire : « pas besoin d'accord, mais visibles
+  des deux ») ; jamais de commentaire privé sur l'autre ; « Ma figurine parle pour moi » (dans « Moi ») les fait taire,
+  et chacun peut en effacer un. Une fois par heure et par paire au plus, trois par jour. Les garde-fous du mot de la fin
+  (cet échange seulement, rien sur un sujet sensible, ni amour, ni corps, ni santé, ni argent ; taquin sans moquerie ;
+  aucun accord au masculin ou au féminin). Un appel au petit modèle par aparté.
+- **Plus tard** : le résumé au retour (« Pendant ton absence, Léa t'a laissé 4 vocaux : … »), et le lieu qui garde la
+  mémoire (un moment marquant devient un objet de l'univers, lot 6).
 
 ### Plus tard (préparé, pas construit)
 
