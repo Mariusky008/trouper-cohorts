@@ -473,7 +473,7 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
         </div>
       )}
       {etat.saison?.enCours && (
-        <p className="um-petit" role="status">
+        <p className="um-pare" role="status">
           {etat.saison.emoji} Ton univers se pare pour {etat.saison.nom}… Reviens dans un instant.
         </p>
       )}
@@ -734,7 +734,7 @@ const STYLES = `
 .um-pablito.travaille{animation:um-sculpte 1.7s ease-in-out infinite}
 .um-titre{margin:0;font-size:26px;font-weight:800}
 .um-doux{margin:0;color:#4a3017;line-height:1.45}
-.um-petit{margin:0;font-size:13px;color:#4a3017;text-align:center}
+.um-petit,.um-pare{margin:0;font-size:13px;color:#4a3017;text-align:center}
 .um-texte{margin:0;padding:14px;border-radius:18px;background:rgba(255,250,240,.9);font-size:17px;line-height:1.5;text-align:left}
 .um-erreur{margin:0;max-width:460px;padding:10px 12px;border-radius:12px;background:#fde3dc;color:#8a1c14}
 .um-bouton{align-self:stretch;min-height:52px;border:0;border-radius:16px;background:#2b1a0c;color:#fff6e6;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 6px 16px rgba(43,26,12,.25)}

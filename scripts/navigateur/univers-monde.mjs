@@ -118,6 +118,8 @@ const proportion = await p.evaluate(() => {
 ok(proportion >= 0.42 && proportion <= 0.6, `sa figurine est grande chez elle, au premier plan (${Math.round(proportion * 100)} % de la scène)`);
 await p.locator(".um-fauteuil .um-lien", { hasText: "Il me plaît" }).click();
 ok((await p.locator(".um-fauteuil").count()) === 0, "« Il me plaît ! » : l'annonce se range");
+await p.waitForSelector(".um-saison", { timeout: 30000 }).catch(() => null);
+ok(/\p{L}/u.test(await texte(".um-saison")), `🍂 le thème du mois, en badge sur la scène (${await texte(".um-saison")})`);
 await p.locator(".um-musique").click();
 ok((await p.locator('.um-musique[aria-pressed="false"]').innerText()) === "🔇", "la musique se coupe d'un toucher");
 await p.locator(".um-onglets button", { hasText: "L’image à partager" }).click();
