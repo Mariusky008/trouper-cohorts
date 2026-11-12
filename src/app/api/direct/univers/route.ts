@@ -11,7 +11,7 @@
 //                                            ce relevé ; une fois par version)
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isCurrentUserAdmin } from "@/lib/admin-guard";
+import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { etatUnivers, fabriquerUnivers, lancerCreation, mesurerSaFigurine, retoucherUnivers, revenirUnivers } from "@/lib/direct/univers-creation-serveur";
 import { fabriquerDecorDeSaison } from "@/lib/direct/saison-serveur";
@@ -24,7 +24,7 @@ const sansCache = { "cache-control": "private, no-store" };
 const REFUS = { error: "Bientôt 🙂" };
 
 export async function GET() {
-  if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
+  if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   const etat = await etatUnivers(supabase, moi?.id ?? null);
@@ -37,7 +37,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
+  if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
   const avant = Date.now() + maxDuration * 1000 - 20_000;
   const p = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const supabase = createAdminClient();

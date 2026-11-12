@@ -152,7 +152,7 @@ function image(dataUrl: unknown): Buffer | null {
 }
 
 // ─── où il en est ──────────────────────────────────────────────────────────────────────────────
-async function prenomDe(supabase: Supabase, habitant: Habitant): Promise<string> {
+export async function prenomDe(supabase: Supabase, habitant: Habitant): Promise<string> {
   if (habitant.prenom) return habitant.prenom;
   const { data } = await supabase.from("clik_cage").select("prenom, updated_at").eq("habitant_id", habitant.id).order("updated_at", { ascending: false }).limit(1);
   return s((Array.isArray(data) ? (data[0] as Ligne | undefined) : undefined)?.prenom);
