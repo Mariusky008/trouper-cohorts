@@ -1,4 +1,4 @@
-# Reprise — où on en est, et ce qu'il reste à faire (12 novembre 2026 : lots 0 à 2 « Univers » faits, la figurine validée ; le lot 3, la conversation, est à l'adresse d'essai du propriétaire)
+# Reprise — où on en est, et ce qu'il reste à faire (12 novembre 2026 : lots 0 à 2 « Univers » faits, la figurine validée ; la conversation (lot 3) et la création de l'univers (lot 4a) sont à l'adresse d'essai du propriétaire)
 
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
@@ -67,9 +67,12 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   transition, la conversation écrite (et la dictée), l'esquisse, les trois colonnes, la proposition, les corrections,
   « C'est mon univers ! » (la fiche de son univers), les garde-fous (le sujet sensible non gardé, le message d'aide et
   les numéros). Ses trois décisions déléguées : feuille de route, lot 3. Détail : `docs/figurines.md`, 9.0 tricies.
-- **La suite** : son avis sur une vraie conversation ; le lot 4 (la création de l'univers) ; puis, le parcours complet
-  en main, le feu vert pour tout le monde (les figurines d'aujourd'hui refaites, Pablito au nouveau style, les visages
-  du nouveau style). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
+- **Le lot 4a (la création de son univers) est construit à l'adresse d'essai** `/univers/monde` : le décor d'après sa
+  fiche, les places, l'image vedette, la découverte (la brume, sa figurine chez elle), les clés, les retouches,
+  revenir en arrière. Détail : `docs/figurines.md`, 9.0 untricies.
+- **La suite** : son avis sur le parcours complet (figurine, conversation, univers) ; le lot 4b (le fauteuil aux
+  couleurs de l'univers, « Mon univers » écran d'accueil) ; puis le feu vert pour tout le monde (les figurines
+  d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
   tournent dans l'appli en ligne, il les regarde sur son iPhone.
 - **Un piège de vocabulaire** : dans le code d'aujourd'hui, « univers » désigne le métier ou la passion qui habille la
   figurine (`<habitant>/univers.json`, `universValide`). Le nouvel univers se range dans `<habitant>/monde/`.
