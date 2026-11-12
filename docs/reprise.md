@@ -46,7 +46,9 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 - **Le premier verdict** (feuille de route, lot 0) : la figurine recopiait la photo (il veut la tête re-sculptée,
   en caricature de collection) ; les univers doivent ressembler à un film d'animation riche et magique ; la scène de
   deux figurines doit être mise en scène par le moteur, pas composée dans le téléphone. **La deuxième série est sur la
-  page.**
+  page.** À chaque série qui change les boutons, augmenter `VERSION_PAGE_ESSAIS` (`lib/direct/univers-essais.ts`) :
+  une page restée ouverte d'avant affiche alors « Recharger la page » au lieu d'envoyer des choix disparus (le 12
+  novembre, « Diorama miniature » refusé sur l'iPhone du propriétaire).
 - **La suite** : son verdict sur la deuxième série, écrit dans la feuille de route (lot 0), puis le lot 1 (le socle)
   et le lot 2 (la nouvelle figurine) avec les consignes retenues. Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les
   essais tournent dans l'appli en ligne, il les regarde sur son iPhone.
