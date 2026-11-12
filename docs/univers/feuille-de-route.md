@@ -574,8 +574,10 @@ La carte de personnage laisse la place à la conversation. La figurine du mois d
 
 **Construit (12 novembre 2026), première partie** ; le détail : `docs/figurines.md`, 9.0 septatricies 🎬🏡. Les mèmes
 se jouent dans son univers (son décor, sa figurine assise, ses visages du nouveau style) ; « Découvrir » : « 🏡 Les
-univers à visiter » (ceux ouverts à tout le monde). **Reste** : la saison de l'univers (à trancher) ; le menu et la
-carte de personnage, avec le feu vert pour tout le monde.
+univers à visiter » (ceux ouverts à tout le monde). **La saison** (le propriétaire, le 12 novembre : « les deux ») :
+son décor du mois (fait à sa première visite du mois) et sa tenue du mois (méritée, au nouveau style, assise chez lui) ;
+le détail : 9.0 quadragies 🍂. **Reste** : le menu et la carte de personnage, avec le feu vert pour tout le monde
+(donné le 12 novembre).
 
 ### Lot R — Le rituel du jour (précision du propriétaire, 11 novembre 2026)
 
@@ -789,6 +791,10 @@ Rien ne bloque le lot 0. À décider en chemin :
 7. ~~**Le rituel du jour (lot R)**~~ — tranché le 11 novembre 2026, « oui pour tout » : construit maintenant sur
    l'appli d'aujourd'hui ; le mot de la fin la nuit, découvert le matin ; trois figurines au plus réagissent ; celui
    dont la figurine parle voit ses mots, les efface, peut tout couper.
+8. ~~La saison de l'univers~~ — tranchée le 12 novembre 2026, « les deux » : son décor change avec le mois, et sa
+   figurine du mois (méritée) s'habille et s'assoit chez lui.
+9. ~~Le feu vert pour tout le monde~~ — donné le 12 novembre 2026 : le nouvel accueil et le nouveau menu, les
+   figurines actuelles refaites, Pablito au nouveau style. Construit derrière un seul interrupteur, allumé à la fin.
 
 ## 14. Les mots
 

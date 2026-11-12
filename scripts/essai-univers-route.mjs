@@ -142,6 +142,22 @@ ok(
   "chaque image signée, dans sa version (le décor : rien en entrée ; la vedette : son décor et sa figurine, dans son nouveau fauteuil)",
 );
 ok((await appeler(LEA, { action: "creer" })).statut === 409, "un univers créé ne se recrée pas : il se retouche");
+
+// ═══ 🍂 LA SAISON (lot 7) : son décor du mois, fait à sa première visite du mois ═══
+const es = await attendre(LEA, (e) => e.saison?.decor === true);
+const saison = (await ia()).find((c) => c.startsWith("IMAGE ") && c.includes("Dress it for the season «"));
+ok(es.saison?.decor === true && Boolean(es.saison.nom) && /\/saisons\//.test(decodeURIComponent(es.decor ?? "")) && Boolean(saison) && saison.includes("EMPTY"), `🍂 son décor du mois (${es.saison?.emoji} ${es.saison?.nom}) : le même lieu, paré du thème, l'espace devant libre`);
+ok(es.saison?.tenue === false && !es.figurine?.assise?.includes("/mois/"), "sa tenue du mois : pas encore méritée (sa figurine de tous les jours)");
+// sa figurine du mois, méritée et faite au nouveau style : c'est elle qui s'assoit chez lui ce mois-ci
+const MOIS = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()).slice(0, 7);
+await json(`${LEA.id}/mois/${MOIS}.json`, { mois: MOIS, image: `${LEA.id}/mois/${MOIS}.webp`, expression: "fier", le: new Date().toISOString() });
+await deposer(`${LEA.id}/mois/${MOIS}.webp`, Buffer.from("RIFF0000WEBP"), "image/webp");
+await deposer(`${LEA.id}/mois/${MOIS}-p.webp`, Buffer.from("RIFF0000WEBP"), "image/webp");
+ok((await appeler(LEA)).saison?.tenue === false, "une figurine du mois de l'ancien style ne s'assoit pas chez lui");
+await json(`${LEA.id}/mois/${MOIS}.json`, { mois: MOIS, image: `${LEA.id}/mois/${MOIS}.webp`, expression: "fier", style: "collection-1", le: new Date().toISOString() });
+const et = await appeler(LEA);
+ok(et.saison?.tenue === true && et.figurine?.assise?.includes(`/mois/${MOIS}.webp`) && et.figurine?.parle?.includes(`/mois/${MOIS}-p.webp`), "🗓️ sa tenue du mois (au nouveau style) : c'est elle qui s'assoit chez lui, et qui parle");
+await json(`${LEA.id}/mois/${MOIS}.json`, {});
 const m1 = await appeler(LEA, { action: "mesurer" });
 ok(m1.statut === 200 && m1.version === 1 && !(await appeler(LEA)).scene?.figurine && (await lire(`${LEA.id}/monde/creation.json`))?.mesure === 1, "📏 sa figurine relevée sur l'image vedette : demandée une fois (sans modèle qui voit, rien ne change)");
 

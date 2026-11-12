@@ -78,6 +78,33 @@ export const consigneVedette = () => consigneScene(1, SITUATION_VEDETTE);
 
 /** Les places, la lumière, et où sont les éléments : relevés par un modèle qui regarde le décor. */
 /**
+ * 🍂 LE DÉCOR DE SAISON (lot 7, « la figurine du mois devient la saison de son univers » ; le propriétaire : « les deux,
+ * ça serait sympa ») : chaque mois, son décor se pare du thème du mois — le même lieu, le même cadrage, la même
+ * lumière, l'espace devant toujours libre. Fait sur son décor (IMAGE 1), une fois par mois.
+ */
+export const TOUCHES_DE_SAISON: Record<string, string> = {
+  galette: "a golden galette des rois on a table with a little paper crown beside it, soft winter light",
+  "saint-valentin": "a few red and pink paper hearts, a small bouquet of red roses, a warm romantic glow",
+  printemps: "fresh spring flowers in vases and pots, blossoming branches outside, bright fresh light",
+  paques: "a few painted Easter eggs in a basket, spring flowers, a chocolate bunny on a shelf",
+  "fete-des-meres": "a beautiful bouquet of fresh flowers and a small handmade card on a table",
+  musique: "a guitar leaning against the wall, string lights, a few music notes painted on a little banner",
+  ete: "bright summer sunlight, a straw hat and sunglasses on a table, fresh fruit, plants in full bloom",
+  vacances: "a beach towel, a straw hat, a suitcase and a few seashells, a relaxed holiday mood",
+  rentree: "a school bag, neatly stacked new notebooks and pencils, early autumn light",
+  halloween: "carved pumpkins with a warm glow, a few friendly paper bats, autumn leaves — playful, never scary",
+  automne: "warm orange and red autumn leaves, a cosy knitted blanket, a few pumpkins and pinecones",
+  noel: "a decorated little Christmas tree with warm fairy lights, a few wrapped presents, a garland, snow outside the window",
+};
+export function consigneDecorDeSaison(nomEdition: string, touche: string): string {
+  return [
+    "IMAGE 1 is the decor of a personal universe, in the style of a warm animated film. Make a new image of the very same decor: the same place, the same framing, the same objects, the same direction of light, the same style.",
+    `Dress it for the season « ${nomEdition} » with a few touches: ${touche}. Subtle and charming: the place must still be recognized at first glance.`,
+    "Keep the open space in the foreground completely EMPTY (figurines will be placed there later). NO figurine, no person, no text, no logo, nothing alcoholic.",
+  ].join("\n");
+}
+
+/**
  * 📏 Où le moteur a posé sa figurine sur l'image vedette, et à quelle taille : c'est ce qui la place chez elle, à
  * l'échelle de la pièce (le propriétaire, le 12 novembre : « je suis encore petit, ça ne fait pas naturel »).
  */

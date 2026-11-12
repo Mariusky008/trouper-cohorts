@@ -22,6 +22,7 @@ import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { VISIBILITES, type FicheMonde, type Visibilite } from "./monde";
 import { motInterdit } from "./mots-interdits";
+import { decorDuMoment, tenueDuMois } from "./saison-serveur";
 import { assiseDe, hDeCle, poserProfil, seParlent } from "./talkie-serveur";
 import { MOT_SOUVENIR_MAX, SOUVENIRS_EN_ATTENTE_MAX, SOUVENIRS_POSES_MAX, motDeSouvenir, objetValide, type MesVisites, type SouvenirVu, type UniversPublic, type VueVisite } from "./visites";
 
@@ -89,12 +90,14 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
   const acces = await peutEntrer(supabase, visiteur?.id ?? null, h, f);
   const hote = await quiEst(supabase, h);
   if (!acces.ok) return { etat: f.visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
-  const [decor, assise, moi, visites, souvenirs] = await Promise.all([
-    signer(supabase, f.references.decor.chemin, 3600),
+  const [decor, assise, moi, visites, souvenirs, tenue] = await Promise.all([
+    // (🍂 son décor du mois, quand il est fait ; sa figurine dans sa tenue du mois, si elle l'a méritée)
+    decorDuMoment(supabase, h, f).then((d) => signer(supabase, d.chemin || f.references.decor!.chemin, 3600)),
     assiseDe(supabase, h).catch(() => undefined),
     visiteur && visiteur.id !== h ? quiEst(supabase, visiteur.id) : Promise.resolve(null),
     lireVisites(supabase, h),
     acces.proche ? lireSouvenirs(supabase, h) : Promise.resolve([] as Souvenir[]),
+    tenueDuMois(supabase, h).catch(() => null),
   ]);
   if (!decor || !assise) return { etat: "absent" };
   const place = f.scene.figurine ?? null;
@@ -111,7 +114,7 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     prenom: hote.prenom,
     proposition: f.proposition,
     decor,
-    hote: { image: assise.n, parle: assise.p, ...(place ? { x: place.x, y: place.y, hauteur: place.hauteur } : { x: hotePlace.x, y: hotePlace.y }) },
+    hote: { image: tenue?.n ?? assise.n, parle: tenue?.p ?? assise.p, ...(place ? { x: place.x, y: place.y, hauteur: place.hauteur } : { x: hotePlace.x, y: hotePlace.y }) },
     invite: { x: invite.x, y: invite.y, echelle: invite.echelle, ...(moi?.image ? { image: moi.image, ...(moi.assise ? { assise: true } : {}) } : {}) },
     proche: acces.proche,
     // (ses clés, ses propres phrases : à ses proches seulement)

@@ -2443,8 +2443,7 @@ Le propriétaire : « en attendant on peut faire […] le lot 7 ».
 - **« Découvrir » montre les figurines chez elles** : après « Mon vœu », une page « 🏡 Les univers à visiter » — ceux
   qu'on a ouverts à tout le monde (lot 6 ; l'index `univers/publics.json`, tenu par `choisirVisibilite`), leur figurine
   chez elle (l'image vedette) ; un toucher, et on entre (`/univers/chez/<clé>`). Rien quand il n'y en a pas.
-- **La saison de l'univers** (la figurine du mois) : pas encore construite — à trancher avec le propriétaire (son
-  univers qui change avec le mois, ou sa figurine qui s'habille, chez elle).
+- **La saison de l'univers** (la figurine du mois) : voir 9.0 quadragies (le propriétaire : « les deux »).
 - **Les essais** : `scripts/navigateur/visite-univers.mjs` (« Découvrir » : Chez Marc).
 
 ### 9.0 octatricies ☀️ Ma figurine me répond : l'humeur du matin (12 novembre) — lot R3
@@ -2525,6 +2524,29 @@ façon de parler : la scène de leur conversation (`proches.tsx`) s'anime, et la
 - **L'essai** : `scripts/navigateur/conversation-vivante.mjs` (Léa et Zoé, chacune sur son téléphone : « … », « J'arrive
   ! » et la notification, 👏 puis ❤️, un message qui arrive, le silence à l'horloge avancée — s'occuper, danser,
   dormir ; l'aparté de Léa et Nico, une seule fois, effacé ; pas d'aparté avec Eva ni avec Sam ; les refus).
+
+### 9.0 quadragies 🍂 La saison de son univers (12 novembre) — lot 7
+
+Le propriétaire, à qui l'on proposait « son univers change avec le mois » ou « sa figurine s'habille selon le mois » :
+« les deux, ça serait sympa non ? ». Le code : `saison-serveur.ts`.
+
+- **Le décor du mois** : à sa première visite du mois (le `GET` de `/api/direct/univers`), son décor se pare du thème du
+  mois, après la réponse — le même lieu, le même cadrage, la même lumière, quelques touches (`TOUCHES_DE_SAISON` et
+  `consigneDecorDeSaison` de `monde-consignes.ts` : une galette en janvier, des citrouilles qui sourient en octobre,
+  un petit sapin en décembre ; jamais rien d'alcoolisé), l'espace devant toujours libre. Une image haute par personne et
+  par mois (environ 4 à 8 centimes), rangée à part : `<habitant>/monde/saisons/<mois>-<empreinte de son décor>.png` (une
+  retouche de son univers en refait un, le mois suivant aussi) ; un verrou de cinq minutes. Pendant qu'il se fait :
+  « 🎄 Ton univers se pare pour Noël… Reviens dans un instant. » (la page relit toutes les 25 secondes, six fois au plus).
+  Partout où son décor se montre — chez lui, en visite, dans ses conversations jouées chez lui, ses vidéos WhatsApp et
+  ses mèmes —, c'est celui du mois quand il est fait (`decorDuMoment`). Sur la scène, un badge : « 🍂 Automne ».
+- **La tenue du mois** : sa figurine du mois, méritée comme avant (dix jours sur ClikMe dans le mois), se fait au
+  nouveau style quand il a sa figurine assise : la même figurine, dans le même fauteuil, habillée du thème, détourée
+  (`consigneTenueAssise` et `consigneBoucheTenueAssise` de `perso-consignes.ts` ; la fiche du mois porte
+  `style: "collection-1"`). Ce mois-là, c'est elle qui s'assoit chez lui (et qui parle : sa bouche ouverte)
+  (`tenueDuMois`) ; elle reste aussi un look du studio, comme avant. Sans figurine du nouveau style, rien ne change.
+- **Les essais** : `scripts/essai-univers-route.mjs` (le décor du mois fait à la première visite, la consigne ; la
+  tenue du mois de l'ancien style qui ne s'assoit pas, celle du nouveau qui s'assoit et parle),
+  `scripts/verifier-fiches.mjs` (chaque mois a sa touche, les consignes).
 
 ### 9.1 L'idée en une phrase
 

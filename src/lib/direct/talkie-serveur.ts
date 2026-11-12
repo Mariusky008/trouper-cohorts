@@ -51,6 +51,7 @@ import {
 } from "./ma-figurine-serveur";
 import { motInterdit } from "./mots-interdits";
 import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
+import { decorDuMoment } from "./saison-serveur";
 import { humeurValide } from "./rituel";
 import {
   LIENS_PAR_JOUR,
@@ -167,7 +168,8 @@ export async function assiseDe(supabase: Supabase, h: string): Promise<{ n: stri
 export async function chezLui(supabase: Supabase, h: string): Promise<ChezMoi | undefined> {
   const f = await lireFicheMonde(supabase, h);
   if (!f?.references.decor) return undefined;
-  const decor = await signer(supabase, f.references.decor.chemin, 3600);
+  // (🍂 son décor du mois, quand il est fait)
+  const decor = await signer(supabase, (await decorDuMoment(supabase, h, f)).chemin || f.references.decor.chemin, 3600);
   if (!decor) return undefined;
   const place = (id: string, defaut: PlaceChezMoi): PlaceChezMoi => {
     const p = f.scene.places.find((x) => x.id === id);

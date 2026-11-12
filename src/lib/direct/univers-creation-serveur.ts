@@ -33,6 +33,7 @@ import { motInterdit } from "./mots-interdits";
 import { fauteuilAuxCouleurs, type Fauteuil, type FichePerso } from "./perso";
 import { consigneFauteuil, consigneMemeFigurine } from "./perso-consignes";
 import { signatureDe } from "./signature-serveur";
+import { decorDeSaisonAFaire, decorDuMoment, saisonDuMois, tenueDuMois } from "./saison-serveur";
 import { RETOUCHES_OFFERTES, RETOUCHES_PAR_JOUR, retoucheUniversValide, type EtapeCreation, type EtatUnivers } from "./univers-creation";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -89,7 +90,15 @@ export async function etatUnivers(supabase: Supabase, h: string | null): Promise
     parle ? signer(supabase, parle) : "",
     auxCouleurs && assise.signature?.entrees[0] ? signer(supabase, assise.signature.entrees[0]) : "",
   ]);
-  const figurine = a ? { figurine: { assise: a, ...(p ? { parle: p } : {}) } } : {};
+  // 🍂 la saison : sa tenue du mois (méritée, au nouveau style), son décor du mois
+  const [tenue, moment, aFaire] = await Promise.all([
+    a ? tenueDuMois(supabase, h).catch(() => null) : Promise.resolve(null),
+    decorDuMoment(supabase, h, f).catch(() => ({ chemin: "", saison: false })),
+    f?.references.decor ? decorDeSaisonAFaire(supabase, h).catch(() => false) : Promise.resolve(false),
+  ]);
+  const figurine = a ? { figurine: tenue ? { assise: tenue.n, ...(tenue.p ? { parle: tenue.p } : {}) } : { assise: a, ...(p ? { parle: p } : {}) } } : {};
+  const decorSaison = moment.saison ? await signer(supabase, moment.chemin) : "";
+  const edition = saisonDuMois();
   // (pas encore d'univers : sa figurine dit s'il doit d'abord la faire — l'accueil, `/univers`, l'y mène)
   if (!f) return { ...vide, ...figurine };
   const commun: EtatUnivers = {
@@ -103,8 +112,9 @@ export async function etatUnivers(supabase: Supabase, h: string | null): Promise
     retouches: { restantes: retouchesRestantes(c), offertes: RETOUCHES_OFFERTES },
     ...figurine,
     ...(auxCouleurs && perso ? { fauteuil: { version: perso.version, ...(fauteuilAvant ? { avant: fauteuilAvant } : {}) } } : {}),
-    ...(decor ? { decor } : {}),
+    ...(decorSaison || decor ? { decor: decorSaison || decor } : {}),
     ...(vedette ? { vedette } : {}),
+    ...(decor ? { saison: { nom: edition.nom, emoji: edition.emoji, decor: Boolean(decorSaison), ...(aFaire ? { enCours: true } : {}), tenue: Boolean(tenue) } } : {}),
     ...(f.version > 1 ? { avant: f.version - 1 } : {}),
   };
   if (enCours(c, f.version)) return { ...commun, etape: "creation", creation: { etape: c.etape as EtapeCreation, ...(c.retouche ? { retouche: c.retouche } : {}) } };

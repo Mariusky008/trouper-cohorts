@@ -14,6 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { etatUnivers, fabriquerUnivers, lancerCreation, mesurerSaFigurine, retoucherUnivers, revenirUnivers } from "@/lib/direct/univers-creation-serveur";
+import { fabriquerDecorDeSaison } from "@/lib/direct/saison-serveur";
 
 export const dynamic = "force-dynamic";
 // (le décor, puis l'image vedette : une minute environ chacun, après la réponse)
@@ -26,7 +27,13 @@ export async function GET() {
   if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
-  return NextResponse.json({ ok: true, ...(await etatUnivers(supabase, moi?.id ?? null)) }, { headers: sansCache });
+  const etat = await etatUnivers(supabase, moi?.id ?? null);
+  // 🍂 sa première visite du mois : son décor du mois se fait, après la réponse
+  if (moi && etat.saison?.enCours) {
+    const avant = Date.now() + maxDuration * 1000 - 20_000;
+    after(() => fabriquerDecorDeSaison(supabase, moi.id, avant));
+  }
+  return NextResponse.json({ ok: true, ...etat }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
