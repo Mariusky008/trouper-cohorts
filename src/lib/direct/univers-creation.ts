@@ -9,7 +9,12 @@
  *  10. LES RETOUCHES avec ses mots, plafonnées (trois offertes, puis une par jour) : une nouvelle version, le même décor
  *      où une seule chose change ; revenir à la version d'avant.
  *
- * D'abord à l'adresse d'essai du propriétaire (`/univers/monde`). Ce fichier est partagé (l'écran et le serveur).
+ * LOT 4b : SON FAUTEUIL prend les couleurs de son monde (une nouvelle version de sa figurine, faite sur son image
+ * « assise », avant l'image vedette : « 🪑 Ton fauteuil a pris les couleurs de ton monde ») ; « MON UNIVERS » DEVIENT
+ * L'ACCUEIL (`/univers`) : son univers, et le menu de demain (Découvrir · Autour · Créer · Proches · Mon univers).
+ *
+ * D'abord aux adresses d'essai du propriétaire (`/univers`, `/univers/monde`). Ce fichier est partagé (l'écran et le
+ * serveur).
  */
 import type { SceneMonde, SourceElement } from "./monde";
 
@@ -20,8 +25,8 @@ export const RETOUCHE_UNIVERS_MAX = 120;
 /** Des idées de retouches, à toucher (il peut écrire les siennes). */
 export const IDEES_RETOUCHE_UNIVERS = ["Davantage de nature", "Plus de lumière", "Un petit coin lecture", "Le soir, avec des lampes allumées"];
 
-/** Où en est sa création : le décor, les places, l'image vedette. */
-export type EtapeCreation = "decor" | "places" | "vedette";
+/** Où en est sa création : le décor, les places, son fauteuil aux couleurs de son monde (lot 4b), l'image vedette. */
+export type EtapeCreation = "decor" | "places" | "fauteuil" | "vedette";
 export type CleUnivers = { id: string; quoi: string; pourquoi: string; source: SourceElement; zone?: [number, number, number, number] };
 
 export type EtatUnivers = {
@@ -34,6 +39,8 @@ export type EtatUnivers = {
   vedette?: string;
   /** sa figurine (lot 2) : assise, et bouche ouverte */
   figurine?: { assise: string; parle?: string };
+  /** 🪑 son fauteuil a pris les couleurs de son monde (lot 4b) : la version de sa figurine, et son image d'avant */
+  fauteuil?: { version: number; avant?: string };
   scene?: SceneMonde;
   proposition?: string;
   lumiere?: string;

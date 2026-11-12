@@ -2311,7 +2311,36 @@ une session d'administrateur ; après « C'est mon univers ! », « Créer mon u
 - **Les essais** : `scripts/essai-univers-route.mjs` et `scripts/navigateur/univers-monde.mjs`.
 
 **La suite (lot 4b)** : le fauteuil aux couleurs de son univers (« ton fauteuil a pris les couleurs de ton monde »), et
-« Mon univers » comme écran d'accueil.
+« Mon univers » comme écran d'accueil — construits juste après (9.0 duotricies 🪑, ci-dessous).
+
+### 9.0 duotricies 🪑 Son fauteuil aux couleurs de son monde, et « Mon univers » l'accueil (12 novembre) — lot 4b
+
+Toujours aux adresses d'essai du propriétaire (une session d'administrateur) ; les gens de Dax gardent l'appli
+d'aujourd'hui jusqu'à son feu vert.
+
+- **Son fauteuil prend les couleurs de son monde** (décidé le 12 novembre : « de départ, puis aux couleurs ») : pendant
+  la création de son univers, entre les places et l'image vedette (« Je refais ton fauteuil à tes couleurs »), une
+  fois. Une nouvelle version de sa figurine, toujours validée : le même fauteuil, les couleurs de la palette de son
+  univers (`fauteuilAuxCouleurs`, `perso.ts`) ; son image « assise » refaite d'après celle d'avant, la figurine
+  inchangée (`consigneFauteuil`, `perso-consignes.ts`, refaisable mot pour mot à partir de la fiche :
+  `consigneAttendue`) ; sa bouche ouverte refaite d'après la nouvelle (pendant l'image vedette) ; debout, sans
+  fauteuil, gardée. L'image vedette le montre déjà. Sans succès, le fauteuil de départ reste. Une retouche de l'univers
+  ne le refait pas ; une figurine refaite (fauteuil de départ) le reprendra à la retouche suivante.
+- **« 🪑 Ton fauteuil a pris les couleurs de ton monde »** dans la découverte : avant, après, « Il me plaît ! » (une fois
+  par version de sa figurine, ce téléphone s'en souvient).
+- **« Mon univers », l'accueil** : `/univers`. Son univers en grand (« Mon univers », sa figurine chez elle, tout ce que
+  fait la découverte) et **le menu de demain** (feuille de route, section 8) : 🔥 Découvrir · 📍 Autour · ✏️ Créer ·
+  👯 Proches · 🏡 Mon univers — les quatre premiers mènent aux onglets d'aujourd'hui (`/collection#…`). Tant que son
+  univers n'est pas créé, l'accueil montre l'étape où il en est : sans figurine, « Ton univers commence par toi »
+  (« Créer ma figurine ») ; sans univers, la conversation avec Pablito ; puis la création. **Une seule adresse à
+  retenir pour tout le parcours.**
+- **Le coût** : une image haute et une moyenne de plus à la création (environ 5 centimes).
+- **Les essais** : `scripts/essai-univers-route.mjs` (le fauteuil refait, signé, refaisable ; pas refait à la retouche),
+  `scripts/navigateur/univers-monde.mjs` (l'annonce, l'accueil, le menu, Sam sans figurine),
+  `scripts/verifier-fiches.mjs` (`fauteuilAuxCouleurs`).
+
+**La suite** : son avis sur tout le parcours, puis le feu vert pour tout le monde (l'accueil de `/collection` devient
+« Mon univers », les figurines d'aujourd'hui refaites, Pablito au nouveau style) ; puis le lot 5 (le proche qui entre).
 
 ### 9.1 L'idée en une phrase
 

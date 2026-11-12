@@ -3,9 +3,11 @@
 //
 // Un visiteur sans session d'administrateur est renvoyé. Le propriétaire a sa figurine et la fiche de son univers :
 // « Ton univers est prêt à être créé ✨ », « Créer mon univers » ; Pablito construit ; la découverte : la brume se lève,
-// son décor, sa figurine assise à sa place ; « L'image à partager » ; « 🔑 Les clés de ton univers » : « Tu m'as dit :
-// « … » » ; une retouche avec une idée toute prête : la version 2, « Revenir à la version d'avant ». Rien ne déborde,
-// jamais le mot interdit, aucune erreur dans la page.
+// son décor, sa figurine assise à sa place ; « 🪑 Ton fauteuil a pris les couleurs de ton monde » (lot 4b) : avant,
+// après, « Il me plaît ! » ; « L'image à partager » ; « 🔑 Les clés de ton univers » : « Tu m'as dit : « … » » ; une
+// retouche avec une idée toute prête : la version 2, « Revenir à la version d'avant ». « MON UNIVERS », L'ACCUEIL
+// (`/univers`, lot 4b) : son univers, le menu de demain ; Sam, sans figurine, y est mené à sa figurine. Rien ne
+// déborde, jamais le mot interdit, aucune erreur dans la page.
 import { BASE, D, F, lancer } from "./commun.mjs";
 
 let echecs = 0;
@@ -92,7 +94,10 @@ ok((await texte(".um-titre")).includes("Ton univers est prêt à être créé") 
 await p.screenshot({ path: `${D}/univers-monde-1-a-creer.png` });
 await p.locator(".um-carte .um-bouton").click();
 const chantier = await p.waitForSelector('[aria-label="Pablito construit ton univers"]', { timeout: 6000 }).then(() => true).catch(() => false);
-if (chantier) await p.screenshot({ path: `${D}/univers-monde-2-chantier.png` });
+if (chantier) {
+  ok((await texte(".um-etapes")).includes("Je refais ton fauteuil à tes couleurs"), "le chantier : son fauteuil refait à ses couleurs, une étape");
+  await p.screenshot({ path: `${D}/univers-monde-2-chantier.png` });
+}
 
 // ═══ LA DÉCOUVERTE ═══
 await p.waitForSelector(".um-decouverte .um-decor", { timeout: 60000 }).catch(() => null);
@@ -100,7 +105,11 @@ const brume = await p.waitForSelector(".um-brume", { timeout: 3000 }).then(() =>
 ok((await p.locator(".um-decouverte .um-decor").count()) === 1 && (await p.locator(".um-place .um-figurine").count()) === 1, `la découverte : son décor, sa figurine assise à sa place${chantier ? " (après le chantier)" : ""}`);
 ok(brume, "la première fois, la brume se lève");
 await p.waitForSelector(".um-brume", { state: "detached", timeout: 6000 }).catch(() => null);
+await p.waitForSelector(".um-fauteuil", { timeout: 6000 }).catch(() => null);
+ok((await texte(".um-fauteuil")).includes("Ton fauteuil a pris les couleurs de ton monde") && (await p.locator(".um-fauteuil img").count()) === 2, "« 🪑 Ton fauteuil a pris les couleurs de ton monde » : avant, après");
 await p.screenshot({ path: `${D}/univers-monde-3-decouverte.png` });
+await p.locator(".um-fauteuil .um-lien", { hasText: "Il me plaît" }).click();
+ok((await p.locator(".um-fauteuil").count()) === 0, "« Il me plaît ! » : l'annonce se range");
 await p.locator(".um-onglets button", { hasText: "L’image à partager" }).click();
 ok((await p.locator(".um-place").count()) === 0 && (await p.locator(".um-gestes .um-bouton", { hasText: "Partager mon univers" }).count()) === 1, "« L'image à partager » : sa figurine chez elle, « 📤 Partager mon univers »");
 await p.locator(".um-onglets button", { hasText: "Chez moi" }).click();
@@ -119,6 +128,38 @@ await p.locator(".um-retouche .um-bouton").click();
 await p.waitForFunction(() => document.querySelector(".um-decouverte") && [...document.querySelectorAll(".um-lien")].some((x) => x.textContent?.includes("version d’avant")), null, { timeout: 60000 }).catch(() => null);
 ok((await p.locator(".um-lien", { hasText: "Revenir à la version d’avant" }).count()) === 1 && (await texte(".um-decouverte .um-petit")).includes("Encore 2 retouches"), "une retouche avec une idée toute prête : la version 2 ; « Revenir à la version d'avant »");
 ok((await debordement()) <= 0 && (await sansMotInterdit()), "rien ne déborde, sans le mot interdit");
+ok((await p.locator(".um-fauteuil").count()) === 0, "après la retouche, son fauteuil n'est pas annoncé de nouveau");
+
+// ═══ « MON UNIVERS », L'ACCUEIL ═══
+const versAccueil = p.locator("a.um-lien", { hasText: "Mon univers" });
+ok((await versAccueil.getAttribute("href")) === "/univers", "de son univers, le chemin vers l'accueil de demain");
+await p.goto(`${BASE}/univers`, { waitUntil: "networkidle" });
+await p.waitForSelector(".um-decouverte .um-decor", { timeout: 30000 }).catch(() => null);
+const menu = await p.locator(".um-menu a").allInnerTexts();
+ok(
+  (await texte(".um-entete")) === "Mon univers" && (await p.locator(".um-place .um-figurine").count()) === 1 && menu.map((m) => m.replace(/\s+/g, " ").trim()).join("|") === "🔥 Découvrir|📍 Autour|✏️ Créer|👯 Proches|🏡 Mon univers",
+  `l'accueil : « Mon univers », sa figurine chez elle, le menu de demain (${menu.length})`,
+);
+ok((await p.locator('.um-menu a[aria-current="page"]').innerText()).includes("Mon univers") && (await p.locator('.um-menu a', { hasText: "Créer" }).getAttribute("href")) === "/collection#figurine", "« Mon univers » est l'onglet ouvert ; les autres mènent à l'appli d'aujourd'hui");
+ok((await debordement()) <= 0 && (await sansMotInterdit()), "l'accueil : rien ne déborde, sans le mot interdit");
+await p.screenshot({ path: `${D}/univers-monde-5-accueil.png` });
+
+// ═══ SAM, SANS FIGURINE : L'ACCUEIL LE MÈNE À SA FIGURINE ═══
+const SAM = { id: "abababab-0000-4000-8000-000000000902", jeton: "jeton-sam-univers-nav-000001" };
+await semer("human_habitants", [{ id: SAM.id, device_token: SAM.jeton, prenom: "Sam", ville_slug: "dax" }]);
+const ctxSam = await b.newContext({ viewport: { width: 390, height: 844 }, userAgent: IPHONE, isMobile: true, hasTouch: true });
+await ctxSam.addCookies([
+  { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE },
+  { name: "clikme_habitant", value: SAM.jeton, url: BASE },
+]);
+const ps = await ctxSam.newPage();
+ps.on("pageerror", (e) => erreurs.push(String(e)));
+await ps.goto(`${BASE}/univers`, { waitUntil: "networkidle" });
+await ps.waitForSelector(".um-carte .um-bouton", { timeout: 30000 }).catch(() => null);
+ok(
+  (await ps.locator(".um-titre").first().innerText().catch(() => "")).includes("Ton univers commence par toi") && (await ps.locator(".um-carte a.um-bouton").getAttribute("href")) === "/univers/figurine",
+  "Sam, sans figurine : « Ton univers commence par toi », « Créer ma figurine »",
+);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();

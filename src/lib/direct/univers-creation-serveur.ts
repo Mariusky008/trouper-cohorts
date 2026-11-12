@@ -6,7 +6,10 @@
  *      seule chose change, `consigneRetoucheDecor`) — rangé dans `<habitant>/monde/v<n>/decor.png`, signé ;
  *   2. LES PLACES : un modèle qui voit relève où sa figurine s'assoit, d'où vient la lumière, où sont ses éléments
  *      (`questionPlaces`) ; sans lui, les places d'attente restent ;
- *   3. L'IMAGE VEDETTE : sa figurine (lot 2) chez elle, dans son décor (`consigneVedette`, la scène validée au lot 0).
+ *   3. SON FAUTEUIL AUX COULEURS DE SON MONDE (lot 4b), une fois : une nouvelle version de sa figurine
+ *      (`enregistrerVersionPerso`), son image « assise » refaite (`consigneFauteuil` : seul le fauteuil change), sa
+ *      bouche ouverte refaite d'après elle, debout gardée (pas de fauteuil) ; sans succès, le fauteuil de départ reste ;
+ *   4. L'IMAGE VEDETTE : sa figurine (lot 2) chez elle, dans son décor (`consigneVedette`, la scène validée au lot 0).
  * Chaque étape complète la version (`completerMonde`) ; `<habitant>/monde/creation.json` dit où on en est.
  *
  * LES RETOUCHES : trois offertes, puis une par jour ; chacune est une nouvelle version (`enregistrerVersionMonde`), et
@@ -20,13 +23,15 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { jourParis } from "@/lib/jour-paris";
 import { regarderImage } from "./dressing-serveur";
-import { cheminImageVersion, completerMonde, enregistrerVersionMonde, lireFicheMonde, lireFichePerso, revenirAVersion } from "./fiches-serveur";
+import { cheminImageVersion, completerMonde, completerReferencesPerso, enregistrerVersionMonde, enregistrerVersionPerso, lireFicheMonde, lireFichePerso, revenirAVersion } from "./fiches-serveur";
 import { deposer, ecrireJson, lireJson, signer, telecharger } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { DIRECTIONS_LUMIERE, type FicheMonde, type PlaceMonde, type SceneMonde } from "./monde";
 import { consigneDecorDuMonde, consigneRetoucheDecor, consigneVedette, questionPlaces } from "./monde-consignes";
 import { demanderUneImage } from "./moteur-images-serveur";
 import { motInterdit } from "./mots-interdits";
+import { fauteuilAuxCouleurs, type Fauteuil, type FichePerso } from "./perso";
+import { consigneFauteuil, consigneMemeFigurine } from "./perso-consignes";
 import { signatureDe } from "./signature-serveur";
 import { RETOUCHES_OFFERTES, RETOUCHES_PAR_JOUR, retoucheUniversValide, type EtapeCreation, type EtatUnivers } from "./univers-creation";
 
@@ -56,7 +61,7 @@ type Creation = {
 const lireCreation = (supabase: Supabase, h: string) => lireJson<Creation>(supabase, cheminCreation(h));
 const ecrireCreation = (supabase: Supabase, h: string, c: Partial<Creation>) => ecrireJson(supabase, cheminCreation(h), c);
 const enCours = (c: Partial<Creation>, version: number) =>
-  c.version === version && (c.etape === "decor" || c.etape === "places" || c.etape === "vedette") && Date.now() - (Date.parse(s(c.depuis)) || 0) < PERIMEE_MS;
+  c.version === version && (c.etape === "decor" || c.etape === "places" || c.etape === "fauteuil" || c.etape === "vedette") && Date.now() - (Date.parse(s(c.depuis)) || 0) < PERIMEE_MS;
 
 /** Les retouches qu'il peut encore demander : les offertes d'abord, puis une par jour. */
 function retouchesRestantes(c: Partial<Creation>): number {
@@ -71,15 +76,20 @@ export async function etatUnivers(supabase: Supabase, h: string | null): Promise
   const vide: EtatUnivers = { etape: "sans-fiche", cles: [], retouches: { restantes: RETOUCHES_OFFERTES, offertes: RETOUCHES_OFFERTES }, branche };
   if (!h) return vide;
   const [f, c, { fiche: perso }] = await Promise.all([lireFicheMonde(supabase, h), lireCreation(supabase, h), lireFichePerso(supabase, h)]);
-  if (!f) return vide;
-  const assise = perso?.style === "collection-1" ? perso.references.assise?.chemin : undefined;
+  const assise = perso?.style === "collection-1" ? perso.references.assise : undefined;
   const parle = perso?.style === "collection-1" ? perso.references.assise_parle?.chemin : undefined;
-  const [decor, vedette, a, p] = await Promise.all([
-    f.references.decor ? signer(supabase, f.references.decor.chemin) : "",
-    f.references.vedette ? signer(supabase, f.references.vedette.chemin) : "",
-    assise ? signer(supabase, assise) : "",
+  // (🪑 son fauteuil aux couleurs de son monde : son image d'avant, pour montrer ce qui a changé)
+  const auxCouleurs = perso?.fauteuil?.de === "univers" && assise;
+  const [decor, vedette, a, p, fauteuilAvant] = await Promise.all([
+    f?.references.decor ? signer(supabase, f.references.decor.chemin) : "",
+    f?.references.vedette ? signer(supabase, f.references.vedette.chemin) : "",
+    assise ? signer(supabase, assise.chemin) : "",
     parle ? signer(supabase, parle) : "",
+    auxCouleurs && assise.signature?.entrees[0] ? signer(supabase, assise.signature.entrees[0]) : "",
   ]);
+  const figurine = a ? { figurine: { assise: a, ...(p ? { parle: p } : {}) } } : {};
+  // (pas encore d'univers : sa figurine dit s'il doit d'abord la faire — l'accueil, `/univers`, l'y mène)
+  if (!f) return { ...vide, ...figurine };
   const commun: EtatUnivers = {
     ...vide,
     version: f.version,
@@ -89,7 +99,8 @@ export async function etatUnivers(supabase: Supabase, h: string | null): Promise
     scene: f.scene,
     cles: f.elements.map((e) => ({ id: e.id, quoi: e.quoi, pourquoi: e.pourquoi, source: e.source, ...(e.zone ? { zone: e.zone } : {}) })),
     retouches: { restantes: retouchesRestantes(c), offertes: RETOUCHES_OFFERTES },
-    ...(a ? { figurine: { assise: a, ...(p ? { parle: p } : {}) } } : {}),
+    ...figurine,
+    ...(auxCouleurs && perso ? { fauteuil: { version: perso.version, ...(fauteuilAvant ? { avant: fauteuilAvant } : {}) } } : {}),
     ...(decor ? { decor } : {}),
     ...(vedette ? { vedette } : {}),
     ...(f.version > 1 ? { avant: f.version - 1 } : {}),
@@ -195,7 +206,43 @@ function placesRelevees(x: Record<string, unknown>, avant: SceneMonde): { scene:
   return { scene, zones };
 }
 
-/** 🛠️ Son univers se construit : le décor, les places, l'image vedette — chaque étape complète la version. */
+/**
+ * 🪑 SON FAUTEUIL PREND LES COULEURS DE SON MONDE : une nouvelle version de sa figurine (validée comme celle d'avant :
+ * il n'a rien d'autre à refaire), son image « assise » refaite d'après celle d'avant ; sa bouche ouverte se refait
+ * ensuite d'après la nouvelle (`bouche`, qu'on attend avant de finir) ; debout, sans fauteuil, est gardée.
+ */
+async function fauteuilDeSonMonde(supabase: Supabase, h: string, perso: FichePerso, fauteuil: Fauteuil, avant: number): Promise<{ fiche: FichePerso; bouche: Promise<void> } | null> {
+  const ancienne = perso.references.assise!;
+  const image = await telecharger(supabase, ancienne.chemin);
+  if (!image) return null;
+  const consigne = consigneFauteuil(fauteuil);
+  const debut = Date.now();
+  const r = await demanderUneImage({ images: [image], consigne, transparent: true, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high" });
+  if ("erreur" in r) return null;
+  const chemin = `${h}/perso/images/fauteuil-${Date.now().toString(36)}.png`;
+  if (!(await deposer(supabase, chemin, r.png, "image/png"))) return null;
+  const assise = { chemin, signature: signatureDe(r.png, { moteur: r.modele, consigne, reglages: r.reglages, fond: "transparent", entrees: [ancienne.chemin], debut, jetons: r.jetons }) };
+  const contenu: Record<string, unknown> = { ...perso, fauteuil, references: { assise, ...(perso.references.debout ? { debout: perso.references.debout } : {}) } };
+  delete contenu.version;
+  delete contenu.historique;
+  delete contenu.creee_le;
+  const v = await enregistrerVersionPerso(supabase, h, contenu as Omit<FichePerso, "version" | "historique" | "creee_le">, "son fauteuil a pris les couleurs de son monde");
+  if (!v.fiche) return null;
+  const fiche = v.fiche;
+  const bouche = (async () => {
+    const consigneParle = consigneMemeFigurine("parle");
+    const t0 = Date.now();
+    const p = await demanderUneImage({ images: [r.png], consigne: consigneParle, transparent: true, fidelite: "high", avant, cle: cle(), base: base(), qualite: "medium" });
+    if ("erreur" in p) return;
+    const cheminParle = cheminImageVersion(h, "perso", fiche.version, "assise_parle");
+    if (!(await deposer(supabase, cheminParle, p.png, "image/png"))) return;
+    const signature = signatureDe(p.png, { moteur: p.modele, consigne: consigneParle, reglages: p.reglages, fond: "transparent", entrees: [chemin], debut: t0, jetons: p.jetons });
+    await completerReferencesPerso(supabase, h, fiche.version, { assise_parle: { chemin: cheminParle, signature } });
+  })().catch(() => undefined);
+  return { fiche, bouche };
+}
+
+/** 🛠️ Son univers se construit : le décor, les places, son fauteuil, l'image vedette — chaque étape complète la version. */
 export async function fabriquerUnivers(supabase: Supabase, h: string, version: number, avant: number): Promise<void> {
   const marquer = async (maj: Partial<Creation>) => {
     const c = await lireCreation(supabase, h);
@@ -240,9 +287,20 @@ export async function fabriquerUnivers(supabase: Supabase, h: string, version: n
         // (les places d'attente restent)
       }
     }
+    // 3. SON FAUTEUIL AUX COULEURS DE SON MONDE (une fois ; sans succès, le fauteuil de départ reste)
+    let { fiche: perso } = await lireFichePerso(supabase, h);
+    let bouche: Promise<void> = Promise.resolve();
+    const couleurs = fauteuilAuxCouleurs(f.ambiance.palette);
+    if (perso?.style === "collection-1" && perso.references.assise && perso.fauteuil?.de !== "univers" && couleurs && !f.references.vedette) {
+      await marquer({ etape: "fauteuil" });
+      const refait = await fauteuilDeSonMonde(supabase, h, perso, couleurs, avant).catch(() => null);
+      if (refait) {
+        perso = refait.fiche;
+        bouche = refait.bouche;
+      }
+    }
     await marquer({ etape: "vedette" });
-    // 3. L'IMAGE VEDETTE : sa figurine chez elle
-    const { fiche: perso } = await lireFichePerso(supabase, h);
+    // 4. L'IMAGE VEDETTE : sa figurine chez elle (pendant que sa bouche ouverte se refait)
     const assise = perso?.style === "collection-1" ? perso.references.assise : undefined;
     const figurine = assise ? await telecharger(supabase, assise.chemin) : null;
     if (decor && figurine && assise && !f.references.vedette) {
@@ -258,6 +316,7 @@ export async function fabriquerUnivers(supabase: Supabase, h: string, version: n
       }
       // (sans vedette, la découverte se fait avec la figurine posée sur le décor)
     }
+    await bouche;
     await marquer({ etape: "fini", erreur: undefined });
   } catch {
     await rater("Ça n’a pas marché. Relance la création.");

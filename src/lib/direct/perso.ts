@@ -62,6 +62,15 @@ export const FAUTEUIL_DE_DEPART: Fauteuil = {
   de: "depart",
 };
 
+/**
+ * 🪑 SON FAUTEUIL AUX COULEURS DE SON UNIVERS (lot 4b) : le même fauteuil, les couleurs de la palette de son monde (au
+ * plus trois) ; `null` sans couleur. La consigne de son image se redonne à partir de lui (`consigneFauteuil`).
+ */
+export function fauteuilAuxCouleurs(palette: string[]): Fauteuil | null {
+  const c = palette.map(couleurValide).filter(Boolean).slice(0, 3);
+  return c.length ? { description: FAUTEUIL_DE_DEPART.description, couleurs: c, de: "univers" } : null;
+}
+
 export type Tenue = { description: string; couleurs: string[]; accessoires: string[] };
 
 export type FichePerso = {

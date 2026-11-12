@@ -86,6 +86,7 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/surprises", label: "Les surprises du Fantôme" },
         { href: "/admin/humain/figurines-clients", label: "Les figurines des clients" },
         { href: "/admin/humain/univers-essais", label: "Univers : les essais du lot 0" },
+        { href: "/univers", label: "Univers : « Mon univers », l’accueil (essai — mène à l’étape où j’en suis)" },
         { href: "/univers/figurine", label: "Univers : la nouvelle figurine (essai)" },
         { href: "/univers/conversation", label: "Univers : la conversation avec Pablito (essai)" },
         { href: "/univers/monde", label: "Univers : mon univers (essai)" },

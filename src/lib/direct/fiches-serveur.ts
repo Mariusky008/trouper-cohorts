@@ -24,7 +24,7 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { consigneFigurineClient } from "./figurine-pro";
 import { consigneBoucheNeutre } from "./figurine-expressions-serveur";
-import { consigneMemeFigurine, consigneRetoucheFigurine, consigneSculptee } from "./perso-consignes";
+import { consigneFauteuil, consigneMemeFigurine, consigneRetoucheFigurine, consigneSculptee } from "./perso-consignes";
 import { universValide } from "./ma-figurine";
 import { dossierExpressions, ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { NOM_SIGNATURE_NEUTRE, NOM_SIGNATURE_PARLE, NOM_TRAITS } from "./ma-figurine-fabrique-serveur";
@@ -219,7 +219,9 @@ export function consigneAttendue(f: FichePerso, nom: string): string | null {
     if (nom === "parle") return consigneBoucheNeutre();
   }
   if (f.style === "collection-1") {
-    // (retouchée avec ses mots : la consigne de son image est celle de sa dernière retouche, faite sur l'image d'avant)
+    // (son fauteuil aux couleurs de son univers, lot 4b : refait sur l'image d'avant ; sinon, retouchée avec ses mots :
+    // la consigne de sa dernière retouche, faite sur l'image d'avant)
+    if (nom === "assise" && f.fauteuil?.de === "univers") return consigneFauteuil(f.fauteuil);
     if (nom === "assise") return f.retouches?.length ? consigneRetoucheFigurine(f.retouches[f.retouches.length - 1]) : consigneSculptee(f.traits ?? null);
     if (nom === "assise_parle") return consigneMemeFigurine("parle");
     if (nom === "debout") return consigneMemeFigurine("debout");

@@ -8,7 +8,11 @@
  *   · LA DÉCOUVERTE, en plein écran : la brume se lève (la première fois), sa figurine est chez elle, assise à sa place,
  *     avec son ombre ; « Fais-la parler » ; l'image vedette, à partager ; « 🔑 Les clés de ton univers » : il touche un
  *     objet et voit pourquoi il est là (« tu m'as dit : … » ou « j'ai imaginé : … ») ; les retouches avec ses mots
- *     (trois offertes, puis une par jour) ; revenir à la version d'avant.
+ *     (trois offertes, puis une par jour) ; revenir à la version d'avant ;
+ *   · 🪑 SON FAUTEUIL a pris les couleurs de son monde (lot 4b) : avant, après, une fois ;
+ *   · « MON UNIVERS », L'ACCUEIL (`accueil`, à `/univers`, lot 4b) : son univers en grand, et le menu de demain
+ *     (Découvrir · Autour · Créer · Proches · Mon univers) ; tant qu'il n'est pas créé, l'étape où il en est (sa
+ *     figurine, la conversation avec Pablito, la création).
  *
  * FICHIER NAVIGATEUR.
  */
@@ -26,14 +30,14 @@ async function demander<T>(corps: Record<string, unknown>): Promise<T> {
 }
 const message = (e: unknown) => (e instanceof Error && e.message ? e.message : "Ça n’a pas marché. Réessaie.");
 /** (la brume ne se lève qu'une fois par version : ce téléphone s'en souvient) */
-const dejaVu = (v: number) => {
+const dejaVu = (v: number | string) => {
   try {
     return window.localStorage.getItem(`univers-vu-${v}`) === "1";
   } catch {
     return false;
   }
 };
-const marquerVu = (v: number) => {
+const marquerVu = (v: number | string) => {
   try {
     window.localStorage.setItem(`univers-vu-${v}`, "1");
   } catch {
@@ -41,7 +45,16 @@ const marquerVu = (v: number) => {
   }
 };
 
-export function Monde() {
+/** Le menu de demain (`docs/univers/feuille-de-route.md`, section 8) : les onglets d'aujourd'hui, et « Mon univers ». */
+const MENU_DE_DEMAIN = [
+  { ico: "🔥", nom: "Découvrir", href: "/collection#decouvrir" },
+  { ico: "📍", nom: "Autour", href: "/collection#autour" },
+  { ico: "✏️", nom: "Créer", href: "/collection#figurine" },
+  { ico: "👯", nom: "Proches", href: "/collection#proches" },
+  { ico: "🏡", nom: "Mon univers", href: "/univers" },
+] as const;
+
+export function Monde({ accueil = false }: { accueil?: boolean }) {
   const [etat, setEtat] = useState<EtatUnivers | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -80,9 +93,20 @@ export function Monde() {
   }
   const [c1, c2, c3] = etat?.palette?.length === 3 ? etat.palette : ["#f6d9a8", "#e7b77a", "#7a4b2a"];
   return (
-    <main className="um" data-etape={etat?.etape ?? "chargement"} style={{ ["--c1" as string]: c1, ["--c2" as string]: c2, ["--c3" as string]: c3 }}>
+    <main className={`um${accueil ? " accueil" : ""}`} data-etape={etat?.etape ?? "chargement"} style={{ ["--c1" as string]: c1, ["--c2" as string]: c2, ["--c3" as string]: c3 }}>
+      {accueil && etat?.etape === "decouverte" && <h1 className="um-entete">Mon univers</h1>}
       {!etat ? (
         <p className="um-centre">{erreur || "Un instant…"}</p>
+      ) : etat.etape === "sans-fiche" && !etat.figurine ? (
+        <section className="um-carte">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="um-pablito" src={imageVisage("joie", "n")} alt="" />
+          <p className="um-titre">Ton univers commence par toi</p>
+          <p className="um-doux">D’abord ta figurine, assise dans son fauteuil. Ensuite, on imagine ton univers ensemble.</p>
+          <a className="um-bouton" href="/univers/figurine">
+            Créer ma figurine
+          </a>
+        </section>
       ) : etat.etape === "sans-fiche" ? (
         <section className="um-carte">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -115,6 +139,21 @@ export function Monde() {
           {erreur}
         </p>
       )}
+      {!accueil && etat?.etape === "decouverte" && (
+        <a className="um-lien" href="/univers">
+          🏡 Mon univers, l’accueil de demain
+        </a>
+      )}
+      {accueil && (
+        <nav className="um-menu" aria-label="Menu">
+          {MENU_DE_DEMAIN.map((m) => (
+            <a key={m.nom} href={m.href} className={m.href === "/univers" ? "pris" : ""} aria-current={m.href === "/univers" ? "page" : undefined}>
+              <span aria-hidden="true">{m.ico}</span>
+              <small>{m.nom}</small>
+            </a>
+          ))}
+        </nav>
+      )}
       <style>{STYLES}</style>
     </main>
   );
@@ -124,6 +163,7 @@ export function Monde() {
 const ETAPES = [
   { cle: "decor", dit: "Je dessine ton décor" },
   { cle: "places", dit: "Je choisis où tu t’assois" },
+  { cle: "fauteuil", dit: "Je refais ton fauteuil à tes couleurs" },
   { cle: "vedette", dit: "Je t’installe chez toi" },
 ] as const;
 const PHRASES = ["Je pose les murs, la lumière…", "J’ajoute tes objets, un par un.", "Un coup de pinceau doré 🎨", "Je règle la lumière, comme au cinéma.", "On y est presque !"];
@@ -134,7 +174,9 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
     const i = window.setInterval(() => setT(Date.now() - debut), 500);
     return () => window.clearInterval(i);
   }, []);
-  const ici = ETAPES.findIndex((e) => e.cle === etat.creation?.etape);
+  // (une retouche ne refait pas son fauteuil : il a déjà les couleurs de son monde)
+  const etapes = etat.creation?.retouche ? ETAPES.filter((e) => e.cle !== "fauteuil") : ETAPES;
+  const ici = etapes.findIndex((e) => e.cle === etat.creation?.etape);
   return (
     <section className="um-carte" aria-label="Pablito construit ton univers" aria-busy="true">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -142,7 +184,7 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
       <p className="um-titre">{etat.creation?.retouche ? "Pablito retouche ton univers" : "Pablito construit ton univers"}</p>
       {etat.creation?.retouche && <p className="um-doux">« {etat.creation.retouche} »</p>}
       <ol className="um-etapes">
-        {ETAPES.map((e, i) => (
+        {etapes.map((e, i) => (
           <li key={e.cle} className={i < ici ? "fait" : i === ici ? "ici" : ""}>
             {i < ici ? "✓ " : i === ici ? "… " : ""}
             {e.dit}
@@ -209,6 +251,14 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
     }
   }
   const avecZone = etat.cles.filter((c) => c.zone);
+  // (🪑 son fauteuil a pris les couleurs de son monde : montré une fois, jusqu'à ce qu'il le ferme)
+  const [fauteuilVu, setFauteuilVu] = useState(true);
+  const versionFauteuil = etat.fauteuil?.version ?? 0;
+  useEffect(() => {
+    if (!versionFauteuil) return;
+    const t = window.setTimeout(() => setFauteuilVu(dejaVu(`fauteuil-${versionFauteuil}`)), 0);
+    return () => window.clearTimeout(t);
+  }, [versionFauteuil]);
   return (
     <section className="um-decouverte" aria-label="Ton univers">
       <div className="um-onglets" role="tablist">
@@ -245,6 +295,32 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatUnivers; occupe: boolea
           ))}
         {brume && <span className="um-brume" aria-hidden="true" />}
       </div>
+      {!fauteuilVu && etat.fauteuil && vue === "chez-moi" && etat.figurine && (
+        <div className="um-fauteuil" role="status">
+          <span className="um-avant-apres">
+            {etat.fauteuil.avant && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={etat.fauteuil.avant} alt="Ton fauteuil de départ" />
+                <span aria-hidden="true">→</span>
+              </>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={etat.figurine.assise} alt="Ton fauteuil aux couleurs de ton monde" />
+          </span>
+          <b>🪑 Ton fauteuil a pris les couleurs de ton monde</b>
+          <button
+            type="button"
+            className="um-lien"
+            onClick={() => {
+              marquerVu(`fauteuil-${versionFauteuil}`);
+              setFauteuilVu(true);
+            }}
+          >
+            Il me plaît !
+          </button>
+        </div>
+      )}
       {cle && (
         <div className="um-cle" role="dialog" aria-label={cle.quoi}>
           <b>{cle.quoi}</b>
@@ -359,6 +435,16 @@ const STYLES = `
 .um-ombre{position:absolute;bottom:-4%;left:10%;width:80%;height:12%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0))}
 .um-point{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:3px solid #fff;background:rgba(43,26,12,.55);animation:um-pulse 1.4s infinite}
 .um-brume{position:absolute;inset:0;background:radial-gradient(circle at 50% 60%,rgba(255,255,255,.2),rgba(255,248,236,.98) 70%);animation:um-brume 2.8s ease-out forwards;pointer-events:none}
+.um.accueil{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.um-entete{margin:0;font-size:24px;font-weight:900;letter-spacing:-.01em}
+.um-menu{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:540px;margin:0 auto;padding:7px 6px 6px;border-radius:26px;background:rgba(43,26,12,.92);box-shadow:0 14px 34px -12px rgba(0,0,0,.7)}
+.um-menu a{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:4px 0;color:#d9c3a5;text-decoration:none;font-size:20px}
+.um-menu a small{font-size:11px;font-weight:800;white-space:nowrap}
+.um-menu a.pris{color:#fff6e6}
+.um-menu a.pris span{transform:translateY(-2px)}
+.um-fauteuil{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 14px;border-radius:16px;background:rgba(255,253,248,.95);box-shadow:0 6px 18px rgba(43,26,12,.2);text-align:center}
+.um-avant-apres{display:flex;align-items:center;gap:10px;font-size:22px}
+.um-avant-apres img{width:84px;height:110px;object-fit:contain}
 .um-cle{padding:12px 14px;border-radius:16px;background:rgba(255,253,248,.97);box-shadow:0 6px 18px rgba(43,26,12,.2)}
 .um-cle p{margin:6px 0 0;line-height:1.4}
 .um-gestes{display:flex;flex-direction:column;gap:8px}
