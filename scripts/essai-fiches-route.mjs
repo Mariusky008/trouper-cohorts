@@ -73,8 +73,9 @@ ok((await perso(HUGO)).fiche === null, "Hugo n'a pas de figurine : pas de fiche"
 const l0 = await perso(LEA);
 ok(l0.origine === "aujourd-hui" && l0.fiche?.version === 0 && l0.fiche.style === "ressort-1" && l0.fiche.validee_le, `Léa : sa figurine d'aujourd'hui, la version 0 (${l0.origine}, v${l0.fiche?.version})`);
 ok(/^http/.test(l0.fiche?.images?.neutre ?? "") && /^http/.test(l0.fiche?.images?.parle ?? "") && l0.fiche.complete === true, "ses deux images, en adresses signées");
-const vu = JSON.stringify(l0);
-ok(!vu.includes("fab-aaaaaaaaaaaa/fig") && !vu.includes("consigne") && !vu.includes("photo.jpg") && !vu.includes("gris poivre"), "ni chemins, ni consignes, ni son selfie, ni ses traits dans ce qu'il voit");
+// (hors de ses adresses signées, qui portent forcément le chemin de leur image)
+const vu = JSON.stringify({ ...l0, fiche: { ...l0.fiche, images: null } });
+ok(!vu.includes("fab-aaaaaaaaaaaa") && !vu.includes("consigne") && !vu.includes("photo.jpg") && !vu.includes("gris poivre") && !vu.includes("signature"), "ni chemins, ni consignes, ni son selfie, ni ses traits dans ce qu'il voit");
 ok((await lire(`${LEA.id}/perso/fiche.json`)) === null, "rien n'est écrit pour sa version 0");
 
 // ═══ L'ADMIN VOIT TOUT ═══
