@@ -3,6 +3,7 @@
 // DEUX TÂCHES PLANIFIÉES POUR UNE SEULE HEURE. Vercel compte en UTC, Paris non : 11 h 30 à Paris, c'est 10 h 30 UTC l'hiver
 // et 9 h 30 UTC l'été. `vercel.json` appelle donc ce fichier à 10 h 30 UTC, et `meme-du-jour-ete` à 9 h 30 UTC ; celle
 // qui ne tombe pas dans l'heure de 11 h à Paris ne fait rien. Une fois par jour, jamais deux (`notif/envois/<jour>.json`).
+// 🎯 Depuis le 12 novembre 2026, elle parle aussi de la mission du jour de « Mon vœu » (`annonceDeLaMission`).
 //
 // `?force=1` (les essais) : n'importe quelle heure, et même deux fois. Seulement si `CRON_SECRET` existe, et qu'il a été
 // donné, ou pour le faux service de notifications des essais : sans secret, la route reste ouverte (`cron-auth.ts`), et
@@ -11,6 +12,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { envoyerLeMemeDuJour, heureParis } from "@/lib/direct/appli-collection-serveur";
+import { annonceDeLaMission } from "@/lib/direct/voeu-serveur";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -20,5 +22,8 @@ export async function GET(request: Request) {
   const force = new URL(request.url).searchParams.get("force") === "1" && Boolean(process.env.CRON_SECRET || process.env.PUSH_ESSAI_ORIGINE);
   const { h } = heureParis();
   if (!force && h !== 11) return NextResponse.json({ ok: true, rien: `il est ${h} h à Paris : le mème du jour part entre 11 h et midi` });
-  return NextResponse.json({ ok: true, ...(await envoyerLeMemeDuJour(createAdminClient(), { force })) });
+  const supabase = createAdminClient();
+  // (🎯 « Mon vœu » : la même notification parle de sa mission du jour, s'il en a une)
+  const adapter = await annonceDeLaMission(supabase).catch(() => undefined);
+  return NextResponse.json({ ok: true, ...(await envoyerLeMemeDuJour(supabase, { force, adapter })) });
 }

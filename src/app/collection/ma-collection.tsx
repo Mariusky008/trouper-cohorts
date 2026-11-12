@@ -75,6 +75,8 @@ const ALIAS: Record<string, Vue> = {
   // (✨ « Mon vœu » et la mission du jour : les premières pages de « Découvrir », 11 novembre 2026)
   voeu: "decouvrir",
   mission: "decouvrir",
+  // (🌙 la notification de 19 h : ses réponses en grand)
+  reponses: "decouvrir",
   // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
   reactions: "figurine",
   personnage: "personnage",

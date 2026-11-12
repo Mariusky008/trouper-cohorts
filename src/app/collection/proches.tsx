@@ -149,7 +149,8 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
   }, [compte, prete, ouvrir]);
 
   // ☀️ « Lui répondre », sous le mot de sa figurine (la feuille du matin) : leur conversation
-  const ouvrirFil = useCallback((cle: string) => ouvrir({ cle, parler: false }), [ouvrir]);
+  // (✨ « Mon vœu » : « Parler à Marius » l'ouvre micro prêt — `parler`)
+  const ouvrirFil = useCallback((cle: string, parler = false) => ouvrir({ cle, parler }), [ouvrir]);
   useConversationDemandee(ouvrirFil, Boolean(compte && prete));
 
   async function ajouter(cle: string, apres?: () => void) {

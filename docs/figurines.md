@@ -2088,12 +2088,36 @@ suite pour savoir comment ils vont s'entraider ») :
 - **« Je peux aider » après sa tête** : le propriétaire avait encouragé d'abord, et l'aide ne s'ouvrait plus. L'aide
   prend maintenant la place de sa tête (gardée), et l'auteur la voit comme une nouvelle réponse.
 
-**La suite** : le lot 2 — les réponses du soir en plein écran (stories), répondre avec sa tête, la réponse vocale dans la
-foulée d'« Lui répondre » (aujourd'hui : la conversation s'ouvre dans « Proches »), les notifications (la mission avec le mème du jour, les
-réponses à 19 h), la série partout ; le lot 3 — « Exaucé » (la fête, le merci, le mème de la victoire, les compteurs,
-la carte de personnage, « Mes vœux » dans « Moi »), la reformulation proposée après cinq jours sans aide, et le retrait
-de la question du jour (après avoir changé la source de la phrase du mois et de l'étape qui s'en servent). Et une
-bulle du tuto pour « Mon vœu », à enregistrer par le propriétaire.
+**Le lot 2 (12 novembre, « on attaque le lot 2 »)** :
+
+- **🙂 Réponds avec ta tête** (la maquette 4a) : sur chaque tête qui l'encourage, ouverte en grand, l'auteur répond avec
+  SES visages déjà faits et un mot — « Merci ! » (son amour), « Mort de rire » (son rire), « Grave ! » (son euphorie),
+  « Trop bien ! » (sa joie) (`TETES_REPONDRE`) ; « ✓ Tu lui as répondu : MERCI ! » (il peut changer). Gardé chez lui
+  (`<auteur>/voeux/merci-<vœu>.json`) et chez l'autre (`<habitant>/voeux/retours.json`, les 40 derniers).
+- **↩️ Les retours** : celui qui avait encouragé (ou aidé) retrouve la tête de l'auteur dans sa rangée de bulles
+  (« ↩️ MERCI ! », un anneau orange tant qu'il ne l'a pas vue) ; un toucher, en grand : « Léa t'a répondu », son vœu, sa
+  tête et son mot. On peut en recevoir sans avoir de vœu soi-même.
+- **🎯 11 h 30** : la notification du mème du jour parle aussi de SA MISSION — s'il a déjà commencé « Mon vœu » (son âge
+  est dit), qu'il ne l'a pas faite aujourd'hui, et que quelqu'un d'autre de sa tranche d'âge a un vœu en route :
+  « 🎯 Ta mission du jour t'attend — Des vœux à encourager en une minute, et le mème du jour : 🔥 … 🔥 Garde ta série de
+  5 jours ! » (`annonceDeLaMission`, passée à `envoyerLeMemeDuJour`). Une seule notification, pas deux à une demi-heure
+  d'écart ; même s'il a déjà répondu au mème du jour. Elle ouvre sa mission (`#voeu`).
+- **🌙 19 h** (décidé le 11 novembre : « au fil de la journée, avec une notification à 19 h ») : les réponses à son vœu
+  reçues aujourd'hui et pas encore vues — « ✨ 3 réponses à ton vœu — Dont une aide : Marius peut t'aider. Viens voir
+  👀 » (ou « Leurs figurines t'encouragent ») ; sinon, la tête qu'on lui a répondue — « ↩️ Léa t'a répondu — « MERCI ! »,
+  avec sa figurine, sur son vœu. » Une fois par jour, à qui a les notifications et « Quand on répond à tes mèmes »
+  allumé (`envoyerLeSoirDuVoeu`, `/api/cron/voeu-soir` à 18 h 05 UTC et `voeu-soir-ete` à 17 h 05 UTC). Une aide à
+  laquelle il a déjà répondu est vue : elle n'est plus annoncée.
+- **👀 Son lien (`#reponses`)** ouvre ses réponses en grand, la première pas encore vue ; sinon, ses retours. Ouvertes
+  ainsi, elles sont vues.
+- **🎙️ « Parler à Marius »** (après « Lui répondre avec ma figurine ») ouvre leur conversation dans « Proches » le micro
+  prêt (la maquette 4c) : `ouvrirConversation(cle, true)` (`rituel.tsx`), qui ouvrait jusque-là la conversation seule.
+- **« N figurines croient en ton vœu »** compte aussi ceux qui l'aident.
+
+**La suite** : le lot 3 — « Exaucé » (la fête, le merci, le mème de la victoire, les compteurs, la carte de personnage,
+« Mes vœux » dans « Moi »), la reformulation proposée après cinq jours sans aide, et le retrait de la question du jour
+(après avoir changé la source de la phrase du mois et de l'étape qui s'en servent). Et une bulle du tuto pour « Mon
+vœu », à enregistrer par le propriétaire.
 
 ### 9.0 duodetricies 🗂️ Le socle « Univers » : la fiche de chaque figurine (12 novembre) — lot 1
 

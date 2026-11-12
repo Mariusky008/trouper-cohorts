@@ -73,11 +73,11 @@ leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est 
 (les décisions du propriétaire, ce que fait le lot 1, la suite).
 
 - **Où on en est** : le lot 1 est fusionné (#126), la migration appliquée par le patron ; ses retouches du 12 novembre
-  (son vœu en grand, la mission vide, les vœux d'ailleurs, l'aide → proches) sont en PR. Le lot 1 : déposer son vœu, la mission dans « Découvrir », « Je peux aider », sa page
+  (son vœu en grand, la mission vide, les vœux d'ailleurs, l'aide → proches) sont fusionnées (#129). Le lot 1 : déposer son vœu, la mission dans « Découvrir », « Je peux aider », sa page
   « Mon vœu », « Faire évoluer », la série ; l'appli s'ouvre sur « Découvrir » une fois le premier mème fait).
 - **À faire par le propriétaire** : enregistrer une bulle du tuto pour « Mon vœu » s'il en veut une.
-- **La suite** : le lot 2 (les réponses du soir en stories, répondre avec sa tête, les notifications de midi et de
-  19 h ; « accepter une aide → proches » est fait), puis le lot 3 (« Exaucé », la reformulation, le retrait de la question du jour).
+- **La suite** : le lot 2 est en PR (répondre avec sa tête, les retours, les notifications de 11 h 30 et 19 h) ; puis le
+  lot 3 (« Exaucé », la reformulation, le retrait de la question du jour).
 - **Pas sans son accord** : ouvrir l'inscription à toutes les villes (il a dit « je lance partout » ; la distribution
   des vœux le permet déjà, l'inscription non).
 
@@ -175,7 +175,8 @@ leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est 
 | #121 | ✏️ « Créer » sur un seul écran (la maquette du patron) : sa figurine en direct et sa bulle, la rangée de ses visages, ce qu'elle dit — sa phrase écrite ou SA voix, jamais une voix de synthèse —, « Créer mon mème », « Réagir en un toucher » ; sur son mème prêt, « Sa version » (vidéo, BD, film, affiche) le refait à la même place, avec une animation ; avec sa voix, « Elle danse en parlant » — `docs/figurines.md`, 9.0 quattervicies |
 | #122 | 🎙️ La dernière bulle du tuto de « Créer » a sa voix (« Touche « Créer mon mème »… », enregistrée par le patron : `tuto-creer-4c`) |
 | #126 | ✨ « Mon vœu », lot 1 : déposer son vœu (huit tuiles, « Surprise » écrit par l'IA d'après sa carte), la mission du jour en tête de « Découvrir » (trois vœux à encourager avec ses têtes, « Je peux aider », passer, signaler), « Mission accomplie » et la série, sa page « Mon vœu » et « Faire évoluer » ; « As-tu 18 ans ou plus ? » (les 15-17 ans entre eux) ; l'appli s'ouvre sur « Découvrir » — `docs/figurines.md`, 9.0 septvicies ✨ « Mon vœu », essai `scripts/navigateur/voeu.mjs`, migration à appliquer à la main |
-| (cette PR) | ✨ « Mon vœu », après le premier essai du patron : son vœu en grand en haut de la page ; la mission vide dit vrai et propose « 📲 Inviter mes amis » ; les vœux « sur place » d'ailleurs, pour encourager seulement ; « ✋ Marius peut t'aider » → « Lui répondre avec ma figurine » (ils deviennent proches, leur conversation s'ouvre dans « Proches ») ou « Pas pour moi » ; « Je peux aider » après sa tête — `docs/figurines.md`, 9.0 septvicies ✨ |
+| #129 | ✨ « Mon vœu », après le premier essai du patron : son vœu en grand en haut de la page ; la mission vide dit vrai et propose « 📲 Inviter mes amis » ; les vœux « sur place » d'ailleurs, pour encourager seulement ; « ✋ Marius peut t'aider » → « Lui répondre avec ma figurine » (ils deviennent proches, leur conversation s'ouvre dans « Proches ») ou « Pas pour moi » ; « Je peux aider » après sa tête — `docs/figurines.md`, 9.0 septvicies ✨ |
+| (cette PR) | ✨ « Mon vœu », lot 2 : « Réponds avec ta tête » (Merci !, Mort de rire, Grave, Trop bien) et ses retours (« ↩️ Léa t'a répondu ») ; la notification de 11 h 30 parle de la mission ; celle de 19 h des réponses du jour (nouvelle tâche planifiée `voeu-soir`) ; leur lien ouvre les réponses en grand ; « Parler à Marius » ouvre le micro — `docs/figurines.md`, 9.0 septvicies ✨ |
 
 Après #94, l'essai `appli-notif.mjs` a échoué sur `main` : la CI tournait entre 11 h et midi (heure de Paris), et
 l'appel « sans forcer » de l'essai avait vraiment fait l'envoi. Ce n'est pas un défaut de l'appli. L'essai le fait

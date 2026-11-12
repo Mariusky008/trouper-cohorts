@@ -136,20 +136,24 @@ function useAttente(attente: boolean) {
 // ─── « Lui répondre » : leur conversation, dans « Proches » ──────────────────────────────────────────
 const EVT_PARLER = "clikme-rituel-parler";
 let conversationAttendue = "";
-/** Ouvre la conversation avec ce proche (l'onglet « Proches » la prend dès qu'il est là). */
-export function ouvrirConversation(cle: string) {
+// (« Mon vœu », 12 novembre 2026 : « Parler à Marius » ouvre leur conversation micro prêt — `parler`)
+let parlerAttendu = false;
+export function ouvrirConversation(cle: string, parler = false) {
   conversationAttendue = cle;
+  parlerAttendu = parler;
   window.dispatchEvent(new CustomEvent(EVT_PARLER));
 }
 /** Pour « Proches » : ouvre la conversation demandée (tout de suite, ou dès qu'elle l'est). */
-export function useConversationDemandee(ouvrir: (cle: string) => void, actif: boolean) {
+export function useConversationDemandee(ouvrir: (cle: string, parler: boolean) => void, actif: boolean) {
   useEffect(() => {
     if (!actif) return;
     const prendre = () => {
       const c = conversationAttendue;
       if (!c) return;
       conversationAttendue = "";
-      ouvrir(c);
+      const p = parlerAttendu;
+      parlerAttendu = false;
+      ouvrir(c, p);
     };
     void Promise.resolve().then(prendre);
     window.addEventListener(EVT_PARLER, prendre);

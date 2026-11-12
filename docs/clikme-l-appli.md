@@ -66,6 +66,8 @@ Une fois ton premier mème fait, **l'appli s'ouvre ici**.
   peux le reformuler, le mettre en pause, en faire un autre. En haut, ton vœu en grand, puis les gens qui t'ont répondu.
   Quand quelqu'un propose son aide (« ✋ Marius peut t'aider »), tu lui réponds avec ta figurine : vous devenez proches,
   et vous continuez dans Proches, avec vos figurines. Ou « Pas pour moi » : il ne le saura pas.
+  À chaque tête qui t'encourage, tu peux répondre avec la tienne (« Merci ! », « Mort de rire »…) : l'autre la retrouve
+  dans ses bulles.
 - **🎯 Ta mission du jour** : trois vœux des autres à encourager, en une minute. Tu réponds **avec ta tête** (tes
   visages déjà faits, et un mot en sticker : « J'Y CROIS ! »), tu proposes ton aide (une phrase toute prête, ou ta
   voix), ou tu passes ton tour (l'autre ne le saura jamais). Mission faite : ton vœu passe en premier le lendemain, et
@@ -121,7 +123,8 @@ parle qu'avec des voix enregistrées, jamais avec une voix de synthèse.
 
 ## 4. Pourquoi on revient
 
-- **Ta mission du jour** (trois vœux à encourager) et **les réponses à ton vœu**.
+- **Ta mission du jour** (trois vœux à encourager, rappelée avec le mème du jour vers 11 h 30) et **les réponses à ton
+  vœu** (une notification vers 19 h).
 - **Le mème du jour**, chaque jour, vers 11 h 30.
 - **Les réponses** : « Hugo t'a répondu ! ».
 - **La figurine du mois**, qui se mérite en dix jours.
