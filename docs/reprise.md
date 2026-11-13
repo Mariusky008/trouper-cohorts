@@ -96,7 +96,8 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   **La nouvelle interface** (la maquette validée le 13 novembre : « Chez moi » au centre, une nouvelle façon de se parler) :
   lot 1 fait — le menu à trois, « ＋ Nouveau », « Moi » reprend « Créer » (9.0 quinquadragies 📐) ; lot 2 fait — Chez moi
   rangé par personne, les demandes des inconnus (9.0 sexquadragies 👋) ; lot 3 fait — la conversation range visites et
-  cadeaux, 🎭 et 🎁 à côté de « Lui répondre » (9.0 septquadragies 💬). À suivre : le mème envoyé à un proche (lot 4).
+  cadeaux, 🎭 et 🎁 à côté de « Lui répondre » (9.0 septquadragies 💬) ; lot 4 fait — le mème envoyé à un proche, dans
+  la conversation (9.0 octoquadragies 🎭). La nouvelle interface est complète ; la suite : ses retours sur son iPhone.
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais

@@ -2739,6 +2739,26 @@ moi » (l'interrupteur allumé) y ajoute (`proches.tsx`, `Conversation`, `chezMo
 - **L'essai** : `scripts/navigateur/bascule-univers.mjs` (chez Marc : la visite et le bouquet de Sam dans leur fil, 🎭 qui
   mène au studio, 🎁 sans univers ; chez Sam : « Son univers », un livre laissé chez Marc, dans le fil).
 
+### 9.0 octoquadragies 🎭 La nouvelle interface, lot 4 : le mème envoyé à un proche, dans la conversation (13 novembre)
+
+Le propriétaire : « la possibilité de créer un mème […] qu'on pourrait envoyer sur WhatsApp ou dans un des messages de la
+page chez moi ».
+
+- **🎭 dans une conversation** retient pour qui est le mème (`meme-pour.tsx`, `retenirMemePour`, le temps de la visite)
+  et ouvre le studio de toujours ; « ＋ Nouveau › Créer un mème » l'oublie.
+- **Le mème prêt** (sous « Partager ») : « 🎭 Envoyer à Sam » (celui pour qui il l'a fait), « ou à un autre proche » (leurs
+  figurines en rond) ; sans 🎭 : « 🎭 L'envoyer à un proche ». Envoyé : « ✓ Envoyé à Sam : il est dans votre
+  conversation » — « 💬 Voir notre conversation ».
+- **Le serveur** (`memes-proches-serveur.ts`, `POST /api/direct/proches { action: "meme", cle, id }`) : seulement entre
+  proches (dans les deux sens), seulement son propre mème ; rangé dans `fils/<paire>/memes.json` (les 100 derniers, une
+  fois chacun) ; l'autre est prévenu (« 🎭 Marc t'a envoyé un mème », une fois par jour, vers leur conversation). Il compte
+  dans les non lus ; il peut être le dernier message (« 🎭 t'a envoyé un mème »).
+- **Dans le fil** (le fil de la conversation donne `memes`) : sa vignette (sa figurine, ses mots, « ▶ ») ; un toucher : en
+  grand, sa vidéo ; « 🎭 Répondre avec un mème ».
+- **Les essais** : `scripts/essai-memes-proches-route.mjs` (envoyer, les refus, les non lus, « nouveau » puis relu),
+  `scripts/navigateur/bascule-univers.mjs` (Marc fait son mème pour Sam depuis leur conversation, « Envoyer à Sam », Sam
+  le voit dans sa liste et le regarde).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
