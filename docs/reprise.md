@@ -122,8 +122,11 @@ bon moment.
 - **La suite** : sa lecture du cahier (la section 16 liste les choix faits par défaut, sur lesquels il peut revenir ;
   les banques de phrases des sections 5, 7.1 et 7.3 sont à valider) ; puis le lot E1.
 - **À côté** : il a dit de l'étagère « très bien comme feature, mais ça ne fera pas venir les gens ». Il cherche
-  encore ce qui fera parler de l'appli ; une proposition lui a été faite (des épisodes de dessin animé tirés de leurs
-  vrais vocaux, à partager), **sans réponse encore, rien de décidé**.
+  encore ce qui fera parler de l'appli. Une première proposition (des épisodes de dessin animé tirés de leurs vrais
+  vocaux) est **écartée** : « les messages que les gens s'envoient sont épisodiques et souvent courts ». La leçon : ne
+  pas compter sur ce que les gens se disent ; l'appli doit fournir la matière. Une deuxième piste lui est proposée
+  (les figurines vivent leur vie : chaque jour, une petite scène chez soi avec la figurine d'un proche, et une réponse
+  en un toucher) — **sans réponse encore, rien de décidé**.
 
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 
