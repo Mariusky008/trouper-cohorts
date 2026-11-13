@@ -111,7 +111,13 @@ export function Proches({
   const visible = useContext(OngletVisible);
   // 🏡 (« Chez moi ») la feuille de mon humeur, et celle du « ＋ » (et, dedans, le choix du proche à qui parler)
   const [humeurOuverte, setHumeurOuverte] = useState(false);
-  const [plus, setPlus] = useState<false | "menu" | "qui">(false);
+  const [plusOuvert, setPlusOuvert] = useState(false);
+  // (ce que montre la feuille du « ＋ » : gardé pendant qu'elle se referme)
+  const [plus, setPlusVue] = useState<"menu" | "qui">("menu");
+  const setPlus = (x: false | "menu" | "qui") => {
+    if (x) setPlusVue(x);
+    setPlusOuvert(Boolean(x));
+  };
   const rituel = useRituel();
   useEffect(() => {
     if (chezMoi && visible && compte && prete) void chargerRituel();
@@ -415,7 +421,7 @@ export function Proches({
             <button type="button" className="cm-plus" aria-label="Nouvelle conversation" onClick={() => setPlus("menu")}>
               ＋
             </button>
-            <Feuille ouverte={Boolean(plus)} onFermer={() => setPlus(false)} titre={plus === "qui" ? "À qui parler ?" : "Nouvelle conversation"} className="pr-feuille cm-feuille">
+            <Feuille ouverte={plusOuvert} onFermer={() => setPlus(false)} titre={plus === "qui" ? "À qui parler ?" : "Nouvelle conversation"} className="pr-feuille cm-feuille">
               {plus === "qui" ? (
                 <div className="cm-qui">
                   {aParler.map((p) => (

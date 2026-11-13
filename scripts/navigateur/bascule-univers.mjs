@@ -98,6 +98,8 @@ await fermerPablito(avant);
 ok((await menu(avant)) === "Découvrir · Autour · Créer · Mes mèmes · Proches" && (await avant.locator(".pn").count()) === 0, `éteint : le menu d'aujourd'hui, pas d'invitation (${await menu(avant)})`);
 
 // ═══ ALLUMÉ : l'appli s'ouvre sur « Chez moi » (le 13 novembre : « Mon univers » et « Proches » ne font plus qu'un) ═══
+// (Marc a déjà ouvert l'appli : sa figurine du nouveau style y est passée — le pont — et Sam peut lui parler)
+await fetch(`${ALLUME}/api/direct/ma-figurine`, { headers: { cookie: `clikme_habitant=${MARC.jeton}` } });
 const p = await tel(ALLUME, SAM);
 await p.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
 await fermerPablito(p);
