@@ -106,7 +106,7 @@ export function chargerRituel(): Promise<EtatRituel | null> {
     });
   return enVol;
 }
-function useRituel(): EtatRituel | null {
+export function useRituel(): EtatRituel | null {
   return useSyncExternalStore(
     sAbonner,
     () => etat,

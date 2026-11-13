@@ -56,12 +56,13 @@ const marquerVu = (v: number | string) => {
 };
 
 /** Le menu de demain (`docs/univers/feuille-de-route.md`, section 8) : les onglets d'aujourd'hui, et « Mon univers ». */
+// (le menu de l'appli, quatre onglets depuis « Chez moi » — le 13 novembre 2026 : « Mon univers » et « Proches » ne font
+// plus qu'un, `app/collection/chez-moi.tsx`)
 const MENU_DE_DEMAIN = [
   { ico: "🔥", nom: "Découvrir", href: "/collection#decouvrir" },
   { ico: "📍", nom: "Autour", href: "/collection#autour" },
   { ico: "✏️", nom: "Créer", href: "/collection#figurine" },
-  { ico: "👯", nom: "Proches", href: "/collection#proches" },
-  { ico: "🏡", nom: "Mon univers", href: "/univers" },
+  { ico: "🏡", nom: "Chez moi", href: "/collection#proches" },
 ] as const;
 
 export function Monde({ accueil = false }: { accueil?: boolean }) {
@@ -138,7 +139,13 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
   const [c1, c2, c3] = etat?.palette?.length === 3 ? etat.palette : ["#f6d9a8", "#e7b77a", "#7a4b2a"];
   return (
     <main className={`um${accueil ? " accueil" : ""}`} data-etape={etat?.etape ?? "chargement"} style={{ ["--c1" as string]: c1, ["--c2" as string]: c2, ["--c3" as string]: c3 }}>
-      {accueil && etat?.etape === "decouverte" && <h1 className="um-entete">Mon univers</h1>}
+      {/* (🏡 ses réglages, derrière ⚙️ de « Chez moi » : le retour, en haut) */}
+      {!accueil && etat?.etape === "decouverte" && (
+        <a className="um-retour" href="/collection#proches">
+          ← Chez moi
+        </a>
+      )}
+      {etat?.etape === "decouverte" && <h1 className="um-entete">Mon univers</h1>}
       {!etat ? (
         <p className="um-centre">{erreur || "Un instant…"}</p>
       ) : etat.etape === "sans-fiche" && !etat.figurine ? (
@@ -203,8 +210,8 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
         </p>
       )}
       {!accueil && etat?.etape === "decouverte" && (
-        <a className="um-lien" href="/univers">
-          🏡 Mon univers, l’accueil de demain
+        <a className="um-lien" href="/collection#proches">
+          🏡 Retour chez moi
         </a>
       )}
       {/* 📥 ses mèmes sont rangés dans « Mon univers » (le menu de demain n'a plus d'onglet « Mes mèmes ») */}
@@ -216,7 +223,7 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
       {accueil && (
         <nav className="um-menu" aria-label="Menu">
           {MENU_DE_DEMAIN.map((m) => (
-            <a key={m.nom} href={m.href} className={m.href === "/univers" ? "pris" : ""} aria-current={m.href === "/univers" ? "page" : undefined}>
+            <a key={m.nom} href={m.href}>
               <span aria-hidden="true">{m.ico}</span>
               <small>{m.nom}</small>
             </a>
@@ -270,13 +277,13 @@ function Chantier({ etat }: { etat: EtatUnivers }) {
 
 // ─── la découverte ────────────────────────────────────────────────────────────────────────────────
 /** La hauteur de sa figurine chez elle, sans relevé sur l'image vedette (en part de la scène) : au premier plan. */
-const TAILLE_FIGURINE = 0.5;
+export const TAILLE_FIGURINE = 0.5;
 
 /**
  * 📏 Où est sa figurine dans son image (détourée : des bords transparents) : le haut et le bas de ce qui se voit, en
  * fractions de l'image. Sans lecture possible, une marge d'usage.
  */
-function useCadreVisible(src: string | undefined): { haut: number; bas: number } {
+export function useCadreVisible(src: string | undefined): { haut: number; bas: number } {
   const [cadre, setCadre] = useState({ haut: 0.04, bas: 0.97 });
   useEffect(() => {
     if (!src) return;
@@ -762,7 +769,8 @@ const STYLES = `
 .um-brume{position:absolute;inset:0;background:radial-gradient(circle at 50% 60%,rgba(255,255,255,.2),rgba(255,248,236,.98) 70%);animation:um-brume 2.8s ease-out forwards;pointer-events:none}
 .um.accueil{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 .um-entete{margin:0;font-size:24px;font-weight:900;letter-spacing:-.01em}
-.um-menu{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:540px;margin:0 auto;padding:7px 6px 6px;border-radius:26px;background:rgba(43,26,12,.92);box-shadow:0 14px 34px -12px rgba(0,0,0,.7)}
+.um-retour{align-self:flex-start;color:#4a3017;font-weight:800;font-size:16px;text-decoration:none}
+.um-menu{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));max-width:540px;margin:0 auto;padding:7px 6px 6px;border-radius:26px;background:rgba(43,26,12,.92);box-shadow:0 14px 34px -12px rgba(0,0,0,.7)}
 .um-menu a{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:4px 0;color:#d9c3a5;text-decoration:none;font-size:20px}
 .um-menu a small{font-size:11px;font-weight:800;white-space:nowrap}
 .um-menu a.pris{color:#fff6e6}

@@ -1,11 +1,13 @@
 // 🔀 LA BASCULE « UNIVERS POUR TOUS », DANS LE NAVIGATEUR (`lib/direct/univers-pour-tous.ts`) — sur un iPhone, contre le
 // faux Supabase (jamais la vraie base), avec une seconde app lancée ici, l'interrupteur allumé (`../seconde-app.mjs`).
 //
-// Sam a sa figurine d'aujourd'hui. L'interrupteur allumé : l'appli s'ouvre sur « Mon univers » (« Ton univers commence
-// par toi ») ; le menu du bas devient Découvrir · Autour · Créer · Proches · Mon univers ; « Créer » l'invite à refaire sa
-// figurine au nouveau style ; « Ta figurine » lui propose sa photo d'avant (les deux cases toujours à cocher). Un
+// Sam a sa figurine d'aujourd'hui. L'interrupteur allumé : l'appli s'ouvre sur « Chez moi » (son univers l'attend ; ses
+// conversations comme WhatsApp — Marc ; « Mes mèmes » ; « ＋ ») ; le menu du bas : Découvrir · Autour · Créer · Chez
+// moi ; Marc, qui a son univers, le voit par une fenêtre, sa figurine au milieu, sa pastille d'humeur, ⚙️ ; « Créer »
+// invite Sam à refaire sa figurine au nouveau style ; « Ta figurine » lui propose sa photo d'avant (les deux cases toujours à cocher). Un
 // nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. Freiné (l'app de la CI,
 // `CLIKME_UNIVERS_POUR_TOUS=0`) : l'appli d'avant. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+import crypto from "node:crypto";
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 import { lancerSecondeApp } from "../seconde-app.mjs";
@@ -32,6 +34,52 @@ await deposer(`${SAM.id}/photo.jpg`, fs.readFileSync("public/direct/atelier-bijo
 await json(`${SAM.id}/majeur.json`, { le: maintenant, age: 15 });
 await semer("clik_ma_figurine", [{ habitant_id: SAM.id, prenom: SAM.prenom, photo: `${SAM.id}/photo.jpg`, accord_le: maintenant, demande_le: maintenant, neutre: `${SAM.id}/neutre-essai.webp`, parle: `${SAM.id}/neutre-essai.webp`, prete_le: maintenant }]);
 
+// 🏡 Marc : sa figurine du nouveau style, son univers, et Sam pour proche (« Chez moi »)
+const cleProfil = (h) => crypto.createHash("sha256").update(`clikme-profil:${h}`).digest("hex").slice(0, 16);
+const MARC = { id: "abababab-0000-4000-8000-000000000d02", jeton: "jeton-marc-bascule-nav-00001", prenom: "Marc" };
+await semer("human_habitants", [{ id: MARC.id, device_token: MARC.jeton, prenom: MARC.prenom, ville_slug: "dax" }]);
+await json(`${MARC.id}/majeur.json`, { le: maintenant, age: 15 });
+const P1 = `${MARC.id}/perso/v1`;
+// (rangée comme en vrai : l'image assise est la proposition validée, `perso/images/<id>.png`)
+const ASSISE_MARC = `${MARC.id}/perso/images/a1b2c3d4e5f6.png`;
+await deposer(ASSISE_MARC, fs.readFileSync("public/direct/double/ecoute.webp"), "image/webp");
+for (const n of ["assise_parle", "debout"]) await deposer(`${P1}/${n}.png`, fs.readFileSync("public/direct/double/ecoute.webp"), "image/webp");
+const perso = {
+  version: 1,
+  style: "collection-1",
+  creee_le: maintenant,
+  validee_le: maintenant,
+  references: { assise: { chemin: ASSISE_MARC }, assise_parle: { chemin: `${P1}/assise_parle.png` }, debout: { chemin: `${P1}/debout.png` } },
+  historique: [{ version: 1, le: maintenant, raison: "« C’est moi ! »", style: "collection-1" }],
+};
+await json(`${P1}/fiche.json`, perso);
+await json(`${MARC.id}/perso/fiche.json`, perso);
+const M1 = `${MARC.id}/monde/v1`;
+await deposer(`${M1}/decor.png`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
+await deposer(`${M1}/vedette.png`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
+const monde = {
+  version: 1,
+  style: "film-chaleureux-1",
+  creee_le: maintenant,
+  validee_le: maintenant,
+  proposition: "Je t'imagine dans un atelier ouvert sur la mer.",
+  ambiance: { lumiere: "fin d'après-midi dorée", palette: ["#e8b06a", "#2f5d73", "#f3ead9"] },
+  elements: [{ id: "e1", quoi: "un établi", pourquoi: "je bricole tous les dimanches", source: "dit", valide: true }],
+  regles: [],
+  inconnus: [],
+  scene: { sol: 0.8, places: [{ id: "hote", x: 0.32, y: 0.84, echelle: 1 }, { id: "invite", x: 0.7, y: 0.86, echelle: 1 }], lumiere: { vient_de: "gauche", couleur: "#ffd9a0" } },
+  references: { decor: { chemin: `${M1}/decor.png` }, vedette: { chemin: `${M1}/vedette.png` } },
+  visibilite: "proches",
+  souvenirs: [],
+  historique: [{ version: 1, le: maintenant, raison: "sa conversation avec Pablito", style: "film-chaleureux-1" }],
+};
+await json(`${M1}/fiche.json`, monde);
+await json(`${MARC.id}/monde/fiche.json`, monde);
+await json(`${MARC.id}/monde/creation.json`, { version: 1, etape: "fini", mesure: 1 });
+for (const x of [SAM, MARC]) await json(`profils/${cleProfil(x.id)}.json`, { h: x.id });
+await json(`${MARC.id}/proches.json`, { ids: [SAM.id] });
+await json(`${SAM.id}/proches.json`, { ids: [MARC.id] });
+
 const b = await lancer();
 const erreurs = [];
 async function tel(base, qui) {
@@ -52,34 +100,64 @@ await avant.goto(`${BASE}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(avant);
 ok((await menu(avant)) === "Découvrir · Autour · Créer · Mes mèmes · Proches" && (await avant.locator(".pn").count()) === 0, `éteint : le menu d'aujourd'hui, pas d'invitation (${await menu(avant)})`);
 
-// ═══ ALLUMÉ : l'appli s'ouvre sur « Mon univers » ═══
+// ═══ ALLUMÉ : l'appli s'ouvre sur « Chez moi » (le 13 novembre : « Mon univers » et « Proches » ne font plus qu'un) ═══
+// (Marc a déjà ouvert l'appli : sa figurine du nouveau style y est passée — le pont — et Sam peut lui parler)
+await fetch(`${ALLUME}/api/direct/ma-figurine`, { headers: { cookie: `clikme_habitant=${MARC.jeton}` } });
 const p = await tel(ALLUME, SAM);
 await p.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
-await p.waitForURL(/\/univers$/, { timeout: 20000 }).catch(() => null);
-await p.waitForSelector(".um-titre", { timeout: 20000 }).catch(() => null);
-ok(new URL(p.url()).pathname === "/univers" && (await texte(p, ".um-titre")) === "Ton univers commence par toi", `l'appli s'ouvre sur « Mon univers » (${new URL(p.url()).pathname} : ${await texte(p, ".um-titre")})`);
-const liens = (await p.locator(".um-menu a small").allInnerTexts()).join(" · ");
-ok(liens === "Découvrir · Autour · Créer · Proches · Mon univers", `son menu : ${liens}`);
-await p.screenshot({ path: `${D}/bascule-1-mon-univers.png` });
+await fermerPablito(p);
+await p.waitForSelector(".cm-tete", { timeout: 20000 }).catch(() => null);
+ok(new URL(p.url()).hash === "#proches" && (await texte(p, ".cm-titre h2")) === "Chez moi", `l'appli s'ouvre sur « Chez moi » (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
+ok((await menu(p)) === "Découvrir · Autour · Créer · Chez moi", `le menu du bas, à quatre : ${await menu(p)}`);
+await p.waitForSelector(".cm-attend", { timeout: 20000 }).catch(() => null);
+ok((await texte(p, ".cm-attend b")) === "Ton univers t’attend 🏡" && (await p.locator('.cm-attend[href="/univers"]').count()) === 1, `sans univers encore : ce qui l'attend (${await texte(p, ".cm-attend b")})`);
+await p.waitForSelector(".cm-liste li[data-cle]", { timeout: 20000 }).catch(() => null);
+const ligneMarc = await texte(p, ".cm-liste li[data-cle] .cm-ligne");
+ok(ligneMarc.includes("Marc") && ligneMarc.includes("Dis-lui bonjour") && (await p.locator(".pr-grille, .pr-wa, .pr-lien").count()) === 0, `ses conversations, comme WhatsApp : Marc (${ligneMarc}) ; plus de cartes ni de blocs`);
+ok((await p.locator(".cm-memes", { hasText: "Mes mèmes" }).count()) === 1, "« 📥 Mes mèmes » : une ligne de la liste");
+await p.locator(".cm-plus").click();
+await p.waitForSelector(".cm-actions", { timeout: 10000 }).catch(() => null);
+const actions = (await p.locator(".cm-actions b").allInnerTexts()).join(" · ");
+ok(actions === "Parler à un proche · Par WhatsApp · Ajouter un proche", `« ＋ » : ${actions}`);
+await p.locator(".cm-actions button", { hasText: "Parler à un proche" }).click();
+ok((await p.locator(".cm-qui button", { hasText: "Marc" }).count()) === 1, "« Parler à un proche » : à qui ? Marc");
+await p.screenshot({ path: `${D}/bascule-1-chez-moi-plus.png` });
+await p.keyboard.press("Escape");
+ok((await debordement(p)) <= 1 && (await sansMotInterdit(p)), "rien ne déborde, jamais le mot interdit");
+await p.screenshot({ path: `${D}/bascule-1-chez-moi.png` });
+
+// ═══ 🏡 MARC, QUI A SON UNIVERS : la fenêtre sur son univers, sa pastille d'humeur, ⚙️ ═══
+const m = await tel(ALLUME, MARC);
+await m.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
+await fermerPablito(m);
+await m.waitForSelector(".cm-fenetre .cm-place img", { timeout: 20000 }).catch(() => null);
+const fen = await m.evaluate(() => {
+  const f = document.querySelector(".cm-fenetre")?.getBoundingClientRect();
+  const fig = document.querySelector(".cm-place img")?.getBoundingClientRect();
+  return f && fig ? { h: f.height / f.width, dedans: fig.top >= f.top - 2 && fig.bottom <= f.bottom + 40, figH: fig.height / f.height } : null;
+});
+ok(Boolean(fen) && fen.h < 1.05 && fen.dedans && fen.figH > 0.35, `la fenêtre sur son univers : sa figurine chez elle, au milieu (${JSON.stringify(fen)})`);
+ok((await m.locator('.cm-reglages[href="/univers/monde"]').count()) === 1 && (await texte(m, ".cm-humeur")) === "☀️ Ton humeur ?", "⚙️ : les réglages de son univers ; la pastille « Ton humeur ? »");
+await m.locator(".cm-humeur").click();
+await m.waitForSelector(".cm-feuille .rt-bloc", { timeout: 10000 }).catch(() => null);
+ok((await m.locator(".cm-feuille .rt-bloc").count()) >= 1, "la pastille ouvre son humeur du jour (la feuille de toujours)");
+await m.screenshot({ path: `${D}/bascule-2-chez-moi-univers.png` });
+await m.keyboard.press("Escape");
+await m.goto(`${ALLUME}/univers/monde`, { waitUntil: "networkidle" });
+await m.waitForSelector(".um-retour", { timeout: 20000 }).catch(() => null);
+ok((await m.locator('.um-retour[href="/collection#proches"]').count()) === 1, "ses réglages : « ← Chez moi » en haut");
+await m.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
+await fermerPablito(m);
+await m.waitForSelector(".tf-moi, .tf", { timeout: 20000 }).catch(() => null);
+ok((await m.locator(".pn").count()) === 0, "Marc, sa figurine déjà du nouveau style : plus de « Ta figurine fait peau neuve » dans « Créer »");
 
 // ═══ « Créer » : l'invitation à refaire sa figurine au nouveau style ═══
-await p.locator(".um-menu a", { hasText: "Créer" }).click();
-await p.waitForURL(/\/collection#figurine$/, { timeout: 20000 }).catch(() => null);
+await p.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(p);
 await p.waitForSelector(".pn", { timeout: 20000 }).catch(() => null);
-ok((await menu(p)) === "Découvrir · Autour · Créer · Proches · Mon univers", `le menu du bas : Découvrir · Autour · Créer · Proches · Mon univers (${await menu(p)})`);
 ok((await texte(p, ".pn b")) === "Ta figurine fait peau neuve" && (await p.locator('.pn a[href="/univers/figurine"]').innerText()) === "La refaire au nouveau style", `« Créer » l'invite à refaire sa figurine (${await texte(p, ".pn")})`);
 ok((await p.locator(".tf-moi, .tf").count()) > 0, "son studio reste là, en dessous");
-ok((await debordement(p)) <= 1 && (await sansMotInterdit(p)), "rien ne déborde, jamais le mot interdit");
-await p.screenshot({ path: `${D}/bascule-2-creer.png` });
-// (« Mon univers », dans le menu du bas : l'accueil)
-await p.locator(".mc-nav button", { hasText: "Mon univers" }).click();
-await p.waitForURL(/\/univers$/, { timeout: 20000 }).catch(() => null);
-ok(new URL(p.url()).pathname === "/univers", "« Mon univers », dans le menu du bas : l'accueil");
-// (une adresse précise mène toujours à son onglet : pas de détour par l'accueil)
-await p.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
-await p.waitForTimeout(800);
-ok(new URL(p.url()).pathname === "/collection" && new URL(p.url()).hash === "#proches", "une adresse précise (#proches) reste où elle mène");
+await p.screenshot({ path: `${D}/bascule-3-creer.png` });
 
 // ═══ « Ta figurine » : sa photo d'avant ═══
 await p.goto(`${ALLUME}/univers/figurine`, { waitUntil: "networkidle" });
@@ -90,7 +168,7 @@ ok((await p.locator(".nf-photo img").count()) === 1 && (await p.locator(".nf-sel
 await p.locator('.nf-case input[name="moi"]').check();
 await p.locator('.nf-case input[name="age"]').check();
 ok(!(await p.locator(".nf-selfie .nf-bouton").isDisabled()), "« C’est bien moi » et « 15 ans ou plus » cochés : « Créer ma figurine »");
-await p.screenshot({ path: `${D}/bascule-3-photo-d-avant.png` });
+await p.screenshot({ path: `${D}/bascule-4-photo-d-avant.png` });
 await p.locator(".nf-selfie .nf-bouton").click();
 await p.waitForSelector(".nf-selfie", { state: "detached", timeout: 20000 }).catch(() => null);
 ok((await p.locator(".nf-selfie").count()) === 0, "sa figurine du nouveau style part à l'atelier, d'après sa photo d'avant");
@@ -101,7 +179,7 @@ await n.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(n);
 await n.waitForSelector(".pn", { timeout: 20000 }).catch(() => null);
 ok((await texte(n, ".pn b")) === "Crée ta figurine" && (await n.locator('.pn a[href="/univers/figurine"]').count()) === 1 && (await n.locator(".tf-envoi-photo, input[type=file]").count()) === 0, `un nouveau venu : « Crée ta figurine », au nouveau style (${await texte(n, ".pn")})`);
-await n.screenshot({ path: `${D}/bascule-4-nouveau.png` });
+await n.screenshot({ path: `${D}/bascule-5-nouveau.png` });
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();

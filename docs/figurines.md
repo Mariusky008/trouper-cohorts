@@ -2616,6 +2616,31 @@ l'appli seulement.
   publics (`lieux-publics/`).
 - **L'essai** : `scripts/essai-remise-a-zero-route.mjs`.
 
+### 9.0 tresquadragies 🏡 « Chez moi » : mon univers et mes conversations, une seule page (13 novembre)
+
+Le propriétaire, ses captures à l'appui : « Mon univers » — « des tonnes d'informations […] on ne sait pas ce qu'il faut
+y faire, à quoi elle sert, si ce n'est changer notre univers visuel ; si c'est juste ça, ça ne mérite pas une page
+entière » ; « Proches » — « très confus […] c'est supposé être une page où on appelle ou envoie des messages […] un peu
+comme WhatsApp, quelque chose de simple ». Ses réponses : une seule page, « Chez moi » ; le reste derrière « ＋ ».
+
+- **Le menu** (l'interrupteur allumé) : **Découvrir · Autour · Créer · Chez moi** ; l'appli s'ouvre sur « Chez moi ».
+  C'est l'onglet « Proches » d'avant (`#proches`, ses notifications, `?parler=`), rhabillé (`proches.tsx`, `chezMoi`).
+- **En haut** (`chez-moi.tsx`) : une fenêtre sur mon univers — son décor du moment, ma figurine assise chez elle (la
+  même place que sur `/univers/monde`), le thème du mois ; ma pastille d'humeur (« ☀️ Ton humeur ? », ou « 😄 Joie » ;
+  un point quand les figurines en ont dit un mot) — un toucher : la feuille de mon humeur de toujours ; ⚙️ : les
+  réglages de mon univers (`/univers/monde` : retoucher, les clés, qui est passé, qui peut entrer, mon lien de visite —
+  avec « ← Chez moi » en haut). Sans univers encore : « Ton univers t'attend 🏡 » (`/univers`).
+- **Dessous, mes conversations, comme WhatsApp** : la figurine de chacun en rond (sa tête du jour, le point vert « là
+  maintenant »), son prénom, le dernier message (« Toi : 🎙️ « … » », « Dis-lui bonjour 👋 »), l'heure (« 09:12 »,
+  « hier », « lun. »), les non-lus en pastille verte ; un toucher : la conversation (jouée chez moi, comme avant). En
+  tête, quand il y en a : « ☀️ Les figurines — elles ont réagi à ton humeur 👀 » (ou le mot de la fin de cette nuit).
+  En bas : « 📥 Mes mèmes ».
+- **« ＋ »** (en bas à droite) : « 🎙️ Parler à un proche » (à qui ?), « 💬 Par WhatsApp » (à quelqu'un qui n'a pas
+  ClikMe), « 👯 Ajouter un proche » (mon lien). Plus de cartes, plus de blocs.
+- **Freiné** (`CLIKME_UNIVERS_POUR_TOUS=0`) : l'onglet « Proches » d'avant, à l'identique.
+- **L'essai** : `scripts/navigateur/bascule-univers.mjs` (l'arrivée sur « Chez moi », le menu à quatre, la liste, « ＋ »,
+  la fenêtre sur l'univers de Marc, la pastille, ⚙️ et le retour).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

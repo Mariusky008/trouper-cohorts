@@ -25,7 +25,8 @@ import { Feuille } from "./ma-figurine";
 import { demanderOui } from "./fenetre";
 import { FigurineQuiParle, type FigurineHandle } from "./figurine-qui-parle";
 import { OngletVisible } from "./guide";
-import { BandeauRituel, MonHumeur, fabriquerMesTetes, useConversationDemandee, useRituelAvec } from "./rituel";
+import { BandeauRituel, MonHumeur, chargerRituel, fabriquerMesTetes, useConversationDemandee, useRituel, useRituelAvec } from "./rituel";
+import { EnteteChezMoi } from "./chez-moi";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
@@ -76,14 +77,51 @@ const heure = (le: string) => {
   const d = new Date(le);
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 };
+/** 🕐 L'heure, façon WhatsApp : « 09:12 » aujourd'hui, « hier », « lun. », sinon « 3 nov. ». */
+const quandCourt = (le: string) => {
+  const d = new Date(le);
+  if (Number.isNaN(d.getTime())) return "";
+  const jour = (x: Date) => x.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" });
+  const maintenant = new Date();
+  if (jour(d) === jour(maintenant)) return heure(le);
+  if (jour(d) === jour(new Date(maintenant.getTime() - 86_400_000))) return "hier";
+  if (maintenant.getTime() - d.getTime() < 6 * 86_400_000) return d.toLocaleDateString("fr-FR", { weekday: "short", timeZone: "Europe/Paris" });
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
+};
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, "0")}`;
 
 // ─── l'onglet ─────────────────────────────────────────────────────────────────────────────────────
 type Donnees = { proches: ProcheVivant[]; presence: boolean; cle: string };
 type Invitation = { cle: string; prenom: string; image: string; proche: boolean };
 
-export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean | null; prete: boolean; allerA: (o: string) => void; onNonLus: (n: number) => void }) {
+export function Proches({
+  compte,
+  prete,
+  allerA,
+  onNonLus,
+  chezMoi = false,
+}: {
+  compte: boolean | null;
+  prete: boolean;
+  allerA: (o: string) => void;
+  onNonLus: (n: number) => void;
+  /** 🏡 « Chez moi » (l'interrupteur « Univers pour tous » allumé, `chez-moi.tsx`) : mon univers en haut, la liste façon WhatsApp */
+  chezMoi?: boolean;
+}) {
   const visible = useContext(OngletVisible);
+  // 🏡 (« Chez moi ») la feuille de mon humeur, et celle du « ＋ » (et, dedans, le choix du proche à qui parler)
+  const [humeurOuverte, setHumeurOuverte] = useState(false);
+  const [plusOuvert, setPlusOuvert] = useState(false);
+  // (ce que montre la feuille du « ＋ » : gardé pendant qu'elle se referme)
+  const [plus, setPlusVue] = useState<"menu" | "qui">("menu");
+  const setPlus = (x: false | "menu" | "qui") => {
+    if (x) setPlusVue(x);
+    setPlusOuvert(Boolean(x));
+  };
+  const rituel = useRituel();
+  useEffect(() => {
+    if (chezMoi && visible && compte && prete) void chargerRituel();
+  }, [chezMoi, visible, compte, prete]);
   const [donnees, setDonnees] = useState<Donnees | null>(null);
   const [erreur, setErreur] = useState("");
   const [ouvert, setOuvert] = useState<{ cle: string; parler: boolean } | null>(null);
@@ -231,6 +269,234 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
     }
   }
 
+  // ─── ce qui sert aux deux écrans : lui parler par WhatsApp, le message prêt, la conversation, le lien d'un proche ───
+  const portails = (
+    <>
+      {/* 📲 il lui parle (par WhatsApp) : l'écran de toujours ; son message devient un lien */}
+      {whatsapp &&
+        createPortal(
+          <Parler
+            lui={null}
+            moi={whatsapp}
+            boutonEnvoyer="Envoyer par WhatsApp"
+            onFermer={() => setWhatsapp(null)}
+            envoyer={async (p) => {
+              // (🎬 sa vidéo se fabrique ensuite : le son s'ouvre ici, pendant qu'il touche « Envoyer »)
+              const ctx = partageVideoPossible() ? ouvrirLeSon() : null;
+              try {
+                const j = await demander<{ url: string; reste: number }>({ action: "lien-creer", son: p.son, duree: p.duree, repliques: p.repliques, pour: p.pour });
+                setPret({ url: new URL(j.url, window.location.origin).toString(), pour: p.pour, reste: Number(j.reste) || 0, parole: p, moi: whatsapp, ctx });
+                setWhatsapp(null);
+              } catch (e) {
+                void ctx?.close().catch(() => undefined);
+                throw e;
+              }
+            }}
+          />,
+          document.body,
+        )}
+      {pret && (
+        <Feuille ouverte onFermer={() => setPret(null)} titre="Ton message est prêt" className="pr-feuille">
+          <LeMessagePret key={pret.url} pret={pret} lienWhatsApp={lienWhatsApp(pret)} copie={lienCopie} onCopier={() => void copierLeLien(pret)} />
+        </Feuille>
+      )}
+
+      {/* (posée sur la page entière : elle couvre le menu, quoi que fassent les onglets) */}
+      {ouvert && createPortal(<Conversation key={ouvert.cle} cle={ouvert.cle} parler={ouvert.parler} onFermer={fermer} />, document.body)}
+
+      {invite && (
+        <Feuille ouverte={inviteOuverte} onFermer={() => setInviteOuverte(false)} titre={`Le lien de ${invite.prenom}`} className="pr-feuille">
+          <div className="pr-invite">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {invite.image && <img src={invite.image} alt={`La figurine de ${invite.prenom}`} draggable={false} />}
+            <b>{invite.prenom} veut être ton proche</b>
+            <p>Ajoute {invite.prenom} : vos figurines pourront se parler, avec vos voix.</p>
+            {invite.proche ? (
+              <span className="pr-deja">Déjà dans tes proches ✓</span>
+            ) : (
+              <button type="button" className="pr-bouton" disabled={geste === invite.cle} onClick={() => void ajouter(invite.cle, () => setInvite({ ...invite, proche: true }))}>
+                {geste === invite.cle ? "…" : `👯 Ajouter ${invite.prenom}`}
+              </button>
+            )}
+          </div>
+        </Feuille>
+      )}
+    </>
+  );
+
+  // ─── 🏡 « CHEZ MOI » : mon univers en haut, mes conversations dessous, comme WhatsApp ; le reste derrière « ＋ » ───
+  if (chezMoi) {
+    const liste = donnees?.proches ?? [];
+    const aParler = liste.filter((p) => p.lien === "proches");
+    const nouveau = (rituel?.mots.length ?? 0) + (rituel?.fins.length ?? 0);
+    const apercu = (p: ProcheVivant): string => {
+      if (p.lien === "ajoute") return `Veut te parler : ajoute ${p.prenom} aussi`;
+      if (p.lien === "attend") return `En attente : ${p.prenom} doit t’ajouter aussi`;
+      if (!p.dernier) return "Dis-lui bonjour 👋";
+      const t = p.dernier.texte;
+      return `${p.dernier.moi ? "Toi : " : ""}${t ? `🎙️ « ${t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t} »` : "🎙️ Message vocal"}`;
+    };
+    return (
+      <div className="pr cm">
+        <EnteteChezMoi actif={visible && compte !== null} onHumeur={() => setHumeurOuverte(true)} />
+        {compte === null ? null : !compte || !prete ? (
+          <p className="cm-doux">Tes conversations arriveront ici, dès que ta figurine sera là.</p>
+        ) : (
+          <>
+            {!donnees && !erreur && (
+              <div className="mc-attente">
+                <i />
+              </div>
+            )}
+            <ul className="cm-liste" aria-label="Mes conversations">
+              {/* ☀️ ce que les figurines ont dit de mon humeur, le mot de la fin de cette nuit : une ligne, comme un message */}
+              {nouveau > 0 && (
+                <li>
+                  <button type="button" className="cm-ligne cm-rituel" onClick={() => setHumeurOuverte(true)}>
+                    <span className="cm-avatar" aria-hidden="true">
+                      ☀️
+                    </span>
+                    <span className="cm-texte">
+                      <b>Les figurines</b>
+                      <span>{(rituel?.mots.length ?? 0) > 0 ? "Elles ont réagi à ton humeur 👀" : "Cette nuit, vos figurines se sont parlé 🌙"}</span>
+                    </span>
+                    <span className="cm-cote">
+                      <i className="cm-non-lus">{nouveau}</i>
+                    </span>
+                  </button>
+                </li>
+              )}
+              {liste.map((p, i) => (
+                <li key={p.cle} data-cle={p.cle}>
+                  <button type="button" className={`cm-ligne${p.nonLus ? " chaud" : ""}`} disabled={p.lien !== "proches"} onClick={() => ouvrir({ cle: p.cle, parler: false })} aria-label={`Ta conversation avec ${p.prenom}`}>
+                    <span className="cm-avatar">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.imageHumeur || p.image} alt="" draggable={false} style={{ animationDelay: `${(-0.7 * i).toFixed(1)}s` }} />
+                      {p.la && <i className="cm-la" aria-label="Là maintenant" />}
+                      {p.humeur && <span className="cm-emoji">{humeurDe(p.humeur)?.emoji}</span>}
+                    </span>
+                    <span className="cm-texte">
+                      <b>{p.prenom}</b>
+                      <span>{apercu(p)}</span>
+                    </span>
+                    <span className="cm-cote">
+                      {p.dernier && <time dateTime={p.dernier.le}>{quandCourt(p.dernier.le)}</time>}
+                      {p.nonLus > 0 && <i className="cm-non-lus">{p.nonLus}</i>}
+                    </span>
+                  </button>
+                  {p.lien === "ajoute" && (
+                    <button type="button" className="cm-ajouter" disabled={geste === p.cle} onClick={() => void ajouter(p.cle)}>
+                      {geste === p.cle ? "…" : "Ajouter"}
+                    </button>
+                  )}
+                </li>
+              ))}
+              {/* 📥 mes mèmes : ce qu'ils sont devenus (comme les « Archivées » de WhatsApp) */}
+              <li>
+                <button type="button" className="cm-ligne cm-memes" onClick={() => allerA("memes")}>
+                  <span className="cm-avatar" aria-hidden="true">
+                    📥
+                  </span>
+                  <span className="cm-texte">
+                    <b>Mes mèmes</b>
+                    <span>Ceux que tu as envoyés, et ce qu’ils sont devenus</span>
+                  </span>
+                </button>
+              </li>
+            </ul>
+            {donnees && !liste.length && (
+              <div className="cm-vide">
+                <b>Pas encore de conversation</b>
+                <p>Ajoute tes proches : vos figurines se parleront, avec vos voix.</p>
+                <button type="button" className="pr-bouton" onClick={() => setPlus("menu")}>
+                  ＋ Ajouter un proche
+                </button>
+              </div>
+            )}
+            {erreur && (
+              <p className="pr-erreur" role="alert">
+                {erreur}
+              </p>
+            )}
+            <button type="button" className="cm-plus" aria-label="Nouvelle conversation" onClick={() => setPlus("menu")}>
+              ＋
+            </button>
+            <Feuille ouverte={plusOuvert} onFermer={() => setPlus(false)} titre={plus === "qui" ? "À qui parler ?" : "Nouvelle conversation"} className="pr-feuille cm-feuille">
+              {plus === "qui" ? (
+                <div className="cm-qui">
+                  {aParler.map((p) => (
+                    <button
+                      key={p.cle}
+                      type="button"
+                      onClick={() => {
+                        setPlus(false);
+                        ouvrir({ cle: p.cle, parler: true });
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.image} alt="" draggable={false} />
+                      {p.prenom}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="cm-actions">
+                  {aParler.length > 0 && (
+                    <button type="button" onClick={() => setPlus("qui")}>
+                      <span aria-hidden="true">🎙️</span>
+                      <span>
+                        <b>Parler à un proche</b>
+                        <small>Ta figurine lui parle, avec ta voix</small>
+                      </span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={geste === "whatsapp"}
+                    onClick={() => {
+                      setPlus(false);
+                      void parlerParWhatsApp();
+                    }}
+                  >
+                    <span aria-hidden="true">💬</span>
+                    <span>
+                      <b>Par WhatsApp</b>
+                      <small>À quelqu’un qui n’a pas ClikMe : ta figurine lui arrive en vidéo</small>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!donnees?.cle}
+                    onClick={() => {
+                      setPlus(false);
+                      void partager();
+                    }}
+                  >
+                    <span aria-hidden="true">👯</span>
+                    <span>
+                      <b>{copie ? "Lien copié ✓" : "Ajouter un proche"}</b>
+                      <small>Envoie ton lien : vous vous ajoutez, et vos figurines se parlent</small>
+                    </span>
+                  </button>
+                </div>
+              )}
+            </Feuille>
+            <Feuille ouverte={humeurOuverte} onFermer={() => setHumeurOuverte(false)} titre="Ton humeur du jour" className="pr-feuille cm-feuille">
+              <MonHumeur
+                visible={humeurOuverte}
+                onRepondre={(cle) => {
+                  setHumeurOuverte(false);
+                  ouvrirFil(cle);
+                }}
+              />
+            </Feuille>
+          </>
+        )}
+        {portails}
+      </div>
+    );
+  }
+
   const tete = (
     <div className="pr-tete">
       <h2>Proches</h2>
@@ -364,55 +630,7 @@ export function Proches({ compte, prete, allerA, onNonLus }: { compte: boolean |
         </div>
       )}
 
-      {/* 📲 il lui parle (par WhatsApp) : l'écran de toujours ; son message devient un lien */}
-      {whatsapp &&
-        createPortal(
-          <Parler
-            lui={null}
-            moi={whatsapp}
-            boutonEnvoyer="Envoyer par WhatsApp"
-            onFermer={() => setWhatsapp(null)}
-            envoyer={async (p) => {
-              // (🎬 sa vidéo se fabrique ensuite : le son s'ouvre ici, pendant qu'il touche « Envoyer »)
-              const ctx = partageVideoPossible() ? ouvrirLeSon() : null;
-              try {
-                const j = await demander<{ url: string; reste: number }>({ action: "lien-creer", son: p.son, duree: p.duree, repliques: p.repliques, pour: p.pour });
-                setPret({ url: new URL(j.url, window.location.origin).toString(), pour: p.pour, reste: Number(j.reste) || 0, parole: p, moi: whatsapp, ctx });
-                setWhatsapp(null);
-              } catch (e) {
-                void ctx?.close().catch(() => undefined);
-                throw e;
-              }
-            }}
-          />,
-          document.body,
-        )}
-      {pret && (
-        <Feuille ouverte onFermer={() => setPret(null)} titre="Ton message est prêt" className="pr-feuille">
-          <LeMessagePret key={pret.url} pret={pret} lienWhatsApp={lienWhatsApp(pret)} copie={lienCopie} onCopier={() => void copierLeLien(pret)} />
-        </Feuille>
-      )}
-
-      {/* (posée sur la page entière : elle couvre le menu, quoi que fassent les onglets) */}
-      {ouvert && createPortal(<Conversation key={ouvert.cle} cle={ouvert.cle} parler={ouvert.parler} onFermer={fermer} />, document.body)}
-
-      {invite && (
-        <Feuille ouverte={inviteOuverte} onFermer={() => setInviteOuverte(false)} titre={`Le lien de ${invite.prenom}`} className="pr-feuille">
-          <div className="pr-invite">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {invite.image && <img src={invite.image} alt={`La figurine de ${invite.prenom}`} draggable={false} />}
-            <b>{invite.prenom} veut être ton proche</b>
-            <p>Ajoute {invite.prenom} : vos figurines pourront se parler, avec vos voix.</p>
-            {invite.proche ? (
-              <span className="pr-deja">Déjà dans tes proches ✓</span>
-            ) : (
-              <button type="button" className="pr-bouton" disabled={geste === invite.cle} onClick={() => void ajouter(invite.cle, () => setInvite({ ...invite, proche: true }))}>
-                {geste === invite.cle ? "…" : `👯 Ajouter ${invite.prenom}`}
-              </button>
-            )}
-          </div>
-        </Feuille>
-      )}
+      {portails}
     </div>
   );
 }
