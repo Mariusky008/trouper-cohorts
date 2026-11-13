@@ -180,6 +180,13 @@ const visiter = (qui, corps) => fetch(`${ALLUME}/api/direct/visites`, { method: 
 ok((await visiter(SAM, { action: "souvenir", objet: "fleurs", mot: "Pour ton atelier !" })).status === 200 && (await visiter(LEA, { action: "frapper" })).status === 200, "Sam laisse un bouquet chez Marc ; Léa frappe à sa porte");
 await m.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
 await fermerPablito(m);
+// (📐 lot 2 : la ligne de chacun dit ce qui s'est passé — lue derrière la découverte, qui s'ouvre par-dessus)
+await m.waitForFunction(() => [...document.querySelectorAll(".cm-liste li[data-cle] .cm-texte")].some((x) => x.textContent.includes("cadeau")), null, { timeout: 20000, polling: 200 }).catch(() => null);
+const ligne = async (qui) => (await m.locator(`.cm-liste li[data-cle="${cleProfil(qui.id)}"] .cm-texte span`).first().textContent({ timeout: 10000 }).catch(() => "")) ?? "";
+const lSam = await ligne(SAM);
+const lLea = await ligne(LEA);
+ok(lSam.includes("t’a laissé un cadeau") && lLea.includes("a frappé à ta porte"), `📐 rangé par personne : Sam « ${lSam} », Léa « ${lLea} »`);
+ok((await m.locator(".cm-rituel, .cm-visites").count()) === 0, "plus de lignes à part (« Les figurines », « Mes visites ») : tout est dans la ligne de chacun");
 await m.waitForSelector(".vr .vr-boite", { timeout: 20000 }).catch(() => null);
 ok((await texte(m, ".vr-qui")).includes("Sam t’a laissé un cadeau") && (await m.locator(".vr-points i").count()) === 2 && (await texte(m, ".vr-indice")).includes("Touche le paquet"), "en arrivant chez lui : « Sam t'a laissé un cadeau ! », un paquet à ouvrir (et une autre découverte après)");
 await m.screenshot({ path: `${D}/bascule-3a-cadeau-ferme.png` });
@@ -207,13 +214,32 @@ await m.screenshot({ path: `${D}/bascule-3e-bouquet-pose.png` });
 await m.reload({ waitUntil: "networkidle" });
 await m.waitForSelector(".cm-visites", { timeout: 20000 }).catch(() => null);
 await m.waitForTimeout(1200);
-ok((await m.locator(".vr").count()) === 0 && (await texte(m, ".cm-visites")).includes("Mes visites"), "en revenant : plus de découverte (c'est vu) ; la ligne « 🚪 Mes visites »");
-await m.locator(".cm-visites").click();
+ok((await m.locator(".vr").count()) === 0 && (await texte(m, ".cm-puce-visites")).includes("Mes visites"), "en revenant : plus de découverte (c'est vu) ; « 🚪 Mes visites » sur sa fenêtre");
+await m.locator(".cm-puce-visites").click();
 await m.waitForSelector(".vr-carte.bilan", { timeout: 5000 }).catch(() => null);
 const bilan = await texte(m, ".vr-carte.bilan");
 ok(bilan.includes("Qui est passé chez toi") && bilan.includes("Sam") && bilan.includes("Léa") && bilan.includes("Un bouquet, de Sam"), `« Mes visites » : qui est passé, ce qui est posé chez lui (${bilan.slice(0, 120)})`);
 ok((await debordement(m)) <= 1 && (await sansMotInterdit(m)), "la découverte : rien ne déborde, jamais le mot interdit");
 await m.locator(".vr-fermer").click();
+
+// ═══ 👋 NINA, UNE INCONNUE, FRAPPE (l'univers de Marc est ouvert à tous) : une demande, en haut de « Chez moi » ═══
+await json(`${MARC.id}/adulte.json`, { le: maintenant });
+for (const c of [`${M1}/fiche.json`, `${MARC.id}/monde/fiche.json`]) await json(c, { ...monde, visibilite: "tous" });
+const NINA = { id: "abababab-0000-4000-8000-000000000d04", jeton: "jeton-nina-bascule-nav-00001", prenom: "Nina" };
+await semer("human_habitants", [{ id: NINA.id, device_token: NINA.jeton, prenom: NINA.prenom, ville_slug: "dax" }]);
+await deposer(`${NINA.id}/neutre-essai.webp`, fs.readFileSync("public/direct/double/pied/montre.webp"), "image/webp");
+await semer("clik_ma_figurine", [{ habitant_id: NINA.id, prenom: NINA.prenom, photo: `${NINA.id}/photo.jpg`, accord_le: maintenant, neutre: `${NINA.id}/neutre-essai.webp`, parle: `${NINA.id}/neutre-essai.webp`, prete_le: maintenant }]);
+await json(`profils/${cleProfil(NINA.id)}.json`, { h: NINA.id });
+ok((await visiter(NINA, { action: "frapper" })).status === 200, "Nina, qui ne connaît pas Marc, frappe à sa porte");
+await m.reload({ waitUntil: "networkidle" });
+await m.waitForSelector(".vr .vr-porte", { timeout: 20000 }).catch(() => null);
+await m.locator(".vr-fermer").click().catch(() => null);
+await m.waitForSelector(".cm-demande", { timeout: 10000 }).catch(() => null);
+ok((await texte(m, ".cm-demandes h3")) !== "" && (await texte(m, ".cm-demande")).includes("Nina a frappé chez toi") && (await m.locator(".cm-demande .cm-ajouter-demande", { hasText: "Ajouter Nina" }).count()) === 1, `👋 « Une demande » : ${await texte(m, ".cm-demande")}`);
+await m.screenshot({ path: `${D}/bascule-3f-demande.png` });
+await m.locator(".cm-ajouter-demande").click();
+await m.waitForSelector(`.cm-liste li[data-cle="${cleProfil(NINA.id)}"]`, { timeout: 10000 }).catch(() => null);
+ok((await m.locator(".cm-demande").count()) === 0 && (await ligne(NINA)).includes("En attente"), `« Ajouter Nina » : la demande s'en va, Nina est dans la liste (${await ligne(NINA)})`);
 
 // ═══ « Créer » : l'invitation à refaire sa figurine au nouveau style ═══
 await p.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });

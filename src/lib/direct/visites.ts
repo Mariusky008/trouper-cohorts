@@ -97,6 +97,8 @@ export type Passage = {
   proche?: boolean;
   /** son univers m'est ouvert (on peut lui rendre visite) */
   univers?: boolean;
+  /** un inconnu dont j'ai ignoré la demande (il ne revient plus en « demande » dans « Chez moi ») */
+  ignore?: boolean;
 };
 export type MesVisites = {
   visibilite: Visibilite;
