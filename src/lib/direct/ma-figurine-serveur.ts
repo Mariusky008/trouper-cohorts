@@ -229,8 +229,10 @@ export async function etatMaFigurine(supabase: Supabase, habitant: Habitant | nu
     prenom,
     commerces,
     compte: true,
-    // 🔀 (l'interrupteur allumé : sa figurine se fait au nouveau style ; le pont pose `perso/v<n>/assise` dans sa ligne)
-    ...(universPourTous() ? { bascule: { nouveauStyle: /\/perso\/v\d+\//.test(s(ligne?.neutre)) } } : {}),
+    // 🔀 (l'interrupteur allumé : sa figurine se fait au nouveau style ; le pont pose son image assise dans sa ligne —
+    // toujours rangée sous `<habitant>/perso/` : `perso/images/<proposition>.png`, ou `perso/v<n>/…` après son fauteuil ;
+    // celles d'avant sont à la racine de son dossier, `<habitant>/<nom>-<empreinte>.webp`)
+    ...(universPourTous() ? { bascule: { nouveauStyle: s(ligne?.neutre).includes("/perso/") } } : {}),
   };
   const prete = Boolean(ligne?.prete_le && s(ligne?.neutre) && s(ligne?.parle));
   if (!ok) return { ...base, etape: "bientot" };

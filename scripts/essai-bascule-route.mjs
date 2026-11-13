@@ -48,15 +48,19 @@ await semer("human_habitants", [
 ]);
 const maintenant = new Date().toISOString();
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+// (rangée comme en vrai : l'image assise est la proposition validée, `perso/images/<id>.png` ; ses autres images, dans la
+// version — `nouvelle-figurine-serveur.ts`)
+const ASSISE = (h) => `${h}/perso/images/a1b2c3d4e5f6.png`;
 const nouvelleFigurine = async (h) => {
   const P1 = `${h}/perso/v1`;
-  for (const n of ["assise", "assise_parle", "debout"]) await deposer(`${P1}/${n}.png`, PNG, "image/png");
+  await deposer(ASSISE(h), PNG, "image/png");
+  for (const n of ["assise_parle", "debout"]) await deposer(`${P1}/${n}.png`, PNG, "image/png");
   const perso = {
     version: 1,
     style: "collection-1",
     creee_le: maintenant,
     validee_le: maintenant,
-    references: { assise: { chemin: `${P1}/assise.png` }, assise_parle: { chemin: `${P1}/assise_parle.png` }, debout: { chemin: `${P1}/debout.png` } },
+    references: { assise: { chemin: ASSISE(h) }, assise_parle: { chemin: `${P1}/assise_parle.png` }, debout: { chemin: `${P1}/debout.png` } },
     photo: { chemin: `${h}/perso/selfie-essai.jpg`, accord_le: maintenant },
     historique: [{ version: 1, le: maintenant, raison: "« C’est moi ! »", style: "collection-1" }],
   };
@@ -97,22 +101,22 @@ ok((await appeler(ALLUME, LEA, "/univers")).statut === 200 && (await appeler(ALL
 const e1 = await appeler(ALLUME, LEA, "/api/direct/ma-figurine");
 const l1 = await ligne(LEA.id);
 ok(
-  e1.etat?.etape === "prete" && l1?.neutre === `${PL}/assise.png` && l1.parle === `${PL}/assise_parle.png` && Boolean(l1.prete_le) && l1.prenom === "Léa" && l1.photo === `${LEA.id}/perso/selfie-essai.jpg`,
+  e1.etat?.etape === "prete" && l1?.neutre === ASSISE(LEA.id) && l1.parle === `${PL}/assise_parle.png` && Boolean(l1.prete_le) && l1.prenom === "Léa" && l1.photo === `${LEA.id}/perso/selfie-essai.jpg`,
   `🌉 le pont : en ouvrant l'appli, sa figurine du nouveau style devient la sienne (${l1?.neutre})`,
 );
-ok(decodeURIComponent(e1.etat?.neutre ?? "").includes("/perso/v1/assise.png") && decodeURIComponent(e1.etat?.parle ?? "").includes("/perso/v1/assise_parle.png"), "l'appli la montre, assise, et la fait parler");
+ok(decodeURIComponent(e1.etat?.neutre ?? "").includes("/perso/images/a1b2c3d4e5f6.png") && decodeURIComponent(e1.etat?.parle ?? "").includes("/perso/v1/assise_parle.png"), "l'appli la montre, assise, et la fait parler");
 const avantIa = (await ia()).length;
 const v = await appeler(ALLUME, LEA, "/api/direct/ma-figurine", { action: "expressions", veut: "colere" });
 const faites = (await ia()).slice(avantIa);
 ok(v.statut === 200 && faites.length > 0 && faites.every((c) => c.includes("seated in its armchair")), `🎭 ses visages : au nouveau style, sur sa figurine assise (${faites.length} image(s), jamais l'ancienne consigne)`);
-const fichiers = await (await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: dossierExpressions(LEA.id, `${PL}/assise.png`), limit: 100 }) })).json().catch(() => []);
+const fichiers = await (await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: dossierExpressions(LEA.id, ASSISE(LEA.id)), limit: 100 }) })).json().catch(() => []);
 ok(Array.isArray(fichiers) && fichiers.some((f) => f.name === "colere-n.webp"), "rangés dans le dossier de sa figurine assise — celui que lit l'appli");
 const e2 = await appeler(ALLUME, LEA, "/api/direct/ma-figurine");
 ok((await ligne(LEA.id))?.updated_at === l1?.updated_at && e2.etat?.etape === "prete", "le pont n'est posé qu'une fois (rien ne change à la visite suivante)");
 
 const h1 = await appeler(ALLUME, HUGO, "/api/direct/ma-figurine");
 const lh = await ligne(HUGO.id);
-ok(h1.etat?.etape === "prete" && lh?.neutre === `${PH}/assise.png` && lh.parle === `${PH}/assise_parle.png` && lh.prenom === "Hugo le bricoleur" && lh.photo === `${HUGO.id}/photo.jpg`, "Hugo : sa figurine d'aujourd'hui remplacée par la nouvelle (son prénom et sa photo gardés)");
+ok(h1.etat?.etape === "prete" && lh?.neutre === ASSISE(HUGO.id) && lh.parle === `${PH}/assise_parle.png` && lh.prenom === "Hugo le bricoleur" && lh.photo === `${HUGO.id}/photo.jpg`, "Hugo : sa figurine d'aujourd'hui remplacée par la nouvelle (son prénom et sa photo gardés)");
 const s1 = await appeler(ALLUME, SAM, "/api/direct/ma-figurine");
 ok(s1.etat?.etape === "prete" && (await ligne(SAM.id))?.neutre === `${SAM.id}/figurine-n.webp`, "Sam, sans figurine du nouveau style : rien ne change");
 const avantSam = (await ia()).length;

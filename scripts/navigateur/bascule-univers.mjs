@@ -40,13 +40,16 @@ const MARC = { id: "abababab-0000-4000-8000-000000000d02", jeton: "jeton-marc-ba
 await semer("human_habitants", [{ id: MARC.id, device_token: MARC.jeton, prenom: MARC.prenom, ville_slug: "dax" }]);
 await json(`${MARC.id}/majeur.json`, { le: maintenant, age: 15 });
 const P1 = `${MARC.id}/perso/v1`;
-for (const n of ["assise", "assise_parle", "debout"]) await deposer(`${P1}/${n}.png`, fs.readFileSync("public/direct/double/ecoute.webp"), "image/webp");
+// (rangée comme en vrai : l'image assise est la proposition validée, `perso/images/<id>.png`)
+const ASSISE_MARC = `${MARC.id}/perso/images/a1b2c3d4e5f6.png`;
+await deposer(ASSISE_MARC, fs.readFileSync("public/direct/double/ecoute.webp"), "image/webp");
+for (const n of ["assise_parle", "debout"]) await deposer(`${P1}/${n}.png`, fs.readFileSync("public/direct/double/ecoute.webp"), "image/webp");
 const perso = {
   version: 1,
   style: "collection-1",
   creee_le: maintenant,
   validee_le: maintenant,
-  references: { assise: { chemin: `${P1}/assise.png` }, assise_parle: { chemin: `${P1}/assise_parle.png` }, debout: { chemin: `${P1}/debout.png` } },
+  references: { assise: { chemin: ASSISE_MARC }, assise_parle: { chemin: `${P1}/assise_parle.png` }, debout: { chemin: `${P1}/debout.png` } },
   historique: [{ version: 1, le: maintenant, raison: "« C’est moi ! »", style: "collection-1" }],
 };
 await json(`${P1}/fiche.json`, perso);
@@ -143,6 +146,10 @@ await m.keyboard.press("Escape");
 await m.goto(`${ALLUME}/univers/monde`, { waitUntil: "networkidle" });
 await m.waitForSelector(".um-retour", { timeout: 20000 }).catch(() => null);
 ok((await m.locator('.um-retour[href="/collection#proches"]').count()) === 1, "ses réglages : « ← Chez moi » en haut");
+await m.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
+await fermerPablito(m);
+await m.waitForSelector(".tf-moi, .tf", { timeout: 20000 }).catch(() => null);
+ok((await m.locator(".pn").count()) === 0, "Marc, sa figurine déjà du nouveau style : plus de « Ta figurine fait peau neuve » dans « Créer »");
 
 // ═══ « Créer » : l'invitation à refaire sa figurine au nouveau style ═══
 await p.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
