@@ -73,16 +73,20 @@ ok((await fetch(`${BASE}/univers/figurine`, { redirect: "manual" })).status !== 
 
 // ═══ LE SELFIE ═══
 const e0 = await appeler();
-ok(e0.etape === "selfie" && e0.branche === true && e0.restantes === 12, `sans compte sur ce téléphone : le selfie, le moteur branché, douze essais (${e0.etape})`);
+ok(e0.etape === "selfie" && e0.branche === true && e0.restantes === 12 && Array.isArray(e0.villeADonner?.suggestions), `sans compte sur ce téléphone : le selfie, sa ville à donner, le moteur branché, douze essais (${e0.etape})`);
 ok((await appeler({ action: "selfie", photo: PHOTO, moi: false, age: true })).statut === 400 && (await appeler({ action: "selfie", photo: PHOTO, moi: true, age: false })).statut === 400, "sans « C'est bien moi » ou sans ses 15 ans : rien");
 ok((await appeler({ action: "selfie", photo: "pas une image", moi: true, age: true })).statut === 400, "sans photo : rien");
-const s1 = await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true });
-ok(s1.statut === 200 && /^[a-z0-9]{12}$/.test(s1.id ?? "") && cookies.includes("clikme_habitant="), "son selfie : un compte sur ce téléphone, sa première proposition demandée");
+// 🏙️ sa ville : n'importe laquelle (le 13 novembre 2026 : « quiconque peut avoir l'application »)
+ok((await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true })).statut === 400 && (await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "4" })).statut === 400 && !cookies.includes("clikme_habitant="), "sans sa ville : rien (pas de compte ouvert)");
+const s1 = await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "Saint-Étienne" });
+ok(s1.statut === 200 && /^[a-z0-9]{12}$/.test(s1.id ?? "") && cookies.includes("clikme_habitant="), "son selfie et sa ville : un compte sur ce téléphone, sa première proposition demandée");
 const e1 = await attendre((e) => e.etape === "decouverte");
 const p1 = e1.propositions?.[0];
 ok(e1.etape === "decouverte" && p1?.etat === "fait" && /^http/.test(p1.image ?? "") && e1.restantes === 11, `faite après la réponse : la découverte, son image (${e1.etape}, ${p1?.etat}, ${e1.restantes} restantes)`);
 const jeton = /clikme_habitant=([^;]+)/.exec(cookies)[1];
-const h = (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=id`)).json())[0]?.id;
+const sonCompte = (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=id,ville_slug`)).json())[0];
+const h = sonCompte?.id;
+ok(sonCompte?.ville_slug === "saint-etienne", `sa ville, n'importe laquelle, rangée en clé (${sonCompte?.ville_slug}) : elle le reliera aux commerçants de la même ville`);
 const brouillon = h ? await lire(`${h}/perso/brouillon.json`) : null;
 const sig1 = brouillon?.propositions?.[0]?.signature;
 ok(Boolean(h) && brouillon?.selfie?.startsWith(`${h}/perso/selfie-`) && sig1?.entrees?.[0] === brouillon.selfie && sig1.fond === "transparent" && sig1.consigne.includes("RE-SCULPTED, NEVER COPIED"), "son selfie rangé chez lui ; la proposition signée (la consigne, son selfie en entrée, fond transparent)");

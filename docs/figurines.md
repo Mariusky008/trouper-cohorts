@@ -2588,8 +2588,15 @@ actuelles refaites, Pablito au nouveau style : OUI ». Tout est construit derri�
   le pont, les visages, Hugo et Sam, la photo d'avant, Pablito adopté et servi), `scripts/navigateur/bascule-univers.mjs`
   (l'arrivée sur « Mon univers », le menu, « Ta figurine fait peau neuve », la photo d'avant, un nouveau venu).
 - **Allumé** (le 13 novembre) : `UNIVERS_POUR_TOUS = true`. Pablito passe au nouveau style dès que le propriétaire
-  adopte sa figurine (d'ici là, le Pablito d'avant). Un nouveau venu reçoit la ville de Dax (comme le chantier depuis le
-  lot 2 : la page de la nouvelle figurine ne demande pas la ville).
+  adopte sa figurine (d'ici là, le Pablito d'avant).
+- **🏙️ Ouverte à tous, quelle que soit sa ville** (le propriétaire, le 13 novembre : « quiconque peut avoir
+  l'application, puisque les amis que je vais contacter ne sont pas forcément de ma ville ; on peut renseigner sa ville,
+  et lorsqu'elle correspond à la ville d'un commerçant, ils sont mis en relation ») : sans compte sur ce téléphone,
+  `/univers/figurine` demande « Ta ville » — n'importe laquelle, écrite librement (`villeEcrite`), avec en suggestion
+  celles où ClikMe a des commerçants. Elle se range en clé (`ville_slug`, `villeSlug`) : la même que celle des
+  commerçants, de quoi les mettre en relation le jour où les commerçants entrent dans l'appli. Une ville sans
+  commerçant : « Découvrir » montre les mèmes d'ailleurs (comme avant). (Freiné, l'ancienne page « Crée ta figurine »
+  garde sa liste des villes des commerçants.)
 
 ### 9.1 L'idée en une phrase
 

@@ -18,7 +18,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { imageVisage, type Visage } from "@/lib/direct/guide";
-import { IDEES_RETOUCHE, type EtatNouvelleFigurine, type PropositionVue } from "@/lib/direct/nouvelle-figurine";
+import { IDEES_RETOUCHE, VILLE_MAX, villeEcrite, type EtatNouvelleFigurine, type PropositionVue } from "@/lib/direct/nouvelle-figurine";
 import { RETOUCHE_FIGURINE_MAX } from "@/lib/direct/perso-consignes";
 
 const ROUTE = "/api/direct/nouvelle-figurine";
@@ -100,7 +100,13 @@ export function NouvelleFigurine() {
       {!etat ? (
         <p className="nf-centre">{erreur || "Un instant…"}</p>
       ) : etape === "selfie" ? (
-        <Selfie occupe={occupe} branche={etat.branche} photoDAvant={etat.photoDAvant} onEnvoyer={(photo) => faire({ action: "selfie", photo, moi: true, age: true })} />
+        <Selfie
+          occupe={occupe}
+          branche={etat.branche}
+          photoDAvant={etat.photoDAvant}
+          villeADonner={etat.villeADonner}
+          onEnvoyer={(photo, ville) => faire({ action: "selfie", photo, moi: true, age: true, ...(ville ? { ville } : {}) })}
+        />
       ) : etape === "fabrication" ? (
         <Atelier key={etat.propositions[0]?.id} demande={etat.propositions[0]?.demande} />
       ) : etape === "decouverte" ? (
@@ -119,8 +125,22 @@ export function NouvelleFigurine() {
 }
 
 // ─── 1. le selfie ─────────────────────────────────────────────────────────────────────────────────
-function Selfie({ occupe, branche, photoDAvant, onEnvoyer }: { occupe: boolean; branche: boolean; photoDAvant?: string; onEnvoyer: (photo: string) => void }) {
+function Selfie({
+  occupe,
+  branche,
+  photoDAvant,
+  villeADonner,
+  onEnvoyer,
+}: {
+  occupe: boolean;
+  branche: boolean;
+  photoDAvant?: string;
+  villeADonner?: { suggestions: { slug: string; nom: string }[] };
+  onEnvoyer: (photo: string, ville?: string) => void;
+}) {
   const [photo, setPhoto] = useState("");
+  // 🏙️ sa ville (pas encore de compte sur ce téléphone) : n'importe laquelle
+  const [ville, setVille] = useState("");
   // 🖼️ sa photo d'avant (celle de sa figurine d'aujourd'hui) : reprise telle quelle, sans nouveau selfie
   const [dAvant, setDAvant] = useState(false);
   const [moi, setMoi] = useState(false);
@@ -136,7 +156,8 @@ function Selfie({ occupe, branche, photoDAvant, onEnvoyer }: { occupe: boolean; 
       setLecture(message(e));
     }
   }
-  const pret = (Boolean(photo) || dAvant) && moi && age && !occupe && branche;
+  const villeOk = !villeADonner || villeEcrite(ville) !== "";
+  const pret = (Boolean(photo) || dAvant) && moi && age && villeOk && !occupe && branche;
   const montree = dAvant ? photoDAvant : photo;
   return (
     <section className="nf-selfie" aria-label="Ton selfie">
@@ -153,13 +174,33 @@ function Selfie({ occupe, branche, photoDAvant, onEnvoyer }: { occupe: boolean; 
         </button>
       )}
       {lecture && <p className="nf-erreur">{lecture}</p>}
+      {villeADonner && (
+        <label className="nf-ville">
+          <span>Ta ville</span>
+          <input
+            type="text"
+            name="ville"
+            value={ville}
+            maxLength={VILLE_MAX}
+            autoComplete="address-level2"
+            list="nf-villes"
+            placeholder="Où que tu sois"
+            onChange={(e) => setVille(e.target.value)}
+          />
+          <datalist id="nf-villes">
+            {villeADonner.suggestions.map((v) => (
+              <option key={v.slug} value={v.nom} />
+            ))}
+          </datalist>
+        </label>
+      )}
       <label className="nf-case">
         <input type="checkbox" name="moi" checked={moi} onChange={(e) => setMoi(e.target.checked)} /> C’est bien moi
       </label>
       <label className="nf-case">
         <input type="checkbox" name="age" checked={age} onChange={(e) => setAge(e.target.checked)} /> J’ai 15 ans ou plus
       </label>
-      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo)}>
+      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined)}>
         {occupe ? "…" : "Créer ma figurine"}
       </button>
       {!branche && <p className="nf-doux">Le moteur d’image n’est pas branché ici.</p>}
@@ -380,6 +421,8 @@ const STYLES = `
 .nf-bouton:disabled{opacity:.45}
 .nf-vers{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .nf-lien{border:0;background:none;color:#6b4a2b;font-size:16px;text-decoration:underline;padding:8px}
+.nf-ville{display:flex;flex-direction:column;gap:6px;width:100%;max-width:340px;text-align:left;font-size:15px;font-weight:700;color:#4a3017}
+.nf-ville input{box-sizing:border-box;width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #e3cfb4;background:#fffaf3;color:#2b1a0c;font:inherit;font-size:16px;font-weight:500}
 .nf-atelier{padding-top:5vh}
 .nf-pablito{position:relative;width:170px;height:200px}
 .nf-pablito img{width:100%;height:100%;object-fit:contain;animation:nf-sculpte 1.7s ease-in-out infinite}

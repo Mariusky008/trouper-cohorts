@@ -42,6 +42,7 @@ import {
   type EtatProposition,
   type PropositionVue,
 } from "./nouvelle-figurine";
+import { nomDeVille, villeSlug } from "./ville";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -105,10 +106,26 @@ async function sonCheminDePhotoDAvant(supabase: Supabase, h: string): Promise<st
 }
 
 // ─── où il en est ──────────────────────────────────────────────────────────────────────────────────
+/** 🏙️ Les villes où ClikMe a des commerçants (les plus fournies d'abord) : des suggestions, jamais une liste fermée. */
+async function villesDesCommercants(supabase: Supabase): Promise<{ slug: string; nom: string }[]> {
+  try {
+    const { data } = await supabase.from("human_vitrine_sites").select("city").eq("est_client", true).limit(500);
+    const parVille = new Map<string, { nom: string; n: number }>();
+    for (const x of (Array.isArray(data) ? data : []) as { city?: string }[]) {
+      const nom = s(x.city).replace(/\b\d{5}\b/g, " ").replace(/,.*$/, "").replace(/\s+/g, " ").trim();
+      const slug = villeSlug(nom);
+      if (slug) parVille.set(slug, { nom: parVille.get(slug)?.nom ?? nomDeVille(nom), n: (parVille.get(slug)?.n ?? 0) + 1 });
+    }
+    return [...parVille.entries()].sort((a, b) => b[1].n - a[1].n || a[1].nom.localeCompare(b[1].nom, "fr")).slice(0, 30).map(([slug, v]) => ({ slug, nom: v.nom }));
+  } catch {
+    return [];
+  }
+}
+
 export async function etatNouvelleFigurine(supabase: Supabase, h: string | null): Promise<EtatNouvelleFigurine> {
   const branche = moteurPersoBranche();
   const vide: EtatNouvelleFigurine = { etape: "selfie", propositions: [], restantes: PROPOSITIONS_PAR_JOUR, branche };
-  if (!h) return vide;
+  if (!h) return { ...vide, villeADonner: { suggestions: await villesDesCommercants(supabase) } };
   const [b, { fiche, origine }] = await Promise.all([lireBrouillon(supabase, h), lireFichePerso(supabase, h)]);
   const restantes = Math.max(0, PROPOSITIONS_PAR_JOUR - faitesAujourdhui(b));
   const propositions: PropositionVue[] = await Promise.all(
