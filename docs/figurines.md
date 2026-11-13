@@ -2774,7 +2774,7 @@ Le lot E1 : noter, ranger, montrer, retirer.
   retiré plus jamais noté, quarante au plus : le plus ancien goût s'en va) ; `titrePour` (« Le permis de Léa » chez
   moi, « Ton permis » chez Léa, « d'Inès », « d'Hugo ») ; `detailPour` (« jeudi 19 nov. », « le 4 décembre », « promis
   il y a 3 semaines », « Léa adore », « votre blague ») ; les rayons ; la banque des phrases de la figurine qui voit
-  noter (à valider par le propriétaire). Un filet de mots sensibles avant même d'appeler le modèle (la santé, l'argent,
+  noter (validée par le propriétaire le 13 novembre). Un filet de mots sensibles avant même d'appeler le modèle (la santé, l'argent,
   une dispute, les amours, la religion…), qui laisse passer « mort de rire », « une enceinte », « un avocat ».
 - **Le serveur** (`etagere-serveur.ts`) : `fils/<paire>/etagere.json` ; le passage du modèle (`preparerNotes`, le petit
   modèle de l'aparté, « NOTENT CE QUI COMPTE ») sur un échange qui s'est posé (une minute), par trois portes : la
@@ -2824,7 +2824,7 @@ Le cahier : `docs/univers/etagere.md`, sections 4.4, 6.4, 7.1 à 7.3, 8.1. Ce qu
 - **La fête, dans la scène** (une fois par personne : `vus`) : la fierté (des confettis, la figurine de celui qui n'est
   pas concerné : « Léa, c'est réussi ! 🏆 Je range ça tout en haut ») ; la promesse tenue (des confettis, les deux qui
   sautent, « 8 promesses tenues ! On est des gens fiables 😎 ») ; la relance (l'une, puis l'autre : « 3 semaines… ça
-  attend toujours 🍝 », « Je dis ça, je dis rien 🙄 »). Banques à valider par le propriétaire.
+  attend toujours 🍝 », « Je dis ça, je dis rien 🙄 »). Banques validées par le propriétaire le 13 novembre.
 - **Les rappels du matin** (`mesRappels`, `GET /api/direct/etagere?rappels=1`, gardés une fois par jour dans
   `<habitant>/rappels.json`) : sur « Chez moi », sous la fenêtre de son univers, sa figurine le lui rappelle — « 📌 DE
   VOTRE ÉTAGÈRE, LÉA ET TOI », « Aujourd'hui, c'est le permis de Léa 🚗 Un petit mot avant le départ ? », « 🎭 Un

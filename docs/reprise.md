@@ -129,9 +129,9 @@ par une autre session, mise en pause ; le propriétaire a confié tout le chanti
   relances, la ligne de « Chez moi ».
   **E3 « La poussière et les idées » aussi** (9.0 unquinquagies 🕸️) : la poussière, se rallumer, les idées de
   cadeau, le mème de la blague, la page des mesures. **Tout le cahier est construit.**
-- **La suite** : ses retours sur son iPhone ; les banques de phrases (sections 5, 7.1 et 7.3 du cahier, et le réveil)
-  et les choix par défaut (section 16) attendent sa relecture ; les mesures à regarder dans une semaine (la page admin
-  des mèmes, « 📚 L'étagère »).
+- **Validé** (13 novembre) : toutes les phrases des figurines, et tous les choix des sections 16 et 16 bis du cahier.
+- **La suite** : ses retours sur son iPhone ; les mesures, le 20 novembre (un rappel est programmé dans cette session) :
+  la page admin des mèmes, « 📚 L'étagère » — il copie les chiffres, on règle la consigne du modèle et les seuils.
 - **À côté** : il a dit de l'étagère « très bien comme feature, mais ça ne fera pas venir les gens ». Il cherche
   encore ce qui fera parler de l'appli. Une première proposition (des épisodes de dessin animé tirés de leurs vrais
   vocaux) est **écartée** : « les messages que les gens s'envoient sont épisodiques et souvent courts ». La leçon : ne
