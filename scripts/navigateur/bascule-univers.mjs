@@ -5,7 +5,10 @@
 // conversations comme WhatsApp — Marc ; « Mes mèmes » ; « ＋ ») ; le menu du bas : Découvrir · Autour · Créer · Chez
 // moi ; Marc, qui a son univers, le voit par une fenêtre, sa figurine au milieu, sa pastille d'humeur, ⚙️ ; « Créer »
 // invite Sam à refaire sa figurine au nouveau style ; « Ta figurine » lui propose sa photo d'avant (les deux cases toujours à cocher). Un
-// nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. Freiné (l'app de la CI,
+// nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. 🎁🚪 Sam laisse un bouquet chez Marc, Léa
+// frappe à sa porte : en arrivant chez lui, Marc les découvre — le paquet qui se dandine, qu'il ouvre (l'objet, le mot),
+// « ✨ Le poser chez moi » ; la porte qui tremble, qu'il ouvre (« C'est Léa ! ») ; le bouquet posé dans sa fenêtre ; ce
+// n'est plus nouveau ensuite ; « Mes visites » : le bilan. Freiné (l'app de la CI,
 // `CLIKME_UNIVERS_POUR_TOUS=0`) : l'appli d'avant. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -150,6 +153,53 @@ await m.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(m);
 await m.waitForSelector(".tf-moi, .tf", { timeout: 20000 }).catch(() => null);
 ok((await m.locator(".pn").count()) === 0, "Marc, sa figurine déjà du nouveau style : plus de « Ta figurine fait peau neuve » dans « Créer »");
+
+// ═══ 🎁🚪 SAM LUI LAISSE UN BOUQUET, LÉA FRAPPE À SA PORTE : MARC LES DÉCOUVRE EN ARRIVANT CHEZ LUI ═══
+const LEA = { id: "abababab-0000-4000-8000-000000000d03", jeton: "jeton-lea-bascule-nav-000001", prenom: "Léa" };
+await semer("human_habitants", [{ id: LEA.id, device_token: LEA.jeton, prenom: LEA.prenom, ville_slug: "dax" }]);
+await deposer(`${LEA.id}/neutre-essai.webp`, fs.readFileSync("public/direct/double/pied/montre.webp"), "image/webp");
+await semer("clik_ma_figurine", [{ habitant_id: LEA.id, prenom: LEA.prenom, photo: `${LEA.id}/photo.jpg`, accord_le: maintenant, neutre: `${LEA.id}/neutre-essai.webp`, parle: `${LEA.id}/neutre-essai.webp`, prete_le: maintenant }]);
+await json(`profils/${cleProfil(LEA.id)}.json`, { h: LEA.id });
+await json(`${MARC.id}/proches.json`, { ids: [SAM.id, LEA.id] });
+await json(`${LEA.id}/proches.json`, { ids: [MARC.id] });
+const visiter = (qui, corps) => fetch(`${ALLUME}/api/direct/visites`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${qui.jeton}` }, body: JSON.stringify({ ...corps, cle: cleProfil(MARC.id) }) });
+ok((await visiter(SAM, { action: "souvenir", objet: "fleurs", mot: "Pour ton atelier !" })).status === 200 && (await visiter(LEA, { action: "frapper" })).status === 200, "Sam laisse un bouquet chez Marc ; Léa frappe à sa porte");
+await m.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
+await fermerPablito(m);
+await m.waitForSelector(".vr .vr-boite", { timeout: 20000 }).catch(() => null);
+ok((await texte(m, ".vr-qui")).includes("Sam t’a laissé un cadeau") && (await m.locator(".vr-points i").count()) === 2 && (await texte(m, ".vr-indice")).includes("Touche le paquet"), "en arrivant chez lui : « Sam t'a laissé un cadeau ! », un paquet à ouvrir (et une autre découverte après)");
+await m.screenshot({ path: `${D}/bascule-3a-cadeau-ferme.png` });
+await m.locator(".vr-boite").click();
+await m.waitForSelector(".vr-objet", { timeout: 5000 }).catch(() => null);
+await m.waitForTimeout(1300);
+ok((await texte(m, ".vr-nom")).includes("Un bouquet") && (await texte(m, ".vr-nom")).includes("de Sam") && (await texte(m, ".vr-mot")).includes("Pour ton atelier !") && (await m.locator(".vr-confettis i").count()) > 10, "il l'ouvre : des confettis, « Un bouquet, de Sam », son mot");
+await m.screenshot({ path: `${D}/bascule-3b-cadeau-ouvert.png` });
+await m.locator(".vr-bouton", { hasText: "Le poser chez moi" }).click();
+await m.waitForSelector(".vr-pose", { timeout: 10000 }).catch(() => null);
+ok((await m.locator(".vr-pose").count()) === 1 && (await m.locator(".vr-bouton", { hasText: "Lui dire merci" }).count()) === 1, "« ✨ Le poser chez moi » : posé ; « 💬 Lui dire merci »");
+await m.locator(".vr-bouton", { hasText: "Suivant" }).click();
+await m.waitForSelector(".vr-porte", { timeout: 5000 }).catch(() => null);
+ok((await texte(m, ".vr-titre")) === "Toc toc ! Qui est là ?" && (await m.locator(".vr-tocs b").count()) === 2, "puis : « Toc toc ! Qui est là ? », la porte qui tremble");
+await m.screenshot({ path: `${D}/bascule-3c-porte.png` });
+await m.locator(".vr-porte").click();
+await m.waitForTimeout(1500);
+ok((await texte(m, ".vr-titre")).includes("C’est Léa") && (await texte(m, ".vr-nom")).includes("aujourd’hui") && (await m.locator(".vr-bouton", { hasText: "Lui parler" }).count()) === 1 && (await m.locator('a.vr-bouton[href^="/univers/chez/"]').count()) === 0, "il ouvre : « C'est Léa ! », aujourd'hui ; « 💬 Lui parler » (pas d'univers à visiter)");
+await m.screenshot({ path: `${D}/bascule-3d-porte-ouverte.png` });
+await m.locator(".vr-lien", { hasText: "Fermer" }).click();
+await m.waitForSelector(".vr", { state: "detached", timeout: 5000 }).catch(() => null);
+await m.waitForSelector(".cm-fenetre .cm-souvenir", { timeout: 10000 }).catch(() => null);
+ok((await m.locator(".vr").count()) === 0 && (await m.locator(".cm-fenetre .cm-souvenir").count()) === 1 && (await m.locator(".cm-badge-visites").count()) === 0, "refermé : le bouquet est posé dans sa fenêtre ; plus rien ne l'attend");
+await m.screenshot({ path: `${D}/bascule-3e-bouquet-pose.png` });
+await m.reload({ waitUntil: "networkidle" });
+await m.waitForSelector(".cm-visites", { timeout: 20000 }).catch(() => null);
+await m.waitForTimeout(1200);
+ok((await m.locator(".vr").count()) === 0 && (await texte(m, ".cm-visites")).includes("Mes visites"), "en revenant : plus de découverte (c'est vu) ; la ligne « 🚪 Mes visites »");
+await m.locator(".cm-visites").click();
+await m.waitForSelector(".vr-carte.bilan", { timeout: 5000 }).catch(() => null);
+const bilan = await texte(m, ".vr-carte.bilan");
+ok(bilan.includes("Qui est passé chez toi") && bilan.includes("Sam") && bilan.includes("Léa") && bilan.includes("Un bouquet, de Sam"), `« Mes visites » : qui est passé, ce qui est posé chez lui (${bilan.slice(0, 120)})`);
+ok((await debordement(m)) <= 1 && (await sansMotInterdit(m)), "la découverte : rien ne déborde, jamais le mot interdit");
+await m.locator(".vr-fermer").click();
 
 // ═══ « Créer » : l'invitation à refaire sa figurine au nouveau style ═══
 await p.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });

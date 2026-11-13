@@ -47,8 +47,12 @@ export const VISIBILITES_DITES: Record<Visibilite, { titre: string; dit: string 
   moi: { titre: "🔒 Moi seul", dit: "Personne n’entre chez toi." },
 };
 
-/** Un souvenir, tel qu'on le voit : l'objet, le mot, de qui (son prénom), où il est posé (une fois accepté). */
-export type SouvenirVu = { id: string; objet: ObjetSouvenir; mot?: string; de: string; le: string; x?: number; y?: number };
+/**
+ * Un souvenir, tel qu'on le voit : l'objet, le mot, de qui (son prénom), où il est posé (une fois accepté). À celui qui
+ * le reçoit, en plus : la figurine de celui qui l'a laissé (`image`), sa clé (`cle` : lui parler) et si son univers lui
+ * est ouvert (`univers` : lui rendre visite).
+ */
+export type SouvenirVu = { id: string; objet: ObjetSouvenir; mot?: string; de: string; le: string; x?: number; y?: number; image?: string; cle?: string; univers?: boolean };
 
 /** Ce que voit celui qui entre chez quelqu'un. */
 export type VueVisite =
@@ -58,8 +62,12 @@ export type VueVisite =
       prenom: string;
       proposition: string;
       decor: string;
-      /** sa figurine, assise chez elle (relevée sur son image vedette, sinon sa place) */
-      hote: { image: string; parle?: string; x: number; y: number; hauteur?: number };
+      /**
+       * sa figurine, assise à sa place (la place de l'hôte) — à la même échelle que la conversation chez soi : 36 % de la
+       * hauteur du décor, fois l'échelle de la place (le propriétaire, le 13 novembre : « les figurines ne sont pas
+       * proportionnelles à l'univers »)
+       */
+      hote: { image: string; parle?: string; x: number; y: number; echelle: number };
       /** la place de l'invité, et la figurine du visiteur (s'il en a une) */
       invite: { x: number; y: number; echelle: number; image?: string; assise?: boolean };
       /** un proche : ses clés, les souvenirs posés, et il peut en laisser un */
@@ -69,16 +77,32 @@ export type VueVisite =
       peutLaisser: boolean;
       /** il a déjà frappé aujourd'hui */
       frappe: boolean;
+      /** ses cadeaux qui attendent d'être ouverts, chez lui (un paquet à ses pieds) */
+      mesCadeaux: number;
       /** c'est chez lui (il se voit comme le voient les autres) */
       chezSoi: boolean;
     };
 
-/** Ce que voit celui qui reçoit : qui est passé, les souvenirs à accepter, ceux qui sont posés, qui peut entrer. */
+/**
+ * Ce que voit celui qui reçoit : qui est passé (`nouveau` : depuis la dernière fois qu'il a regardé ; `cle` : lui rendre
+ * visite), les souvenirs à ouvrir, ceux qui sont posés, qui peut entrer.
+ */
+export type Passage = {
+  prenom: string;
+  image?: string;
+  cle?: string;
+  le: string;
+  nouveau?: boolean;
+  /** c'est un proche (on peut lui parler) */
+  proche?: boolean;
+  /** son univers m'est ouvert (on peut lui rendre visite) */
+  univers?: boolean;
+};
 export type MesVisites = {
   visibilite: Visibilite;
   adulte: boolean;
   cle: string;
-  passes: { prenom: string; image?: string; le: string }[];
+  passes: Passage[];
   enAttente: SouvenirVu[];
   poses: SouvenirVu[];
 };

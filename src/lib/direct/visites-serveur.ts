@@ -6,9 +6,13 @@
  *     personne) ;
  *   · `<h>/monde/souvenirs.json` = { liste: [{ id, de, objet, mot?, le, accepte_le?, x?, y? }] } — hors des versions
  *     de son univers (une retouche ne les efface pas) ;
+ *   · `<h>/monde/visites-vues.json` = { le } — la dernière fois qu'il a découvert qui est passé (ce qui est nouveau) ;
  *   · `<h>/adulte.json` = { le } — il a déclaré 18 ans ou plus (pour ouvrir son univers à tous) ;
  *   · `signalements/univers/<h>.json` = { liste: [{ de, le, quoi }] } — pour l'équipe.
- * Frapper prévient celui qu'on visite, une fois par jour (« 🚪 Léa a frappé à ta porte »).
+ * Frapper prévient celui qu'on visite, une fois par jour (« 🚪 Léa a frappé à ta porte ») ; un cadeau aussi (« 🎁 Léa t'a
+ * laissé un cadeau ») — les deux mènent à « Chez moi » (`/collection#proches`), où il les découvre (le propriétaire, le 13
+ * novembre 2026 : « quand je laisse un souvenir, il va quelque part où il n'y a aucune chance qu'il soit vu […] il faut
+ * que ce soit une vraie expérience de découverte »).
  *
  * FICHIER SERVEUR.
  */
@@ -31,7 +35,10 @@ const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
 const cheminVisites = (h: string) => `${h}/monde/visites.json`;
 const cheminSouvenirs = (h: string) => `${h}/monde/souvenirs.json`;
+const cheminVues = (h: string) => `${h}/monde/visites-vues.json`;
 const cheminAdulte = (h: string) => `${h}/adulte.json`;
+/** Où mènent ses notifications : « Chez moi », où il découvre qui est passé et ses cadeaux. */
+const CHEZ_MOI = "/collection#proches";
 const cheminSignalements = (h: string) => `signalements/univers/${h}.json`;
 /** 🏡 Les univers ouverts à tous (« Découvrir », lot 7) : { liste: [{ h, le }] } — les plus récents à la fin. */
 const CHEMIN_PUBLICS = "univers/publics.json";
@@ -48,7 +55,7 @@ const lireSouvenirs = async (supabase: Supabase, h: string) => {
 };
 export const estAdulte = async (supabase: Supabase, h: string) => Boolean(s((await lireJson<{ le?: string }>(supabase, cheminAdulte(h))).le));
 
-/** Son prénom (sa figurine d'aujourd'hui), et l'image de sa figurine : la nouvelle, assise, sinon celle d'aujourd'hui. */
+/** Son prénom (sa figurine d'aujourd'hui), et l'image de sa figurine : la nouvelle, assise, sinon celle d'aujourd'hui (signée une heure). */
 async function quiEst(supabase: Supabase, h: string): Promise<{ prenom: string; image?: string; assise?: boolean }> {
   const [{ ligne }, assise] = await Promise.all([lireLigne(supabase, h), assiseDe(supabase, h).catch(() => undefined)]);
   const prenom = s(ligne?.prenom) || "Quelqu’un";
@@ -66,13 +73,16 @@ async function peutEntrer(supabase: Supabase, visiteur: string | null, h: string
   return { ok: true, proche };
 }
 
-const souvenirVu = (x: Souvenir, prenom: string): SouvenirVu => ({
+const souvenirVu = (x: Souvenir, prenom: string, qui?: { image?: string; cle?: string; univers?: boolean }): SouvenirVu => ({
   id: x.id,
   objet: objetValide(x.objet)!,
   ...(x.mot ? { mot: x.mot } : {}),
   de: prenom,
   le: x.le,
   ...(typeof x.x === "number" && typeof x.y === "number" ? { x: x.x, y: x.y } : {}),
+  ...(qui?.image ? { image: qui.image } : {}),
+  ...(qui?.cle ? { cle: qui.cle } : {}),
+  ...(qui?.univers ? { univers: true } : {}),
 });
 async function prenomsDe(supabase: Supabase, ids: string[]): Promise<Map<string, string>> {
   const uniques = [...new Set(ids)];
@@ -100,7 +110,6 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     tenueDuMois(supabase, h).catch(() => null),
   ]);
   if (!decor || !assise) return { etat: "absent" };
-  const place = f.scene.figurine ?? null;
   const hotePlace = f.scene.places.find((p) => p.id === "hote") ?? { x: 0.36, y: 0.8, echelle: 1 };
   const invite = f.scene.places.find((p) => p.id === "invite") ?? { x: 0.66, y: 0.82, echelle: 0.96 };
   const poses = souvenirs.filter((x) => x.accepte_le);
@@ -114,7 +123,8 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     prenom: hote.prenom,
     proposition: f.proposition,
     decor,
-    hote: { image: tenue?.n ?? assise.n, parle: tenue?.p ?? assise.p, ...(place ? { x: place.x, y: place.y, hauteur: place.hauteur } : { x: hotePlace.x, y: hotePlace.y }) },
+    // (📏 les deux figurines à leurs places, à la même échelle que la conversation chez soi)
+    hote: { image: tenue?.n ?? assise.n, parle: tenue?.p ?? assise.p, x: hotePlace.x, y: hotePlace.y, echelle: hotePlace.echelle },
     invite: { x: invite.x, y: invite.y, echelle: invite.echelle, ...(moi?.image ? { image: moi.image, ...(moi.assise ? { assise: true } : {}) } : {}) },
     proche: acces.proche,
     // (ses clés, ses propres phrases : à ses proches seulement)
@@ -122,6 +132,7 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     souvenirs: poses.map((x) => souvenirVu(x, noms.get(x.de) ?? "Quelqu’un")),
     peutLaisser: Boolean(visiteur && visiteur.id !== h && acces.proche),
     frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && v.le.startsWith(jour))),
+    mesCadeaux: visiteur ? souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length : 0,
     chezSoi: visiteur?.id === h,
   };
 }
@@ -139,16 +150,22 @@ async function chezQui(supabase: Supabase, visiteur: Habitant, cle: unknown): Pr
   return { h, f, proche: acces.proche };
 }
 
+/** Sa visite, notée chez lui (une par jour et par personne) : `true` si c'est la première d'aujourd'hui. */
+async function noterVisite(supabase: Supabase, de: string, h: string): Promise<boolean> {
+  const jour = jourParis();
+  const visites = await lireVisites(supabase, h);
+  if (visites.some((v) => v.de === de && v.le.startsWith(jour))) return false;
+  await ecrireJson(supabase, cheminVisites(h), { liste: [...visites, { de, le: new Date().toISOString() }].slice(-40) });
+  return true;
+}
+
 /** 🚪 Frapper à la porte : il saura qui est passé (une visite par jour et par personne ; prévenu une fois par jour). */
 export async function frapper(supabase: Supabase, visiteur: Habitant, cle: unknown): Promise<Resultat> {
   const c = await chezQui(supabase, visiteur, cle);
   if (!c.h) return { error: c.error, statut: c.statut };
-  const jour = jourParis();
-  const visites = await lireVisites(supabase, c.h);
-  if (visites.some((v) => v.de === visiteur.id && v.le.startsWith(jour))) return { ok: true };
-  await ecrireJson(supabase, cheminVisites(c.h), { liste: [...visites, { de: visiteur.id, le: new Date().toISOString() }].slice(-40) });
+  if (!(await noterVisite(supabase, visiteur.id, c.h))) return { ok: true };
   const { prenom } = await quiEst(supabase, visiteur.id);
-  await prevenirUneFoisParJour(supabase, c.h, "visite", { titre: `🚪 ${prenom} a frappé à ta porte`, corps: "Viens voir qui est passé dans ton univers.", url: "/univers", tag: "visite" }).catch(() => undefined);
+  await prevenirUneFoisParJour(supabase, c.h, "visite", { titre: `🚪 Toc toc ! ${prenom} a frappé à ta porte`, corps: "Viens voir qui est passé chez toi.", url: CHEZ_MOI, tag: "visite" }).catch(() => undefined);
   return { ok: true };
 }
 
@@ -166,7 +183,10 @@ export async function laisserSouvenir(supabase: Supabase, visiteur: Habitant, cl
   if (liste.filter((x) => x.de === visiteur.id && !x.accepte_le).length >= SOUVENIRS_EN_ATTENTE_MAX) return { error: "Tes souvenirs attendent déjà d’être vus.", statut: 429 };
   const souvenir: Souvenir = { id: randomUUID().replace(/-/g, "").slice(0, 12), de: visiteur.id, objet: o, ...(m ? { mot: m } : {}), le: new Date().toISOString() };
   await ecrireJson(supabase, cheminSouvenirs(c.h), { liste: [...liste, souvenir].slice(-60) });
-  await frapper(supabase, visiteur, cle);
+  // (sa visite est notée ; il est prévenu du cadeau — pas de « toc toc » en plus)
+  await noterVisite(supabase, visiteur.id, c.h);
+  const { prenom } = await quiEst(supabase, visiteur.id);
+  await prevenirUneFoisParJour(supabase, c.h, "souvenir", { titre: `🎁 ${prenom} t’a laissé un cadeau`, corps: "Il t’attend chez toi : viens l’ouvrir !", url: CHEZ_MOI, tag: "souvenir" }).catch(() => undefined);
   return { ok: true };
 }
 
@@ -181,25 +201,64 @@ export async function signalerUnivers(supabase: Supabase, visiteur: Habitant, cl
 }
 
 // ─── chez soi : qui est passé, les souvenirs, qui peut entrer ─────────────────────────────────────
-/** 🏡 Chez lui : qui est passé, les souvenirs à accepter et ceux qui sont posés, qui peut entrer. */
+/**
+ * 🏡 Chez lui : qui est passé (et qui est nouveau depuis la dernière fois qu'il a regardé), les souvenirs à ouvrir (avec
+ * la figurine de qui les a laissés) et ceux qui sont posés, qui peut entrer.
+ */
 export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisites | null> {
   const f = await lireFicheMonde(supabase, h);
   if (!f) return null;
-  const [visites, souvenirs, adulte, cle] = await Promise.all([lireVisites(supabase, h), lireSouvenirs(supabase, h), estAdulte(supabase, h), poserProfil(supabase, h)]);
+  const [visites, souvenirs, adulte, cle, vues] = await Promise.all([
+    lireVisites(supabase, h),
+    lireSouvenirs(supabase, h),
+    estAdulte(supabase, h),
+    poserProfil(supabase, h),
+    lireJson<{ le?: string }>(supabase, cheminVues(h)),
+  ]);
   const recents = visites.slice(-12).reverse();
-  const qui = new Map(await Promise.all([...new Set(recents.map((v) => v.de))].map(async (id) => [id, await quiEst(supabase, id)] as const)));
+  const enAttente = souvenirs.filter((x) => !x.accepte_le);
+  // (qui sont-ils : prénom, figurine, clé, proche ou non, son univers ouvert ou non — ceux qui sont passés, et ceux dont
+  // un cadeau attend)
+  const ids = [...new Set([...recents.map((v) => v.de), ...enAttente.map((x) => x.de)])];
+  const qui = new Map(
+    await Promise.all(
+      ids.map(async (id) => {
+        const [q, cleDeLui, proche, univers] = await Promise.all([quiEst(supabase, id), poserProfil(supabase, id), seParlent(supabase, h, id), universOuvert(supabase, h, id)]);
+        return [id, { ...q, cle: cleDeLui, proche, univers }] as const;
+      }),
+    ),
+  );
   const noms = await prenomsDe(
     supabase,
-    souvenirs.map((x) => x.de),
+    souvenirs.filter((x) => x.accepte_le && !qui.has(x.de)).map((x) => x.de),
   );
+  const prenomDe = (id: string) => qui.get(id)?.prenom ?? noms.get(id) ?? "Quelqu’un";
+  const vuLe = s(vues.le);
   return {
     visibilite: f.visibilite,
     adulte,
     cle,
-    passes: recents.map((v) => ({ prenom: qui.get(v.de)?.prenom ?? "Quelqu’un", ...(qui.get(v.de)?.image ? { image: qui.get(v.de)!.image } : {}), le: v.le })),
-    enAttente: souvenirs.filter((x) => !x.accepte_le).map((x) => souvenirVu(x, noms.get(x.de) ?? "Quelqu’un")),
-    poses: souvenirs.filter((x) => x.accepte_le).map((x) => souvenirVu(x, noms.get(x.de) ?? "Quelqu’un")),
+    passes: recents.map((v) => {
+      const q = qui.get(v.de);
+      return {
+        prenom: prenomDe(v.de),
+        ...(q?.image ? { image: q.image } : {}),
+        ...(q?.cle ? { cle: q.cle } : {}),
+        le: v.le,
+        ...(!vuLe || v.le > vuLe ? { nouveau: true } : {}),
+        ...(q?.proche ? { proche: true } : {}),
+        ...(q?.univers ? { univers: true } : {}),
+      };
+    }),
+    enAttente: enAttente.map((x) => souvenirVu(x, prenomDe(x.de), qui.get(x.de))),
+    poses: souvenirs.filter((x) => x.accepte_le).map((x) => souvenirVu(x, prenomDe(x.de))),
   };
+}
+
+/** 👀 Il a découvert qui est passé : ce qui est arrivé avant n'est plus nouveau. */
+export async function marquerVisitesVues(supabase: Supabase, h: string): Promise<Resultat> {
+  await ecrireJson(supabase, cheminVues(h), { le: new Date().toISOString() });
+  return { ok: true };
 }
 
 /** Une place pour un souvenir accepté : sur le sol, devant, sans recouvrir les autres (en fractions du décor). */

@@ -19,7 +19,7 @@
  *     visite ») : quand son univers est créé, la scène est SON DÉCOR ; sa figurine assise à sa place, celle du proche
  *     qui entre et s'assoit à la place de l'invité ; celle qui parle le fait avec sa voix, sa bouche, les sous-titres.
  */
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Feuille } from "./ma-figurine";
 import { demanderOui } from "./fenetre";
@@ -27,6 +27,7 @@ import { FigurineQuiParle, type FigurineHandle } from "./figurine-qui-parle";
 import { OngletVisible } from "./guide";
 import { BandeauRituel, MonHumeur, chargerRituel, fabriquerMesTetes, useConversationDemandee, useRituel, useRituelAvec } from "./rituel";
 import { EnteteChezMoi } from "./chez-moi";
+import { VisitesRecues, aDecouvrir, marquerVu, signatureDe, useMesVisites, type ADecouvrir } from "./visites-recues";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
@@ -212,6 +213,36 @@ export function Proches({
   const ouvrirFil = useCallback((cle: string, parler = false) => ouvrir({ cle, parler }), [ouvrir]);
   useConversationDemandee(ouvrirFil, Boolean(compte && prete));
 
+  // 🎁🚪 (« Chez moi ») qui a frappé à ma porte, qui m'a laissé un cadeau : une découverte animée (`visites-recues.tsx`),
+  // ouverte toute seule en arrivant quand il y a du nouveau (une fois par nouveauté et par session)
+  const { visites, recharger: rechargerVisites } = useMesVisites(chezMoi && visible && Boolean(compte) && prete);
+  const nouveautes = useMemo(() => aDecouvrir(visites), [visites]);
+  const [decouverte, setDecouverte] = useState<ADecouvrir[] | null>(null);
+  useEffect(() => {
+    if (!chezMoi || !visible || decouverte || ouvert || !nouveautes.length) return;
+    const signature = signatureDe(nouveautes);
+    try {
+      if (window.sessionStorage.getItem("clikme-decouverte") === signature) return;
+    } catch {
+      /* rien */
+    }
+    const t = window.setTimeout(() => {
+      try {
+        window.sessionStorage.setItem("clikme-decouverte", signature);
+      } catch {
+        /* rien */
+      }
+      setDecouverte(nouveautes);
+    }, 700);
+    return () => window.clearTimeout(t);
+  }, [chezMoi, visible, decouverte, ouvert, nouveautes]);
+  const decouvrir = () => setDecouverte(nouveautes.length ? nouveautes : [{ genre: "bilan" }]);
+  const finDecouverte = () => {
+    const vus = decouverte?.some((x) => x.genre === "toc" || x.genre === "cadeau");
+    setDecouverte(null);
+    void (vus ? marquerVu() : Promise.resolve()).then(() => rechargerVisites());
+  };
+
   async function ajouter(cle: string, apres?: () => void) {
     setGeste(cle);
     try {
@@ -338,7 +369,7 @@ export function Proches({
     };
     return (
       <div className="pr cm">
-        <EnteteChezMoi actif={visible && compte !== null} onHumeur={() => setHumeurOuverte(true)} />
+        <EnteteChezMoi actif={visible && compte !== null} onHumeur={() => setHumeurOuverte(true)} visites={visites} nouveautes={nouveautes} onVisites={decouvrir} />
         {compte === null ? null : !compte || !prete ? (
           <p className="cm-doux">Tes conversations arriveront ici, dès que ta figurine sera là.</p>
         ) : (
@@ -362,6 +393,32 @@ export function Proches({
                     </span>
                     <span className="cm-cote">
                       <i className="cm-non-lus">{nouveau}</i>
+                    </span>
+                  </button>
+                </li>
+              )}
+              {/* 🚪 mes visites : qui a frappé, mes cadeaux (un toucher : les découvrir, ou le bilan) */}
+              {visites && (visites.passes.length > 0 || visites.enAttente.length > 0 || visites.poses.length > 0) && (
+                <li>
+                  <button type="button" className={`cm-ligne cm-visites${nouveautes.length ? " chaud" : ""}`} onClick={decouvrir}>
+                    <span className="cm-avatar" aria-hidden="true">
+                      {visites.enAttente.length ? "🎁" : "🚪"}
+                    </span>
+                    <span className="cm-texte">
+                      <b>Mes visites</b>
+                      <span>
+                        {visites.enAttente.length
+                          ? `${visites.enAttente[0].de} t’a laissé un cadeau 🎁`
+                          : nouveautes.length && nouveautes[0].genre === "toc"
+                            ? `${nouveautes[0].p.prenom} a frappé à ta porte`
+                            : visites.passes.length
+                              ? `Dernier passage : ${visites.passes[0].prenom}`
+                              : "Les cadeaux posés chez toi"}
+                      </span>
+                    </span>
+                    <span className="cm-cote">
+                      {visites.passes[0] && <time dateTime={visites.passes[0].le}>{quandCourt(visites.passes[0].le)}</time>}
+                      {nouveautes.length > 0 && <i className="cm-non-lus">{nouveautes.length}</i>}
                     </span>
                   </button>
                 </li>
@@ -493,6 +550,17 @@ export function Proches({
           </>
         )}
         {portails}
+        {decouverte && (
+          <VisitesRecues
+            liste={decouverte}
+            visites={visites}
+            onFermer={finDecouverte}
+            onParler={(cle) => {
+              finDecouverte();
+              ouvrirFil(cle, true);
+            }}
+          />
+        )}
       </div>
     );
   }

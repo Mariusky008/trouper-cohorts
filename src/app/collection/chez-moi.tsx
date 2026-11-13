@@ -11,10 +11,16 @@
  * son image vedette — comme `/univers/monde`), le thème du mois, mon humeur en pastille (un toucher : la changer, et voir
  * ce que les figurines en ont dit), ⚙️ « Mon univers » (ses réglages : `/univers/monde`). Sans univers encore : ce qui
  * l'attend (`/univers`).
+ *
+ * 🎁🚪 MES VISITES (le 13 novembre 2026, `visites-recues.tsx`) : sur ma fenêtre, un badge qui se dandine quand un cadeau
+ * m'attend ou que quelqu'un a frappé (un toucher : la découverte) ; les cadeaux que j'ai posés chez moi, sur le sol de
+ * mon univers, qui scintillent.
  */
 import { useEffect, useRef, useState } from "react";
 import type { EtatUnivers } from "@/lib/direct/univers-creation";
 import { humeurDe } from "@/lib/direct/rituel";
+import { objetDe, type MesVisites, type SouvenirVu } from "@/lib/direct/visites";
+import type { ADecouvrir } from "./visites-recues";
 import { TAILLE_FIGURINE, useCadreVisible } from "../univers/monde/monde";
 import { useRituel } from "./rituel";
 
@@ -35,14 +41,28 @@ export function useMonUnivers(actif: boolean): EtatUnivers | null | "absent" {
   return etat;
 }
 
-/** L'en-tête : « Chez moi », ⚙️, la fenêtre sur mon univers, ma pastille d'humeur. */
-export function EnteteChezMoi({ actif, onHumeur }: { actif: boolean; onHumeur: () => void }) {
+/** L'en-tête : « Chez moi », ⚙️, la fenêtre sur mon univers, ma pastille d'humeur, le badge de mes visites. */
+export function EnteteChezMoi({
+  actif,
+  onHumeur,
+  visites = null,
+  nouveautes = [],
+  onVisites,
+}: {
+  actif: boolean;
+  onHumeur: () => void;
+  visites?: MesVisites | null;
+  nouveautes?: ADecouvrir[];
+  onVisites?: () => void;
+}) {
   const etat = useMonUnivers(actif);
   const r = useRituel();
   const h = humeurDe(r?.humeur ?? null);
   // (ce que les figurines ont dit de mon humeur, et le mot de la fin de cette nuit : un point sur la pastille)
   const nouveau = (r?.mots.length ?? 0) + (r?.fins.length ?? 0);
   const pret = etat && etat !== "absent" && etat.etape === "decouverte" && etat.decor;
+  const cadeaux = nouveautes.filter((x) => x.genre === "cadeau").length;
+  const tocs = nouveautes.length - cadeaux;
   return (
     <header className="cm-tete">
       <div className="cm-titre">
@@ -56,7 +76,12 @@ export function EnteteChezMoi({ actif, onHumeur }: { actif: boolean; onHumeur: (
       {etat === null ? (
         <div className="cm-fenetre cm-attente" aria-hidden="true" />
       ) : pret ? (
-        <FenetreSurMonUnivers etat={etat}>
+        <FenetreSurMonUnivers etat={etat} souvenirs={visites?.poses}>
+          {nouveautes.length > 0 && onVisites && (
+            <button type="button" className={`cm-badge-visites${cadeaux ? " cadeau" : ""}`} onClick={onVisites}>
+              {cadeaux ? `🎁 ${cadeaux > 1 ? `${cadeaux} cadeaux t’attendent` : "Un cadeau t’attend !"}` : `🚪 Toc toc ! ${tocs > 1 ? `${tocs} visites` : "Une visite"}`}
+            </button>
+          )}
           <button type="button" className={`cm-humeur${h ? "" : " vide"}`} onClick={onHumeur} aria-label={h ? `Ton humeur : ${h.court}. La changer` : "Ton humeur du jour ?"}>
             {h ? `${h.emoji} ${h.court}` : "☀️ Ton humeur ?"}
             {nouveau > 0 && <i aria-label={`${nouveau} nouveau(x)`}>{nouveau}</i>}
@@ -84,7 +109,7 @@ export function EnteteChezMoi({ actif, onHumeur }: { actif: boolean; onHumeur: (
  * 🪟 Une fenêtre sur mon univers : la scène entière (2:3, comme `/univers/monde`), vue par une fenêtre plus basse,
  * centrée sur ma figurine. Un toucher : mon univers en grand (`/univers/monde`).
  */
-function FenetreSurMonUnivers({ etat, children }: { etat: EtatUnivers; children?: React.ReactNode }) {
+function FenetreSurMonUnivers({ etat, souvenirs, children }: { etat: EtatUnivers; souvenirs?: SouvenirVu[]; children?: React.ReactNode }) {
   const boite = useRef<HTMLDivElement>(null);
   const [largeur, setLargeur] = useState(0);
   useEffect(() => {
@@ -115,6 +140,14 @@ function FenetreSurMonUnivers({ etat, children }: { etat: EtatUnivers; children?
       <a className="cm-scene" href="/univers/monde" aria-label="Mon univers, en grand" style={{ transform: `translateY(${-decalage}px)` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="cm-decor" src={etat.decor} alt="Mon univers" />
+        {/* 🎁 les cadeaux posés chez moi, sur le sol */}
+        {(souvenirs ?? []).map((s, k) =>
+          typeof s.x === "number" && typeof s.y === "number" ? (
+            <span key={s.id} className="cm-souvenir" style={{ left: `${s.x * 100}%`, top: `${s.y * 100}%`, animationDelay: `${(-0.9 * k).toFixed(1)}s` }} title={`${objetDe(s.objet)?.nom ?? ""}, de ${s.de}`}>
+              {objetDe(s.objet)?.emoji}
+            </span>
+          ) : null,
+        )}
         {etat.figurine?.assise && (
           <span className="cm-place" style={{ left: `${place.x * 100}%`, top: `${Math.max(place.bas, place.hauteur + 0.02) * 100}%`, height: `${place.hauteur * 100}%` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -135,7 +168,7 @@ export const STYLES_CHEZ_MOI = `
 .cm-fenetre{position:relative;width:100%;overflow:hidden;border-radius:24px;background:#2b1a0c;box-shadow:0 14px 30px -14px rgba(0,0,0,.8);aspect-ratio:auto}
 .cm-attente{height:240px;animation:cm-lueur 1.4s ease-in-out infinite alternate}
 @keyframes cm-lueur{from{opacity:.5}to{opacity:.85}}
-.cm-scene{position:absolute;left:0;top:0;width:100%;aspect-ratio:2/3;display:block}
+.cm-scene{position:absolute;left:0;top:0;width:100%;aspect-ratio:2/3;display:block;container-type:inline-size}
 .cm-decor{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cm-place{position:absolute;transform:translate(-50%,-100%);aspect-ratio:2/3;display:flex;align-items:flex-end;justify-content:center}
 .cm-place img{height:100%;width:auto;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
@@ -143,6 +176,12 @@ export const STYLES_CHEZ_MOI = `
 .cm-humeur.vide{background:#FF2E9A;color:#fff}
 .cm-humeur i{display:grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#FF2E9A;color:#fff;font-style:normal;font-size:12px}
 .cm-humeur.vide i{background:#fff;color:#FF2E9A}
+.cm-souvenir{position:absolute;transform:translate(-50%,-100%);font-size:clamp(20px,7.5cqw,34px);line-height:1;filter:drop-shadow(0 4px 4px rgba(0,0,0,.4)) drop-shadow(0 0 8px rgba(255,236,170,.55));pointer-events:none;animation:cm-scintille 3s ease-in-out infinite}
+@keyframes cm-scintille{0%,100%{filter:drop-shadow(0 4px 4px rgba(0,0,0,.4)) drop-shadow(0 0 4px rgba(255,236,170,.3))}50%{filter:drop-shadow(0 4px 4px rgba(0,0,0,.4)) drop-shadow(0 0 12px rgba(255,236,170,.9))}}
+.cm-badge-visites{position:absolute;left:10px;top:10px;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:0;border-radius:999px;background:#FFF4E6;color:#2b1a0c;font:inherit;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 8px 18px -6px rgba(0,0,0,.7);animation:cm-appelle 2.2s ease-in-out infinite;transform-origin:20% 50%}
+.cm-badge-visites.cadeau{background:linear-gradient(135deg,#FF2E9A,#F2A23B);color:#fff;box-shadow:0 8px 22px -6px rgba(255,46,154,.9)}
+@keyframes cm-appelle{0%,60%,100%{transform:none}66%{transform:rotate(-5deg) scale(1.06)}72%{transform:rotate(4deg) scale(1.06)}78%{transform:rotate(-3deg)}84%{transform:none}}
+.cm-visites .cm-avatar{background:linear-gradient(135deg,#FF2E9A,#F2A23B)}
 .cm-saison{position:absolute;right:10px;top:10px;padding:5px 10px;border-radius:999px;background:rgba(255,250,240,.85);color:#2b1a0c;font-size:13px;font-weight:800;pointer-events:none}
 .cm-attend{display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:24px;background:linear-gradient(135deg,rgba(255,46,154,.2),rgba(242,196,107,.16));border:1px solid rgba(242,196,107,.35);color:#FFF4E6;text-decoration:none}
 .cm-attend b{font-size:18px;font-weight:900}

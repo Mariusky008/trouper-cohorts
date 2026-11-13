@@ -90,6 +90,9 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   duoquadragies 🧹) — les commerçants restent intacts.
   **« Chez moi »** (le 13 novembre, ses retours sur « Mon univers » et « Proches ») : une seule page, mon univers en
   haut, mes conversations comme WhatsApp, le reste derrière « ＋ » ; menu à quatre (9.0 tresquadragies 🏡).
+  **Les visites refaites** (le 13 novembre, « une vraie expérience de découverte ») : en visite, les figurines à
+  l'échelle, « 🚪 Toc toc » et « 🎁 Offrir » tout de suite ; chez moi, le paquet et la porte à ouvrir, en arrivant
+  (9.0 quaterquadragies 🎁🚪).
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
