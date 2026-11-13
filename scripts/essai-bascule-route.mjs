@@ -9,7 +9,8 @@
 //     `parle` = sa bouche ouverte) ; ses visages se font au nouveau style, dans le même dossier ; Hugo, qui avait sa
 //     figurine d'aujourd'hui et vient de valider la nouvelle, la voit remplacée (son prénom gardé) ; Sam, sans figurine
 //     du nouveau style, ne change pas — l'appli l'invite à la refaire, et il peut reprendre sa photo d'avant. Pablito :
-//     la figurine de Léa adoptée depuis l'admin, servie au nouveau style seulement l'interrupteur allumé.
+//     la figurine de Léa adoptée depuis l'admin, servie au nouveau style seulement l'interrupteur allumé ; 🧍 sa figurine
+//     debout reprise à l'adoption (la bienvenue du tuto), et la première image faite ensuite : debout, la bouche ouverte.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI ; ce script lance lui-même la seconde)
@@ -161,12 +162,16 @@ ok(n1.statut === 200 && n1.type === "image/webp" && c1.statut === 200 && c1.cach
 const avantPablito = (await ia()).length;
 const m1 = await image(ALLUME, "louche-n");
 ok(m1.statut === 200 && m1.cache.includes("max-age=60"), "une image pas encore faite : sa figurine assise en attendant (gardée une minute)");
+// (🧍 13 novembre 2026, la bienvenue du tuto : sa figurine debout, reprise à l'adoption ; la première image qui manque,
+// c'est elle, la bouche ouverte — puis ses visages, sur sa figurine assise)
+const d1 = await image(ALLUME, "debout-n");
+ok(d1.statut === 200 && d1.type === "image/webp" && d1.cache.includes("max-age=86400"), `allumé : Pablito debout, sa figurine debout reprise à l'adoption (${d1.statut})`);
 let pablito = [];
 for (let i = 0; i < 40 && !pablito.length; i++) {
   await new Promise((r) => setTimeout(r, 500));
-  pablito = (await ia()).slice(avantPablito).filter((c) => c.includes("seated in its armchair"));
+  pablito = (await ia()).slice(avantPablito).filter((c) => c.includes("IMAGE 1 is a finished collectible"));
 }
-ok(pablito.length >= 1 && pablito.every((c) => c.includes("IMAGE 1 is a finished collectible caricature figurine of a real person, seated in its armchair")), "ce qui manque se fait après la réponse, au nouveau style (sur sa figurine assise)");
+ok(pablito.length >= 1 && pablito[0].includes("STANDING upright on its feet") && pablito[0].includes("its mouth is now open"), "ce qui manque se fait après la réponse, au nouveau style : d'abord debout, la bouche ouverte");
 let p2 = await admin();
 for (let i = 0; i < 40 && !(p2.etat?.faites > p1.etat.faites); i++) {
   await new Promise((r) => setTimeout(r, 500));
@@ -175,6 +180,8 @@ for (let i = 0; i < 40 && !(p2.etat?.faites > p1.etat.faites); i++) {
 ok(p2.etat?.faites === p1.etat.faites + 1, `une image de plus (${p2.etat?.faites}/${p2.etat?.faites + (p2.etat?.aFaire?.length ?? 0)})`);
 const f1 = await admin({ action: "fabriquer" });
 ok(f1.statut === 200 && Boolean(f1.fait) && f1.etat?.faites === p2.etat.faites + 1, `« Faire l'image suivante » : ${f1.fait ?? "rien"} (${f1.etat?.faites} faites)`);
+const derniere = (await ia()).slice(avantPablito).filter((c) => c.includes("IMAGE 1 is a finished collectible")).pop() ?? "";
+ok(/^[a-z]+-[np]$/.test(f1.fait ?? "") && !f1.fait.startsWith("debout") && derniere.includes("IMAGE 1 is a finished collectible caricature figurine of a real person, seated in its armchair"), `puis ses visages, au nouveau style, sur sa figurine assise (${f1.fait})`);
 
 arreter();
 console.log(echecs ? `\n${echecs} échec(s)` : "\nla bascule tient ✓");

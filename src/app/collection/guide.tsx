@@ -87,6 +87,22 @@ const lacher = (a: HTMLAudioElement) => {
   a.pause();
 };
 
+/**
+ * 🔓 DÉBLOQUER SA VOIX PENDANT UN TOUCHER (la bienvenue, `bienvenue.tsx` : sa bulle suivante arrive un peu après le
+ * toucher, quand l'iPhone ne laisse plus jouer) : un silence joué tout de suite, et le lecteur reste débloqué.
+ */
+const SILENCE = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQIAAACAgA==";
+export function debloquerLaVoix(): void {
+  try {
+    const a = lecteurPablito();
+    if (!a.paused) return;
+    a.src = SILENCE;
+    void a.play().catch(() => undefined);
+  } catch {
+    /* (pas de son ici : la bulle s'écrit sans voix) */
+  }
+}
+
 /** Il dit ce son (un de ses enregistrements) quand il change ; rend « il parle ». Sans son : rien. */
 export function useVoixPablito(son: string | undefined, actif = true): boolean {
   const [joue, setJoue] = useState(false);

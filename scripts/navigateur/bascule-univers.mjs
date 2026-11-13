@@ -5,7 +5,8 @@
 // conversations comme WhatsApp — Marc ; « ＋ Nouveau », avec « Créer un mème ») ; le menu du bas, à trois : Découvrir ·
 // Chez moi (au milieu, sa figurine) · Autour ; « Moi » : ce qui était dans « Créer » (le studio, mes mèmes…) ; Marc, qui a son univers, le voit par une fenêtre, sa figurine au milieu, sa pastille d'humeur, ⚙️ ; « Créer »
 // invite Sam à refaire sa figurine au nouveau style ; « Ta figurine » lui propose sa photo d'avant (les deux cases toujours à cocher). Un
-// nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. 🎁🚪 Sam laisse un bouquet chez Marc, Léa
+// nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style ; un autre, au bout de la bienvenue : « Je crée ma
+// figurine » mène tout droit à l’atelier du nouveau style. 🎁🚪 Sam laisse un bouquet chez Marc, Léa
 // frappe à sa porte : en arrivant chez lui, Marc les découvre — le paquet qui se dandine, qu'il ouvre (l'objet, le mot),
 // « ✨ Le poser chez moi » ; la porte qui tremble, qu'il ouvre (« C'est Léa ! ») ; le bouquet posé dans sa fenêtre ; ce
 // n'est plus nouveau ensuite ; « Mes visites » : le bilan ; la conversation range ce qui s'est passé (visite, cadeau),
@@ -324,6 +325,18 @@ await fermerPablito(n);
 await n.waitForSelector(".pn", { timeout: 20000 }).catch(() => null);
 ok((await texte(n, ".pn b")) === "Crée ta figurine" && (await n.locator('.pn a[href="/univers/figurine"]').count()) === 1 && (await n.locator(".tf-envoi-photo, input[type=file]").count()) === 0, `un nouveau venu : « Crée ta figurine », au nouveau style (${await texte(n, ".pn")})`);
 await n.screenshot({ path: `${D}/bascule-5-nouveau.png` });
+
+// ═══ UN AUTRE NOUVEAU VENU : la bienvenue (`bienvenue.tsx`, 13 novembre 2026) mène tout droit à l'atelier du nouveau style ═══
+const n2 = await tel(ALLUME, null);
+await n2.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
+await n2.waitForSelector(".tu.bv", { timeout: 30000 });
+for (let k = 1; k < 6; k++) {
+  await n2.locator('.tu.bv[data-dit="oui"] .bv-repondre').click({ timeout: 20000 });
+  await n2.waitForSelector(`.tu.bv[data-rang="${k + 1}"]`, { timeout: 10000 });
+}
+await n2.locator(".tu .tu-creer").click({ timeout: 20000 });
+await n2.waitForURL(/\/univers\/figurine/, { timeout: 20000 }).catch(() => null);
+ok(new URL(n2.url()).pathname === "/univers/figurine", `allumé : « Je crée ma figurine » mène tout droit à l'atelier du nouveau style (${n2.url()})`);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
 await b.close();

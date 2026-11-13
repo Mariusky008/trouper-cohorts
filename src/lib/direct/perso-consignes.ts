@@ -167,6 +167,22 @@ export function consigneBoucheAssise(x: Sentiment): string {
 }
 
 /**
+ * 🗣️ DEBOUT, LA BOUCHE OUVERTE (13 novembre 2026, la bienvenue du tuto : « que je sois debout, que je prenne tout
+ * l'écran, et que ma bouche parle en même temps que le texte ») — faite sur son image debout (IMAGE 1) : seule sa
+ * bouche s'ouvre. Pour Pablito (`pablito-univers-serveur.ts`), une fois.
+ */
+export function consigneBoucheDebout(): string {
+  return [
+    "IMAGE 1 is a finished collectible figurine of a real person, STANDING upright on its feet, with no armchair. Make a new image of EXACTLY THE SAME FIGURINE: the same person, the same face and likeness, the same hair, the same clothes, colours and materials, the same standing pose, the same size, framing and light.",
+    `Change ONLY this: ${CHANGEMENTS.parle}`,
+    "",
+    "BACKGROUND: fully transparent (alpha channel) — only the figurine and a soft contact shadow under its feet.",
+    "",
+    ...CONTRAINTES(false),
+  ].join("\n");
+}
+
+/**
  * 🗓️ SA TENUE DE SAISON (la figurine du mois, au nouveau style — lot 7, « la figurine du mois devient la saison de son
  * univers ») : la même figurine dans le même fauteuil, habillée du thème du mois, avec l'expression du mois ; puis sa
  * bouche ouverte. Fond transparent : elle s'assoit chez elle, dans son décor.

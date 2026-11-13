@@ -1660,7 +1660,8 @@ d'infos, tu pourras toujours cliquer ici ». La maquette (le canvas « Le tuto �
 jour ; sa voix est enregistrée par lui (`public/collection/pablito/tuto-*.mp3`, la liste : `TUTO_ENREGISTRES` dans
 `lib/direct/guide.ts` ; toutes enregistrées ; une bulle à venir s'écrirait sans voix).
 
-- **La bienvenue** (`app/collection/tuto.tsx`) : à la toute première arrivée (pas encore de figurine), une seule fois sur
+- **La bienvenue** (`app/collection/tuto.tsx`) — *refaite pour l'univers le 13 novembre 2026 : 9.0 duoquinquagies 👋 ;
+  ce qui suit est la version d'avant* : à la toute première arrivée (pas encore de figurine), une seule fois sur
   ce téléphone, trois bulles ; à la troisième, la lumière se pose sur le logo (« Besoin de plus d'infos sur les
   fonctionnalités ? Touche ici, quand tu veux : je te fais visiter. ») ; puis « 📸 Je crée ma figurine ».
 - **Plus aucune fenêtre dans les pages** : l'accueil de « Créer », « Découvrir », « Mes mèmes » et les deux de « Moi »
@@ -2877,6 +2878,66 @@ mesure la relation, pas un message : personne n'est noté.
   les alertes) ; `scripts/essai-etagere-poussiere-route.mjs` (la poussière chez l'un et chez l'autre, la page, la
   ligne grise, se rallumer, les idées, les compteurs) ; `scripts/navigateur/etagere-poussiere.mjs` (la scène grise,
   la carte rien que pour lui, le micro, la page, le mème de la blague, l'étagère qui se rallume).
+
+### 9.0 duoquinquagies 👋 La bienvenue refaite pour l'univers : une conversation avec Pablito (13 novembre)
+
+Le propriétaire : « le concept a beaucoup évolué vers un ClikMe, c'est un peu comme WhatsApp, mais ça crée des univers
+communs entre les gens qui se parlent ! C'est-à-dire ? Eh bien, chaque personne a sa figurine qui, au fil des
+conversations, range les souvenirs, les rappels, les infos… OK, et quoi d'autre ? Au fil des conversations, elle crée un
+univers qui s'agrandit et te définit mieux que tu ne pourrais l'imaginer, avec des endroits secrets et des portes à ta
+personnalité… Le premier tuto doit retranscrire cette idée, pour expliquer à quoi s'attendre ; ensuite, on fera des
+tutos pour chaque fonctionnalité. » La maquette (« Le premier tuto de ClikMe ») et les six bulles sont validées le même
+jour ; il les a enregistrées (la sixième, il l'a gardée telle quelle).
+
+- **La bienvenue** (`app/collection/bienvenue.tsx`, à la place des trois bulles de 9.0 duodevicies) : toujours à la
+  toute première arrivée, une seule fois sur ce téléphone (`clikme-tuto-bienvenue`). Une conversation avec Pablito,
+  présentée comme sur WhatsApp : « Pablito écrit… », sa bulle, sa voix ; on touche sa question, elle part dans la
+  conversation comme un message (✓✓), il répond. Un toucher sur la conversation écrit la bulle d'un coup.
+- **Les six bulles, et ce qu'on lui répond** :
+  1. « Salut ! Moi, c'est Pablito, le patron de ClikMe. Bienvenue ! » — « C'est quoi, ClikMe ? »
+  2. « ClikMe, c'est un peu comme WhatsApp : tu parles avec tes proches. Mais ici, vos conversations créent un univers
+     commun entre vous. » — « C'est-à-dire ? »
+  3. « Chaque personne a sa figurine, faite à partir de son selfie. Au fil de vos conversations, elle range tout : les
+     souvenirs, les rappels, les infos. » — « Et quoi d'autre ? »
+  4. « Ton univers s'agrandit à chaque conversation. De nouveaux endroits apparaissent, certains secrets, avec des
+     portes que tu n'ouvres qu'à qui tu veux. » — « Et ensuite ? »
+  5. « Petit à petit, il te définit mieux que tu ne pourrais l'imaginer. Tes proches peuvent le visiter… et toi,
+     visiter les leurs. » — « Ça commence comment ? »
+  6. « Par toi ! Un selfie pour ta figurine, puis on discute cinq minutes, et je dessine les premiers endroits de ton
+     univers. » — « 📸 Je crée ma figurine », ou « Plus tard » ; dessous : « Une question ? Touche le logo ClikMe, en
+     haut, quand tu veux. »
+- **Sa voix** : `tuto-bienvenue-1` (celle d'avant), puis `tuto-univers-2` à `tuto-univers-6` (reçues le 13 novembre ;
+  les anciennes bulles 2 et 3 sont parties avec leur texte). La liste : `TUTO_ENREGISTRES`, `lib/direct/guide.ts`.
+- **🧍 Pablito debout, en grand** (le propriétaire, le même jour : « ça aurait été mieux que je sois debout et que je
+  prenne tout l'écran, au lieu d'avoir un petit carré où je suis assis, et que ma bouche parle en même temps que le
+  texte ») : à la première bulle, la scène prend presque tout l'écran ; sa figurine debout, bouche fermée et bouche
+  ouverte l'une sur l'autre, la bouche qui bouge tant qu'il parle ; chaque bulle s'écrit au rythme de sa voix (la durée
+  de chaque enregistrement) ; un toucher sur sa réponse débloque sa voix pour la bulle suivante (l'iPhone). Ses images
+  debout (`/api/direct/guide/debout-n` et `debout-p`) : au nouveau style seulement — sa figurine debout reprise de sa
+  fiche (à l'adoption, ou au premier passage s'il était adopté avant), puis la bouche ouverte, faite une fois par le
+  moteur (`consigneBoucheDebout`) ; ce sont les deux premières de la liste de Pablito (`pablito-univers-serveur.ts`).
+  En attendant : sa figurine assise ; l'interrupteur éteint, son portrait d'avant.
+- **Au-dessus, l'univers qui grandit** (dessiné, comme sur la maquette) : 1. Pablito, debout, salue ; 2. deux
+  figurines (Toi, Léa) se parlent, leur univers commun apparaît entre elles ; 3. l'étagère : un souvenir déjà là, un
+  rappel et une info qui s'envolent de la conversation ; 4. l'univers s'agrandit (l'étagère, ta chanson, tes films, tes
+  photos, ta porte, un endroit secret), « Qui peut entrer » passe par ses quatre réglages ; 5. Léa frappe à ta porte, un
+  nouvel endroit apparaît ; 6. le chemin : ton selfie, ta figurine, 5 minutes avec Pablito, ton univers.
+- **« Je crée ma figurine »** : l'interrupteur « Univers pour tous » allumé, tout droit à l'atelier du nouveau style
+  (`/univers/figurine`) ; éteint, la page de sa figurine (`#creer`). « Passer » (en haut, sauf à la dernière bulle) et
+  « Plus tard » la ferment ; « Échap » aussi.
+- **La suite, voulue par le propriétaire** (le même jour, en montrant son univers d'automne) : « mon univers commence
+  comme celui-là, et il évolue avec des choses qui apparaissent ; il s'agrandit de plus en plus dans tous les sens pour
+  faire apparaître dans ma maison de nouvelles pièces, dans le même style que le départ : mon bureau avec mes photos,
+  mes vinyles où on voit ma chanson préférée, une télé avec mon film préféré… Et pour l'univers partagé avec quelqu'un,
+  on doit voir aussi l'univers de départ et les étagères qui se remplissent. » La scène dessinée attend donc les vraies
+  pièces de « l'univers qui grandit » (le chantier de l'autre session) : elles la remplaceront (son choix : « plus tard,
+  avec l'autre session »).
+- **Les essais** : `tuto.mjs` (Pablito debout, en grand, sa bouche qui bouge ; les six bulles et leurs six voix, les questions qui partent comme des messages, le
+  toucher qui écrit la bulle d'un coup, l'univers commun, l'étagère, les six endroits et la porte, Léa qui frappe, le
+  chemin, « Je crée ma figurine », une seule fois) ; `bascule-univers.mjs` (allumé : « Je crée ma figurine » mène à
+  `/univers/figurine`) ; `ma-figurine.mjs` et `famille-page.mjs` (la bienvenue, puis « Passer ») ;
+  `essai-bascule-route.mjs` (Pablito adopté : sa figurine debout reprise, puis la première image faite — debout, la
+  bouche ouverte — puis ses visages, sur sa figurine assise).
 
 ### 9.1 L'idée en une phrase
 

@@ -198,11 +198,13 @@ await vide.screenshot({ path: `${D}/famille-4-vide.png` });
 // ═══ MA COLLECTION, SANS FIGURINE : Pablito (la figurine du patron de ClikMe) dit bienvenue la première fois, une seule
 // fois ; ensuite, le logo ouvre la visite (le tuto, 9 novembre 2026) ═══
 await vide.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await vide.waitForSelector(".tu .tu-carte", { timeout: 30000 });
+await vide.waitForSelector(".tu.bv", { timeout: 30000 });
+// (la bienvenue refaite pour l'univers, 13 novembre 2026 : sa bulle s'écrit, après « Pablito écrit… »)
+await vide.waitForSelector('.tu.bv[data-dit="oui"]', { timeout: 20000 }).catch(() => null);
 const accueilVide = await texte(vide, "#o-figurine");
-ok(/Pablito/i.test(await texte(vide, ".tu-texte")) && (await vide.locator('.tu[role="dialog"]').count()) === 1, "la première fois : Pablito dit bienvenue (« Salut ! Moi, c’est Pablito… »)");
+ok(/Pablito/i.test(await texte(vide, ".bv-msg.pablito .bv-texte")) && (await vide.locator('.tu[role="dialog"]').count()) === 1, "la première fois : Pablito dit bienvenue (« Salut ! Moi, c’est Pablito… »)");
 ok(accueilVide.includes("Crée ta figurine") && (await vide.locator("#creer .tf-prenom-photo").count()) === 1, "sans compte : la quête « Crée ta figurine » (son prénom demandé)");
-ok((await vide.locator(".tu .mq img.mq-i").count()) === 2 && (await vide.locator(".tu-carte svg").count()) === 0, "le guide est sa figurine (bouche fermée, bouche ouverte), plus un personnage dessiné");
+ok((await vide.locator(".tu .bv-debout img").count()) === 2 && (await vide.locator(".tu .bv-debout svg").count()) === 0, "le guide est sa figurine (bouche fermée, bouche ouverte), plus un personnage dessiné");
 ok(await fermerPablito(vide), "« Passer » la ferme");
 ok((await vide.locator(".tu, .pb-voile, .mqd-revoir").count()) === 0 && (await vide.locator(".mc-logo .mc-logo-point").count()) === 1, "fermée : plus rien dans la page, un point rose sur le logo");
 await vide.reload({ waitUntil: "networkidle" });

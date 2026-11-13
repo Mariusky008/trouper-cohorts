@@ -26,7 +26,7 @@ import { LOUCHE, ordreDesTenues } from "./guide-serveur";
 import { SANS_BOUCHE, VISAGES_FIGURINE } from "./ma-figurine";
 import { depotDans, dossierExpressions, signer, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
-import { consigneBoucheAssise, consigneTenueAssise, consigneVisageAssise, consigneVisageAssiseLibre } from "./perso-consignes";
+import { consigneBoucheAssise, consigneBoucheDebout, consigneMemeFigurine, consigneTenueAssise, consigneVisageAssise, consigneVisageAssiseLibre } from "./perso-consignes";
 import { universPourTous } from "./univers-pour-tous";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -68,18 +68,24 @@ export async function pablitoAuNouveauStyle(supabase: Supabase): Promise<boolean
   return universPourTous() && (await pablitoAdopte(supabase));
 }
 
-/** Une de ses images du nouveau style, si elle est faite (`neutre-n`, `neutre-p`, `joie-n`, `louche-n`, `seule`, `edition-noel`…). */
+/** Ses visages, rangés à part (`joie-n`, `colere-p`…) — pas sa grimace, ni sa figurine debout (`debout-n`, `debout-p`). */
+const estUnVisage = (nom: string) => /^[a-z]+-[np]$/.test(nom) && nom !== "louche-n" && !nom.startsWith("debout-");
+
+/** Une de ses images du nouveau style, si elle est faite (`neutre-n`, `neutre-p`, `joie-n`, `louche-n`, `seule`, `debout-n`, `edition-noel`…). */
 export async function imageDePablito(supabase: Supabase, nom: string): Promise<Buffer | null> {
   if (nom === "neutre-n" || nom === "seule") return depotDans(supabase, BASE).lire("neutre.webp");
   if (nom === "neutre-p") return depotDans(supabase, BASE).lire("parle.webp");
-  const visage = /^[a-z]+-[np]$/.test(nom) && nom !== "louche-n";
-  return depotDans(supabase, visage ? VISAGES : AUTRES).lire(`${nom}.webp`);
+  return depotDans(supabase, estUnVisage(nom) ? VISAGES : AUTRES).lire(`${nom}.webp`);
 }
 /** Sa figurine assise de tous les jours (en attendant qu'une image soit faite), bouche fermée ou ouverte. */
 export const pablitoDeTousLesJours = (supabase: Supabase, parle: boolean) => depotDans(supabase, BASE).lire(parle ? "parle.webp" : "neutre.webp");
 
-/** Les images à faire, dans l'ordre : ses visages (bouche fermée, puis ouverte), sa grimace, ses tenues (celle du mois d'abord). */
-const ORDRE = () => [...VISAGES_FIGURINE.flatMap((v) => [`${v.cle}-n`, `${v.cle}-p`]), "louche-n", ...ordreDesTenues().map((c) => `edition-${c}`)];
+/**
+ * Les images à faire, dans l'ordre : 🧍 debout (13 novembre 2026, la bienvenue du tuto : il y parle debout, en grand —
+ * bouche fermée, sa figurine debout reprise à l'adoption, sinon faite ; puis bouche ouverte), ses visages (bouche
+ * fermée, puis ouverte), sa grimace, ses tenues (celle du mois d'abord).
+ */
+const ORDRE = () => ["debout-n", "debout-p", ...VISAGES_FIGURINE.flatMap((v) => [`${v.cle}-n`, `${v.cle}-p`]), "louche-n", ...ordreDesTenues().map((c) => `edition-${c}`)];
 
 /** 🧑 L'adopter : la figurine du nouveau style de cet habitant (le propriétaire) devient Pablito. */
 export async function adopterSaFigurine(supabase: Supabase, h: string): Promise<{ error?: string; repris?: number }> {
@@ -106,6 +112,10 @@ export async function adopterSaFigurine(supabase: Supabase, h: string): Promise<
     const octets = await siens.lire(n);
     if (octets) await v.ecrire(n, octets, "image/webp");
   }
+  // 🧍 sa figurine debout, si elle est faite : reprise telle quelle (bouche fermée ; la bouche ouverte se fera)
+  const debout = s(fiche.references.debout?.chemin);
+  const d = debout ? await telecharger(supabase, debout).catch(() => null) : null;
+  if (d) await depotDans(supabase, AUTRES).ecrire("debout-n.webp", await enWebp(d), "image/webp");
   await b.ecrire("source.json", Buffer.from(JSON.stringify({ h, version: fiche.version, le: new Date().toISOString() })), "application/json");
   memo = null;
   return { repris: noms.length };
@@ -148,6 +158,29 @@ export async function fabriquerPablito(supabase: Supabase, avant: number): Promi
   try {
     const neutre = await depotDans(supabase, BASE).lire("neutre.webp");
     if (!neutre) return { erreur: "Sa figurine est introuvable." };
+    // 🧍 debout : bouche fermée (sa figurine debout, faite d'après sa figurine assise si elle n'a pas été reprise), puis
+    // bouche ouverte (d'après la debout)
+    if (nom === "debout-n" || nom === "debout-p") {
+      // (adopté avant le 13 novembre 2026 : sa figurine debout, si elle est faite, est reprise de sa fiche — rien à payer)
+      if (nom === "debout-n") {
+        const h = s(json(await depotDans(supabase, BASE).lire("source.json")).h);
+        const chemin = h ? s((await lireFichePerso(supabase, h).catch(() => ({ fiche: null }))).fiche?.references.debout?.chemin) : "";
+        const reprise = chemin ? await telecharger(supabase, chemin).catch(() => null) : null;
+        if (reprise) {
+          await a.ecrire("debout-n.webp", await enWebp(reprise), "image/webp");
+          return { fait: nom };
+        }
+      }
+      const source = nom === "debout-p" ? await a.lire("debout-n.webp") : neutre;
+      if (!source) return { erreur: "Sa figurine debout est introuvable." };
+      const r = await demanderUneImage({ images: [source], consigne: nom === "debout-p" ? consigneBoucheDebout() : consigneMemeFigurine("debout"), transparent: true, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high" });
+      if ("erreur" in r) {
+        await a.ecrire("echecs.json", Buffer.from(JSON.stringify({ ...echecs, [nom]: (Number(echecs[nom]) || 0) + 1 })), "application/json");
+        return { erreur: r.erreur };
+      }
+      await a.ecrire(`${nom}.webp`, await enWebp(r.png), "image/webp");
+      return { fait: nom };
+    }
     const visage = /^([a-z]+)-([np])$/.exec(nom);
     const x = visage && nom !== "louche-n" ? VISAGES_FIGURINE.find((f) => f.cle === visage[1])?.cle : undefined;
     // (sa main cache sa bouche : la même image pour parler — pas de bouche ouverte à payer)
