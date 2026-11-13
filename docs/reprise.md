@@ -86,6 +86,8 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
   (`UNIVERS_POUR_TOUS`, 9.0 unquadragies 🔀), **allumé le 13 novembre** — les portes, le pont vers l'appli, le menu de
   demain, les figurines refaites, Pablito au nouveau style (à adopter depuis `/admin/humain/univers-essais`). Le frein :
   `CLIKME_UNIVERS_POUR_TOUS=0` chez l'hébergeur. Les essais d'avant tournent freinés ; ceux de la bascule, allumés.
+  **Remettre l'appli à zéro** (les comptes de l'appli étaient fictifs) : `/admin/humain/remise-a-zero` (9.0
+  duoquadragies 🧹) — les commerçants restent intacts.
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais
