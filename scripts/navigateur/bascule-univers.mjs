@@ -4,8 +4,8 @@
 // Sam a sa figurine d'aujourd'hui. L'interrupteur allumé : l'appli s'ouvre sur « Mon univers » (« Ton univers commence
 // par toi ») ; le menu du bas devient Découvrir · Autour · Créer · Proches · Mon univers ; « Créer » l'invite à refaire sa
 // figurine au nouveau style ; « Ta figurine » lui propose sa photo d'avant (les deux cases toujours à cocher). Un
-// nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. L'interrupteur éteint (l'app de la CI) : rien
-// ne change. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. Freiné (l'app de la CI,
+// `CLIKME_UNIVERS_POUR_TOUS=0`) : l'appli d'avant. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 import { lancerSecondeApp } from "../seconde-app.mjs";

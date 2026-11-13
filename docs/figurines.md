@@ -2552,11 +2552,15 @@ Le propriétaire, à qui l'on proposait « son univers change avec le mois » ou
 
 Le propriétaire : « Le feu vert pour ouvrir tout cela à tout le monde : nouvel accueil et nouveau menu, figurines
 actuelles refaites, Pablito au nouveau style : OUI ». Tout est construit derrière **un seul interrupteur**,
-`UNIVERS_POUR_TOUS` (`lib/direct/univers-interrupteur.ts`, lu par l'écran aussi ; le serveur : `univers-pour-tous.ts`),
-**éteint** ; on l'allume dans une dernière PR, une fois que le propriétaire a tout vu. Les essais l'allument avec
-`CLIKME_UNIVERS_POUR_TOUS=1`, sur une seconde app (`scripts/seconde-app.mjs`).
+`UNIVERS_POUR_TOUS` (`lib/direct/univers-interrupteur.ts`, lu par l'écran aussi ; le serveur : `univers-pour-tous.ts`).
+**Allumé le 13 novembre 2026** (le propriétaire : « allume »).
 
-- **Éteint (aujourd'hui)** : rien ne change ; le chantier reste à l'adresse d'essai, réservée au propriétaire.
+- **Le frein** : `CLIKME_UNIVERS_POUR_TOUS=0` chez l'hébergeur (côté serveur) remet l'appli d'avant sans déployer — les
+  portes au propriétaire, l'ancien menu et l'ancienne arrivée, plus de pont, le Pablito d'avant (les figurines déjà
+  passées au nouveau style le restent, leur ligne ayant changé). « 1 » force l'allumage. Les essais d'avant tournent
+  freinés (la CI : `CLIKME_UNIVERS_POUR_TOUS: "0"`) ; ceux de la bascule lancent une seconde app allumée
+  (`scripts/seconde-app.mjs`).
+- **Freiné** : rien ne change ; le chantier reste à l'adresse d'essai, réservée au propriétaire.
 - **Allumé — les portes** : `/univers`, `/univers/figurine`, `/univers/conversation`, `/univers/monde` et leurs routes
   s'ouvrent à chacun, avec SA figurine (son cookie d'habitant) (`universPermis`).
 - **Allumé — le pont** (`pont-univers-serveur.ts`) : sa figurine du nouveau style devient celle de l'appli — sa ligne
@@ -2583,8 +2587,9 @@ actuelles refaites, Pablito au nouveau style : OUI ». Tout est construit derri�
 - **Les essais** : `scripts/essai-bascule-route.mjs` (les deux positions de l'interrupteur dans la même base : les portes,
   le pont, les visages, Hugo et Sam, la photo d'avant, Pablito adopté et servi), `scripts/navigateur/bascule-univers.mjs`
   (l'arrivée sur « Mon univers », le menu, « Ta figurine fait peau neuve », la photo d'avant, un nouveau venu).
-- **Reste, pour la dernière PR** : allumer (`UNIVERS_POUR_TOUS = true`), après que le propriétaire a adopté sa figurine
-  comme Pablito et vu le parcours ; les essais d'aujourd'hui qui supposent l'interrupteur éteint suivront.
+- **Allumé** (le 13 novembre) : `UNIVERS_POUR_TOUS = true`. Pablito passe au nouveau style dès que le propriétaire
+  adopte sa figurine (d'ici là, le Pablito d'avant). Un nouveau venu reçoit la ville de Dax (comme le chantier depuis le
+  lot 2 : la page de la nouvelle figurine ne demande pas la ville).
 
 ### 9.1 L'idée en une phrase
 
