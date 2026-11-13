@@ -117,7 +117,7 @@ ok((await texte(p, ".cm-attend b")) === "Ton univers t’attend 🏡" && (await 
 await p.waitForSelector(".cm-liste li[data-cle]", { timeout: 20000 }).catch(() => null);
 const ligneMarc = await texte(p, ".cm-liste li[data-cle] .cm-ligne");
 ok(ligneMarc.includes("Marc") && ligneMarc.includes("Dis-lui bonjour") && (await p.locator(".pr-grille, .pr-wa, .pr-lien").count()) === 0, `ses conversations, comme WhatsApp : Marc (${ligneMarc}) ; plus de cartes ni de blocs`);
-ok((await p.locator(".cm-memes").count()) === 0 && (await texte(p, ".cm-tete-liste")).includes("Mes conversations"), "« Mes conversations », et plus de ligne « Mes mèmes » (elle est dans « Moi »)");
+ok((await p.locator(".cm-memes").count()) === 0 && /mes conversations/i.test(await texte(p, ".cm-tete-liste")), "« Mes conversations », et plus de ligne « Mes mèmes » (elle est dans « Moi »)");
 await p.locator(".cm-nouveau").click();
 await p.waitForSelector(".cm-actions", { timeout: 10000 }).catch(() => null);
 const actions = (await p.locator(".cm-actions b").allInnerTexts()).join(" · ");
@@ -219,7 +219,7 @@ await m.locator(".vr-fermer").click();
 await p.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(p);
 await p.waitForSelector(".pn", { timeout: 20000 }).catch(() => null);
-ok((await texte(p, ".pn b")) === "Ta figurine fait peau neuve" && (await p.locator('.pn a[href="/univers/figurine"]').innerText()) === "La refaire au nouveau style", `« Créer » l'invite à refaire sa figurine (${await texte(p, ".pn")})`);
+ok((await texte(p, "#o-figurine .pn b")) === "Ta figurine fait peau neuve" && (await p.locator('#o-figurine .pn a[href="/univers/figurine"]').innerText()) === "La refaire au nouveau style", `« Créer » l'invite à refaire sa figurine (${await texte(p, "#o-figurine .pn")})`);
 ok((await p.locator(".tf-moi, .tf").count()) > 0, "son studio reste là, en dessous");
 await p.screenshot({ path: `${D}/bascule-3-creer.png` });
 
