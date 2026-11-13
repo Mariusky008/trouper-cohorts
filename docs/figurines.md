@@ -2598,6 +2598,24 @@ actuelles refaites, Pablito au nouveau style : OUI ». Tout est construit derri�
   commerçant : « Découvrir » montre les mèmes d'ailleurs (comme avant). (Freiné, l'ancienne page « Crée ta figurine »
   garde sa liste des villes des commerçants.)
 
+### 9.0 duoquadragies 🧹 Remettre l'appli à zéro (13 novembre)
+
+Le propriétaire, l'univers ouvert à tous : « ce sont que des comptes fictifs, donc peut-être que le plus simple c'est
+de tout réinitialiser, effacer les comptes et recommencer à zéro » ; ses réponses : tout effacer, son compte aussi ;
+l'appli seulement.
+
+- **La page** : `/admin/humain/remise-a-zero` (administrateur). Elle compte d'abord ce qui partirait (table par table,
+  seau par seau), sans rien effacer ; puis « Tout effacer, pour de bon » une fois **EFFACER** tapé — les fichiers
+  d'abord, par lots de 500 (la page rappelle jusqu'au bout), puis les lignes. Relancée, elle reprend où elle en était.
+- **Ce qui part** (`remise-a-zero-serveur.ts`, `TABLES` et `SEAUX`) : tous les comptes de l'appli (`human_habitants`)
+  et ce qui leur appartient — figurines, mèmes et leur mesure, vœux, proches et conversations, cartes de fidélité,
+  visites et mots du jour chez les commerçants, maisons, salons, notifications ; leurs fichiers (le seau des
+  figurines, le seau des maisons, celui des salons).
+- **Ce qui reste** : les commerçants et tout ce qui est à eux (vitrines, offres, échanges, factures, leurs mèmes dans
+  `figurines-pros`), les administrateurs, Pablito (`demo-proprio/`), les essais du lot 0 (`essais-univers/`), les lieux
+  publics (`lieux-publics/`).
+- **L'essai** : `scripts/essai-remise-a-zero-route.mjs`.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
