@@ -2908,7 +2908,16 @@ jour ; il les a enregistrées (la sixième, il l'a gardée telle quelle).
      haut, quand tu veux. »
 - **Sa voix** : `tuto-bienvenue-1` (celle d'avant), puis `tuto-univers-2` à `tuto-univers-6` (reçues le 13 novembre ;
   les anciennes bulles 2 et 3 sont parties avec leur texte). La liste : `TUTO_ENREGISTRES`, `lib/direct/guide.ts`.
-- **Au-dessus, l'univers qui grandit** (dessiné, comme sur la maquette) : 1. Pablito, en grand, salue ; 2. deux
+- **🧍 Pablito debout, en grand** (le propriétaire, le même jour : « ça aurait été mieux que je sois debout et que je
+  prenne tout l'écran, au lieu d'avoir un petit carré où je suis assis, et que ma bouche parle en même temps que le
+  texte ») : à la première bulle, la scène prend presque tout l'écran ; sa figurine debout, bouche fermée et bouche
+  ouverte l'une sur l'autre, la bouche qui bouge tant qu'il parle ; chaque bulle s'écrit au rythme de sa voix (la durée
+  de chaque enregistrement) ; un toucher sur sa réponse débloque sa voix pour la bulle suivante (l'iPhone). Ses images
+  debout (`/api/direct/guide/debout-n` et `debout-p`) : au nouveau style seulement — sa figurine debout reprise de sa
+  fiche (à l'adoption, ou au premier passage s'il était adopté avant), puis la bouche ouverte, faite une fois par le
+  moteur (`consigneBoucheDebout`) ; ce sont les deux premières de la liste de Pablito (`pablito-univers-serveur.ts`).
+  En attendant : sa figurine assise ; l'interrupteur éteint, son portrait d'avant.
+- **Au-dessus, l'univers qui grandit** (dessiné, comme sur la maquette) : 1. Pablito, debout, salue ; 2. deux
   figurines (Toi, Léa) se parlent, leur univers commun apparaît entre elles ; 3. l'étagère : un souvenir déjà là, un
   rappel et une info qui s'envolent de la conversation ; 4. l'univers s'agrandit (l'étagère, ta chanson, tes films, tes
   photos, ta porte, un endroit secret), « Qui peut entrer » passe par ses quatre réglages ; 5. Léa frappe à ta porte, un
@@ -2923,10 +2932,12 @@ jour ; il les a enregistrées (la sixième, il l'a gardée telle quelle).
   on doit voir aussi l'univers de départ et les étagères qui se remplissent. » La scène dessinée attend donc les vraies
   pièces de « l'univers qui grandit » (le chantier de l'autre session) : elles la remplaceront (son choix : « plus tard,
   avec l'autre session »).
-- **Les essais** : `tuto.mjs` (les six bulles et leurs six voix, les questions qui partent comme des messages, le
+- **Les essais** : `tuto.mjs` (Pablito debout, en grand, sa bouche qui bouge ; les six bulles et leurs six voix, les questions qui partent comme des messages, le
   toucher qui écrit la bulle d'un coup, l'univers commun, l'étagère, les six endroits et la porte, Léa qui frappe, le
   chemin, « Je crée ma figurine », une seule fois) ; `bascule-univers.mjs` (allumé : « Je crée ma figurine » mène à
-  `/univers/figurine`) ; `ma-figurine.mjs` et `famille-page.mjs` (la bienvenue, puis « Passer »).
+  `/univers/figurine`) ; `ma-figurine.mjs` et `famille-page.mjs` (la bienvenue, puis « Passer ») ;
+  `essai-bascule-route.mjs` (Pablito adopté : sa figurine debout reprise, puis la première image faite — debout, la
+  bouche ouverte — puis ses visages, sur sa figurine assise).
 
 ### 9.1 L'idée en une phrase
 

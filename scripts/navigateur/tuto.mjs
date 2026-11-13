@@ -83,7 +83,11 @@ const neuf = await tel();
 await neuf.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await neuf.waitForSelector(".tu.bv", { timeout: 60000 });
 ok((await neuf.locator(".tu.bv .bv-ecrit").count()) === 1, "à la première arrivée : « Pablito écrit… », comme dans une conversation");
-ok((await neuf.locator(".tu.bv .bv-pablito .mq").count()) === 1 && (await neuf.locator(".tu.bv .bv-points i").count()) === 6, "Pablito, en grand, salue ; six points pour six bulles");
+ok((await neuf.locator(".tu.bv .bv-debout img").count()) === 2 && (await neuf.locator(".tu.bv .bv-salut").count()) === 1 && (await neuf.locator(".tu.bv .bv-points i").count()) === 6, "Pablito, debout et en grand, salue (bouche fermée, bouche ouverte) ; six points pour six bulles");
+await neuf.waitForSelector(".bv-curseur", { timeout: 10000 });
+ok((await neuf.locator(".tu.bv .bv-debout.parle").count()) === 1, "pendant qu'il parle, sa bouche bouge");
+const scene = await neuf.evaluate(() => document.querySelector(".bv-scene").getBoundingClientRect().height / window.innerHeight);
+ok(scene > 0.55, `il prend presque tout l'écran (la scène : ${Math.round(scene * 100)} %)`);
 let dit = await dite(neuf);
 ok(dit === BULLES[0][0] && (await neuf.locator(".bv-msg.pablito .bv-qui").innerText()) === "Pablito", `la bulle 1, signée Pablito (${dit})`);
 ok(neuf.sons.includes(`/collection/pablito/${BULLES[0][1]}.mp3`), `sa voix enregistrée part avec la bulle (${neuf.sons.join(", ")})`);
@@ -105,7 +109,7 @@ for (let k = 1; k < BULLES.length; k++) {
   ok(dit === BULLES[k][0] && neuf.sons.includes(`/collection/pablito/${BULLES[k][1]}.mp3`), `la bulle ${k + 1}, et sa voix (${BULLES[k][1]}) : ${dit.slice(0, 50)}…`);
   if (k === 1) {
     await neuf.waitForTimeout(1800);
-    ok((await opacite(neuf, ".bv-ile")) === 1 && (await opacite(neuf, ".bv-dit.lea")) === 1 && (await opacite(neuf, ".bv-pablito")) === 0, "l'univers commun apparaît entre les deux figurines, qui se parlent");
+    ok((await opacite(neuf, ".bv-ile")) === 1 && (await opacite(neuf, ".bv-dit.lea")) === 1 && (await opacite(neuf, ".bv-debout")) === 0, "l'univers commun apparaît entre les deux figurines, qui se parlent");
   }
   if (k === 2) {
     await neuf.waitForTimeout(3200);

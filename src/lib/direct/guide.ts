@@ -91,8 +91,9 @@ export function nomGuideValide(nom: string): boolean {
   const m = /^([a-z]+)-([np])$/.exec(nom);
   if (m && VISAGES_FIGURINE.some((x) => x.cle === m[1])) return true;
   if (nom === "louche-n" || nom === "seule") return true;
-  // (🧑 son image de tous les jours, servie elle aussi quand il passe au nouveau style : `pablito-univers-serveur.ts`)
-  if (nom === "neutre-n" || nom === "neutre-p") return true;
+  // (🧑 son image de tous les jours, servie elle aussi quand il passe au nouveau style : `pablito-univers-serveur.ts` ;
+  // 🧍 debout, bouche fermée et ouverte : la bienvenue du tuto, au nouveau style seulement)
+  if (nom === "neutre-n" || nom === "neutre-p" || nom === "debout-n" || nom === "debout-p") return true;
   const e = /^edition-([a-z-]+)$/.exec(nom);
   return Boolean(e && CLES_EDITIONS.has(e[1]));
 }
@@ -112,6 +113,13 @@ export const imageVisage = (v: Visage, bouche: "n" | "p") =>
     : v === "louche"
       ? servie("louche-n")
       : servie(`${v}-${bouche}`);
+
+/**
+ * 🧍 Pablito debout, en entier, bouche fermée (`n`) ou ouverte (`p`) — la bienvenue du tuto (13 novembre 2026 : « que je
+ * sois debout, que je prenne tout l'écran, et que ma bouche parle en même temps que le texte »). Au nouveau style
+ * seulement (en attendant qu'elle soit faite : sa figurine assise) ; sinon, son portrait d'avant, joyeux.
+ */
+export const imagePablitoDebout = (bouche: "n" | "p") => (UNIVERS_POUR_TOUS ? servie(`debout-${bouche}`) : imageVisage("joie", bouche));
 
 /** Sa figurine seule (sans fond), dans la tenue d'une édition s'il y en a une. */
 export const imageFigurineGuide = (edition?: string | null) => servie(edition && CLES_EDITIONS.has(edition) ? `edition-${edition}` : "seule");

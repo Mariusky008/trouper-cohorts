@@ -81,7 +81,7 @@ ok((await hugo.locator(".mc-barre button.mc-moi").count()) === 1, "« Moi » est
 // sa question, il répond, six bulles — puis « Je crée ma figurine » (la bulle s'écrit lettre à lettre : on attend qu'elle
 // soit dite)
 await hugo.waitForSelector('.tu.bv[data-dit="oui"]', { timeout: 20000 }).catch(() => null);
-ok((await hugo.locator(".tu.bv .bv-pablito .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, ".bv-msg.pablito .bv-texte")), "Pablito, la figurine du patron de ClikMe, lui dit bonjour");
+ok((await hugo.locator(".tu.bv .bv-debout img").count()) === 2 && /Pablito/i.test(await texte(hugo, ".bv-msg.pablito .bv-texte")), "Pablito, la figurine du patron de ClikMe, lui dit bonjour");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
 for (let k = 1; k < 6; k++) {
   await hugo.locator('.tu.bv[data-dit="oui"] .bv-repondre').click({ timeout: 20000 });

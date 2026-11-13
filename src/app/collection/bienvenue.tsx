@@ -6,13 +6,14 @@
  * dire ? Eh bien, chaque personne a sa figurine qui, au fil des conversations, range les souvenirs, les rappels, les
  * infos… OK, et quoi d'autre ? Au fil des conversations, elle crée un univers qui s'agrandit et te définit mieux que tu
  * ne pourrais l'imaginer, avec des endroits secrets et des portes à ta personnalité… Le premier tuto doit retranscrire
- * cette idée, pour expliquer à quoi s'attendre. » La maquette (« Le premier tuto de ClikMe ») et les six bulles sont
+ * cette idée, pour expliquer à quoi s'attendre. » Puis : « que je sois debout, que je prenne tout l'écran, et que
+ * ma bouche parle en même temps que le texte » : chaque bulle s'écrit au rythme de sa voix. La maquette (« Le premier tuto de ClikMe ») et les six bulles sont
  * validées le même jour ; leur voix, enregistrée par lui (`tuto-bienvenue-1`, puis `tuto-univers-2` à `-6`).
  *
  * À la toute première arrivée (pas encore de figurine), une seule fois sur ce téléphone (`clikme-tuto-bienvenue`, comme
  * avant) : une conversation avec Pablito, présentée comme sur WhatsApp — on touche sa question (« C'est quoi, ClikMe ? »,
  * « C'est-à-dire ? »…), il répond. Au-dessus, un univers grandit à chaque réponse :
- *   1. Pablito, en grand, salue ;
+ *   1. Pablito, debout et en grand, salue — sa bouche bouge pendant qu'il parle (la scène prend presque tout l'écran) ;
  *   2. deux figurines se parlent (« On se fait un ciné jeudi ? ») : leur univers commun apparaît entre elles ;
  *   3. l'étagère : un souvenir déjà là, puis un rappel et une info qui s'envolent de la conversation pour s'y poser ;
  *   4. l'univers s'agrandit : ta chanson, tes films, tes photos, l'étagère, un endroit secret, ta porte — « Qui peut
@@ -23,17 +24,20 @@
  * Toi et Léa sont de petits personnages dessinés : le nouveau venu n'a pas encore sa figurine.
  */
 import { useEffect, useRef, useState } from "react";
-import { SONS_PABLITO } from "@/lib/direct/guide";
-import { Guide, useVoixBulle, type Visage } from "./guide";
+import { SONS_PABLITO, imagePablitoDebout } from "@/lib/direct/guide";
+import { Guide, debloquerLaVoix, useVoixBulle, type Visage } from "./guide";
 
-/** Les bulles de Pablito (son visage, son enregistrement), et ce qu'on lui répond — la dernière : « Je crée ma figurine ». */
-export const BIENVENUE: { t: string; v: Visage; son: string; toi?: string }[] = [
-  { t: "Salut ! Moi, c’est Pablito, le patron de ClikMe. Bienvenue !", v: "joie", son: "tuto-bienvenue-1", toi: "C’est quoi, ClikMe ?" },
-  { t: "ClikMe, c’est un peu comme WhatsApp : tu parles avec tes proches. Mais ici, vos conversations créent un univers commun entre vous.", v: "euphorie", son: "tuto-univers-2", toi: "C’est-à-dire ?" },
-  { t: "Chaque personne a sa figurine, faite à partir de son selfie. Au fil de vos conversations, elle range tout : les souvenirs, les rappels, les infos.", v: "joie", son: "tuto-univers-3", toi: "Et quoi d’autre ?" },
-  { t: "Ton univers s’agrandit à chaque conversation. De nouveaux endroits apparaissent, certains secrets, avec des portes que tu n’ouvres qu’à qui tu veux.", v: "euphorie", son: "tuto-univers-4", toi: "Et ensuite ?" },
-  { t: "Petit à petit, il te définit mieux que tu ne pourrais l’imaginer. Tes proches peuvent le visiter… et toi, visiter les leurs.", v: "joie", son: "tuto-univers-5", toi: "Ça commence comment ?" },
-  { t: "Par toi ! Un selfie pour ta figurine, puis on discute cinq minutes, et je dessine les premiers endroits de ton univers.", v: "joie", son: "tuto-univers-6" },
+/**
+ * Les bulles de Pablito (son visage, son enregistrement et sa durée, en secondes : la bulle s'écrit au rythme de sa voix),
+ * et ce qu'on lui répond — la dernière : « Je crée ma figurine ».
+ */
+export const BIENVENUE: { t: string; v: Visage; son: string; duree: number; toi?: string }[] = [
+  { t: "Salut ! Moi, c’est Pablito, le patron de ClikMe. Bienvenue !", v: "joie", son: "tuto-bienvenue-1", duree: 4.05, toi: "C’est quoi, ClikMe ?" },
+  { t: "ClikMe, c’est un peu comme WhatsApp : tu parles avec tes proches. Mais ici, vos conversations créent un univers commun entre vous.", v: "euphorie", son: "tuto-univers-2", duree: 6.69, toi: "C’est-à-dire ?" },
+  { t: "Chaque personne a sa figurine, faite à partir de son selfie. Au fil de vos conversations, elle range tout : les souvenirs, les rappels, les infos.", v: "joie", son: "tuto-univers-3", duree: 8.67, toi: "Et quoi d’autre ?" },
+  { t: "Ton univers s’agrandit à chaque conversation. De nouveaux endroits apparaissent, certains secrets, avec des portes que tu n’ouvres qu’à qui tu veux.", v: "euphorie", son: "tuto-univers-4", duree: 7.71, toi: "Et ensuite ?" },
+  { t: "Petit à petit, il te définit mieux que tu ne pourrais l’imaginer. Tes proches peuvent le visiter… et toi, visiter les leurs.", v: "joie", son: "tuto-univers-5", duree: 7.63, toi: "Ça commence comment ?" },
+  { t: "Par toi ! Un selfie pour ta figurine, puis on discute cinq minutes, et je dessine les premiers endroits de ton univers.", v: "joie", son: "tuto-univers-6", duree: 6.11 },
 ];
 /** Qui peut entrer : les quatre réglages de la porte, l'un après l'autre. */
 const ACCES = ["🌍 Tout le monde", "💞 Mes proches", "✋ Sur demande", "🔒 Rien que moi"];
@@ -61,14 +65,32 @@ function Perso({ qui }: { qui: "toi" | "lea" }) {
   );
 }
 
+/**
+ * 🧍 PABLITO DEBOUT, EN GRAND (13 novembre 2026, le propriétaire : « que je sois debout, que je prenne tout l'écran, au
+ * lieu d'un petit carré où je suis assis, et que ma bouche parle en même temps que le texte ») : sa figurine debout,
+ * bouche fermée et bouche ouverte, l'une sur l'autre ; tant qu'il parle, la bouche s'ouvre et se ferme.
+ */
+function PablitoDebout({ parle }: { parle: boolean }) {
+  return (
+    <span className={`bv-debout${parle ? " parle" : ""}`}>
+      <span className="bv-debout-corps">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="bv-debout-n" src={imagePablitoDebout("n")} alt="" draggable={false} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="bv-debout-p" src={imagePablitoDebout("p")} alt="" draggable={false} />
+      </span>
+      <span className="bv-salut">👋</span>
+    </span>
+  );
+}
+
 /** 🌍 L'univers qui grandit, au-dessus de la conversation (ce qu'il montre suit la bulle : les classes `d1` à `d6`). */
 function Scene({ i, parle, acces }: { i: number; parle: boolean; acces: number }) {
   return (
     <div className="bv-scene" aria-hidden="true">
       <span className="bv-etoiles" />
-      <span className="bv-pablito">
-        <Guide visage="joie" parle={i === 0 && parle} salue />
-      </span>
+      <span className="bv-projecteur" />
+      <PablitoDebout parle={i === 0 && parle} />
 
       <span className="bv-ile">
         <span className="bv-roche" />
@@ -132,6 +154,8 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
   const b = BIENVENUE[i];
   const derniere = i === BIENVENUE.length - 1;
   const vu = reduit ? b.t.length : n;
+  // (au rythme de sa voix : deux lettres à la fois, la bulle finit avec elle ; sans enregistrement, vite)
+  const rythme = SONS_PABLITO[b.son] ? Math.min(140, Math.max(22, (b.duree * 1000 * 0.92) / Math.ceil(b.t.length / 2))) : 22;
   const tape = !ecrit && vu < b.t.length;
   const dit = !ecrit && !tape;
   // sa voix part avec sa bulle (les enregistrements du patron ; une bulle sans enregistrement s'écrirait sans voix)
@@ -146,9 +170,9 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
   // la bulle se tape, deux lettres à la fois
   useEffect(() => {
     if (ecrit || reduit || n >= b.t.length) return;
-    const t = window.setTimeout(() => setN((x) => Math.min(b.t.length, x + 2)), 22);
+    const t = window.setTimeout(() => setN((x) => Math.min(b.t.length, x + 2)), rythme);
     return () => window.clearTimeout(t);
-  }, [ecrit, n, b.t.length, reduit]);
+  }, [ecrit, n, b.t.length, reduit, rythme]);
   // la porte : qui peut entrer, ses quatre réglages l'un après l'autre (pendant la bulle 4)
   useEffect(() => {
     if (i !== 3) return;
@@ -175,6 +199,8 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
   }, []);
 
   const repondre = () => {
+    // (pendant ce toucher : sa voix débloquée, pour la bulle qui arrive)
+    debloquerLaVoix();
     setI((x) => Math.min(BIENVENUE.length - 1, x + 1));
     setN(0);
     setEcrit(!reduit);
@@ -303,9 +329,19 @@ export const STYLES_BIENVENUE = `
 .bv-scene > *{position:absolute}
 .bv-etoiles{inset:0;opacity:.75;animation:bv-scintille 4s ease-in-out infinite alternate;
   background-image:radial-gradient(1.4px 1.4px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 42%,#ffd9ee,transparent),radial-gradient(1.6px 1.6px at 46% 12%,#fff,transparent),radial-gradient(1px 1px at 63% 30%,#fff,transparent),radial-gradient(1.3px 1.3px at 81% 16%,#ffe7b8,transparent),radial-gradient(1px 1px at 90% 44%,#fff,transparent),radial-gradient(1.2px 1.2px at 8% 60%,#fff,transparent),radial-gradient(1px 1px at 72% 58%,#ffd9ee,transparent),radial-gradient(1.5px 1.5px at 37% 70%,#fff,transparent)}
-/* 1 · Pablito, en grand, salue */
-.bv-pablito{left:50%;top:50%;width:min(140px,38vw);transform:translate(-50%,-50%);transition:opacity .5s,transform .6s cubic-bezier(.2,1.2,.4,1)}
-.bv.d2 .bv-pablito{opacity:0;transform:translate(-50%,-80%) scale(.6)}
+/* 1 · Pablito debout, en grand, salue ; la scène prend presque tout l'écran */
+.bv-app .bv-scene{transition:flex-basis .7s cubic-bezier(.3,.9,.3,1)}
+.bv:not(.d2) .bv-scene{flex-basis:62%}
+.bv-projecteur{left:50%;bottom:-6%;width:120%;height:90%;transform:translateX(-50%);background:radial-gradient(50% 55% at 50% 70%,rgba(255,196,140,.32),rgba(255,46,154,.14) 55%,transparent 75%);transition:opacity .5s}
+.bv.d2 .bv-projecteur{opacity:0}
+.bv-debout{left:50%;bottom:2%;height:94%;aspect-ratio:2/3;max-width:92%;transform:translateX(-50%);transform-origin:50% 100%;transition:opacity .5s,transform .7s cubic-bezier(.2,1.2,.4,1)}
+.bv-debout::after{content:"";position:absolute;left:22%;right:22%;bottom:-1%;height:5%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.55),transparent);z-index:-1}
+.bv-debout-corps{position:absolute;inset:0;transform-origin:50% 100%;animation:bv-respire 3.4s ease-in-out infinite}
+.bv-debout-corps img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%;border-radius:18px}
+.bv-debout-p{opacity:0}
+.bv-debout.parle .bv-debout-p{animation:bv-bouche .28s steps(1) infinite}
+.bv-salut{position:absolute;right:2%;top:16%;font-size:34px;line-height:1;transform-origin:70% 85%;animation:bv-salut .5s ease-in-out infinite alternate;filter:drop-shadow(0 4px 4px rgba(0,0,0,.4))}
+.bv.d2 .bv-debout{opacity:0;transform:translateX(-50%) scale(.5)}
 /* l'île : votre univers commun, qui s'agrandit */
 .bv-ile{left:50%;bottom:9%;width:270px;height:150px;opacity:0;transform:translateX(-50%) scale(.1);transform-origin:50% 60%;transition:transform 1s cubic-bezier(.2,1.1,.3,1),opacity .6s,bottom 1s}
 .bv.d2 .bv-ile{opacity:1;bottom:4%;transform:translateX(-50%) scale(.42)}
@@ -440,6 +476,9 @@ export const STYLES_BIENVENUE = `
 .bv-indice b{color:#FFF4E6}
 
 @keyframes bv-scintille{to{opacity:.4}}
+@keyframes bv-respire{50%{transform:scale(1.012,.992) rotate(-.6deg)}}
+@keyframes bv-bouche{0%{opacity:1}50%{opacity:0}}
+@keyframes bv-salut{from{transform:rotate(-14deg)}to{transform:rotate(16deg)}}
 @keyframes bv-dodeline{50%{transform:rotate(-4deg) translateY(-2px)}}
 @keyframes bv-pose{0%{opacity:0;transform:translate(var(--de-x),var(--de-y)) scale(.4) rotate(-30deg)}50%{opacity:1}100%{opacity:1;transform:none}}
 @keyframes bv-mystere{50%{box-shadow:0 0 0 1.5px #F2C46B,0 0 22px rgba(242,196,107,.8)}}
