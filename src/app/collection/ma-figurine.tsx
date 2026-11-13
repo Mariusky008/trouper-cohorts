@@ -29,6 +29,7 @@
  * 10 novembre 2026 : 9.0 unvicies, 9.0 tervicies) sont parties. Voir `docs/figurines.md`, 9.0 quattervicies.
  */
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { EnvoyerAUnProche } from "./meme-pour";
 import {
   ATTESTATION_AGE,
   ATTITUDES,
@@ -1261,6 +1262,8 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
                   ⬇️
                 </a>
               </div>
+              {/* 🎭 (la nouvelle interface, lot 4) l'envoyer à un proche, dans leur conversation */}
+              {envoye && <EnvoyerAUnProche id={envoye.id} />}
               {/* 📍 POUR « AUTOUR » : il le dépose là-bas ; 🔥 SA RÉPONSE AU MÈME DU JOUR ; 🌍 SINON, LE FIL DE SA VILLE */}
               {envoye && !meme.duo && pourAutour ? (
                 <button

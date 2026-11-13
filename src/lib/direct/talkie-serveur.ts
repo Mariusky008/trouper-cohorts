@@ -51,6 +51,7 @@ import {
 } from "./ma-figurine-serveur";
 import { motInterdit } from "./mots-interdits";
 import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
+import { memesDuFil, memesRanges } from "./memes-proches-serveur";
 import { decorDuMoment } from "./saison-serveur";
 import { humeurValide } from "./rituel";
 import {
@@ -287,6 +288,11 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
           const m = await lireJson<Fiche>(supabase, `${dossierMessages(pair)}/${d.nom}`);
           dernier = { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
         }
+        // 🎭 (lot 4) les mèmes envoyés entre eux : ils comptent dans les non lus ; le dernier, s'il est plus récent
+        const memes = await memesRanges(supabase, moi.id, h).catch(() => []);
+        nonLus += memes.filter((x) => x.de !== moi.id && Date.parse(x.le) > vu).length;
+        const dm = memes[memes.length - 1];
+        if (dm && (!dernier || dm.le > dernier.le)) dernier = { texte: "🎭 Un mème", le: dm.le, moi: dm.de === moi.id, meme: true };
       }
       const la = lien === "proches" ? await estLa(supabase, h) : false;
       const venu = lien === "proches" && Date.now() - (Date.parse(s(venus[h])) || 0) < 7 * 86_400_000;
@@ -363,11 +369,11 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
     )
   ).filter((m): m is MessageFil => Boolean(m));
   const nouveaux = messages.filter((m) => m.nouveau);
-  if (nouveaux.length) {
-    await ecrireJson(supabase, cheminLus(moi.id), { ...lus, [h]: Date.now() });
-    await Promise.all(nouveaux.map(() => noter(supabase, pair, h, "vu")));
-  }
-  return { fil: { cle: cleProfil(h), lui, moi: mienne, la, messages, ...(chezMoi ? { chezMoi } : {}) } };
+  // 🎭 (lot 4) les mèmes de leur conversation
+  const memes = await memesDuFil(supabase, moi.id, h, vu).catch(() => []);
+  if (nouveaux.length || memes.some((x) => x.nouveau)) await ecrireJson(supabase, cheminLus(moi.id), { ...lus, [h]: Date.now() });
+  if (nouveaux.length) await Promise.all(nouveaux.map(() => noter(supabase, pair, h, "vu")));
+  return { fil: { cle: cleProfil(h), lui, moi: mienne, la, messages, ...(chezMoi ? { chezMoi } : {}), ...(memes.length ? { memes } : {}) } };
 }
 
 // ─── comprendre ce qu'il a dit ────────────────────────────────────────────────────────────────────

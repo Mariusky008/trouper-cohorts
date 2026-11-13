@@ -30,12 +30,14 @@ import { EnteteChezMoi } from "./chez-moi";
 import { VisitesRecues, aDecouvrir, marquerVu, signatureDe, useMesVisites, type ADecouvrir } from "./visites-recues";
 import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type ObjetSouvenir, type SouvenirVu } from "@/lib/direct/visites";
 import { jouerDoux } from "@/lib/direct/sons";
+import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
 import {
+  type MemeFil,
   PAROLE_MAX_S,
   PAROLE_MIN_S,
   TETES_DE_DEPART,
@@ -393,6 +395,7 @@ export function Proches({
       if (p.lien === "ajoute") return `Veut te parler : ajoute ${p.prenom} aussi`;
       if (p.lien === "attend") return `En attente : ${p.prenom} doit t’ajouter aussi`;
       if (!p.dernier) return "Dis-lui bonjour 👋";
+      if (p.dernier.meme) return p.dernier.moi ? "Toi : 🎭 un mème" : "🎭 t’a envoyé un mème";
       const t = p.dernier.texte;
       return `${p.dernier.moi ? "Toi : " : ""}${t ? `🎙️ « ${t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t} »` : "🎙️ Message vocal"}`;
     };
@@ -574,6 +577,7 @@ export function Proches({
                     type="button"
                     onClick={() => {
                       setPlus(false);
+                      retenirMemePour(null);
                       allerA("creer");
                     }}
                   >
@@ -785,6 +789,7 @@ function ligneDe(p: ProcheVivant): string {
   if (p.lien === "ajoute") return `Veut te parler : ajoute ${p.prenom} aussi.`;
   if (p.lien === "attend") return `En attente : ${p.prenom} doit t’ajouter aussi.`;
   if (!p.dernier) return "Pas encore de message : dis-lui bonjour 👋";
+  if (p.dernier.meme) return `${p.dernier.moi ? "Toi : 🎭 un mème" : "🎭 T’a envoyé un mème"} · ${depuis(p.dernier.le)}`;
   const dit = p.dernier.texte ? `« ${p.dernier.texte.length > 46 ? `${p.dernier.texte.slice(0, 44).trimEnd()}…` : p.dernier.texte} »` : "🎙️ un message";
   return `${p.dernier.moi ? "Toi : " : "T’a parlé : "}${dit} · ${depuis(p.dernier.le)}`;
 }
@@ -851,6 +856,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const [motCadeau, setMotCadeau] = useState("");
   const [laisses, setLaisses] = useState<Laisse[]>([]);
   const [info, setInfo] = useState("");
+  // 🎭 (lot 4) le mème qu'il regarde, en grand
+  const [regarde, setRegarde] = useState<MemeFil | null>(null);
   const [fil, setFil] = useState<Fil | null>(null);
   const [erreur, setErreur] = useState("");
   const [enregistrer, setEnregistrer] = useState(parler);
@@ -1137,8 +1144,9 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         ...laisses.map((x) => ({ le: x.le, e: { laisse: x }, i: -1 })),
       ]
     : [];
-  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt }[] = [
+  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil }[] = [
     ...fil.messages.map((x, i) => ({ le: x.le, x, i })),
+    ...(fil.memes ?? []).map((mm) => ({ le: mm.le, mm, i: -1 })),
     ...gestes.filter((g) => g.type === "panneau").map((g) => ({ le: g.le, g, i: -1 })),
     ...(vivant?.apartes ?? []).map((a) => ({ le: a.le, a, i: -1 })),
     ...evts,
@@ -1296,7 +1304,26 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       </div>
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
-        {elements.map(({ x, i, g, a, e, le }) => {
+        {elements.map(({ x, i, g, a, e, le, mm }) => {
+          if (mm)
+            return (
+              <li key={`m-${mm.id}`} className={`pr-meme ${mm.moi ? "moi" : "lui"}`}>
+                <button type="button" className={mm.nouveau ? "nouveau" : ""} onClick={() => setRegarde(mm)} aria-label={mm.moi ? "Regarder ton mème" : `Regarder le mème de ${fil.lui.prenom}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={mm.image} alt="" draggable={false} />
+                  <span>
+                    <span className="pr-texte">🎭 {mm.texte ? `« ${mm.texte} »` : "Un mème"}</span>
+                    <small>
+                      {mm.moi ? "Ton mème" : `Le mème de ${fil.lui.prenom}`} · {heure(mm.le)}
+                      {mm.nouveau ? " · nouveau" : ""}
+                    </small>
+                  </span>
+                  <i className="pr-meme-lire" aria-hidden="true">
+                    ▶
+                  </i>
+                </button>
+              </li>
+            );
           if (e) {
             if (e.cadeau) {
               return (
@@ -1405,7 +1432,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           🪧
         </button>
         {chezMoi && (
-          <button type="button" className="pr-geste" aria-label="Lui faire un mème" onClick={chezMoi.onMeme}>
+          <button type="button" className="pr-geste" aria-label="Lui faire un mème" onClick={() => (retenirMemePour({ cle, prenom: fil.lui.prenom }), chezMoi.onMeme())}>
             🎭<small>Mème</small>
           </button>
         )}
@@ -1440,6 +1467,35 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           </button>
           <p className="pr-note">Il arrive emballé, devant sa porte : {fil.lui.prenom} l’ouvrira.</p>
         </Feuille>
+      )}
+      {/* 🎭 un mème, en grand : sa vidéo ; « Répondre avec un mème » */}
+      {regarde && (
+        <div className="pr-regarde" role="dialog" aria-modal="true" aria-label="Le mème" onClick={(ev) => ev.target === ev.currentTarget && setRegarde(null)}>
+          <div>
+            {regarde.video ? (
+              <video src={regarde.video} poster={regarde.image} controls autoPlay playsInline />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={regarde.image} alt="" />
+            )}
+            {regarde.texte && <p>« {regarde.texte} »</p>}
+            <span className="pr-regarde-actions">
+              {!regarde.moi && chezMoi && (
+                <button type="button" className="pr-bouton" onClick={() => (setRegarde(null), retenirMemePour({ cle, prenom: fil.lui.prenom }), chezMoi.onMeme())}>
+                  🎭 Répondre avec un mème
+                </button>
+              )}
+              {!regarde.video && (
+                <a className="pr-bouton clair" href={regarde.lien}>
+                  ▶ Le regarder
+                </a>
+              )}
+              <button type="button" className="pr-regarde-fermer" onClick={() => setRegarde(null)}>
+                Fermer
+              </button>
+            </span>
+          </div>
+        </div>
       )}
 
       {enregistrer && (
@@ -2285,6 +2341,14 @@ export const STYLES_PROCHES = `
 .pr-evt-cadeau b{display:block;font-size:14px}
 .pr-evt-cadeau small{display:block;margin:1px 0 6px;font-size:12px;color:#CDB4C0}
 .pr-evt-cadeau button{padding:7px 16px;border:0;border-radius:999px;background:#F2C46B;color:#2A0F1F;font:inherit;font-size:13.5px;font-weight:900;cursor:pointer}
+.pr-meme button{position:relative;padding-right:34px}
+.pr-meme-lire{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#FF2E9A;color:#fff;font-style:normal;font-size:10px}
+.pr-regarde{position:fixed;inset:0;z-index:45;display:grid;place-items:center;padding:16px;background:rgba(10,4,8,.82)}
+.pr-regarde > div{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:420px}
+.pr-regarde video,.pr-regarde img{width:100%;max-height:68dvh;border-radius:20px;background:#000;object-fit:contain}
+.pr-regarde p{margin:0;color:#FFF4E6;font-weight:800;text-align:center}
+.pr-regarde-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%}
+.pr-regarde-fermer{border:0;background:none;color:#CDB4C0;font:inherit;font-size:15px;font-weight:700;text-decoration:underline;padding:8px;cursor:pointer}
 .pr-info{margin:0 2px;padding:9px 12px;border-radius:14px;background:rgba(61,220,132,.12);color:#BFF5D6;font-size:13.5px;font-weight:700}
 .pr-objets{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .pr-objets button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border:2px solid transparent;border-radius:16px;background:rgba(255,255,255,.06);color:#CDB4C0;font:inherit;cursor:pointer}

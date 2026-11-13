@@ -9,7 +9,7 @@
 // frappe à sa porte : en arrivant chez lui, Marc les découvre — le paquet qui se dandine, qu'il ouvre (l'objet, le mot),
 // « ✨ Le poser chez moi » ; la porte qui tremble, qu'il ouvre (« C'est Léa ! ») ; le bouquet posé dans sa fenêtre ; ce
 // n'est plus nouveau ensuite ; « Mes visites » : le bilan ; la conversation range ce qui s'est passé (visite, cadeau),
-// 🎭 et 🎁 à côté de « Lui répondre ». Freiné (l'app de la CI,
+// 🎭 et 🎁 à côté de « Lui répondre » ; son mème, fait pour Sam, part dans leur conversation, Sam le regarde. Freiné (l'app de la CI,
 // `CLIKME_UNIVERS_POUR_TOUS=0`) : l'appli d'avant. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -255,10 +255,35 @@ await m.locator(".pr-plein .pr-geste", { hasText: "Mème" }).click();
 await m.waitForFunction(() => location.hash === "#creer" && !document.querySelector(".pr-plein"), null, { timeout: 10000, polling: 200 }).catch(() => null);
 ok(new URL(m.url()).hash === "#creer" && (await m.locator(".pr-plein").count()) === 0, "🎭 Mème : le studio");
 
+// ═══ 🎭 LOT 4 : LE MÈME, FAIT DANS LE STUDIO, PART DANS LEUR CONVERSATION ═══
+await m.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 30000 }).catch(() => null);
+await m.locator(".tf-moi .tf-texte textarea").fill("Moi le lundi matin");
+await m.locator(".tf-envoyer").click();
+await m.waitForSelector(".tf-meme-pret video", { timeout: 90000 }).catch(() => null);
+await m.waitForSelector(".mp-bloc .mp-bouton", { timeout: 15000 }).catch(() => null);
+ok((await texte(m, ".mp-bloc .mp-bouton")) === "🎭 Envoyer à Sam", `son mème prêt : « ${await texte(m, ".mp-bloc .mp-bouton")} » (celui pour qui il l'a fait)`);
+await m.screenshot({ path: `${D}/bascule-3i-meme-pour-sam.png` });
+await m.locator(".mp-bloc .mp-bouton").click();
+await m.waitForSelector(".mp-parti", { timeout: 10000 }).catch(() => null);
+ok((await texte(m, ".mp-parti")).includes("Envoyé à Sam"), "« ✓ Envoyé à Sam : il est dans votre conversation »");
+await m.locator(".mp-bloc .mp-bouton", { hasText: "Voir notre conversation" }).click();
+await m.waitForSelector(".pr-plein .pr-meme.moi", { timeout: 15000 }).catch(() => null);
+ok((await texte(m, ".pr-plein .pr-meme.moi")).includes("Moi le lundi matin"), "« Voir notre conversation » : son mème, dans leur fil");
+await m.locator(".pr-plein .pr-retour").click();
+
 // 🎁 Sam laisse un livre chez Marc, depuis leur conversation (Marc a son univers : « 🏡 Son univers »)
 await p.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
 await fermerPablito(p);
+// (🎭 lot 4 : chez Sam, la ligne de Marc dit son mème)
+await p.waitForFunction((c) => document.querySelector(`.cm-liste li[data-cle="${c}"] .cm-texte`)?.textContent?.includes("mème"), cleProfil(MARC.id), { timeout: 15000, polling: 200 }).catch(() => null);
+ok((await texte(p, `.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-texte`)).includes("🎭 t’a envoyé un mème"), "🎭 chez Sam : « Marc — 🎭 t'a envoyé un mème »");
 await p.locator(`.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-ligne`).click();
+await p.waitForSelector(".pr-plein .pr-meme.lui", { timeout: 15000 }).catch(() => null);
+await p.locator(".pr-plein .pr-meme.lui button").click();
+await p.waitForSelector(".pr-regarde video", { timeout: 10000 }).catch(() => null);
+ok((await p.locator(".pr-regarde video").count()) === 1 && (await p.locator(".pr-regarde .pr-bouton", { hasText: "Répondre avec un mème" }).count()) === 1, "Sam regarde le mème de Marc, en grand ; « 🎭 Répondre avec un mème »");
+await p.screenshot({ path: `${D}/bascule-3j-meme-recu.png` });
+await p.locator(".pr-regarde-fermer").click();
 await p.waitForSelector(".pr-plein .pr-son-univers", { timeout: 15000 }).catch(() => null);
 ok((await p.locator(".pr-plein .pr-son-univers").getAttribute("href").catch(() => "")) === `/univers/chez/${cleProfil(MARC.id)}`, "chez Sam, la conversation avec Marc : « 🏡 Son univers »");
 await p.locator(".pr-plein .pr-geste", { hasText: "Cadeau" }).click();
