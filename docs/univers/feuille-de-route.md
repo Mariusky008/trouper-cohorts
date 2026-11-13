@@ -693,6 +693,20 @@ session doit reprendre à la fois.
 - **Plus tard** : le résumé au retour (« Pendant ton absence, Léa t'a laissé 4 vocaux : … »), et le lieu qui garde la
   mémoire (un moment marquant devient un objet de l'univers, lot 6).
 
+### Lot E — L'étagère (13 novembre 2026)
+
+Le propriétaire, sur l'appli presque finie : « il faut une utilité […] un chemin original et utile et qui fera revenir
+les gens, basé sur le nouveau moyen de communication que j'ai développé ». La réponse, validée sur une maquette (« on va
+construire cette feature ») : **les figurines se souviennent**. Elles notent ce qui compte entre deux proches (une
+date, une promesse, un goût, une blague), le rangent sur l'étagère de la paire, et le rappellent au bon moment, avec
+l'humeur du matin.
+
+- **Le cahier des charges** : `docs/univers/etagere.md` — le lire en entier avant de coder. **La maquette** :
+  `docs/univers/maquettes/etagere.html`.
+- **Pas encore développé.** Trois lots, une PR chacun : E1 « Noté ! » (noter, ranger, montrer, retirer), E2 « Plus
+  tard » (les rappels du matin, la fierté, les promesses), E3 « La poussière et les idées ».
+- Il touche `proches.tsx` et `conversation-vivante.tsx` : une seule session à la fois.
+
 ### Plus tard (préparé, pas construit)
 
 - **Réalise mon vœu** : la figurine met en scène un souhait, dans son univers. Une image générée, gardée.

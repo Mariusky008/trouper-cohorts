@@ -1,0 +1,859 @@
+<!doctype html>
+<!-- LA MAQUETTE DE L'ÉTAGÈRE (13 novembre 2026), validée par le propriétaire. Le cahier des charges : ../etagere.md.
+     À ouvrir dans un navigateur, à la largeur d'un téléphone. Ses images sont celles de public/direct/ensemble
+     (les petits fantômes y jouent Léa, Sam, Nina et moi, faute de vraies figurines dans le dépôt). Rien de l'appli
+     ne lit ce fichier. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>L'étagère ClikMe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;800;900&family=Caveat:wght@600;700&display=swap">
+<style>
+/* Mise en page : une seule colonne de téléphone (440 px au plus), l'appli ClikMe telle qu'elle est (fond prune, rose,
+   crème), avec en haut une barre discrète pour sauter d'un moment de la maquette à l'autre. */
+:root{
+  --fond:#12060F; --fond2:#1E0C18; --carte:rgba(255,255,255,.055); --trait:rgba(255,255,255,.08);
+  --creme:#FFF4E6; --doux:#BFA6B3; --pale:#8f7884; --rose:#FF2E9A; --or:#F2C46B; --vert:#3DDC84;
+  --bois:#6b3f1f; --bois-clair:#a5683a; --papier:#fbf0d9; --encre:#2b1a0c;
+  --f:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --main:"Caveat","Segoe Print","Bradley Hand",cursive;
+  color-scheme:dark;
+}
+html{height:100%;box-sizing:border-box;background:var(--fond)}
+*,*::before,*::after{box-sizing:border-box}
+body{height:100%;margin:0;background:var(--fond);color:var(--creme);font-family:var(--f);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+#app{position:relative;height:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;background:var(--fond2);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:hidden}
+@media (min-width:480px){#app{border-left:1px solid var(--trait);border-right:1px solid var(--trait)}}
+
+/* la barre de visite */
+.visite{flex:none;display:flex;align-items:center;gap:6px;padding-block:8px 6px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
+.visite::-webkit-scrollbar{display:none}
+.visite b{flex:none;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--pale);padding:0 4px}
+.visite button{flex:none;border:1px solid var(--trait);background:transparent;border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:600;color:var(--doux);white-space:nowrap}
+.visite button.on{background:var(--creme);color:var(--encre);border-color:var(--creme)}
+
+#ecran{flex:1;min-height:0;position:relative;display:flex;flex-direction:column}
+.defile{flex:1;min-height:0;overflow-y:auto;padding-bottom:90px;scrollbar-width:none}
+.defile::-webkit-scrollbar{display:none}
+
+/* le menu */
+.menu{flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding-block:6px 8px;border-top:1px solid var(--trait);background:var(--fond2)}
+.menu button{display:flex;flex-direction:column;align-items:center;gap:1px;border:0;background:none;padding:4px 0;font-size:11.5px;font-weight:600;color:var(--pale)}
+.menu button span{font-size:22px;line-height:1.1;filter:grayscale(.6)}
+.menu button.on{color:var(--creme)}
+.menu button.on span{filter:none}
+
+/* Chez moi */
+.cm-titre{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:4px 0 10px}
+.cm-titre h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.02em}
+.cm-titre span{font-size:13px;font-weight:600;color:var(--doux)}
+.fenetre{position:relative;height:220px;border-radius:24px;overflow:hidden;background:#2b1a0c url(../../../public/direct/ensemble/scene-bibliotheque.webp) center 70%/cover no-repeat;box-shadow:0 14px 30px -14px rgba(0,0,0,.8)}
+.fenetre .place{height:74%;bottom:-2%;left:50%;transform:translateX(-50%)}
+.fenetre .bulle{right:14%;max-width:220px}
+.fenetre .bulle::after{right:22px}
+.pastille{position:absolute;left:10px;bottom:10px;z-index:3;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:0;border-radius:999px;background:rgba(255,250,240,.93);color:var(--encre);font-size:15px;font-weight:800;box-shadow:0 6px 14px -6px rgba(0,0,0,.6)}
+.pastille.vide{background:var(--rose);color:#fff}
+.saison{position:absolute;right:10px;top:10px;z-index:2;padding:5px 10px;border-radius:999px;background:rgba(255,250,240,.85);color:var(--encre);font-size:12.5px;font-weight:800}
+
+.rappel{display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;margin-top:12px;padding:14px;border-radius:20px;background:linear-gradient(140deg,rgba(242,196,107,.18),rgba(255,46,154,.14));border:1px solid rgba(242,196,107,.35);animation:monte .5s cubic-bezier(.2,.8,.3,1.2) both}
+.rappel .av{width:48px;height:48px}
+.rappel small{display:block;font-size:12px;font-weight:700;color:var(--or);letter-spacing:.02em}
+.rappel p{margin:3px 0 10px;font-size:15.5px;font-weight:600;line-height:1.35}
+.rappel .actions{display:flex;flex-wrap:wrap;gap:8px}
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;padding:10px 16px;font-size:14.5px;font-weight:800;background:var(--rose);color:#fff;box-shadow:0 8px 18px -10px rgba(255,46,154,.9)}
+.bt.clair{background:rgba(255,255,255,.1);color:var(--creme);box-shadow:none}
+.bt.or{background:var(--or);color:var(--encre);box-shadow:0 8px 18px -10px rgba(242,196,107,.9)}
+.bt.petit{padding:7px 12px;font-size:13px}
+.bt:active{transform:scale(.97)}
+
+.liste{list-style:none;margin:12px 0 0;padding:0}
+.liste li{border-bottom:1px solid var(--trait)}
+.ligne{width:100%;display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 2px;border:0;background:none;text-align:left}
+.ligne:active{background:rgba(255,255,255,.04)}
+.av{position:relative;display:block;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 50% 30%,#5b2a4a,#2a1022);overflow:visible}
+.av .rond{position:absolute;inset:0;border-radius:50%;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover;object-position:50% 6%;transform:scale(1.45);transform-origin:50% 18%}
+.av .la{position:absolute;right:1px;bottom:1px;width:13px;height:13px;border-radius:50%;background:var(--vert);border:2px solid var(--fond2)}
+.av.gris img{filter:grayscale(.85) brightness(.75)}
+.txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.txt b{font-size:16.5px;font-weight:800}
+.txt span{font-size:14px;color:var(--doux);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ligne.chaud .txt span{color:var(--creme);font-weight:600}
+.cote{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:44px}
+.cote time{font-size:12.5px;color:var(--pale)}
+.ligne.chaud .cote time{color:var(--vert);font-weight:800}
+.nonlu{display:grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--vert);color:#0f2a19;font-size:12.5px;font-weight:900}
+.indice{position:relative;margin:2px 0 6px 70px;padding:6px 10px;border-radius:12px;background:var(--creme);color:var(--encre);font-size:13px;font-weight:700;width:max-content;max-width:calc(100% - 70px);animation:flotte 2.4s ease-in-out infinite}
+.indice::before{content:"";position:absolute;left:18px;top:-6px;border:6px solid transparent;border-top:0;border-bottom-color:var(--creme)}
+.plus{position:absolute;right:4px;bottom:16px;z-index:5;display:grid;place-items:center;width:58px;height:58px;border:0;border-radius:18px;background:linear-gradient(135deg,var(--rose),var(--or));color:#fff;font-size:30px;font-weight:600;box-shadow:0 14px 26px -10px rgba(255,46,154,.9)}
+
+/* conversation */
+.conv{flex:1;min-height:0;display:flex;flex-direction:column}
+.cv-tete{flex:none;display:flex;align-items:center;gap:10px;padding-block:4px 10px}
+.retour{flex:none;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.08);font-size:20px;font-weight:800}
+.cv-tete .av{width:42px;height:42px}
+.cv-tete .qui{flex:1;min-width:0;display:flex;flex-direction:column}
+.cv-tete .qui b{font-size:17px;font-weight:800;line-height:1.2}
+.cv-tete .qui small{font-size:12.5px;color:var(--doux)}
+.cv-tete .qui small.la{color:var(--vert);font-weight:700}
+.vers-etagere{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(242,196,107,.4);background:rgba(242,196,107,.12);color:var(--or);border-radius:999px;padding:7px 11px;font-size:13px;font-weight:800}
+
+.scene{flex:none;position:relative;height:clamp(230px,36vh,300px);border-radius:22px;overflow:hidden;background:#2b1a0c url(../../../public/direct/ensemble/scene-bibliotheque.webp) center 74%/cover no-repeat;box-shadow:0 14px 30px -16px rgba(0,0,0,.9);transition:filter 1.2s ease}
+.scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,6,15,.25),transparent 30%,transparent 70%,rgba(18,6,15,.35));pointer-events:none}
+.scene.poussiere{filter:grayscale(.75) brightness(.55) sepia(.2)}
+.place{position:absolute;bottom:3%;height:52%;aspect-ratio:2/3;z-index:2}
+.place.lui{left:4%}
+.place.moi{right:4%}
+.place img{width:100%;height:100%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 8px 8px rgba(0,0,0,.45));animation:respire 3.6s ease-in-out infinite;transform-origin:50% 100%}
+.place.moi img{animation-delay:-1.8s}
+.place.parle img{animation:parle .38s ease-in-out 4}
+.place.sursaut img{animation:sursaut .5s ease-out}
+.place.dort img{animation:dort 4s ease-in-out infinite}
+.zzz{position:absolute;right:8%;top:6%;font-size:18px;font-weight:900;color:#d8cbe0;animation:zzz 2.6s ease-in-out infinite;pointer-events:none}
+.bulle{position:absolute;bottom:calc(100% + 4px);z-index:6;width:max-content;max-width:min(230px,58vw);padding:8px 11px;border-radius:16px;background:var(--creme);color:var(--encre);font-size:13px;font-weight:700;line-height:1.3;box-shadow:0 10px 20px -10px rgba(0,0,0,.8);animation:pop .35s cubic-bezier(.2,.8,.3,1.4) both}
+.lui .bulle{left:6%}
+.moi .bulle{right:6%}
+.bulle::after{content:"";position:absolute;bottom:-6px;border:7px solid transparent;border-bottom:0;border-top-color:var(--creme)}
+.lui .bulle::after{left:22px}
+.moi .bulle::after{right:22px}
+.bulle.part{animation:part .3s ease-in both}
+.panneau{position:absolute;bottom:calc(100% - 6px);left:50%;z-index:6;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;animation:brandit .5s cubic-bezier(.2,.8,.3,1.4) both}
+.panneau span{padding:6px 12px;border-radius:8px;background:#fff;color:var(--encre);font-size:15px;font-weight:900;white-space:nowrap;border:3px solid var(--encre);box-shadow:0 8px 14px -8px rgba(0,0,0,.8)}
+.panneau i{width:5px;height:26px;background:#8a5a33;border-radius:0 0 3px 3px}
+.panneau.note span{background:var(--or)}
+.eclat{position:absolute;z-index:7;font-size:26px;pointer-events:none;animation:eclat 1.4s ease-out forwards}
+
+/* l'étagère au mur, dans la scène */
+.mur{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;padding:0}
+.mur .rang{display:flex;align-items:flex-end;justify-content:center;gap:5px;min-width:140px;height:34px;padding:0 10px}
+.mur .rang span{font-size:25px;line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.5));transition:transform .3s}
+.mur .rang span.vient{visibility:hidden}
+.mur .rang span.arrive{animation:pose .5s cubic-bezier(.2,.8,.3,1.5)}
+.mur .planche{width:100%;height:7px;border-radius:2px;background:linear-gradient(180deg,var(--bois-clair),var(--bois));box-shadow:0 5px 8px -3px rgba(0,0,0,.7)}
+.mur small{margin-top:3px;padding:2px 8px;border-radius:999px;background:rgba(18,6,15,.6);font-size:11px;font-weight:800;color:var(--or);white-space:nowrap}
+.scene.poussiere .mur .rang span{filter:grayscale(1) brightness(.7)}
+.toile{position:absolute;font-size:24px;opacity:.85;pointer-events:none;transition:opacity .8s,transform .8s}
+.vol{position:absolute;left:0;top:0;z-index:8;font-size:30px;pointer-events:none;filter:drop-shadow(0 4px 4px rgba(0,0,0,.5))}
+
+/* le fil */
+.fil{flex:1;min-height:0;overflow-y:auto;list-style:none;margin:0;padding:12px 0 8px;display:flex;flex-direction:column;gap:8px;scrollbar-width:none}
+.fil::-webkit-scrollbar{display:none}
+.fil > li{animation:monte .35s ease-out both}
+.sep{align-self:center;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.07);font-size:11.5px;font-weight:700;color:var(--doux)}
+.plus-tard{align-self:center;font-size:12.5px;font-weight:800;color:var(--or)}
+.msg{max-width:82%;display:flex;flex-direction:column;gap:3px;padding:9px 12px 7px;border-radius:18px}
+.msg.lui{align-self:flex-start;background:rgba(255,255,255,.08);border-bottom-left-radius:6px}
+.msg.moi{align-self:flex-end;background:#5a1d45;border-bottom-right-radius:6px}
+.voc{display:flex;align-items:center;gap:8px}
+.voc .lire{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.14);font-size:11px}
+.onde{display:flex;align-items:center;gap:2px;height:22px}
+.onde i{display:block;width:3px;border-radius:2px;background:rgba(255,244,230,.6)}
+.voc .duree{font-size:12px;color:var(--doux);font-variant-numeric:tabular-nums}
+.msg p{margin:0;font-size:14.5px;line-height:1.35}
+.msg time{align-self:flex-end;font-size:11px;color:var(--pale)}
+.msg{position:relative}
+.reaction{position:absolute;bottom:-10px;font-size:15px;padding:1px 5px;border-radius:999px;background:var(--fond2);border:1px solid var(--trait)}
+.msg.lui .reaction{right:-6px}
+.msg.moi .reaction{left:-6px}
+.msg.panneau-fil{background:none;padding:0;align-items:inherit}
+.msg.panneau-fil span{display:inline-block;padding:6px 12px;border-radius:8px;background:#fff;color:var(--encre);font-weight:900;border:3px solid var(--encre)}
+
+.carte-fil{align-self:stretch;margin:4px 6px;padding:12px 14px;border-radius:18px;background:rgba(242,196,107,.1);border:1px dashed rgba(242,196,107,.55)}
+.carte-fil .entete{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:var(--or);letter-spacing:.02em}
+.carte-fil .objet{display:flex;align-items:center;gap:10px;margin-top:8px}
+.carte-fil .objet .e{font-size:30px;line-height:1}
+.carte-fil .objet b{display:block;font-size:15.5px}
+.carte-fil .objet span{display:block;font-size:13px;color:var(--doux)}
+.carte-fil blockquote{margin:8px 0 0;padding:0 0 0 10px;border-left:3px solid rgba(242,196,107,.5);font-size:14px;color:var(--creme)}
+.carte-fil blockquote cite{display:block;margin-top:2px;font-style:normal;font-size:12px;color:var(--doux)}
+.carte-fil .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.carte-fil .pied{margin-top:8px;font-size:11.5px;color:var(--pale)}
+.carte-fil.trophee{background:linear-gradient(140deg,rgba(242,196,107,.22),rgba(255,46,154,.12));border-style:solid}
+.carte-fil.prive{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.18)}
+.carte-fil.prive .entete{color:var(--doux)}
+.lien{border:0;background:none;padding:0;font-size:13px;font-weight:800;color:var(--or);text-decoration:underline;text-underline-offset:3px}
+.lien.doux{color:var(--pale)}
+
+.compo{flex:none;display:flex;gap:8px;padding-block:8px 10px;position:relative}
+.compo .micro{flex:1;justify-content:center;padding:13px 16px;font-size:15.5px}
+.compo .rond{flex:none;width:50px;height:50px;border:0;border-radius:50%;background:rgba(255,255,255,.09);font-size:22px}
+.enreg{position:absolute;inset:8px 0 10px;z-index:4;display:flex;align-items:center;justify-content:center;gap:10px;border-radius:999px;background:var(--rose);color:#fff;font-weight:800}
+.enreg i{width:10px;height:10px;border-radius:50%;background:#fff;animation:clignote .8s infinite}
+
+/* l'étagère, en grand */
+.eta-etat{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:14px;background:rgba(242,196,107,.12);color:var(--or);font-size:13.5px;font-weight:700}
+.eta-etat.gris{background:rgba(255,255,255,.06);color:var(--doux)}
+.compteurs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.compteurs div{padding:10px 8px;border-radius:16px;background:var(--carte);text-align:center}
+.compteurs b{display:block;font-size:22px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.compteurs span{font-size:11.5px;color:var(--doux);font-weight:600}
+.meuble{position:relative;padding:12px 12px 4px;border-radius:14px;background:linear-gradient(180deg,#3d2412,#2a170b);border:6px solid #4d2e16;box-shadow:inset 0 0 40px rgba(0,0,0,.6),0 20px 30px -18px rgba(0,0,0,.9)}
+.meuble::before{content:"";position:absolute;inset:0;border-radius:8px;background:radial-gradient(ellipse at 50% -10%,rgba(255,214,140,.32),transparent 65%);pointer-events:none}
+.meuble.poussiere{filter:grayscale(.8) brightness(.7)}
+.meuble.poussiere::before{display:none}
+.rayon{position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-around;gap:6px 4px;min-height:104px;padding:6px 2px 18px}
+.rayon::after{content:"";position:absolute;left:-12px;right:-12px;bottom:6px;height:12px;background:linear-gradient(180deg,var(--bois-clair),var(--bois));box-shadow:0 6px 8px -3px rgba(0,0,0,.7)}
+.rayon .nom-rayon{position:absolute;left:0;top:-2px;font-family:var(--main);font-size:16px;color:rgba(251,240,217,.55)}
+.souvenir{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:3px;width:31%;max-width:110px;border:0;background:none;padding:14px 0 0}
+.souvenir .e{font-size:40px;line-height:1;filter:drop-shadow(0 5px 3px rgba(0,0,0,.55));transition:transform .2s}
+.souvenir:active .e{transform:scale(1.12) rotate(-4deg)}
+.souvenir .etiq{max-width:100%;padding:1px 7px 2px;border-radius:3px;background:var(--papier);color:var(--encre);font-family:var(--main);font-size:16px;font-weight:700;line-height:1.05;text-align:center;transform:rotate(-2deg);box-shadow:0 2px 3px rgba(0,0,0,.4)}
+.souvenir:nth-child(2n) .etiq{transform:rotate(2deg)}
+.souvenir .tenue{position:absolute;top:8px;right:14%;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--vert);color:#0f2a19;font-size:12px;font-weight:900}
+.souvenir.haut .e{filter:drop-shadow(0 0 12px rgba(255,214,140,.8)) drop-shadow(0 5px 3px rgba(0,0,0,.55))}
+.regles{margin:14px 2px 0;font-size:12.5px;line-height:1.5;color:var(--pale)}
+.regles b{color:var(--doux)}
+
+/* feuille du bas */
+.voile{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;background:rgba(10,3,8,.6);animation:fondu .25s ease both}
+.feuille{width:100%;max-height:88%;overflow-y:auto;padding:10px 18px 20px;border-radius:26px 26px 0 0;background:#2a1322;box-shadow:0 -20px 40px -20px rgba(0,0,0,.9);animation:glisse .32s cubic-bezier(.2,.8,.3,1) both}
+.feuille .poignee{width:42px;height:5px;margin:0 auto 12px;border-radius:999px;background:rgba(255,255,255,.18)}
+.feuille h2{margin:0 0 4px;font-size:20px;font-weight:900;letter-spacing:-.01em;text-wrap:balance}
+.feuille .sous{margin:0 0 14px;font-size:14px;color:var(--doux)}
+.humeurs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.humeurs button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 2px;border:0;border-radius:18px;background:var(--carte);font-size:12.5px;font-weight:700}
+.humeurs button span{font-size:32px;line-height:1}
+.memes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.meme{position:relative;aspect-ratio:1;border:3px solid transparent;border-radius:14px;overflow:hidden;background:radial-gradient(circle at 50% 70%,#ff8ac4,#9d1f63);padding:0}
+.meme.on{border-color:var(--or)}
+.meme img{position:absolute;left:50%;bottom:-6%;height:78%;transform:translateX(-50%);object-fit:contain}
+.meme b{position:absolute;left:4px;right:4px;top:5px;z-index:1;font-size:11px;font-weight:900;line-height:1.05;text-transform:uppercase;color:#fff;text-align:center;-webkit-text-stroke:.6px #1b0713;text-shadow:0 2px 0 #1b0713}
+.meme-fil{width:180px;aspect-ratio:1;position:relative;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 70%,#ff8ac4,#9d1f63)}
+.meme-fil img{position:absolute;left:50%;bottom:-6%;height:76%;transform:translateX(-50%)}
+.meme-fil b{position:absolute;left:6px;right:6px;top:8px;font-size:17px;font-weight:900;line-height:1.05;text-transform:uppercase;color:#fff;text-align:center;-webkit-text-stroke:.8px #1b0713;text-shadow:0 2px 0 #1b0713}
+.meme-fil.lui{background:radial-gradient(circle at 50% 70%,#9fd8ff,#2f5fa8)}
+.panneaux{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.panneaux button{padding:12px 8px;border:3px solid var(--encre);border-radius:10px;background:#fff;color:var(--encre);font-size:15px;font-weight:900}
+.detail{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px}
+.detail .e{font-size:64px;line-height:1.1;filter:drop-shadow(0 8px 6px rgba(0,0,0,.5))}
+.detail h2{margin-top:4px}
+.detail blockquote{margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:var(--carte);font-size:15px;font-style:italic}
+.detail cite{display:block;font-size:12.5px;color:var(--doux);font-style:normal}
+.detail .actions{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:14px}
+.detail .actions .bt{width:100%}
+.note-douce{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:rgba(242,196,107,.1);font-size:13px;color:var(--or);font-weight:600}
+
+[hidden]{display:none!important}
+#toast{position:absolute;left:50%;bottom:86px;z-index:40;transform:translateX(-50%);width:max-content;max-width:calc(100% - 40px);padding:10px 16px;border-radius:999px;background:var(--creme);color:var(--encre);font-size:13.5px;font-weight:800;box-shadow:0 12px 24px -10px rgba(0,0,0,.8);text-align:center}
+.confetti{position:absolute;z-index:9;width:8px;height:12px;border-radius:2px;pointer-events:none}
+
+@keyframes respire{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.012)}}
+@keyframes parle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px) rotate(-1.5deg)}}
+@keyframes sursaut{0%{transform:none}30%{transform:translateY(-14px) scale(1.04)}60%{transform:translateY(2px)}100%{transform:none}}
+@keyframes dort{0%,100%{transform:rotate(-3deg) translateY(2px)}50%{transform:rotate(-5deg) translateY(4px)}}
+@keyframes zzz{0%{opacity:0;transform:translate(0,6px) scale(.8)}40%{opacity:1}100%{opacity:0;transform:translate(10px,-16px) scale(1.15)}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.8)}to{opacity:1;transform:none}}
+@keyframes part{to{opacity:0;transform:translateY(-6px) scale(.95)}}
+@keyframes brandit{from{opacity:0;transform:translate(-50%,20px) rotate(-8deg)}to{opacity:1;transform:translate(-50%,0) rotate(0)}}
+@keyframes eclat{0%{opacity:0;transform:translateY(0) scale(.6)}20%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-60px) scale(1)}}
+@keyframes pose{0%{transform:translateY(-10px) scale(1.5)}60%{transform:translateY(2px) scale(.9)}100%{transform:none}}
+@keyframes monte{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes fondu{from{opacity:0}to{opacity:1}}
+@keyframes glisse{from{transform:translateY(100%)}to{transform:none}}
+@keyframes clignote{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+
+<div id="app">
+  <nav class="visite" id="visite" aria-label="Les moments de la maquette">
+    <b>Maquette</b>
+    <button data-aller="chez" class="on">Chez moi</button>
+    <button data-aller="pendant">1 · Pendant</button>
+    <button data-aller="etagere">2 · L'étagère</button>
+    <button data-aller="matin">3 · Le matin</button>
+    <button data-aller="promesse">4 · Une promesse</button>
+    <button data-aller="poussiere">5 · La poussière</button>
+  </nav>
+  <main id="ecran"></main>
+  <nav class="menu" id="menu" aria-label="Menu">
+    <button data-onglet><span>✨</span>Découvrir</button>
+    <button data-onglet><span>📍</span>Autour</button>
+    <button data-onglet><span>🎭</span>Créer</button>
+    <button class="on" data-chez><span>🏡</span>Chez moi</button>
+  </nav>
+  <div id="toast" hidden></div>
+</div>
+
+<script>
+"use strict";
+const IMG = n => `../../../public/direct/ensemble/${n}.webp`;
+const GENS = {
+  lea: { nom: "Léa", fig: "fleuri" },
+  sam: { nom: "Sam", fig: "denim" },
+  nina: { nom: "Nina", fig: "melomane" },
+};
+const MOI = "cosy";
+const HUMEURS = [
+  ["😄", "Joie", "Ce sourire-là, je le garde pour la journée ☀️"],
+  ["🤩", "Euphorie", "Wouah, quelle énergie ! Je suis ton rythme ⚡"],
+  ["😂", "Fou rire", "Raconte, raconte ! 😂"],
+  ["😍", "Amour", "Ça se voit d'ici 💗"],
+  ["😜", "Grimace", "Belle tête. Je fais pareil 😜"],
+  ["😢", "Tristesse", "Je reste à côté de toi aujourd'hui 💛"],
+  ["😠", "Colère", "On souffle un coup, ensemble 😤"],
+  ["😱", "Oh non", "Ça va aller. Une chose à la fois 🫶"],
+];
+
+function objetsDeDepart() {
+  return {
+    lea: [
+      { id: "rando", e: "🥾", t: "La rando des crêtes", d: "promesse tenue", q: "« On la fait cet automne, promis ! »", par: "toi", quand: "dim. 14 sept.", genre: "promesse", tenue: true },
+      { id: "pivoines", e: "💐", t: "Les pivoines", d: "ses fleurs préférées", q: "« Les pivoines, c'est les plus belles fleurs du monde »", par: "Léa", quand: "dim. 26 oct.", genre: "gout" },
+      { id: "canard", e: "🦆", t: "Le canard de Biarritz", d: "votre blague", q: "« Le canard qui nous a volé nos chouquettes 😭 »", par: "toi", quand: "sam. 4 oct.", genre: "blague" },
+      { id: "anniv", e: "🎂", t: "Son anniversaire", d: "le 4 décembre", q: "« Le 4 décembre, je fais une petite fête »", par: "Léa", quand: "mar. 21 oct.", genre: "date" },
+      { id: "phares", e: "📖", t: "Le roman des phares", d: "Léa veut le lire", q: "« J'ai trop envie de lire ce roman sur les phares »", par: "Léa", quand: "mer. 5 nov.", genre: "gout" },
+    ],
+    sam: [
+      { id: "resto", e: "🍝", t: "Le resto italien", d: "promis il y a 3 semaines", q: "« Faut qu'on se fasse ce resto italien ! »", par: "Sam", quand: "jeu. 23 oct.", genre: "promesse" },
+      { id: "baby", e: "⚽", t: "La revanche au baby-foot", d: "promesse tenue", q: "« Revanche samedi, prépare-toi »", par: "Sam", quand: "sam. 11 oct.", genre: "promesse", tenue: true },
+      { id: "chiot", e: "🐶", t: "Le chiot de Sam", d: "il s'appelle Biscotte", q: "« Il s'appelle Biscotte et il mange mes chaussettes »", par: "Sam", quand: "lun. 3 nov.", genre: "gout" },
+    ],
+    nina: [
+      { id: "concert", e: "🎧", t: "Son concert", d: "le samedi 1er nov.", q: "« Samedi c'est le concert, j'ai trop hâte 🎧 »", par: "Nina", quand: "jeu. 30 oct.", genre: "date" },
+      { id: "fraisier", e: "🍰", t: "Le fraisier de sa grand-mère", d: "la meilleure recette du monde", q: "« Le fraisier de ma grand-mère, rien ne le bat »", par: "Nina", quand: "dim. 19 oct.", genre: "gout" },
+    ],
+  };
+}
+const PERMIS = { id: "permis", e: "🚗", t: "Le permis de Léa", d: "jeudi 19 nov.", q: "« Jeudi prochain je passe le permis, je stresse trop 😬 »", par: "Léa", quand: "ven. 13 nov., 18:42", genre: "date" };
+
+function filsDeDepart() {
+  return {
+    lea: [
+      { t: "sep", txt: "Hier" },
+      { t: "meme", de: "lui", leg: "Quand le moniteur dit « créneau »", h: "21:05" },
+      { t: "voc", de: "moi", txt: "Mdr le pauvre, j'ai eu exactement la même tête 😂", dur: "0:05", h: "21:09" },
+      { t: "sep", txt: "Aujourd'hui" },
+      { t: "voc", de: "moi", txt: "Alors, elle commence comment ta semaine ?", dur: "0:04", h: "18:38" },
+      { t: "voc", de: "lui", txt: "Jeudi prochain je passe le permis, je stresse trop 😬", dur: "0:09", h: "18:42" },
+    ],
+    sam: [
+      { t: "sep", txt: "Jeu. 23 oct." },
+      { t: "voc", de: "lui", txt: "Faut qu'on se fasse ce resto italien !", dur: "0:04", h: "19:12" },
+      { t: "voc", de: "moi", txt: "Grave, je te dis quand 🙌", dur: "0:03", h: "19:20" },
+      { t: "sep", txt: "Hier" },
+      { t: "voc", de: "lui", txt: "Biscotte a encore mangé une chaussette 🧦", dur: "0:06", h: "20:47" },
+      { t: "rappel-resto" },
+    ],
+    nina: [
+      { t: "sep", txt: "Jeu. 30 oct." },
+      { t: "voc", de: "lui", txt: "Samedi c'est le concert, j'ai trop hâte 🎧", dur: "0:05", h: "17:30" },
+      { t: "voc", de: "moi", txt: "Trop bien ! Tu me raconteras 🎶", dur: "0:03", h: "17:41" },
+      { t: "sep", txt: "Aujourd'hui" },
+      { t: "poussiere" },
+    ],
+  };
+}
+
+let S;
+function etatNeuf() {
+  return {
+    jour: "ven", humeur: { e: "😄", n: "Joie" },
+    objets: objetsDeDepart(), fils: filsDeDepart(),
+    permisNote: false, permisReussi: false, leaLu: false,
+    promesses: { lea: 3, sam: 7, nina: 1 },
+    restoTenu: false, poussiere: true, rappelVu: false,
+  };
+}
+S = etatNeuf();
+
+const $ = (s, r = document) => r.querySelector(s);
+const ecran = $("#ecran");
+let minuteurs = [];
+const plusTard = (ms, f) => { const id = setTimeout(f, ms); minuteurs.push(id); return id; };
+const annuler = () => { minuteurs.forEach(clearTimeout); minuteurs = []; };
+const echap = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const calme = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function toast(txt, ms = 2600) {
+  const t = $("#toast"); t.textContent = txt; t.hidden = false;
+  clearTimeout(toast.id); toast.id = setTimeout(() => (t.hidden = true), ms);
+}
+function avatar(fig, extra = "") {
+  return `<span class="av ${extra}"><span class="rond"><img src="${IMG(fig + "-assis")}" alt=""></span></span>`;
+}
+function menuVisible(oui) { $("#menu").hidden = !oui; }
+function visiteActive(cle) { document.querySelectorAll("#visite button").forEach(b => b.classList.toggle("on", b.dataset.aller === cle)); }
+
+/* ---------- CHEZ MOI ---------- */
+function ligneDe(k) {
+  const g = GENS[k];
+  let txt, h, chaud = false, nonlu = 0, gris = false, la = false;
+  if (k === "lea") {
+    la = true;
+    if (S.jour === "jeu") {
+      if (S.permisReussi) { txt = "🏆 « JE L'AI !!! 🎉 »"; h = "11:40"; chaud = true; nonlu = 1; }
+      else if (S.fils.lea.some(x => x.jeudi)) { const d = S.fils.lea.filter(x => x.jeudi && x.de === "moi").pop(); txt = d && d.t === "meme" ? `Toi : 🎭 ${d.leg}` : "Toi : 🎙️ « Bonne chance pour tout à l'heure ! »"; h = "8:14"; }
+      else { txt = "📌 Aujourd'hui : son permis 🚗"; h = "8:12"; chaud = true; }
+    } else if (!S.leaLu) { txt = "🎙️ « Jeudi prochain je passe le permis… »"; h = "18:42"; chaud = true; nonlu = 1; }
+    else { txt = "📌 Noté : son permis, jeudi 19"; h = "18:42"; }
+  } else if (k === "sam") {
+    txt = S.restoTenu ? "✅ Le resto : promesse tenue !" : "🍝 Le resto promis attend depuis 3 semaines"; h = "hier";
+  } else {
+    gris = S.poussiere;
+    txt = S.poussiere ? "🕸️ Votre étagère prend la poussière" : "Toi : 🎙️ « Alors, ce concert ?! »";
+    h = S.poussiere ? "1 nov." : "18:50";
+  }
+  return `<li><button class="ligne${chaud ? " chaud" : ""}" data-conv="${k}">
+    <span class="av${gris ? " gris" : ""}"><span class="rond"><img src="${IMG(g.fig + "-assis")}" alt=""></span>${la ? '<i class="la"></i>' : ""}</span>
+    <span class="txt"><b>${g.nom}</b><span>${echap(txt)}</span></span>
+    <span class="cote"><time>${h}</time>${nonlu ? `<i class="nonlu">${nonlu}</i>` : ""}</span>
+  </button></li>`;
+}
+function rendreChez(opts = {}) {
+  annuler(); menuVisible(true);
+  const jour = S.jour === "jeu" ? "Jeu. 19 nov. · 8:12" : "Ven. 13 nov.";
+  const h = S.humeur;
+  ecran.innerHTML = `<div class="defile">
+    <header class="cm-titre"><h1>Chez moi</h1><span>${jour}</span></header>
+    <div class="fenetre" id="fenetre">
+      <span class="saison">🍂 Novembre</span>
+      <div class="place" id="maPlace"><img src="${IMG(MOI + "-assis")}" alt="Ma figurine, chez moi"></div>
+      <button class="pastille${h ? "" : " vide"}" id="pastille">${h ? `${h.e} ${h.n}` : "☀️ Ton humeur ?"}</button>
+    </div>
+    <div id="rappel"></div>
+    <ul class="liste">
+      ${ligneDe("lea")}
+      ${!S.leaLu && S.jour === "ven" ? `<li style="border:0"><div class="indice">👆 Léa vient de t'envoyer un vocal</div></li>` : ""}
+      ${ligneDe("sam")}${ligneDe("nina")}
+    </ul>
+  </div>
+  <button class="plus" id="plus" aria-label="Plus">＋</button>`;
+  $("#pastille").onclick = ouvrirHumeur;
+  $("#plus").onclick = () => toast("＋ : parler à un proche, créer un mème, inviter quelqu'un");
+  ecran.querySelectorAll("[data-conv]").forEach(b => (b.onclick = () => ouvrirConv(b.dataset.conv)));
+  if (S.jour === "jeu" && h && !S.fils.lea.some(x => x.jeudi)) montrerRappel(false);
+}
+function ouvrirHumeur() {
+  feuille(`<h2>Bonjour ☀️ Ton humeur ce matin ?</h2><p class="sous">Ta figurine prend ce visage pour la journée.</p>
+    <div class="humeurs">${HUMEURS.map(([e, n], i) => `<button data-h="${i}"><span>${e}</span>${n}</button>`).join("")}</div>`, f => {
+    f.querySelectorAll("[data-h]").forEach(b => (b.onclick = () => {
+      const [e, n, phrase] = HUMEURS[+b.dataset.h];
+      S.humeur = { e, n }; fermer();
+      $("#pastille").className = "pastille"; $("#pastille").textContent = `${e} ${n}`;
+      const p = $("#maPlace");
+      bulle(p, phrase, 4200); anime(p, "parle");
+      if (S.jour === "jeu" && !S.fils.lea.some(x => x.jeudi)) plusTard(1900, () => montrerRappel(true));
+    }));
+  });
+}
+function montrerRappel(parle) {
+  const r = $("#rappel"); if (!r) return;
+  r.innerHTML = `<div class="rappel">
+    ${avatar(MOI)}
+    <div><small>📌 DE VOTRE ÉTAGÈRE, LÉA ET TOI</small>
+      <p>Aujourd'hui, c'est le permis de Léa 🚗 Un petit mot avant le départ ?</p>
+      <div class="actions"><button class="bt" id="rpMeme">🎭 Un mème</button><button class="bt clair" id="rpVoc">🎙️ Un vocal</button></div>
+    </div></div>`;
+  if (parle) { const p = $("#maPlace"); bulle(p, "Et ce matin, il y a autre chose… 👇", 2600); anime(p, "parle"); }
+  $("#rpMeme").onclick = () => ouvrirMeme("lea", { matin: true });
+  $("#rpVoc").onclick = () => { S.fils.lea.push({ t: "sep", txt: "Aujourd'hui", jeudi: true }, { t: "voc", de: "moi", txt: "Bonne chance pour tout à l'heure ! 🍀 Tu vas gérer", dur: "0:04", h: "8:14", jeudi: true }); ouvrirConv("lea", "matin"); };
+}
+
+/* ---------- LA SCÈNE ---------- */
+function scene(k) {
+  const g = GENS[k];
+  const objs = S.objets[k].filter(o => !o.retire);
+  const vus = objs.slice(-5);
+  const dusty = k === "nina" && S.poussiere;
+  return `<div class="scene${dusty ? " poussiere" : ""}" id="scene">
+    <button class="mur" id="mur" aria-label="Votre étagère"><span class="rang" id="rang">${vus.map(o => `<span data-o="${o.id}">${o.e}</span>`).join("")}</span><span class="planche"></span><small>📚 Votre étagère · ${objs.length}</small></button>
+    ${dusty ? `<span class="toile" style="left:24%;top:4px">🕸️</span><span class="toile" style="right:22%;top:20px;transform:scaleX(-1)">🕸️</span>` : ""}
+    <div class="place lui${dusty ? " dort" : ""}" id="pLui"><img src="${IMG(g.fig + "-assis")}" alt="La figurine de ${g.nom}">${dusty ? '<span class="zzz">z</span>' : ""}</div>
+    <div class="place moi${dusty ? " dort" : ""}" id="pMoi"><img src="${IMG(MOI + "-assis")}" alt="Ma figurine">${dusty ? '<span class="zzz" style="animation-delay:-1.2s">z</span>' : ""}</div>
+  </div>`;
+}
+function bulle(place, txt, ms = 3800) {
+  if (!place) return;
+  (place.closest("#scene") || place).querySelectorAll(".bulle").forEach(b => b.remove());
+  const b = document.createElement("div"); b.className = "bulle"; b.textContent = txt; place.appendChild(b);
+  plusTard(ms, () => { b.classList.add("part"); setTimeout(() => b.remove(), 320); });
+}
+function panneau(place, txt, note = false, ms = 3400) {
+  if (!place) return;
+  place.querySelectorAll(".panneau").forEach(b => b.remove());
+  const p = document.createElement("div"); p.className = "panneau" + (note ? " note" : "");
+  p.innerHTML = `<span>${echap(txt)}</span><i></i>`; place.appendChild(p);
+  salue(place, ms);
+  plusTard(ms, () => p.remove());
+}
+function salue(place, ms = 1800) {
+  const img = place.querySelector("img"); if (!img) return;
+  const base = img.src.replace("-salue", "-assis");
+  img.src = base.replace("-assis", "-salue");
+  plusTard(ms, () => (img.src = base));
+}
+function anime(place, cls) {
+  if (!place) return;
+  place.classList.remove("parle", "sursaut"); void place.offsetWidth; place.classList.add(cls);
+  plusTard(1600, () => place.classList.remove(cls));
+}
+function eclat(place, e) {
+  const sc = $("#scene"); if (!sc || !place) return;
+  const r = place.getBoundingClientRect(), s = sc.getBoundingClientRect();
+  for (let i = 0; i < 3; i++) {
+    const x = document.createElement("span"); x.className = "eclat"; x.textContent = e;
+    x.style.left = r.left - s.left + r.width * (0.3 + 0.2 * i) + "px"; x.style.top = r.top - s.top + r.height * 0.2 + "px";
+    x.style.animationDelay = i * 0.15 + "s"; sc.appendChild(x); setTimeout(() => x.remove(), 1900);
+  }
+}
+function confettis(zone) {
+  if (!zone || calme) return;
+  const cols = ["#FF2E9A", "#F2C46B", "#3DDC84", "#9fd8ff", "#fff"];
+  const w = zone.clientWidth, h = zone.clientHeight;
+  for (let i = 0; i < 36; i++) {
+    const c = document.createElement("span"); c.className = "confetti"; c.style.background = cols[i % cols.length];
+    c.style.left = w / 2 + "px"; c.style.top = h * 0.35 + "px"; zone.appendChild(c);
+    const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * w * 0.45;
+    c.animate([{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d * 0.6 + 80}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }], { duration: 1300 + Math.random() * 600, easing: "cubic-bezier(.2,.7,.4,1)", fill: "forwards" });
+    setTimeout(() => c.remove(), 2000);
+  }
+}
+/* un objet qui vole de la figurine jusqu'à l'étagère au mur */
+function envoler(depuis, emoji, idObjet, fin) {
+  const sc = $("#scene"), rang = $("#rang"); if (!sc || !rang) return fin && fin();
+  const cible = document.createElement("span"); cible.textContent = emoji; cible.dataset.o = idObjet; cible.className = "vient";
+  rang.appendChild(cible); if (rang.children.length > 5) rang.firstElementChild.remove();
+  const s = sc.getBoundingClientRect(), a = depuis.getBoundingClientRect(), b = cible.getBoundingClientRect();
+  const x0 = a.left - s.left + a.width * 0.45, y0 = a.top - s.top + a.height * 0.45;
+  const x1 = b.left - s.left - 4, y1 = b.top - s.top - 6;
+  const v = document.createElement("span"); v.className = "vol"; v.textContent = emoji; sc.appendChild(v);
+  const anim = v.animate([
+    { transform: `translate(${x0}px,${y0}px) scale(.5)`, opacity: 0 },
+    { transform: `translate(${x0}px,${y0 - 30}px) scale(1.5)`, opacity: 1, offset: 0.25 },
+    { transform: `translate(${(x0 + x1) / 2}px,${Math.min(y0, y1) - 40}px) scale(1.3)`, offset: 0.6 },
+    { transform: `translate(${x1}px,${y1}px) scale(.75)`, opacity: 1 },
+  ], { duration: calme ? 1 : 1100, easing: "cubic-bezier(.35,.6,.4,1)", fill: "forwards" });
+  anim.onfinish = () => { v.remove(); cible.classList.remove("vient"); cible.classList.add("arrive"); majCompteur(); fin && fin(); };
+}
+function majCompteur() {
+  const m = $("#mur small"); if (!m) return;
+  const k = ecran.dataset.k; m.textContent = `📚 Votre étagère · ${S.objets[k].filter(o => !o.retire).length}`;
+  const v = $("#versEtagere span"); if (v) v.textContent = S.objets[k].filter(o => !o.retire).length;
+}
+
+/* ---------- LE FIL ---------- */
+function onde(n = 18, graine = 3) {
+  let s = graine, out = "";
+  for (let i = 0; i < n; i++) { s = (s * 9301 + 49297) % 233280; out += `<i style="height:${6 + Math.round((s / 233280) * 16)}px"></i>`; }
+  return `<span class="onde">${out}</span>`;
+}
+function elementFil(k, x, i) {
+  const g = GENS[k];
+  switch (x.t) {
+    case "sep": return `<li class="sep">${echap(x.jeudi || S.jour !== "jeu" ? x.txt : ({ "Hier": "Jeu. 12 nov.", "Aujourd'hui": "Ven. 13 nov." }[x.txt] || x.txt))}</li>`;
+    case "plus-tard": return `<li class="plus-tard">⏩ ${echap(x.txt)}</li>`;
+    case "voc": return `<li class="msg ${x.de}" data-i="${i}"><span class="voc"><span class="lire">▶</span>${onde(18, i + 2)}<span class="duree">${x.dur}</span></span><p>« ${echap(x.txt)} »</p><time>${x.h}</time>${x.reac ? `<span class="reaction">${x.reac}</span>` : ""}</li>`;
+    case "meme": return `<li class="msg ${x.de}" data-i="${i}" style="padding:6px"><span class="meme-fil ${x.de}"><img src="${IMG((x.de === "moi" ? MOI : g.fig) + "-salue")}" alt=""><b>${echap(x.leg)}</b></span><time>${x.h}</time>${x.reac ? `<span class="reaction">${x.reac}</span>` : ""}</li>`;
+    case "panneau": return `<li class="msg ${x.de} panneau-fil"><span>🪧 ${echap(x.txt)}</span></li>`;
+    case "note": {
+      const o = S.objets[k].find(z => z.id === x.obj) || PERMIS;
+      return `<li class="carte-fil"><div class="entete">📌 NOTÉ SUR VOTRE ÉTAGÈRE</div>
+        <div class="objet"><span class="e">${o.e}</span><div><b>${echap(o.t)}</b><span>${echap(o.d)}</span></div></div>
+        <div class="actions"><button class="lien" data-etagere>Voir l'étagère</button><button class="lien doux" data-retirer="${o.id}">Retirer</button></div>
+        <div class="pied">Noté par la figurine de ${g.nom} · visible de ${g.nom} et toi</div></li>`;
+    }
+    case "trophee": return `<li class="carte-fil trophee"><div class="entete">🏆 RANGÉ EN HAUT DE VOTRE ÉTAGÈRE</div>
+        <div class="objet"><span class="e">🏆</span><div><b>Le permis de Léa</b><span>réussi le jeudi 19 nov.</span></div></div>
+        <div class="actions"><button class="bt petit" data-cadeau>🎁 Lui offrir un cadeau</button><button class="bt petit clair" data-etagere>Voir l'étagère</button></div></li>`;
+    case "rappel-resto": return S.restoTenu
+      ? `<li class="carte-fil trophee"><div class="entete">✅ PROMESSE TENUE</div><div class="objet"><span class="e">🍝</span><div><b>Le resto italien</b><span>${S.promesses.sam} promesses tenues entre vous</span></div></div></li>`
+      : `<li class="carte-fil"><div class="entete">🍝 VOS FIGURINES SE SOUVIENNENT</div>
+        <blockquote>« Faut qu'on se fasse ce resto italien ! »<cite>Sam, le jeudi 23 octobre</cite></blockquote>
+        <div class="pied" style="margin-top:6px;font-size:13px;color:var(--creme)">Ça fait 3 semaines 👀</div>
+        <div class="actions"><button class="bt petit" data-panneau-direct="Ce soir ?">🪧 Ce soir ?</button><button class="bt petit or" data-tenue="resto">✅ C'est fait !</button></div>
+        <div class="pied">Visible de Sam et toi</div></li>`;
+    case "poussiere": return S.poussiere
+      ? `<li class="carte-fil prive"><div class="entete">🕸️ RIEN QUE POUR TOI, DE TA FIGURINE</div>
+        <p style="margin:8px 0 0;font-size:15px;line-height:1.4">12 jours sans un mot… Votre étagère prend la poussière. Nina avait son concert le 1er novembre 🎧</p>
+        <div class="actions"><button class="bt petit" data-demander>🎙️ Lui demander comment c'était</button></div></li>`
+      : `<li class="carte-fil trophee"><div class="entete">✨ L'ÉTAGÈRE SE RALLUME</div><p style="margin:6px 0 0;font-size:14px">Nina et toi, c'est reparti.</p></li>`;
+  }
+  return "";
+}
+function rendreFil(k) {
+  const f = $("#fil"); if (!f) return;
+  f.innerHTML = S.fils[k].map((x, i) => elementFil(k, x, i)).join("");
+  brancherFil(k); f.scrollTop = f.scrollHeight;
+}
+function ajouter(k, x) {
+  S.fils[k].push(x);
+  const f = $("#fil"); if (!f) return;
+  f.insertAdjacentHTML("beforeend", elementFil(k, x, S.fils[k].length - 1));
+  brancherFil(k); f.scrollTo({ top: f.scrollHeight, behavior: calme ? "auto" : "smooth" });
+}
+function reagir(k, i, e) {
+  const x = S.fils[k][i]; if (!x) return; x.reac = e;
+  const li = $(`#fil [data-i="${i}"]`); if (!li) return;
+  li.querySelector(".reaction")?.remove(); li.insertAdjacentHTML("beforeend", `<span class="reaction">${e}</span>`);
+}
+function brancherFil(k) {
+  ecran.querySelectorAll("[data-etagere]").forEach(b => (b.onclick = () => ouvrirEtagere(k)));
+  ecran.querySelectorAll("[data-retirer]").forEach(b => (b.onclick = () => retirer(k, b.dataset.retirer)));
+  ecran.querySelectorAll("[data-cadeau]").forEach(b => (b.onclick = () => toast("🎁 Ici, la feuille « Offrir » des visites")));
+  ecran.querySelectorAll("[data-tenue]").forEach(b => (b.onclick = () => promesseTenue(k)));
+  ecran.querySelectorAll("[data-panneau-direct]").forEach(b => (b.onclick = () => poserPanneau(k, b.dataset.panneauDirect)));
+  ecran.querySelectorAll("[data-demander]").forEach(b => (b.onclick = () => enregistrer(k)));
+}
+
+/* ---------- CONVERSATION ---------- */
+const STATUT = { lea: ["là maintenant", true], sam: ["vu hier à 20:47", false], nina: ["vu il y a 12 jours", false] };
+function ouvrirConv(k, scenario) {
+  annuler(); menuVisible(false);
+  const g = GENS[k];
+  if (k === "lea" && S.jour === "ven") S.leaLu = true;
+  ecran.dataset.k = k;
+  const n = S.objets[k].filter(o => !o.retire).length;
+  ecran.innerHTML = `<section class="conv">
+    <header class="cv-tete">
+      <button class="retour" id="retour" aria-label="Retour">←</button>
+      ${avatar(g.fig)}
+      <div class="qui"><b>${g.nom}</b><small class="${STATUT[k][1] ? "la" : ""}">${STATUT[k][0]}</small></div>
+      <button class="vers-etagere" id="versEtagere">📚 <span>${n}</span></button>
+    </header>
+    ${scene(k)}
+    <ol class="fil" id="fil"></ol>
+    <footer class="compo" id="compo">
+      <button class="bt micro" id="micro">🎙️ Lui répondre</button>
+      <button class="rond" id="btMeme" aria-label="Un mème">🎭</button>
+      <button class="rond" id="btPanneau" aria-label="Un panneau">🪧</button>
+    </footer>
+  </section>`;
+  rendreFil(k);
+  $("#retour").onclick = () => { visiteActive("chez"); rendreChez(); };
+  $("#versEtagere").onclick = $("#mur").onclick = () => ouvrirEtagere(k);
+  $("#micro").onclick = () => enregistrer(k);
+  $("#btMeme").onclick = () => ouvrirMeme(k, {});
+  $("#btPanneau").onclick = () => ouvrirPanneaux(k);
+
+  const lui = $("#pLui"), moi = $("#pMoi");
+  if (k === "lea" && S.jour === "ven" && !S.permisNote) {
+    // 1 · PENDANT : sa figurine note le permis
+    plusTard(700, () => anime(lui, "parle"));
+    plusTard(1500, () => panneau(lui, "📌 Noté !", true, 2600));
+    plusTard(2100, () => envoler(lui, "🚗", "permis", () => {
+      S.permisNote = true; S.objets.lea.push({ ...PERMIS });
+      ajouter("lea", { t: "note", obj: "permis" });
+      plusTard(500, () => { bulle(moi, "Jeudi 19, c'est noté 📌 On lui enverra de la chance 🍀", 4600); anime(moi, "parle"); });
+    }));
+  } else if (k === "lea" && scenario === "matin") {
+    // 3 · LE MATIN : le mème part, Léa réagit, puis la bonne nouvelle
+    const dernier = S.fils.lea.length - 1;
+    plusTard(900, () => { anime(lui, "sursaut"); eclat(lui, "❤️"); reagir("lea", dernier, "❤️"); });
+    plusTard(1700, () => bulle(lui, "Trop mignon 🥹 Merci !", 2600));
+    plusTard(4300, () => ajouter("lea", { t: "plus-tard", txt: "Plus tard, 11:40" }));
+    plusTard(5000, () => { ajouter("lea", { t: "voc", de: "lui", txt: "JE L'AI !!! 🎉🎉🎉", dur: "0:03", h: "11:40" }); anime(lui, "parle"); salue(lui, 2400); });
+    plusTard(6200, () => trophee());
+  } else if (k === "sam" && !S.restoTenu) {
+    plusTard(800, () => { bulle(lui, "3 semaines… les pâtes refroidissent 🍝", 3600); anime(lui, "parle"); });
+    plusTard(3600, () => { bulle(moi, "Je dis ça, je dis rien 🙄", 2800); anime(moi, "parle"); });
+  } else if (k === "nina" && S.poussiere) {
+    plusTard(900, () => bulle(moi, "Psst… réveille-nous 😴", 3000));
+  }
+}
+function trophee() {
+  const rang = $("#rang"), sc = $("#scene"); if (!rang) return;
+  const car = rang.querySelector('[data-o="permis"]');
+  if (car) { car.textContent = "🏆"; car.classList.remove("arrive"); void car.offsetWidth; car.classList.add("arrive"); }
+  const o = S.objets.lea.find(z => z.id === "permis");
+  if (o) Object.assign(o, { e: "🏆", d: "réussi le jeudi 19 nov.", haut: true, genre: "victoire" });
+  S.permisReussi = true;
+  confettis(sc);
+  plusTard(400, () => ajouter("lea", { t: "trophee" }));
+  plusTard(900, () => { const moi = $("#pMoi"); bulle(moi, "Léa l'a eu ! 🏆 Je le range tout en haut", 4200); anime(moi, "parle"); salue(moi, 2200); });
+}
+function enregistrer(k) {
+  const c = $("#compo"); if (!c || c.querySelector(".enreg")) return;
+  const e = document.createElement("div"); e.className = "enreg"; e.innerHTML = `<i></i>Ta voix… 0:03`; c.appendChild(e);
+  const moi = $("#pMoi"), lui = $("#pLui");
+  bulle(moi, "…", 1600);
+  plusTard(1700, () => {
+    e.remove();
+    if (k === "lea") {
+      ajouter("lea", { t: "voc", de: "moi", txt: S.jour === "jeu" ? "Alors alors ?? 👀" : "Tu vas gérer ! Je croise tout ce que j'ai 🤞", dur: "0:04", h: S.jour === "jeu" ? "11:42" : "18:44" });
+      anime(moi, "parle");
+      plusTard(1200, () => { anime(lui, "sursaut"); eclat(lui, "🥹"); reagir("lea", S.fils.lea.length - 1, "🥹"); });
+      if (S.jour === "ven") plusTard(2200, () => toast("Tout n'est pas noté : une ou deux choses par conversation, au plus", 3200));
+    } else if (k === "sam") {
+      ajouter("sam", { t: "voc", de: "moi", txt: "Ce soir, 20 h, chez Luigi ? 🍝", dur: "0:03", h: "18:46" });
+      anime(moi, "parle");
+      plusTard(1500, () => { panneau(lui, "J'arrive !", false, 3200); ajouter("sam", { t: "panneau", de: "lui", txt: "J'arrive !" }); });
+      plusTard(3200, () => { bulle(moi, "On coche la promesse quand c'est fait ✅", 3000); });
+    } else {
+      ajouter("nina", { t: "voc", de: "moi", txt: "Alors, ce concert ?! Raconte 😍", dur: "0:03", h: "18:50" });
+      rallumer();
+    }
+  });
+}
+function rallumer() {
+  const sc = $("#scene"); if (!sc) return;
+  S.poussiere = false;
+  sc.classList.remove("poussiere");
+  sc.querySelectorAll(".toile").forEach(t => { t.style.opacity = 0; t.style.transform = "translateY(-30px) rotate(40deg)"; });
+  sc.querySelectorAll(".zzz").forEach(z => z.remove());
+  sc.querySelectorAll(".place").forEach(p => p.classList.remove("dort"));
+  const lui = $("#pLui"), moi = $("#pMoi");
+  plusTard(700, () => { anime(lui, "sursaut"); anime(moi, "sursaut"); eclat(lui, "✨"); eclat(moi, "✨"); });
+  plusTard(1300, () => {
+    const i = S.fils.nina.findIndex(x => x.t === "poussiere");
+    if (i >= 0) { S.fils.nina.splice(i, 1); }
+    rendreFil("nina"); ajouter("nina", { t: "poussiere" });
+  });
+  plusTard(2600, () => { anime(lui, "parle"); bulle(lui, "Ohhh c'était FOU 🎧 Je t'envoie une vidéo !", 4200); });
+}
+function promesseTenue(k) {
+  if (k !== "sam" || S.restoTenu) return;
+  S.restoTenu = true; S.promesses.sam += 1;
+  const o = S.objets.sam.find(z => z.id === "resto"); if (o) Object.assign(o, { tenue: true, d: "promesse tenue le 13 nov." });
+  confettis($("#scene"));
+  const lui = $("#pLui"), moi = $("#pMoi");
+  salue(lui, 2000); salue(moi, 2000); eclat(lui, "🍝"); eclat(moi, "✅");
+  rendreFil("sam");
+  plusTard(700, () => bulle(moi, `${S.promesses.sam} promesses tenues ! On est des gens fiables 😎`, 3800));
+}
+function poserPanneau(k, txt) {
+  const moi = $("#pMoi"), lui = $("#pLui");
+  panneau(moi, txt, false, 3200);
+  ajouter(k, { t: "panneau", de: "moi", txt });
+  if (k === "sam" && txt === "Ce soir ?") plusTard(1700, () => { panneau(lui, "J'arrive !", false, 3200); ajouter("sam", { t: "panneau", de: "lui", txt: "J'arrive !" }); });
+  else plusTard(1300, () => { anime(lui, "sursaut"); eclat(lui, "😂"); });
+}
+
+/* ---------- MÈMES ET PANNEAUX ---------- */
+const LEGENDES = {
+  lea: ["Tu vas gérer 🚗", "Créneau ? Même pas peur", "Jeudi, c'est ton jour"],
+  sam: ["Les pâtes refroidissent 🍝", "3 semaines… 🙄", "Ce soir ou jamais"],
+  nina: ["Alors, ce concert ? 🎧", "Raconte TOUT", "J'ai besoin de détails"],
+  canard: ["Le canard de Biarritz 🦆", "Rends les chouquettes", "Il est encore là-bas"],
+};
+function ouvrirMeme(k, o) {
+  const leg = LEGENDES[o.canard ? "canard" : k];
+  let choix = 0;
+  feuille(`<h2>🎭 Un mème pour ${GENS[k].nom}</h2><p class="sous">${o.canard ? "Votre blague, prête à repartir." : "Ta figurine, avec ce que vous vous dites en ce moment."}</p>
+    <div class="memes">${leg.map((l, i) => `<button class="meme${i ? "" : " on"}" data-m="${i}"><img src="${IMG(MOI + "-salue")}" alt=""><b>${echap(l)}</b></button>`).join("")}</div>
+    <div style="display:flex;flex-direction:column;gap:8px"><button class="bt" id="envoyerMeme">Envoyer à ${GENS[k].nom}</button><button class="bt clair" id="wa">💬 Sur WhatsApp</button></div>`, f => {
+    f.querySelectorAll("[data-m]").forEach(b => (b.onclick = () => { choix = +b.dataset.m; f.querySelectorAll(".meme").forEach(x => x.classList.toggle("on", x === b)); }));
+    $("#wa", f).onclick = () => toast("Dans l'appli, le mème part en vidéo sur WhatsApp");
+    $("#envoyerMeme", f).onclick = () => {
+      fermer();
+      if (o.matin) {
+        S.fils.lea.push({ t: "sep", txt: "Aujourd'hui", jeudi: true }, { t: "meme", de: "moi", leg: leg[choix], h: "8:14", jeudi: true });
+        ouvrirConv("lea", "matin");
+      } else if (o.canard) {
+        ouvrirConv(k);
+        plusTard(300, () => { ajouter(k, { t: "meme", de: "moi", leg: leg[choix], h: "18:52" }); anime($("#pMoi"), "parle"); plusTard(1100, () => { anime($("#pLui"), "sursaut"); eclat($("#pLui"), "😂"); reagir(k, S.fils[k].length - 1, "😂"); bulle($("#pLui"), "NOOON pas le canard 😭😂", 3000); }); });
+      } else {
+        ajouter(k, { t: "meme", de: "moi", leg: leg[choix], h: S.jour === "jeu" ? "11:45" : "18:48" });
+        anime($("#pMoi"), "parle");
+        plusTard(1100, () => { const lui = $("#pLui"); anime(lui, "sursaut"); eclat(lui, "😂"); reagir(k, S.fils[k].length - 1, "😂"); });
+      }
+    };
+  });
+}
+function ouvrirPanneaux(k) {
+  const P = ["MDR", "J'arrive !", "Rappelle-moi", "Bravo !", "Pas dispo 😴", "Je pense à toi", "Merci !", "Ce soir ?"];
+  feuille(`<h2>🪧 Ta figurine montre un panneau</h2><p class="sous">${GENS[k].nom} le voit tout de suite.</p>
+    <div class="panneaux">${P.map(p => `<button data-p="${echap(p)}">${echap(p)}</button>`).join("")}</div>`, f => {
+    f.querySelectorAll("[data-p]").forEach(b => (b.onclick = () => { fermer(); poserPanneau(k, b.dataset.p); }));
+  });
+}
+
+/* ---------- L'ÉTAGÈRE, EN GRAND ---------- */
+function ouvrirEtagere(k) {
+  annuler(); menuVisible(false);
+  const g = GENS[k];
+  const objs = S.objets[k].filter(o => !o.retire);
+  const tenues = S.promesses[k];
+  const dusty = k === "nina" && S.poussiere;
+  const haut = objs.filter(o => o.haut || o.tenue);
+  const milieu = objs.filter(o => !o.haut && !o.tenue && (o.genre === "date" || o.genre === "promesse"));
+  const bas = objs.filter(o => !o.haut && !o.tenue && !(o.genre === "date" || o.genre === "promesse"));
+  const blague = objs.find(o => o.genre === "blague");
+  const souvenir = o => `<button class="souvenir${o.haut ? " haut" : ""}" data-o="${o.id}"><span class="e">${o.e}</span><span class="etiq">${echap(o.t)}</span>${o.tenue ? '<i class="tenue">✓</i>' : ""}</button>`;
+  const rayon = (nom, liste) => `<div class="rayon"><span class="nom-rayon">${nom}</span>${liste.length ? liste.map(souvenir).join("") : `<span style="align-self:center;font-family:var(--main);font-size:18px;color:rgba(251,240,217,.4)">rien encore</span>`}</div>`;
+  ecran.innerHTML = `<div class="defile" style="padding-bottom:24px">
+    <header class="cv-tete"><button class="retour" id="retour" aria-label="Retour">←</button>
+      <div class="qui"><b>${g.nom} et toi</b><small>Votre étagère</small></div>${avatar(g.fig)}</header>
+    <div class="eta-etat${dusty ? " gris" : ""}">${dusty ? "🕸️ Elle prend la poussière · 12 jours sans un mot" : "✨ Bien éclairée · vous vous êtes parlé 5 jours sur 7"}</div>
+    <div class="compteurs">
+      <div><b>${objs.length}</b><span>souvenirs</span></div>
+      <div><b>${tenues}</b><span>promesses tenues</span></div>
+      <div><b>${blague ? blague.e : "–"}</b><span>${blague ? "votre blague" : "pas de blague"}</span></div>
+    </div>
+    <div class="meuble${dusty ? " poussiere" : ""}">
+      ${rayon("Nos fiertés", haut)}${rayon("À venir", milieu)}${rayon("Ce qu'on aime", bas)}
+    </div>
+    <p class="regles"><b>Vos figurines notent une ou deux choses par conversation, au plus.</b> Rien de sensible (santé, argent, amours). Tout se voit des deux côtés, et chacun peut retirer un objet. Les visiteurs de ton univers ne voient pas votre étagère.</p>
+    ${blague ? `<button class="bt clair" id="memeBlague" style="width:100%;margin-top:12px">🎭 Un mème avec votre blague</button>` : ""}
+  </div>`;
+  $("#retour").onclick = () => ouvrirConv(k);
+  ecran.querySelectorAll("[data-o]").forEach(b => (b.onclick = () => detail(k, b.dataset.o)));
+  const mb = $("#memeBlague"); if (mb) mb.onclick = () => ouvrirMeme(k, { canard: true });
+}
+function detail(k, id) {
+  const o = S.objets[k].find(z => z.id === id); if (!o) return;
+  const g = GENS[k];
+  let plus = "";
+  if (o.genre === "date" && !o.haut) plus = `<p class="note-douce">⏰ Ta figurine te le rappellera le jour venu, au moment de ton humeur du matin.</p>`;
+  if (o.genre === "promesse" && !o.tenue) plus = `<div class="actions"><button class="bt or" id="dTenue">✅ C'est fait !</button></div>`;
+  if (o.genre === "blague") plus = `<div class="actions"><button class="bt" id="dMeme">🎭 En faire un mème</button></div>`;
+  if (o.genre === "gout") plus = `<p class="note-douce">🎁 Une idée de cadeau, quand le moment viendra.</p>`;
+  if (o.haut) plus = `<p class="note-douce">🏆 Rangé tout en haut, avec vos fiertés.</p>`;
+  feuille(`<div class="detail"><span class="e">${o.e}</span><h2>${echap(o.t)}</h2><p class="sous" style="margin:0">${echap(o.d)}</p>
+    <blockquote>${echap(o.q)}<cite>Dit par ${o.par === "toi" ? "toi" : echap(o.par)} · ${echap(o.quand)}</cite></blockquote>
+    <cite>Noté par vos figurines · visible de ${g.nom} et toi</cite>
+    ${plus}
+    <div class="actions" style="margin-top:6px"><button class="bt clair" id="dRetirer">Retirer de l'étagère</button></div></div>`, f => {
+    $("#dRetirer", f).onclick = () => { fermer(); retirer(k, id); };
+    const t = $("#dTenue", f); if (t) t.onclick = () => { fermer(); if (k === "sam") { ouvrirConv("sam"); plusTard(400, () => promesseTenue("sam")); } };
+    const m = $("#dMeme", f); if (m) m.onclick = () => { fermer(); ouvrirMeme(k, { canard: true }); };
+  });
+}
+function retirer(k, id) {
+  const o = S.objets[k].find(z => z.id === id); if (!o) return;
+  o.retire = true;
+  toast(`${o.e} Retiré de votre étagère, pour vous deux`);
+  if (ecran.querySelector(".meuble")) ouvrirEtagere(k);
+  else { $(`#rang [data-o="${id}"]`)?.remove(); majCompteur(); }
+}
+
+/* ---------- FEUILLE DU BAS ---------- */
+function feuille(html, brancher) {
+  fermer();
+  const v = document.createElement("div"); v.className = "voile"; v.id = "voile";
+  v.innerHTML = `<div class="feuille" role="dialog" aria-modal="true"><div class="poignee"></div>${html}</div>`;
+  v.onclick = e => { if (e.target === v) fermer(); };
+  $("#app").appendChild(v); brancher && brancher(v);
+}
+function fermer() { $("#voile")?.remove(); }
+
+/* ---------- LA VISITE ---------- */
+function aller(cle) {
+  fermer(); visiteActive(cle);
+  if (cle === "chez") { S = etatNeuf(); rendreChez(); }
+  else if (cle === "pendant") { S = etatNeuf(); ouvrirConv("lea"); }
+  else if (cle === "etagere") { S = etatNeuf(); S.permisNote = true; S.leaLu = true; S.objets.lea.push({ ...PERMIS }); ouvrirEtagere("lea"); }
+  else if (cle === "matin") {
+    S = etatNeuf(); S.jour = "jeu"; S.humeur = null; S.leaLu = true; S.permisNote = true; S.objets.lea.push({ ...PERMIS });
+    S.fils.lea.push({ t: "note", obj: "permis" });
+    rendreChez(); plusTard(600, ouvrirHumeur);
+  }
+  else if (cle === "promesse") { S = etatNeuf(); S.leaLu = true; ouvrirConv("sam"); }
+  else if (cle === "poussiere") { S = etatNeuf(); S.leaLu = true; ouvrirConv("nina"); }
+}
+document.querySelectorAll("#visite button").forEach(b => (b.onclick = () => aller(b.dataset.aller)));
+document.querySelectorAll("[data-onglet]").forEach(b => (b.onclick = () => toast("Cette maquette ne montre que « Chez moi »")));
+$("[data-chez]").onclick = () => { if (!ecran.querySelector(".cm-titre")) { visiteActive("chez"); rendreChez(); } };
+rendreChez();
+</script>
+</body>
+</html>

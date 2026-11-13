@@ -108,9 +108,22 @@ Deux lots validés par le propriétaire (feuille de route « Univers », lot R, 
   validée) et un geste utile la suit ; la veille, le 3114 au troisième jour difficile, « Ta semaine en visages » le
   dimanche. **Fusionné** (#141 ; `docs/figurines.md`, 9.0 octatricies ☀️).
 - **R4, la conversation vivante** : les figurines vivantes (silences, « il prépare un message », réactions avec le
-  corps), les panneaux, et l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Construit, en
-  PR** (`docs/figurines.md`, 9.0 novatricies 🎭) ; il touche `proches.tsx`, que la session « Univers » modifie aussi :
-  une seule session à la fois.
+  corps), les panneaux, et l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Fusionné**
+  (#143 ; `docs/figurines.md`, 9.0 novatricies 🎭).
+
+## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
+
+Le propriétaire cherchait « l'utilité » de l'appli, ce qui fera revenir. Sa réponse, sur une maquette : **oui, on la
+construit** — vos deux figurines notent ce qui compte entre vous, le rangent sur votre étagère, et te le rappellent au
+bon moment.
+
+- **Où on en est** : le cahier des charges est écrit (`docs/univers/etagere.md`), la maquette validée est dans le
+  dépôt (`docs/univers/maquettes/etagere.html`). **Rien n'est développé.**
+- **La suite** : sa lecture du cahier (la section 16 liste les choix faits par défaut, sur lesquels il peut revenir ;
+  les banques de phrases des sections 5, 7.1 et 7.3 sont à valider) ; puis le lot E1.
+- **À côté** : il a dit de l'étagère « très bien comme feature, mais ça ne fera pas venir les gens ». Il cherche
+  encore ce qui fera parler de l'appli ; une proposition lui a été faite (des épisodes de dessin animé tirés de leurs
+  vrais vocaux, à partager), **sans réponse encore, rien de décidé**.
 
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 
