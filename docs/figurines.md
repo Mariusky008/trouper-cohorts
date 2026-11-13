@@ -2686,6 +2686,25 @@ expérience de découverte qui me fasse plaisir, beaucoup plus animée et mise e
   feuille du cadeau, le paquet à ses pieds), `scripts/navigateur/bascule-univers.mjs` (Marc découvre le bouquet de Sam
   et la visite de Léa, le bouquet dans sa fenêtre, le bilan).
 
+### 9.0 quinquadragies 📐 La nouvelle interface, lot 1 : « Chez moi » au centre, le menu à trois (13 novembre)
+
+Le propriétaire : « l'application devrait tourner autour d'une nouvelle façon de communiquer avec son entourage proche ou
+inconnu, donc le bouton central devrait être “chez moi” […] la possibilité de créer un mème, qui auparavant était le
+bouton central, ferait partie de la page chez moi ». La maquette (publiée en page, avec de faux proches) a été validée :
+« ok on part sur cette interface ». Quatre lots : (1) la navigation, (2) Chez moi rangé par personne et les demandes des
+inconnus, (3) la conversation en fil, (4) le mème envoyé à un proche.
+
+- **Le menu, à trois** (l'interrupteur allumé, `ma-collection.tsx`, `MENU_UNIVERS`) : **Découvrir · Chez moi · Autour** ;
+  « Chez moi » au milieu, en gros bouton rond, ma figurine dedans (`mc-nav-centre`, la place qu'avait « Créer ») ; sa
+  pastille compte mes messages non lus, mes cadeaux et mes visites à découvrir (`onNouveautes`).
+- **« ＋ Nouveau »**, à côté de « Mes conversations » (plus de bouton flottant, qui cachait la première ligne) : parler à
+  un proche, **🎭 Créer un mème** (le studio de toujours, `#creer`), par WhatsApp, ajouter un proche.
+- **« Moi »** (sous mon prénom, en haut) commence par ce qui était dans « Créer » (`RaccourcisMoi`, `chez-moi.tsx`) : ma
+  figurine et mes mèmes (le studio), mon univers (`/univers/monde`), mes mèmes envoyés (`#memes`), mes réactions ; la
+  suite de « Moi » ne bouge pas. La ligne « 📥 Mes mèmes » quitte « Chez moi ».
+- **Freiné** : le menu d'avant, à cinq, à l'identique.
+- **L'essai** : `scripts/navigateur/bascule-univers.mjs` (le menu à trois, « ＋ Nouveau », « Créer un mème », « Moi »).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
