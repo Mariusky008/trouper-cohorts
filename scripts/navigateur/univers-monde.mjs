@@ -143,16 +143,16 @@ ok((await debordement()) <= 0 && (await sansMotInterdit()), "rien ne déborde, s
 ok((await p.locator(".um-fauteuil").count()) === 0, "après la retouche, son fauteuil n'est pas annoncé de nouveau");
 
 // ═══ « MON UNIVERS », L'ACCUEIL ═══
-const versAccueil = p.locator("a.um-lien", { hasText: "l’accueil de demain" });
-ok((await versAccueil.getAttribute("href")) === "/univers", "de son univers, le chemin vers l'accueil de demain");
+// (🏡 le 13 novembre : « Mon univers » et « Proches » ne font plus qu'un, « Chez moi » ; ici, ses réglages, derrière ⚙️)
+ok((await p.locator("a.um-retour").getAttribute("href")) === "/collection#proches" && (await p.locator("a.um-lien", { hasText: "Retour chez moi" }).getAttribute("href")) === "/collection#proches", "de son univers, le chemin du retour : « ← Chez moi »");
 await p.goto(`${BASE}/univers`, { waitUntil: "networkidle" });
 await p.waitForSelector(".um-decouverte .um-decor", { timeout: 30000 }).catch(() => null);
 const menu = await p.locator(".um-menu a").allInnerTexts();
 ok(
-  (await texte(".um-entete")) === "Mon univers" && (await p.locator(".um-place .um-figurine").count()) === 1 && menu.map((m) => m.replace(/\s+/g, " ").trim()).join("|") === "🔥 Découvrir|📍 Autour|✏️ Créer|👯 Proches|🏡 Mon univers",
+  (await texte(".um-entete")) === "Mon univers" && (await p.locator(".um-place .um-figurine").count()) === 1 && menu.map((m) => m.replace(/\s+/g, " ").trim()).join("|") === "🔥 Découvrir|📍 Autour|✏️ Créer|🏡 Chez moi",
   `l'accueil : « Mon univers », sa figurine chez elle, le menu de demain (${menu.length})`,
 );
-ok((await p.locator('.um-menu a[aria-current="page"]').innerText()).includes("Mon univers") && (await p.locator('.um-menu a', { hasText: "Créer" }).getAttribute("href")) === "/collection#figurine", "« Mon univers » est l'onglet ouvert ; les autres mènent à l'appli d'aujourd'hui");
+ok((await p.locator(".um-menu a", { hasText: "Chez moi" }).getAttribute("href")) === "/collection#proches" && (await p.locator(".um-menu a", { hasText: "Créer" }).getAttribute("href")) === "/collection#figurine", "le menu mène à l'appli : « Chez moi », « Créer »…");
 ok((await debordement()) <= 0 && (await sansMotInterdit()), "l'accueil : rien ne déborde, sans le mot interdit");
 await p.screenshot({ path: `${D}/univers-monde-5-accueil.png` });
 
