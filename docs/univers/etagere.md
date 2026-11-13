@@ -2,8 +2,9 @@
 
 **Statut : validé par le propriétaire (« on va construire cette feature »). Le lot E1 « Noté ! » est construit (13
 novembre 2026, `docs/figurines.md`, 9.0 novoquadragies 📚), puis le lot E2 « Plus tard » (9.0 quinquagies 📅) et le
-lot E3 « La poussière et les idées » (9.0 unquinquagies 🕸️) : tout le cahier est construit. Les banques de phrases
-(sections 5, 7.1, 7.3, et le réveil) et les choix de la section 16 attendent toujours la relecture du propriétaire.** Ce document dit tout ce qu'il faut
+lot E3 « La poussière et les idées » (9.0 unquinquagies 🕸️) : tout le cahier est construit. Le 13 novembre, le
+propriétaire a validé toutes les phrases des figurines (sections 5, 7.1, 7.3, 9, telles que construites) et tous les
+choix des sections 16 et 16 bis (« ok »).** Ce document dit tout ce qu'il faut
 pour la construire. Il ne remplace pas `docs/univers/feuille-de-route.md` : il s'y ajoute (lot E).
 
 > **Ce qui a changé depuis l'écriture de ce cahier** (la nouvelle interface, lots 1 à 4, fusionnés le 13 novembre) :
@@ -237,15 +238,15 @@ je n'ai pas encore vu s'envoler :
   sans vol.
 - **`prefers-reduced-motion`** : pas de vol ; l'objet apparaît sur l'étagère, la carte dans le fil.
 - **Pas de son** au lot E1.
-- **La phrase de l'autre figurine** n'est pas écrite par le modèle : elle est tirée d'une banque, par genre. À
-  valider par le propriétaire, comme les phrases de l'humeur (R3) :
+- **La phrase de l'autre figurine** n'est pas écrite par le modèle : elle est tirée d'une banque, par genre. Validée
+  par le propriétaire le 13 novembre 2026 :
 
 | Genre | Phrases (une au hasard, jamais deux fois de suite) |
 |---|---|
 | `date` | « C'est noté 📌 On y pensera ce jour-là » · « Je retiens la date, promis 📅 » · « Ce jour-là, on envoie de la chance 🍀 » |
 | `promesse` | « Promis, c'est promis 🤝 Je surveille » · « Noté ! On verra qui tient parole 👀 » · « Je garde ça bien en vue 🤝 » |
 | `gout` | « Bon à savoir 💛 Je garde ça » · « Je note, ça peut servir 🎁 » · « Ça, je ne l'oublierai pas 💛 » |
-| `blague` | « Celle-là, on la garde 😂 » · « Classée dans nos meilleures 🏅 » · « Je la ressortirai, compte sur moi 😏 » |
+| `blague` | « Celle-là, on la garde 😂 » · « Rangée avec nos meilleures 🏅 » · « Je la ressortirai, compte sur moi 😏 » |
 
 **La carte dans le fil** (visible des deux, entre les messages, à l'heure où c'est noté) :
 
@@ -322,7 +323,7 @@ Le rappel arrive **avec le rituel du matin**, pas à part : après la phrase de 
 - « 📌 DE VOTRE ÉTAGÈRE, LÉA ET TOI » ; « Aujourd'hui, c'est le permis de Léa 🚗 Un petit mot avant le départ ? » ;
   « 🎙️ Un vocal » (notre conversation, micro prêt : `?parler=<clé>`) et « 🎭 Un mème » (voir 12).
 - **Qui le reçoit** : l'autre, jamais celui que ça concerne. Léa, elle, entend sa propre figurine après son
-  humeur : « C'est le grand jour 🚗 Je croise tout ce que j'ai 🤞 » (banque à valider, trois phrases).
+  humeur : « C'est le grand jour 🚗 Je croise tout ce que j'ai 🤞 » (trois phrases, validées : `ENCOURAGEMENTS`).
 - **Deux rappels au plus par matin**, dans cet ordre : une épreuve aujourd'hui ; un anniversaire aujourd'hui ; un
   anniversaire dans trois jours ; un événement aujourd'hui ; le lendemain d'un événement.
 - **Le rappel s'efface** dès que j'ai envoyé un message à cette personne dans la journée : « ✓ Envoyé à Léa ».
@@ -357,7 +358,7 @@ L'envoi de 8 h 40 existe (`envoyerLesMatins`, une notification par jour au plus 
 - **La relance** : 21 jours après la promesse, une carte dans le fil, visible des deux, à l'ouverture de la
   conversation : « 🍝 VOS FIGURINES SE SOUVIENNENT », la citation, « Sam, le jeudi 23 octobre », « Ça fait 3 semaines
   👀 », « 🪧 Ce soir ? » (le panneau, R4) et « ✅ C'est fait ! ». Les deux figurines s'en mêlent, une fois : « 3
-  semaines… les pâtes refroidissent 🍝 », « Je dis ça, je dis rien 🙄 » (banque à valider ; la première phrase prend
+  semaines… les pâtes refroidissent 🍝 », « Je dis ça, je dis rien 🙄 » (validées, telles que construites : voir 16 bis ; la première phrase prend
   l'emoji du souvenir).
 - Une deuxième et dernière relance à 60 jours. Ensuite la promesse passe en `sommeil` : elle reste sur l'étagère,
   plus de relance.
@@ -546,13 +547,13 @@ Comme pour chaque lot de l'appli :
 
 ## 16. Les décisions prises par défaut
 
-Le propriétaire a validé l'idée et la maquette. Ces points-là ont été tranchés en écrivant ce cahier ; il peut
-revenir sur chacun.
+Le propriétaire a validé l'idée et la maquette. Ces points-là ont été tranchés en écrivant ce cahier ; **il les a
+tous confirmés le 13 novembre 2026** (il peut toujours revenir sur l'un d'eux).
 
 | Point | Choix par défaut | L'autre choix |
 |---|---|---|
 | Le mot à l'écran | « souvenir » pour l'étagère ; les cadeaux des visites s'appellent tous « cadeaux » | Un autre mot pour l'étagère (« pépite ») |
-| Les phrases des figurines | Tirées de banques écrites d'avance (sections 5, 7.1, 7.3), à valider | Écrites par le modèle |
+| Les phrases des figurines | Tirées de banques écrites d'avance (sections 5, 7.1, 7.3), validées le 13 novembre | Écrites par le modèle |
 | « Ma figurine parle pour moi » coupé chez l'un | Rien n'est noté entre eux | Ne lire que les messages de l'autre |
 | La poussière | Pas de notification | Une notification douce au dixième jour |
 | Les promesses | Relances à 21 et 60 jours, dans le fil, sans notification | Une notification à la première relance |
@@ -560,7 +561,7 @@ revenir sur chacun.
 | « 🎭 Un mème » | Ouvre le studio, puis le mème part dans leur conversation (fait, nouvelle interface lot 4) | — |
 | Retirer un souvenir | L'autre n'est pas prévenu | Le prévenir |
 
-## 16 bis. Ce que la construction a ajusté (13 novembre 2026, à relire)
+## 16 bis. Ce que la construction a ajusté (13 novembre 2026, validé par le propriétaire)
 
 | Où | Le cahier | Ce qui est construit | Pourquoi |
 |---|---|---|---|
@@ -568,7 +569,7 @@ revenir sur chacun.
 | La relance (7.3) | « 3 semaines… les pâtes refroidissent 🍝 » | « 3 semaines… ça attend toujours 🍝 » (et deux autres) | la phrase sert à toutes les promesses, pas qu'aux pâtes ; l'emoji du souvenir est repris |
 | La ligne (8.1) | « 🍝 Le resto promis attend depuis 3 semaines » | « 🍝 Le resto italien : promis il y a 3 semaines » | le titre est écrit par le modèle (« Le resto italien ») : on ne sait pas en tirer « Le resto » |
 | La poussière (9) | l'accroche : « Nina avait son concert le 1er novembre 🎧 » | idem ; un goût : « Nina adore le fraisier 🍰 » ; la blague : « Et votre blague : … » | les trois accroches, écrites |
-| Le réveil (9) | « les figurines sursautent » | elles sautent, et l'une dit « C'est reparti ✨ » (ou deux autres) | une banque de trois, à valider |
+| Le réveil (9) | « les figurines sursautent » | elles sautent, et l'une dit « C'est reparti ✨ » (ou deux autres) | une banque de trois, validée |
 | Un filet de plus (3.2) | le modèle dit « sensible » | et avant lui, une liste de mots (la santé, l'argent, une dispute, les amours…) : l'échange n'est même pas envoyé au modèle | moins d'appels, et un double filet ; « mort de rire », « une enceinte », « un avocat » passent |
 | La page des mesures (13) | à côté de `statsTalkie` | sur la page admin des mèmes, « 📚 L'étagère, sur 14 jours » | c'est là que sont les mesures du talkie |
 | Un compte effacé (8.3) | l'étagère est effacée | il n'existe pas d'effacement d'un seul compte : la remise à zéro (admin) efface tout | rien à brancher aujourd'hui |

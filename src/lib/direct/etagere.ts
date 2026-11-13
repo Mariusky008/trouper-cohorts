@@ -508,7 +508,7 @@ export const pierreTombale = (x: ObjetGarde, par8: string, le: string): ObjetGar
 });
 
 // ─── ce que dit la figurine qui voit noter ────────────────────────────────────────────────────────
-/** 🗨️ La phrase de l'autre figurine quand un objet se pose (une au hasard, jamais deux fois de suite) — à valider par le propriétaire. */
+/** 🗨️ La phrase de l'autre figurine quand un objet se pose (une au hasard, jamais deux fois de suite) — validées par le propriétaire le 13 novembre 2026. */
 export const PHRASES_NOTE: Record<GenreObjet, readonly string[]> = {
   date: ["C’est noté 📌 On y pensera ce jour-là", "Je retiens la date, promis 📅", "Ce jour-là, on envoie de la chance 🍀"],
   promesse: ["Promis, c’est promis 🤝 Je surveille", "Noté ! On verra qui tient parole 👀", "Je garde ça bien en vue 🤝"],
@@ -644,7 +644,7 @@ export function garderRappels<T extends { cas: CasRappel; rang: number }>(l: rea
   return [...tries.filter((x) => x.cas === "encourage").slice(0, 1), ...tries.filter((x) => x.cas !== "encourage").slice(0, ETAGERE_E2.rappels)];
 }
 
-/** 💪 Ce que dit SA figurine à celui que ça concerne, le jour J (à valider par le propriétaire). */
+/** 💪 Ce que dit SA figurine à celui que ça concerne, le jour J (validé par le propriétaire le 13 novembre 2026). */
 export const ENCOURAGEMENTS: readonly string[] = ["C’est le grand jour {e} Je croise tout ce que j’ai 🤞", "Aujourd’hui, c’est ton jour {e} Tu vas assurer 💪", "Respire un grand coup {e} Je suis avec toi"];
 /** La phrase du rappel (l'appli la compose, pas le modèle) : `titre` est déjà tourné pour lui ; `idees` : deux goûts. */
 export function phraseRappel(cas: CasRappel, titre: string, emoji: string, idees: string[] = [], graine = ""): string {
@@ -707,7 +707,7 @@ export function ligneEtagere(x: { rappel?: Rappel | null; nouveau?: ObjetGarde |
   return null;
 }
 
-// ─── ce que disent les figurines, plus tard (à valider par le propriétaire) ────────────────────────
+// ─── ce que disent les figurines, plus tard (validé par le propriétaire le 13 novembre 2026) ────────
 /** 🏆 Une fierté : la figurine de celui qui n'est pas concerné. */
 export const phraseFierte = (prenom: string | null) => (prenom ? `${prenom}, c’est réussi ! 🏆 Je range ça tout en haut` : "C’est réussi ! 🏆 Je range ça tout en haut");
 /** ✅ Une promesse tenue. */
@@ -788,7 +788,7 @@ export function rallumages(ts: readonly number[], deja: ReadonlySet<string>, mai
   }
   return r;
 }
-/** ✨ Ce que disent les figurines en se réveillant (à valider par le propriétaire). */
+/** ✨ Ce que disent les figurines en se réveillant (validé par le propriétaire le 13 novembre 2026). */
 export const PHRASES_RALLUME: readonly string[] = ["C’est reparti ✨", "Ah, enfin ! ✨ On s’ennuyait", "Les revoilà ✨"];
 /** 🕸️ Sur sa ligne, dans « Chez moi » (le cas 5) : l'avatar passe en gris. */
 export const LIGNE_POUSSIERE = { txt: "🕸️ Votre étagère prend la poussière", rang: 0.5 } as const;
