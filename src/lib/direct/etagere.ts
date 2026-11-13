@@ -69,9 +69,11 @@ export type ObjetGarde = {
  * ÉTAGÈRE »), une promesse tenue (« ✅ PROMESSE TENUE », `n` : les promesses tenues entre eux à ce moment), une relance
  * (« VOS FIGURINES SE SOUVIENNENT », `n` : 21 ou 60 jours ; 0 : le lendemain du jour prévu).
  */
-export type GenreCarte = "fierte" | "tenue" | "relance";
+export type GenreCarte = "fierte" | "tenue" | "relance" | "rallume";
 export type CarteGardee = { id: string; genre: GenreCarte; objet: string; le: string; n?: number };
 export type CarteVue = { id: string; genre: GenreCarte; le: string; n?: number; objet: ObjetVu; nouvelle: boolean };
+/** ✨ (lot E3) « L'ÉTAGÈRE SE RALLUME » : pas d'objet, le moment où ils se sont reparlé. */
+export type CarteRallume = { id: string; le: string; nouvelle: boolean };
 
 /** Ce qu'un des deux en voit : le titre déjà tourné pour lui, le détail composé. */
 export type ObjetVu = {
@@ -110,6 +112,10 @@ export type EtagereScene = {
   tenues?: number;
   /** L'un des deux l'a mise en pause. */
   pause?: { moi: boolean };
+  /** 🕸️ (lot E3) l'état de leur relation, et ce que sa figurine lui dit, à lui seul, quand l'étagère prend la poussière. */
+  etat?: EtatEtagere;
+  poussiere?: { jours: number; texte: string; bouton: string };
+  rallumes?: CarteRallume[];
 };
 
 /** 📚 La page « Votre étagère ». */
@@ -119,6 +125,9 @@ export type EtagereVue = {
   objets: ObjetVu[];
   tenues: number;
   pause: { moi: boolean } | null;
+  /** 🕸️ (lot E3) « ✨ Bien éclairée · vous vous êtes parlé 5 jours sur 7 », « 🕸️ Elle prend la poussière · 12 jours sans un mot ». */
+  etat?: EtatEtagere;
+  phraseEtat?: string;
 };
 
 export const ETAGERE = {
@@ -722,3 +731,87 @@ export const leJourLong = (le: string) => {
   const d = enDate(iso);
   return `le ${JOURS[d.getUTCDay()]} ${numero(d.getUTCDate())} ${MOIS[d.getUTCMonth()]}`;
 };
+
+// ─── lot E3 : la poussière et les idées ────────────────────────────────────────────────────────────
+/**
+ * 🕸️ LE BAROMÈTRE DE LA RELATION (9) — pas d'un message, personne n'est noté : `eclairee` (un message de l'un ou de
+ * l'autre depuis moins de 4 jours), `calme` (4 à 9 jours), `poussiere` (10 jours ou plus). Seulement pour une étagère
+ * qui a au moins un souvenir, et une paire qui s'est déjà dit au moins six messages (un proche tout neuf ne prend pas
+ * la poussière).
+ */
+export type EtatEtagere = "eclairee" | "calme" | "poussiere";
+export const POUSSIERE = { eclairee: 4, poussiere: 10, messagesMin: 6 } as const;
+export const joursSansUnMot = (dernier: number, maintenant: number) => Math.max(0, Math.floor((maintenant - dernier) / 86_400_000));
+export function etatEtagere(x: { dernier: number; messages: number; objets: number; maintenant: number }): EtatEtagere | null {
+  if (!x.objets || x.messages < POUSSIERE.messagesMin || !x.dernier) return null;
+  const j = (x.maintenant - x.dernier) / 86_400_000;
+  return j < POUSSIERE.eclairee ? "eclairee" : j < POUSSIERE.poussiere ? "calme" : "poussiere";
+}
+/** « 5 jours sur 7 » : les jours, sur les sept derniers (aujourd'hui compris), où l'un des deux a envoyé un message. */
+export function joursSurSept(ts: readonly number[], aujourdhui: string): number {
+  const debut = ajouterJours(aujourdhui, -6);
+  return new Set(ts.map((x) => jourDe(x)).filter((j) => j && j >= debut && j <= aujourdhui)).size;
+}
+export function phraseEtat(etat: EtatEtagere | null | undefined, x: { jours: number; surSept: number }): string {
+  if (etat === "eclairee") return `✨ Bien éclairée · vous vous êtes parlé ${x.surSept} jour${x.surSept > 1 ? "s" : ""} sur 7`;
+  if (etat === "poussiere") return `🕸️ Elle prend la poussière · ${x.jours} jours sans un mot`;
+  return "";
+}
+/**
+ * 🕸️ « RIEN QUE POUR TOI, DE TA FIGURINE » : l'accroche vient de l'étagère — le dernier événement passé, sinon un goût,
+ * sinon la blague, sinon rien. Chacun a la sienne ; personne ne voit celle de l'autre.
+ */
+export function carteDePoussiere(objets: readonly ObjetGarde[], moi8: string, prenomAutre: string, jours: number, aujourdhui: string): { texte: string; bouton: string } {
+  const base = `${jours} jours sans un mot… Votre étagère prend la poussière.`;
+  const ev = objets.filter((o) => o.genre === "date" && o.sorte === "evenement" && o.etat !== "retire" && o.titre && o.quand && o.quand < aujourdhui).sort((a, b) => (a.quand ?? "").localeCompare(b.quand ?? "")).pop();
+  if (ev?.quand) {
+    const qui = ev.concerne === "deux" ? "Vous aviez" : ev.concerne === moi8 ? "Tu avais" : `${prenomAutre} avait`;
+    return { texte: `${base} ${qui} ${sonTitre(ev, moi8).replace(/^son /, ev.concerne === "deux" ? "votre " : ev.concerne === moi8 ? "ton " : "son ")} ${leJourDuMois(ev.quand)} ${ev.emoji}`.replace(/  +/g, " "), bouton: "🎙️ Lui demander comment c’était" };
+  }
+  const g = objets.filter((o) => o.genre === "gout" && o.etat === "actif" && o.concerne !== moi8).pop();
+  if (g) return { texte: `${base} ${g.nuance === "envie" ? `Sur votre étagère, il y a ${minuscule(g.titre)}` : `${g.concerne === "deux" ? "Vous adorez" : `${prenomAutre} adore`} ${minuscule(g.titre)}`} ${g.emoji}`, bouton: "🎙️ Lui faire signe" };
+  const b = objets.filter((o) => o.genre === "blague" && o.etat === "actif").pop();
+  if (b) return { texte: `${base} Et votre blague : ${minuscule(b.titre)} ${b.emoji}`, bouton: "🎙️ Lui faire signe" };
+  return { texte: base, bouton: "🎙️ Lui faire signe" };
+}
+/**
+ * ✨ SE RALLUMER : le premier message après dix jours ou plus sans un mot (de l'un ou de l'autre) — « L'ÉTAGÈRE SE
+ * RALLUME ». Les reprises de la dernière semaine, qui n'ont pas encore leur carte.
+ */
+export function rallumages(ts: readonly number[], deja: ReadonlySet<string>, maintenant: number): { id: string; le: string }[] {
+  const tri = [...ts].sort((a, b) => a - b);
+  const r: { id: string; le: string }[] = [];
+  for (let k = POUSSIERE.messagesMin; k < tri.length; k++) {
+    if (tri[k] - tri[k - 1] < POUSSIERE.poussiere * 86_400_000 || maintenant - tri[k] > 7 * 86_400_000) continue;
+    const id = `a-${tri[k].toString(36)}`;
+    if (!deja.has(id)) r.push({ id, le: new Date(tri[k]).toISOString() });
+  }
+  return r;
+}
+/** ✨ Ce que disent les figurines en se réveillant (à valider par le propriétaire). */
+export const PHRASES_RALLUME: readonly string[] = ["C’est reparti ✨", "Ah, enfin ! ✨ On s’ennuyait", "Les revoilà ✨"];
+/** 🕸️ Sur sa ligne, dans « Chez moi » (le cas 5) : l'avatar passe en gris. */
+export const LIGNE_POUSSIERE = { txt: "🕸️ Votre étagère prend la poussière", rang: 0.5 } as const;
+
+/** 🎁 (7.4) Ce qu'il ou elle aime, pour la feuille « Offrir » : deux goûts au plus, les plus récents. */
+export const idees = (objets: readonly Pick<ObjetVu, "genre" | "etat" | "pourMoi" | "emoji" | "titre" | "le">[]) =>
+  objets
+    .filter((o) => o.genre === "gout" && o.etat === "actif" && !o.pourMoi)
+    .sort((a, b) => b.le.localeCompare(a.le))
+    .slice(0, 2);
+/** 🎭 (7.5) Les mots du mème de leur blague. */
+export const memeDeLaBlague = (o: Pick<ObjetGarde, "titre" | "emoji">) => `${o.titre} ${o.emoji}`;
+
+// ─── lot E3 : ce qu'on mesure (13) ─────────────────────────────────────────────────────────────────
+/** Les compteurs du jour (`stats/etagere/<jour>.json`). */
+export type StatsJourEtagere = { notes: number; paires: number; retires: number; dates: number; rappels: number; suivis: number; tenues: number; rallumees: number };
+export const STATS_VIDES: StatsJourEtagere = { notes: 0, paires: 0, retires: 0, dates: 0, rappels: 0, suivis: 0, tenues: 0, rallumees: 0 };
+/** Les seuils d'alerte : plus de 2 souvenirs par paire et par jour ; plus de 15 % retirés ; plus de 10 % de dates changées ; moins de 30 % de rappels suivis. */
+export function alertesEtagere(s: StatsJourEtagere): string[] {
+  const a: string[] = [];
+  if (s.paires && s.notes / s.paires > 2) a.push("Plus de 2 souvenirs par paire et par jour : la consigne note trop.");
+  if (s.notes && s.retires / s.notes > 0.15) a.push("Plus de 15 % des souvenirs retirés : la consigne note trop, ou mal.");
+  if (s.notes && s.dates / s.notes > 0.1) a.push("Plus de 10 % de dates changées à la main : le modèle comprend mal les jours.");
+  if (s.rappels >= 5 && s.suivis / s.rappels < 0.3) a.push("Moins de 30 % des rappels suivis d'un message : le rappel ne sert pas assez.");
+  return a;
+}

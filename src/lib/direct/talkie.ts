@@ -67,7 +67,7 @@ export type ProcheVivant = {
   /** 🏡 son univers est créé et lui est ouvert (« Univers », lot 6) : « Son univers » */
   univers?: boolean;
   /** 📚 ce que leur étagère dit sur sa ligne (lot E2 : un rappel du jour, un souvenir pas encore vu, une relance), et son rang */
-  etagere?: { txt: string; rang: number };
+  etagere?: { txt: string; rang: number; gris?: boolean };
 };
 /** La conversation avec un proche. */
 /** Une place de son univers (en fractions de son décor, 2:3), et la taille d'une figurine qui s'y assoit. */

@@ -11,7 +11,8 @@
  * QUAND LES FIGURINES LISENT (4.1) : un échange qui vient de se poser (son dernier message a une minute), jamais
  * bloquant (`after()`), par trois portes, la même fonction derrière (`preparerNotes`) :
  *   1. la conversation ouverte (la relecture toutes les 4 s, `etagereDansLaScene` dit qu'il y a à lire) ;
- *   2. l'ouverture de « Chez moi » (six conversations au plus, `noterMesConversations`) ;
+ *   2. l'ouverture de « Chez moi » (six conversations au plus, `noterMesConversations` ; un tour toutes les trois
+ *      minutes au plus, `<habitant>/etagere-tour.json`) ;
  *   3. le matin (la première ouverture du rituel).
  * Les conditions : les deux ont « Ma figurine parle pour moi » ; l'étagère n'est pas en pause ; aucun des messages n'a
  * été signalé ; au moins un message de vingt signes ; rien de sensible ; six passages au plus par jour. Sinon le
@@ -24,6 +25,10 @@
  * (« ✅ C'est fait ! », annuler pendant 24 h, les relances à 21 et 60 jours) — `cartes` : ce qui s'insère dans le fil ;
  * les rappels du matin (`mesRappels`, gardés dans `<habitant>/rappels.json` = { jour, liste }, une fois par jour) et
  * la notification du matin (`notifDesRappels`) ; la ligne de « Chez moi » (`lignesEtagere`).
+ *
+ * 🕸️ LOT E3 « LA POUSSIÈRE ET LES IDÉES » : l'état de leur relation (éclairée, calme, la poussière), la carte « rien
+ * que pour toi » de sa figurine, se rallumer (une carte `rallume` dans le fil) ; les goûts pour « Offrir »
+ * (`goutsDe`) ; ce qu'on mesure, jour par jour (`stats/etagere/<jour>.json`, `statsEtagere`).
  *
  * FICHIER SERVEUR.
  */
@@ -39,6 +44,16 @@ import {
   CATALOGUE,
   ETAGERE,
   ETAGERE_E2,
+  LIGNE_POUSSIERE,
+  STATS_VIDES,
+  alertesEtagere,
+  carteDePoussiere,
+  etatEtagere,
+  joursSansUnMot,
+  joursSurSept,
+  phraseEtat,
+  rallumages,
+  type StatsJourEtagere,
   appliquerIssues,
   ecartJours,
   echangeSensible,
@@ -110,18 +125,46 @@ async function lireEtagere(supabase: Supabase, pair: string): Promise<FicheEtage
     lu: Number(f.lu) || 0,
     verrou: Number(f.verrou) || 0,
     tenues: Math.max(0, Number(f.tenues) || 0),
-    cartes: (Array.isArray(f.cartes) ? f.cartes : []).filter((c): c is CarteGardee => Boolean(c && s(c.id) && s(c.objet) && s(c.le) && ["fierte", "tenue", "relance"].includes(s(c.genre)))),
+    cartes: (Array.isArray(f.cartes) ? f.cartes : []).filter((c): c is CarteGardee => Boolean(c && s(c.id) && s(c.objet) && s(c.le) && ["fierte", "tenue", "relance", "rallume"].includes(s(c.genre)))),
   };
 }
-/** ⏳ Le temps qui passe (lot E2) : l'étagère vieillit, les relances dues s'ajoutent — écrit seulement s'il y a du neuf. */
-async function aJour(supabase: Supabase, pair: string, f: FicheEtagere): Promise<FicheEtagere> {
+/**
+ * ⏳ Le temps qui passe (lot E2) : l'étagère vieillit, les relances dues s'ajoutent ; ✨ (lot E3, avec leurs messages)
+ * une reprise après dix jours sans un mot : « L'ÉTAGÈRE SE RALLUME ». Écrit seulement s'il y a du neuf.
+ */
+async function aJour(supabase: Supabase, pair: string, f: FicheEtagere, noms?: { ts: number }[]): Promise<FicheEtagere> {
   const jour = jourParis();
   const v = vieillir(f.objets, jour);
   const relances = relancesDues(v.objets, f.cartes ?? [], jour, new Date().toISOString());
-  if (!v.change && !relances.length) return f;
-  const g = { ...f, objets: v.objets, cartes: [...(f.cartes ?? []), ...relances].slice(-ETAGERE_E2.cartes) };
+  const deja = new Set((f.cartes ?? []).filter((c) => c.genre === "rallume").map((c) => c.id));
+  const rallumes = noms && f.objets.some(visible) ? rallumages(noms.map((n) => n.ts), deja, Date.now()).map((r): CarteGardee => ({ id: r.id, genre: "rallume", objet: "-", le: r.le })) : [];
+  if (!v.change && !relances.length && !rallumes.length) return f;
+  const g = { ...f, objets: v.objets, cartes: [...(f.cartes ?? []), ...relances, ...rallumes].slice(-ETAGERE_E2.cartes) };
   await ecrireEtagere(supabase, pair, g);
+  if (rallumes.length) await noterStat(supabase, "rallumees", rallumes.length);
   return g;
+}
+
+// ─── ce qu'on mesure (lot E3) ──────────────────────────────────────────────────────────────────────
+const cheminStats = (jour: string) => `stats/etagere/${jour}.json`;
+/** Un compteur du jour, de plus (relire, puis écrire : la dernière écriture gagne, c'est accepté pour une mesure). */
+async function noterStat(supabase: Supabase, cle: keyof StatsJourEtagere, n = 1): Promise<void> {
+  if (!n) return;
+  const jour = jourParis();
+  const x = await lireJson<Partial<StatsJourEtagere>>(supabase, cheminStats(jour));
+  await ecrireJson(supabase, cheminStats(jour), { ...STATS_VIDES, ...x, [cle]: (Number(x[cle]) || 0) + n }).catch(() => false);
+}
+/** 📊 L'étagère, jour par jour (la page des mesures) : les compteurs, et les alertes. */
+export async function statsEtagere(supabase: Supabase, jours = 14): Promise<{ jour: string; stats: StatsJourEtagere; alertes: string[] }[]> {
+  const aujourdhui = jourParis();
+  const l = await Promise.all(
+    Array.from({ length: jours }, async (_, k) => {
+      const jour = new Date(Date.parse(`${aujourdhui}T12:00:00Z`) - k * 86_400_000).toISOString().slice(0, 10);
+      const x = { ...STATS_VIDES, ...(await lireJson<Partial<StatsJourEtagere>>(supabase, cheminStats(jour))) };
+      return { jour, stats: x, alertes: alertesEtagere(x) };
+    }),
+  );
+  return l;
 }
 const ecrireEtagere = (supabase: Supabase, pair: string, f: FicheEtagere) => ecrireJson(supabase, cheminEtagere(pair), f);
 
@@ -137,18 +180,20 @@ const prenomDe = async (supabase: Supabase, h: string, defaut: string) => s((awa
 /** Ce que l'un des deux voit de leur étagère : les objets visibles, et les cartes du fil (lot E2). */
 async function objetsVus(supabase: Supabase, f: FicheEtagere, moi: string, h: string) {
   const visibles = f.objets.filter(visible);
-  if (!visibles.length) return { objets: [], cartes: [] as CarteVue[], prenomAutre: "" };
+  if (!visibles.length) return { objets: [], cartes: [] as CarteVue[], rallumes: [] as { id: string; le: string; nouvelle: boolean }[], prenomAutre: "" };
   const [prenomMoi, prenomAutre] = await Promise.all([prenomDe(supabase, moi, "Toi"), prenomDe(supabase, h, "Ton proche")]);
   const c = { moi8: qui8(moi), prenomMoi, prenomAutre, aujourdhui: jourParis() };
   const objets = visibles.sort((a, b) => a.le.localeCompare(b.le)).map((o) => vueDe(o, c));
   const vus = new Set(f.vus?.[qui8(moi)] ?? []);
   const cartes = (f.cartes ?? [])
+    .filter((x) => x.genre !== "rallume")
     .map((x): CarteVue | null => {
       const o = objets.find((y) => y.id === x.objet);
       return o ? { id: x.id, genre: x.genre, le: x.le, ...(x.n != null ? { n: x.n } : {}), objet: o, nouvelle: !vus.has(x.id) } : null;
     })
     .filter((x): x is CarteVue => Boolean(x));
-  return { objets, cartes, prenomAutre };
+  const rallumes = (f.cartes ?? []).filter((x) => x.genre === "rallume").map((x) => ({ id: x.id, le: x.le, nouvelle: !vus.has(x.id) }));
+  return { objets, cartes, rallumes, prenomAutre };
 }
 
 // ─── dans la scène ─────────────────────────────────────────────────────────────────────────────────
@@ -168,12 +213,26 @@ function aLire(f: FicheEtagere, noms: { ts: number }[], maintenant: number): boo
  */
 export async function etagereDansLaScene(supabase: Supabase, moi: Habitant, h: string, pair: string, noms: { ts: number }[]): Promise<{ scene?: EtagereScene; aNoter: boolean }> {
   if (!etagereAllumee()) return { aNoter: false };
-  const f = await aJour(supabase, pair, await lireEtagere(supabase, pair));
-  const { objets, cartes } = await objetsVus(supabase, f, moi.id, h);
+  const f = await aJour(supabase, pair, await lireEtagere(supabase, pair), noms);
+  const { objets, cartes, rallumes, prenomAutre } = await objetsVus(supabase, f, moi.id, h);
   const vus = new Set(f.vus?.[qui8(moi.id)] ?? []);
+  // 🕸️ (lot E3) l'état de leur relation ; la poussière : ce que sa figurine lui dit, à lui seul
+  const maintenant = Date.now();
+  const dernier = noms.length ? noms[noms.length - 1].ts : 0;
+  const etat = etatEtagere({ dernier, messages: noms.length, objets: objets.length, maintenant });
+  const jours = joursSansUnMot(dernier, maintenant);
   return {
-    scene: { objets, nouveaux: objets.filter((o) => !vus.has(o.id)).map((o) => o.id), cartes, tenues: f.tenues ?? 0, ...(f.pause ? { pause: { moi: f.pause.par8 === qui8(moi.id) } } : {}) },
-    aNoter: aLire(f, noms, Date.now()),
+    scene: {
+      objets,
+      nouveaux: objets.filter((o) => !vus.has(o.id)).map((o) => o.id),
+      cartes,
+      tenues: f.tenues ?? 0,
+      ...(f.pause ? { pause: { moi: f.pause.par8 === qui8(moi.id) } } : {}),
+      ...(etat ? { etat } : {}),
+      ...(etat === "poussiere" ? { poussiere: { jours, ...carteDePoussiere(f.objets, qui8(moi.id), prenomAutre, jours, jourParis()) } } : {}),
+      ...(rallumes.length ? { rallumes } : {}),
+    },
+    aNoter: aLire(f, noms, maintenant),
   };
 }
 
@@ -276,6 +335,9 @@ export async function preparerNotes(supabase: Supabase, a: string, b: string): P
     const i = appliquerIssues(g.objets, x.issues ?? [], { aujourdhui: jour, le, par8: "ia" });
     const r = ranger(i.objets, x.proposes ?? [], { aujourdhui: jour, le, nouvelId: () => randomUUID().replace(/-/g, "").slice(0, 12) });
     await ecrireEtagere(supabase, pair, { ...g, objets: r.objets, cartes: [...(g.cartes ?? []), ...i.cartes].slice(-ETAGERE_E2.cartes), lu: Math.max(g.lu, fin), verrou: 0, ...(x.compte ? { appels: { jour, n: appels + 1 } } : {}) });
+    // 📊 (la mesure) les souvenirs notés ; une paire active de plus (son premier passage du jour)
+    await noterStat(supabase, "notes", r.neufs.length);
+    if (x.compte && !appels) await noterStat(supabase, "paires");
     return r.neufs.length + i.cartes.length;
   };
   const [pa, pb] = await Promise.all([parlePourLui(supabase, a), parlePourLui(supabase, b)]);
@@ -326,6 +388,10 @@ export async function preparerNotes(supabase: Supabase, a: string, b: string): P
  */
 export async function noterMesConversations(supabase: Supabase, moi: Habitant, max = 6): Promise<number> {
   if (!etagereAllumee() || !iaBranchee()) return 0;
+  // (la liste se recharge souvent : un tour toutes les trois minutes au plus)
+  const tour = await lireJson<{ le?: number }>(supabase, `${moi.id}/etagere-tour.json`);
+  if (Date.now() - (Number(tour.le) || 0) < 3 * 60_000) return 0;
+  await ecrireJson(supabase, `${moi.id}/etagere-tour.json`, { le: Date.now() });
   const miens = [...(await prochesDe(supabase, moi.id))].filter((h) => h !== moi.id).slice(0, 60);
   const aFaire: string[] = [];
   for (const h of miens) {
@@ -345,9 +411,11 @@ export async function etagereAvec(supabase: Supabase, moi: Habitant, cle: unknow
   if (!etagereAllumee()) return { error: "L’étagère n’est pas ouverte.", statut: 404 };
   const q = await avecQui(supabase, moi, cle);
   if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
-  const [f0, lui] = await Promise.all([lireEtagere(supabase, q.pair), figurineVue(supabase, q.h, false)]);
-  const f = await aJour(supabase, q.pair, f0);
+  const [f0, lui, noms] = await Promise.all([lireEtagere(supabase, q.pair), figurineVue(supabase, q.h, false), nomsDuFil(supabase, q.pair)]);
+  const f = await aJour(supabase, q.pair, f0, noms);
   const { objets } = await objetsVus(supabase, f, moi.id, q.h);
+  const dernier = noms.length ? noms[noms.length - 1].ts : 0;
+  const etat = etatEtagere({ dernier, messages: noms.length, objets: objets.length, maintenant: Date.now() });
   return {
     etagere: {
       prenom: lui?.prenom || "Ton proche",
@@ -355,6 +423,7 @@ export async function etagereAvec(supabase: Supabase, moi: Habitant, cle: unknow
       objets,
       tenues: f.tenues ?? 0,
       pause: f.pause ? { moi: f.pause.par8 === qui8(moi.id) } : null,
+      ...(etat ? { etat, phraseEtat: phraseEtat(etat, { jours: joursSansUnMot(dernier, Date.now()), surSept: joursSurSept(noms.map((n) => n.ts), jourParis()) }) } : {}),
     },
   };
 }
@@ -393,6 +462,7 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
   }
   const o = f.objets.find((x) => x.id === s(p.id) && visible(x));
   if (!o) return { error: "Ce souvenir n’est plus sur votre étagère.", statut: 404 };
+  if (p.action === "retirer") void noterStat(supabase, "retires").catch(() => undefined);
   if (p.action === "retirer") return ecrire({ ...f, objets: f.objets.map((x) => (x === o ? pierreTombale(x, moi8, le) : x)), cartes: (f.cartes ?? []).filter((c) => c.objet !== o.id) });
   // 🏆 celui que ça concerne le dit lui-même, son jour arrivé
   if (p.action === "reussi") {
@@ -405,6 +475,7 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
   if (p.action === "tenue") {
     if (o.genre !== "promesse" || (o.etat !== "actif" && o.etat !== "sommeil")) return { error: "Cette promesse est déjà tenue.", statut: 400 };
     const tenues = (f.tenues ?? 0) + 1;
+    void noterStat(supabase, "tenues").catch(() => undefined);
     return ecrire({ ...f, tenues, objets: f.objets.map((x) => (x === o ? { ...x, etat: "tenue" as const, change: { le, par8: moi8 } } : x)), cartes: [...(f.cartes ?? []), { id: `t-${o.id}-${Date.now().toString(36)}`, genre: "tenue" as const, objet: o.id, le, n: tenues }].slice(-ETAGERE_E2.cartes) });
   }
   if (p.action === "annuler-tenue") {
@@ -416,6 +487,7 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
     const e = quand ? ecartJours(jourParis(), quand) : -1;
     if (!quand || e < 0 || e > ETAGERE.joursMax) return { error: "Choisis un jour à venir (dans l’année).", statut: 400 };
     if (!(o.genre === "date" || o.genre === "promesse") || o.etat !== "actif") return { error: "Ce souvenir n’a pas de date.", statut: 400 };
+    void noterStat(supabase, "dates").catch(() => undefined);
     return ecrire({ ...f, objets: f.objets.map((x) => (x === o ? { ...x, quand, ditQuand: undefined, change: { le, par8: moi8 } } : x)) });
   }
   return { error: "Demande incomplète.", statut: 400 };
@@ -479,6 +551,7 @@ async function rappelsDuJour(supabase: Supabase, moi: string): Promise<RappelGar
   if (g.jour === jour && Array.isArray(g.liste)) return g.liste;
   const liste = await calculerRappels(supabase, moi);
   await ecrireJson(supabase, cheminRappels(moi), { jour, liste });
+  await noterStat(supabase, "rappels", liste.filter((x) => x.cas !== "encourage").length);
   return liste;
 }
 /** Il a envoyé un message à cette personne aujourd'hui (le rappel s'efface : « ✓ Envoyé à Léa »). */
@@ -495,13 +568,22 @@ export async function mesRappels(supabase: Supabase, moi: Habitant): Promise<Rap
   if (!l.length) return [];
   // (c'est SA figurine qui le lui rappelle : la maquette)
   const mienne = (await figurineVue(supabase, moi.id, false))?.neutre ?? "";
-  return Promise.all(
+  const vus = await Promise.all(
     l.map(async (x) => {
       const { h, ...r } = x;
       const fait = r.cas === "encourage" ? false : await luiAEcritAujourdhui(supabase, moi.id, h);
       return { id: r.id, cle: r.cle, prenom: r.prenom, cas: r.cas, texte: r.texte, emoji: r.emoji, meme: r.meme, image: mienne, fait };
     }),
   );
+  // 📊 (la mesure) un rappel suivi d'un message le jour même, compté une fois
+  const g = await lireJson<{ jour?: string; liste?: unknown; suivis?: string[] }>(supabase, cheminRappels(moi.id));
+  const suivis = new Set(g.suivis ?? []);
+  const neufs = vus.filter((r) => r.fait && !suivis.has(r.id)).map((r) => r.id);
+  if (neufs.length && g.jour === jourParis()) {
+    await ecrireJson(supabase, cheminRappels(moi.id), { ...g, suivis: [...suivis, ...neufs] });
+    await noterStat(supabase, "suivis", neufs.length);
+  }
+  return vus;
 }
 
 /** 🔔 Pour l'envoi du matin (`envoyerLesMatins`) : le rappel qui fait le titre de la notification, s'il y en a un. */
@@ -521,12 +603,12 @@ export async function notifDesRappels(supabase: Supabase, h: string): Promise<{ 
  * 📋 LA LIGNE DE CHAQUE PERSONNE DANS « CHEZ MOI » (8.1), ce que l'étagère en dit : un rappel du jour (pas encore
  * suivi d'un message), un souvenir qu'il n'a pas encore vu se poser (trois jours), une promesse en relance.
  */
-export async function lignesEtagere(supabase: Supabase, moi: Habitant, cles: string[]): Promise<Record<string, LigneEtagere>> {
+export async function lignesEtagere(supabase: Supabase, moi: Habitant, cles: string[]): Promise<Record<string, LigneEtagere & { gris?: boolean }>> {
   if (!etagereAllumee()) return {};
   const jour = jourParis();
   const moi8 = qui8(moi.id);
   const rappels = await rappelsDuJour(supabase, moi.id).catch(() => [] as RappelGarde[]);
-  const r: Record<string, LigneEtagere> = {};
+  const r: Record<string, LigneEtagere & { gris?: boolean }> = {};
   await Promise.all(
     cles.slice(0, 60).map(async (cle) => {
       const h = await hDeCle(supabase, cle);
@@ -545,7 +627,27 @@ export async function lignesEtagere(supabase: Supabase, moi: Habitant, cles: str
       const po = c ? objets.find((o) => o.id === c.objet && o.etat === "actif") : undefined;
       const l = ligneEtagere({ rappel, nouveau, relance: po && c ? { objet: po, n: c.n ?? 0 } : null }, moi8);
       if (l) r[cle] = l;
+      else {
+        // 🕸️ (lot E3, le cas 5) la poussière : l'avatar passe en gris
+        const noms = await nomsDuFil(supabase, pair);
+        const dernier = noms.length ? noms[noms.length - 1].ts : 0;
+        if (etatEtagere({ dernier, messages: noms.length, objets: objets.filter(visible).length, maintenant: Date.now() }) === "poussiere") r[cle] = { ...LIGNE_POUSSIERE, gris: true };
+      }
     }),
   );
   return r;
+}
+
+/** 🎁 (lot E3, 7.4) Ce qu'il ou elle aime, pour la feuille « Offrir » d'une visite : deux goûts au plus (entre proches). */
+export async function goutsDe(supabase: Supabase, moi: Habitant, cle: unknown): Promise<{ emoji: string; titre: string }[]> {
+  if (!etagereAllumee()) return [];
+  const q = await avecQui(supabase, moi, cle).catch(() => ({}) as { h?: string; pair?: string });
+  if (!q.h || !q.pair) return [];
+  const f = await lireEtagere(supabase, q.pair);
+  const moi8 = qui8(moi.id);
+  return f.objets
+    .filter((o) => o.genre === "gout" && o.etat === "actif" && o.concerne !== moi8)
+    .sort((a, b) => b.le.localeCompare(a.le))
+    .slice(0, 2)
+    .map((o) => ({ emoji: o.emoji, titre: minuscule(o.titre) }));
 }

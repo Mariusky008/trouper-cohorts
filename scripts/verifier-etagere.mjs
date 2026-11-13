@@ -199,5 +199,44 @@ ok(E.dureeRelance(21) === "Ça fait 3 semaines 👀" && E.dureeRelance(60) === "
 const plusTard = [...E.ENCOURAGEMENTS, ...E.RELANCE_PREMIERE, ...E.RELANCE_SECONDE, E.phraseFierte("Léa"), E.phraseFierte(null), E.phraseTenue(2), ...["epreuve", "anniv", "anniv3", "evenement", "lendemain"].map((c) => E.memeDuRappel(c, "🚗"))];
 ok(plusTard.every((x) => !GENRE.test(x) && !/exemple/i.test(x) && passe(x)), `les phrases d'E2 : sans accord, sans le mot interdit, sans alcool (${plusTard.filter((x) => GENRE.test(x) || !passe(x)).join(" | ") || "aucune"})`);
 
+// ═══ LOT E3 : LA POUSSIÈRE ═══
+const H = Date.parse("2026-11-13T12:00:00Z");
+const etatA = (j, x = {}) => E.etatEtagere({ dernier: H - j * 86_400_000, messages: 8, objets: 2, maintenant: H, ...x });
+ok(etatA(3) === "eclairee" && etatA(4) === "calme" && etatA(9) === "calme" && etatA(10) === "poussiere", "3 jours : éclairée ; 4 à 9 : calme ; 10 : la poussière");
+ok(etatA(30, { messages: 5 }) === null && etatA(30, { objets: 0 }) === null, "un proche tout neuf (moins de six messages), une étagère vide : pas de poussière");
+const jours = ["2026-11-13T09:00:00Z", "2026-11-13T18:00:00Z", "2026-11-12T10:00:00Z", "2026-11-10T10:00:00Z", "2026-11-07T10:00:00Z", "2026-11-06T10:00:00Z"].map(Date.parse);
+ok(E.joursSurSept(jours, AUJ) === 4, "« 4 jours sur 7 » (deux messages le même jour comptent pour un ; le 6 est hors de la semaine)");
+ok(E.phraseEtat("eclairee", { jours: 0, surSept: 5 }) === "✨ Bien éclairée · vous vous êtes parlé 5 jours sur 7" && E.phraseEtat("poussiere", { jours: 12, surSept: 0 }) === "🕸️ Elle prend la poussière · 12 jours sans un mot" && E.phraseEtat("calme", { jours: 6, surSept: 1 }) === "", "l'état, en clair (rien de particulier quand c'est calme)");
+const NINA8 = "cccccccc";
+const avecConcert = [ob({ id: "conc", sorte: "evenement", emoji: "🎧", titre: "Le concert", titreToi: "Ton concert", concerne: NINA8, quand: "2026-11-01", etat: "passe" }), ob({ id: "fr", genre: "gout", emoji: "🍰", titre: "Le fraisier", concerne: NINA8, nuance: "aime" })];
+const cp = E.carteDePoussiere(avecConcert, MOI, "Nina", 12, AUJ);
+ok(cp.texte === "12 jours sans un mot… Votre étagère prend la poussière. Nina avait son concert le 1er novembre 🎧" && cp.bouton === "🎙️ Lui demander comment c’était", `l'accroche : le dernier événement passé (« ${cp.texte} »)`);
+ok(E.carteDePoussiere(avecConcert, NINA8, "Sam", 12, AUJ).texte.endsWith("Tu avais ton concert le 1er novembre 🎧"), "chez Nina, la sienne : « Tu avais ton concert… »");
+ok(E.carteDePoussiere([avecConcert[1]], MOI, "Nina", 12, AUJ).texte.endsWith("Nina adore le fraisier 🍰") && E.carteDePoussiere([avecConcert[1]], MOI, "Nina", 12, AUJ).bouton === "🎙️ Lui faire signe", "sinon un goût : « Nina adore le fraisier 🍰 »");
+ok(E.carteDePoussiere([ob({ id: "c", genre: "blague", emoji: "🦆", titre: "Le canard de Biarritz", concerne: "deux" })], MOI, "Nina", 12, AUJ).texte.endsWith("Et votre blague : le canard de Biarritz 🦆"), "sinon la blague");
+ok(E.carteDePoussiere([], MOI, "Nina", 12, AUJ).texte === "12 jours sans un mot… Votre étagère prend la poussière.", "sinon rien de plus");
+const tsAvant = [1, 2, 3, 4, 5, 6].map((k) => H - (30 - k) * 86_400_000);
+const reprise = H - 2 * 86_400_000;
+const ra = E.rallumages([...tsAvant, reprise], new Set(), H);
+ok(ra.length === 1 && ra[0].le === new Date(reprise).toISOString(), "se rallumer : le premier message après dix jours sans un mot");
+ok(E.rallumages([...tsAvant, reprise], new Set([ra[0].id]), H).length === 0 && E.rallumages([...tsAvant, H - 8 * 86_400_000], new Set(), H).length === 0 && E.rallumages([...tsAvant.slice(0, 4), reprise], new Set(), H).length === 0, "une seule fois ; pas une reprise vieille de plus d'une semaine ; pas un proche tout neuf");
+ok(E.LIGNE_POUSSIERE.txt === "🕸️ Votre étagère prend la poussière" && E.LIGNE_POUSSIERE.rang < 1, "sur sa ligne : « 🕸️ Votre étagère prend la poussière », sous tout le reste");
+ok(E.PHRASES_RALLUME.every((x) => !GENRE.test(x) && passe(x) && !/exemple/i.test(x)), "les phrases du réveil : sans accord, sans le mot interdit");
+
+// ═══ LES IDÉES, LA BLAGUE ═══
+const vusIdees = [
+  { genre: "gout", etat: "actif", pourMoi: false, emoji: "💐", titre: "Les pivoines de Léa", le: "2026-11-02" },
+  { genre: "gout", etat: "actif", pourMoi: true, emoji: "🍕", titre: "Tes pizzas", le: "2026-11-05" },
+  { genre: "gout", etat: "actif", pourMoi: false, emoji: "📖", titre: "Le roman des phares de Léa", le: "2026-11-04" },
+  { genre: "gout", etat: "actif", pourMoi: false, emoji: "🧸", titre: "Les peluches de Léa", le: "2026-10-01" },
+];
+ok(E.idees(vusIdees).map((x) => x.emoji).join("") === "📖💐", "« Offrir » : deux de ses goûts au plus, les plus récents (pas les miens)");
+ok(E.memeDeLaBlague({ titre: "Le canard de Biarritz", emoji: "🦆" }) === "Le canard de Biarritz 🦆", "le mème de leur blague : « Le canard de Biarritz 🦆 »");
+
+// ═══ CE QU'ON MESURE ═══
+ok(!E.alertesEtagere({ ...E.STATS_VIDES, notes: 4, paires: 3, retires: 0, rappels: 10, suivis: 5 }).length, "une journée normale : pas d'alerte");
+const al = E.alertesEtagere({ ...E.STATS_VIDES, notes: 10, paires: 2, retires: 3, dates: 2, rappels: 10, suivis: 1 });
+ok(al.length === 4, `les quatre seuils : trop de souvenirs, trop de retirés, trop de dates changées, des rappels pas suivis (${al.length})`);
+
 console.log(echecs ? `\n${echecs} échec(s)` : "\nles règles de l'étagère tiennent ✓");
 process.exit(echecs ? 1 : 0);
