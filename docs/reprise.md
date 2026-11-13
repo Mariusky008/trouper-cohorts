@@ -116,6 +116,22 @@ Deux lots validés par le propriétaire (feuille de route « Univers », lot R, 
   corps), les panneaux, et l'aparté des deux figurines (IA, visible des deux, sans demande d'accord). **Fusionné**
   (#143 ; `docs/figurines.md`, 9.0 novatricies 🎭).
 
+## 0 quinquies. Les tutos : la bienvenue refaite pour l'univers (13 novembre 2026)
+
+Le propriétaire : « le concept a beaucoup évolué » (ClikMe, c'est un peu comme WhatsApp, mais ça crée des univers
+communs entre les gens qui se parlent). **La bienvenue est refaite** (`docs/figurines.md`, 9.0 duoquinquagies 👋) : une
+conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses six bulles validées et enregistrées.
+
+- **Pour la session de « l'univers qui grandit »** : la scène de la bienvenue est dessinée en attendant vos pièces. Le
+  propriétaire veut y voir son univers de départ (une pièce comme son univers d'automne), puis la maison qui s'agrandit
+  dans tous les sens, avec de nouvelles pièces dans le même style (le bureau avec les photos, les vinyles avec la
+  chanson préférée, la télé avec le film préféré) ; et, pour l'univers partagé, l'univers de départ et les étagères qui
+  se remplissent. Ses mots exacts : 9.0 duoquinquagies. Quand les pièces existeront, elles remplaceront la scène
+  (`Scene`, dans `app/collection/bienvenue.tsx`).
+- **La suite** : un tuto par fonctionnalité (« ensuite, on fera des tutos pour chaque feature ») ; aujourd'hui, le logo
+  ouvre encore la visite d'avant (`tuto.tsx` : Créer, Découvrir, Autour, Mes mèmes, Proches, Moi), qui ne suit plus le
+  menu à trois.
+
 ## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
 
 Le propriétaire cherchait « l'utilité » de l'appli, ce qui fera revenir. Sa réponse, sur une maquette : **oui, on la

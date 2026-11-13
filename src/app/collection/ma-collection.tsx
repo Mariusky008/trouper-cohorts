@@ -52,7 +52,8 @@ import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } fro
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
 import { STYLES_ETAGERE } from "./etagere";
-import { BienvenueTuto, PageEnVisite, STYLES_TUTO, VisiteTuto, ecrireTuto, lireTuto, pageTuto, type PageTuto } from "./tuto";
+import { PageEnVisite, STYLES_TUTO, VisiteTuto, ecrireTuto, lireTuto, pageTuto, type PageTuto } from "./tuto";
+import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
 import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
@@ -406,12 +407,15 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
           ouvrirConversation(cle);
         }}
       />
+      {/* 👋 LA BIENVENUE (`bienvenue.tsx`, refaite pour l'univers le 13 novembre 2026) ; « Je crée ma figurine » : l'atelier
+          du nouveau style, tout droit (l'interrupteur « Univers pour tous » allumé), sinon la page de sa figurine */}
       {bienvenue && (
         <BienvenueTuto
           onFini={finirBienvenue}
           onCreer={() => {
             finirBienvenue();
-            allerA("creer");
+            if (univers) window.location.assign("/univers/figurine");
+            else allerA("creer");
           }}
         />
       )}
@@ -441,7 +445,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE}</style>
     </main>
   );
 }

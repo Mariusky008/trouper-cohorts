@@ -39,11 +39,14 @@ const voix = (cle: string, fichier: string) => [cle, `/collection/pablito/${fich
 /**
  * Les bulles du tuto déjà enregistrées (`public/collection/pablito/<nom>.mp3`), reçues du patron le 9 novembre 2026 :
  * toutes (la dernière, celle de la visite, « Je te fais visiter ? », dans l'après-midi). Le 10 novembre 2026, la dernière
- * bulle de « Créer », réécrite pour l'écran unique (`tuto-creer-4c`).
+ * bulle de « Créer », réécrite pour l'écran unique (`tuto-creer-4c`). Le 13 novembre 2026, la bienvenue refaite pour
+ * l'univers (`app/collection/bienvenue.tsx`) : sa première bulle reste `tuto-bienvenue-1` ; les cinq suivantes,
+ * `tuto-univers-2` à `tuto-univers-6`, reçues le jour même (les anciennes bulles 2 et 3 sont parties avec leur texte).
  */
 const enSerie = (page: string, n: number) => Array.from({ length: n }, (_, k) => `tuto-${page}-${k + 1}`);
 export const TUTO_ENREGISTRES = [
-  ...enSerie("bienvenue", 3),
+  "tuto-bienvenue-1",
+  ...enSerie("univers", 6).slice(1),
   "tuto-visite-1",
   ...enSerie("creer", 4),
   "tuto-creer-4c",

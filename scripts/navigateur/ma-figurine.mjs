@@ -73,22 +73,22 @@ const api = (p, corps) =>
 // ═══ HUGO (une figurine du mois) : L’ACCUEIL DE PABLITO, LE MENU EN BAS, « CRÉE TA FIGURINE » ═══
 const hugo = await tel(HUGO);
 await hugo.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await hugo.waitForSelector(".tu .tu-carte", { timeout: 60000 });
+await hugo.waitForSelector(".tu.bv", { timeout: 60000 });
 const menu = await texte(hugo, ".mc-nav");
 ok((await hugo.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && !/Ce mois-ci|Album|Rencontres|Moi/.test(menu), `le menu en bas : Découvrir · Autour · Créer · Mes mèmes · Proches (${menu})`);
 ok((await hugo.locator(".mc-barre button.mc-moi").count()) === 1, "« Moi » est en haut, sous son prénom");
-// 👋 LA BIENVENUE DU TUTO (9 novembre 2026, à la place de l'ancienne fenêtre de Pablito) : ses trois bulles, puis « Je crée ma figurine »
-// (la bulle s'écrit lettre à lettre : on attend qu'elle ait dit son nom)
-await hugo.waitForFunction(() => /Pablito/i.test(document.querySelector(".tu-texte")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => null);
-ok((await hugo.locator(".tu .tu-pablito .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, ".tu-texte")), "Pablito, la figurine du patron de ClikMe, lui dit bonjour");
+// 👋 LA BIENVENUE (13 novembre 2026, refaite pour l'univers, `bienvenue.tsx`) : la conversation avec Pablito — on touche
+// sa question, il répond, six bulles — puis « Je crée ma figurine » (la bulle s'écrit lettre à lettre : on attend qu'elle
+// soit dite)
+await hugo.waitForSelector('.tu.bv[data-dit="oui"]', { timeout: 20000 }).catch(() => null);
+ok((await hugo.locator(".tu.bv .bv-pablito .mq").count()) === 1 && /Pablito/i.test(await texte(hugo, ".bv-msg.pablito .bv-texte")), "Pablito, la figurine du patron de ClikMe, lui dit bonjour");
 await hugo.screenshot({ path: `${D}/ma-figurine-0-pablito.png` });
-for (let k = 0; k < 2; k++) {
-  // (la bulle finit de s'écrire, puis « Suivant »)
-  await hugo.waitForFunction(() => !document.querySelector(".tu .tu-curseur"), null, { timeout: 15000 });
-  await hugo.locator(".tu .tu-suivant").click();
+for (let k = 1; k < 6; k++) {
+  await hugo.locator('.tu.bv[data-dit="oui"] .bv-repondre').click({ timeout: 20000 });
+  await hugo.waitForSelector(`.tu.bv[data-rang="${k + 1}"]`, { timeout: 10000 });
 }
-await hugo.waitForSelector(".tu .tu-creer", { timeout: 10000 });
-ok((await texte(hugo, ".tu-texte")).includes("Touche ici") && (await hugo.locator('.tu[data-lumiere="oui"]').count()) === 1, "sa troisième bulle montre le logo (« Touche ici, quand tu veux »)");
+await hugo.waitForSelector(".tu .tu-creer", { timeout: 20000 });
+ok((await texte(hugo, ".tu .bv-indice")).includes("logo"), "à la fin : « Je crée ma figurine », et le logo pour la suite");
 await hugo.locator(".tu .tu-creer").click();
 ok((await hugo.locator(".tu").count()) === 0, "« Je crée ma figurine » ferme la bienvenue");
 ok((await hugo.locator(".pb-voile, .mqd-revoir").count()) === 0, "plus aucune fenêtre de Pablito dans la page, plus de petit bouton");

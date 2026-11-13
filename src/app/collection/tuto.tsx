@@ -7,9 +7,9 @@
  * reste : si tu as besoin de plus d'infos, tu pourras toujours cliquer ici ». La maquette et chaque texte sont validés
  * le même jour (le canvas « Le tuto »).
  *
- *   · LA BIENVENUE : à la toute première arrivée (pas encore de figurine), une seule fois sur ce téléphone, trois
- *     bulles ; à la troisième, la lumière se pose sur le logo (« Touche ici, quand tu veux ») ; puis « Je crée ma
- *     figurine ». Les pages n'ouvrent plus aucune fenêtre d'elles-mêmes.
+ *   · LA BIENVENUE : à la toute première arrivée (pas encore de figurine), une seule fois sur ce téléphone — refaite
+ *     pour l'univers le 13 novembre 2026 : une conversation avec Pablito, et un univers qui grandit au-dessus
+ *     (`bienvenue.tsx`) ; puis « Je crée ma figurine ». Les pages n'ouvrent plus aucune fenêtre d'elles-mêmes.
  *   · LA VISITE (un toucher sur le logo) : une carte par page, « Vue » une fois visitée ; un point rose sur le logo
  *     jusqu'à la première visite.
  *   · UNE PAGE : Pablito la montre SUR LA VRAIE PAGE — l'écran s'assombrit, sauf ce dont il parle ; sa voix (les
@@ -29,12 +29,6 @@ export type VueTuto = "figurine" | "decouvrir" | "autour" | "memes" | "proches" 
  * pas encore enregistrée : elle s'écrit alors sans voix) */
 export type EtapeTuto = { t: string; v: Visage; cible?: string[]; sinon?: string[]; son?: string };
 
-/** 👋 La bienvenue : trois bulles, la dernière montre le logo. */
-export const BIENVENUE: EtapeTuto[] = [
-  { t: "Salut ! Moi, c’est Pablito, le patron de ClikMe. Bienvenue !", v: "joie" },
-  { t: "Ici, tu fabriques ta figurine à partir d’un selfie, et c’est elle qui parle à ta place. C’est gratuit, et ça prend une minute.", v: "euphorie" },
-  { t: "Besoin de plus d’infos sur les fonctionnalités ? Touche ici, quand tu veux : je te fais visiter.", v: "joie", cible: [".mc-barre .mc-logo"] },
-];
 /** Sa bulle, en haut de la visite. */
 export const VISITE_DIT = "Je te fais visiter ? Touche une page : je te la montre sur place.";
 
@@ -310,32 +304,6 @@ function Pas({
         </div>
       </div>
     </div>
-  );
-}
-
-/** 👋 LA BIENVENUE, à la toute première arrivée : trois bulles, la lumière sur le logo, puis « Je crée ma figurine ». */
-export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer: () => void }) {
-  const [i, setI] = useState(0);
-  return (
-    <Pas
-      key={i}
-      etape={BIENVENUE[i]}
-      son={sonDe(`tuto-bienvenue-${i + 1}`)}
-      titre=""
-      rang={i + 1}
-      total={BIENVENUE.length}
-      dernier={i === BIENVENUE.length - 1}
-      grand
-      onSuite={() => setI((x) => Math.min(BIENVENUE.length - 1, x + 1))}
-      onPasser={onFini}
-      fin={
-        <span className="tu-fin">
-          <button type="button" className="tu-suivant tu-creer" onClick={onCreer}>
-            📸 Je crée ma figurine
-          </button>
-        </span>
-      }
-    />
   );
 }
 

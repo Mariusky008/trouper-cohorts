@@ -1,8 +1,10 @@
 // 🧭 LE TUTO DE CLIKME (9 novembre 2026, `app/collection/tuto.tsx`) — contre le faux Supabase, jamais la vraie base.
 //
-// Un nouveau venu : Pablito lui dit bienvenue, une seule fois (trois bulles, sa voix enregistrée ; la troisième met la
-// lumière sur le logo : « Touche ici, quand tu veux »), puis « Je crée ma figurine ». Les pages n'ouvrent plus aucune
-// fenêtre d'elles-mêmes. Inès, qui a sa figurine : pas de bienvenue ; un point rose sur le logo ; le logo ouvre la
+// Un nouveau venu : la bienvenue refaite pour l'univers (13 novembre 2026, `app/collection/bienvenue.tsx`), une seule
+// fois — une conversation avec Pablito, on touche sa question, il répond (six bulles, ses six voix enregistrées), et
+// au-dessus l'univers grandit (l'univers commun, l'étagère qui se remplit, les endroits et la porte, Léa qui frappe, le
+// chemin) ; un toucher sur la conversation écrit la bulle d'un coup ; puis « Je crée ma figurine ». Les pages n'ouvrent
+// plus aucune fenêtre d'elles-mêmes. Inès, qui a sa figurine : pas de bienvenue ; un point rose sur le logo ; le logo ouvre la
 // visite (six pages) ; « Créer » : Pablito la montre sur la vraie page, la lumière suit ses trois étapes (9 novembre
 // 2026) — sa phrase, les tons et les trois façons, « son visage moi-même », sa voix et « Créer mon mème » ; « La suite : Découvrir » ; « Échap » arrête ; « Créer » est « Vue » ; « Retour »
 // pendant une page arrête la visite. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
@@ -61,28 +63,76 @@ const eclaire = async (p, sel) => {
   }, sel);
 };
 
-// ═══ UN NOUVEAU VENU : LA BIENVENUE ═══
+// ═══ UN NOUVEAU VENU : LA BIENVENUE (la conversation avec Pablito, l'univers qui grandit) ═══
+const BULLES = [
+  ["Salut ! Moi, c’est Pablito, le patron de ClikMe. Bienvenue !", "tuto-bienvenue-1", "C’est quoi, ClikMe ?"],
+  ["ClikMe, c’est un peu comme WhatsApp : tu parles avec tes proches. Mais ici, vos conversations créent un univers commun entre vous.", "tuto-univers-2", "C’est-à-dire ?"],
+  ["Chaque personne a sa figurine, faite à partir de son selfie. Au fil de vos conversations, elle range tout : les souvenirs, les rappels, les infos.", "tuto-univers-3", "Et quoi d’autre ?"],
+  ["Ton univers s’agrandit à chaque conversation. De nouveaux endroits apparaissent, certains secrets, avec des portes que tu n’ouvres qu’à qui tu veux.", "tuto-univers-4", "Et ensuite ?"],
+  ["Petit à petit, il te définit mieux que tu ne pourrais l’imaginer. Tes proches peuvent le visiter… et toi, visiter les leurs.", "tuto-univers-5", "Ça commence comment ?"],
+  ["Par toi ! Un selfie pour ta figurine, puis on discute cinq minutes, et je dessine les premiers endroits de ton univers.", "tuto-univers-6", null],
+];
+/** Sa bulle est dite (écrite en entier) ; son texte. */
+const dite = async (p) => {
+  await p.waitForSelector('.tu.bv[data-dit="oui"]', { timeout: 20000 });
+  return (await p.locator(".bv-msg.pablito .bv-texte").last().innerText()).replace(/\s+/g, " ").trim();
+};
+/** Ce qu'on voit d'un élément de la scène (son opacité, une fois posée). */
+const opacite = (p, sel) => p.evaluate((s) => Number(getComputedStyle(document.querySelector(s)).opacity), sel);
 const neuf = await tel();
 await neuf.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
-await neuf.waitForSelector(".tu .tu-carte", { timeout: 60000 });
-ok((await texte(neuf, ".tu-texte")).length > 0 && (await neuf.locator(".tu-carte.grand .tu-pablito .mq").count()) === 1, "à la première arrivée : Pablito, en grand, dit bonjour");
-await ecrite(neuf);
-ok((await texte(neuf, ".tu-texte")) === "Salut ! Moi, c’est Pablito, le patron de ClikMe. Bienvenue !" && (await texte(neuf, ".tu-qui")).includes("1 / 3"), `la bulle 1, sur 3 (${await texte(neuf, ".tu-texte")})`);
-ok(neuf.sons.includes("/collection/pablito/tuto-bienvenue-1.mp3"), `sa voix enregistrée part avec la bulle (${neuf.sons.join(", ")})`);
+await neuf.waitForSelector(".tu.bv", { timeout: 60000 });
+ok((await neuf.locator(".tu.bv .bv-ecrit").count()) === 1, "à la première arrivée : « Pablito écrit… », comme dans une conversation");
+ok((await neuf.locator(".tu.bv .bv-pablito .mq").count()) === 1 && (await neuf.locator(".tu.bv .bv-points i").count()) === 6, "Pablito, en grand, salue ; six points pour six bulles");
+let dit = await dite(neuf);
+ok(dit === BULLES[0][0] && (await neuf.locator(".bv-msg.pablito .bv-qui").innerText()) === "Pablito", `la bulle 1, signée Pablito (${dit})`);
+ok(neuf.sons.includes(`/collection/pablito/${BULLES[0][1]}.mp3`), `sa voix enregistrée part avec la bulle (${neuf.sons.join(", ")})`);
 ok((await neuf.locator(".pb-voile, .mqd-revoir").count()) === 0, "plus aucune ancienne fenêtre de Pablito");
 await neuf.screenshot({ path: `${D}/tuto-1-bienvenue.png` });
-await suivant(neuf);
-await ecrite(neuf);
-ok((await texte(neuf, ".tu-texte")).startsWith("Ici, tu fabriques ta figurine à partir d’un selfie") && neuf.sons.includes("/collection/pablito/tuto-bienvenue-2.mp3"), "la bulle 2 : sa figurine, d'après un selfie (et sa voix)");
-await suivant(neuf);
-await ecrite(neuf);
-const logo = await eclaire(neuf, ".mc-barre .mc-logo");
-ok(
-  (await texte(neuf, ".tu-texte")) === "Besoin de plus d’infos sur les fonctionnalités ? Touche ici, quand tu veux : je te fais visiter." && logo.ok && logo.serre && neuf.sons.includes("/collection/pablito/tuto-bienvenue-3.mp3"),
-  `la bulle 3 : la lumière sur le logo, « Touche ici, quand tu veux » (lumière ${logo.l}, logo ${logo.e})`,
-);
-ok((await neuf.locator(".tu .tu-passer").count()) === 0 && (await texte(neuf, ".tu .tu-creer")).includes("Je crée ma figurine"), "à la fin : « Je crée ma figurine »");
-await neuf.screenshot({ path: `${D}/tuto-2-le-logo.png` });
+for (let k = 1; k < BULLES.length; k++) {
+  const question = BULLES[k - 1][2];
+  ok((await texte(neuf, ".tu.bv .bv-repondre")) === question, `sa réponse à toucher : « ${question} »`);
+  await neuf.locator(".tu.bv .bv-repondre").click();
+  await neuf.waitForSelector(`.tu.bv[data-rang="${k + 1}"].d${k + 1}`, { timeout: 10000 });
+  ok((await neuf.locator(".bv-msg.moi").count()) === k && (await neuf.locator(".bv-msg.moi .bv-bulle").last().innerText()).includes(question), `sa question part dans la conversation, comme un message (${k})`);
+  if (k === 1) {
+    // (un toucher sur la conversation pendant qu'il écrit : la bulle s'écrit d'un coup)
+    await neuf.waitForSelector(".bv-curseur", { timeout: 10000 });
+    await neuf.locator(".tu.bv .bv-fil").click({ position: { x: 20, y: 20 } });
+    ok((await neuf.locator('.tu.bv[data-dit="oui"]').count()) === 1, "un toucher sur la conversation : la bulle s'écrit d'un coup");
+  }
+  dit = await dite(neuf);
+  ok(dit === BULLES[k][0] && neuf.sons.includes(`/collection/pablito/${BULLES[k][1]}.mp3`), `la bulle ${k + 1}, et sa voix (${BULLES[k][1]}) : ${dit.slice(0, 50)}…`);
+  if (k === 1) {
+    await neuf.waitForTimeout(1800);
+    ok((await opacite(neuf, ".bv-ile")) === 1 && (await opacite(neuf, ".bv-dit.lea")) === 1 && (await opacite(neuf, ".bv-pablito")) === 0, "l'univers commun apparaît entre les deux figurines, qui se parlent");
+  }
+  if (k === 2) {
+    await neuf.waitForTimeout(3200);
+    ok((await opacite(neuf, ".bv-etagere")) === 1 && (await opacite(neuf, ".bv-obj.v1")) === 1 && (await opacite(neuf, ".bv-obj.v2")) === 1 && (await texte(neuf, ".bv-etiquettes")).includes("Jeudi : ciné"), "l'étagère : un souvenir, puis un rappel et une info venus de la conversation");
+    await neuf.screenshot({ path: `${D}/tuto-2-etagere.png` });
+  }
+  if (k === 3) {
+    await neuf.waitForTimeout(3000);
+    const lieux = await neuf.locator(".bv-lieu").evaluateAll((l) => l.filter((x) => Number(getComputedStyle(x).opacity) > 0.9).map((x) => x.innerText.replace(/\s+/g, " ").trim()));
+    ok(lieux.length === 6 && lieux.some((x) => x.includes("Un endroit secret")) && lieux.some((x) => x.includes("Ta porte")), `l'univers s'agrandit : six endroits, dont un secret et ta porte (${lieux.join(" · ")})`);
+    const avant = await texte(neuf, ".bv-acces span");
+    await neuf.waitForTimeout(1600);
+    const apres = await texte(neuf, ".bv-acces span");
+    ok(avant !== apres && /Tout le monde|Mes proches|Sur demande|Rien que moi/.test(apres), `qui peut entrer : les réglages de la porte défilent (${avant} → ${apres})`);
+    await neuf.screenshot({ path: `${D}/tuto-3-univers.png` });
+  }
+  if (k === 4) {
+    await neuf.waitForTimeout(2200);
+    ok((await texte(neuf, ".bv-toc")).includes("Léa frappe à ta porte") && (await opacite(neuf, ".bv-lieu.l-concert")) === 1 && (await opacite(neuf, ".bv-acces")) === 0, "Léa frappe à ta porte ; un nouvel endroit apparaît");
+  }
+}
+await neuf.waitForTimeout(2000);
+ok((await opacite(neuf, ".bv-chemin .bv-etape:last-child")) === 1 && (await texte(neuf, ".bv-chemin")).includes("Ton selfie"), "le chemin : ton selfie, ta figurine, 5 minutes avec Pablito, ton univers");
+ok((await neuf.locator(".tu .tu-passer").count()) === 0 && (await texte(neuf, ".tu .tu-creer")).includes("Je crée ma figurine") && (await neuf.locator(".tu .bv-plus-tard").count()) === 1, "à la fin : « Je crée ma figurine », ou « Plus tard »");
+ok((await texte(neuf, ".tu .bv-indice")).includes("Touche le logo ClikMe"), "et le logo pour la suite (« Touche le logo ClikMe, en haut »)");
+ok((await neuf.evaluate(() => { const f = document.querySelector(".bv-fil"); return f.scrollHeight - f.scrollTop - f.clientHeight; })) <= 2, "la conversation reste en bas : sa dernière bulle se lit");
+await neuf.screenshot({ path: `${D}/tuto-4-la-fin.png` });
 await neuf.locator(".tu .tu-creer").click();
 await neuf.waitForTimeout(600);
 ok((await neuf.locator(".tu").count()) === 0 && neuf.url().endsWith("#creer") && (await neuf.locator("#creer.tf-quete").count()) === 1, "« Je crée ma figurine » : la bienvenue s'en va, la page de sa figurine");
