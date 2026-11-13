@@ -748,6 +748,9 @@ async function apercuMeme(supabase: Supabase, id: string, cache: Cache, ligne?: 
   };
 }
 
+/** 🎭 Un mème en vignette, seul (le mème qu'il envoie à un proche, dans leur conversation : `memes-proches-serveur.ts`). */
+export const apercuDUnMeme = (supabase: Supabase, id: string) => apercuMeme(supabase, id, new Map());
+
 /**
  * 📥 « MES MÈMES » : les siens (les plus récents), avec leurs vues (`clik_meme_evenement` ; sans la table, ses écoutes)
  * et leurs réponses ; les réponses en duo qu'on lui a faites ; et ceux qu'il a reçus (`recus` : les numéros gardés sur

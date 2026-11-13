@@ -59,7 +59,8 @@ export type ProcheVivant = {
   la: boolean;
   nonLus: number;
   lien: LienProche;
-  dernier?: { texte: string; le: string; moi: boolean };
+  /** son dernier message (`meme` : c'était un mème, lot 4) */
+  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean };
   venu?: boolean;
   humeur?: Sentiment;
   imageHumeur?: string;
@@ -76,7 +77,9 @@ export type PlaceChezMoi = { x: number; y: number; echelle: number };
 /** `figurine` : sa figurine relevée sur son image vedette (son milieu, le bas de son fauteuil, sa hauteur, lot 4). */
 export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi; figurine?: { x: number; y: number; hauteur: number } };
 // (`FigurineVue.chez` : seulement la sienne, pour la vidéo qu'il envoie par WhatsApp — « chez celui qui envoie », lot 5b)
-export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi };
+/** 🎭 Un mème envoyé dans leur conversation (la nouvelle interface, lot 4, `memes-proches-serveur.ts`). */
+export type MemeFil = { id: string; moi: boolean; le: string; image: string; texte?: string; video?: string; lien: string; nouveau?: boolean };
+export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[] };
 
 export const cleValide = (x: unknown): string | null => (typeof x === "string" && /^[a-f0-9]{16}$/.test(x) ? x : null);
 export const texteDuMessage = (r: readonly Replique[]) =>

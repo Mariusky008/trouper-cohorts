@@ -18,6 +18,8 @@
 // POST { action: "prepare", cle, oui }  → { ok } : 🎭 il prépare un message (sa figurine se penche chez l'autre)
 // POST { action: "geste", cle, type: "panneau"|"reaction", quoi, message? } → { geste } : 🪧 un panneau, 👏 une réaction
 // POST { action: "aparte-effacer", cle, id } → { ok } : 🎭 il efface un aparté de leurs figurines (pour les deux)
+// POST { action: "meme", cle, id }      → { ok } : 🎭 il envoie son mème (fait dans le studio) dans leur conversation
+//                                          (la nouvelle interface, lot 4, `memes-proches-serveur.ts`) ; l'autre est prévenu
 // (GET ?vivant= écrit aussi, après la réponse, l'aparté d'un échange qui vient de finir — lot R4b)
 // 📲 L'ÉTAPE 5, PAR WHATSAPP :
 // POST { action: "lien-creer", son, duree, repliques, pour? } → { id, url, reste } : son message, en lien (`/t/<id>`),
@@ -35,6 +37,7 @@ import {
   creerLien,
   envoyerParole,
   filAvec,
+  hDeCle,
   maCle,
   maFigurineVue,
   maPresence,
@@ -42,8 +45,10 @@ import {
   mesProchesVivants,
   prevenirDeLaParole,
   repondreAuLien,
+  seParlent,
   signalerParole,
 } from "@/lib/direct/talkie-serveur";
+import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
 export const dynamic = "force-dynamic";
@@ -131,6 +136,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, geste: r.geste }, { headers: sansCache });
   }
   if (p?.action === "presence") return NextResponse.json({ ok: true, ...(await choisirPresence(supabase, moi, p.oui)) }, { headers: sansCache });
+  if (p?.action === "meme") {
+    const h = await hDeCle(supabase, p.cle);
+    const r = !h ? { error: "Ce proche n’existe pas.", statut: 404 } : !(await seParlent(supabase, moi.id, h)) ? { error: "Vous pourrez vous parler quand vous vous serez ajoutés tous les deux.", statut: 403 } : await envoyerMemeAuProche(supabase, moi, h, p.id);
+    return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
+  }
   if (p?.action === "proche" || p?.action === "signaler") {
     const r = p.action === "proche" ? await changerProche(supabase, moi, p.cle, p.oui) : await signalerParole(supabase, moi, p.cle, p.id);
     return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
