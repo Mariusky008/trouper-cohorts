@@ -2705,6 +2705,24 @@ inconnus, (3) la conversation en fil, (4) le mème envoyé à un proche.
 - **Freiné** : le menu d'avant, à cinq, à l'identique.
 - **L'essai** : `scripts/navigateur/bascule-univers.mjs` (le menu à trois, « ＋ Nouveau », « Créer un mème », « Moi »).
 
+### 9.0 sexquadragies 👋 La nouvelle interface, lot 2 : « Chez moi » rangé par personne, les demandes des inconnus (13 novembre)
+
+- **Tout est rangé par personne** (`proches.tsx`, `chezMoi`) : la ligne de chacun dit ce qui s'est passé avec lui, le plus
+  important d'abord — « 🎁 t'a laissé un cadeau », ses messages (« 🎙️ « … » »), « 🚪 a frappé à ta porte », « ☀️ Sa
+  figurine a réagi à ton humeur », « 🌙 Vos figurines se sont parlé cette nuit » ; l'heure de ce qui est arrivé en dernier ;
+  la pastille compte ce qui attend vraiment (cadeaux, messages, visite). Les lignes à part (« Les figurines », « Mes
+  visites ») s'en vont. Les conversations les plus vivantes en haut.
+- **Toucher la ligne de quelqu'un dont un cadeau attend** l'ouvre d'abord (la découverte, 9.0 quaterquadragies), puis
+  « Lui dire merci » mène à la conversation ; sinon, la conversation.
+- **👋 Les demandes** : un inconnu a frappé (mon univers est ouvert à tous) — en haut, « Une demande » : « Nina a frappé
+  chez toi · Vous ne vous connaissez pas · il y a 20 min », « Ajouter Nina » (elle entre dans ma liste, en attente qu'elle
+  m'ajoute aussi), « Son univers » (s'il est ouvert), « Ignorer » (elle ne revient plus en demande ; elle ne le sait
+  pas : `POST { action: "ignorer", cle }`, gardé dans `<h>/monde/visites-vues.json`). « Tant que tu n'as pas accepté sa
+  demande, on ne peut pas t'écrire : seulement frapper à ta porte. »
+- **Sur ma fenêtre** : sans rien de nouveau, « 🚪 Mes visites » (le bilan : qui est passé, ce qui est posé chez moi).
+- **Les essais** : `scripts/essai-visites-route.mjs` (un inconnu frappe, sa demande ignorée, gardée après « vu »),
+  `scripts/navigateur/bascule-univers.mjs` (les lignes de Sam et de Léa, la demande de Nina, « Ajouter Nina »).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
