@@ -6,7 +6,8 @@
  *     personne) ;
  *   · `<h>/monde/souvenirs.json` = { liste: [{ id, de, objet, mot?, le, accepte_le?, x?, y? }] } — hors des versions
  *     de son univers (une retouche ne les efface pas) ;
- *   · `<h>/monde/visites-vues.json` = { le } — la dernière fois qu'il a découvert qui est passé (ce qui est nouveau) ;
+ *   · `<h>/monde/visites-vues.json` = { le, ignores? } — la dernière fois qu'il a découvert qui est passé (ce qui est
+ *     nouveau) ; les inconnus dont il a ignoré la demande (leurs clés, les 200 dernières) ;
  *   · `<h>/adulte.json` = { le } — il a déclaré 18 ans ou plus (pour ouvrir son univers à tous) ;
  *   · `signalements/univers/<h>.json` = { liste: [{ de, le, quoi }] } — pour l'équipe.
  * Frapper prévient celui qu'on visite, une fois par jour (« 🚪 Léa a frappé à ta porte ») ; un cadeau aussi (« 🎁 Léa t'a
@@ -28,6 +29,7 @@ import { VISIBILITES, type FicheMonde, type Visibilite } from "./monde";
 import { motInterdit } from "./mots-interdits";
 import { decorDuMoment, tenueDuMois } from "./saison-serveur";
 import { assiseDe, hDeCle, poserProfil, seParlent } from "./talkie-serveur";
+import { cleValide } from "./talkie";
 import { MOT_SOUVENIR_MAX, SOUVENIRS_EN_ATTENTE_MAX, SOUVENIRS_POSES_MAX, motDeSouvenir, objetValide, type MesVisites, type SouvenirVu, type UniversPublic, type VueVisite } from "./visites";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -213,8 +215,9 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
     lireSouvenirs(supabase, h),
     estAdulte(supabase, h),
     poserProfil(supabase, h),
-    lireJson<{ le?: string }>(supabase, cheminVues(h)),
+    lireJson<{ le?: string; ignores?: string[] }>(supabase, cheminVues(h)),
   ]);
+  const ignores = new Set(Array.isArray(vues.ignores) ? vues.ignores.map(s) : []);
   const recents = visites.slice(-12).reverse();
   const enAttente = souvenirs.filter((x) => !x.accepte_le);
   // (qui sont-ils : prénom, figurine, clé, proche ou non, son univers ouvert ou non — ceux qui sont passés, et ceux dont
@@ -248,6 +251,7 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
         ...(!vuLe || v.le > vuLe ? { nouveau: true } : {}),
         ...(q?.proche ? { proche: true } : {}),
         ...(q?.univers ? { univers: true } : {}),
+        ...(q?.cle && !q.proche && ignores.has(q.cle) ? { ignore: true } : {}),
       };
     }),
     enAttente: enAttente.map((x) => souvenirVu(x, prenomDe(x.de), qui.get(x.de))),
@@ -257,7 +261,18 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
 
 /** 👀 Il a découvert qui est passé : ce qui est arrivé avant n'est plus nouveau. */
 export async function marquerVisitesVues(supabase: Supabase, h: string): Promise<Resultat> {
-  await ecrireJson(supabase, cheminVues(h), { le: new Date().toISOString() });
+  const vues = await lireJson<{ ignores?: string[] }>(supabase, cheminVues(h));
+  await ecrireJson(supabase, cheminVues(h), { ...vues, le: new Date().toISOString() });
+  return { ok: true };
+}
+
+/** 🙈 Un inconnu a frappé : il ignore sa demande (l'autre ne le sait pas ; il ne revient plus en « demande »). */
+export async function ignorerDemande(supabase: Supabase, h: string, cle: unknown): Promise<Resultat> {
+  const c = cleValide(cle);
+  if (!c) return { error: "Cette demande n’existe pas.", statut: 400 };
+  const vues = await lireJson<{ le?: string; ignores?: string[] }>(supabase, cheminVues(h));
+  const ignores = (Array.isArray(vues.ignores) ? vues.ignores.map(s) : []).filter((x) => x !== c);
+  await ecrireJson(supabase, cheminVues(h), { ...vues, ignores: [...ignores, c].slice(-200) });
   return { ok: true };
 }
 

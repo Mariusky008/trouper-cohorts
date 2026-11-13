@@ -363,16 +363,51 @@ export function Proches({
 
   // ─── 🏡 « CHEZ MOI » : mon univers en haut, mes conversations dessous, comme WhatsApp ; le reste derrière « ＋ » ───
   if (chezMoi) {
-    const liste = donnees?.proches ?? [];
-    const aParler = liste.filter((p) => p.lien === "proches");
-    const nouveau = (rituel?.mots.length ?? 0) + (rituel?.fins.length ?? 0);
-    const apercu = (p: ProcheVivant): string => {
+    const aParler = (donnees?.proches ?? []).filter((p) => p.lien === "proches");
+    const message = (p: ProcheVivant): string => {
       if (p.lien === "ajoute") return `Veut te parler : ajoute ${p.prenom} aussi`;
       if (p.lien === "attend") return `En attente : ${p.prenom} doit t’ajouter aussi`;
       if (!p.dernier) return "Dis-lui bonjour 👋";
       const t = p.dernier.texte;
       return `${p.dernier.moi ? "Toi : " : ""}${t ? `🎙️ « ${t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t} »` : "🎙️ Message vocal"}`;
     };
+    // 📐 (lot 2, la maquette validée) TOUT EST RANGÉ PAR PERSONNE : sa ligne dit ce qui s'est passé avec lui — un cadeau
+    // qui attend, ses messages, sa visite, le mot de sa figurine sur mon humeur, le mot de la fin de nos figurines ; le
+    // plus important d'abord ; la pastille compte ce qui attend vraiment (cadeaux, messages, visite)
+    const evenements = (p: ProcheVivant) => {
+      const ev: { txt: string; le: string; n: number; rang: number }[] = [{ txt: message(p), le: p.dernier?.le ?? "", n: p.nonLus, rang: p.nonLus ? 3 : 0 }];
+      const cadeaux = visites?.enAttente.filter((x) => x.cle === p.cle) ?? [];
+      if (cadeaux.length) ev.push({ txt: `🎁 t’a laissé ${cadeaux.length > 1 ? `${cadeaux.length} cadeaux` : "un cadeau"}`, le: cadeaux[cadeaux.length - 1].le, n: cadeaux.length, rang: 4 });
+      const toc = visites?.passes.find((v) => v.cle === p.cle && v.nouveau);
+      if (toc && !cadeaux.length) ev.push({ txt: "🚪 a frappé à ta porte", le: toc.le, n: 1, rang: 2 });
+      const mot = rituel?.mots.find((m) => m.de.cle === p.cle);
+      if (mot) ev.push({ txt: "☀️ Sa figurine a réagi à ton humeur", le: mot.le, n: 0, rang: 1 });
+      const fin = rituel?.fins.find((f) => f.lui.cle === p.cle);
+      if (fin) ev.push({ txt: "🌙 Vos figurines se sont parlé cette nuit", le: fin.jour, n: 0, rang: 1 });
+      const haut = ev.reduce((a, b) => (b.rang > a.rang ? b : a));
+      const le = ev.map((e) => e.le).reduce((a, b) => (b > a ? b : a), "");
+      return { txt: haut.txt, le, n: ev.reduce((s, e) => s + e.n, 0), cadeaux };
+    };
+    const rangLien = (p: ProcheVivant) => (p.lien === "proches" ? 0 : p.lien === "ajoute" ? 1 : 2);
+    const liste = [...(donnees?.proches ?? [])]
+      .map((p) => ({ p, e: evenements(p) }))
+      .sort((a, b) => rangLien(a.p) - rangLien(b.p) || Number(b.e.n > 0) - Number(a.e.n > 0) || b.e.le.localeCompare(a.e.le));
+    // 👋 LES DEMANDES : un inconnu a frappé (mon univers est ouvert à tous) — pas encore dans ma liste, pas ignoré
+    const vusDemande = new Set<string>();
+    const demandes = (visites?.passes ?? []).filter((v) => {
+      if (!v.cle || v.proche || v.ignore || vusDemande.has(v.cle) || liste.some((x) => x.p.cle === v.cle)) return false;
+      vusDemande.add(v.cle);
+      return true;
+    });
+    async function ignorer(cle: string) {
+      setGeste(cle);
+      try {
+        await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "ignorer", cle }) });
+        await rechargerVisites();
+      } finally {
+        setGeste("");
+      }
+    }
     return (
       <div className="pr cm">
         <EnteteChezMoi actif={visible && compte !== null} onHumeur={() => setHumeurOuverte(true)} visites={visites} nouveautes={nouveautes} onVisites={decouvrir} />
@@ -385,6 +420,45 @@ export function Proches({
                 <i />
               </div>
             )}
+            {/* 👋 les demandes des inconnus qui ont frappé : l'ajouter, voir son univers, ignorer */}
+            {demandes.length > 0 && (
+              <div className="cm-demandes">
+                <h3>{demandes.length > 1 ? "Des demandes" : "Une demande"}</h3>
+                {demandes.map((d) => (
+                  <div key={d.cle} className="cm-demande" data-cle={d.cle}>
+                    {d.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={d.image} alt="" draggable={false} />
+                    ) : (
+                      <span aria-hidden="true">🙂</span>
+                    )}
+                    <span className="cm-demande-texte">
+                      <b>{d.prenom} a frappé chez toi</b>
+                      <small>Vous ne vous connaissez pas · {depuis(d.le)}</small>
+                    </span>
+                    <span className="cm-demande-actions">
+                      <button
+                        type="button"
+                        className="cm-ajouter-demande"
+                        disabled={geste === d.cle}
+                        onClick={() => void ajouter(d.cle!, () => void rechargerVisites())}
+                      >
+                        {geste === d.cle ? "…" : `Ajouter ${d.prenom}`}
+                      </button>
+                      {d.univers && (
+                        <a className="cm-lien" href={`/univers/chez/${d.cle}`}>
+                          Son univers
+                        </a>
+                      )}
+                      <button type="button" className="cm-lien" disabled={geste === d.cle} onClick={() => void ignorer(d.cle!)}>
+                        Ignorer
+                      </button>
+                    </span>
+                  </div>
+                ))}
+                <p className="cm-doux petit">Tant que tu n’as pas accepté sa demande, on ne peut pas t’écrire : seulement frapper à ta porte.</p>
+              </div>
+            )}
             {/* ＋ NOUVEAU (le 13 novembre 2026, la maquette validée : à côté de « Mes conversations », plus de bouton flottant
                 qui cachait la première ligne) — parler à un proche, créer un mème, WhatsApp, ajouter un proche */}
             <div className="cm-tete-liste">
@@ -394,52 +468,16 @@ export function Proches({
               </button>
             </div>
             <ul className="cm-liste" aria-label="Mes conversations">
-              {/* ☀️ ce que les figurines ont dit de mon humeur, le mot de la fin de cette nuit : une ligne, comme un message */}
-              {nouveau > 0 && (
-                <li>
-                  <button type="button" className="cm-ligne cm-rituel" onClick={() => setHumeurOuverte(true)}>
-                    <span className="cm-avatar" aria-hidden="true">
-                      ☀️
-                    </span>
-                    <span className="cm-texte">
-                      <b>Les figurines</b>
-                      <span>{(rituel?.mots.length ?? 0) > 0 ? "Elles ont réagi à ton humeur 👀" : "Cette nuit, vos figurines se sont parlé 🌙"}</span>
-                    </span>
-                    <span className="cm-cote">
-                      <i className="cm-non-lus">{nouveau}</i>
-                    </span>
-                  </button>
-                </li>
-              )}
-              {/* 🚪 mes visites : qui a frappé, mes cadeaux (un toucher : les découvrir, ou le bilan) */}
-              {visites && (visites.passes.length > 0 || visites.enAttente.length > 0 || visites.poses.length > 0) && (
-                <li>
-                  <button type="button" className={`cm-ligne cm-visites${nouveautes.length ? " chaud" : ""}`} onClick={decouvrir}>
-                    <span className="cm-avatar" aria-hidden="true">
-                      {visites.enAttente.length ? "🎁" : "🚪"}
-                    </span>
-                    <span className="cm-texte">
-                      <b>Mes visites</b>
-                      <span>
-                        {visites.enAttente.length
-                          ? `${visites.enAttente[0].de} t’a laissé un cadeau 🎁`
-                          : nouveautes.length && nouveautes[0].genre === "toc"
-                            ? `${nouveautes[0].p.prenom} a frappé à ta porte`
-                            : visites.passes.length
-                              ? `Dernier passage : ${visites.passes[0].prenom}`
-                              : "Les cadeaux posés chez toi"}
-                      </span>
-                    </span>
-                    <span className="cm-cote">
-                      {visites.passes[0] && <time dateTime={visites.passes[0].le}>{quandCourt(visites.passes[0].le)}</time>}
-                      {nouveautes.length > 0 && <i className="cm-non-lus">{nouveautes.length}</i>}
-                    </span>
-                  </button>
-                </li>
-              )}
-              {liste.map((p, i) => (
+              {liste.map(({ p, e }, i) => (
                 <li key={p.cle} data-cle={p.cle}>
-                  <button type="button" className={`cm-ligne${p.nonLus ? " chaud" : ""}`} disabled={p.lien !== "proches"} onClick={() => ouvrir({ cle: p.cle, parler: false })} aria-label={`Ta conversation avec ${p.prenom}`}>
+                  <button
+                    type="button"
+                    className={`cm-ligne${e.n ? " chaud" : ""}`}
+                    disabled={p.lien !== "proches" && !e.cadeaux.length}
+                    // (un cadeau de lui attend : on l'ouvre d'abord — puis « Lui dire merci » mène à notre conversation)
+                    onClick={() => (e.cadeaux.length ? setDecouverte(e.cadeaux.map((s) => ({ genre: "cadeau", s }))) : ouvrir({ cle: p.cle, parler: false }))}
+                    aria-label={`Ta conversation avec ${p.prenom}`}
+                  >
                     <span className="cm-avatar">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={p.imageHumeur || p.image} alt="" draggable={false} style={{ animationDelay: `${(-0.7 * i).toFixed(1)}s` }} />
@@ -448,11 +486,11 @@ export function Proches({
                     </span>
                     <span className="cm-texte">
                       <b>{p.prenom}</b>
-                      <span>{apercu(p)}</span>
+                      <span>{e.txt}</span>
                     </span>
                     <span className="cm-cote">
-                      {p.dernier && <time dateTime={p.dernier.le}>{quandCourt(p.dernier.le)}</time>}
-                      {p.nonLus > 0 && <i className="cm-non-lus">{p.nonLus}</i>}
+                      {e.le && <time dateTime={e.le}>{quandCourt(e.le)}</time>}
+                      {e.n > 0 && <i className="cm-non-lus">{e.n}</i>}
                     </span>
                   </button>
                   {p.lien === "ajoute" && (

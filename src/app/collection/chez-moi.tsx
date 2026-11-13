@@ -82,6 +82,12 @@ export function EnteteChezMoi({
               {cadeaux ? `🎁 ${cadeaux > 1 ? `${cadeaux} cadeaux t’attendent` : "Un cadeau t’attend !"}` : `🚪 Toc toc ! ${tocs > 1 ? `${tocs} visites` : "Une visite"}`}
             </button>
           )}
+          {/* 🚪 (rien de nouveau) qui est passé, ce qui est posé chez moi : le bilan */}
+          {!nouveautes.length && onVisites && visites && (visites.passes.length > 0 || visites.poses.length > 0) && (
+            <button type="button" className="cm-puce-visites" onClick={onVisites}>
+              🚪 Mes visites
+            </button>
+          )}
           <button type="button" className={`cm-humeur${h ? "" : " vide"}`} onClick={onHumeur} aria-label={h ? `Ton humeur : ${h.court}. La changer` : "Ton humeur du jour ?"}>
             {h ? `${h.emoji} ${h.court}` : "☀️ Ton humeur ?"}
             {nouveau > 0 && <i aria-label={`${nouveau} nouveau(x)`}>{nouveau}</i>}
@@ -250,6 +256,19 @@ export const STYLES_CHEZ_MOI = `
 .cm-vide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:14px;padding:16px;border-radius:20px;background:rgba(255,255,255,.05)}
 .cm-vide b{font-size:17px}
 .cm-vide p{margin:0;color:#CDB4C0;font-size:14px}
+.cm-puce-visites{position:absolute;right:10px;bottom:10px;z-index:2;padding:8px 13px;border:0;border-radius:999px;background:rgba(18,6,15,.78);color:#FFF4E6;font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 14px -6px rgba(0,0,0,.6)}
+/* 👋 les demandes des inconnus */
+.cm-demandes{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.cm-demandes h3{margin:0 2px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#CDB4C0}
+.cm-demande{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(242,196,107,.5)}
+.cm-demande > img,.cm-demande > span:first-child{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:50% 12%;background:#3a1630;border:2px solid #F2C46B;font-size:24px;box-sizing:border-box}
+.cm-demande-texte{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cm-demande-texte b{font-size:15.5px;font-weight:800}
+.cm-demande-texte small{font-size:13px;color:#CDB4C0}
+.cm-demande-actions{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.cm-ajouter-demande{padding:9px 16px;border:0;border-radius:999px;background:#F2C46B;color:#2A0F1F;font:inherit;font-size:14.5px;font-weight:900;cursor:pointer}
+.cm-lien{padding:6px 2px;border:0;background:none;color:#CDB4C0;font:inherit;font-size:14px;font-weight:700;text-decoration:underline;cursor:pointer}
+.cm-doux.petit{margin:0 2px;font-size:12.5px}
 .cm-tete-liste{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 2px 0}
 .cm-tete-liste h3{margin:0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#CDB4C0}
 .cm-nouveau{flex:none;padding:9px 15px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-size:14.5px;font-weight:900;box-shadow:0 8px 20px -8px rgba(255,46,154,.9);cursor:pointer;-webkit-tap-highlight-color:transparent}

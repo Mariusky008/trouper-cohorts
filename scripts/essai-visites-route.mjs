@@ -142,6 +142,13 @@ ok(vi2?.souvenirs?.length === 1 && vi2.souvenirs[0].objet === "fleurs" && (await
 ok((await faire(MARC, { action: "retirer", id: bouquet.id })).statut === 200 && (await voir(MARC, "moi=1")).visites.poses.length === 0, "Marc retire le bouquet");
 await faire(MARC, { action: "decider", id: livre.id, oui: false });
 
+// ═══ 👋 UN INCONNU FRAPPE (son univers est ouvert à tous) : une demande, que Marc peut ignorer ═══
+ok((await faire(NICO, { action: "frapper", cle: MARC.cle })).statut === 200, "Nico (pas son proche) frappe : l'univers de Marc est ouvert à tous");
+const pn = (await voir(MARC, "moi=1")).visites?.passes?.find((x) => x.cle === NICO.cle);
+ok(pn && pn.proche !== true && !pn.ignore, "chez Marc : Nico est passé, pas un proche — une demande");
+ok((await faire(MARC, { action: "ignorer", cle: NICO.cle })).statut === 200 && (await voir(MARC, "moi=1")).visites?.passes?.find((x) => x.cle === NICO.cle)?.ignore === true, "Marc ignore sa demande (Nico ne le saura pas)");
+ok((await faire(MARC, { action: "vu" })).statut === 200 && (await voir(MARC, "moi=1")).visites?.passes?.find((x) => x.cle === NICO.cle)?.ignore === true && (await faire(MARC, { action: "ignorer", cle: "pas-une-cle" })).statut === 400, "« vu » garde ce qu'il a ignoré ; une clé qui n'en est pas une : refusée");
+
 // ═══ « MOI SEUL », SIGNALER, « PROCHES » ═══
 ok((await faire(MARC, { action: "visibilite", visibilite: "moi" })).statut === 200 && (await voir(INES, `cle=${MARC.cle}`)).vue?.etat === "ferme" && (await faire(INES, { action: "frapper", cle: MARC.cle })).statut === 403, "« moi seul » : la porte est fermée, même pour Inès");
 ok((await voir(MARC, `cle=${MARC.cle}`)).vue?.chezSoi === true, "Marc voit son univers comme ses visiteurs");
