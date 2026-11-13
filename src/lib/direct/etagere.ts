@@ -58,9 +58,20 @@ export type ObjetGarde = {
   ditQuand?: string;
   annuel?: boolean;
   etat: EtatObjet;
-  /** La dernière action de l'un des deux. */
+  /** La dernière action de l'un des deux (« ia » : l'issue dite par le modèle). */
   change?: { le: string; par8: string };
+  /** 🏆 Une fierté : l'emoji d'avant (la voiture devenue trophée). */
+  emojiAvant?: string;
 };
+
+/**
+ * 🃏 CE QUI S'INSÈRE DANS LE FIL (lot E2), à son heure, pour les deux : une fierté (« 🏆 RANGÉ EN HAUT DE VOTRE
+ * ÉTAGÈRE »), une promesse tenue (« ✅ PROMESSE TENUE », `n` : les promesses tenues entre eux à ce moment), une relance
+ * (« VOS FIGURINES SE SOUVIENNENT », `n` : 21 ou 60 jours ; 0 : le lendemain du jour prévu).
+ */
+export type GenreCarte = "fierte" | "tenue" | "relance";
+export type CarteGardee = { id: string; genre: GenreCarte; objet: string; le: string; n?: number };
+export type CarteVue = { id: string; genre: GenreCarte; le: string; n?: number; objet: ObjetVu; nouvelle: boolean };
 
 /** Ce qu'un des deux en voit : le titre déjà tourné pour lui, le détail composé. */
 export type ObjetVu = {
@@ -83,6 +94,8 @@ export type ObjetVu = {
   /** Ça le concerne, lui (celui qui regarde) ; ou les deux. */
   pourMoi: boolean;
   deux: boolean;
+  /** ✅ Quand la promesse a été tenue (« Annuler » pendant 24 h). */
+  tenueLe?: string;
 };
 
 /** 🎭 L'étagère dans la scène de la conversation (relue avec la conversation vivante, toutes les 4 s). */
@@ -91,6 +104,10 @@ export type EtagereScene = {
   objets: ObjetVu[];
   /** Ceux qu'il n'a pas encore vus se poser (l'envol, une fois par personne). */
   nouveaux: string[];
+  /** 🃏 Les fiertés, les promesses tenues, les relances (lot E2) ; `nouvelle` : il ne l'a pas encore vue se jouer. */
+  cartes?: CarteVue[];
+  /** Les promesses tenues entre eux. */
+  tenues?: number;
   /** L'un des deux l'a mise en pause. */
   pause?: { moi: boolean };
 };
@@ -273,6 +290,7 @@ export function titrePour(o: Pick<ObjetGarde, "titre" | "titreToi" | "concerne">
 /** Le détail sous le titre : l'appli le compose, pas le modèle. */
 export function detailPour(o: ObjetGarde, moi8: string, prenomAutre: string, aujourdhui: string): string {
   if (o.etat === "fierte") return o.quand ? `réussi le ${jourCourt(o.quand)}` : "réussi";
+  if (o.genre === "promesse" && o.etat === "sommeil") return `promis le ${jourCourt(jourDe(o.le)).replace(/^\S+ /, "")}`;
   if (o.genre === "date") return o.quand ? (o.annuel ? leJourDuMois(o.quand) : jourCourt(o.quand)) : "";
   if (o.genre === "promesse") {
     if (o.etat === "tenue") return `promesse tenue le ${jourCourt(jourDe(o.change?.le ?? o.le)).replace(/^\S+ /, "")}`;
@@ -322,6 +340,7 @@ export function vueDe(o: ObjetGarde, c: { moi8: string; prenomMoi: string; preno
     rayon: rayonDe(o),
     pourMoi: o.concerne === c.moi8,
     deux: o.concerne === "deux",
+    ...(o.etat === "tenue" && o.change?.le ? { tenueLe: o.change.le } : {}),
   };
 }
 
@@ -497,3 +516,209 @@ export function phraseDeNote(genre: GenreObjet, graine: string, avant = ""): str
 /** Les règles, en clair (la page de l'étagère). */
 export const REGLES_ETAGERE =
   "Vos figurines notent une ou deux choses par conversation, au plus. Rien de sensible (santé, argent, amours). Tout se voit des deux côtés, et chacun peut retirer un souvenir. Les visiteurs de ton univers ne voient pas votre étagère.";
+
+// ─── lot E2 : plus tard ────────────────────────────────────────────────────────────────────────────
+/** Le titre, sa première lettre en minuscule (« le permis de Léa »). */
+export const minuscule = (t: string) => (t ? t[0].toLocaleLowerCase("fr-FR") + t.slice(1) : t);
+
+/**
+ * ⏳ LE TEMPS PASSE SUR L'ÉTAGÈRE (sans bruit) : une épreuve sans nouvelles trois jours après s'en va ; un événement
+ * s'en va le surlendemain ; un anniversaire passé revient l'année suivante ; une promesse relancée deux fois s'endort
+ * (elle reste, on ne la relance plus).
+ */
+export function vieillir(objets: readonly ObjetGarde[], aujourdhui: string): { objets: ObjetGarde[]; change: boolean } {
+  let change = false;
+  const l = objets.map((o) => {
+    if (o.etat !== "actif") return o;
+    if (o.genre === "date" && o.quand) {
+      const e = ecartJours(o.quand, aujourdhui);
+      if (o.sorte === "epreuve" && e > 3) return (change = true), { ...o, etat: "passe" as const };
+      if (o.sorte === "evenement" && e > 1) return (change = true), { ...o, etat: "passe" as const };
+      if (o.annuel && e > 0) {
+        let q = o.quand;
+        for (let k = 0; k < 3 && ecartJours(q, aujourdhui) > 0; k++) q = jourValide(`${Number(q.slice(0, 4)) + 1}${q.slice(4)}`) ?? ajouterJours(q, 365);
+        return (change = true), { ...o, quand: q };
+      }
+    }
+    if (o.genre === "promesse" && !o.quand && ecartJours(jourDe(o.le), aujourdhui) >= ETAGERE_E2.sommeil) return (change = true), { ...o, etat: "sommeil" as const };
+    return o;
+  });
+  return { objets: l, change };
+}
+
+export const ETAGERE_E2 = {
+  /** Les relances d'une promesse (en jours), puis le sommeil. */
+  relances: [21, 60] as readonly number[],
+  sommeil: 67,
+  /** « Annuler » une promesse tenue : pendant 24 h. */
+  annuler: 24 * 3_600_000,
+  /** Deux rappels au plus par matin. */
+  rappels: 2,
+  /** Les cartes gardées. */
+  cartes: 120,
+} as const;
+
+/** 🍝 LES RELANCES DUES : à 21 et 60 jours d'une promesse ; le lendemain du jour prévu (« Alors, c'est fait ? »). */
+export function relancesDues(objets: readonly ObjetGarde[], cartes: readonly CarteGardee[], aujourdhui: string, le: string): CarteGardee[] {
+  const neuves: CarteGardee[] = [];
+  const deja = new Set(cartes.filter((c) => c.genre === "relance").map((c) => `${c.objet}:${c.n ?? 0}`));
+  for (const o of objets) {
+    if (o.genre !== "promesse" || o.etat !== "actif") continue;
+    if (o.quand) {
+      if (ecartJours(o.quand, aujourdhui) >= 1 && !deja.has(`${o.id}:0`)) neuves.push({ id: `r0-${o.id}`, genre: "relance", objet: o.id, le, n: 0 });
+      continue;
+    }
+    const age = ecartJours(jourDe(o.le), aujourdhui);
+    // (la plus récente qui est due, une seule à la fois)
+    const n = [...ETAGERE_E2.relances].reverse().find((j) => age >= j);
+    if (n && !deja.has(`${o.id}:${n}`)) neuves.push({ id: `r${n}-${o.id}`, genre: "relance", objet: o.id, le, n });
+  }
+  return neuves;
+}
+
+/** Ce que le modèle dit de l'issue d'une épreuve (4.4). */
+export type Issue = { id: string; resultat: "reussi" | "rate" | "reporte"; quand?: string };
+export const issueValide = (x: unknown): Issue | null => {
+  if (!x || typeof x !== "object") return null;
+  const b = x as Record<string, unknown>;
+  const r = b.resultat === "reussi" || b.resultat === "rate" || b.resultat === "reporte" ? b.resultat : null;
+  return typeof b.id === "string" && r ? { id: b.id, resultat: r, ...(jourValide(b.quand) ? { quand: jourValide(b.quand)! } : {}) } : null;
+};
+/** Une épreuve attend son issue : son jour est arrivé (du jour J à J+3). */
+export const issueAttendue = (o: ObjetGarde, aujourdhui: string) =>
+  o.genre === "date" && o.sorte === "epreuve" && o.etat === "actif" && Boolean(o.quand) && ecartJours(o.quand!, aujourdhui) >= 0 && ecartJours(o.quand!, aujourdhui) <= 3;
+
+/**
+ * 🏆 LES ISSUES : réussi → une fierté (le trophée, tout en haut, la carte) ; raté → elle s'en va, sans bruit (aucune
+ * carte, aucune blague) ; reporté → le nouveau jour s'il est dit, sinon elle s'en va.
+ */
+export function appliquerIssues(objets: readonly ObjetGarde[], issues: readonly Issue[], o: { aujourdhui: string; le: string; par8: string }): { objets: ObjetGarde[]; cartes: CarteGardee[] } {
+  const cartes: CarteGardee[] = [];
+  const l = objets.map((x) => {
+    const i = issues.find((y) => y.id === x.id);
+    if (!i || !issueAttendue(x, o.aujourdhui)) return x;
+    if (i.resultat === "reussi") {
+      cartes.push({ id: `f-${x.id}`, genre: "fierte", objet: x.id, le: o.le });
+      return { ...x, etat: "fierte" as const, emojiAvant: x.emoji, emoji: "🏆", change: { le: o.le, par8: o.par8 } };
+    }
+    if (i.resultat === "reporte" && i.quand && ecartJours(o.aujourdhui, i.quand) > 0 && ecartJours(o.aujourdhui, i.quand) <= ETAGERE.joursMax) return { ...x, quand: i.quand, ditQuand: undefined };
+    return { ...x, etat: "passe" as const };
+  });
+  return { objets: l, cartes };
+}
+
+// ─── les rappels du matin (7.1) ────────────────────────────────────────────────────────────────────
+/** epreuve, anniv, anniv3, evenement, lendemain : pour l'autre ; encourage : pour celui que ça concerne. */
+export type CasRappel = "epreuve" | "anniv" | "anniv3" | "evenement" | "lendemain" | "encourage";
+const RANG_RAPPEL: Record<CasRappel, number> = { epreuve: 1, encourage: 1, anniv: 2, anniv3: 3, evenement: 4, lendemain: 5 };
+export type Rappel = { cas: CasRappel; objet: ObjetGarde; rang: number };
+/** Les rappels d'aujourd'hui sur une étagère, pour celui qui regarde (`moi8`). */
+export function rappelsDe(objets: readonly ObjetGarde[], moi8: string, aujourdhui: string): Rappel[] {
+  const r: Rappel[] = [];
+  for (const o of objets) {
+    if (o.genre !== "date" || o.etat !== "actif" || !o.quand) continue;
+    const e = ecartJours(aujourdhui, o.quand);
+    const pourMoi = o.concerne === moi8;
+    let cas: CasRappel | null = null;
+    if (o.sorte === "epreuve" && e === 0) cas = pourMoi ? "encourage" : "epreuve";
+    else if (o.sorte === "fete" && !pourMoi && e === 0) cas = "anniv";
+    else if (o.sorte === "fete" && !pourMoi && e === 3) cas = "anniv3";
+    else if (o.sorte === "evenement" && !pourMoi && e === 0) cas = "evenement";
+    else if (o.sorte === "evenement" && !pourMoi && e === -1) cas = "lendemain";
+    if (cas) r.push({ cas, objet: o, rang: RANG_RAPPEL[cas] });
+  }
+  return r.sort((a, b) => a.rang - b.rang);
+}
+/** Deux au plus par matin (dans l'ordre : une épreuve, un anniversaire, un anniversaire dans 3 jours, un événement, le lendemain) ; et un encouragement. */
+export function garderRappels<T extends { cas: CasRappel; rang: number }>(l: readonly T[]): T[] {
+  const tries = [...l].sort((a, b) => a.rang - b.rang);
+  return [...tries.filter((x) => x.cas === "encourage").slice(0, 1), ...tries.filter((x) => x.cas !== "encourage").slice(0, ETAGERE_E2.rappels)];
+}
+
+/** 💪 Ce que dit SA figurine à celui que ça concerne, le jour J (à valider par le propriétaire). */
+export const ENCOURAGEMENTS: readonly string[] = ["C’est le grand jour {e} Je croise tout ce que j’ai 🤞", "Aujourd’hui, c’est ton jour {e} Tu vas assurer 💪", "Respire un grand coup {e} Je suis avec toi"];
+/** La phrase du rappel (l'appli la compose, pas le modèle) : `titre` est déjà tourné pour lui ; `idees` : deux goûts. */
+export function phraseRappel(cas: CasRappel, titre: string, emoji: string, idees: string[] = [], graine = ""): string {
+  const t = minuscule(titre);
+  if (cas === "encourage") return ENCOURAGEMENTS[hache(graine || titre) % ENCOURAGEMENTS.length].replace("{e}", emoji);
+  if (cas === "epreuve") return `Aujourd’hui, c’est ${t} ${emoji} Un petit mot avant le départ ?`;
+  if (cas === "anniv") return /anniv/i.test(titre) ? `C’est ${t} ${emoji} Tu lui souhaites ?` : `Aujourd’hui, c’est ${t} ${emoji} Un petit mot ?`;
+  if (cas === "anniv3") return `Dans 3 jours, ${t} ${emoji}${idees.length ? ` Des idées : ${idees.join(", ")}` : ""}`;
+  if (cas === "evenement") return `Aujourd’hui, ${t} ${emoji}`;
+  return `Hier, c’était ${t} ${emoji} Tu lui demandes comment c’était ?`;
+}
+/** 🔔 La notification du matin, quand il y a un rappel : le rappel fait le titre (7.2). */
+export function notifRappel(cas: CasRappel, titre: string, emoji: string, idees = false): { titre: string; corps: string } {
+  const t = minuscule(titre);
+  if (cas === "anniv3") return { titre: `📌 Dans 3 jours : ${t} ${emoji}`, corps: idees ? "Ta figurine a des idées. Viens voir 👀" : "Ta figurine t’en parle ce matin." };
+  if (cas === "lendemain") return { titre: `📌 Hier : ${t} ${emoji}`, corps: "Tu lui demandes comment c’était ? Ta figurine t’attend." };
+  const corps = cas === "epreuve" ? "Un petit mot avant le départ ? Ta figurine t’attend." : cas === "anniv" ? "Tu lui souhaites ? Ta figurine t’attend." : "Un petit mot ? Ta figurine t’attend.";
+  return { titre: `📌 Aujourd’hui : ${t} ${emoji}`, corps };
+}
+/** 🎭 Les mots du mème proposé avec un rappel (le studio s'ouvre avec eux). */
+export function memeDuRappel(cas: CasRappel, emoji: string): string {
+  if (cas === "epreuve") return `Tu vas gérer ${emoji}`;
+  if (cas === "anniv") return "Joyeux anniversaire ! 🎂";
+  if (cas === "anniv3") return `Ça approche ${emoji}`;
+  if (cas === "evenement") return `Profite à fond ${emoji}`;
+  if (cas === "lendemain") return `Alors, c’était comment ? ${emoji}`;
+  return `C’est le grand jour ${emoji}`;
+}
+
+// ─── la ligne de « Chez moi » (8.1) ────────────────────────────────────────────────────────────────
+/** « son permis », « sa finale », « ses pivoines », « ton permis », « le resto italien ». */
+export function sonTitre(o: Pick<ObjetGarde, "titre" | "titreToi" | "concerne">, moi8: string): string {
+  if (o.concerne === moi8) return minuscule(o.titreToi || o.titre);
+  if (o.concerne === "deux") return minuscule(o.titre);
+  const m = /^(les|le|la)\s+(.+)$/i.exec(o.titre) ?? /^(l’|l')(.+)$/i.exec(o.titre);
+  if (!m) return minuscule(o.titre);
+  const art = m[1].toLowerCase();
+  return `${art === "les" ? "ses" : art === "la" ? "sa" : "son"} ${m[2]}`;
+}
+/** Ce que la ligne d'une personne dit de leur étagère (la première qui s'applique), et son rang parmi les autres événements. */
+export type LigneEtagere = { txt: string; rang: number };
+/** ☀️ Un rappel du matin, tel que « Chez moi » le montre (jamais l'identifiant d'un habitant : sa clé). */
+export type RappelVu = { id: string; cle: string; prenom: string; image: string; cas: CasRappel; texte: string; emoji: string; meme: string; fait: boolean };
+export const RANGS_LIGNE = { rappel: 2.9, note: 2.8, relance: 2.7 } as const;
+export function ligneEtagere(x: { rappel?: Rappel | null; nouveau?: ObjetGarde | null; relance?: { objet: ObjetGarde; n: number } | null }, moi8: string): LigneEtagere | null {
+  if (x.rappel && x.rappel.cas !== "encourage") {
+    const o = x.rappel.objet;
+    const quand = x.rappel.cas === "anniv3" ? "Dans 3 jours" : x.rappel.cas === "lendemain" ? "Hier" : "Aujourd’hui";
+    return { txt: `📌 ${quand} : ${sonTitre(o, moi8)} ${o.emoji}`, rang: RANGS_LIGNE.rappel };
+  }
+  if (x.nouveau) {
+    const o = x.nouveau;
+    const jour = o.genre === "date" && o.quand && !o.annuel ? `, ${jourCourt(o.quand).split(" ").slice(0, 2).join(" ")}` : o.annuel && o.quand ? `, ${leJourDuMois(o.quand)}` : "";
+    return { txt: `📌 Noté : ${sonTitre(o, moi8)}${jour}`, rang: RANGS_LIGNE.note };
+  }
+  if (x.relance) {
+    const { objet: o, n } = x.relance;
+    return { txt: n ? `${o.emoji} ${o.titre} : promis il y a ${n >= 60 ? "2 mois" : `${Math.floor(n / 7)} semaines`}` : `${o.emoji} ${o.titre} : alors, c’est fait ?`, rang: RANGS_LIGNE.relance };
+  }
+  return null;
+}
+
+// ─── ce que disent les figurines, plus tard (à valider par le propriétaire) ────────────────────────
+/** 🏆 Une fierté : la figurine de celui qui n'est pas concerné. */
+export const phraseFierte = (prenom: string | null) => (prenom ? `${prenom}, c’est réussi ! 🏆 Je range ça tout en haut` : "C’est réussi ! 🏆 Je range ça tout en haut");
+/** ✅ Une promesse tenue. */
+export const phraseTenue = (n: number) => `${n} promesse${n > 1 ? "s" : ""} tenue${n > 1 ? "s" : ""} ! On est des gens fiables 😎`;
+/** 🍝 Une relance : les deux figurines s'en mêlent, une fois (la première prend l'emoji du souvenir). */
+export const RELANCE_PREMIERE: readonly string[] = ["{n}… ça attend toujours {e}", "{n}, et toujours rien {e}", "On en parle, de ça ? {e} Ça fait {n}"];
+export const RELANCE_SECONDE: readonly string[] = ["Je dis ça, je dis rien 🙄", "Moi, je dis : ce soir 👀", "Il n’est jamais trop tard 😏"];
+export function phrasesRelance(n: number, emoji: string, graine: string): [string, string] {
+  const duree = n >= 60 ? "Deux mois" : n ? `${Math.floor(n / 7)} semaines` : "";
+  const k = hache(graine);
+  const modele = RELANCE_PREMIERE[k % RELANCE_PREMIERE.length];
+  const premiere = n ? modele.replace("{n}", modele.startsWith("{n}") ? duree : duree.toLowerCase()).replace("{e}", emoji) : `Alors, c’est fait ? ${emoji}`;
+  return [premiere, RELANCE_SECONDE[k % RELANCE_SECONDE.length]];
+}
+/** « Ça fait 3 semaines 👀 », « Ça fait 2 mois 👀 », « C'était prévu hier. Alors, c'est fait ? » */
+export const dureeRelance = (n: number) => (n >= 60 ? "Ça fait 2 mois 👀" : n ? `Ça fait ${Math.floor(n / 7)} semaines 👀` : "C’était prévu hier. Alors, c’est fait ?");
+/** « le jeudi 23 octobre » */
+export const leJourLong = (le: string) => {
+  const iso = jourDe(le);
+  if (!iso) return "";
+  const d = enDate(iso);
+  return `le ${JOURS[d.getUTCDay()]} ${numero(d.getUTCDate())} ${MOIS[d.getUTCMonth()]}`;
+};

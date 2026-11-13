@@ -15,6 +15,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { heureParis } from "@/lib/direct/appli-collection-serveur";
 import { envoyerLesMatins } from "@/lib/direct/rituel-serveur";
+import { notifDesRappels } from "@/lib/direct/etagere-serveur";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
   if (!isCronAuthorized(request)) return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   const force = new URL(request.url).searchParams.get("force") === "1" && Boolean(process.env.CRON_SECRET || process.env.PUSH_ESSAI_ORIGINE);
   const { h } = heureParis();
+  const supabase = createAdminClient();
   if (!force && h !== 8) return NextResponse.json({ ok: true, rien: `il est ${h} h à Paris : l'envoi du matin part entre 8 h et 9 h` });
-  return NextResponse.json({ ok: true, ...(await envoyerLesMatins(createAdminClient(), { force })) });
+  return NextResponse.json({ ok: true, ...(await envoyerLesMatins(supabase, { force, rappelsDe: (h) => notifDesRappels(supabase, h) })) });
 }

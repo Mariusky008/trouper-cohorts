@@ -7,12 +7,17 @@
 // POST { action: "date", avec, id, quand }     → { ok } : il change le jour d'une date (« jeudi prochain » mal compris)
 // POST { action: "vu", avec, ids }             → { ok } : il les a vus se poser (l'envol ne se rejoue pas)
 // POST { action: "pause", avec, oui }          → { ok } : plus rien n'est noté entre eux (seul celui qui l'a mise la relance)
+// 📅 LOT E2 :
+// GET ?rappels=1                               → { rappels } : ses rappels du matin (deux au plus), sur « Chez moi »
+// POST { action: "reussi", avec, id }          → { ok } : 🏆 « C'est réussi » (celui que l'épreuve concerne, son jour arrivé)
+// POST { action: "tenue", avec, id }           → { ok } : ✅ une promesse tenue (l'un ou l'autre)
+// POST { action: "annuler-tenue", avec, id }   → { ok } : pendant 24 h
 // Les règles du talkie : la session vérifiée, deux proches qui se sont ajoutés, sinon 403 ; jamais l'identifiant d'un
 // habitant, seulement sa clé. Le frein : `CLIKME_ETAGERE=0` (rien de noté, rien d'affiché : 404).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { agirSurEtagere, etagereAvec } from "@/lib/direct/etagere-serveur";
+import { agirSurEtagere, etagereAvec, mesRappels } from "@/lib/direct/etagere-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +28,9 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
-  const r = await etagereAvec(supabase, moi, new URL(request.url).searchParams.get("avec"));
+  const q = new URL(request.url).searchParams;
+  if (q.get("rappels")) return NextResponse.json({ ok: true, rappels: await mesRappels(supabase, moi).catch(() => []) }, { headers: sansCache });
+  const r = await etagereAvec(supabase, moi, q.get("avec"));
   if (!r.etagere) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
   return NextResponse.json({ ok: true, etagere: r.etagere }, { headers: sansCache });
 }
@@ -33,7 +40,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
-  if (!p || !["retirer", "date", "vu", "pause"].includes(String(p.action))) return NextResponse.json({ error: "Demande incomplète." }, { status: 400, headers: sansCache });
+  if (!p || !["retirer", "date", "vu", "pause", "reussi", "tenue", "annuler-tenue"].includes(String(p.action))) return NextResponse.json({ error: "Demande incomplète." }, { status: 400, headers: sansCache });
   const r = await agirSurEtagere(supabase, moi, p);
   return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
 }

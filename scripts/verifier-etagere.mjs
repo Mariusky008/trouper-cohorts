@@ -135,5 +135,69 @@ ok(E.CATALOGUE.length >= 55 && new Set(E.CATALOGUE).size === E.CATALOGUE.length,
 ok(["📅", "🤝", "💛", "😂"].every((e) => E.CATALOGUE.includes(e)), "les emojis des genres sont dans le catalogue");
 ok(E.emojiDuCatalogue("✈", "date") === "✈️" && E.emojiDuCatalogue("🍷", "gout") === "💛", "un emoji sans variante retrouvé ; un emoji d'alcool : celui du genre");
 
+// ═══ LOT E2 : LE TEMPS QUI PASSE ═══
+const ob = (x) => ({ id: x.id, genre: "date", emoji: "🚗", titre: "Le permis", titreToi: "Ton permis", concerne: LEA, citation: "…", de8: LEA, message: `m-${x.id}`, le: "2026-11-01T10:00:00.000Z", etat: "actif", ...x });
+const v1 = E.vieillir([ob({ id: "e", sorte: "epreuve", quand: "2026-11-09" }), ob({ id: "e2", sorte: "epreuve", quand: "2026-11-10" }), ob({ id: "ev", sorte: "evenement", quand: "2026-11-11" }), ob({ id: "ev2", sorte: "evenement", quand: "2026-11-12" }), ob({ id: "f", sorte: "fete", annuel: true, quand: "2026-11-12" }), ob({ id: "p", genre: "promesse", le: "2026-09-01T10:00:00.000Z" })], AUJ);
+const etat = (id) => v1.objets.find((x) => x.id === id);
+ok(v1.change && etat("e").etat === "passe" && etat("e2").etat === "actif", "une épreuve sans nouvelles : elle s'en va à J+4, pas à J+3");
+ok(etat("ev").etat === "passe" && etat("ev2").etat === "actif", "un événement s'en va le surlendemain (le lendemain, on demande comment c'était)");
+ok(etat("f").quand === "2027-11-12" && etat("f").etat === "actif", "un anniversaire passé revient l'année suivante");
+ok(etat("p").etat === "sommeil" && E.detailPour(etat("p"), MOI, "Léa", AUJ) === "promis le 1er sept.", "une promesse relancée deux fois s'endort (elle reste)");
+const pr = ob({ id: "resto", genre: "promesse", concerne: "deux", emoji: "🍝", titre: "Le resto italien", le: "2026-10-23T17:00:00.000Z" });
+const r21 = E.relancesDues([pr], [], AUJ, "2026-11-13T09:00:00.000Z");
+ok(r21.length === 1 && r21[0].n === 21 && r21[0].genre === "relance" && r21[0].objet === "resto", "21 jours après la promesse : une relance");
+ok(E.relancesDues([pr], r21, AUJ, "x").length === 0, "une seule fois");
+ok(E.relancesDues([pr], r21, "2026-12-22", "x")[0]?.n === 60 && E.relancesDues([pr], [], "2026-11-12", "x").length === 0, "à 60 jours, la deuxième (et pas avant 21 jours)");
+ok(E.relancesDues([{ ...pr, quand: "2026-11-12" }], [], AUJ, "x")[0]?.n === 0, "une promesse qui avait un jour : le lendemain, « Alors, c'est fait ? »");
+ok(E.relancesDues([{ ...pr, etat: "tenue" }], [], AUJ, "x").length === 0, "une promesse tenue : plus de relance");
+
+// ═══ LES ISSUES, LA FIERTÉ ═══
+const ep = ob({ id: "permis", sorte: "epreuve", quand: AUJ });
+const i1 = E.appliquerIssues([ep], [{ id: "permis", resultat: "reussi" }], { aujourdhui: AUJ, le: "2026-11-13T11:40:00.000Z", par8: "ia" });
+ok(i1.objets[0].etat === "fierte" && i1.objets[0].emoji === "🏆" && i1.objets[0].emojiAvant === "🚗" && i1.cartes[0]?.genre === "fierte" && E.rayonDe(i1.objets[0]) === "fiertes", "réussi : le trophée, tout en haut, une carte « fierté »");
+ok(E.detailPour(i1.objets[0], MOI, "Léa", AUJ) === "réussi le vendredi 13 nov.", "« réussi le vendredi 13 nov. »");
+const i2 = E.appliquerIssues([ep], [{ id: "permis", resultat: "rate" }], { aujourdhui: AUJ, le: "x", par8: "ia" });
+ok(i2.objets[0].etat === "passe" && !i2.cartes.length, "raté : il s'en va, sans bruit (aucune carte)");
+ok(E.appliquerIssues([ep], [{ id: "permis", resultat: "reporte", quand: "2026-12-03" }], { aujourdhui: AUJ, le: "x", par8: "ia" }).objets[0].quand === "2026-12-03" && E.appliquerIssues([ep], [{ id: "permis", resultat: "reporte" }], { aujourdhui: AUJ, le: "x", par8: "ia" }).objets[0].etat === "passe", "reporté : le nouveau jour s'il est dit, sinon il s'en va");
+ok(E.appliquerIssues([ob({ id: "permis", sorte: "epreuve", quand: "2026-11-20" })], [{ id: "permis", resultat: "reussi" }], { aujourdhui: AUJ, le: "x", par8: "ia" }).objets[0].etat === "actif", "une issue avant le jour J : ignorée");
+ok(E.issueValide({ id: "a", resultat: "reussi" })?.resultat === "reussi" && E.issueValide({ id: "a", resultat: "bof" }) === null, "une issue relue : rien d'inventé");
+
+// ═══ LES RAPPELS DU MATIN ═══
+const etg = [
+  ob({ id: "permis", sorte: "epreuve", quand: AUJ }),
+  ob({ id: "anniv", sorte: "fete", annuel: true, emoji: "🎂", titre: "L’anniversaire", titreToi: "Ton anniversaire", quand: "2026-11-16" }),
+  ob({ id: "conc", sorte: "evenement", emoji: "🎧", titre: "Le concert", quand: "2026-11-12" }),
+  ob({ id: "piv", genre: "gout", emoji: "💐", titre: "Les pivoines", nuance: "aime" }),
+  ob({ id: "rom", genre: "gout", emoji: "📖", titre: "Le roman des phares", nuance: "envie" }),
+];
+const rs = E.rappelsDe(etg, MOI, AUJ);
+ok(rs.map((r) => r.cas).join(",") === "epreuve,anniv3,lendemain", `chez Sam : l'épreuve du jour, l'anniversaire dans 3 jours, le lendemain du concert, dans cet ordre (${rs.map((r) => r.cas)})`);
+ok(E.rappelsDe(etg, LEA, AUJ).map((r) => r.cas).join(",") === "encourage", "chez Léa (ça la concerne) : seulement l'encouragement de sa figurine");
+ok(E.garderRappels(rs).length === 2 && E.garderRappels(rs).map((r) => r.cas).join(",") === "epreuve,anniv3", "deux rappels au plus par matin, les plus importants");
+ok(E.garderRappels([...rs, ...E.rappelsDe(etg, LEA, AUJ)]).filter((r) => r.cas === "encourage").length === 1, "et l'encouragement, à part");
+ok(E.phraseRappel("epreuve", "Le permis de Léa", "🚗") === "Aujourd’hui, c’est le permis de Léa 🚗 Un petit mot avant le départ ?", "« Aujourd'hui, c'est le permis de Léa 🚗 Un petit mot avant le départ ? »");
+ok(E.phraseRappel("anniv3", "L’anniversaire de Léa", "🎂", ["les pivoines", "le roman des phares"]) === "Dans 3 jours, l’anniversaire de Léa 🎂 Des idées : les pivoines, le roman des phares", "à J-3 : « Des idées : les pivoines, le roman des phares »");
+ok(E.phraseRappel("anniv", "L’anniversaire de Léa", "🎂") === "C’est l’anniversaire de Léa 🎂 Tu lui souhaites ?" && E.phraseRappel("evenement", "Le concert de Nina", "🎧") === "Aujourd’hui, le concert de Nina 🎧" && E.phraseRappel("lendemain", "Le concert de Nina", "🎧") === "Hier, c’était le concert de Nina 🎧 Tu lui demandes comment c’était ?", "l'anniversaire, l'événement, le lendemain");
+ok(E.phraseRappel("encourage", "Ton permis", "🚗", [], "x").includes("🚗") && E.ENCOURAGEMENTS.length === 3, "l'encouragement prend l'emoji du souvenir");
+const nf = E.notifRappel("epreuve", "Le permis de Léa", "🚗");
+ok(nf.titre === "📌 Aujourd’hui : le permis de Léa 🚗" && nf.corps === "Un petit mot avant le départ ? Ta figurine t’attend.", "la notification : « 📌 Aujourd'hui : le permis de Léa 🚗 »");
+
+// ═══ LA LIGNE DE « CHEZ MOI » ═══
+ok(E.sonTitre({ titre: "Le permis", concerne: LEA }, MOI) === "son permis" && E.sonTitre({ titre: "La finale", concerne: LEA }, MOI) === "sa finale" && E.sonTitre({ titre: "Les pivoines", concerne: LEA }, MOI) === "ses pivoines" && E.sonTitre({ titre: "L’anniversaire", concerne: LEA }, MOI) === "son anniversaire", "« son permis », « sa finale », « ses pivoines », « son anniversaire »");
+ok(E.sonTitre({ titre: "Le permis", titreToi: "Ton permis", concerne: LEA }, LEA) === "ton permis" && E.sonTitre({ titre: "Le resto italien", concerne: "deux" }, MOI) === "le resto italien", "« ton permis », « le resto italien »");
+ok(E.ligneEtagere({ rappel: rs[0] }, MOI)?.txt === "📌 Aujourd’hui : son permis 🚗", "un rappel du jour : « 📌 Aujourd'hui : son permis 🚗 »");
+ok(E.ligneEtagere({ nouveau: ob({ id: "p2", sorte: "epreuve", quand: "2026-11-19" }) }, MOI)?.txt === "📌 Noté : son permis, jeudi 19", "un souvenir pas encore vu : « 📌 Noté : son permis, jeudi 19 »");
+ok(E.ligneEtagere({ relance: { objet: pr, n: 21 } }, MOI)?.txt === "🍝 Le resto italien : promis il y a 3 semaines", "une relance : « 🍝 Le resto italien : promis il y a 3 semaines »");
+ok(E.RANGS_LIGNE.rappel > E.RANGS_LIGNE.note && E.RANGS_LIGNE.note > E.RANGS_LIGNE.relance && E.RANGS_LIGNE.relance > 2 && E.RANGS_LIGNE.rappel < 3, "les rangs : après un message non lu, avant une visite");
+
+// ═══ CE QUE DISENT LES FIGURINES, PLUS TARD ═══
+const [q1, q2] = E.phrasesRelance(21, "🍝", "r21-resto");
+ok(/3 semaines/i.test(q1) && q1.includes("🍝") && E.RELANCE_SECONDE.includes(q2), `la relance : « ${q1} » / « ${q2} »`);
+ok(E.phrasesRelance(60, "🍝", "k")[0].toLowerCase().includes("deux mois") && E.phrasesRelance(0, "🥾", "k")[0] === "Alors, c’est fait ? 🥾", "à 60 jours : « deux mois » ; le lendemain : « Alors, c'est fait ? »");
+ok(E.phraseFierte("Léa") === "Léa, c’est réussi ! 🏆 Je range ça tout en haut" && E.phraseTenue(8) === "8 promesses tenues ! On est des gens fiables 😎" && E.phraseTenue(1) === "1 promesse tenue ! On est des gens fiables 😎", "la fierté, la promesse tenue");
+ok(E.dureeRelance(21) === "Ça fait 3 semaines 👀" && E.dureeRelance(60) === "Ça fait 2 mois 👀", "« Ça fait 3 semaines 👀 »");
+const plusTard = [...E.ENCOURAGEMENTS, ...E.RELANCE_PREMIERE, ...E.RELANCE_SECONDE, E.phraseFierte("Léa"), E.phraseFierte(null), E.phraseTenue(2), ...["epreuve", "anniv", "anniv3", "evenement", "lendemain"].map((c) => E.memeDuRappel(c, "🚗"))];
+ok(plusTard.every((x) => !GENRE.test(x) && !/exemple/i.test(x) && passe(x)), `les phrases d'E2 : sans accord, sans le mot interdit, sans alcool (${plusTard.filter((x) => GENRE.test(x) || !passe(x)).join(" | ") || "aucune"})`);
+
 console.log(echecs ? `\n${echecs} échec(s)` : "\nles règles de l'étagère tiennent ✓");
 process.exit(echecs ? 1 : 0);

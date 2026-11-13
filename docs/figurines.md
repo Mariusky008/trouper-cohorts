@@ -2805,6 +2805,46 @@ Le lot E1 : noter, ranger, montrer, retirer.
   permis » chez Léa, la page, la fiche, retirer, sans mouvement). Le faux modèle répond d'après des mots clés
   (`scripts/faux-supabase.mjs`).
 
+### 9.0 quinquagies 📅 L'étagère, lot E2 « Plus tard » : les rappels du matin, la fierté, les promesses (13 novembre)
+
+Le cahier : `docs/univers/etagere.md`, sections 4.4, 6.4, 7.1 à 7.3, 8.1. Ce que l'étagère ressort, au bon moment.
+
+- **Le temps qui passe** (`vieillir`, à la lecture, sans bruit) : une épreuve sans nouvelles s'en va à J+4 ; un
+  événement le surlendemain ; un anniversaire revient l'année suivante ; une promesse relancée deux fois s'endort.
+- **La fierté** : au passage suivant du modèle, une épreuve dont le jour est arrivé (« issue_attendue ») reçoit son
+  issue — réussi : le trophée 🏆 (l'emoji d'avant gardé), « Nos fiertés », la carte « 🏆 RANGÉ EN HAUT DE VOTRE
+  ÉTAGÈRE » (« 🎁 Lui offrir un cadeau » : la feuille « Cadeau » de la conversation) ; raté : il s'en va, sans carte ;
+  reporté : le nouveau jour, s'il est dit. Un « JE L'AI !!! » tout court suffit (le seuil de vingt signes ne compte
+  pas quand une épreuve attend son issue). Celui que ça concerne peut aussi le dire : « 🏆 C'est réussi » sur la
+  fiche ; l'autre ne peut pas (403).
+- **Les promesses** : « ✅ C'est fait ! » (l'un ou l'autre, sur la fiche ou la carte de relance) : « Nos fiertés », le
+  compteur, la carte « ✅ PROMESSE TENUE · 8 promesses tenues entre vous » ; « Annuler » pendant 24 h. Les relances, à
+  21 et 60 jours (et le lendemain du jour prévu : « Alors, c'est fait ? ») : « 🍝 VOS FIGURINES SE SOUVIENNENT », la
+  phrase exacte, « Ça fait 3 semaines 👀 », « 🪧 Ce soir ? » (le panneau), « ✅ C'est fait ! ». Pas de notification.
+- **La fête, dans la scène** (une fois par personne : `vus`) : la fierté (des confettis, la figurine de celui qui n'est
+  pas concerné : « Léa, c'est réussi ! 🏆 Je range ça tout en haut ») ; la promesse tenue (des confettis, les deux qui
+  sautent, « 8 promesses tenues ! On est des gens fiables 😎 ») ; la relance (l'une, puis l'autre : « 3 semaines… ça
+  attend toujours 🍝 », « Je dis ça, je dis rien 🙄 »). Banques à valider par le propriétaire.
+- **Les rappels du matin** (`mesRappels`, `GET /api/direct/etagere?rappels=1`, gardés une fois par jour dans
+  `<habitant>/rappels.json`) : sur « Chez moi », sous la fenêtre de son univers, sa figurine le lui rappelle — « 📌 DE
+  VOTRE ÉTAGÈRE, LÉA ET TOI », « Aujourd'hui, c'est le permis de Léa 🚗 Un petit mot avant le départ ? », « 🎭 Un
+  mème » (le studio, « Tu vas gérer 🚗 » écrit, pour elle) et « 🎙️ Un vocal » (leur conversation, le micro prêt) ;
+  dès qu'il lui a écrit dans la journée : « ✓ Envoyé à Léa ». Deux au plus, dans l'ordre : une épreuve, un
+  anniversaire, un anniversaire dans 3 jours (« Des idées : les pivoines… »), un événement, le lendemain d'un
+  événement. Celui que ça concerne : l'encouragement de SA figurine (« C'est le grand jour 🚗 Je croise tout ce que
+  j'ai 🤞 »).
+- **La notification du matin** (`envoyerLesMatins`, le rappel injecté par la route du matin : `notifDesRappels`) :
+  « 📌 Aujourd'hui : le permis de Léa 🚗 » — « Un petit mot avant le départ ? Ta figurine t'attend. » ; avec un mot de
+  la fin : « … Et cette nuit, vos figurines se sont parlé 🌙 ». Toujours une seule par jour.
+- **La ligne de « Chez moi »** (`lignesEtagere`, ajoutée par la route à chaque proche ; `proches.tsx`, `evenements`) :
+  après un message non lu, avant une visite — « 📌 Aujourd'hui : son permis 🚗 », « 📌 Noté : son permis, jeudi 19 »,
+  « 🍝 Le resto italien : promis il y a 3 semaines ».
+- **Les essais** : `scripts/verifier-etagere.mjs` (le temps, les relances, les issues, les rappels et leur ordre, la
+  notification, la ligne, les phrases) ; `scripts/essai-etagere-plus-tard-route.mjs` (le matin de Sam, la
+  notification, « ✓ Envoyé », « JE L'AI !!! » et la fierté, « C'est réussi » refusé à l'autre, la relance, tenue,
+  annulée, tenue ; le code de Zoé parti sans bruit) ; `scripts/navigateur/etagere-plus-tard.mjs` (sur « Chez moi » :
+  le rappel, les lignes, « 🎭 Un mème » ; la fête de la fierté ; la relance de Paul, « C'est fait ! », la fête).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

@@ -719,7 +719,8 @@ http
         }
         // 📚 L'ÉTAGÈRE (lot E1) : leurs figurines notent ce qui compte, d'après des mots clés — « permis » : une date
         // (« jeudi prochain », le jeudi qui suit le message) ; « resto » : une promesse ; « pivoines » : un goût ;
-        // « canard » : une blague ; « malade » : sensible. Et ce que le serveur doit jeter : « volcan » (une citation
+        // « canard » : une blague ; « malade » : sensible ; « JE L'AI » : l'épreuve du jour est réussie, « raté » : ratée.
+        // Et ce que le serveur doit jeter : « volcan » (une citation
         // inventée), « mojito » (de l'alcool), « concert » (« samedi », mais un vendredi), « Bonnie » (un prénom dans le titre).
         if (consigne.includes("NOTENT CE QUI COMPTE")) {
           const msgs = JSON.parse(/Leurs messages, dans l'ordre \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
@@ -741,7 +742,11 @@ http
             if (/concert/i.test(t)) objets.push({ genre: "date", sorte: "evenement", emoji: "🎧", titre: "Le concert", concerne: m.de, citation: t, message: m.n, quand: jeudiApres(m.date), dit: "samedi" });
             if (/Bonnie/.test(t)) objets.push({ genre: "gout", emoji: "🐶", titre: `Le chien de ${m.de}`, concerne: m.de, nuance: "aime", citation: t, message: m.n });
           }
-          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ sensible: false, objets }) } }] });
+          // 🏆 (lot E2) « JE L'AI » : l'épreuve qui attendait son issue est réussie ; « raté » : ratée
+          const deja = JSON.parse(/Déjà sur leur étagère \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
+          const attendues = deja.filter((o) => o.issue_attendue);
+          const issues = msgs.some((m) => /je l.ai/i.test(m.texte)) ? attendues.map((o) => ({ id: o.id, resultat: "reussi" })) : msgs.some((m) => /raté/i.test(m.texte)) ? attendues.map((o) => ({ id: o.id, resultat: "rate" })) : [];
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ sensible: false, objets, issues }) } }] });
         }
         // 🎭 l'aparté de deux figurines (lot R4b) : deux répliques sur l'échange qui vient de finir — « sensible » quand l'un est malade
         if (consigne.includes("FONT UN APARTÉ")) {

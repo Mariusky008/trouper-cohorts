@@ -124,9 +124,10 @@ bon moment. Le cahier (`docs/univers/etagere.md`) et la maquette (`docs/univers/
 par une autre session, mise en pause ; le propriétaire a confié tout le chantier à la session « Univers ».
 
 - **Où on en est** : **E1 « Noté ! » est construit** (`docs/figurines.md`, 9.0 novoquadragies 📚) : noter, ranger,
-  montrer (le mur, l'envol, la carte, la page, la fiche), retirer, la pause, le frein `CLIKME_ETAGERE=0`.
-- **La suite** : E2 « Plus tard » (les rappels du matin, la fierté, les promesses, la ligne de « Chez moi »), puis E3
-  « La poussière et les idées ». Les banques de phrases (sections 5, 7.1 et 7.3 du cahier) et les choix par défaut
+  montrer (le mur, l'envol, la carte, la page, la fiche), retirer, la pause, le frein `CLIKME_ETAGERE=0`. **E2 « Plus
+  tard » aussi** (9.0 quinquagies 📅) : les rappels du matin et la notification, la fierté, les promesses et leurs
+  relances, la ligne de « Chez moi ».
+- **La suite** : E3 « La poussière et les idées ». Les banques de phrases (sections 5, 7.1 et 7.3 du cahier) et les choix par défaut
   (section 16) attendent sa relecture.
 - **À côté** : il a dit de l'étagère « très bien comme feature, mais ça ne fera pas venir les gens ». Il cherche
   encore ce qui fera parler de l'appli. Une première proposition (des épisodes de dessin animé tirés de leurs vrais
