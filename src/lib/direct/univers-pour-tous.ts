@@ -9,18 +9,23 @@
  *     l'appli (`pont-univers-serveur.ts`) ; le menu de `/collection` change (« Mon univers ») ; Pablito passe au
  *     nouveau style, une fois sa figurine adoptée depuis l'admin (`pablito-univers-serveur.ts`).
  *
- * Les essais l'allument avec `CLIKME_UNIVERS_POUR_TOUS=1` (la même variable, posée chez l'hébergeur, l'allumerait aussi).
+ * ALLUMÉ le 13 novembre 2026 (le propriétaire : « allume »). `CLIKME_UNIVERS_POUR_TOUS` décide avant lui, côté serveur :
+ * « 0 », c'est le FREIN — tout redevient comme avant, sans déployer (les portes au propriétaire, l'ancien menu, plus de
+ * pont, le Pablito d'avant) ; « 1 » l'allume. Les essais d'avant tournent freinés ; ceux de la bascule, allumés.
  *
  * FICHIER SERVEUR.
  */
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { UNIVERS_POUR_TOUS } from "./univers-interrupteur";
 
-/** L'interrupteur lui-même : `univers-interrupteur.ts` (`false` tant que le propriétaire n'a pas tout vu). */
+/** L'interrupteur lui-même : `univers-interrupteur.ts`. */
 export { UNIVERS_POUR_TOUS };
 
-/** Allumé pour tout le monde ? */
-export const universPourTous = (): boolean => UNIVERS_POUR_TOUS || process.env.CLIKME_UNIVERS_POUR_TOUS === "1";
+/** Allumé pour tout le monde ? (« 0 » : le frein ; « 1 » : allumé ; sinon, l'interrupteur) */
+export function universPourTous(): boolean {
+  const force = String(process.env.CLIKME_UNIVERS_POUR_TOUS ?? "").trim();
+  return force === "0" ? false : force === "1" ? true : UNIVERS_POUR_TOUS;
+}
 
 /** Peut-il entrer dans le chantier « Univers » ? Tout le monde quand c'est allumé ; sinon le propriétaire seul. */
 export async function universPermis(): Promise<boolean> {

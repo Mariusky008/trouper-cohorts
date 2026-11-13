@@ -578,7 +578,8 @@ univers à visiter » (ceux ouverts à tout le monde). **La saison** (le propri�
 son décor du mois (fait à sa première visite du mois) et sa tenue du mois (méritée, au nouveau style, assise chez lui) ;
 le détail : 9.0 quadragies 🍂. **La bascule** (le feu vert, donné le 12 novembre) : le menu de demain, l'arrivée sur
 « Mon univers », les figurines d'aujourd'hui refaites (avec la photo d'avant), Pablito au nouveau style — construits
-derrière un seul interrupteur, éteint (9.0 unquadragies 🔀). **Reste** : l'allumer ; la carte de personnage.
+derrière un seul interrupteur (9.0 unquadragies 🔀), **allumé le 13 novembre** (« allume ») ; `CLIKME_UNIVERS_POUR_TOUS=0`
+le freine sans déployer. **Reste** : la carte de personnage (remplacée par la conversation, après quelques jours de vie).
 
 ### Lot R — Le rituel du jour (précision du propriétaire, 11 novembre 2026)
 
@@ -795,7 +796,8 @@ Rien ne bloque le lot 0. À décider en chemin :
 8. ~~La saison de l'univers~~ — tranchée le 12 novembre 2026, « les deux » : son décor change avec le mois, et sa
    figurine du mois (méritée) s'habille et s'assoit chez lui.
 9. ~~Le feu vert pour tout le monde~~ — donné le 12 novembre 2026 : le nouvel accueil et le nouveau menu, les
-   figurines actuelles refaites, Pablito au nouveau style. Construit derrière un seul interrupteur, allumé à la fin.
+   figurines actuelles refaites, Pablito au nouveau style. Construit derrière un seul interrupteur, allumé le 13
+   novembre (« allume »).
 
 ## 14. Les mots
 

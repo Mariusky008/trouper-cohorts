@@ -1,8 +1,8 @@
 // 🔀 LA BASCULE « UNIVERS POUR TOUS », PAR LES ROUTES — contre le faux Supabase et son faux moteur d'image, jamais la
 // vraie base, jamais OpenAI (`lib/direct/univers-pour-tous.ts`, `lib/direct/pont-univers-serveur.ts`).
 //
-// L'interrupteur se juge des deux côtés, dans la même base :
-//   · ÉTEINT (l'app de la CI, :3821) : le chantier reste au propriétaire ; l'appli d'aujourd'hui ne voit pas la figurine
+// L'interrupteur (allumé le 13 novembre 2026) se juge des deux côtés, dans la même base :
+//   · ÉTEINT (l'app de la CI, :3821, freinée par `CLIKME_UNIVERS_POUR_TOUS=0`) : le chantier reste au propriétaire ; l'appli d'aujourd'hui ne voit pas la figurine
 //     du nouveau style de Léa (pas de pont) ;
 //   · ALLUMÉ (une seconde app, lancée ici sur :3822 avec `CLIKME_UNIVERS_POUR_TOUS=1`) : Léa entre sans être
 //     administratrice ; en ouvrant l'appli, sa figurine du nouveau style devient la sienne (`neutre` = son image assise,

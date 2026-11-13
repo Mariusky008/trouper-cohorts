@@ -56,7 +56,9 @@ await p.waitForSelector(".nf-photo.prise img", { timeout: 10000 }).catch(() => n
 await p.locator('.nf-selfie input[name="moi"]').check();
 ok(await creer.isDisabled(), "sans « J'ai 15 ans ou plus » : toujours pas");
 await p.locator('.nf-selfie input[name="age"]').check();
-ok(!(await creer.isDisabled()) && (await debordement()) <= 0 && (await sansMotInterdit()), "sa photo, ses deux cases : « Créer ma figurine » (rien ne déborde)");
+ok(await creer.isDisabled() && (await p.locator('.nf-selfie input[name="ville"]').count()) === 1, "🏙️ sans sa ville (pas encore de compte) : toujours pas");
+await p.locator('.nf-selfie input[name="ville"]').fill("Bordeaux");
+ok(!(await creer.isDisabled()) && (await debordement()) <= 0 && (await sansMotInterdit()), "sa photo, sa ville, ses deux cases : « Créer ma figurine » (rien ne déborde)");
 await p.screenshot({ path: `${D}/nouvelle-figurine-1-selfie.png` });
 await creer.click();
 // (l'atelier : le faux moteur est rapide, il peut passer en un éclair)

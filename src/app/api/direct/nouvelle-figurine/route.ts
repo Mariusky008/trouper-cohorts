@@ -3,7 +3,8 @@
 // gardent leur figurine d'aujourd'hui jusqu'à son feu vert (l'interrupteur `univers-pour-tous.ts`).
 //
 // GET                                         → { etape, propositions, restantes, branche, figurine? }
-// POST { action: "selfie", photo, moi, age }  → { id } : son selfie (« C'est bien moi », « J'ai 15 ans ou plus ») ; sa
+// POST { action: "selfie", photo, moi, age, ville? } → { id } : son selfie (« C'est bien moi », « J'ai 15 ans ou plus ») ;
+//                                               sans compte sur ce téléphone, sa ville (n'importe laquelle) ; sa
 //                                               première proposition se fait après la réponse
 // POST { action: "retoucher", de, demande }   → { id } : une retouche avec ses mots, sur une proposition
 // POST { action: "refaire" }                  → { id } : « Elle ne me ressemble pas » (une nouvelle, d'après le selfie)
@@ -15,6 +16,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { poserLePont } from "@/lib/direct/pont-univers-serveur";
+import { villeEcrite } from "@/lib/direct/nouvelle-figurine";
+import { motInterdit } from "@/lib/direct/mots-interdits";
+import { villeSlug } from "@/lib/direct/ville";
 import { envoyerSelfie, etatNouvelleFigurine, fabriquerProposition, fabriquerSesReferences, refaire, retoucher, valider } from "@/lib/direct/nouvelle-figurine-serveur";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +44,11 @@ export async function POST(request: Request) {
     NextResponse.json(r.error ? { error: r.error } : { ok: true, ...ok }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
 
   if (p?.action === "selfie") {
-    const moi = await assurerHabitant(supabase, "dax");
+    // 🏙️ (sans compte sur ce téléphone : sa ville, n'importe laquelle — elle le relie aux commerçants de la même ville)
+    const deja = await habitantCourant(supabase);
+    const ville = villeEcrite(p.ville);
+    if (!deja && (!ville || motInterdit(ville))) return NextResponse.json({ error: "Dis-nous ta ville." }, { status: 400 });
+    const moi = deja ?? (await assurerHabitant(supabase, villeSlug(ville)));
     if (!moi) return NextResponse.json({ error: "Ça n’a pas marché. Réessaie." }, { status: 502 });
     const r = await envoyerSelfie(supabase, moi, p.photo, p.moi, p.age);
     const id = r.id;

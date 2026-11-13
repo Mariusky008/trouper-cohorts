@@ -106,6 +106,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
+      # 🔀 l'interrupteur « Univers pour tous » est allumé (13 novembre 2026) : les essais d'avant tournent FREINÉS (« 0 »,
+      # l'appli d'avant) ; ceux de la bascule lancent une seconde app allumée (`scripts/seconde-app.mjs`)
+      CLIKME_UNIVERS_POUR_TOUS: "0"
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: faux
       SUPABASE_SERVICE_ROLE_KEY: faux

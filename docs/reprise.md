@@ -82,9 +82,10 @@ autres peuvent y entrer**. Ses deux textes sont dans `docs/univers/vision.md`. L
 - **Le lot 6 (les visites et les souvenirs) est construit** : `docs/figurines.md`, 9.0 sexatricies 🚪.
 - **Le lot 7, première partie** : les mèmes dans l'univers, « Découvrir » montre les univers à visiter (9.0
   septatricies 🎬🏡). **La saison** : son décor du mois et sa tenue du mois (« les deux », 9.0 quadragies 🍂).
-  **La bascule « Univers pour tous »** (le feu vert du 12 novembre) : construite derrière un seul interrupteur, éteint
-  (`UNIVERS_POUR_TOUS`, 9.0 unquadragies 🔀) — les portes, le pont vers l'appli, le menu de demain, les figurines
-  refaites, Pablito au nouveau style (à adopter depuis `/admin/humain/univers-essais`). Reste : l'allumer.
+  **La bascule « Univers pour tous »** (le feu vert du 12 novembre) : construite derrière un seul interrupteur
+  (`UNIVERS_POUR_TOUS`, 9.0 unquadragies 🔀), **allumé le 13 novembre** — les portes, le pont vers l'appli, le menu de
+  demain, les figurines refaites, Pablito au nouveau style (à adopter depuis `/admin/humain/univers-essais`). Le frein :
+  `CLIKME_UNIVERS_POUR_TOUS=0` chez l'hébergeur. Les essais d'avant tournent freinés ; ceux de la bascule, allumés.
 - **La suite** : son avis sur le parcours complet (figurine, conversation, univers, accueil) ; puis le feu vert pour
   tout le monde (les figurines
   d'aujourd'hui refaites, Pablito au nouveau style, les visages du nouveau style) ; puis le lot 5 (le proche qui entre). Les sessions de travail n'ont pas de clé de moteur d'image (l'accès à OpenAI y est bloqué) : les essais

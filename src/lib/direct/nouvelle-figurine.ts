@@ -39,6 +39,11 @@ export type EtatNouvelleFigurine = {
   restantes: number;
   /** le moteur d'image est branché */
   branche: boolean;
+  /**
+   * 🏙️ pas encore de compte sur ce téléphone : sa ville à donner (n'importe laquelle), avec, en suggestion, celles où
+   * ClikMe a des commerçants
+   */
+  villeADonner?: { suggestions: { slug: string; nom: string }[] };
   /** 🖼️ la photo de sa figurine d'aujourd'hui (signée), pour la refaire au nouveau style sans nouveau selfie */
   photoDAvant?: string;
   /** son personnage maître, une fois validé : ses images de référence (assise, et bientôt bouche ouverte et debout) */
@@ -52,3 +57,16 @@ export function demandeValide(x: unknown): string {
 }
 
 export const idPropositionValide = (x: unknown) => (typeof x === "string" && /^[a-z0-9]{12}$/.test(x) ? x : "");
+
+/**
+ * 🏙️ SA VILLE (le propriétaire, le 13 novembre 2026 : « quiconque peut avoir l'application, puisque les amis que je vais
+ * contacter ne sont pas forcément de ma ville ; on peut renseigner sa ville, et lorsqu'elle correspond à la ville d'un
+ * commerçant, ils sont mis en relation ») : n'importe quelle ville, écrite librement — des lettres, des espaces, des
+ * traits d'union, des apostrophes ; `VILLE_MAX` au plus. Elle se range en slug (`villeSlug`), la clé qui la relie aux
+ * commerçants de la même ville. « » si elle ne tient pas.
+ */
+export const VILLE_MAX = 60;
+export function villeEcrite(x: unknown): string {
+  const t = typeof x === "string" ? x.replace(/[^\p{L}\s'’-]+/gu, " ").replace(/\s+/g, " ").trim() : "";
+  return t.length >= 2 && t.length <= VILLE_MAX ? t : "";
+}
