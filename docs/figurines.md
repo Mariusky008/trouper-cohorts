@@ -2723,6 +2723,22 @@ inconnus, (3) la conversation en fil, (4) le mème envoyé à un proche.
 - **Les essais** : `scripts/essai-visites-route.mjs` (un inconnu frappe, sa demande ignorée, gardée après « vu »),
   `scripts/navigateur/bascule-univers.mjs` (les lignes de Sam et de Léa, la demande de Nina, « Ajouter Nina »).
 
+### 9.0 septquadragies 💬 La nouvelle interface, lot 3 : la conversation range ce qui s'est passé entre nous (13 novembre)
+
+La conversation avait déjà son fil (les messages, les panneaux, les apartés — rituel R4) et le rituel en bandeau ; « Chez
+moi » (l'interrupteur allumé) y ajoute (`proches.tsx`, `Conversation`, `chezMoi`) :
+
+- **Dans le fil, à leur heure** : « 🚪 Léa a frappé à ta porte » ; « 🎁 Léa t'a laissé un cadeau — Emballé, devant ta
+  porte · Ouvrir » (la découverte, 9.0 quaterquadragies) ; « 💐 Un bouquet, de Léa : posé chez toi » ; « 📚 Tu as laissé
+  un livre chez Léa » (pendant la conversation). Le serveur donne la clé de qui a laissé chaque cadeau posé.
+- **En bas, autour de « Lui répondre »** : 🪧 (le panneau, inchangé), **🎭 Mème** (le studio ; le lot 4 l'enverra dans la
+  conversation), **🎁 Cadeau** (une feuille : dix objets, un petit mot, « Offrir 📚 à Léa » — déposé devant chez elle,
+  emballé ; s'il n'a pas encore d'univers : « Léa n'a pas encore d'univers où poser un cadeau »).
+- **En haut** : « 🏡 Son univers », quand il lui est ouvert.
+- **La découverte** (paquet, porte) s'ouvre par-dessus tout, conversation comprise.
+- **L'essai** : `scripts/navigateur/bascule-univers.mjs` (chez Marc : la visite et le bouquet de Sam dans leur fil, 🎭 qui
+  mène au studio, 🎁 sans univers ; chez Sam : « Son univers », un livre laissé chez Marc, dans le fil).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
