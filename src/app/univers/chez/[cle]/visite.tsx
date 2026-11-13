@@ -84,6 +84,19 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
   const [frappe, setFrappe] = useState(vue.frappe);
   const [cles, setCles] = useState(false);
   const [offrir, setOffrir] = useState(false);
+  // 🎁 (l'étagère, lot E3) ce qu'il ou elle aime, si nous sommes proches : une idée, pas un catalogue
+  const [gouts, setGouts] = useState<{ emoji: string; titre: string }[]>([]);
+  useEffect(() => {
+    if (!offrir) return;
+    let fini = false;
+    fetch(`/api/direct/etagere?gouts=${cle}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { gouts?: { emoji: string; titre: string }[] }) => !fini && setGouts(Array.isArray(j.gouts) ? j.gouts : []))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, [offrir, cle]);
   const [objet, setObjet] = useState<ObjetSouvenir | null>(null);
   const [mot, setMot] = useState("");
   const [message, setMessage] = useState("");
@@ -297,6 +310,11 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
                 ✕
               </button>
             </div>
+            {gouts.length > 0 && (
+              <p className="uv-idees">
+                {vue.prenom} aime : {gouts.map((g) => `${g.emoji} ${g.titre}`).join(" · ")}
+              </p>
+            )}
             <div className="uv-objets">
               {OBJETS_SOUVENIR.map((o) => (
                 <button key={o.cle} type="button" className={objet === o.cle ? "pris" : ""} aria-pressed={objet === o.cle} aria-label={o.nom} onClick={() => setObjet(o.cle)}>
@@ -378,6 +396,7 @@ const STYLES = `
 .uv-feuille{width:100%;max-width:480px;box-sizing:border-box;padding:16px 16px calc(20px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:#fff6e6;display:flex;flex-direction:column;gap:12px;animation:uv-monte .32s cubic-bezier(.2,.9,.3,1) both;max-height:92dvh;overflow-y:auto}
 .uv-feuille-haut{display:flex;align-items:center;justify-content:space-between;font-size:19px}
 .uv-fermer{width:38px;height:38px;border:0;border-radius:50%;background:rgba(43,26,12,.08);font-size:16px;cursor:pointer}
+.uv-idees{margin:0;padding:9px 12px;border-radius:12px;background:#fff0d6;color:#7a4a12;font-size:13.5px;font-weight:700}
 .uv-objets{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .uv-objets button{border:2px solid transparent;border-radius:16px;background:#fff;padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#2b1a0c;font:inherit;cursor:pointer;transition:transform .15s}
 .uv-objets button span{font-size:32px;line-height:1.1}

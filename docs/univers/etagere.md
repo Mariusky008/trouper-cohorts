@@ -1,8 +1,9 @@
 # L'étagère — cahier des charges (13 novembre 2026)
 
 **Statut : validé par le propriétaire (« on va construire cette feature »). Le lot E1 « Noté ! » est construit (13
-novembre 2026, `docs/figurines.md`, 9.0 novoquadragies 📚), puis le lot E2 « Plus tard » (9.0 quinquagies 📅) ; E3
-suit.** Ce document dit tout ce qu'il faut
+novembre 2026, `docs/figurines.md`, 9.0 novoquadragies 📚), puis le lot E2 « Plus tard » (9.0 quinquagies 📅) et le
+lot E3 « La poussière et les idées » (9.0 unquinquagies 🕸️) : tout le cahier est construit. Les banques de phrases
+(sections 5, 7.1, 7.3, et le réveil) et les choix de la section 16 attendent toujours la relecture du propriétaire.** Ce document dit tout ce qu'il faut
 pour la construire. Il ne remplace pas `docs/univers/feuille-de-route.md` : il s'y ajoute (lot E).
 
 > **Ce qui a changé depuis l'écriture de ce cahier** (la nouvelle interface, lots 1 à 4, fusionnés le 13 novembre) :
@@ -558,6 +559,19 @@ revenir sur chacun.
 | Un examen raté | Le souvenir s'en va sans bruit | Une carte de soutien |
 | « 🎭 Un mème » | Ouvre le studio, puis le mème part dans leur conversation (fait, nouvelle interface lot 4) | — |
 | Retirer un souvenir | L'autre n'est pas prévenu | Le prévenir |
+
+## 16 bis. Ce que la construction a ajusté (13 novembre 2026, à relire)
+
+| Où | Le cahier | Ce qui est construit | Pourquoi |
+|---|---|---|---|
+| La fierté (6.4) | « Léa l'a eu ! 🏆 Je le range tout en haut » | « Léa, c'est réussi ! 🏆 Je range ça tout en haut » | « l'a eu » s'accorde avec la chose (« la finale » : « l'a eue ») : une tournure qui marche pour tout |
+| La relance (7.3) | « 3 semaines… les pâtes refroidissent 🍝 » | « 3 semaines… ça attend toujours 🍝 » (et deux autres) | la phrase sert à toutes les promesses, pas qu'aux pâtes ; l'emoji du souvenir est repris |
+| La ligne (8.1) | « 🍝 Le resto promis attend depuis 3 semaines » | « 🍝 Le resto italien : promis il y a 3 semaines » | le titre est écrit par le modèle (« Le resto italien ») : on ne sait pas en tirer « Le resto » |
+| La poussière (9) | l'accroche : « Nina avait son concert le 1er novembre 🎧 » | idem ; un goût : « Nina adore le fraisier 🍰 » ; la blague : « Et votre blague : … » | les trois accroches, écrites |
+| Le réveil (9) | « les figurines sursautent » | elles sautent, et l'une dit « C'est reparti ✨ » (ou deux autres) | une banque de trois, à valider |
+| Un filet de plus (3.2) | le modèle dit « sensible » | et avant lui, une liste de mots (la santé, l'argent, une dispute, les amours…) : l'échange n'est même pas envoyé au modèle | moins d'appels, et un double filet ; « mort de rire », « une enceinte », « un avocat » passent |
+| La page des mesures (13) | à côté de `statsTalkie` | sur la page admin des mèmes, « 📚 L'étagère, sur 14 jours » | c'est là que sont les mesures du talkie |
+| Un compte effacé (8.3) | l'étagère est effacée | il n'existe pas d'effacement d'un seul compte : la remise à zéro (admin) efface tout | rien à brancher aujourd'hui |
 
 ## 17. Ce qu'on garde pour plus tard
 

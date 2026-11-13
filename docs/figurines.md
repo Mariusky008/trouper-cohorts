@@ -2845,6 +2845,39 @@ Le cahier : `docs/univers/etagere.md`, sections 4.4, 6.4, 7.1 à 7.3, 8.1. Ce qu
   annulée, tenue ; le code de Zoé parti sans bruit) ; `scripts/navigateur/etagere-plus-tard.mjs` (sur « Chez moi » :
   le rappel, les lignes, « 🎭 Un mème » ; la fête de la fierté ; la relance de Paul, « C'est fait ! », la fête).
 
+### 9.0 unquinquagies 🕸️ L'étagère, lot E3 « La poussière et les idées » (13 novembre)
+
+Le cahier : `docs/univers/etagere.md`, sections 7.4, 7.5, 8.1 (cas 5), 9 et 13. Le baromètre demandé par le propriétaire
+mesure la relation, pas un message : personne n'est noté.
+
+- **Les états** (`etatEtagere`) : éclairée (un message de l'un ou de l'autre depuis moins de 4 jours), calme (4 à 9),
+  la poussière (10 ou plus) — seulement pour une étagère qui a un souvenir et une paire qui s'est dit au moins six
+  messages. La page : « ✨ Bien éclairée · vous vous êtes parlé 5 jours sur 7 », « 🕸️ Elle prend la poussière · 12
+  jours sans un mot », le meuble terne.
+- **La poussière, dans la scène** : grise, deux toiles d'araignée, les deux figurines endormies (la posture `dort`),
+  l'étagère terne ; dans le fil, **rien que pour lui**, de sa figurine : « 🕸️ RIEN QUE POUR TOI, DE TA FIGURINE — 12
+  jours sans un mot… Votre étagère prend la poussière. Nina avait son concert le 1er novembre 🎧 », « 🎙️ Lui demander
+  comment c'était » (le micro). L'accroche vient de l'étagère : le dernier événement passé, sinon un goût, sinon la
+  blague, sinon rien ; chacun a la sienne. Pas de notification, pas de reproche. Sur sa ligne de « Chez moi » : « 🕸️
+  Votre étagère prend la poussière », l'avatar en gris.
+- **Se rallumer** (`rallumages`) : le premier message après dix jours sans un mot — la scène reprend ses couleurs, les
+  toiles s'en vont, les deux figurines sursautent, l'une dit « C'est reparti ✨ » ; dans le fil : « ✨ L'ÉTAGÈRE SE
+  RALLUME — Nina et toi, c'est reparti. » (une fois par personne).
+- **Les idées** (7.4) : la feuille « 🎁 Cadeau » de la conversation et la feuille « Offrir » d'une visite (`GET
+  /api/direct/etagere?gouts=<clé>`, entre proches) disent « Léa aime : 📖 le roman des phares · 💐 les pivoines » —
+  une idée, pas un catalogue (les dix objets ne changent pas).
+- **La blague** (7.5) : « 🎭 Un mème avec votre blague » (la page) et « 🎭 En faire un mème » (sa fiche) ouvrent le
+  studio avec ses mots, pour lui (le mème part ensuite dans leur conversation).
+- **Ce qu'on mesure** (13 ; `stats/etagere/<jour>.json`, `statsEtagere`) : les souvenirs notés (par paire active), les
+  retirés, les dates changées à la main, les rappels et ceux suivis d'un message le jour même, les promesses tenues,
+  les étagères rallumées ; sur la page admin des mèmes (« 📚 L'étagère, sur 14 jours »), avec les seuils d'alerte du
+  cahier (plus de 2 par paire et par jour, plus de 15 % retirés, plus de 10 % de dates changées, moins de 30 % de
+  rappels suivis).
+- **Les essais** : `scripts/verifier-etagere.mjs` (les états, « 5 jours sur 7 », l'accroche, se rallumer, les idées,
+  les alertes) ; `scripts/essai-etagere-poussiere-route.mjs` (la poussière chez l'un et chez l'autre, la page, la
+  ligne grise, se rallumer, les idées, les compteurs) ; `scripts/navigateur/etagere-poussiere.mjs` (la scène grise,
+  la carte rien que pour lui, le micro, la page, le mème de la blague, l'étagère qui se rallume).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

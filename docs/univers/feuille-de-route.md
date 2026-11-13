@@ -705,7 +705,7 @@ l'humeur du matin.
   `docs/univers/maquettes/etagere.html`.
 - Trois lots, une PR chacun : E1 « Noté ! » (noter, ranger, montrer, retirer) — **construit** (`docs/figurines.md`,
   9.0 novoquadragies 📚) ; E2 « Plus tard » (les rappels du matin, la fierté, les promesses) — **construit** (9.0
-  quinquagies 📅) ; E3 « La poussière et les idées ».
+  quinquagies 📅) ; E3 « La poussière et les idées » — **construit** (9.0 unquinquagies 🕸️).
 - Il touche `proches.tsx` et `conversation-vivante.tsx` : une seule session à la fois.
 
 ### Plus tard (préparé, pas construit)

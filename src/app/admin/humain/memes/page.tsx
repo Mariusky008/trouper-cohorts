@@ -11,6 +11,7 @@ import { parcoursPremierMeme, statsMemes, type EvenementMeme } from "@/lib/direc
 import { statsReactions } from "@/lib/direct/mes-reactions-serveur";
 import { etatNotifications } from "@/lib/direct/appli-collection-serveur";
 import { statsTalkie } from "@/lib/direct/talkie-serveur";
+import { statsEtagere } from "@/lib/direct/etagere-serveur";
 import { GAGS, REACTIONS } from "@/lib/direct/mes-reactions";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,13 @@ const carte: CSSProperties = { padding: 14, borderRadius: 12, background: "#f6f6
 export default async function PageMemes() {
   if (!(await isCurrentUserAdmin())) redirect("/admin");
   const supabase = createAdminClient();
-  const [s, p, rx, nf, tk] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase), etatNotifications(supabase), statsTalkie(supabase)]);
+  const [s, p, rx, nf, tk, et] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase), etatNotifications(supabase), statsTalkie(supabase), statsEtagere(supabase).catch(() => [])]);
+  // 📚 l'étagère (lot E3) : ce qu'on mesure, sur 14 jours
+  const etSomme = et.reduce((a, x) => {
+    for (const k of Object.keys(x.stats) as (keyof typeof x.stats)[]) a[k] = (a[k] ?? 0) + x.stats[k];
+    return a;
+  }, {} as Record<string, number>);
+  const pc = (a: number, b: number) => (b ? `${Math.round((100 * a) / b)} %` : "—");
   const totalRx = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0);
   const enMoinsDUneMinute = p.delais.filter((d) => d <= 60).length;
   const k7 = s.sept.cree ? s.sept.nouveau / s.sept.cree : 0;
@@ -144,6 +151,36 @@ export default async function PageMemes() {
                 ))}
               </div>
             </>
+          )}
+          {/* 📚 L'ÉTAGÈRE (lot E3, `docs/univers/etagere.md`, section 13) : si les figurines notent assez, ou trop ; si les rappels servent */}
+          <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>📚 L’étagère, sur 14 jours</h2>
+          <p style={{ margin: "0 0 10px", color: "#555" }}>Des souvenirs notés sans trop en mettre, peu de retirés, des rappels suivis d’un message : c’est ce qui dit si l’étagère sert.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }} data-etagere="">
+            {[
+              { n: "Souvenirs notés", v: String(etSomme.notes ?? 0) },
+              { n: "… par paire active et par jour", v: etSomme.paires ? (etSomme.notes / etSomme.paires).toFixed(1) : "—" },
+              { n: "Part des souvenirs retirés", v: pc(etSomme.retires ?? 0, etSomme.notes ?? 0) },
+              { n: "Dates changées à la main", v: pc(etSomme.dates ?? 0, etSomme.notes ?? 0) },
+              { n: "Rappels du matin", v: String(etSomme.rappels ?? 0) },
+              { n: "… suivis d’un message le jour même", v: pc(etSomme.suivis ?? 0, etSomme.rappels ?? 0) },
+              { n: "Promesses tenues", v: String(etSomme.tenues ?? 0) },
+              { n: "Étagères rallumées", v: String(etSomme.rallumees ?? 0) },
+            ].map((x) => (
+              <div key={x.n} style={carte}>
+                <small style={{ color: "#666" }}>{x.n}</small>
+                <b style={{ fontSize: 22 }}>{x.v}</b>
+              </div>
+            ))}
+          </div>
+          {et.some((x) => x.alertes.length) && (
+            <ul style={{ margin: "10px 0 0", padding: "10px 14px 10px 30px", borderRadius: 12, background: "#fff4e5", color: "#7a4a12" }} data-etagere-alertes="">
+              {et
+                .filter((x) => x.alertes.length)
+                .flatMap((x) => x.alertes.map((a) => `${x.jour} : ${a}`))
+                .map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+            </ul>
           )}
           {/* 🔔 LE MÈME DU JOUR À 11 H 30 (le lot 3) : combien l'ont demandé, et ce qu'a donné le dernier envoi */}
           <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>🔔 Le mème du jour à 11 h 30</h2>

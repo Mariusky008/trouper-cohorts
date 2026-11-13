@@ -12,12 +12,14 @@
 // POST { action: "reussi", avec, id }          → { ok } : 🏆 « C'est réussi » (celui que l'épreuve concerne, son jour arrivé)
 // POST { action: "tenue", avec, id }           → { ok } : ✅ une promesse tenue (l'un ou l'autre)
 // POST { action: "annuler-tenue", avec, id }   → { ok } : pendant 24 h
+// 🕸️ LOT E3 :
+// GET ?gouts=<clé>                             → { gouts } : ce qu'il ou elle aime (deux au plus), pour « Offrir »
 // Les règles du talkie : la session vérifiée, deux proches qui se sont ajoutés, sinon 403 ; jamais l'identifiant d'un
 // habitant, seulement sa clé. Le frein : `CLIKME_ETAGERE=0` (rien de noté, rien d'affiché : 404).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { agirSurEtagere, etagereAvec, mesRappels } from "@/lib/direct/etagere-serveur";
+import { agirSurEtagere, etagereAvec, goutsDe, mesRappels } from "@/lib/direct/etagere-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +32,7 @@ export async function GET(request: Request) {
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   const q = new URL(request.url).searchParams;
   if (q.get("rappels")) return NextResponse.json({ ok: true, rappels: await mesRappels(supabase, moi).catch(() => []) }, { headers: sansCache });
+  if (q.get("gouts")) return NextResponse.json({ ok: true, gouts: await goutsDe(supabase, moi, q.get("gouts")).catch(() => []) }, { headers: sansCache });
   const r = await etagereAvec(supabase, moi, q.get("avec"));
   if (!r.etagere) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
   return NextResponse.json({ ok: true, etagere: r.etagere }, { headers: sansCache });

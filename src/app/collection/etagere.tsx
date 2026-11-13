@@ -20,6 +20,9 @@
  *     figurines qui sautent, une phrase) ; la fiche : « 🏆 C'est réussi », « ✅ C'est fait ! », « Annuler » (24 h) ;
  *     `RappelsDuMatin` : sur « Chez moi », le rappel de sa figurine (« Aujourd'hui, c'est le permis de Léa 🚗 »),
  *     « 🎭 Un mème », « 🎙️ Un vocal », puis « ✓ Envoyé à Léa ».
+ *   · 🕸️ LOT E3 « LA POUSSIÈRE ET LES IDÉES » : l'étagère qui prend la poussière (la scène grise, les toiles, les
+ *     figurines endormies, le meuble terne ; `CartePoussiere` : rien que pour lui, de sa figurine) ; « ✨ L'ÉTAGÈRE SE
+ *     RALLUME » (`CarteRallume`, la scène qui se réveille) ; « 🎭 Un mème avec votre blague » ; l'état sur la page.
  *
  * LE MOT : à l'écran, « souvenir » ; dans le code, `objet`.
  */
@@ -41,6 +44,8 @@ import {
   phraseFierte,
   phraseTenue,
   phrasesRelance,
+  PHRASES_RALLUME,
+  memeDeLaBlague,
   type CarteVue,
   type EtagereScene,
   type EtagereVue,
@@ -110,9 +115,10 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
 
   const objets = (scene?.objets ?? []).filter((o) => !retires.has(o.id));
   const attente = (scene?.nouveaux ?? []).filter((id) => !poses.has(id) && objets.some((o) => o.id === id));
-  // 🃏 (lot E2) les cartes du fil, et celles qu'il n'a pas encore vues se jouer
+  // 🃏 (lot E2) les cartes du fil, et celles qu'il n'a pas encore vues se jouer ; ✨ (lot E3) se rallumer
   const cartes = (scene?.cartes ?? []).filter((c) => !retires.has(c.objet.id));
-  const aFeter = cartes.filter((c) => c.nouvelle && !fetees.has(c.id)).map((c) => `c:${c.id}`);
+  const rallumes = scene?.rallumes ?? [];
+  const aFeter = [...cartes.filter((c) => c.nouvelle && !fetees.has(c.id)).map((c) => `c:${c.id}`), ...rallumes.filter((r) => r.nouvelle && !fetees.has(r.id)).map((r) => `c:${r.id}`)];
   const cleAttente = [...attente, ...aFeter].join(",");
 
   const poser = useCallback(
@@ -141,6 +147,19 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
     const aJouer = tous.filter((x) => x.startsWith("c:")).map((x) => x.slice(2));
     // 🎉 (lot E2) une carte qu'il n'a pas encore vue se jouer : la fierté, la promesse tenue, la relance
     if (!ids.length) {
+      // ✨ (lot E3) l'étagère se rallume : les toiles s'envolent, les deux figurines sursautent, l'une parle
+      const r = rallumes.find((x) => x.id === aJouer[0]);
+      if (r) {
+        if (calme()) return void Promise.resolve().then(() => feter([r.id]));
+        enCours.current = true;
+        void Promise.resolve().then(() => setJeu({ note: null, bulle: { qui: "lui", texte: PHRASES_RALLUME[r.id.length % PHRASES_RALLUME.length], n: r.id }, saute: ["moi", "lui"] }));
+        plusTard(4200, () => {
+          setJeu({ note: null, bulle: null });
+          enCours.current = false;
+          feter([r.id]);
+        });
+        return;
+      }
       const c = cartes.find((x) => x.id === aJouer[0]);
       if (!c) return;
       if (calme() || envols.current >= 3) return void Promise.resolve().then(() => feter(aJouer));
@@ -245,16 +264,28 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
   const oublier = useCallback((id: string) => setRetires((r) => new Set([...r, id])), []);
   /** ✋ (lot E2) « 🏆 C'est réussi », « ✅ C'est fait ! », « Annuler » : la scène le montre à la relecture suivante. */
   const faire = useCallback((action: "reussi" | "tenue" | "annuler-tenue", id: string) => agir({ action, avec: cle, id }), [cle]);
-  return { objets, cartes, attente: new Set(attente.filter((id) => id !== vol)), vol, arrive, jeu, retirer, oublier, faire, tenues: scene?.tenues ?? 0, pause: scene?.pause ?? null };
+  return { objets, cartes, rallumes, attente: new Set(attente.filter((id) => id !== vol)), vol, arrive, jeu, retirer, oublier, faire, tenues: scene?.tenues ?? 0, pause: scene?.pause ?? null, etat: scene?.etat ?? null, poussiere: scene?.poussiere ?? null };
 }
 
 /** 📚 La planche, en haut de la scène : les cinq derniers posés ; « 📚 Votre étagère · 6 ». Vide : rien. */
-export function MurEtagere({ objets, attente, vol, arrive, onOuvrir }: { objets: ObjetVu[]; attente: ReadonlySet<string>; vol: string; arrive: string; onOuvrir: () => void }) {
+export function MurEtagere({ objets, attente, vol, arrive, onOuvrir, poussiere = false }: { objets: ObjetVu[]; attente: ReadonlySet<string>; vol: string; arrive: string; onOuvrir: () => void; poussiere?: boolean }) {
   const la = objets.filter((o) => !attente.has(o.id) || o.id === vol);
   const n = la.filter((o) => o.id !== vol).length;
   if (!la.length) return null;
   return (
-    <button type="button" className="et-mur" onClick={onOuvrir} aria-label={`Votre étagère : ${n} souvenir${n > 1 ? "s" : ""}`}>
+    <>
+      {/* 🕸️ (lot E3) la poussière : deux toiles d'araignée */}
+      {poussiere && (
+        <>
+          <span className="et-toile g" aria-hidden="true">
+            🕸️
+          </span>
+          <span className="et-toile d" aria-hidden="true">
+            🕸️
+          </span>
+        </>
+      )}
+    <button type="button" className={`et-mur${poussiere ? " terne" : ""}`} onClick={onOuvrir} aria-label={`Votre étagère : ${n} souvenir${n > 1 ? "s" : ""}`}>
       <span className="et-rang">
         {la.slice(-5).map((o) => (
           <span key={o.id} data-objet={o.id} className={o.id === vol ? "vient" : o.id === arrive ? "arrive" : ""}>
@@ -265,6 +296,36 @@ export function MurEtagere({ objets, attente, vol, arrive, onOuvrir }: { objets:
       <span className="et-planche" aria-hidden="true" />
       <small>📚 Votre étagère · {n}</small>
     </button>
+    </>
+  );
+}
+
+/** 🕸️ (lot E3) « RIEN QUE POUR TOI, DE TA FIGURINE » : douze jours sans un mot, et une accroche tirée de l'étagère. */
+export function CartePoussiere({ texte, bouton, onParler }: { texte: string; bouton: string; onParler: () => void }) {
+  return (
+    <li className="et-carte-fil prive">
+      <div>
+        <b className="et-entete">🕸️ RIEN QUE POUR TOI, DE TA FIGURINE</b>
+        <p className="et-texte">{texte}</p>
+        <span className="et-actions boutons">
+          <button type="button" className="et-petit" onClick={onParler}>
+            {bouton}
+          </button>
+        </span>
+      </div>
+    </li>
+  );
+}
+
+/** ✨ (lot E3) « L'ÉTAGÈRE SE RALLUME » : ils se sont reparlé, après la poussière. */
+export function CarteRallume({ prenom }: { prenom: string }) {
+  return (
+    <li className="et-carte-fil trophee">
+      <div>
+        <b className="et-entete">✨ L’ÉTAGÈRE SE RALLUME</b>
+        <p className="et-texte">{prenom} et toi, c’est reparti.</p>
+      </div>
+    </li>
   );
 }
 
@@ -447,6 +508,7 @@ export function FicheObjet({
   onRetirer,
   onDate,
   onFaire,
+  onMeme,
 }: {
   o: ObjetVu | null;
   prenom: string;
@@ -454,6 +516,7 @@ export function FicheObjet({
   onRetirer: (o: ObjetVu) => Promise<void>;
   onDate: (o: ObjetVu, quand: string) => Promise<void>;
   onFaire?: (o: ObjetVu, action: "reussi" | "tenue" | "annuler-tenue") => Promise<void>;
+  onMeme?: (texte: string) => void;
 }) {
   const [changer, setChanger] = useState(false);
   const [quand, setQuand] = useState("");
@@ -515,6 +578,11 @@ export function FicheObjet({
           )}
           {o.genre === "gout" && <p className="et-note-douce">🎁 Une idée de cadeau, quand le moment viendra.</p>}
           {o.etat === "fierte" && <p className="et-note-douce">🏆 Rangé tout en haut, avec vos fiertés.</p>}
+          {o.genre === "blague" && onMeme && (
+            <button type="button" className="et-bouton" onClick={() => onMeme(memeDeLaBlague(o))}>
+              🎭 En faire un mème
+            </button>
+          )}
           {(o.genre === "date" || o.genre === "promesse") && o.etat === "actif" && o.quand && !reussir && (
             <>
               {changer ? (
@@ -549,7 +617,7 @@ export function FicheObjet({
  * 📚 « VOTRE ÉTAGÈRE » : « Léa et toi » ; les compteurs ; le meuble et ses trois rayons (« Nos fiertés », « À venir »,
  * « Ce qu'on aime ») ; les règles en clair ; la pause. Un toucher sur un souvenir : sa fiche.
  */
-export function PageEtagere({ cle, onFermer, onRetire }: { cle: string; onFermer: () => void; onRetire?: (id: string) => void }) {
+export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; onFermer: () => void; onRetire?: (id: string) => void; onMeme?: (texte: string) => void }) {
   const [vue, setVue] = useState<EtagereVue | null>(null);
   const [erreur, setErreur] = useState("");
   const [fiche, setFiche] = useState<ObjetVu | null>(null);
@@ -637,6 +705,8 @@ export function PageEtagere({ cle, onFermer, onRetire }: { cle: string; onFermer
       )}
       {vue && (
         <>
+          {/* 🕸️ (lot E3) l'état de leur relation : la relation, pas un message */}
+          {vue.phraseEtat && <p className={`et-etat${vue.etat === "poussiere" ? " gris" : ""}`}>{vue.phraseEtat}</p>}
           <div className="et-compteurs">
             <div>
               <b>{objets.length}</b>
@@ -651,7 +721,7 @@ export function PageEtagere({ cle, onFermer, onRetire }: { cle: string; onFermer
               <span>{blague ? "votre blague" : "pas de blague"}</span>
             </div>
           </div>
-          <div className="et-meuble">
+          <div className={`et-meuble${vue.etat === "poussiere" ? " poussiere" : ""}`}>
             {RAYONS.map((r) => {
               const l = rayon(r.cle);
               return (
@@ -680,6 +750,12 @@ export function PageEtagere({ cle, onFermer, onRetire }: { cle: string; onFermer
             </p>
           )}
           <p className="et-regles">{REGLES_ETAGERE}</p>
+          {/* 🎭 (lot E3) leur blague, en mème */}
+          {blague && onMeme && (
+            <button type="button" className="et-bouton clair" onClick={() => onMeme(memeDeLaBlague(blague))}>
+              🎭 Un mème avec votre blague
+            </button>
+          )}
           <div className="et-reglage">
             {vue.pause ? (
               vue.pause.moi ? (
@@ -697,7 +773,7 @@ export function PageEtagere({ cle, onFermer, onRetire }: { cle: string; onFermer
           </div>
         </>
       )}
-      <FicheObjet o={fiche} prenom={vue?.prenom ?? ""} onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} onFaire={faireSur} />
+      <FicheObjet o={fiche} prenom={vue?.prenom ?? ""} onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} onFaire={faireSur} onMeme={onMeme} />
     </div>
   );
   return typeof document === "undefined" ? null : createPortal(contenu, document.body);
@@ -772,6 +848,21 @@ export const STYLES_ETAGERE = `
 .et-bouton:disabled{opacity:.55}
 .et-date{align-self:stretch;display:flex;flex-direction:column;gap:6px}
 .et-date input{min-height:46px;padding:0 12px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#2A1422;color:#FFF4E6;font:inherit;font-size:16px;color-scheme:dark}
+.pr-scene.et-poussiere{filter:grayscale(.75) brightness(.6) sepia(.2);transition:filter 1.2s ease}
+.pr-scene{transition:filter 1.2s ease}
+.et-toile{position:absolute;top:6px;z-index:4;font-size:26px;opacity:.85;pointer-events:none}
+.et-toile.g{left:18%}
+.et-toile.d{right:16%;top:22px;transform:scaleX(-1)}
+.et-mur.terne .et-rang span{filter:grayscale(1) brightness(.7)}
+.et-etat{margin:0;padding:9px 12px;border-radius:14px;background:rgba(242,196,107,.12);color:#F2C46B;font-size:13.5px;font-weight:700}
+.et-etat.gris{background:rgba(255,255,255,.06);color:#BFA6B3}
+.et-meuble.poussiere{filter:grayscale(.8) brightness(.7)}
+.et-meuble.poussiere::before{display:none}
+.pr-fil li.et-carte-fil.prive > div{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.18)}
+.pr-fil li.et-carte-fil.prive .et-entete{color:#BFA6B3}
+.et-texte{margin:0;font-size:15px;line-height:1.4}
+.et-idees{margin:0 0 4px;padding:9px 12px;border-radius:12px;background:rgba(242,196,107,.12);color:#F2C46B;font-size:13.5px;font-weight:700}
+.cm-avatar.gris img{filter:grayscale(.85) brightness(.75)}
 .et-confetti{position:absolute;z-index:9;width:8px;height:12px;border-radius:2px;pointer-events:none}
 .pr-fil li.et-carte-fil.trophee > div{background:linear-gradient(140deg,rgba(242,196,107,.22),rgba(255,46,154,.12));border-style:solid}
 .et-actions.boutons{gap:8px}

@@ -32,8 +32,9 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
-import { CarteEtagere, CarteNote, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
-import type { CarteVue, ObjetVu } from "@/lib/direct/etagere";
+import { CarteEtagere, CarteNote, CartePoussiere, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
+import { idees, type CarteVue, type ObjetVu } from "@/lib/direct/etagere";
+import { versLeStudio } from "./vers-le-studio";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
@@ -512,7 +513,7 @@ export function Proches({
                     onClick={() => (e.cadeaux.length ? setDecouverte(e.cadeaux.map((s) => ({ genre: "cadeau", s }))) : ouvrir({ cle: p.cle, parler: false }))}
                     aria-label={`Ta conversation avec ${p.prenom}`}
                   >
-                    <span className="cm-avatar">
+                    <span className={`cm-avatar${p.etagere?.gris ? " gris" : ""}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={p.imageHumeur || p.image} alt="" draggable={false} style={{ animationDelay: `${(-0.7 * i).toFixed(1)}s` }} />
                       {p.la && <i className="cm-la" aria-label="Là maintenant" />}
@@ -1132,8 +1133,10 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const dernierGeste = gestes.length ? Date.parse(gestes[gestes.length - 1].le) || 0 : 0;
   const silence = maintenant - Math.max(activite, dernierConnu, dernierGeste);
   const luiPrepare = Boolean(vivant?.enregistre);
-  const postureLui: Posture | "prepare" = luiPrepare ? "prepare" : postureDe(avec?.sienne ?? null, silence);
-  const postureMoi: Posture = postureDe(avec?.mienne ?? null, silence);
+  // 🕸️ (l'étagère, lot E3) la poussière : leurs deux figurines dorment
+  const endormies = et.etat === "poussiere";
+  const postureLui: Posture | "prepare" = luiPrepare ? "prepare" : endormies ? "dort" : postureDe(avec?.sienne ?? null, silence);
+  const postureMoi: Posture = endormies ? "dort" : postureDe(avec?.mienne ?? null, silence);
   const luiParle = !m?.moi;
   const postureParleur = joue ? "calme" : luiParle ? postureLui : postureMoi;
   const postureEcoute = luiParle ? postureMoi : postureLui;
@@ -1156,10 +1159,11 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         ...laisses.map((x) => ({ le: x.le, e: { laisse: x }, i: -1 })),
       ]
     : [];
-  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil; ob?: ObjetVu; ct?: CarteVue }[] = [
+  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil; ob?: ObjetVu; ct?: CarteVue; ra?: string }[] = [
     ...fil.messages.map((x, i) => ({ le: x.le, x, i })),
     ...cartesEtagere.map((ob) => ({ le: ob.le, ob, i: -1 })),
     ...et.cartes.map((ct) => ({ le: ct.le, ct, i: -1 })),
+    ...et.rallumes.map((r) => ({ le: r.le, ra: r.id, i: -1 })),
     ...(fil.memes ?? []).map((mm) => ({ le: mm.le, mm, i: -1 })),
     ...gestes.filter((g) => g.type === "panneau").map((g) => ({ le: g.le, g, i: -1 })),
     ...(vivant?.apartes ?? []).map((a) => ({ le: a.le, a, i: -1 })),
@@ -1186,6 +1190,14 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     note: et.jeu.note?.qui === qui ? { n: et.jeu.note.n } : null,
     bulle: et.jeu.bulle?.qui === qui ? { texte: et.jeu.bulle.texte, n: et.jeu.bulle.n } : null,
   });
+  /** 🎭 (l'étagère, lot E3) leur blague, en mème : le studio s'ouvre avec ses mots, pour lui. */
+  function memeDeLEtagere(texte: string) {
+    setPageEtagere(false);
+    retenirMemePour({ cle, prenom: fil?.lui.prenom ?? "" });
+    versLeStudio({ texte });
+    if (chezMoi) chezMoi.onMeme();
+    else onFermer();
+  }
   /** ✅ (lot E2) « C'est fait ! » sur une relance : la promesse est tenue (la fête se joue à la relecture). */
   async function tenirLaPromesse(o: ObjetVu) {
     try {
@@ -1250,7 +1262,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       {/* la scène : leurs deux figurines face à face ; celle qui parle s'avance — chez moi, dans mon univers */}
       <section
         ref={sceneRef}
-        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}${sursaut ? " pv-sursaut" : ""}${et.objets.length ? " avec-etagere" : ""}`}
+        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}${sursaut ? " pv-sursaut" : ""}${et.objets.length ? " avec-etagere" : ""}${endormies ? " et-poussiere" : ""}`}
         aria-label={chez ? `Chez toi : ${fil.lui.prenom} est venu te voir` : "La scène"}
         data-message={m?.id ?? ""}
         data-replique={m ? ir : ""}
@@ -1304,7 +1316,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         <Calque qui="lui" style={chez ? styleDePlace(chez.invite, true) : undefined} prepare={luiPrepare} anim={anim} posture={postureLui} aparte={aparteDe("lui")} note={jeuDe("lui").note} bulle={jeuDe("lui").bulle} />
         <Calque qui="moi" style={chez ? styleDePlace(chez.hote, false) : undefined} prepare={false} anim={anim} posture={postureMoi} aparte={aparteDe("moi")} note={jeuDe("moi").note} bulle={jeuDe("moi").bulle} />
         {/* 📚 leur étagère, au mur : les cinq derniers souvenirs posés */}
-        <MurEtagere objets={et.objets} attente={et.attente} vol={et.vol} arrive={et.arrive} onOuvrir={() => setPageEtagere(true)} />
+        <MurEtagere objets={et.objets} attente={et.attente} vol={et.vol} arrive={et.arrive} onOuvrir={() => setPageEtagere(true)} poussiere={endormies} />
         {s && (
           <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
             <span aria-hidden="true">{s.emoji}</span>
@@ -1344,7 +1356,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       </div>
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
-        {elements.map(({ x, i, g, a, e, le, mm, ob, ct }) => {
+        {elements.map(({ x, i, g, a, e, le, mm, ob, ct, ra }) => {
+          if (ra) return <CarteRallume key={`ra-${ra}`} prenom={fil.lui.prenom} />;
           if (ct)
             return (
               <CarteEtagere
@@ -1468,6 +1481,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
             </li>
           );
         })}
+        {/* 🕸️ (l'étagère, lot E3) rien que pour moi, de ma figurine : la poussière, et une accroche */}
+        {et.poussiere && <CartePoussiere texte={et.poussiere.texte} bouton={et.poussiere.bouton} onParler={() => (fig.current?.arreter(), setActivite(Date.now()), setEnregistrer(true))} />}
       </ol>
       {astuce && fil.messages.length > 0 && <p className="pv-astuce">👆 Appui long sur un message : ta figurine réagit</p>}
       {info && (
@@ -1507,6 +1522,12 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       </div>
       {chezMoi && (
         <Feuille ouverte={offrir} onFermer={() => setOffrir(false)} titre={`Un cadeau pour ${fil.lui.prenom}`} className="pr-feuille pr-feuille-cadeau">
+          {/* 🎁 (l'étagère, lot E3) une idée, pas un catalogue : ce qu'il ou elle aime */}
+          {idees(et.objets).length > 0 && (
+            <p className="et-idees">
+              {fil.lui.prenom} aime : {idees(et.objets).map((o) => `${o.emoji} ${o.titre.replace(new RegExp(` (de |d’)${fil.lui.prenom.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`), "").replace(/^./, (c) => c.toLowerCase())}`).join(" · ")}
+            </p>
+          )}
           <div className="pr-objets">
             {OBJETS_SOUVENIR.map((o) => (
               <button key={o.cle} type="button" aria-pressed={objet === o.cle} aria-label={o.nom} className={objet === o.cle ? "pris" : ""} onClick={() => setObjet(o.cle)}>
@@ -1568,7 +1589,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           }}
         />
       )}
-      {pageEtagere && <PageEtagere cle={cle} onFermer={() => setPageEtagere(false)} onRetire={et.oublier} />}
+      {pageEtagere && <PageEtagere cle={cle} onFermer={() => setPageEtagere(false)} onRetire={et.oublier} onMeme={memeDeLEtagere} />}
       <FeuillePanneaux
         ouverte={panneaux}
         prenom={fil.lui.prenom}
