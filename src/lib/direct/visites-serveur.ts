@@ -222,7 +222,8 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
   const enAttente = souvenirs.filter((x) => !x.accepte_le);
   // (qui sont-ils : prénom, figurine, clé, proche ou non, son univers ouvert ou non — ceux qui sont passés, et ceux dont
   // un cadeau attend)
-  const ids = [...new Set([...recents.map((v) => v.de), ...enAttente.map((x) => x.de)])];
+  const posesListe = souvenirs.filter((x) => x.accepte_le);
+  const ids = [...new Set([...recents.map((v) => v.de), ...enAttente.map((x) => x.de), ...posesListe.map((x) => x.de)])];
   const qui = new Map(
     await Promise.all(
       ids.map(async (id) => {
@@ -231,11 +232,7 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
       }),
     ),
   );
-  const noms = await prenomsDe(
-    supabase,
-    souvenirs.filter((x) => x.accepte_le && !qui.has(x.de)).map((x) => x.de),
-  );
-  const prenomDe = (id: string) => qui.get(id)?.prenom ?? noms.get(id) ?? "Quelqu’un";
+  const prenomDe = (id: string) => qui.get(id)?.prenom ?? "Quelqu’un";
   const vuLe = s(vues.le);
   return {
     visibilite: f.visibilite,
@@ -255,7 +252,8 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
       };
     }),
     enAttente: enAttente.map((x) => souvenirVu(x, prenomDe(x.de), qui.get(x.de))),
-    poses: souvenirs.filter((x) => x.accepte_le).map((x) => souvenirVu(x, prenomDe(x.de))),
+    // (posés chez moi : de qui — sa clé, pour les ranger dans notre conversation)
+    poses: posesListe.map((x) => souvenirVu(x, prenomDe(x.de), { cle: qui.get(x.de)?.cle })),
   };
 }
 

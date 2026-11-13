@@ -28,6 +28,8 @@ import { OngletVisible } from "./guide";
 import { BandeauRituel, MonHumeur, chargerRituel, fabriquerMesTetes, useConversationDemandee, useRituel, useRituelAvec } from "./rituel";
 import { EnteteChezMoi } from "./chez-moi";
 import { VisitesRecues, aDecouvrir, marquerVu, signatureDe, useMesVisites, type ADecouvrir } from "./visites-recues";
+import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type ObjetSouvenir, type SouvenirVu } from "@/lib/direct/visites";
+import { jouerDoux } from "@/lib/direct/sons";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
@@ -339,7 +341,30 @@ export function Proches({
       )}
 
       {/* (posée sur la page entière : elle couvre le menu, quoi que fassent les onglets) */}
-      {ouvert && createPortal(<Conversation key={ouvert.cle} cle={ouvert.cle} parler={ouvert.parler} onFermer={fermer} />, document.body)}
+      {ouvert &&
+        createPortal(
+          <Conversation
+            key={ouvert.cle}
+            cle={ouvert.cle}
+            parler={ouvert.parler}
+            onFermer={fermer}
+            chezMoi={
+              chezMoi
+                ? {
+                    univers: Boolean(donnees?.proches.find((p) => p.cle === ouvert.cle)?.univers),
+                    visites,
+                    onCadeaux: (ss) => setDecouverte(ss.map((s) => ({ genre: "cadeau", s }))),
+                    // (🎭 un mème : le studio — lot 4 : il partira dans notre conversation)
+                    onMeme: () => {
+                      setOuvert(null);
+                      allerA("creer");
+                    },
+                  }
+                : undefined
+            }
+          />,
+          document.body,
+        )}
 
       {invite && (
         <Feuille ouverte={inviteOuverte} onFermer={() => setInviteOuverte(false)} titre={`Le lien de ${invite.prenom}`} className="pr-feuille">
@@ -601,17 +626,19 @@ export function Proches({
           </>
         )}
         {portails}
-        {decouverte && (
-          <VisitesRecues
-            liste={decouverte}
-            visites={visites}
-            onFermer={finDecouverte}
-            onParler={(cle) => {
-              finDecouverte();
-              ouvrirFil(cle, true);
-            }}
-          />
-        )}
+        {decouverte &&
+          createPortal(
+            <VisitesRecues
+              liste={decouverte}
+              visites={visites}
+              onFermer={finDecouverte}
+              onParler={(cle) => {
+                finDecouverte();
+                ouvrirFil(cle, true);
+              }}
+            />,
+            document.body,
+          )}
       </div>
     );
   }
@@ -809,7 +836,21 @@ export function MaPresence() {
 }
 
 // ─── la conversation ──────────────────────────────────────────────────────────────────────────────
-function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean; onFermer: () => void }) {
+/**
+ * 📐 « CHEZ MOI » (la nouvelle interface, lot 3) : la conversation range aussi ce qui s'est passé entre nous — sa visite,
+ * son cadeau à ouvrir, ses cadeaux posés chez moi, ce que je lui laisse — et, en bas, 🎭 un mème et 🎁 un cadeau ; en
+ * haut, « 🏡 Son univers ».
+ */
+type ConversationChezMoi = { univers: boolean; visites: MesVisites | null; onCadeaux: (s: SouvenirVu[]) => void; onMeme: () => void };
+type Laisse = { le: string; objet: ObjetSouvenir };
+
+function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler: boolean; onFermer: () => void; chezMoi?: ConversationChezMoi }) {
+  // 🎁 (chez moi) la feuille du cadeau à lui laisser, et ce que je lui ai laissé pendant cette conversation
+  const [offrir, setOffrir] = useState(false);
+  const [objet, setObjet] = useState<ObjetSouvenir | null>(null);
+  const [motCadeau, setMotCadeau] = useState("");
+  const [laisses, setLaisses] = useState<Laisse[]>([]);
+  const [info, setInfo] = useState("");
   const [fil, setFil] = useState<Fil | null>(null);
   const [erreur, setErreur] = useState("");
   const [enregistrer, setEnregistrer] = useState(parler);
@@ -1085,11 +1126,40 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
       .filter((g) => g.type === "reaction" && g.message === id)
       .map((g) => reactionDe(g.cle)?.emoji ?? "")
       .join("");
-  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue }[] = [
+  // 📐 (chez moi) ce qui s'est passé entre nous, rangé dans le fil : sa visite, son cadeau, ses cadeaux posés, les miens
+  type Evt = { porte?: true; cadeau?: SouvenirVu; pose?: SouvenirVu; laisse?: Laisse };
+  const v = chezMoi?.visites;
+  const evts: { le: string; e: Evt; i: number }[] = chezMoi
+    ? [
+        ...(v?.passes ?? []).filter((x) => x.cle === cle).map((x) => ({ le: x.le, e: { porte: true as const }, i: -1 })),
+        ...(v?.enAttente ?? []).filter((x) => x.cle === cle).map((x) => ({ le: x.le, e: { cadeau: x }, i: -1 })),
+        ...(v?.poses ?? []).filter((x) => x.cle === cle).map((x) => ({ le: x.le, e: { pose: x }, i: -1 })),
+        ...laisses.map((x) => ({ le: x.le, e: { laisse: x }, i: -1 })),
+      ]
+    : [];
+  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt }[] = [
     ...fil.messages.map((x, i) => ({ le: x.le, x, i })),
     ...gestes.filter((g) => g.type === "panneau").map((g) => ({ le: g.le, g, i: -1 })),
     ...(vivant?.apartes ?? []).map((a) => ({ le: a.le, a, i: -1 })),
+    ...evts,
   ].sort((a, b) => a.le.localeCompare(b.le));
+  async function laisserUnCadeau() {
+    if (!objet) return;
+    setErreur("");
+    try {
+      const r = await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "souvenir", cle, objet, mot: motCadeau }) });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      if (!r.ok || j.error) throw new Error(j.error || "Ça n’a pas marché. Réessaie.");
+      jouerDoux("cadeau");
+      setLaisses((l) => [...l, { le: new Date().toISOString(), objet }]);
+      setOffrir(false);
+      setObjet(null);
+      setMotCadeau("");
+      setInfo(`🎁 Déposé devant chez ${fil?.lui.prenom ?? "lui"}, emballé : la surprise l’attend.`);
+    } catch (e) {
+      setErreur(message(e));
+    }
+  }
   const aparteDe = (qui: "moi" | "lui") => {
     if (!aparteJoue) return null;
     const k = aparteJoue.mots.findIndex((x) => x.moi === (qui === "moi"));
@@ -1110,6 +1180,11 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
           <b>{fil.lui.prenom}</b>
           {fil.la && <small className="vert">Là maintenant</small>}
         </span>
+        {chezMoi?.univers && (
+          <a className="pr-son-univers" href={`/univers/chez/${cle}`}>
+            🏡 Son univers
+          </a>
+        )}
         <button type="button" className="pr-menu-bouton" aria-label={`Signaler ou retirer ${fil.lui.prenom}`} aria-expanded={menu} onClick={() => setMenu((x) => !x)}>
           ⋯
         </button>
@@ -1221,7 +1296,35 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
       </div>
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
-        {elements.map(({ x, i, g, a }) => {
+        {elements.map(({ x, i, g, a, e, le }) => {
+          if (e) {
+            if (e.cadeau) {
+              return (
+                <li key={`c-${e.cadeau.id}`} className="pr-evt-cadeau">
+                  <div>
+                    <span className="pr-paquet" aria-hidden="true">
+                      🎁
+                    </span>
+                    <span>
+                      <b>{fil.lui.prenom} t’a laissé un cadeau</b>
+                      <small>Emballé, devant ta porte · {heure(e.cadeau.le)}</small>
+                      <button type="button" onClick={() => chezMoi?.onCadeaux([e.cadeau!])} aria-label={`Ouvrir le cadeau de ${fil.lui.prenom}`}>
+                        Ouvrir
+                      </button>
+                    </span>
+                  </div>
+                </li>
+              );
+            }
+            const o = objetDe(e.pose?.objet ?? e.laisse?.objet);
+            return (
+              <li key={`e-${e.porte ? "p" : e.pose ? `s${e.pose.id}` : "l"}-${le}`} className={`pr-evt${e.laisse ? " moi" : ""}`}>
+                <span>
+                  {e.porte ? "🚪" : o?.emoji} <b>{e.porte ? `${fil.lui.prenom} a frappé à ta porte` : e.pose ? `${o?.nom ?? "Un souvenir"}, de ${fil.lui.prenom} : posé chez toi` : `Tu as laissé ${(o?.nom ?? "un cadeau").toLowerCase()} chez ${fil.lui.prenom}`}</b>
+                </span>
+              </li>
+            );
+          }
           if (a) {
             const mienne = a.mots.find((y) => y.moi)?.texte ?? "";
             const sienne = a.mots.find((y) => !y.moi)?.texte ?? "";
@@ -1286,6 +1389,11 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
         })}
       </ol>
       {astuce && fil.messages.length > 0 && <p className="pv-astuce">👆 Appui long sur un message : ta figurine réagit</p>}
+      {info && (
+        <p className="pr-info" role="status">
+          {info}
+        </p>
+      )}
       {erreur && (
         <p className="pr-erreur" role="alert">
           {erreur}
@@ -1296,11 +1404,43 @@ function Conversation({ cle, parler, onFermer }: { cle: string; parler: boolean;
         <button type="button" className="pv-bouton-panneau" aria-label="Brandir un panneau" onClick={() => setPanneaux(true)}>
           🪧
         </button>
+        {chezMoi && (
+          <button type="button" className="pr-geste" aria-label="Lui faire un mème" onClick={chezMoi.onMeme}>
+            🎭<small>Mème</small>
+          </button>
+        )}
         <button type="button" className="pr-bouton grand" onClick={() => (fig.current?.arreter(), setActivite(Date.now()), setEnregistrer(true))}>
           <IconeMicro />
           {fil.messages.length ? "Lui répondre" : "Lui parler"}
         </button>
+        {chezMoi && (
+          <button
+            type="button"
+            className="pr-geste"
+            aria-label={`Laisser un cadeau chez ${fil.lui.prenom}`}
+            onClick={() => (chezMoi.univers ? (setInfo(""), setOffrir(true)) : setInfo(`🎁 ${fil.lui.prenom} n’a pas encore d’univers où poser un cadeau.`))}
+          >
+            🎁<small>Cadeau</small>
+          </button>
+        )}
       </div>
+      {chezMoi && (
+        <Feuille ouverte={offrir} onFermer={() => setOffrir(false)} titre={`Un cadeau pour ${fil.lui.prenom}`} className="pr-feuille pr-feuille-cadeau">
+          <div className="pr-objets">
+            {OBJETS_SOUVENIR.map((o) => (
+              <button key={o.cle} type="button" aria-pressed={objet === o.cle} aria-label={o.nom} className={objet === o.cle ? "pris" : ""} onClick={() => setObjet(o.cle)}>
+                <span aria-hidden="true">{o.emoji}</span>
+                <small>{o.nom}</small>
+              </button>
+            ))}
+          </div>
+          <input className="pr-mot-cadeau" type="text" name="mot" maxLength={MOT_SOUVENIR_MAX} placeholder="Un petit mot (si tu veux)" value={motCadeau} onChange={(ev) => setMotCadeau(ev.target.value)} />
+          <button type="button" className="pr-bouton grand" disabled={!objet} onClick={() => void laisserUnCadeau()}>
+            {objet ? `Offrir ${objetDe(objet)?.emoji ?? ""} à ${fil.lui.prenom}` : "Choisis un cadeau"}
+          </button>
+          <p className="pr-note">Il arrive emballé, devant sa porte : {fil.lui.prenom} l’ouvrira.</p>
+        </Feuille>
+      )}
 
       {enregistrer && (
         <Parler
@@ -2131,6 +2271,29 @@ export const STYLES_PROCHES = `
 .pr-texte{font-size:13px;font-style:italic;line-height:1.35}
 .pr-fil small{font-size:10.5px;font-weight:700;color:#B49AA8}
 .pr-bas{flex:none;display:flex;gap:10px;padding-top:4px}
+/* 📐 (chez moi) 🎭 et 🎁 autour de « Lui répondre » ; « Son univers » ; ce qui s'est passé entre nous, dans le fil */
+.pr-geste{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:50px;min-height:58px;border:0;border-radius:18px;background:#2A1422;color:#FFF4E6;font:inherit;font-size:22px;line-height:1.1;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.1)}
+.pr-geste small{font-size:10px;font-weight:800;color:#CDB4C0}
+.pr-son-univers{flex:none;margin-left:auto;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.08);color:#FFF4E6;font-size:12.5px;font-weight:800;text-decoration:none;white-space:nowrap}
+.pr-son-univers + .pr-menu-bouton{margin-left:0}
+.pr-evt{justify-content:center}
+.pr-evt > span{max-width:90%;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:12.5px;color:#CDB4C0;text-align:center}
+.pr-evt b{color:#FFF4E6;font-weight:700}
+.pr-evt-cadeau{justify-content:center}
+.pr-evt-cadeau > div{display:grid;grid-template-columns:54px minmax(0,1fr);gap:12px;align-items:center;width:88%;padding:10px 12px;border-radius:18px;background:linear-gradient(135deg,rgba(242,196,107,.18),rgba(255,46,154,.12));border:1px solid rgba(242,196,107,.5)}
+.pr-paquet{display:grid;place-items:center;width:54px;height:54px;border-radius:14px;background:#2A1422;font-size:32px;animation:pr-dandine 1.8s ease-in-out infinite;transform-origin:50% 90%}
+.pr-evt-cadeau b{display:block;font-size:14px}
+.pr-evt-cadeau small{display:block;margin:1px 0 6px;font-size:12px;color:#CDB4C0}
+.pr-evt-cadeau button{padding:7px 16px;border:0;border-radius:999px;background:#F2C46B;color:#2A0F1F;font:inherit;font-size:13.5px;font-weight:900;cursor:pointer}
+.pr-info{margin:0 2px;padding:9px 12px;border-radius:14px;background:rgba(61,220,132,.12);color:#BFF5D6;font-size:13.5px;font-weight:700}
+.pr-objets{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.pr-objets button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border:2px solid transparent;border-radius:16px;background:rgba(255,255,255,.06);color:#CDB4C0;font:inherit;cursor:pointer}
+.pr-objets button span{font-size:28px;line-height:1.1}
+.pr-objets button small{font-size:10px;line-height:1.1;text-align:center}
+.pr-objets button.pris{border-color:#F2C46B;color:#FFF4E6}
+.pr-mot-cadeau{width:100%;box-sizing:border-box;margin-top:10px;padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.05);color:#FFF4E6;font:inherit;font-size:16px}
+.pr-feuille-cadeau .pr-bouton.grand{margin-top:10px}
+@keyframes pr-dandine{0%,100%{transform:rotate(0)}10%{transform:rotate(-7deg)}20%{transform:rotate(6deg)}30%{transform:rotate(-4deg)}40%{transform:none}}
 .pr-bas.colonne{flex-direction:column;align-items:center;gap:8px}
 /* (« Envoyer à … » reste en vue, même quand ses répliques sont longues) */
 .pr-parler .pr-bas{position:sticky;bottom:0;z-index:4;margin-top:auto;padding-top:14px;background:linear-gradient(180deg,rgba(18,6,15,0),#12060F 26%);box-shadow:0 14px 0 #12060F}

@@ -8,7 +8,8 @@
 // nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. 🎁🚪 Sam laisse un bouquet chez Marc, Léa
 // frappe à sa porte : en arrivant chez lui, Marc les découvre — le paquet qui se dandine, qu'il ouvre (l'objet, le mot),
 // « ✨ Le poser chez moi » ; la porte qui tremble, qu'il ouvre (« C'est Léa ! ») ; le bouquet posé dans sa fenêtre ; ce
-// n'est plus nouveau ensuite ; « Mes visites » : le bilan. Freiné (l'app de la CI,
+// n'est plus nouveau ensuite ; « Mes visites » : le bilan ; la conversation range ce qui s'est passé (visite, cadeau),
+// 🎭 et 🎁 à côté de « Lui répondre ». Freiné (l'app de la CI,
 // `CLIKME_UNIVERS_POUR_TOUS=0`) : l'appli d'avant. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -240,6 +241,34 @@ await m.screenshot({ path: `${D}/bascule-3f-demande.png` });
 await m.locator(".cm-ajouter-demande").click();
 await m.waitForSelector(`.cm-liste li[data-cle="${cleProfil(NINA.id)}"]`, { timeout: 10000 }).catch(() => null);
 ok((await m.locator(".cm-demande").count()) === 0 && (await ligne(NINA)).includes("En attente"), `« Ajouter Nina » : la demande s'en va, Nina est dans la liste (${await ligne(NINA)})`);
+
+// ═══ 📐 LOT 3 : LA CONVERSATION RANGE CE QUI S'EST PASSÉ ENTRE NOUS ; 🎭 ET 🎁 À CÔTÉ DE « LUI RÉPONDRE » ═══
+await m.locator(`.cm-liste li[data-cle="${cleProfil(SAM.id)}"] .cm-ligne`).click();
+await m.waitForSelector(".pr-plein .pr-evt", { timeout: 15000 }).catch(() => null);
+const evts = (await m.locator(".pr-plein .pr-evt").allInnerTexts()).join(" | ");
+ok(evts.includes("Sam a frappé à ta porte") && evts.includes("Un bouquet, de Sam : posé chez toi"), `📐 la conversation avec Sam : sa visite, son bouquet posé chez Marc (${evts})`);
+ok((await m.locator(".pr-plein .pr-geste").count()) === 2 && (await m.locator(".pr-plein .pr-son-univers").count()) === 0, "en bas : 🎭 Mème et 🎁 Cadeau ; Sam n'a pas d'univers : pas de « Son univers »");
+await m.locator(".pr-plein .pr-geste", { hasText: "Cadeau" }).click();
+ok((await texte(m, ".pr-plein .pr-info")).includes("n’a pas encore d’univers"), "🎁 : Sam n'a pas encore d'univers où poser un cadeau");
+await m.screenshot({ path: `${D}/bascule-3g-conversation.png` });
+await m.locator(".pr-plein .pr-geste", { hasText: "Mème" }).click();
+await m.waitForFunction(() => location.hash === "#creer" && !document.querySelector(".pr-plein"), null, { timeout: 10000, polling: 200 }).catch(() => null);
+ok(new URL(m.url()).hash === "#creer" && (await m.locator(".pr-plein").count()) === 0, "🎭 Mème : le studio");
+
+// 🎁 Sam laisse un livre chez Marc, depuis leur conversation (Marc a son univers : « 🏡 Son univers »)
+await p.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
+await fermerPablito(p);
+await p.locator(`.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-ligne`).click();
+await p.waitForSelector(".pr-plein .pr-son-univers", { timeout: 15000 }).catch(() => null);
+ok((await p.locator(".pr-plein .pr-son-univers").getAttribute("href").catch(() => "")) === `/univers/chez/${cleProfil(MARC.id)}`, "chez Sam, la conversation avec Marc : « 🏡 Son univers »");
+await p.locator(".pr-plein .pr-geste", { hasText: "Cadeau" }).click();
+await p.waitForSelector(".pr-feuille-cadeau .pr-objets button", { timeout: 10000 }).catch(() => null);
+await p.locator('.pr-feuille-cadeau .pr-objets button[aria-label="Un livre"]').click();
+await p.locator(".pr-feuille-cadeau .pr-bouton.grand").click();
+await p.waitForSelector(".pr-plein .pr-evt.moi", { timeout: 10000 }).catch(() => null);
+ok((await texte(p, ".pr-plein .pr-evt.moi")).includes("Tu as laissé un livre chez Marc") && (await texte(p, ".pr-plein .pr-info")).includes("Déposé devant chez Marc"), "🎁 un livre, depuis la conversation : déposé devant chez Marc, dans le fil");
+await p.screenshot({ path: `${D}/bascule-3h-cadeau-laisse.png` });
+await p.locator(".pr-plein .pr-retour").click();
 
 // ═══ « Créer » : l'invitation à refaire sa figurine au nouveau style ═══
 await p.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
