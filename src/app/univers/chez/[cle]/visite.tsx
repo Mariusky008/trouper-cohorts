@@ -167,7 +167,7 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
               type="button"
               className={`uv-souvenir${montre === s.id ? " montre" : ""}`}
               style={{ left: `${s.x * 100}%`, top: `${s.y * 100}%` }}
-              aria-label={`${objetDe(s.objet)?.nom ?? "Un souvenir"}, de ${s.de}`}
+              aria-label={`${objetDe(s.objet)?.nom ?? "Un cadeau"}, de ${s.de}`}
               onClick={() => setMontre((x) => (x === s.id ? null : s.id))}
             >
               {objetDe(s.objet)?.emoji}
@@ -261,7 +261,7 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
       )}
 
       {vue.souvenirs.length > 0 && (
-        <ul className="uv-liste" aria-label="Les souvenirs posés chez lui">
+        <ul className="uv-liste" aria-label="Les cadeaux posés chez lui">
           {vue.souvenirs.map((s) => (
             <li key={s.id}>
               <b>

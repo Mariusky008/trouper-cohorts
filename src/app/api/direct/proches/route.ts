@@ -20,7 +20,8 @@
 // POST { action: "aparte-effacer", cle, id } → { ok } : 🎭 il efface un aparté de leurs figurines (pour les deux)
 // POST { action: "meme", cle, id }      → { ok } : 🎭 il envoie son mème (fait dans le studio) dans leur conversation
 //                                          (la nouvelle interface, lot 4, `memes-proches-serveur.ts`) ; l'autre est prévenu
-// (GET ?vivant= écrit aussi, après la réponse, l'aparté d'un échange qui vient de finir — lot R4b)
+// (GET ?vivant= écrit aussi, après la réponse, l'aparté d'un échange qui vient de finir — lot R4b ; et 📚 leurs figurines
+//  notent ce qui compte sur leur étagère — lot E1, `etagere-serveur.ts` ; GET (la liste) le fait pour six conversations)
 // 📲 L'ÉTAPE 5, PAR WHATSAPP :
 // POST { action: "lien-creer", son, duree, repliques, pour? } → { id, url, reste } : son message, en lien (`/t/<id>`),
 //      pour quelqu'un qui n'a pas ClikMe (trois par jour)
@@ -49,6 +50,7 @@ import {
   signalerParole,
 } from "@/lib/direct/talkie-serveur";
 import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
+import { effacerEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +77,9 @@ export async function GET(request: Request) {
     // 🎭 un échange vient de finir : leurs figurines font un aparté (après la réponse, jamais bloquant)
     const a = r.aPreparer;
     if (a) after(() => preparerAparte(supabase, a, moi).catch(() => undefined));
+    // 📌 un échange s'est posé : leurs figurines le lisent, et notent ce qui compte (après la réponse)
+    const h = r.aNoter;
+    if (h) after(() => preparerNotes(supabase, moi.id, h).catch(() => 0));
     return NextResponse.json({ ok: true, vivant: r.vivant }, { headers: sansCache });
   }
   const fil = q.get("fil");
@@ -84,6 +89,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, fil: r.fil }, { headers: sansCache });
   }
   const [proches, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);
+  // 📌 à l'ouverture de « Chez moi » : leurs figurines lisent les échanges qui se sont posés (six au plus, après la réponse)
+  after(() => noterMesConversations(supabase, moi).catch(() => 0));
   return NextResponse.json({ ok: true, proches, presence, cle }, { headers: sansCache });
 }
 
@@ -143,6 +150,9 @@ export async function POST(request: Request) {
   }
   if (p?.action === "proche" || p?.action === "signaler") {
     const r = p.action === "proche" ? await changerProche(supabase, moi, p.cle, p.oui) : await signalerParole(supabase, moi, p.cle, p.id);
+    // 📚 un proche retiré : leur étagère s'efface ; un message signalé : ce qui en a été noté s'en va
+    if (r.ok && p.action === "proche" && p.oui === false) await effacerEtagere(supabase, moi.id, p.cle).catch(() => undefined);
+    if (r.ok && p.action === "signaler") await oublierMessage(supabase, moi, p.cle, p.id).catch(() => undefined);
     return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });

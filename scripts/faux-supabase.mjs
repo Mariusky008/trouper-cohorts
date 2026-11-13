@@ -717,6 +717,32 @@ http
           const fin = { sensible: false, premiere: `Hier, c’était « ${sujet}… » 😄 On en reparle ?`, seconde: "Je garde la suite pour ce soir. Tu commences ?" };
           return repondre(res, 200, { choices: [{ message: { content: JSON.stringify(fin) } }] });
         }
+        // 📚 L'ÉTAGÈRE (lot E1) : leurs figurines notent ce qui compte, d'après des mots clés — « permis » : une date
+        // (« jeudi prochain », le jeudi qui suit le message) ; « resto » : une promesse ; « pivoines » : un goût ;
+        // « canard » : une blague ; « malade » : sensible. Et ce que le serveur doit jeter : « volcan » (une citation
+        // inventée), « mojito » (de l'alcool), « concert » (« samedi », mais un vendredi), « Bonnie » (un prénom dans le titre).
+        if (consigne.includes("NOTENT CE QUI COMPTE")) {
+          const msgs = JSON.parse(/Leurs messages, dans l'ordre \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
+          if (msgs.some((m) => /malade/i.test(m.texte))) return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ sensible: true }) } }] });
+          const jeudiApres = (iso) => {
+            const d = new Date(`${iso}T12:00:00Z`);
+            const k = (4 - d.getUTCDay() + 7) % 7 || 7;
+            return new Date(d.getTime() + k * 86_400_000).toISOString().slice(0, 10);
+          };
+          const objets = [];
+          for (const m of msgs) {
+            const t = String(m.texte);
+            if (/permis/i.test(t)) objets.push({ genre: "date", sorte: "epreuve", emoji: "🚗", titre: "Le permis", titre_toi: "Ton permis", concerne: m.de, citation: t, message: m.n, quand: jeudiApres(m.date), dit: "jeudi prochain" });
+            if (/resto/i.test(t)) objets.push({ genre: "promesse", emoji: "🍝", titre: "Le resto italien", concerne: "les deux", citation: t, message: m.n });
+            if (/pivoines/i.test(t)) objets.push({ genre: "gout", emoji: "💐", titre: "Les pivoines", titre_toi: "Tes pivoines", concerne: m.de, nuance: "aime", citation: t, message: m.n });
+            if (/canard/i.test(t)) objets.push({ genre: "blague", emoji: "🦆", titre: "Le canard de Biarritz", concerne: "les deux", citation: t, message: m.n });
+            if (/volcan/i.test(t)) objets.push({ genre: "gout", emoji: "🌋", titre: "Les volcans", concerne: m.de, nuance: "aime", citation: "J'adore les volcans en éruption", message: m.n });
+            if (/mojito/i.test(t)) objets.push({ genre: "gout", emoji: "🍹", titre: "Les mojitos", concerne: m.de, nuance: "aime", citation: t, message: m.n });
+            if (/concert/i.test(t)) objets.push({ genre: "date", sorte: "evenement", emoji: "🎧", titre: "Le concert", concerne: m.de, citation: t, message: m.n, quand: jeudiApres(m.date), dit: "samedi" });
+            if (/Bonnie/.test(t)) objets.push({ genre: "gout", emoji: "🐶", titre: `Le chien de ${m.de}`, concerne: m.de, nuance: "aime", citation: t, message: m.n });
+          }
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ sensible: false, objets }) } }] });
+        }
         // 🎭 l'aparté de deux figurines (lot R4b) : deux répliques sur l'échange qui vient de finir — « sensible » quand l'un est malade
         if (consigne.includes("FONT UN APARTÉ")) {
           const msgs = JSON.parse(/Leurs messages, dans l'ordre \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");

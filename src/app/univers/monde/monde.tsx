@@ -621,7 +621,7 @@ function MesVisitesBloc({ visites, recharger }: { visites: MesVisites; recharger
     <div className="um-visites" aria-label="Mes visites">
       {visites.enAttente.length > 0 && (
         <div className="um-bloc">
-          <b>🎁 Des souvenirs pour toi</b>
+          <b>🎁 Des cadeaux pour toi</b>
           <ul className="um-liste">
             {visites.enAttente.map((x) => (
               <li key={x.id} className="um-souvenir-attente">
@@ -705,7 +705,7 @@ function MesVisitesBloc({ visites, recharger }: { visites: MesVisites; recharger
       </div>
       {visites.poses.length > 0 && (
         <div className="um-bloc">
-          <b>🧺 Les souvenirs posés chez moi</b>
+          <b>🧺 Les cadeaux posés chez moi</b>
           <ul className="um-liste">
             {visites.poses.map((x) => (
               <li key={x.id} className="um-souvenir-attente">

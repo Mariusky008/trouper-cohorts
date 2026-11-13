@@ -21,6 +21,7 @@ import { motPropre } from "./rituel";
 import { repliquesValides, texteDuMessage } from "./talkie";
 import { prevenirDUneParole } from "./appli-collection-serveur";
 import { hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
+import { etagereDansLaScene } from "./etagere-serveur";
 import { APARTE, APARTE_MAX, ENREGISTRE_MS, GESTES_PAR_JOUR, gesteValide, panneauDe, reactionDe, type AparteVue, type GesteFil, type Vivant } from "./vivant";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -71,7 +72,7 @@ async function avecQui(supabase: Supabase, moi: Habitant, cle: unknown): Promise
 const gardes = (x: { liste?: unknown }) => (Array.isArray(x.liste) ? (x.liste as GesteGarde[]) : []);
 
 /** 🎭 LA CONVERSATION VIVANTE : s'il prépare un message, leurs gestes (sept jours), l'heure de leur dernier message. */
-export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat<{ vivant?: Vivant; aPreparer?: { h: string; pair: string; jusqua: number } }>> {
+export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat<{ vivant?: Vivant; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string }>> {
   const q = await avecQui(supabase, moi, cle);
   if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
   const [g, p, noms, ap] = await Promise.all([
@@ -88,9 +89,12 @@ export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown
     .map((x) => gesteValide({ ...x, moi: x.de8 === moi8 }))
     .filter((x): x is GesteFil => Boolean(x));
   const jusqua = aparteAEcrire(ap, noms, moi8, lui8, Date.now());
+  // 📚 leur étagère (lot E1) : ce que leurs figurines ont noté ; un échange à lire (`aNoter` : le proche)
+  const et = await etagereDansLaScene(supabase, moi, q.h, q.pair, noms).catch(() => ({ aNoter: false, scene: undefined }));
   return {
-    vivant: { enregistre: Date.now() - (Number(p[lui8]) || 0) < ENREGISTRE_MS, gestes, dernier: noms.length ? noms[noms.length - 1].ts : 0, apartes: apartesVus(ap, moi8, lui8, depuis) },
+    vivant: { enregistre: Date.now() - (Number(p[lui8]) || 0) < ENREGISTRE_MS, gestes, dernier: noms.length ? noms[noms.length - 1].ts : 0, apartes: apartesVus(ap, moi8, lui8, depuis), ...(et.scene ? { etagere: et.scene } : {}) },
     ...(jusqua ? { aPreparer: { h: q.h, pair: q.pair, jusqua } } : {}),
+    ...(et.aNoter ? { aNoter: q.h } : {}),
   };
 }
 

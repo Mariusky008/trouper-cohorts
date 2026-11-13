@@ -1,0 +1,139 @@
+// 📚 L'ÉTAGÈRE (lot E1), SANS TÉLÉPHONE — `src/lib/direct/etagere.ts` (le cahier : `docs/univers/etagere.md`).
+//
+// Ce qui se vérifie ici :
+//   · un objet valide, et chaque raison de le jeter : une citation absente du message, un mot interdit, de l'alcool,
+//     un numéro, une adresse électronique, un sujet sensible, un prénom ou un possessif dans le titre, une date
+//     passée ou trop lointaine, un jour de la semaine qui ne colle pas, quelqu'un qu'on ne connaît pas ;
+//   · le titre des deux côtés : « Le permis de Léa », « d’Inès », « d’Hugo », « Ton permis », le titre commun ;
+//   · les détails composés (la date, l'anniversaire, la promesse, le goût, la blague) ; les rayons ;
+//   · le rangement : deux par passage, trois par jour, une même chose une seule fois (sa date se met à jour), un
+//     message retiré plus jamais noté, quarante au plus (le plus ancien goût s'en va) ; la pierre tombale sans texte ;
+//   · les phrases de la figurine qui voit noter : jamais deux fois de suite, sans accord au masculin ou au féminin,
+//     sans le mot interdit, sans alcool ; le catalogue des emojis : ni alcool, ni arme, ni drapeau.
+//
+//   node scripts/verifier-etagere.mjs
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
+const exige = createRequire(import.meta.url);
+const ts = exige("typescript");
+const charger = (chemin) => {
+  const js = ts.transpileModule(readFileSync(chemin, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const boite = { exports: {} };
+  new Function("exports", "module", "require", js)(boite.exports, boite, (x) => {
+    throw new Error(`import inattendu : ${x}`);
+  });
+  return boite.exports;
+};
+const E = charger("src/lib/direct/etagere.ts");
+const { motInterdit } = charger("src/lib/direct/mots-interdits.ts");
+const alcool = (t) => /\b(alcools?|bieres?|vins?|aperos?|aperitifs?|cocktails?|champagnes?|whisky|vodka|rhum|tequila|ivres?|mojitos?|spritz)\b/.test(t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""));
+const passe = (t) => Boolean(t) && !motInterdit(t) && !alcool(t);
+
+let echecs = 0;
+const ok = (c, m) => {
+  if (!c) echecs++;
+  console.log(c ? "  ok  " : "ÉCHEC ", m);
+};
+
+// ═══ UN OBJET PROPOSÉ, VÉRIFIÉ ═══
+const LEA = "aaaaaaaa";
+const MOI = "bbbbbbbb";
+const AUJ = "2026-11-13"; // un vendredi
+const messages = [
+  { n: 1, id: "m1", de8: MOI, texte: "Alors, elle commence comment ta semaine ?", jour: AUJ, le: "2026-11-13T17:38:00.000Z" },
+  { n: 2, id: "m2", de8: LEA, texte: "Jeudi prochain je passe le permis, je stresse trop 😬", jour: AUJ, le: "2026-11-13T17:42:00.000Z" },
+  { n: 3, id: "m3", de8: MOI, texte: "Faut qu'on se fasse ce resto italien ! Appelle-moi au 06 12 34 56 78", jour: AUJ, le: "2026-11-13T17:44:00.000Z" },
+];
+const c = { messages, gens: [{ prenom: "Léa", h8: LEA }, { prenom: "Sam", h8: MOI }], aujourdhui: AUJ, passe };
+const permis = { genre: "date", sorte: "epreuve", emoji: "🚗", titre: "Le permis", titre_toi: "Ton permis", concerne: "Léa", citation: "Jeudi prochain je passe le permis", message: 2, quand: "2026-11-19", dit: "jeudi prochain" };
+const o = E.objetValide(permis, c);
+ok(o && o.genre === "date" && o.sorte === "epreuve" && o.emoji === "🚗" && o.titre === "Le permis" && o.titreToi === "Ton permis" && o.concerne === LEA && o.de8 === LEA && o.message === "m2" && o.quand === "2026-11-19" && o.ditQuand === "jeudi prochain", `un objet valide : le permis de Léa, jeudi 19 (${JSON.stringify(o)})`);
+const jete = (x, pourquoi) => ok(E.objetValide({ ...permis, ...x }, c) === null, `jeté : ${pourquoi}`);
+jete({ citation: "Je passe le code demain" }, "la citation n'est pas dans le message");
+jete({ message: 1 }, "la citation est dans un autre message que celui désigné");
+jete({ message: 9 }, "un message qui n'existe pas");
+jete({ genre: "secret" }, "un genre qui n'existe pas");
+jete({ sorte: "rdv" }, "une sorte qui n'existe pas");
+jete({ titre: "Le permis de Léa" }, "un prénom dans le titre");
+jete({ titre: "Son permis" }, "un possessif dans le titre");
+jete({ titre: "Le permis le plus attendu de l'année" }, "un titre de plus de 28 signes");
+jete({ titre: "Les salauds du permis" }, "un mot interdit");
+jete({ titre: "L'apéro du permis" }, "de l'alcool");
+jete({ concerne: "Nina" }, "quelqu'un qu'on ne connaît pas");
+jete({ quand: "2026-11-12", dit: "hier" }, "une date passée");
+jete({ quand: "2028-01-19", dit: "" }, "une date à plus de 400 jours");
+jete({ quand: "2026-11-20", dit: "jeudi prochain" }, "« jeudi », mais un vendredi");
+jete({ quand: "2026-02-30" }, "un jour qui n'existe pas");
+jete({ quand: undefined }, "une date sans jour");
+ok(E.objetValide({ genre: "promesse", emoji: "🍝", titre: "Le resto italien", concerne: "les deux", citation: "Faut qu'on se fasse ce resto italien", message: 3 }, c)?.concerne === "deux", "une promesse pour les deux (« les deux »)");
+ok(E.objetValide({ genre: "promesse", emoji: "🍝", titre: "Le resto italien", concerne: "les deux", citation: "Appelle-moi au 06 12 34 56 78", message: 3 }, c) === null, "jeté : un numéro de téléphone");
+ok(E.objetValide({ genre: "gout", emoji: "🌋", titre: "Les volcans", concerne: "Léa", citation: "Jeudi prochain je passe", message: 2 }, c)?.emoji === "💛", "un emoji hors liste : celui du genre (💛)");
+ok(E.objetValide({ genre: "gout", emoji: "💐", titre: "Les pivoines", concerne: "Léa", nuance: "envie", citation: "je stresse trop", message: 2 }, c)?.nuance === "envie", "un goût : « envie »");
+ok(!E.objetValide({ genre: "gout", emoji: "💐", titre: "Les pivoines", titre_toi: "Les belles pivoines", concerne: "Léa", citation: "je stresse trop", message: 2 }, c)?.titreToi, "un titre « à toi » qui ne commence pas par « Ton / Ta / Tes » : il s'en va");
+const anniv = E.objetValide({ genre: "date", sorte: "fete", emoji: "🎂", titre: "L'anniversaire", titre_toi: "Ton anniversaire", concerne: "Léa", citation: "je stresse trop", message: 2, quand: "2026-03-04", dit: "le 4 mars" }, c);
+ok(anniv?.quand === "2027-03-04" && anniv.annuel === true, `un anniversaire passé cette année : sa prochaine occurrence (${anniv?.quand})`);
+ok(E.echangeSensible(["Je suis malade depuis hier"]) && E.echangeSensible(["Mon loyer a encore augmenté"]) && E.echangeSensible(["Rendez-vous chez le médecin jeudi"]), "sensible : la santé, l'argent, un rendez-vous médical");
+ok(!E.echangeSensible(["J'étais mort de rire", "Une enceinte pour la fête", "Un avocat bien mûr", "Je suis prêt pour le permis", "Médaille d'argent au judo"]), "pas sensible : « mort de rire », « une enceinte », « un avocat », « prêt », « médaille d'argent »");
+ok(E.objetValide({ ...permis, citation: "le médecin a dit oui" }, { ...c, messages: [messages[0], { ...messages[1], texte: "Jeudi prochain je passe le permis, le médecin a dit oui" }, messages[2]] }) === null, "jeté : une citation qui touche un sujet sensible");
+
+// ═══ LE TITRE, DES DEUX CÔTÉS ═══
+const g = { titre: "Le permis", titreToi: "Ton permis", concerne: LEA };
+ok(E.titrePour(g, MOI, "Léa") === "Le permis de Léa", "chez moi : « Le permis de Léa »");
+ok(E.titrePour(g, LEA, "Sam") === "Ton permis", "chez Léa : « Ton permis »");
+ok(E.titrePour(g, MOI, "Inès") === "Le permis d’Inès" && E.titrePour(g, MOI, "Hugo") === "Le permis d’Hugo", "« d’Inès », « d’Hugo »");
+ok(E.titrePour({ titre: "Le resto italien", concerne: "deux" }, MOI, "Léa") === "Le resto italien", "pour les deux : le titre commun");
+ok(E.titrePour({ titre: "Le permis", concerne: LEA }, LEA, "Sam") === "Le permis", "sans « Ton… » : le titre");
+
+// ═══ LES DÉTAILS, LES RAYONS ═══
+const base = { id: "x", emoji: "🚗", citation: "…", de8: LEA, message: "m2", le: "2026-11-13T17:45:00.000Z", etat: "actif" };
+ok(E.detailPour({ ...base, genre: "date", titre: "Le permis", concerne: LEA, quand: "2026-11-19" }, MOI, "Léa", AUJ) === "jeudi 19 nov.", "une date à venir : « jeudi 19 nov. »");
+ok(E.detailPour({ ...base, genre: "date", sorte: "fete", annuel: true, titre: "L'anniversaire", concerne: LEA, quand: "2026-12-04" }, MOI, "Léa", AUJ) === "le 4 décembre", "un anniversaire : « le 4 décembre »");
+ok(E.detailPour({ ...base, genre: "date", titre: "Le concert", concerne: LEA, quand: "2026-11-01" }, MOI, "Nina", "2026-10-30") === "dimanche 1er nov.", "le premier du mois : « 1er »");
+ok(E.detailPour({ ...base, genre: "promesse", titre: "Le resto", concerne: "deux", le: "2026-10-23T17:00:00.000Z" }, MOI, "Sam", "2026-10-30") === "promis le 23 oct.", "une promesse : « promis le 23 oct. »");
+ok(E.detailPour({ ...base, genre: "promesse", titre: "Le resto", concerne: "deux", le: "2026-10-23T17:00:00.000Z" }, MOI, "Sam", AUJ) === "promis il y a 3 semaines", "passé 21 jours : « promis il y a 3 semaines »");
+ok(E.detailPour({ ...base, genre: "gout", nuance: "aime", titre: "Les pivoines", concerne: LEA }, MOI, "Léa", AUJ) === "Léa adore" && E.detailPour({ ...base, genre: "gout", nuance: "aime", titre: "Les pivoines", concerne: LEA }, LEA, "Sam", AUJ) === "tu adores", "un goût : « Léa adore » / « tu adores »");
+ok(E.detailPour({ ...base, genre: "gout", nuance: "envie", titre: "Le roman", concerne: LEA }, MOI, "Léa", AUJ) === "Léa en a envie" && E.detailPour({ ...base, genre: "gout", nuance: "envie", titre: "Le roman", concerne: "deux" }, MOI, "Léa", AUJ) === "vous en avez envie", "« Léa en a envie », « vous en avez envie »");
+ok(E.detailPour({ ...base, genre: "blague", titre: "Le canard", concerne: "deux" }, MOI, "Léa", AUJ) === "votre blague", "une blague : « votre blague »");
+ok(E.rayonDe({ genre: "date", etat: "actif" }) === "avenir" && E.rayonDe({ genre: "promesse", etat: "actif" }) === "avenir" && E.rayonDe({ genre: "gout", etat: "actif" }) === "aime" && E.rayonDe({ genre: "blague", etat: "actif" }) === "aime" && E.rayonDe({ genre: "promesse", etat: "tenue" }) === "fiertes" && E.rayonDe({ genre: "date", etat: "fierte" }) === "fiertes", "les rayons : à venir, ce qu'on aime, nos fiertés");
+ok(E.RAYONS.map((r) => r.nom).join(" · ") === "Nos fiertés · À venir · Ce qu’on aime", "les trois rayons, dans l'ordre");
+const vu = E.vueDe({ ...base, genre: "date", sorte: "epreuve", titre: "Le permis", titreToi: "Ton permis", concerne: LEA, quand: "2026-11-19", messageLe: "2026-11-13T17:42:00.000Z" }, { moi8: MOI, prenomMoi: "Sam", prenomAutre: "Léa", aujourdhui: AUJ });
+ok(vu.titre === "Le permis de Léa" && vu.detail === "jeudi 19 nov." && vu.de === "lui" && vu.ditPar === "Léa" && vu.rayon === "avenir" && !vu.pourMoi && E.momentCourt(vu.ditLe) === "ven. 13 nov., 18:42", `ce que Sam en voit (${vu.titre} · ${vu.detail} · dit par ${vu.ditPar} · ${E.momentCourt(vu.ditLe)})`);
+
+// ═══ LE RANGEMENT ═══
+let n = 0;
+const id = () => `id${++n}`;
+const prop = (titre, message, x = {}) => ({ genre: "gout", emoji: "💐", titre, concerne: LEA, nuance: "aime", citation: titre, de8: LEA, message, ...x });
+const r1 = E.ranger([], [prop("Les pivoines", "a"), prop("Le roman", "b"), prop("Les crêpes", "c")], { aujourdhui: AUJ, le: "2026-11-13T18:00:00.000Z", nouvelId: id });
+ok(r1.neufs.length === 2 && r1.objets.length === 2, "deux au plus par passage");
+const r2 = E.ranger(r1.objets, [prop("Les crêpes", "c"), prop("Le thé", "d")], { aujourdhui: AUJ, le: "2026-11-13T19:00:00.000Z", nouvelId: id });
+ok(r2.neufs.length === 1 && r2.objets.length === 3, "trois par jour au plus (le quatrième attend demain)");
+const r3 = E.ranger(r2.objets, [prop("les pivoines", "z")], { aujourdhui: "2026-11-14", le: "2026-11-14T09:00:00.000Z", nouvelId: id });
+ok(r3.neufs.length === 0 && r3.objets.length === 3, "la même chose (même genre, même titre) : pas doublée");
+const d1 = E.ranger([], [{ ...prop("Le permis", "p"), genre: "date", sorte: "epreuve", quand: "2026-11-19" }], { aujourdhui: AUJ, le: "2026-11-13T18:00:00.000Z", nouvelId: id });
+const d2 = E.ranger(d1.objets, [{ ...prop("Le permis", "q"), genre: "date", sorte: "epreuve", quand: "2026-11-26", ditQuand: "dans deux jeudis" }], { aujourdhui: AUJ, le: "2026-11-13T19:00:00.000Z", nouvelId: id });
+ok(d2.neufs.length === 0 && d2.objets.length === 1 && d2.objets[0].quand === "2026-11-26", "redite avec un autre jour : la date se met à jour");
+const tombe = E.pierreTombale(r1.objets[0], MOI, "2026-11-13T20:00:00.000Z");
+ok(tombe.etat === "retire" && !tombe.titre && !tombe.citation && !tombe.emoji && tombe.message === "a" && tombe.change.par8 === MOI, "la pierre tombale : plus aucun texte, seulement le message");
+const r4 = E.ranger([tombe], [prop("Les pivoines", "a")], { aujourdhui: "2026-11-15", le: "2026-11-15T09:00:00.000Z", nouvelId: id });
+ok(r4.neufs.length === 0, "un message dont l'objet a été retiré : plus jamais noté");
+const quarante = Array.from({ length: 40 }, (_, k) => ({ ...prop(`Goût ${k}`, `g${k}`), id: `g${k}`, le: `2026-10-${String(1 + (k % 28)).padStart(2, "0")}T0${k % 10}:00:00.000Z`, etat: "actif", genre: k === 0 ? "date" : "gout", quand: k === 0 ? "2026-12-01" : undefined }));
+const r5 = E.ranger(quarante, [prop("Les pivoines", "neuf")], { aujourdhui: AUJ, le: "2026-11-13T18:00:00.000Z", nouvelId: id });
+ok(r5.objets.filter(E.visible).length === 40 && r5.objets.find((x) => x.id === "g0")?.etat === "actif" && r5.objets.some((x) => x.etat === "passe" && x.genre === "gout"), "quarante au plus : le plus ancien goût s'en va (jamais une date)");
+
+// ═══ LES PHRASES, LE CATALOGUE ═══
+const toutes = [...Object.values(E.PHRASES_NOTE).flat(), E.REGLES_ETAGERE];
+ok(Object.values(E.PHRASES_NOTE).every((l) => l.length === 3), "trois phrases par genre");
+const GENRE = /\b(content|contente|heureux|heureuse|seul|seule|fatigu[ée]e?|prête?|fière?|motivée?|ravie?|surprise?|occupée?)\b/i;
+ok(toutes.every((t) => !GENRE.test(t)), `aucun accord au masculin ou au féminin (${toutes.filter((t) => GENRE.test(t)).join(" | ") || "aucun"})`);
+ok(toutes.every((t) => !/exemple/i.test(t)), "jamais le mot interdit");
+ok(toutes.every(passe), "aucun mot interdit, aucun alcool");
+const a = E.phraseDeNote("date", "x1");
+ok(E.phraseDeNote("date", "x1", a) !== a && E.PHRASES_NOTE.date.includes(E.phraseDeNote("date", "x1", a)), "jamais deux fois de suite la même phrase");
+ok(!E.CATALOGUE.some((e) => /[🍷🍺🍸🥂🍹🍾🚬💊💉🔫🗡⛪🕌🕍✝☪✡]/u.test(e) || /\p{Regional_Indicator}/u.test(e)), "le catalogue : ni alcool, ni tabac, ni médicament, ni arme, ni drapeau, ni symbole religieux");
+ok(E.CATALOGUE.length >= 55 && new Set(E.CATALOGUE).size === E.CATALOGUE.length, `le catalogue : une soixantaine d'emojis, sans doublon (${E.CATALOGUE.length})`);
+ok(["📅", "🤝", "💛", "😂"].every((e) => E.CATALOGUE.includes(e)), "les emojis des genres sont dans le catalogue");
+ok(E.emojiDuCatalogue("✈", "date") === "✈️" && E.emojiDuCatalogue("🍷", "gout") === "💛", "un emoji sans variante retrouvé ; un emoji d'alcool : celui du genre");
+
+console.log(echecs ? `\n${echecs} échec(s)` : "\nles règles de l'étagère tiennent ✓");
+process.exit(echecs ? 1 : 0);

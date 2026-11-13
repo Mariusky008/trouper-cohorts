@@ -32,6 +32,8 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
+import { CarteNote, MurEtagere, PageEtagere, PastilleEtagere, useEtagere } from "./etagere";
+import type { ObjetVu } from "@/lib/direct/etagere";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
@@ -924,6 +926,10 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       aparteFin.current = window.setTimeout(() => setAparteJoue(null), 11_000);
     },
   });
+  // 📚 L'ÉTAGÈRE (lot E1, `etagere.tsx`) : ce que leurs figurines ont noté, l'envol de ce qui vient de l'être, la page
+  const sceneRef = useRef<HTMLElement>(null);
+  const et = useEtagere(cle, vivant?.etagere, sceneRef);
+  const [pageEtagere, setPageEtagere] = useState(false);
   /** 🗑️ Il efface un aparté (pour les deux). */
   async function effacerAparte(id: string) {
     if (!fil) return;
@@ -1003,14 +1009,16 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     msgs.current = fil?.messages ?? [];
   }, [fil]);
   // (la liste, en bas : les derniers messages en vue — et les panneaux)
-  const nbMessages = (fil?.messages.length ?? 0) + (vivant?.gestes.filter((g) => g.type === "panneau").length ?? 0);
+  // (ce qui est posé : pas ce qui attend de s'envoler, ni ce qui vole)
+  const cartesEtagere = et.objets.filter((o) => !et.attente.has(o.id) && o.id !== et.vol);
+  const nbMessages = (fil?.messages.length ?? 0) + (vivant?.gestes.filter((g) => g.type === "panneau").length ?? 0) + cartesEtagere.length;
   useEffect(() => {
     const l = liste.current;
     if (l) l.scrollTop = l.scrollHeight;
   }, [nbMessages]);
   // (Échap ferme ; la page ne défile pas dessous)
   useEffect(() => {
-    const echap = (e: KeyboardEvent) => e.key === "Escape" && !enregistrer && onFermer();
+    const echap = (e: KeyboardEvent) => e.key === "Escape" && !enregistrer && !pageEtagere && onFermer();
     window.addEventListener("keydown", echap);
     const avant = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -1018,7 +1026,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       window.removeEventListener("keydown", echap);
       document.body.style.overflow = avant;
     };
-  }, [enregistrer, onFermer]);
+  }, [enregistrer, onFermer, pageEtagere]);
 
   const jouerMessage = useCallback((i: number, enSuite: boolean) => {
     const m = msgs.current[i];
@@ -1125,7 +1133,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const luiParle = !m?.moi;
   const postureParleur = joue ? "calme" : luiParle ? postureLui : postureMoi;
   const postureEcoute = luiParle ? postureMoi : postureLui;
-  const gesteDe = (qui: "moi" | "lui") => (anim?.qui === qui && anim.geste.type === "reaction" ? anim.geste.cle : undefined);
+  const gesteDe = (qui: "moi" | "lui") => (et.jeu.note?.qui === qui ? "applaudir" : anim?.qui === qui && anim.geste.type === "reaction" ? anim.geste.cle : undefined);
   const gesteParleur = gesteDe(luiParle ? "lui" : "moi");
   const gesteEcoute = gesteDe(luiParle ? "moi" : "lui");
   const reactionsDe = (id: string) =>
@@ -1144,8 +1152,9 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         ...laisses.map((x) => ({ le: x.le, e: { laisse: x }, i: -1 })),
       ]
     : [];
-  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil }[] = [
+  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil; ob?: ObjetVu }[] = [
     ...fil.messages.map((x, i) => ({ le: x.le, x, i })),
+    ...cartesEtagere.map((ob) => ({ le: ob.le, ob, i: -1 })),
     ...(fil.memes ?? []).map((mm) => ({ le: mm.le, mm, i: -1 })),
     ...gestes.filter((g) => g.type === "panneau").map((g) => ({ le: g.le, g, i: -1 })),
     ...(vivant?.apartes ?? []).map((a) => ({ le: a.le, a, i: -1 })),
@@ -1164,6 +1173,19 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       setObjet(null);
       setMotCadeau("");
       setInfo(`🎁 Déposé devant chez ${fil?.lui.prenom ?? "lui"}, emballé : la surprise l’attend.`);
+    } catch (e) {
+      setErreur(message(e));
+    }
+  }
+  const jeuDe = (qui: "moi" | "lui") => ({
+    note: et.jeu.note?.qui === qui ? { n: et.jeu.note.n } : null,
+    bulle: et.jeu.bulle?.qui === qui ? { texte: et.jeu.bulle.texte, n: et.jeu.bulle.n } : null,
+  });
+  /** 📚 Il retire un souvenir, depuis sa carte (pour les deux, tout de suite). */
+  async function retirerDeLEtagere(o: ObjetVu) {
+    try {
+      await et.retirer(o.id);
+      setInfo(`${o.emoji} Retiré de votre étagère, pour vous deux`);
     } catch (e) {
       setErreur(message(e));
     }
@@ -1193,6 +1215,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
             🏡 Son univers
           </a>
         )}
+        <PastilleEtagere n={cartesEtagere.length} onOuvrir={() => setPageEtagere(true)} />
         <button type="button" className="pr-menu-bouton" aria-label={`Signaler ou retirer ${fil.lui.prenom}`} aria-expanded={menu} onClick={() => setMenu((x) => !x)}>
           ⋯
         </button>
@@ -1212,7 +1235,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
 
       {/* la scène : leurs deux figurines face à face ; celle qui parle s'avance — chez moi, dans mon univers */}
       <section
-        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}${sursaut ? " pv-sursaut" : ""}`}
+        ref={sceneRef}
+        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}${sursaut ? " pv-sursaut" : ""}${et.objets.length ? " avec-etagere" : ""}`}
         aria-label={chez ? `Chez toi : ${fil.lui.prenom} est venu te voir` : "La scène"}
         data-message={m?.id ?? ""}
         data-replique={m ? ir : ""}
@@ -1263,8 +1287,10 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           />
         )}
         {/* 🎭 par-dessus chaque figurine : « … », le panneau, l'éclat d'une réaction, les zZz */}
-        <Calque qui="lui" style={chez ? styleDePlace(chez.invite, true) : undefined} prepare={luiPrepare} anim={anim} posture={postureLui} aparte={aparteDe("lui")} />
-        <Calque qui="moi" style={chez ? styleDePlace(chez.hote, false) : undefined} prepare={false} anim={anim} posture={postureMoi} aparte={aparteDe("moi")} />
+        <Calque qui="lui" style={chez ? styleDePlace(chez.invite, true) : undefined} prepare={luiPrepare} anim={anim} posture={postureLui} aparte={aparteDe("lui")} note={jeuDe("lui").note} bulle={jeuDe("lui").bulle} />
+        <Calque qui="moi" style={chez ? styleDePlace(chez.hote, false) : undefined} prepare={false} anim={anim} posture={postureMoi} aparte={aparteDe("moi")} note={jeuDe("moi").note} bulle={jeuDe("moi").bulle} />
+        {/* 📚 leur étagère, au mur : les cinq derniers souvenirs posés */}
+        <MurEtagere objets={et.objets} attente={et.attente} vol={et.vol} arrive={et.arrive} onOuvrir={() => setPageEtagere(true)} />
         {s && (
           <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
             <span aria-hidden="true">{s.emoji}</span>
@@ -1304,7 +1330,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       </div>
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
-        {elements.map(({ x, i, g, a, e, le, mm }) => {
+        {elements.map(({ x, i, g, a, e, le, mm, ob }) => {
+          if (ob) return <CarteNote key={`et-${ob.id}`} o={ob} prenom={fil.lui.prenom} onVoir={() => setPageEtagere(true)} onRetirer={() => void retirerDeLEtagere(ob)} />;
           if (mm)
             return (
               <li key={`m-${mm.id}`} className={`pr-meme ${mm.moi ? "moi" : "lui"}`}>
@@ -1347,7 +1374,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
             return (
               <li key={`e-${e.porte ? "p" : e.pose ? `s${e.pose.id}` : "l"}-${le}`} className={`pr-evt${e.laisse ? " moi" : ""}`}>
                 <span>
-                  {e.porte ? "🚪" : o?.emoji} <b>{e.porte ? `${fil.lui.prenom} a frappé à ta porte` : e.pose ? `${o?.nom ?? "Un souvenir"}, de ${fil.lui.prenom} : posé chez toi` : `Tu as laissé ${(o?.nom ?? "un cadeau").toLowerCase()} chez ${fil.lui.prenom}`}</b>
+                  {e.porte ? "🚪" : o?.emoji} <b>{e.porte ? `${fil.lui.prenom} a frappé à ta porte` : e.pose ? `${o?.nom ?? "Un cadeau"}, de ${fil.lui.prenom} : posé chez toi` : `Tu as laissé ${(o?.nom ?? "un cadeau").toLowerCase()} chez ${fil.lui.prenom}`}</b>
                 </span>
               </li>
             );
@@ -1514,6 +1541,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           }}
         />
       )}
+      {pageEtagere && <PageEtagere cle={cle} onFermer={() => setPageEtagere(false)} onRetire={et.oublier} />}
       <FeuillePanneaux
         ouverte={panneaux}
         prenom={fil.lui.prenom}
