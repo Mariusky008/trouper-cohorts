@@ -311,7 +311,7 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
 export const STYLES_BIENVENUE = `
 .tu.bv{display:flex;justify-content:center;background:#12040E;color:#FFF4E6;cursor:default}
 .bv-app{position:relative;display:flex;flex-direction:column;width:100%;max-width:440px;height:100%;background:linear-gradient(180deg,#22091B 0%,#12040E 100%);overflow:hidden}
-.bv button{font:inherit;-webkit-tap-highlight-color:transparent}
+.bv button{font-family:inherit;line-height:inherit;-webkit-tap-highlight-color:transparent}
 .bv button:focus-visible{outline:2px solid #FFF4E6;outline-offset:2px}
 /* le haut : le logo, où on en est, « Passer » */
 .bv-haut{position:relative;z-index:5;display:flex;align-items:center;gap:12px;min-height:52px;padding:calc(6px + env(safe-area-inset-top)) 16px 6px}
