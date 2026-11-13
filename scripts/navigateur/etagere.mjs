@@ -99,9 +99,9 @@ const sam = await tel(SAM);
 await ouvrirAvec(sam, LEA);
 ok(await attendre(sam, () => document.querySelector(".pr-plein .pv-calque.lui .et-note")?.textContent?.includes("📌 Noté !"), null, 30000), "leurs figurines ont lu l'échange : celle de Léa brandit « 📌 Noté ! »");
 await sam.screenshot({ path: `${D}/etagere-1-note.png` });
-ok(await attendre(sam, () => Boolean(document.querySelector(".pr-plein .et-vol")), null, 6000), "la voiture s'envole vers l'étagère");
+ok(await attendre(sam, () => Boolean(document.querySelector(".et-vol")), null, 6000), "la voiture s'envole vers l'étagère");
 await sam.screenshot({ path: `${D}/etagere-2-envol.png` });
-ok(await attendre(sam, () => document.querySelector(".pr-plein .et-mur small")?.textContent?.includes("Votre étagère · 1") && document.querySelector(".pr-plein .et-mur [data-objet]")?.textContent === "🚗" && !document.querySelector(".pr-plein .et-vol")), "elle se pose : « 📚 Votre étagère · 1 »");
+ok(await attendre(sam, () => document.querySelector(".pr-plein .et-mur small")?.textContent?.includes("Votre étagère · 1") && document.querySelector(".pr-plein .et-mur [data-objet]")?.textContent === "🚗" && !document.querySelector(".et-vol")), "elle se pose : « 📚 Votre étagère · 1 »");
 ok(await attendre(sam, () => Boolean(document.querySelector(".pr-plein .pr-fil li.et-carte-fil"))), "la carte apparaît dans le fil");
 const carte = await texte(sam, ".pr-plein .pr-fil li.et-carte-fil");
 ok(carte.includes("📌 NOTÉ SUR VOTRE ÉTAGÈRE") && carte.includes("Le permis de Léa") && carte.includes(jeudi) && carte.includes("Voir l’étagère") && carte.includes("Retirer") && carte.includes("Noté par vos figurines · IA · visible de Léa et toi"), `la carte : « ${carte} »`);
@@ -113,7 +113,7 @@ ok((await debordement(sam)) <= 0, "rien ne déborde");
 // ═══ ROUVERTE : PAS DE DEUXIÈME ENVOL ═══
 await ouvrirAvec(sam, LEA);
 await sam.waitForSelector(".pr-plein .pr-fil li.et-carte-fil", { timeout: 15000 });
-ok(!(await attendre(sam, () => Boolean(document.querySelector(".pr-plein .et-note") || document.querySelector(".pr-plein .et-vol")), null, 6000)) && (await sam.locator(".pr-plein .et-mur [data-objet]").count()) === 1, "rouverte : la voiture est déjà sur l'étagère, l'envol ne se rejoue pas");
+ok(!(await attendre(sam, () => Boolean(document.querySelector(".pr-plein .et-note") || document.querySelector(".et-vol")), null, 6000)) && (await sam.locator(".pr-plein .et-mur [data-objet]").count()) === 1, "rouverte : la voiture est déjà sur l'étagère, l'envol ne se rejoue pas");
 
 // ═══ CHEZ LÉA : SA FIGURINE BRANDIT « 📌 NOTÉ ! », « TON PERMIS » ═══
 const lea = await tel(LEA);
