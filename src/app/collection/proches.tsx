@@ -32,8 +32,8 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
-import { CarteNote, MurEtagere, PageEtagere, PastilleEtagere, useEtagere } from "./etagere";
-import type { ObjetVu } from "@/lib/direct/etagere";
+import { CarteEtagere, CarteNote, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
+import type { CarteVue, ObjetVu } from "@/lib/direct/etagere";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
@@ -414,6 +414,8 @@ export function Proches({
       if (mot) ev.push({ txt: "☀️ Sa figurine a réagi à ton humeur", le: mot.le, n: 0, rang: 1 });
       const fin = rituel?.fins.find((f) => f.lui.cle === p.cle);
       if (fin) ev.push({ txt: "🌙 Vos figurines se sont parlé cette nuit", le: fin.jour, n: 0, rang: 1 });
+      // 📚 (l'étagère, lot E2) un rappel du jour, un souvenir pas encore vu, une promesse en relance
+      if (p.etagere) ev.push({ txt: p.etagere.txt, le: p.dernier?.le ?? "", n: 0, rang: p.etagere.rang });
       const haut = ev.reduce((a, b) => (b.rang > a.rang ? b : a));
       const le = ev.map((e) => e.le).reduce((a, b) => (b > a ? b : a), "");
       return { txt: haut.txt, le, n: ev.reduce((s, e) => s + e.n, 0), cadeaux };
@@ -450,6 +452,8 @@ export function Proches({
                 <i />
               </div>
             )}
+            {/* ☀️ (l'étagère, lot E2) les rappels du matin : ma figurine me les dit, sous la fenêtre de mon univers */}
+            <RappelsDuMatin actif={visible} onParler={(c) => ouvrirFil(c, true)} />
             {/* 👋 les demandes des inconnus qui ont frappé : l'ajouter, voir son univers, ignorer */}
             {demandes.length > 0 && (
               <div className="cm-demandes">
@@ -928,7 +932,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   });
   // 📚 L'ÉTAGÈRE (lot E1, `etagere.tsx`) : ce que leurs figurines ont noté, l'envol de ce qui vient de l'être, la page
   const sceneRef = useRef<HTMLElement>(null);
-  const et = useEtagere(cle, vivant?.etagere, sceneRef);
+  const et = useEtagere(cle, vivant?.etagere, sceneRef, fil?.lui.prenom ?? "", Boolean(fil));
   const [pageEtagere, setPageEtagere] = useState(false);
   /** 🗑️ Il efface un aparté (pour les deux). */
   async function effacerAparte(id: string) {
@@ -1011,7 +1015,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   // (la liste, en bas : les derniers messages en vue — et les panneaux)
   // (ce qui est posé : pas ce qui attend de s'envoler, ni ce qui vole)
   const cartesEtagere = et.objets.filter((o) => !et.attente.has(o.id) && o.id !== et.vol);
-  const nbMessages = (fil?.messages.length ?? 0) + (vivant?.gestes.filter((g) => g.type === "panneau").length ?? 0) + cartesEtagere.length;
+  const nbMessages = (fil?.messages.length ?? 0) + (vivant?.gestes.filter((g) => g.type === "panneau").length ?? 0) + cartesEtagere.length + et.cartes.length;
   useEffect(() => {
     const l = liste.current;
     if (l) l.scrollTop = l.scrollHeight;
@@ -1133,7 +1137,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const luiParle = !m?.moi;
   const postureParleur = joue ? "calme" : luiParle ? postureLui : postureMoi;
   const postureEcoute = luiParle ? postureMoi : postureLui;
-  const gesteDe = (qui: "moi" | "lui") => (et.jeu.note?.qui === qui ? "applaudir" : anim?.qui === qui && anim.geste.type === "reaction" ? anim.geste.cle : undefined);
+  const gesteDe = (qui: "moi" | "lui") => (et.jeu.note?.qui === qui || et.jeu.saute?.includes(qui) ? "applaudir" : anim?.qui === qui && anim.geste.type === "reaction" ? anim.geste.cle : undefined);
   const gesteParleur = gesteDe(luiParle ? "lui" : "moi");
   const gesteEcoute = gesteDe(luiParle ? "moi" : "lui");
   const reactionsDe = (id: string) =>
@@ -1152,9 +1156,10 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         ...laisses.map((x) => ({ le: x.le, e: { laisse: x }, i: -1 })),
       ]
     : [];
-  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil; ob?: ObjetVu }[] = [
+  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil; ob?: ObjetVu; ct?: CarteVue }[] = [
     ...fil.messages.map((x, i) => ({ le: x.le, x, i })),
     ...cartesEtagere.map((ob) => ({ le: ob.le, ob, i: -1 })),
+    ...et.cartes.map((ct) => ({ le: ct.le, ct, i: -1 })),
     ...(fil.memes ?? []).map((mm) => ({ le: mm.le, mm, i: -1 })),
     ...gestes.filter((g) => g.type === "panneau").map((g) => ({ le: g.le, g, i: -1 })),
     ...(vivant?.apartes ?? []).map((a) => ({ le: a.le, a, i: -1 })),
@@ -1181,6 +1186,15 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     note: et.jeu.note?.qui === qui ? { n: et.jeu.note.n } : null,
     bulle: et.jeu.bulle?.qui === qui ? { texte: et.jeu.bulle.texte, n: et.jeu.bulle.n } : null,
   });
+  /** ✅ (lot E2) « C'est fait ! » sur une relance : la promesse est tenue (la fête se joue à la relecture). */
+  async function tenirLaPromesse(o: ObjetVu) {
+    try {
+      await et.faire("tenue", o.id);
+      setInfo(`✅ ${o.titre} : promesse tenue !`);
+    } catch (e) {
+      setErreur(message(e));
+    }
+  }
   /** 📚 Il retire un souvenir, depuis sa carte (pour les deux, tout de suite). */
   async function retirerDeLEtagere(o: ObjetVu) {
     try {
@@ -1330,7 +1344,20 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       </div>
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
-        {elements.map(({ x, i, g, a, e, le, mm, ob }) => {
+        {elements.map(({ x, i, g, a, e, le, mm, ob, ct }) => {
+          if (ct)
+            return (
+              <CarteEtagere
+                key={`ct-${ct.id}`}
+                c={ct}
+                prenom={fil.lui.prenom}
+                tenues={et.tenues}
+                onVoir={() => setPageEtagere(true)}
+                onCadeau={() => (chezMoi?.univers ? (setInfo(""), setOffrir(true)) : setInfo(`🎁 ${fil.lui.prenom} n’a pas encore d’univers où poser un cadeau.`))}
+                onPanneau={() => void faireUnGeste("panneau", "cesoir")}
+                onTenue={() => void tenirLaPromesse(ct.objet)}
+              />
+            );
           if (ob) return <CarteNote key={`et-${ob.id}`} o={ob} prenom={fil.lui.prenom} onVoir={() => setPageEtagere(true)} onRetirer={() => void retirerDeLEtagere(ob)} />;
           if (mm)
             return (

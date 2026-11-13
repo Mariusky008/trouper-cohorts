@@ -50,7 +50,7 @@ import {
   signalerParole,
 } from "@/lib/direct/talkie-serveur";
 import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
-import { effacerEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
+import { effacerEtagere, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
 export const dynamic = "force-dynamic";
@@ -88,7 +88,10 @@ export async function GET(request: Request) {
     if (!r.fil) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     return NextResponse.json({ ok: true, fil: r.fil }, { headers: sansCache });
   }
-  const [proches, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);
+  const [vivants, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);
+  // 📚 la ligne de chacun, ce que l'étagère en dit (lot E2 : un rappel du jour, un souvenir pas encore vu, une relance)
+  const lignes = await lignesEtagere(supabase, moi, vivants.filter((p) => p.lien === "proches").map((p) => p.cle)).catch(() => ({}) as Record<string, never>);
+  const proches = vivants.map((p) => (lignes[p.cle] ? { ...p, etagere: lignes[p.cle] } : p));
   // 📌 à l'ouverture de « Chez moi » : leurs figurines lisent les échanges qui se sont posés (six au plus, après la réponse)
   after(() => noterMesConversations(supabase, moi).catch(() => 0));
   return NextResponse.json({ ok: true, proches, presence, cle }, { headers: sansCache });

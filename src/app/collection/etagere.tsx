@@ -14,13 +14,39 @@
  *   · `CarteNote` : « 📌 NOTÉ SUR VOTRE ÉTAGÈRE », dans le fil ;
  *   · `PageEtagere` : « Votre étagère » (les trois rayons, les règles, la pause) ; `FicheObjet` : un souvenir en grand
  *     (la phrase exacte, qui l'a dite, quand ; changer la date ; le retirer, pour les deux).
+ *   · 📅 LOT E2 « PLUS TARD » : `CarteEtagere` — dans le fil, la fierté (« 🏆 RANGÉ EN HAUT DE VOTRE ÉTAGÈRE », « 🎁 Lui
+ *     offrir un cadeau »), la promesse tenue (« ✅ PROMESSE TENUE »), la relance (« VOS FIGURINES SE SOUVIENNENT », « 🪧
+ *     Ce soir ? », « ✅ C'est fait ! ») ; et la première fois qu'il la voit, la scène fait la fête (des confettis, les
+ *     figurines qui sautent, une phrase) ; la fiche : « 🏆 C'est réussi », « ✅ C'est fait ! », « Annuler » (24 h) ;
+ *     `RappelsDuMatin` : sur « Chez moi », le rappel de sa figurine (« Aujourd'hui, c'est le permis de Léa 🚗 »),
+ *     « 🎭 Un mème », « 🎙️ Un vocal », puis « ✓ Envoyé à Léa ».
  *
  * LE MOT : à l'écran, « souvenir » ; dans le code, `objet`.
  */
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Feuille } from "./ma-figurine";
-import { RAYONS, REGLES_ETAGERE, ecartJours, jourDe, momentCourt, phraseDeNote, type EtagereScene, type EtagereVue, type ObjetVu } from "@/lib/direct/etagere";
+import { retenirMemePour } from "./meme-pour";
+import { versLeStudio } from "./vers-le-studio";
+import {
+  ETAGERE_E2,
+  RAYONS,
+  REGLES_ETAGERE,
+  dureeRelance,
+  ecartJours,
+  jourDe,
+  leJourLong,
+  momentCourt,
+  phraseDeNote,
+  phraseFierte,
+  phraseTenue,
+  phrasesRelance,
+  type CarteVue,
+  type EtagereScene,
+  type EtagereVue,
+  type ObjetVu,
+  type RappelVu,
+} from "@/lib/direct/etagere";
 
 const ROUTE = "/api/direct/etagere";
 async function agir(corps: Record<string, unknown>): Promise<void> {
@@ -37,16 +63,41 @@ const calme = () => {
 };
 const aujourdhui = () => jourDe(Date.now());
 
-/** Ce qui se joue par-dessus une figurine pendant qu'un objet se pose. */
-export type JeuEtagere = { note: { qui: "moi" | "lui"; n: string } | null; bulle: { qui: "moi" | "lui"; texte: string; n: string } | null };
+/** Ce qui se joue par-dessus une figurine pendant qu'un objet se pose (et, lot E2, pendant une fête : qui saute). */
+export type JeuEtagere = { note: { qui: "moi" | "lui"; n: string } | null; bulle: { qui: "moi" | "lui"; texte: string; n: string } | null; saute?: ("moi" | "lui")[] };
+
+/** 🎉 Des confettis, dans la scène (pas si le téléphone préfère moins de mouvement). */
+function confettis(zone: HTMLElement | null) {
+  if (!zone || calme()) return;
+  const cols = ["#FF2E9A", "#F2C46B", "#3DDC84", "#9fd8ff", "#ffffff"];
+  const w = zone.clientWidth;
+  const h = zone.clientHeight;
+  for (let i = 0; i < 36; i++) {
+    const c = document.createElement("span");
+    c.className = "et-confetti";
+    c.style.background = cols[i % cols.length];
+    c.style.left = `${w / 2}px`;
+    c.style.top = `${h * 0.35}px`;
+    zone.appendChild(c);
+    const a = Math.random() * Math.PI * 2;
+    const d = 60 + Math.random() * w * 0.45;
+    c.animate([{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d * 0.6 + 80}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }], {
+      duration: 1300 + Math.random() * 600,
+      easing: "cubic-bezier(.2,.7,.4,1)",
+      fill: "forwards",
+    });
+    window.setTimeout(() => c.remove(), 2100);
+  }
+}
 
 /**
  * 📌 L'ÉTAGÈRE DANS LA CONVERSATION : les objets (sans ceux qu'il vient de retirer), ceux qui attendent de s'envoler,
  * l'envol en cours ; `retirer` (pour les deux, tout de suite).
  */
-export function useEtagere(cle: string, scene: EtagereScene | undefined, refScene: RefObject<HTMLElement | null>) {
+export function useEtagere(cle: string, scene: EtagereScene | undefined, refScene: RefObject<HTMLElement | null>, prenom = "", pret = true) {
   const [retires, setRetires] = useState<ReadonlySet<string>>(() => new Set());
   const [poses, setPoses] = useState<ReadonlySet<string>>(() => new Set());
+  const [fetees, setFetees] = useState<ReadonlySet<string>>(() => new Set());
   const [vol, setVol] = useState("");
   const [arrive, setArrive] = useState("");
   const [jeu, setJeu] = useState<JeuEtagere>({ note: null, bulle: null });
@@ -59,7 +110,10 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
 
   const objets = (scene?.objets ?? []).filter((o) => !retires.has(o.id));
   const attente = (scene?.nouveaux ?? []).filter((id) => !poses.has(id) && objets.some((o) => o.id === id));
-  const cleAttente = attente.join(",");
+  // 🃏 (lot E2) les cartes du fil, et celles qu'il n'a pas encore vues se jouer
+  const cartes = (scene?.cartes ?? []).filter((c) => !retires.has(c.objet.id));
+  const aFeter = cartes.filter((c) => c.nouvelle && !fetees.has(c.id)).map((c) => `c:${c.id}`);
+  const cleAttente = [...attente, ...aFeter].join(",");
 
   const poser = useCallback(
     (ids: string[]) => {
@@ -70,9 +124,52 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
     [cle],
   );
 
+  const feter = useCallback(
+    (ids: string[]) => {
+      if (!ids.length) return;
+      setFetees((p) => new Set([...p, ...ids]));
+      void agir({ action: "vu", avec: cle, ids }).catch(() => undefined);
+    },
+    [cle],
+  );
+
   useEffect(() => {
-    if (enCours.current || !cleAttente) return;
-    const ids = cleAttente.split(",");
+    // (rien ne se joue avant que la conversation soit là : la scène, les figurines, son prénom)
+    if (!pret || enCours.current || !cleAttente) return;
+    const tous = cleAttente.split(",");
+    const ids = tous.filter((x) => !x.startsWith("c:"));
+    const aJouer = tous.filter((x) => x.startsWith("c:")).map((x) => x.slice(2));
+    // 🎉 (lot E2) une carte qu'il n'a pas encore vue se jouer : la fierté, la promesse tenue, la relance
+    if (!ids.length) {
+      const c = cartes.find((x) => x.id === aJouer[0]);
+      if (!c) return;
+      if (calme() || envols.current >= 3) return void Promise.resolve().then(() => feter(aJouer));
+      enCours.current = true;
+      envols.current += 1;
+      const fini = (ms: number) =>
+        plusTard(ms, () => {
+          setJeu({ note: null, bulle: null });
+          enCours.current = false;
+          feter([c.id]);
+        });
+      const sc = refScene.current;
+      if (c.genre === "fierte") {
+        confettis(sc);
+        const qui = c.objet.pourMoi || c.objet.deux ? "lui" : "moi";
+        void Promise.resolve().then(() => setJeu({ note: null, bulle: { qui, texte: phraseFierte(c.objet.pourMoi || c.objet.deux ? null : prenom), n: c.id }, saute: [qui] }));
+        fini(4800);
+      } else if (c.genre === "tenue") {
+        confettis(sc);
+        void Promise.resolve().then(() => setJeu({ note: null, bulle: { qui: "moi", texte: phraseTenue(c.n ?? scene?.tenues ?? 1), n: c.id }, saute: ["moi", "lui"] }));
+        fini(4800);
+      } else {
+        const [p1, p2] = phrasesRelance(c.n ?? 0, c.objet.emoji, c.id);
+        void Promise.resolve().then(() => setJeu({ note: null, bulle: { qui: "lui", texte: p1, n: `${c.id}-1` } }));
+        plusTard(3600, () => setJeu({ note: null, bulle: { qui: "moi", texte: p2, n: `${c.id}-2` } }));
+        fini(6800);
+      }
+      return;
+    }
     // (sans mouvement, ou déjà trois envols : ils se posent sans vol)
     if (calme() || envols.current >= 3) return void Promise.resolve().then(() => poser(ids));
     const o = (scene?.objets ?? []).find((x) => x.id === ids[0]);
@@ -135,7 +232,7 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cleAttente, poses]);
+  }, [cleAttente, poses, fetees, pret]);
 
   const retirer = useCallback(
     async (id: string) => {
@@ -146,7 +243,9 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
   );
   /** (retiré ailleurs — la page : il s'en va d'ici aussi) */
   const oublier = useCallback((id: string) => setRetires((r) => new Set([...r, id])), []);
-  return { objets, attente: new Set(attente.filter((id) => id !== vol)), vol, arrive, jeu, retirer, oublier, pause: scene?.pause ?? null };
+  /** ✋ (lot E2) « 🏆 C'est réussi », « ✅ C'est fait ! », « Annuler » : la scène le montre à la relecture suivante. */
+  const faire = useCallback((action: "reussi" | "tenue" | "annuler-tenue", id: string) => agir({ action, avec: cle, id }), [cle]);
+  return { objets, cartes, attente: new Set(attente.filter((id) => id !== vol)), vol, arrive, jeu, retirer, oublier, faire, tenues: scene?.tenues ?? 0, pause: scene?.pause ?? null };
 }
 
 /** 📚 La planche, en haut de la scène : les cinq derniers posés ; « 📚 Votre étagère · 6 ». Vide : rien. */
@@ -208,8 +307,154 @@ export function CarteNote({ o, prenom, onVoir, onRetirer }: { o: ObjetVu; prenom
   );
 }
 
+/**
+ * 🃏 (lot E2) UNE CARTE DU FIL : la fierté, la promesse tenue, la relance — visible des deux, à son heure. `onCadeau` :
+ * « 🎁 Lui offrir un cadeau » ; `onPanneau` : « 🪧 Ce soir ? » ; `onTenue` : « ✅ C'est fait ! ».
+ */
+export function CarteEtagere({ c, prenom, tenues, onVoir, onCadeau, onPanneau, onTenue }: { c: CarteVue; prenom: string; tenues: number; onVoir: () => void; onCadeau: () => void; onPanneau: () => void; onTenue: () => void }) {
+  const o = c.objet;
+  if (c.genre === "fierte")
+    return (
+      <li className="et-carte-fil trophee" data-carte={c.id}>
+        <div>
+          <b className="et-entete">🏆 RANGÉ EN HAUT DE VOTRE ÉTAGÈRE</b>
+          <span className="et-objet">
+            <span className="et-e" aria-hidden="true">
+              🏆
+            </span>
+            <span>
+              <b>{o.titre}</b>
+              <small>{o.detail}</small>
+            </span>
+          </span>
+          <span className="et-actions boutons">
+            {!o.pourMoi && (
+              <button type="button" className="et-petit" onClick={onCadeau}>
+                🎁 Lui offrir un cadeau
+              </button>
+            )}
+            <button type="button" className="et-petit clair" onClick={onVoir}>
+              Voir l’étagère
+            </button>
+          </span>
+        </div>
+      </li>
+    );
+  if (c.genre === "tenue")
+    return (
+      <li className="et-carte-fil trophee" data-carte={c.id}>
+        <div>
+          <b className="et-entete">✅ PROMESSE TENUE</b>
+          <span className="et-objet">
+            <span className="et-e" aria-hidden="true">
+              {o.emoji}
+            </span>
+            <span>
+              <b>{o.titre}</b>
+              <small>
+                {c.n ?? tenues} promesse{(c.n ?? tenues) > 1 ? "s" : ""} tenue{(c.n ?? tenues) > 1 ? "s" : ""} entre vous
+              </small>
+            </span>
+          </span>
+        </div>
+      </li>
+    );
+  const enCours = o.etat === "actif" || o.etat === "sommeil";
+  return (
+    <li className="et-carte-fil" data-carte={c.id}>
+      <div>
+        <b className="et-entete">{o.emoji} VOS FIGURINES SE SOUVIENNENT</b>
+        <blockquote>
+          « {o.citation} »<cite>{o.de === "moi" ? "Toi" : o.ditPar}, {leJourLong(o.ditLe)}</cite>
+        </blockquote>
+        <span className="et-duree">{dureeRelance(c.n ?? 0)}</span>
+        {enCours ? (
+          <span className="et-actions boutons">
+            <button type="button" className="et-petit" onClick={onPanneau}>
+              🪧 Ce soir ?
+            </button>
+            <button type="button" className="et-petit or" onClick={onTenue}>
+              ✅ C’est fait !
+            </button>
+          </span>
+        ) : (
+          o.etat === "tenue" && <small className="et-tenue-ok">✅ Promesse tenue</small>
+        )}
+        <small className="et-pied">Visible de {prenom} et toi</small>
+      </div>
+    </li>
+  );
+}
+
+/**
+ * ☀️ (lot E2) LES RAPPELS DU MATIN, sur « Chez moi », sous la fenêtre de son univers : sa figurine le lui rappelle
+ * (« Aujourd'hui, c'est le permis de Léa 🚗 Un petit mot avant le départ ? ») ; « 🎭 Un mème » (le studio, les mots
+ * écrits, pour elle), « 🎙️ Un vocal » (leur conversation, le micro prêt) ; dès qu'il lui a écrit : « ✓ Envoyé à Léa ».
+ * Le jour J, celui que ça concerne lit l'encouragement de SA figurine.
+ */
+export function RappelsDuMatin({ actif, onParler }: { actif: boolean; onParler: (cle: string) => void }) {
+  const [rappels, setRappels] = useState<RappelVu[] | null>(null);
+  useEffect(() => {
+    if (!actif) return;
+    let fini = false;
+    fetch(`${ROUTE}?rappels=1`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { rappels?: RappelVu[] }) => !fini && setRappels(Array.isArray(j.rappels) ? j.rappels : []))
+      .catch(() => !fini && setRappels([]));
+    return () => {
+      fini = true;
+    };
+  }, [actif]);
+  if (!rappels?.length) return null;
+  return (
+    <div className="et-rappels">
+      {rappels.map((r) => (
+        <div key={`${r.cas}-${r.id}`} className={`et-rappel${r.cas === "encourage" ? " moi" : ""}`} data-objet={r.id}>
+          {r.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={r.image} alt="" draggable={false} />
+          ) : (
+            <span aria-hidden="true">{r.emoji}</span>
+          )}
+          <div>
+            <small>{r.cas === "encourage" ? "💪 DE TA FIGURINE" : `📌 DE VOTRE ÉTAGÈRE, ${r.prenom.toLocaleUpperCase("fr-FR")} ET TOI`}</small>
+            <p>{r.texte}</p>
+            {r.cas !== "encourage" &&
+              (r.fait ? (
+                <p className="et-fait">✓ Envoyé à {r.prenom}</p>
+              ) : (
+                <span className="et-actions boutons">
+                  <button type="button" className="et-petit" onClick={() => (retenirMemePour({ cle: r.cle, prenom: r.prenom }), versLeStudio({ texte: r.meme }))}>
+                    🎭 Un mème
+                  </button>
+                  <button type="button" className="et-petit clair" onClick={() => onParler(r.cle)}>
+                    🎙️ Un vocal
+                  </button>
+                </span>
+              ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** 🔎 Un souvenir en grand : la phrase exacte, qui l'a dite, quand ; changer la date ; le retirer, pour les deux. */
-export function FicheObjet({ o, prenom, onFermer, onRetirer, onDate }: { o: ObjetVu | null; prenom: string; onFermer: () => void; onRetirer: (o: ObjetVu) => Promise<void>; onDate: (o: ObjetVu, quand: string) => Promise<void> }) {
+export function FicheObjet({
+  o,
+  prenom,
+  onFermer,
+  onRetirer,
+  onDate,
+  onFaire,
+}: {
+  o: ObjetVu | null;
+  prenom: string;
+  onFermer: () => void;
+  onRetirer: (o: ObjetVu) => Promise<void>;
+  onDate: (o: ObjetVu, quand: string) => Promise<void>;
+  onFaire?: (o: ObjetVu, action: "reussi" | "tenue" | "annuler-tenue") => Promise<void>;
+}) {
   const [changer, setChanger] = useState(false);
   const [quand, setQuand] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -234,6 +479,11 @@ export function FicheObjet({ o, prenom, onFermer, onRetirer, onDate }: { o: Obje
     }
   };
   const avenir = Boolean(o?.quand) && ecartJours(aujourdhui(), o?.quand ?? "") >= 0 && o?.etat === "actif";
+  // 🏆 (lot E2) son épreuve : le jour est arrivé (jusqu'à trois jours après) ; ✅ une promesse ; « Annuler » 24 h
+  const ecart = o?.quand ? ecartJours(o.quand, aujourdhui()) : -1;
+  const reussir = Boolean(o && onFaire && o.genre === "date" && o.sorte === "epreuve" && o.etat === "actif" && (o.pourMoi || o.deux) && ecart >= 0 && ecart <= 3);
+  const tenir = Boolean(o && onFaire && o.genre === "promesse" && (o.etat === "actif" || o.etat === "sommeil"));
+  const annuler = Boolean(o && onFaire && o.etat === "tenue" && o.tenueLe && Date.now() - Date.parse(o.tenueLe) < ETAGERE_E2.annuler);
   return (
     <Feuille ouverte={Boolean(o)} onFermer={onFermer} titre={o ? o.titre : "Un souvenir"} className="et-feuille">
       {o && (
@@ -247,10 +497,25 @@ export function FicheObjet({ o, prenom, onFermer, onRetirer, onDate }: { o: Obje
             « {o.citation} »<cite>Dit par {o.de === "moi" ? "toi" : o.ditPar} · {momentCourt(o.ditLe)}</cite>
           </blockquote>
           <small className="et-pied">Noté par vos figurines · IA · visible de {prenom} et toi</small>
-          {o.genre === "date" && avenir && <p className="et-note-douce">⏰ Ta figurine te le rappellera le jour venu, au moment de ton humeur du matin.</p>}
+          {o.genre === "date" && avenir && !reussir && <p className="et-note-douce">⏰ Ta figurine te le rappellera le jour venu, au moment de ton humeur du matin.</p>}
+          {reussir && (
+            <button type="button" className="et-bouton or" disabled={occupe} onClick={() => void faire(() => onFaire!(o, "reussi"))}>
+              🏆 C’est réussi
+            </button>
+          )}
+          {tenir && (
+            <button type="button" className="et-bouton or" disabled={occupe} onClick={() => void faire(() => onFaire!(o, "tenue"))}>
+              ✅ C’est fait !
+            </button>
+          )}
+          {annuler && (
+            <button type="button" className="et-bouton clair" disabled={occupe} onClick={() => void faire(() => onFaire!(o, "annuler-tenue"))}>
+              Annuler (elle n’est pas tenue)
+            </button>
+          )}
           {o.genre === "gout" && <p className="et-note-douce">🎁 Une idée de cadeau, quand le moment viendra.</p>}
           {o.etat === "fierte" && <p className="et-note-douce">🏆 Rangé tout en haut, avec vos fiertés.</p>}
-          {(o.genre === "date" || o.genre === "promesse") && o.etat === "actif" && o.quand && (
+          {(o.genre === "date" || o.genre === "promesse") && o.etat === "actif" && o.quand && !reussir && (
             <>
               {changer ? (
                 <span className="et-date">
@@ -320,6 +585,12 @@ export function PageEtagere({ cle, onFermer, onRetire }: { cle: string; onFermer
     await agir({ action: "date", avec: cle, id: o.id, quand });
     setFiche(null);
     setInfo(`📅 C’est noté : ${o.titre.charAt(0).toLowerCase()}${o.titre.slice(1)}, à la nouvelle date`);
+    setTour((t) => t + 1);
+  }
+  async function faireSur(o: ObjetVu, action: "reussi" | "tenue" | "annuler-tenue") {
+    await agir({ action, avec: cle, id: o.id });
+    setFiche(null);
+    setInfo(action === "reussi" ? "🏆 Rangé tout en haut, avec vos fiertés !" : action === "tenue" ? `✅ ${o.titre} : promesse tenue !` : "Annulé : elle attend encore d’être tenue.");
     setTour((t) => t + 1);
   }
   async function pause(oui: boolean) {
@@ -426,7 +697,7 @@ export function PageEtagere({ cle, onFermer, onRetire }: { cle: string; onFermer
           </div>
         </>
       )}
-      <FicheObjet o={fiche} prenom={vue?.prenom ?? ""} onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} />
+      <FicheObjet o={fiche} prenom={vue?.prenom ?? ""} onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} onFaire={faireSur} />
     </div>
   );
   return typeof document === "undefined" ? null : createPortal(contenu, document.body);
@@ -439,8 +710,8 @@ export const STYLES_ETAGERE = `
 .et-rang span.vient{visibility:hidden}
 .et-rang span.arrive{animation:et-pose .5s cubic-bezier(.2,.8,.3,1.5)}
 .et-planche{width:100%;height:7px;border-radius:2px;background:linear-gradient(180deg,#a5683a,#6b3f1f);box-shadow:0 5px 8px -3px rgba(0,0,0,.7)}
-.pr-scene.avec-etagere:not(.chez){padding-top:64px}
-.pr-scene.avec-etagere:not(.chez) .pv-calque{top:64px}
+.pr-scene.avec-etagere:not(.chez){padding-top:80px}
+.pr-scene.avec-etagere:not(.chez) .pv-calque{top:80px}
 .et-mur small{margin-top:3px;padding:2px 8px;border-radius:999px;background:rgba(18,6,15,.62);font-size:11px;font-weight:800;color:#F2C46B;white-space:nowrap}
 .et-vol{position:fixed;left:0;top:0;z-index:90;font-size:30px;line-height:1;pointer-events:none;filter:drop-shadow(0 4px 4px rgba(0,0,0,.5))}
 .et-pastille{flex:none;display:inline-flex;align-items:center;gap:5px;padding:7px 11px;border:1px solid rgba(242,196,107,.45);border-radius:999px;background:rgba(242,196,107,.12);color:#F2C46B;font:inherit;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
@@ -501,6 +772,24 @@ export const STYLES_ETAGERE = `
 .et-bouton:disabled{opacity:.55}
 .et-date{align-self:stretch;display:flex;flex-direction:column;gap:6px}
 .et-date input{min-height:46px;padding:0 12px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#2A1422;color:#FFF4E6;font:inherit;font-size:16px;color-scheme:dark}
+.et-confetti{position:absolute;z-index:9;width:8px;height:12px;border-radius:2px;pointer-events:none}
+.pr-fil li.et-carte-fil.trophee > div{background:linear-gradient(140deg,rgba(242,196,107,.22),rgba(255,46,154,.12));border-style:solid}
+.et-actions.boutons{gap:8px}
+.et-actions .et-petit,.et-petit{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-size:13.5px;font-weight:800;text-decoration:none;cursor:pointer}
+.et-actions .et-petit.clair,.et-petit.clair{background:rgba(255,255,255,.1);color:#FFF4E6}
+.et-actions .et-petit.or,.et-petit.or{background:#F2C46B;color:#2b1a0c}
+.et-bouton.or{background:#F2C46B;color:#2b1a0c}
+.pr-fil li.et-carte-fil blockquote{margin:2px 0 0;padding:0 0 0 10px;border-left:3px solid rgba(242,196,107,.5);font-size:14px}
+.pr-fil li.et-carte-fil blockquote cite{display:block;margin-top:2px;font-style:normal;font-size:12px;color:#CDB4C0}
+.et-duree{font-size:13.5px;font-weight:700}
+.et-tenue-ok{font-size:13px;font-weight:800;color:#9FF0C4}
+.et-rappels{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px}
+.et-rappel{display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;padding:14px;border-radius:20px;background:linear-gradient(140deg,rgba(242,196,107,.18),rgba(255,46,154,.14));border:1px solid rgba(242,196,107,.35);animation:et-monte .5s cubic-bezier(.2,.8,.3,1.2) both}
+.et-rappel img,.et-rappel > span{width:48px;height:48px;border-radius:50%;object-fit:cover;object-position:50% 12%;background:#3a1630;display:grid;place-items:center;font-size:24px}
+.et-rappel small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.02em;color:#F2C46B}
+.et-rappel p{margin:3px 0 10px;font-size:15.5px;font-weight:600;line-height:1.35}
+.et-rappel.moi p{margin-bottom:0}
+.et-rappel .et-fait{margin:0;font-size:13.5px;font-weight:800;color:#9FF0C4}
 @keyframes et-pose{0%{transform:translateY(-10px) scale(1.5)}60%{transform:translateY(2px) scale(.9)}100%{transform:none}}
 @keyframes et-monte{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.et-rang span.arrive,.pr-fil li.et-carte-fil > div,.pv-calque .et-note{animation:none}}

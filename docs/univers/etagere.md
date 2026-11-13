@@ -1,7 +1,8 @@
 # L'étagère — cahier des charges (13 novembre 2026)
 
 **Statut : validé par le propriétaire (« on va construire cette feature »). Le lot E1 « Noté ! » est construit (13
-novembre 2026, `docs/figurines.md`, 9.0 novoquadragies 📚) ; E2 et E3 suivent.** Ce document dit tout ce qu'il faut
+novembre 2026, `docs/figurines.md`, 9.0 novoquadragies 📚), puis le lot E2 « Plus tard » (9.0 quinquagies 📅) ; E3
+suit.** Ce document dit tout ce qu'il faut
 pour la construire. Il ne remplace pas `docs/univers/feuille-de-route.md` : il s'y ajoute (lot E).
 
 > **Ce qui a changé depuis l'écriture de ce cahier** (la nouvelle interface, lots 1 à 4, fusionnés le 13 novembre) :

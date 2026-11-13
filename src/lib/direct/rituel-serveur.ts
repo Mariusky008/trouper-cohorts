@@ -508,7 +508,7 @@ export type BilanMatin = { jour: string; personnes: number; fins: number; envoye
  * sont préparés ; s'il en a, une notification (une par jour au plus) : « 🌙 Cette nuit, vos figurines se sont parlé ».
  * Une fois par jour ; une fonction a une minute : passé 50 secondes, on s'arrête (les autres les trouveront en ouvrant).
  */
-export async function envoyerLesMatins(supabase: Supabase, o: { force?: boolean } = {}): Promise<BilanMatin> {
+export async function envoyerLesMatins(supabase: Supabase, o: { force?: boolean; rappelsDe?: (h: string) => Promise<{ titre: string; corps: string } | null> } = {}): Promise<BilanMatin> {
   const jour = jourParis();
   const bilan: BilanMatin = { jour, personnes: 0, fins: 0, envoyes: 0 };
   const marque = `notif/matins/${jour}.json`;
@@ -527,10 +527,13 @@ export async function envoyerLesMatins(supabase: Supabase, o: { force?: boolean 
       ids.slice(k, k + 5).map(async (h) => {
         bilan.personnes++;
         const avec = await preparerSesFins(supabase, h).catch(() => [] as string[]);
-        if (!avec.length) return;
+        // 📌 un rappel de l'étagère (lot E2) : c'est lui qui fait le titre ; pas de notification en plus
+        const rappel = o.rappelsDe ? await o.rappelsDe(h).catch(() => null) : null;
+        if (!avec.length && !rappel) return;
         bilan.fins += avec.length;
         const prenoms = (await Promise.all(avec.slice(0, 2).map(async (x) => s((await lireLigne(supabase, x)).ligne?.prenom)))).filter(Boolean);
-        if ((await prevenirUneFoisParJour(supabase, h, "matin", notifDuMatin(prenoms, avec.length))) === "envoye") bilan.envoyes++;
+        const notif = rappel ? { titre: rappel.titre, corps: avec.length ? `${rappel.corps} Et cette nuit, vos figurines se sont parlé 🌙` : rappel.corps, url: "/collection#proches", tag: "rituel-matin" } : notifDuMatin(prenoms, avec.length);
+        if ((await prevenirUneFoisParJour(supabase, h, "matin", notif)) === "envoye") bilan.envoyes++;
       }),
     );
   }
