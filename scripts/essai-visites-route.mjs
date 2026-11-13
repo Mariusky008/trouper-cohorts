@@ -6,7 +6,9 @@
 // le monde » : il faut avoir déclaré 18 ans ou plus ; Nico et l'inconnu entrent, sans ses clés ni ses souvenirs. Inès
 // frappe (une visite par jour) ; ses souvenirs : pas d'alcool, trois en attente au plus ; Marc accepte (il se pose,
 // les proches le voient), refuse, retire. « Moi seul » : la porte est fermée. Nico signale. Dans « Proches », Inès
-// voit « Son univers ».
+// voit « Son univers ». (13 novembre 2026) Les deux figurines à leurs places, à l'échelle ; chez Marc : qui est passé
+// (sa figurine, sa clé, proche ou non, nouveau jusqu'à « vu ») et les cadeaux (avec la figurine de qui les a laissés) ;
+// Inès voit ses paquets pas encore ouverts.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
@@ -99,6 +101,7 @@ const faire = async (qui, corps) => {
 const vi = (await voir(INES, `cle=${MARC.cle}`)).vue;
 ok(vi?.etat === "ouvert" && vi.prenom === "Marc" && vi.proche && vi.cles.length === 1 && vi.peutLaisser && /^http/.test(vi.decor) && /^http/.test(vi.hote.image), "« mes proches » : Inès entre — son décor, sa figurine, ses clés ; elle peut laisser un souvenir");
 ok(/^http/.test(vi?.invite?.image ?? ""), "la figurine d'Inès, à la place de l'invité");
+ok(vi?.hote?.x === 0.32 && vi.hote.y === 0.84 && vi.hote.echelle === 1 && vi.hote.hauteur === undefined && vi.invite.x === 0.7 && vi.mesCadeaux === 0, "📏 sa figurine à la place de l'hôte, à son échelle (comme la conversation chez soi) ; pas encore de cadeau d'Inès");
 ok((await voir(NICO, `cle=${MARC.cle}`)).vue?.etat === "reserve" && (await voir(null, `cle=${MARC.cle}`)).vue?.etat === "reserve", "Nico (pas proche dans les deux sens) et un inconnu : « réservé à ses proches »");
 ok((await voir(INES, "cle=0123456789abcdef")).vue?.etat === "absent", "une clé qui n'est à personne : « cet univers n'existe pas »");
 
@@ -113,6 +116,9 @@ ok(vn?.etat === "ouvert" && !vn.proche && vn.cles.length === 0 && !vn.peutLaisse
 ok((await faire(INES, { action: "frapper", cle: MARC.cle })).statut === 200 && (await faire(INES, { action: "frapper", cle: MARC.cle })).statut === 200, "Inès frappe à la porte (deux fois)");
 const mv1 = (await voir(MARC, "moi=1")).visites;
 ok(mv1?.passes?.length === 1 && mv1.passes[0].prenom === "Inès" && mv1.visibilite === "tous" && mv1.adulte && mv1.cle === MARC.cle, "chez Marc : « Inès est passée », une fois par jour ; son réglage, son lien");
+const p1 = mv1?.passes?.[0] ?? {};
+ok(p1.cle === INES.cle && /^http/.test(p1.image ?? "") && p1.nouveau === true && p1.proche === true && !p1.univers, "qui a frappé : sa figurine, sa clé, « nouveau », une proche (lui parler) ; pas d'univers à visiter");
+ok((await faire(MARC, { action: "vu" })).statut === 200 && !(await voir(MARC, "moi=1")).visites?.passes?.[0]?.nouveau, "« vu » : Marc a découvert qui est passé, ce n'est plus nouveau");
 ok((await faire(MARC, { action: "frapper", cle: MARC.cle })).statut === 400, "on ne frappe pas chez soi");
 
 // ═══ LES SOUVENIRS ═══
@@ -124,6 +130,8 @@ await faire(INES, { action: "souvenir", cle: MARC.cle, objet: "livre" });
 ok((await faire(INES, { action: "souvenir", cle: MARC.cle, objet: "ballon" })).statut === 429, "trois souvenirs en attente au plus");
 const mv2 = (await voir(MARC, "moi=1")).visites;
 ok(mv2?.enAttente?.length === 3 && mv2.enAttente[0].de === "Inès" && mv2.enAttente[0].mot === "Pour ton atelier !" && mv2.poses.length === 0, "chez Marc : trois souvenirs à accepter, de qui, avec son mot");
+ok(mv2.enAttente[0].cle === INES.cle && /^http/.test(mv2.enAttente[0].image ?? ""), "un cadeau : la figurine de qui l'a laissé, sa clé (lui dire merci)");
+ok((await voir(INES, `cle=${MARC.cle}`)).vue?.mesCadeaux === 3, "Inès voit ses trois paquets, pas encore ouverts, chez Marc");
 ok((await voir(INES, `cle=${MARC.cle}`)).vue?.souvenirs?.length === 0, "tant qu'il ne l'a pas accepté, il n'apparaît pas");
 const [bouquet, tasse, livre] = mv2.enAttente;
 ok((await faire(MARC, { action: "decider", id: bouquet.id, oui: true })).statut === 200 && (await faire(MARC, { action: "decider", id: tasse.id, oui: false })).statut === 200, "Marc pose le bouquet chez lui, et dit « non merci » à la tasse");

@@ -8,11 +8,12 @@
 // POST { action: "signaler", cle }                 → signaler un univers (pour l'équipe)
 // POST { action: "decider", id, oui }              → chez moi : accepter (il se pose) ou refuser un souvenir
 // POST { action: "retirer", id }                   → chez moi : retirer un souvenir posé
+// POST { action: "vu" }                            → chez moi : j'ai découvert qui est passé (plus « nouveau »)
 // POST { action: "visibilite", visibilite, adulte? } → chez moi : qui peut entrer (« tous » : 18 ans ou plus déclarés)
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { choisirVisibilite, deciderSouvenir, frapper, laisserSouvenir, mesVisites, retirerSouvenir, signalerUnivers, universPublics, visiterUnivers } from "@/lib/direct/visites-serveur";
+import { choisirVisibilite, deciderSouvenir, frapper, laisserSouvenir, marquerVisitesVues, mesVisites, retirerSouvenir, signalerUnivers, universPublics, visiterUnivers } from "@/lib/direct/visites-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
               ? await retirerSouvenir(supabase, moi.id, p.id)
               : p?.action === "visibilite"
                 ? await choisirVisibilite(supabase, moi.id, p.visibilite, p.adulte)
-                : { error: "Demande incomplète.", statut: 400 };
+                : p?.action === "vu"
+                  ? await marquerVisitesVues(supabase, moi.id)
+                  : { error: "Demande incomplète.", statut: 400 };
   return NextResponse.json(r.error ? { error: r.error } : { ok: true }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
 }

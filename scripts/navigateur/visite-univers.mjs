@@ -1,8 +1,10 @@
 // 🚪 EN VISITE (« Univers », lot 6) — `/univers/chez/<clé>` et « Mon univers » (`/univers/monde`), sur un iPhone, contre
 // le faux Supabase (jamais la vraie base).
 //
-// Inès, proche de Marc, entre chez lui : « Chez Marc », son décor, sa figurine, la sienne en visite ; « 🚪 Frapper à la
-// porte » ; « 🎁 Laisser un souvenir » (un bouquet, un mot) ; « 🔑 Les clés de son univers ». Marc, dans son univers :
+// Inès, proche de Marc, entre chez lui : « Chez Marc », son décor, sa figurine, la sienne en visite — toutes deux à
+// l'échelle du décor (36 % de sa hauteur, comme la conversation chez soi) ; « 🚪 Toc toc » (la scène tremble, « Toc !
+// Toc ! ») ; « 🎁 Offrir » (un bouquet, un mot : le paquet se pose à ses pieds) ; « 🔑 Les clés de son univers ». Marc,
+// dans son univers :
 // « 🎁 Des souvenirs pour toi » — « Le poser chez moi » : le bouquet apparaît sur le sol de son décor ; « Qui est
 // passé » : Inès ; « Qui peut entrer chez moi ? » : « 🌍 Tout le monde » demande 18 ans ou plus. 🏡 Lot 7 : dans
 // « Découvrir », Inès voit « Les univers à visiter » — « Chez Marc ». Rien ne déborde, jamais le mot interdit, aucune
@@ -105,18 +107,36 @@ await ines.goto(`${BASE}/univers/chez/${MARC.cle}`, { waitUntil: "networkidle" }
 await ines.waitForSelector(".uv-scene .uv-decor", { timeout: 30000 }).catch(() => null);
 ok((await texte(ines, ".uv-entete")) === "Chez Marc" && (await ines.locator(".uv-scene .uv-place").count()) === 2, "« Chez Marc » : son décor, sa figurine, et celle d'Inès en visite");
 await ines.waitForTimeout(900);
+// 📏 à l'échelle du décor : la hauteur de chacune, en part de la scène (36 % fois l'échelle de sa place)
+const parts = await ines.evaluate(() => {
+  const s = document.querySelector(".uv-scene")?.getBoundingClientRect();
+  return [...document.querySelectorAll(".uv-scene .uv-place")].map((e) => e.getBoundingClientRect().height / (s?.height || 1));
+});
+// (sa figurine, assise : 36 % ; celle d'Inès, d'avant — une carte — un peu plus petite : 80 % de cette taille)
+ok(parts.length === 2 && Math.abs(parts[0] - 0.36) < 0.02 && Math.abs(parts[1] - 0.36 * 0.8) < 0.02, `📏 les deux figurines à l'échelle du décor (${parts.map((x) => x.toFixed(2)).join(", ")} de sa hauteur)`);
 await ines.screenshot({ path: `${D}/visite-univers-1-chez-marc.png` });
-await ines.locator(".uv-gestes .uv-bouton", { hasText: "Frapper à la porte" }).click();
+ok((await ines.locator(".uv-gestes .uv-geste").count()) === 2, "deux gestes, juste sous la scène : « 🚪 Toc toc » et « 🎁 Offrir »");
+await ines.locator(".uv-geste.porte").click();
+await ines.waitForTimeout(250);
+ok((await ines.locator(".uv-scene.toc1 .uv-toc b").count()) === 2, "« Toc toc » : la scène tremble, « Toc ! Toc ! »");
 await ines.waitForSelector(".uv-message", { timeout: 10000 }).catch(() => null);
-ok((await texte(ines, ".uv-message")).includes("Marc verra ta visite") && (await texte(ines, ".uv-gestes .uv-bouton")).includes("Tu as frappé"), "« 🚪 Frapper à la porte » : « Toc toc ! Marc verra ta visite. »");
-await ines.locator(".uv-gestes .uv-bouton", { hasText: "Les clés de son univers" }).click();
+ok((await texte(ines, ".uv-message")).includes("Marc verra ta visite") && (await texte(ines, ".uv-geste.porte")).includes("Déjà frappé"), "« Toc toc ! Marc verra ta visite 💛 »");
+await ines.locator(".uv-bouton.clair", { hasText: "Les clés de son univers" }).click();
 ok((await texte(ines, ".uv-liste")).includes("je bricole tous les dimanches"), "entre proches : les clés de son univers, ses phrases");
-await ines.locator(".uv-gestes .uv-bouton", { hasText: "Laisser un souvenir" }).click();
+await ines.locator(".uv-geste.cadeau").click();
+await ines.waitForSelector(".uv-feuille", { timeout: 5000 }).catch(() => null);
+ok((await texte(ines, ".uv-feuille-haut")).includes("Un cadeau pour Marc") && (await ines.locator(".uv-feuille .uv-objets button").count()) === 10, "« 🎁 Offrir » : « Un cadeau pour Marc », dix objets");
 await ines.locator('.uv-objets button[aria-label="Un bouquet"]').click();
 await ines.locator(".uv-mot input").fill("Pour ton atelier !");
-await ines.locator(".uv-laisser .uv-bouton").click();
-await ines.waitForFunction(() => document.querySelector(".uv-message")?.textContent?.includes("souvenir"), null, { timeout: 10000 }).catch(() => null);
-ok((await texte(ines, ".uv-message")).includes("Ton souvenir est parti"), "« 🎁 Laisser un souvenir » : un bouquet, un mot — parti, Marc le verra");
+ok((await texte(ines, ".uv-bouton.offrir")).includes("à Marc"), "« Offrir 💐 à Marc »");
+await ines.screenshot({ path: `${D}/visite-univers-1b-offrir.png` });
+await ines.locator(".uv-bouton.offrir").click();
+await ines.waitForSelector(".uv-scene .uv-envol", { timeout: 10000 }).catch(() => null);
+ok((await ines.locator(".uv-feuille").count()) === 0 && (await ines.locator(".uv-scene .uv-envol").count()) === 1, "le paquet s'envole vers Marc");
+// (par intervalles : sur cette page, les animations sans fin peuvent retenir les images d'animation du navigateur)
+await ines.waitForFunction(() => document.querySelector(".uv-message")?.textContent?.includes("cadeau"), null, { timeout: 10000, polling: 200 }).catch(() => null);
+ok((await texte(ines, ".uv-message")).includes("Ton cadeau est déposé") && (await ines.locator(".uv-scene .uv-paquets i").count()) === 1, "« 🎁 Ton cadeau est déposé ! » — il attend, emballé, à ses pieds");
+await ines.screenshot({ path: `${D}/visite-univers-1c-depose.png` });
 ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "la visite : rien ne déborde, sans le mot interdit");
 
 // ═══ MARC, CHEZ LUI ═══

@@ -567,6 +567,13 @@ un mot ; trois en attente au plus ; ni alcool ni mots interdits), « 🚩 Signal
 souvenirs à accepter (posés sur le sol du décor), qui peut entrer, son lien de visite. Dans « Proches » : « 🏡 Son
 univers ».
 
+**Refait le 13 novembre 2026** (le propriétaire : « les figurines ne sont pas proportionnelles à l'univers […] quand je
+laisse un souvenir, il va quelque part où il n'y a aucune chance qu'il soit vu […] plus accessible et immédiat […] une
+vraie expérience de découverte ») ; le détail : `docs/figurines.md`, 9.0 quaterquadragies 🎁🚪. En visite, les deux
+figurines à l'échelle de la conversation ; « 🚪 Toc toc » et « 🎁 Offrir » sous la scène, tout de suite animés. Chez
+moi, en arrivant : le paquet à ouvrir, la porte à ouvrir, « Le poser chez moi », « Lui dire merci », « Lui rendre
+visite » ; le badge sur ma fenêtre, la ligne « Mes visites ».
+
 ### Lot 7 — L'appli d'aujourd'hui rhabillée
 
 Voir la section 8. Les mèmes se jouent dans l'univers. « Découvrir » montre les figurines chez elles. Le menu change.

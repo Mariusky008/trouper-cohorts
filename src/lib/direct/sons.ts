@@ -438,7 +438,11 @@ function cloche(m: { ctx: AudioContext; sortie: GainNode }, hz: number, depart: 
 /** La mélodie des surprises : une note de plus haut à chacune, dans la gamme. */
 const MELODIE = [SOL, D(0), SI, RE, MI2, SOL2];
 
-export type MomentDoux = "trouve" | "surprise" | "rideau" | "avis";
+/**
+ * `porte` : on frappe à une porte (« Univers », les visites — le propriétaire, le 13 novembre 2026 : « une vraie
+ * expérience de découverte […] beaucoup plus animée ») ; `cadeau` : un cadeau qui s'ouvre.
+ */
+export type MomentDoux = "trouve" | "surprise" | "rideau" | "avis" | "porte" | "cadeau";
 
 /**
  * JOUER UN MOMENT DE MA MAISON, DOUCEMENT. `rang` : la surprise (0, 1, 2…),
@@ -469,6 +473,27 @@ export function jouerDoux(moment: MomentDoux, rang = 0): void {
       /** UN AVIS — à peine une goutte : plus haut pour « j'adore », plus bas pour « j'aime pas ». */
       case "avis":
         cloche(m, rang > 0 ? MI2 : rang < 0 ? SOL : SI, 0, 0.18, 0.7);
+        break;
+      /**
+       * TOC, TOC — DEUX COUPS DE BOIS. Un coup = un bruit bref, filtré bas (le bois), sous une sinusoïde grave qui
+       * tombe (le corps de la porte). Le second un peu plus faible : c'est la même main.
+       */
+      case "porte":
+        for (const [depart, niveau] of [
+          [0, 1],
+          [0.2, 0.8],
+        ] as const) {
+          souffle(m, { depart, duree: 0.05, niveau: 0.5 * niveau, coupure: 520 });
+          voix(m, { hz: 150, vers: 85, depart, duree: 0.13, niveau: 0.75 * niveau, attaque: 0.002, forme: "sine", coupure: 700 });
+        }
+        break;
+      /** UN CADEAU QUI S'OUVRE — le papier (un souffle), puis quatre notes qui montent, la dernière qui reste. */
+      case "cadeau":
+        souffle(m, { duree: 0.16, niveau: 0.12, coupure: 3200 });
+        cloche(m, SOL, 0.08, 0.22, 1.2);
+        cloche(m, SI, 0.18, 0.22, 1.2);
+        cloche(m, RE, 0.28, 0.22, 1.4);
+        cloche(m, SOL2, 0.4, 0.26, 2.2);
         break;
     }
   } catch {

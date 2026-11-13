@@ -2641,6 +2641,51 @@ comme WhatsApp, quelque chose de simple ». Ses réponses : une seule page, « C
 - **L'essai** : `scripts/navigateur/bascule-univers.mjs` (l'arrivée sur « Chez moi », le menu à quatre, la liste, « ＋ »,
   la fenêtre sur l'univers de Marc, la pastille, ⚙️ et le retour).
 
+### 9.0 quaterquadragies 🎁🚪 Les visites refaites : frapper et offrir tout de suite, les découvrir chez moi (13 novembre)
+
+Le propriétaire, ses captures à l'appui : « quand je vais voir l'univers de quelqu'un, les figurines ne sont pas
+proportionnelles à l'univers ; et quand je laisse un souvenir, il va quelque part où il n'y a aucune chance qu'il soit
+vu par celui à qui il a été envoyé […] il faut repenser le système où l'on frappe à la porte et quand on laisse un
+cadeau : plus accessible et immédiat ; et lorsque quelqu'un a tapé à ma porte ou laissé un cadeau, que ce soit une vraie
+expérience de découverte qui me fasse plaisir, beaucoup plus animée et mise en valeur ».
+
+- **En visite** (`/univers/chez/<clé>`, `visite.tsx`) : les deux figurines à leurs places (l'hôte, l'invité), **à
+  l'échelle de la conversation chez soi** — 36 % de la hauteur du décor, fois l'échelle de la place (une figurine
+  d'avant, une carte, à 80 % de cette taille). Avant : la taille relevée sur l'image vedette, divisée, pour les deux —
+  des géantes. Sous la scène, **deux gestes** : « 🚪 Toc toc » (tout de suite : le son de la porte — deux coups de bois
+  composés dans le téléphone, aucune voix —, la scène qui tremble, « Toc ! Toc ! », sa figurine qui sursaute ; puis
+  « Toc toc ! Marc verra ta visite 💛 ») et, entre proches, « 🎁 Offrir » (une feuille : dix objets en grand, un petit
+  mot, « Offrir 💐 à Marc » ; le paquet s'envole et se pose à ses pieds, des étincelles, « 🎁 Ton cadeau est déposé !
+  Marc le découvrira en ouvrant ClikMe »). Mes cadeaux pas encore ouverts restent à ses pieds, emballés (`mesCadeaux`) ;
+  un souvenir posé, touché : de qui, son mot. « ← » ramène à « Chez moi ».
+- **Prévenu** : « 🚪 Toc toc ! Léa a frappé à ta porte » et, désormais, « 🎁 Léa t'a laissé un cadeau — il t'attend
+  chez toi : viens l'ouvrir ! » (une fois par jour chacune) ; les deux mènent à « Chez moi » (`/collection#proches`,
+  plus `/univers`). Laisser un cadeau note la visite sans « toc toc » en plus.
+- **Chez moi, la découverte** (`visites-recues.tsx`) : en arrivant, quand il y a du nouveau (une fois par nouveauté et
+  par session), une scène plein écran, une découverte après l'autre (des tirets en haut) :
+  · 🎁 **un cadeau** : la figurine de qui l'a laissé, « Sam t'a laissé un cadeau ! », un paquet rose au ruban doré qui
+  se dandine — « Touche le paquet pour l'ouvrir » ; le papier, quatre notes qui montent, le couvercle qui s'envole, des
+  confettis, l'objet qui jaillit dans un halo qui tourne, « Un bouquet, de Sam », son mot sur un papier ; « ✨ Le poser
+  chez moi » (il apparaît dans mon univers) ou « Non merci » ; puis « 💬 Lui dire merci » (notre conversation, micro
+  prêt) ;
+  · 🚪 **quelqu'un a frappé** (depuis la dernière fois ; une fois par personne, six au plus ; pas celui dont un cadeau
+  attend) : « Toc toc ! Qui est là ? », une porte qui tremble — « Touche la porte pour ouvrir » ; les deux coups, la
+  porte qui pivote sur la lumière, sa figurine qui surgit : « C'est Léa ! 👋 — Léa a frappé à ta porte, aujourd'hui à
+  14 h 05 » ; « 🏡 Lui rendre visite » (si son univers m'est ouvert), « 💬 Lui parler » (si c'est un proche).
+  Refermée, tout est « vu » (`POST { action: "vu" }` → `<h>/monde/visites-vues.json`).
+- **Sur ma fenêtre** : un badge qui se dandine — « 🎁 Un cadeau t'attend ! » ou « 🚪 Toc toc ! Une visite » (un
+  toucher : la découverte) ; les cadeaux posés, sur le sol de mon univers, qui scintillent. **Dans la liste** : « 🚪 Mes
+  visites » (« Sam t'a laissé un cadeau 🎁 », « Léa a frappé à ta porte », ou « Dernier passage : Léa » ; les nouveautés
+  en pastille) — un toucher : la découverte, ou, sans rien de nouveau, le bilan (qui est passé, avec « Visiter » ; les
+  cadeaux posés chez moi). `/univers/monde` garde ses réglages (qui peut entrer, retirer un souvenir).
+- **Le serveur** (`visites-serveur.ts`) : `mesVisites` rend, pour chaque passage, sa figurine, sa clé, `nouveau`,
+  `proche`, `univers` ; pour chaque cadeau qui attend, la figurine et la clé de qui l'a laissé ; `visiterUnivers` rend
+  la place de l'hôte (x, y, échelle) et `mesCadeaux`.
+- **Les essais** : `scripts/essai-visites-route.mjs` (les places, « nouveau » puis « vu », la figurine de qui a laissé
+  un cadeau, mes paquets), `scripts/navigateur/visite-univers.mjs` (les deux figurines à l'échelle, « Toc toc », la
+  feuille du cadeau, le paquet à ses pieds), `scripts/navigateur/bascule-univers.mjs` (Marc découvre le bouquet de Sam
+  et la visite de Léa, le bouquet dans sa fenêtre, le bilan).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
