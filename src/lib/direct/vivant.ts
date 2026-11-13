@@ -14,6 +14,7 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
 import type { Sentiment } from "./ma-figurine";
+import type { EtagereScene } from "./etagere";
 
 /** 🪧 Les panneaux (validés par le propriétaire le 12 novembre 2026). */
 export const PANNEAUX = [
@@ -43,9 +44,10 @@ export const reactionDe = (cle: unknown) => REACTIONS.find((r) => r.cle === cle)
 export type GesteFil = { id: string; moi: boolean; le: string; type: "panneau" | "reaction"; cle: string; message?: string };
 /**
  * Ce que la conversation relit toutes les quelques secondes, page visible : s'il prépare un message, les gestes (des
- * sept derniers jours), et quand est arrivé le dernier message (un nouveau : elle se relit, et les figurines sursautent).
+ * sept derniers jours), et quand est arrivé le dernier message (un nouveau : elle se relit, et les figurines sursautent) ;
+ * 📚 et leur étagère (lot E1, `etagere.ts`) : ce que leurs figurines ont noté, ce qu'il n'a pas encore vu se poser.
  */
-export type Vivant = { enregistre: boolean; gestes: GesteFil[]; dernier: number; apartes: AparteVue[] };
+export type Vivant = { enregistre: boolean; gestes: GesteFil[]; dernier: number; apartes: AparteVue[]; etagere?: EtagereScene };
 
 /**
  * 🎭 L'APARTÉ DES DEUX FIGURINES (lot R4b) : après un vrai échange et deux minutes de silence, elles se tournent l'une

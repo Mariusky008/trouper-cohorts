@@ -8,7 +8,8 @@
  *   · `useAppuiLong` : un appui long sur un message (ou le clic droit) ouvre les réactions ;
  *   · `FeuillePanneaux`, `FeuilleReactions` : les huit panneaux, les six réactions ;
  *   · `Calque` : par-dessus chaque figurine, « … » (il prépare un message), le panneau brandi, l'éclat d'une réaction,
- *     les zZz, et 🎭 sa bulle d'aparté (lot R4b) ;
+ *     les zZz, 🎭 sa bulle d'aparté (lot R4b) ; et 📚 l'étagère (lot E1, `etagere.tsx`) : « 📌 Noté ! » brandi par la
+ *     figurine de celui qui l'a dit, la phrase de l'autre ;
  *   · `STYLES_VIVANT` : les postures (s'occuper, danser, s'affaler, bras croisés, dormir, se pencher, sursauter) — avec
  *     `rotate` et `translate`, qui s'ajoutent aux transformations de la scène sans les défaire.
  */
@@ -173,6 +174,8 @@ export function Calque({
   anim,
   posture,
   aparte = null,
+  note = null,
+  bulle = null,
 }: {
   qui: "moi" | "lui";
   style?: CSSProperties;
@@ -180,6 +183,8 @@ export function Calque({
   anim: Anim | null;
   posture: Posture | "prepare";
   aparte?: { texte: string; second: boolean; n: string } | null;
+  note?: { n: string } | null;
+  bulle?: { texte: string; n: string } | null;
 }) {
   const a = anim?.qui === qui ? anim : null;
   const panneau = a?.geste.type === "panneau" ? panneauDe(a.geste.cle) : null;
@@ -210,7 +215,17 @@ export function Calque({
           {aparte.texte}
         </span>
       )}
-      {posture === "dort" && !aparte && <span className="pv-zzz">z z Z</span>}
+      {note && (
+        <span key={`n-${note.n}`} className="et-note">
+          📌 Noté !
+        </span>
+      )}
+      {bulle && !aparte && (
+        <span key={`b-${bulle.n}`} className="pv-aparte et-bulle">
+          {bulle.texte}
+        </span>
+      )}
+      {posture === "dort" && !aparte && !bulle && <span className="pv-zzz">z z Z</span>}
       {posture === "bras" && <span className="pv-boude">😤</span>}
     </div>
   );

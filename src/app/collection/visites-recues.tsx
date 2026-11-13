@@ -202,7 +202,7 @@ function Cadeau({ s, dernier, suivant, onDecide, onParler }: { s: SouvenirVu; de
         ) : null}
         {ouvert && (
           <>
-            <span className="vr-objet" role="img" aria-label={o?.nom ?? "Un souvenir"}>
+            <span className="vr-objet" role="img" aria-label={o?.nom ?? "Un cadeau"}>
               {o?.emoji}
             </span>
             <span className="vr-confettis" aria-hidden="true">

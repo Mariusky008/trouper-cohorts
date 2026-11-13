@@ -5,7 +5,7 @@
 // l'échelle du décor (36 % de sa hauteur, comme la conversation chez soi) ; « 🚪 Toc toc » (la scène tremble, « Toc !
 // Toc ! ») ; « 🎁 Offrir » (un bouquet, un mot : le paquet se pose à ses pieds) ; « 🔑 Les clés de son univers ». Marc,
 // dans son univers :
-// « 🎁 Des souvenirs pour toi » — « Le poser chez moi » : le bouquet apparaît sur le sol de son décor ; « Qui est
+// « 🎁 Des cadeaux pour toi » — « Le poser chez moi » : le bouquet apparaît sur le sol de son décor ; « Qui est
 // passé » : Inès ; « Qui peut entrer chez moi ? » : « 🌍 Tout le monde » demande 18 ans ou plus. 🏡 Lot 7 : dans
 // « Découvrir », Inès voit « Les univers à visiter » — « Chez Marc ». Rien ne déborde, jamais le mot interdit, aucune
 // erreur dans la page.
@@ -143,7 +143,7 @@ ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "la visite :
 const marc = await tel(MARC, true);
 await marc.goto(`${BASE}/univers/monde`, { waitUntil: "networkidle" });
 await marc.waitForSelector(".um-visites .um-souvenir-attente", { timeout: 30000 }).catch(() => null);
-ok((await texte(marc, ".um-visites")).includes("Des souvenirs pour toi") && (await texte(marc, ".um-souvenir-attente")).includes("de Inès : « Pour ton atelier ! »"), "Marc : « 🎁 Des souvenirs pour toi » — le bouquet d'Inès, son mot");
+ok((await texte(marc, ".um-visites")).includes("Des cadeaux pour toi") && (await texte(marc, ".um-souvenir-attente")).includes("de Inès : « Pour ton atelier ! »"), "Marc : « 🎁 Des cadeaux pour toi » — le bouquet d'Inès, son mot");
 ok((await texte(marc, ".um-passes")).includes("Inès"), "« 🚪 Qui est passé » : Inès");
 await marc.locator(".um-souvenir-attente button", { hasText: "Le poser chez moi" }).click();
 await marc.waitForSelector(".um-scene .um-souvenir", { timeout: 10000 }).catch(() => null);

@@ -2759,6 +2759,52 @@ page chez moi ».
   `scripts/navigateur/bascule-univers.mjs` (Marc fait son mème pour Sam depuis leur conversation, « Envoyer à Sam », Sam
   le voit dans sa liste et le regarde).
 
+### 9.0 novoquadragies 📚 L'étagère, lot E1 « Noté ! » : les figurines se souviennent (13 novembre)
+
+Le cahier des charges (validé, avec sa maquette) : `docs/univers/etagere.md`. « WhatsApp oublie tout ; sur ClikMe, vos
+deux figurines retiennent ce qui compte entre vous, le rangent sur votre étagère, et te le ressortent au bon moment. »
+Le lot E1 : noter, ranger, montrer, retirer.
+
+- **Les règles** (`lib/direct/etagere.ts`, sans serveur) : quatre genres (une date — épreuve, fête, événement —, une
+  promesse, un goût, une blague) ; le catalogue fermé des emojis (ni alcool, ni arme, ni drapeau, ni symbole
+  religieux) ; `objetValide` (la citation se retrouve mot pour mot dans le message désigné ; aucun mot interdit, rien
+  d'alcoolisé, pas de numéro ni d'adresse électronique, rien de sensible ; pas de prénom ni de possessif dans le titre ;
+  on sait qui est concerné ; la date est à venir, à moins de 400 jours, et tombe le jour de la semaine dit) ; `ranger`
+  (deux par passage, trois par paire et par jour, une même chose une seule fois — sa date se met à jour —, un message
+  retiré plus jamais noté, quarante au plus : le plus ancien goût s'en va) ; `titrePour` (« Le permis de Léa » chez
+  moi, « Ton permis » chez Léa, « d'Inès », « d'Hugo ») ; `detailPour` (« jeudi 19 nov. », « le 4 décembre », « promis
+  il y a 3 semaines », « Léa adore », « votre blague ») ; les rayons ; la banque des phrases de la figurine qui voit
+  noter (à valider par le propriétaire). Un filet de mots sensibles avant même d'appeler le modèle (la santé, l'argent,
+  une dispute, les amours, la religion…), qui laisse passer « mort de rire », « une enceinte », « un avocat ».
+- **Le serveur** (`etagere-serveur.ts`) : `fils/<paire>/etagere.json` ; le passage du modèle (`preparerNotes`, le petit
+  modèle de l'aparté, « NOTENT CE QUI COMPTE ») sur un échange qui s'est posé (une minute), par trois portes : la
+  conversation ouverte (la relecture toutes les 4 s), l'ouverture de « Chez moi » (six conversations), la première
+  ouverture du rituel du matin — toujours après la réponse. Rien n'est noté si l'un des deux a coupé « Ma figurine
+  parle pour moi », si l'étagère est en pause, si un message a été signalé, si l'échange est sensible ; six passages
+  par paire et par jour ; un verrou de 90 s ; un curseur (jamais relire). Un message signalé après coup : ce qui en
+  vient s'en va ; un proche retiré : l'étagère s'efface. Le frein : `CLIKME_ETAGERE=0`.
+- **Les routes** : `GET /api/direct/proches?vivant=<clé>` rend `vivant.etagere` (les objets, titres tournés pour lui ;
+  ceux qu'il n'a pas vus se poser) ; `GET /api/direct/etagere?avec=<clé>` (la page) ; `POST /api/direct/etagere`
+  (`retirer`, `date`, `vu`, `pause`). Sans session : 401 ; pas proches : 403.
+- **À l'écran** (`app/collection/etagere.tsx`) : dans la scène de la conversation, la planche au mur (les cinq derniers,
+  « 📚 Votre étagère · 6 ») ; un objet tout neuf s'envole — la figurine de celui qui l'a dit saute et brandit « 📌 Noté
+  ! », l'emoji vole jusqu'à la planche, se pose, la carte « 📌 NOTÉ SUR VOTRE ÉTAGÈRE » apparaît dans le fil, l'autre
+  figurine dit sa phrase. Une fois par personne ; trois envols d'affilée au plus ; sans vol si le téléphone préfère
+  moins de mouvement. « 📚 6 » dans l'en-tête. La page « Votre étagère » (« Léa et toi », les compteurs, le meuble et
+  ses trois rayons, les règles en clair, « ⚙️ Mettre l'étagère en pause » — seul celui qui l'a mise la relance) ; la
+  fiche d'un souvenir (la phrase exacte, « Dit par Léa · ven. 13 nov., 18:42 », « Noté par vos figurines · IA », « 📅
+  Changer la date », « Retirer de l'étagère »). Retirer : tout de suite, pour les deux, « 🚗 Retiré de votre étagère,
+  pour vous deux ».
+- **Le mot** : à l'écran, l'étagère garde des « souvenirs » ; les visites n'ont plus que des « cadeaux » (les deux titres
+  de `/univers/monde`, les derniers « Un souvenir » de la lecture d'écran).
+- **Les essais** : `scripts/verifier-etagere.mjs` (sans téléphone, dans la CI : chaque raison de jeter, les titres, les
+  détails, le rangement, les phrases, le catalogue) ; `scripts/essai-etagere-route.mjs` (le permis de Léa noté chez
+  les deux, vu, relire, la page, la date, retirer et jamais renoté, le sensible, « parle pour moi » coupé, ce qui est
+  jeté, la pause, le message signalé, le proche retiré, le frein sur une seconde app) ; `scripts/navigateur/etagere.mjs`
+  (le scénario de la maquette : « 📌 Noté ! », l'envol, la carte, la phrase, l'en-tête, pas de second envol, « Ton
+  permis » chez Léa, la page, la fiche, retirer, sans mouvement). Le faux modèle répond d'après des mots clés
+  (`scripts/faux-supabase.mjs`).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

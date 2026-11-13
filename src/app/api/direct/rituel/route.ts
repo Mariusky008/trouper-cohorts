@@ -21,6 +21,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { choisirHumeur, choisirParle, ecrireLesMots, effacerFin, effacerMot, monRituel, preparerSesFins, rituelAvec } from "@/lib/direct/rituel-serveur";
 import { repondreAHumeur, reponseDuJour } from "@/lib/direct/humeur-reponse-serveur";
+import { noterMesConversations } from "@/lib/direct/etagere-serveur";
 
 export const dynamic = "force-dynamic";
 // (les figurines écrivent après la réponse : le petit modèle de texte, une demande pour toutes)
@@ -42,6 +43,8 @@ export async function GET(request: Request) {
   const [{ aPreparer, ...r }, reponse] = await Promise.all([monRituel(supabase, moi), reponseDuJour(supabase, moi.id).catch(() => null)]);
   // 🌙 ses mots de la fin de ce matin : préparés une fois, après la réponse
   if (aPreparer) after(() => preparerSesFins(supabase, moi.id).catch(() => []));
+  // 📌 et leurs figurines lisent les échanges d'hier qui se sont posés (l'étagère, lot E1)
+  if (aPreparer) after(() => noterMesConversations(supabase, moi).catch(() => 0));
   return NextResponse.json({ ok: true, ...r, reponse: reponse && reponse.humeur === r.humeur ? reponse : null }, { headers: sansCache });
 }
 
