@@ -100,12 +100,15 @@ export function Proches({
   prete,
   allerA,
   onNonLus,
+  onNouveautes,
   chezMoi = false,
 }: {
   compte: boolean | null;
   prete: boolean;
   allerA: (o: string) => void;
   onNonLus: (n: number) => void;
+  /** 🎁🚪 (« Chez moi ») ce qui m'attend en plus des messages : cadeaux, visites (la pastille du bouton du milieu) */
+  onNouveautes?: (n: number) => void;
   /** 🏡 « Chez moi » (l'interrupteur « Univers pour tous » allumé, `chez-moi.tsx`) : mon univers en haut, la liste façon WhatsApp */
   chezMoi?: boolean;
 }) {
@@ -237,6 +240,9 @@ export function Proches({
     return () => window.clearTimeout(t);
   }, [chezMoi, visible, decouverte, ouvert, nouveautes]);
   const decouvrir = () => setDecouverte(nouveautes.length ? nouveautes : [{ genre: "bilan" }]);
+  useEffect(() => {
+    if (chezMoi) onNouveautes?.(nouveautes.length);
+  }, [chezMoi, nouveautes, onNouveautes]);
   const finDecouverte = () => {
     const vus = decouverte?.some((x) => x.genre === "toc" || x.genre === "cadeau");
     setDecouverte(null);
@@ -379,6 +385,14 @@ export function Proches({
                 <i />
               </div>
             )}
+            {/* ＋ NOUVEAU (le 13 novembre 2026, la maquette validée : à côté de « Mes conversations », plus de bouton flottant
+                qui cachait la première ligne) — parler à un proche, créer un mème, WhatsApp, ajouter un proche */}
+            <div className="cm-tete-liste">
+              <h3>Mes conversations</h3>
+              <button type="button" className="cm-nouveau" onClick={() => setPlus("menu")}>
+                ＋ Nouveau
+              </button>
+            </div>
             <ul className="cm-liste" aria-label="Mes conversations">
               {/* ☀️ ce que les figurines ont dit de mon humeur, le mot de la fin de cette nuit : une ligne, comme un message */}
               {nouveau > 0 && (
@@ -448,18 +462,6 @@ export function Proches({
                   )}
                 </li>
               ))}
-              {/* 📥 mes mèmes : ce qu'ils sont devenus (comme les « Archivées » de WhatsApp) */}
-              <li>
-                <button type="button" className="cm-ligne cm-memes" onClick={() => allerA("memes")}>
-                  <span className="cm-avatar" aria-hidden="true">
-                    📥
-                  </span>
-                  <span className="cm-texte">
-                    <b>Mes mèmes</b>
-                    <span>Ceux que tu as envoyés, et ce qu’ils sont devenus</span>
-                  </span>
-                </button>
-              </li>
             </ul>
             {donnees && !liste.length && (
               <div className="cm-vide">
@@ -475,10 +477,7 @@ export function Proches({
                 {erreur}
               </p>
             )}
-            <button type="button" className="cm-plus" aria-label="Nouvelle conversation" onClick={() => setPlus("menu")}>
-              ＋
-            </button>
-            <Feuille ouverte={plusOuvert} onFermer={() => setPlus(false)} titre={plus === "qui" ? "À qui parler ?" : "Nouvelle conversation"} className="pr-feuille cm-feuille">
+            <Feuille ouverte={plusOuvert} onFermer={() => setPlus(false)} titre={plus === "qui" ? "À qui parler ?" : "Que veux-tu faire ?"} className="pr-feuille cm-feuille">
               {plus === "qui" ? (
                 <div className="cm-qui">
                   {aParler.map((p) => (
@@ -507,6 +506,20 @@ export function Proches({
                       </span>
                     </button>
                   )}
+                  {/* 🎭 un mème : le studio de toujours (« Créer » a quitté le menu) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlus(false);
+                      allerA("creer");
+                    }}
+                  >
+                    <span aria-hidden="true">🎭</span>
+                    <span>
+                      <b>Créer un mème</b>
+                      <small>Ta figurine le dit ; tu l’envoies sur WhatsApp</small>
+                    </span>
+                  </button>
                   <button
                     type="button"
                     disabled={geste === "whatsapp"}

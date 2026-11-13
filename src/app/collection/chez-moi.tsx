@@ -160,6 +160,46 @@ function FenetreSurMonUnivers({ etat, souvenirs, children }: { etat: EtatUnivers
   );
 }
 
+/**
+ * 🙂 « MOI », QUAND « CRÉER » A QUITTÉ LE MENU (la maquette validée le 13 novembre 2026) : ma figurine (le studio : ses
+ * looks, ses mèmes prêts, ses visages), mon univers (ses réglages), mes mèmes (ce qu'ils sont devenus), mes réactions.
+ * La suite de « Moi » reste dessous (ma carte, ma figurine du mois, mon téléphone…).
+ */
+export function RaccourcisMoi({ allerA }: { allerA: (o: string) => void }) {
+  const ligne = (ico: string, titre: string, dit: string) => (
+    <>
+      <span aria-hidden="true">{ico}</span>
+      <span>
+        <b>{titre}</b>
+        <small>{dit}</small>
+      </span>
+      <i aria-hidden="true">›</i>
+    </>
+  );
+  return (
+    <ul className="cm-moi-raccourcis" aria-label="Moi">
+      <li>
+        <button type="button" onClick={() => allerA("creer")}>
+          {ligne("🎭", "Ma figurine et mes mèmes", "Le studio : ses looks, ses mèmes prêts, le duo")}
+        </button>
+      </li>
+      <li>
+        <a href="/univers/monde">{ligne("🏡", "Mon univers", "Le retoucher, qui peut entrer, mon lien de visite")}</a>
+      </li>
+      <li>
+        <button type="button" onClick={() => allerA("memes")}>
+          {ligne("📥", "Mes mèmes envoyés", "Vus, les réponses, ceux que j’ai reçus")}
+        </button>
+      </li>
+      <li>
+        <button type="button" onClick={() => allerA("reactions")}>
+          {ligne("⚡", "Mes réactions", "Stickers et gags avec ma tête")}
+        </button>
+      </li>
+    </ul>
+  );
+}
+
 export const STYLES_CHEZ_MOI = `
 .cm-tete{display:flex;flex-direction:column;gap:12px;margin-bottom:6px}
 .cm-titre{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -210,7 +250,19 @@ export const STYLES_CHEZ_MOI = `
 .cm-vide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:14px;padding:16px;border-radius:20px;background:rgba(255,255,255,.05)}
 .cm-vide b{font-size:17px}
 .cm-vide p{margin:0;color:#CDB4C0;font-size:14px}
-.cm-plus{position:fixed;right:max(18px,calc(50vw - 252px));bottom:calc(106px + env(safe-area-inset-bottom));z-index:19;display:grid;place-items:center;width:58px;height:58px;border:0;border-radius:18px;background:linear-gradient(135deg,#FF2E9A,#F2C46B);color:#fff;font:inherit;font-size:30px;font-weight:700;box-shadow:0 14px 26px -10px rgba(255,46,154,.9);cursor:pointer}
+.cm-tete-liste{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 2px 0}
+.cm-tete-liste h3{margin:0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#CDB4C0}
+.cm-nouveau{flex:none;padding:9px 15px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-size:14.5px;font-weight:900;box-shadow:0 8px 20px -8px rgba(255,46,154,.9);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cm-nouveau:active{transform:scale(.96)}
+.cm-liste{margin-top:4px}
+/* 🙂 « Moi » : ce qui était dans « Créer » */
+.cm-moi-raccourcis{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.cm-moi-raccourcis a,.cm-moi-raccourcis button{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:13px 14px;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:none;color:#FFF4E6;font:inherit;text-align:left;text-decoration:none;cursor:pointer;box-sizing:border-box}
+.cm-moi-raccourcis li:last-child a,.cm-moi-raccourcis li:last-child button{border-bottom:0}
+.cm-moi-raccourcis span:first-child{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.07);font-size:20px}
+.cm-moi-raccourcis b{display:block;font-size:15.5px;font-weight:800}
+.cm-moi-raccourcis small{display:block;margin-top:1px;font-size:13px;color:#CDB4C0}
+.cm-moi-raccourcis i{font-style:normal;font-size:20px;color:#A88E99}
 .cm-actions{display:flex;flex-direction:column;gap:10px}
 .cm-actions button{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.05);color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
 .cm-actions button > span:first-child{font-size:26px}

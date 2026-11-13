@@ -2,8 +2,8 @@
 // faux Supabase (jamais la vraie base), avec une seconde app lancée ici, l'interrupteur allumé (`../seconde-app.mjs`).
 //
 // Sam a sa figurine d'aujourd'hui. L'interrupteur allumé : l'appli s'ouvre sur « Chez moi » (son univers l'attend ; ses
-// conversations comme WhatsApp — Marc ; « Mes mèmes » ; « ＋ ») ; le menu du bas : Découvrir · Autour · Créer · Chez
-// moi ; Marc, qui a son univers, le voit par une fenêtre, sa figurine au milieu, sa pastille d'humeur, ⚙️ ; « Créer »
+// conversations comme WhatsApp — Marc ; « ＋ Nouveau », avec « Créer un mème ») ; le menu du bas, à trois : Découvrir ·
+// Chez moi (au milieu, sa figurine) · Autour ; « Moi » : ce qui était dans « Créer » (le studio, mes mèmes…) ; Marc, qui a son univers, le voit par une fenêtre, sa figurine au milieu, sa pastille d'humeur, ⚙️ ; « Créer »
 // invite Sam à refaire sa figurine au nouveau style ; « Ta figurine » lui propose sa photo d'avant (les deux cases toujours à cocher). Un
 // nouveau venu, dans « Créer » : « Crée ta figurine », au nouveau style. 🎁🚪 Sam laisse un bouquet chez Marc, Léa
 // frappe à sa porte : en arrivant chez lui, Marc les découvre — le paquet qui se dandine, qu'il ouvre (l'objet, le mot),
@@ -111,23 +111,37 @@ await p.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
 await fermerPablito(p);
 await p.waitForSelector(".cm-tete", { timeout: 20000 }).catch(() => null);
 ok(new URL(p.url()).hash === "#proches" && (await texte(p, ".cm-titre h2")) === "Chez moi", `l'appli s'ouvre sur « Chez moi » (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
-ok((await menu(p)) === "Découvrir · Autour · Créer · Chez moi", `le menu du bas, à quatre : ${await menu(p)}`);
+ok((await menu(p)) === "Découvrir · Chez moi · Autour" && (await p.locator(".mc-nav-proches.mc-nav-centre.pris").count()) === 1, `le menu du bas, à trois, « Chez moi » au milieu : ${await menu(p)}`);
 await p.waitForSelector(".cm-attend", { timeout: 20000 }).catch(() => null);
 ok((await texte(p, ".cm-attend b")) === "Ton univers t’attend 🏡" && (await p.locator('.cm-attend[href="/univers"]').count()) === 1, `sans univers encore : ce qui l'attend (${await texte(p, ".cm-attend b")})`);
 await p.waitForSelector(".cm-liste li[data-cle]", { timeout: 20000 }).catch(() => null);
 const ligneMarc = await texte(p, ".cm-liste li[data-cle] .cm-ligne");
 ok(ligneMarc.includes("Marc") && ligneMarc.includes("Dis-lui bonjour") && (await p.locator(".pr-grille, .pr-wa, .pr-lien").count()) === 0, `ses conversations, comme WhatsApp : Marc (${ligneMarc}) ; plus de cartes ni de blocs`);
-ok((await p.locator(".cm-memes", { hasText: "Mes mèmes" }).count()) === 1, "« 📥 Mes mèmes » : une ligne de la liste");
-await p.locator(".cm-plus").click();
+ok((await p.locator(".cm-memes").count()) === 0 && /mes conversations/i.test(await texte(p, ".cm-tete-liste")), "« Mes conversations », et plus de ligne « Mes mèmes » (elle est dans « Moi »)");
+await p.locator(".cm-nouveau").click();
 await p.waitForSelector(".cm-actions", { timeout: 10000 }).catch(() => null);
 const actions = (await p.locator(".cm-actions b").allInnerTexts()).join(" · ");
-ok(actions === "Parler à un proche · Par WhatsApp · Ajouter un proche", `« ＋ » : ${actions}`);
+ok(actions === "Parler à un proche · Créer un mème · Par WhatsApp · Ajouter un proche", `« ＋ Nouveau » : ${actions}`);
 await p.locator(".cm-actions button", { hasText: "Parler à un proche" }).click();
 ok((await p.locator(".cm-qui button", { hasText: "Marc" }).count()) === 1, "« Parler à un proche » : à qui ? Marc");
 await p.screenshot({ path: `${D}/bascule-1-chez-moi-plus.png` });
 await p.keyboard.press("Escape");
 ok((await debordement(p)) <= 1 && (await sansMotInterdit(p)), "rien ne déborde, jamais le mot interdit");
 await p.screenshot({ path: `${D}/bascule-1-chez-moi.png` });
+// 🎭 « Créer un mème » : le studio de toujours
+await p.locator(".cm-nouveau").click();
+await p.locator(".cm-actions button", { hasText: "Créer un mème" }).click();
+await p.waitForFunction(() => location.hash === "#creer", null, { timeout: 10000 }).catch(() => null);
+ok(new URL(p.url()).hash === "#creer" && !(await p.locator("#o-figurine").isHidden()), "« Créer un mème » ouvre le studio");
+// 🙂 « Moi » : ce qui était dans « Créer »
+await p.locator(".mc-barre button.mc-moi").click();
+await p.waitForSelector(".cm-moi-raccourcis", { timeout: 10000 }).catch(() => null);
+const raccourcis = (await p.locator(".cm-moi-raccourcis b").allInnerTexts()).join(" · ");
+ok(raccourcis === "Ma figurine et mes mèmes · Mon univers · Mes mèmes envoyés · Mes réactions", `« Moi » : ${raccourcis}`);
+await p.locator(".cm-moi-raccourcis button", { hasText: "Mes mèmes envoyés" }).click();
+await p.waitForFunction(() => location.hash === "#memes", null, { timeout: 10000 }).catch(() => null);
+ok(new URL(p.url()).hash === "#memes", "« Mes mèmes envoyés » : là où ils sont");
+await p.locator(".mc-nav-proches").click();
 
 // ═══ 🏡 MARC, QUI A SON UNIVERS : la fenêtre sur son univers, sa pastille d'humeur, ⚙️ ═══
 const m = await tel(ALLUME, MARC);
@@ -205,7 +219,7 @@ await m.locator(".vr-fermer").click();
 await p.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(p);
 await p.waitForSelector(".pn", { timeout: 20000 }).catch(() => null);
-ok((await texte(p, ".pn b")) === "Ta figurine fait peau neuve" && (await p.locator('.pn a[href="/univers/figurine"]').innerText()) === "La refaire au nouveau style", `« Créer » l'invite à refaire sa figurine (${await texte(p, ".pn")})`);
+ok((await texte(p, "#o-figurine .pn b")) === "Ta figurine fait peau neuve" && (await p.locator('#o-figurine .pn a[href="/univers/figurine"]').innerText()) === "La refaire au nouveau style", `« Créer » l'invite à refaire sa figurine (${await texte(p, "#o-figurine .pn")})`);
 ok((await p.locator(".tf-moi, .tf").count()) > 0, "son studio reste là, en dessous");
 await p.screenshot({ path: `${D}/bascule-3-creer.png` });
 
