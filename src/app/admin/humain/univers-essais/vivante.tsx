@@ -4,7 +4,7 @@
  * 🏠 UNE PIÈCE ENTIÈRE, VIVANTE — L'ESSAI (`lib/direct/pieces-vivantes-serveur.ts`, 14 novembre 2026 : « chaque pièce
  * entièrement sur l'écran comme sur la photo, mais dézoomée […] deux ou trois gros objets animés, le reste sur des
  * étagères […] les étoiles ça fait très années 2000 : bien plus wow et immersif »). Pour chaque pièce : l'image entière,
- * les objets vedettes repérés, puis sa photo vivante (une vidéo de huit secondes, en boucle). On y entre en plein écran :
+ * les objets vedettes repérés, puis sa photo vivante (une vidéo de quatre secondes, en boucle). On y entre en plein écran :
  * la pièce vit, sa figurine est assise au premier plan ; on touche une vedette, on s'en approche.
  */
 import { useCallback, useEffect, useState } from "react";
@@ -36,7 +36,7 @@ const PIECES: { cle: Piece; nom: string }[] = [
 const ETAPES: { cle: Etape; nom: string }[] = [
   { cle: "image", nom: "La pièce entière, vue de loin (une image, une à deux minutes)" },
   { cle: "objets", nom: "Ses vedettes repérées (quelques secondes)" },
-  { cle: "video", nom: "Sa photo vivante : huit secondes de vidéo (quelques minutes)" },
+  { cle: "video", nom: "Sa photo vivante : quatre secondes de vidéo, en boucle (quelques minutes)" },
 ];
 const CLE_YOUTUBE = "clikme-essai-tele-youtube";
 /** L'identifiant d'une vidéo YouTube, depuis son lien (youtu.be, watch?v=, shorts, embed). */
@@ -113,7 +113,7 @@ export function PieceVivante() {
       <p style={{ margin: "0 0 10px", color: "#555", lineHeight: 1.45 }}>
         Chaque pièce entière à l’écran, vue de loin, comme l’image de ton univers : deux ou trois gros objets (ce sont eux qui vivent), le reste sur des étagères.
         Puis le moteur vidéo de Google (Veo) en fait une <b>photo vivante</b> : la caméra ne bouge pas, seuls les objets vivent (le disque tourne, le feu danse, les
-        poissons nagent, la lumière scintille), en boucle. Ensuite, entre dedans : touche un objet, on s’en approche. Coût, environ : 0,25 $ l’image, 1 $ la
+        poissons nagent, la lumière scintille), en boucle. Ensuite, entre dedans : touche un objet, on s’en approche. Coût, environ : 0,25 $ l’image, 0,20 $ la
         vidéo.
       </p>
       <div role="tablist" aria-label="Les pièces" style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "0 0 12px" }}>

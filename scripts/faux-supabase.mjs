@@ -854,7 +854,7 @@ http
         return repondre(res, 200, n < 2 ? { id: video[1], status: "in_progress", progress: 40 } : { id: video[1], status: "completed", progress: 100 });
       }
       // 🎥 UN FAUX VEO (l'API Gemini de Google, `GEMINI_VIDEO_BASE_URL=…/gemini`) : ses moteurs (un texte, deux vidéos) ;
-      // une commande (« VEO <moteur> <format> <taille de l'image reçue> <consigne> ») — la première forme, avec
+      // une commande (« VEO <moteur> <format> <durée>s <taille de l'image reçue> <consigne> ») — la première forme, avec
       // « personGeneration », est refusée (400), la suivante passe ; « en train » à la première question, faite à la
       // deuxième ; la vidéo se télécharge. La terrasse : aucun moteur vidéo trouvé (404).
       if (url.pathname === "/gemini/v1beta/models" && req.method === "GET") {
@@ -863,6 +863,7 @@ http
             { name: "models/gemini-2.5-flash", supportedGenerationMethods: ["generateContent"] },
             { name: "models/veo-3.1-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
             { name: "models/veo-3.1-fast-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
+            { name: "models/veo-3.1-lite-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
           ],
         });
       }
@@ -882,7 +883,7 @@ http
           consignesIA.push(`VEO-400 ${veo[1]} personGeneration`);
           return repondre(res, 400, { error: { code: 400, message: "personGeneration isn't supported by this model" } });
         }
-        consignesIA.push(`VEO ${veo[1]} ${q.parameters?.aspectRatio ?? ""} ${m ? `${m.width}x${m.height}` : "aucune"} ${inst.prompt ?? ""}`);
+        consignesIA.push(`VEO ${veo[1]} ${q.parameters?.aspectRatio ?? ""} ${q.parameters?.durationSeconds ?? "-"}s ${m ? `${m.width}x${m.height}` : "aucune"} ${inst.prompt ?? ""}`);
         videosEssai.set("op1", 0);
         return repondre(res, 200, { name: `models/${veo[1]}/operations/op1` });
       }

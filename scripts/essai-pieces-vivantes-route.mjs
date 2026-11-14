@@ -122,7 +122,7 @@ const v1 = await appeler(lea, { action: "fabriquer" });
 ia = (await toutIA()).slice(avant);
 const commande = ia.find((c) => c.startsWith("VEO ")) ?? "";
 ok(v1.statut === 200 && v1.progres === 0 && !v1.fait && v1.etat?.videoEnCours?.depuis, "3. la vidéo : commandée (rien de fait encore)");
-ok(ia.includes("VEO-400 veo-3.1-fast-generate-001 personGeneration") && commande.startsWith("VEO veo-3.1-fast-generate-001 9:16 720x1280 ") && commande.includes("no voice") && commande.includes("locked-off tripod shot") && commande.includes("the vinyl record turns slowly") && commande.includes("the flames of the fire flicker") && commande.includes("stays empty"), `le moteur vidéo : 8 s, 720 × 1280, l'image reçue exactement à sa taille ; la caméra immobile, le disque tourne, le feu danse (${commande.slice(0, 48)}…)`);
+ok(ia.includes("VEO-400 veo-3.1-lite-generate-001 personGeneration") && commande.startsWith("VEO veo-3.1-lite-generate-001 9:16 4s 720x1280 ") && commande.includes("no voice") && commande.includes("locked-off tripod shot") && commande.includes("the vinyl record turns slowly") && commande.includes("the flames of the fire flicker") && commande.includes("stays empty"), `le moteur vidéo : 8 s, 720 × 1280, l'image reçue exactement à sa taille ; la caméra immobile, le disque tourne, le feu danse (${commande.slice(0, 48)}…)`);
 const v2 = await appeler(lea, { action: "fabriquer" });
 ok(typeof v2.progres === "number" && v2.progres < 95 && !v2.fait && v2.etat?.videoEnCours, `elle se fait (${v2.progres} %, estimé : Veo ne le dit pas)`);
 const v3 = await appeler(lea, { action: "fabriquer" });
@@ -150,8 +150,8 @@ ok(ia.some((c) => c.startsWith("VEO ") && c.includes("the television screen stay
 await appeler(lea, { action: "fabriquer", piece: "terrasse" });
 await appeler(lea, { action: "fabriquer", piece: "terrasse" });
 const t404 = await appeler(lea, { action: "fabriquer", piece: "terrasse" });
-ok(t404.statut === 502 && (t404.error ?? "").includes("Veo") && (t404.error ?? "").includes("veo-3.1-fast-generate-001 : 404") && (t404.error ?? "").includes("is not found") && !t404.etat?.videoEnCours, `🔌 la terrasse : le moteur vidéo introuvable — l'adresse et le moteur sont dits, et la clé qui ouvre les vidéos (${t404.error})`);
-ok((await toutIA()).includes("VEO-404 veo-3.1-fast-generate-001") && (await toutIA()).includes("VEO-404 veo-3.1-generate-001"), "la commande a bien été tentée, chez chacun des moteurs vidéo du compte");
+ok(t404.statut === 502 && (t404.error ?? "").includes("Veo") && (t404.error ?? "").includes("veo-3.1-lite-generate-001 : 404") && (t404.error ?? "").includes("is not found") && !t404.etat?.videoEnCours, `🔌 la terrasse : le moteur vidéo introuvable — l'adresse et le moteur sont dits, et la clé qui ouvre les vidéos (${t404.error})`);
+ok((await toutIA()).includes("VEO-404 veo-3.1-lite-generate-001") && (await toutIA()).includes("VEO-404 veo-3.1-fast-generate-001") && (await toutIA()).includes("VEO-404 veo-3.1-generate-001"), "la commande a bien été tentée, chez chacun des moteurs vidéo du compte");
 
 // ─── 📚 un souvenir qu'elle montre (son étagère, « Mon étagère ») : il se posera sur une étagère de ses pièces ───
 await deposer(`${LEA.id}/neutre-essai.png`, PNG, "image/png");

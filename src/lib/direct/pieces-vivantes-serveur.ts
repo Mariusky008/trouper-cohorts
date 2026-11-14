@@ -383,8 +383,8 @@ async function commanderLaVideo(p: Piece, vue: Buffer): Promise<{ id: string; br
  * LE 14 NOVEMBRE (le propriétaire : « Sora 2 n'existe plus, il me semble ») : OpenAI a fermé son moteur vidéo (Sora 2,
  * l'API « Videos ») le 24 septembre 2026 — d'où le 404. La vidéo se fait maintenant chez Google : Veo, par l'API Gemini
  * (`GEMINI_VIDEO_API_KEY`, sinon la clé Gemini des figurines, sinon la clé commune ; `GEMINI_VIDEO_BASE_URL`). Le
- * moteur : `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models`, « veo », qui font des vidéos), le rapide d'abord
- * (le moins cher), le définitif avant l'aperçu. La commande est une « opération » qu'on suit, puis la vidéo se télécharge.
+ * moteur : `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models`, « veo », qui font des vidéos), le moins cher
+ * d'abord (le « Lite », puis le rapide), le définitif avant l'aperçu. La commande est une « opération » qu'on suit, puis la vidéo se télécharge.
  * `VIDEO_MOTEUR=openai` revient à OpenAI (si un jour il rouvre).
  */
 const cleGoogle = () => s(process.env.GEMINI_VIDEO_API_KEY) || s(process.env.FIGURINE_GEMINI_API_KEY) || s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
@@ -394,13 +394,21 @@ export const moteurVideo = (): "veo" | "openai" => {
   return m === "veo" || m === "openai" ? m : cleGoogle() ? "veo" : "openai";
 };
 /** Si le compte ne dit pas ses moteurs : ceux-ci, dans cet ordre. */
-const MODELES_VEO = ["veo-3.1-fast-generate-001", "veo-3.1-generate-001", "veo-3.0-fast-generate-001", "veo-3.0-generate-001", "veo-3.1-fast-generate-preview", "veo-3.1-generate-preview"];
+const MODELES_VEO = ["veo-3.1-lite-generate-001", "veo-3.1-fast-generate-001", "veo-3.1-generate-001", "veo-3.1-lite-generate-preview", "veo-3.1-fast-generate-preview", "veo-3.1-generate-preview"];
+/**
+ * 💶 LE COÛT (le propriétaire, le 14 novembre : « y a-t-il un moyen de réduire ce coût d'un euro ? ») : Veo se paie à
+ * la seconde — 0,40 $ la seconde le standard, 0,10 $ le rapide, 0,05 $ le « Lite » (720p, septembre 2026). Pour une
+ * boucle où seules les vedettes bougent, le Lite et QUATRE secondes suffisent : environ 0,20 $ la pièce.
+ * `GEMINI_VIDEO_SECONDES` (4, 6 ou 8) et `GEMINI_VIDEO_MODEL` pour autre chose.
+ */
+const secondesVeo = () => (["4", "6", "8"].includes(s(process.env.GEMINI_VIDEO_SECONDES)) ? Number(s(process.env.GEMINI_VIDEO_SECONDES)) : 4);
 export async function modelesVeo(): Promise<string[]> {
   const force = s(process.env.GEMINI_VIDEO_MODEL);
   const r = await fetch(`${baseGoogle()}/v1beta/models?pageSize=1000`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(20_000) }).catch(() => null);
   const j = (r?.ok ? await r.json().catch(() => ({})) : {}) as { models?: { name?: string; supportedGenerationMethods?: string[] }[] };
   const vus = (j.models ?? []).filter((m) => /veo/i.test(s(m.name)) && (m.supportedGenerationMethods ?? []).includes("predictLongRunning")).map((m) => s(m.name).replace(/^models\//, ""));
-  const rang = (id: string) => (/fast/i.test(id) ? 0 : 2) + (/preview/i.test(id) ? 1 : 0);
+  // (le moins cher d'abord : le « Lite », puis le rapide, puis le standard ; le définitif avant l'aperçu)
+  const rang = (id: string) => (/lite/i.test(id) ? 0 : /fast/i.test(id) ? 2 : 4) + (/preview/i.test(id) ? 1 : 0);
   const tries = [...vus].sort((a, b) => rang(a) - rang(b) || b.localeCompare(a));
   return [...new Set([...(force ? [force] : []), ...(tries.length ? tries : MODELES_VEO)])].slice(0, 4);
 }
@@ -410,10 +418,12 @@ async function commanderChezVeo(p: Piece, vue: Buffer): Promise<{ id: string; mo
   const prompt = consigneVivante(p);
   // (la forme que l'API attend a changé selon les versions : l'image « inlineData », puis sans réglage de personnes,
   // puis « bytesBase64Encoded » — à la première qui n'est pas refusée pour sa forme)
+  const duree = secondesVeo();
   const formes = [
-    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", personGeneration: "allow_adult" } },
+    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", durationSeconds: duree, personGeneration: "allow_adult" } },
+    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", durationSeconds: duree } },
     { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16" } },
-    { instances: [{ prompt, image: { bytesBase64Encoded: data, mimeType: "image/png" } }], parameters: { aspectRatio: "9:16" } },
+    { instances: [{ prompt, image: { bytesBase64Encoded: data, mimeType: "image/png" } }], parameters: { aspectRatio: "9:16", durationSeconds: duree } },
   ];
   const refus: string[] = [];
   for (const modele of await modelesVeo()) {

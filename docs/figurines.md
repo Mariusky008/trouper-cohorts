@@ -3062,8 +3062,11 @@ panoramas), sur SON univers — `lib/direct/pieces-vivantes-serveur.ts`, `api/ad
   moins cher), le définitif avant l'aperçu. La commande (`:predictLongRunning`, l'image en 9:16, « no voice, no
   dialogue, no music » — et la vidéo est toujours jouée sans le son) essaie trois formes de requête (la première refusée
   pour sa forme, la suivante) ; l'opération est suivie (Veo ne dit pas où il en est : une estimation sur deux minutes),
-  puis la vidéo se télécharge. Le faux Veo de `faux-supabase.mjs` (`/gemini/…`) ; la CI a `GEMINI_VIDEO_*` faux. Coût,
-  environ 1 $ la vidéo.
+  puis la vidéo se télécharge. Le faux Veo de `faux-supabase.mjs` (`/gemini/…`) ; la CI a `GEMINI_VIDEO_*` faux.
+- **Le coût** (le propriétaire : « y a-t-il un moyen de réduire ce coût d'un euro ? ») : Veo se paie à la seconde —
+  0,40 $ le standard, 0,10 $ le rapide, **0,05 $ le « Lite »** (720p). Le Lite d'abord, et **quatre secondes** en boucle
+  (`durationSeconds`) : environ **0,20 $ la pièce** au lieu d'un dollar. `GEMINI_VIDEO_SECONDES` (4, 6, 8) et
+  `GEMINI_VIDEO_MODEL` pour autre chose.
 
 ### 9.0 septquinquagies 🎨 Les ambiances de son univers — l'essai (14 novembre)
 
