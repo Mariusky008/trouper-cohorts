@@ -1017,6 +1017,13 @@ function useMonEtagere(actif: boolean) {
       fini = true;
     };
   }, [actif, tour]);
+  // (il revient sur l'appli : un proche a peut-être déposé quelque chose entre-temps)
+  useEffect(() => {
+    if (!actif) return;
+    const revient = () => document.visibilityState === "visible" && setTour((t) => t + 1);
+    document.addEventListener("visibilitychange", revient);
+    return () => document.removeEventListener("visibilitychange", revient);
+  }, [actif]);
   return { vue, erreur, recharger: () => setTour((t) => t + 1) };
 }
 

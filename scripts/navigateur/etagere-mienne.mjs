@@ -193,8 +193,10 @@ try {
   ok(await attendre(() => [...document.querySelectorAll(".et-page .et-etiquette")].some((x) => x.textContent === "Le gâteau au chocolat de Sam"), null, 15000, l), "chez Léa : « Le gâteau au chocolat de Sam »");
   await l.screenshot({ path: `${D}/etagere-e4-5-leur-etagere.png` });
 
-  // ═══ CHEZ SAM : LA CARTE, LA PLANCHE ═══
-  await p.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
+  // ═══ CHEZ SAM : LA CARTE, LA PLANCHE (il revient sur l'appli : elle se relit) ═══
+  await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "4"), "il revient sur l'appli : sa planche se relit, elle passe à 4");
+  await p.goto(`${ALLUME}/collection?v=${Date.now()}#proches`, { waitUntil: "networkidle" });
   ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "4"), "la planche de Sam passe à 4");
   await p.locator(`.cm-liste li[data-cle="${LEA.cle}"] .cm-ligne`).click();
   await p.waitForSelector(".pr-plein .pr-scene", { timeout: 30000 });
