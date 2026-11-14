@@ -143,6 +143,17 @@ await appeler(lea, { action: "fabriquer", piece: "tele" });
 ia = (await toutIA()).slice(avantTele);
 ok(ia.some((c) => c.startsWith("VIDEO ") && c.includes("the television screen stays dark and perfectly still") && c.includes("fish swim")), "dans la vidéo : les poissons nagent, l'écran reste noir");
 
+// ─── 🏠 « Ma maison » : ses pièces prêtes (`/api/direct/mes-pieces`) ───
+const mesPieces = async (cookie) => {
+  const r = await fetch(`${BASE}/api/direct/mes-pieces`, { headers: { cookie } });
+  return { statut: r.status, ...(await r.json().catch(() => ({}))) };
+};
+const mp = await mesPieces(lea);
+const [salon, tele] = mp.pieces ?? [];
+ok(mp.statut === 200 && mp.pieces?.length === 2 && salon?.piece === "salon" && salon.nom === "Le salon" && /^http/.test(salon.vue ?? "") && /^http/.test(salon.video ?? "") && salon.objets?.objets?.length === 3 && salon.vedettes?.length === 3, "🏠 ses pièces pour « Ma maison » : le salon (sa vue, sa vidéo, ses vedettes repérées)");
+ok(tele?.piece === "tele" && tele.nom === "La pièce télé" && !tele.video && tele.objets?.ecran?.l === 20, "la pièce télé : sa vue et ses vedettes (sa vidéo n'est pas encore faite)");
+ok((await mesPieces(sam)).pieces?.length === 0, "Sam : aucune pièce");
+
 // ─── refaire ───
 const r1 = await appeler(lea, { action: "refaire", etape: "video" });
 ok(r1.statut === 200 && r1.etat?.faites?.join() === "image,objets" && (await octets(`${D}/salon/video.mp4`)) === null, "refaire la vidéo : elle seule s'efface");

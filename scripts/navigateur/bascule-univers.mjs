@@ -81,6 +81,10 @@ const monde = {
 await json(`${M1}/fiche.json`, monde);
 await json(`${MARC.id}/monde/fiche.json`, monde);
 await json(`${MARC.id}/monde/creation.json`, { version: 1, etape: "fini", mesure: 1 });
+// 🎬 son salon, entier et vivant (l'essai « Une pièce entière, vivante ») : sa vue, ses vedettes repérées
+const S1 = `${MARC.id}/pieces-entieres/salon`;
+await deposer(`${S1}/vue.webp`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
+await json(`${S1}/objets.json`, { objets: [{ cle: "platine", x: 60, y: 50, l: 25, h: 14 }, { cle: "feu", x: 8, y: 40, l: 28, h: 22 }, { cle: "fenetre", x: 30, y: 10, l: 40, h: 25 }], place: { x: 30, y: 72, l: 40, h: 16 }, ecran: null });
 for (const x of [SAM, MARC]) await json(`profils/${cleProfil(x.id)}.json`, { h: x.id });
 await json(`${MARC.id}/proches.json`, { ids: [SAM.id] });
 await json(`${SAM.id}/proches.json`, { ids: [MARC.id] });
@@ -163,6 +167,24 @@ ok(Boolean(fen) && fen.h > 1.4 && fen.dedans && fen.figH > 0.2, `🏠 « Ma mais
 ok((await m.locator('#o-maison .cm-reglages[href="/univers/monde"]').count()) === 1, "⚙️ : les réglages de son univers");
 await m.waitForSelector("#o-maison .mm-bouton[href^='/univers/chez/']", { timeout: 10000 }).catch(() => null);
 ok((await m.locator("#o-maison .mm-bouton").first().getAttribute("href")) === `/univers/chez/${cleProfil(MARC.id)}`, "« 👀 Comme la voient mes visiteurs » : sa page de visite");
+// 🎬 ses pièces : son univers, puis son salon — on glisse ; un toucher, on entre (sa figurine, ses vedettes)
+await m.waitForSelector("#o-maison .mm-piece", { timeout: 10000 }).catch(() => null);
+ok((await m.locator("#o-maison .mm-page").count()) === 2 && (await texte(m, "#o-maison .mm-points span")).includes("Glisse pour visiter tes pièces"), "🎬 « Ma maison » : son univers, puis son salon (« Glisse pour visiter tes pièces → »)");
+await m.locator("#o-maison .mm-points button").nth(1).click();
+await m.waitForFunction(() => document.querySelector("#o-maison .mm-points span")?.textContent === "Le salon", null, { timeout: 5000, polling: 150 }).catch(() => null);
+ok((await texte(m, "#o-maison .mm-points span")) === "Le salon", "on glisse : « Le salon »");
+await m.locator("#o-maison .mm-piece").click();
+await m.waitForSelector(".pv-plein .pv-objet", { timeout: 5000 }).catch(() => null);
+ok((await m.locator(".pv-plein .pv-objet").count()) === 3 && (await texte(m, ".pv-plein .pv-nom")) === "Le salon" && (await m.locator(".pv-plein .pv-figurine").count()) === 1, "un toucher : dedans, en plein écran — sa figurine, ses trois vedettes");
+await m.locator('.pv-plein .pv-objet[data-objet="platine"]').click();
+await m.waitForSelector(".pv-plein .pv-carte", { timeout: 3000 }).catch(() => null);
+ok((await texte(m, ".pv-plein .pv-carte")).includes("Le tourne-disque") && (await m.locator(".pv-plein .pv-scene.vise").count()) === 1, "il touche le tourne-disque : la caméra s'en approche, sa carte monte");
+await m.screenshot({ path: `${D}/bascule-2c-piece-vivante.png` });
+await m.keyboard.press("Escape");
+await m.keyboard.press("Escape");
+await m.waitForSelector(".pv-plein", { state: "detached", timeout: 3000 }).catch(() => null);
+ok((await m.locator(".pv-plein").count()) === 0, "Échap, Échap : il ressort");
+await m.locator("#o-maison .mm-points button").first().click();
 await m.screenshot({ path: `${D}/bascule-2-ma-maison.png` });
 await m.locator(".mc-nav-proches").click();
 await m.waitForSelector("#o-proches .cm-humeur", { timeout: 10000 }).catch(() => null);

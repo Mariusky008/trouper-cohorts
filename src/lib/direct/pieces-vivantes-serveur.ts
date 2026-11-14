@@ -318,6 +318,32 @@ export async function fabriquerLaPieceVivante(supabase: Supabase, h: string, p: 
   }
 }
 
+// ─── 🏠 dans « Ma maison » ─────────────────────────────────────────────────────────────────────────
+export const NOMS_PIECES: Record<Piece, string> = { salon: "Le salon", tele: "La pièce télé", terrasse: "La terrasse" };
+export type PieceDeMaMaison = { piece: Piece; nom: string; vue: string; video?: string; objets?: ObjetsVus; vedettes: { cle: string; nom: string; dit: string }[] };
+
+/**
+ * 🏠 Ses pièces prêtes (leur image entière faite), pour l'onglet « Ma maison » : la vue et sa vidéo (signées, une
+ * heure), ses vedettes repérées. Les siennes seulement ; aucune : une liste vide.
+ */
+export async function mesPieces(supabase: Supabase, h: string): Promise<PieceDeMaMaison[]> {
+  const pieces = await Promise.all(
+    PIECES.map(async (p): Promise<PieceDeMaMaison | null> => {
+      const d = depotDans(supabase, dossier(h, p));
+      const noms = await d.lister().catch(() => [] as string[]);
+      if (!noms.includes("vue.webp")) return null;
+      const [vue, video, objets] = await Promise.all([
+        signer(supabase, `${dossier(h, p)}/vue.webp`),
+        noms.includes("video.mp4") ? signer(supabase, `${dossier(h, p)}/video.mp4`) : Promise.resolve(""),
+        noms.includes("objets.json") ? d.lire("objets.json").then((b) => objetsValides(p, json(b))).catch(() => null) : Promise.resolve(null),
+      ]);
+      if (!vue) return null;
+      return { piece: p, nom: NOMS_PIECES[p], vue, ...(video ? { video } : {}), ...(objets ? { objets } : {}), vedettes: PLANS_ENTIERS[p].vedettes.map(({ cle: k, nom, dit }) => ({ cle: k, nom, dit })) };
+    }),
+  );
+  return pieces.filter((x): x is PieceDeMaMaison => Boolean(x));
+}
+
 /** ↩️ Refaire une étape : elle, et ce qui en dépend (l'image : tout ; les objets : eux seuls ; la vidéo : elle). */
 export async function refaireDeLaPieceVivante(supabase: Supabase, h: string, p: Piece, etape: unknown): Promise<{ error?: string }> {
   const e = ETAPES_VIVANTES.find((x) => x === etape);

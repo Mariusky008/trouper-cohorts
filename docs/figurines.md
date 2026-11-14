@@ -3096,6 +3096,24 @@ Pablito ne propose plus rien et chaque décor reste cosy) :
 - **L'essai** : `essai-ambiances-univers-route.mjs` (Tom et ses soirées Minecraft : néon proposé, pastel choisi, gardé
   après une correction, peint en pastel, puis New York ; Zoé : cosy, la consigne d'aujourd'hui).
 
+### 9.0 novoquinquagies 🎬 « Ma maison » : ses pièces, entières et vivantes (14 novembre)
+
+La suite de « Ma maison » (le propriétaire : « attaque la suite de Ma maison ») — ce qu'il a demandé : chaque pièce
+entière à l'écran, deux ou trois gros objets animés, on y entre.
+
+- **Dans l'onglet** (`app/collection/ma-maison.tsx`) : quand il a des pièces prêtes, son univers puis ses pièces
+  défilent (on glisse ; des points et le nom de la pièce dessous, « Glisse pour visiter tes pièces → ») ; la vidéo de
+  celle qu'on regarde joue en boucle, les autres attendent ; « ▶ Entrer » : en plein écran.
+- **Dedans** (`app/univers/piece-vivante.tsx`, partagé avec l'essai de l'administrateur) : la pièce entière, sa vidéo
+  en boucle sans couture, sa figurine assise à la place repérée, ses vedettes (un toucher : la caméra s'en approche, sa
+  carte monte) ; d'une pièce à l'autre, glisser ou les flèches ‹ › et des points ; Échap ou « ← Sortir ».
+- **Ses pièces** : `GET /api/direct/mes-pieces` (`mesPieces`, `pieces-vivantes-serveur.ts`) — les siennes, celles dont
+  l'image entière est faite (la vue, la vidéo si elle l'est, les vedettes repérées), signées une heure. Aujourd'hui,
+  seules les pièces faites dans l'essai existent : **qui en reçoit, et quand** (« elles apparaîtront au fil de tes
+  conversations »), c'est au propriétaire de le décider — une pièce coûte environ 0,25 $ d'image et 0,80 $ de vidéo.
+- **Les essais** : `essai-pieces-vivantes-route.mjs` (ses pièces pour « Ma maison » ; Sam, aucune),
+  `bascule-univers.mjs` (le salon de Marc : on glisse, on entre, sa figurine, ses trois vedettes, le tourne-disque).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

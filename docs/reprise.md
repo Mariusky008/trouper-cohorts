@@ -161,8 +161,9 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
   en hauteur, vue de loin, ses trois vedettes et ses étagères ; les vedettes repérées par un modèle qui voit les
   images ; puis sa **photo vivante** — huit secondes de vidéo faites par le moteur vidéo d'OpenAI d'après l'image (la
   caméra immobile, seules les vedettes vivent), jouées en boucle ; on y entre en plein écran, on touche une vedette, on
-  s'en approche ; la télé passe un lien YouTube. **À juger par le propriétaire sur son téléphone** avant d'aller plus
-  loin (la vraie « Ma maison » : une pièce après l'autre, en glissant).
+  s'en approche ; la télé passe un lien YouTube. **À juger par le propriétaire sur son téléphone.** Et dans l'onglet
+  « Ma maison » (9.0 novoquinquagies) : quand on a des pièces, son univers puis ses pièces défilent, on glisse, on entre
+  en plein écran. **À décider par le propriétaire** : qui reçoit des pièces, et quand (coût : environ 1 $ la pièce).
 - **Une autre session** construit l'étagère E5 (`docs/univers/etagere-accord.md`) puis les messages écrits
   (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à
   elle ; l'en-tête de la conversation, le menu et « Ma maison » sont à celle-ci.
