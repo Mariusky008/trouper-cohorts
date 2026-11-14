@@ -10,6 +10,10 @@
 //     message retiré plus jamais noté, quarante au plus (le plus ancien goût s'en va) ; la pierre tombale sans texte ;
 //   · les phrases de la figurine qui voit noter : jamais deux fois de suite, sans accord au masculin ou au féminin,
 //     sans le mot interdit, sans alcool ; le catalogue des emojis : ni alcool, ni arme, ni drapeau.
+//   · 📌 (lot E5) « Je le range ? » : la question part au bon destinataire (une personne, les deux, celui qui n'a pas dit
+//     la phrase) ; « oui », « non », le premier des deux ; 48 heures, et la date plus proche ; le réglage, seul et à
+//     deux ; le dépôt pour l'autre ; l'issue d'une épreuve ; un souvenir proposé n'est jamais visible ; les nouvelles
+//     phrases sans accord de genre ni le mot interdit ; la ligne de « Chez moi » ; la mesure.
 //
 //   node scripts/verifier-etagere.mjs
 import { readFileSync } from "node:fs";
@@ -285,6 +289,106 @@ ok(al.length === 4, `les quatre seuils : trop de souvenirs, trop de retirés, tr
   ok(E.STATS_VIDES.deposes === 0 && E.GENRES_DEPOT.length === 5 && E.SORTES_DEPOT.length === 3 && E.RAYONS_MIENS.map((r) => r.nom).join("|") === "Mes fiertés|À venir|Ce que j’aime", "les déposés se comptent ; cinq genres, trois sortes de jour ; mes trois rayons");
   const textesE4 = [E.REGLES_MON_ETAGERE, ...E.GENRES_DEPOT.flatMap((g) => [g.nom, g.indice]), ...E.SORTES_DEPOT.map((x) => x.nom), E.phraseRappel("mien", "Ton concert", "🎤"), E.notifRappel("mien", "Ton concert", "🎤").corps];
   ok(textesE4.every((x) => !GENRE.test(x) && passe(x) && !/exemple/i.test(x)), "les mots du lot E4 : sans accord, sans le mot interdit, sans alcool");
+}
+
+// ═══ 📌 (lot E5) « JE LE RANGE ? » ═══
+{
+  const LE = "2026-11-13T18:00:00.000Z";
+  const maintenant = Date.parse(LE);
+  let k = 0;
+  const nid = () => `q${++k}`;
+  // (le réglage : ni Léa ni Sam ne laissent leur figurine ranger seule)
+  const seuls = { [LEA]: false, [MOI]: false };
+  const demander = (p) => ((p.concerne === "deux" ? seuls[LEA] || seuls[MOI] : seuls[p.concerne]) ? null : { a: E.aQuiDemander(p), jusqua: E.jusquaDe(LE, p.quand) });
+  const permisP = { genre: "date", sorte: "epreuve", emoji: "🚗", titre: "Le permis", titreToi: "Ton permis", concerne: LEA, citation: "Jeudi prochain je passe le permis", de8: LEA, message: "m2", quand: "2026-11-19", ditQuand: "jeudi prochain" };
+  const restoP = { genre: "promesse", emoji: "🍝", titre: "Le resto italien", concerne: "deux", citation: "Faut qu'on se fasse ce resto italien", de8: MOI, message: "m3" };
+  const q1 = E.ranger([], [permisP, restoP], { aujourdhui: AUJ, le: LE, nouvelId: nid, demander });
+  const [pp, pr] = q1.objets;
+  ok(q1.neufs.length === 2 && q1.questions.length === 2 && pp.etat === "propose" && pr.etat === "propose", "ce que les figurines notent se range « proposé » : deux questions");
+  ok(pp.demande.a === LEA && pr.demande.a === "deux", "le permis : la question à Léa seule ; le resto : aux deux");
+  ok(!E.visible(pp) && !E.visible(pr) && !E.meConcerne(pp, LEA), "un souvenir proposé n'est jamais visible (ni le mur, ni la page, ni « Mon étagère »)");
+  const ditParSam = E.ranger([], [{ ...permisP, de8: MOI, message: "m9" }], { aujourdhui: AUJ, le: LE, nouvelId: nid, demander }).objets[0];
+  ok(ditParSam.demande.a === LEA && E.decide(ditParSam, LEA) && !E.decide(ditParSam, MOI), "Sam dit « Léa passe son permis » : c'est Léa qui décide, pas Sam");
+  ok(E.decide(pr, LEA) && E.decide(pr, MOI), "un souvenir commun : l'un ou l'autre décide");
+  // 48 heures, et la date plus proche
+  ok(pr.demande.jusqua === "2026-11-15T18:00:00.000Z", `48 heures pour répondre (${pr.demande.jusqua})`);
+  ok(E.jusquaDe(LE, "2026-11-14") === "2026-11-14T20:00:00.000Z", "une date demain : jusqu'à son soir");
+  ok(E.jusquaDe("2026-11-13T19:30:00.000Z", "2026-11-13") === "2026-11-13T22:30:00.000Z", "une date ce soir, dite à 20 h 30 : au moins trois heures");
+  ok(E.jusquaDe(LE, "2026-11-19") === "2026-11-15T18:00:00.000Z", "une date lointaine : 48 heures");
+  // « oui », « non », le premier des deux
+  const nonSam = E.repondre(q1.objets, pp.id, true, { moi8: MOI, le: LE, maintenant });
+  ok(nonSam.statut === 403 && nonSam.erreur === "C’est à celui que ça concerne de répondre.", "Sam répond au permis de Léa : refusé (403)");
+  const ouiLea = E.repondre(q1.objets, pp.id, true, { moi8: LEA, le: LE, maintenant });
+  const rangeP = ouiLea.objets.find((x) => x.id === pp.id);
+  ok(rangeP.etat === "actif" && !rangeP.demande && rangeP.change.par8 === LEA && E.visible(rangeP) && !ouiLea.cartes.length, "Léa dit oui : le permis se range (visible), sans question");
+  ok(E.repondre(ouiLea.objets, pp.id, true, { moi8: LEA, le: LE, maintenant }).statut === 404, "répondre deux fois : la question n'attend plus (404)");
+  const nonLea = E.repondre(q1.objets, pp.id, false, { moi8: LEA, le: LE, maintenant });
+  const tombeNon = nonLea.objets.find((x) => x.id === pp.id);
+  ok(tombeNon.etat === "retire" && tombeNon.raison === "non" && !tombeNon.titre && !tombeNon.citation, "Léa dit non : une pierre tombale « non », sans texte");
+  ok(E.ranger(nonLea.objets, [permisP], { aujourdhui: "2026-11-14", le: "2026-11-14T09:00:00.000Z", nouvelId: nid, demander }).neufs.length === 0, "un « non » est définitif : jamais reproposé");
+  const ouiSam = E.repondre(q1.objets, pr.id, true, { moi8: MOI, le: LE, maintenant });
+  ok(ouiSam.objets.find((x) => x.id === pr.id).etat === "actif" && E.repondre(ouiSam.objets, pr.id, false, { moi8: LEA, le: LE, maintenant }).statut === 404, "le resto : le premier « oui » des deux le range, l'autre ne peut plus dire non");
+  const nonDeux = E.repondre(q1.objets, pr.id, false, { moi8: LEA, le: LE, maintenant });
+  ok(nonDeux.objets.find((x) => x.id === pr.id).raison === "non", "le premier « non » des deux l'écarte");
+  const date = E.repondre(q1.objets, pp.id, true, { moi8: LEA, le: LE, quand: "2026-11-26", maintenant });
+  ok(date.objets.find((x) => x.id === pp.id).quand === "2026-11-26" && date.objets.find((x) => x.id === pp.id).etat === "actif" && !date.objets.find((x) => x.id === pp.id).ditQuand, "« Changer la date » sur une question : le bon jour, et rangé");
+  // sans réponse
+  const v48 = E.vieillir(q1.objets, "2026-11-15", Date.parse("2026-11-15T18:00:01.000Z"));
+  ok(v48.expires === 2 && v48.change && v48.objets.every((x) => x.etat === "retire" && x.raison === "sans-reponse"), "48 heures sans réponse : rien n'est rangé (la pierre tombale « sans-reponse »)");
+  ok(E.vieillir(q1.objets, "2026-11-15", Date.parse("2026-11-15T17:59:00.000Z")).expires === 0, "avant 48 heures : la question attend toujours");
+  ok(E.ranger(v48.objets, [permisP], { aujourdhui: "2026-11-16", le: "2026-11-16T09:00:00.000Z", nouvelId: nid, demander }).neufs.length === 0, "sans réponse : n'est plus reproposé");
+  ok(E.repondre(v48.objets, pp.id, true, { moi8: LEA, le: LE, maintenant: Date.parse("2026-11-16T09:00:00.000Z") }).statut === 404, "trop tard pour répondre");
+  // la même chose, redite pendant que la question attend
+  const redit = E.ranger(q1.objets, [{ ...permisP, message: "m7", quand: "2026-11-26", ditQuand: "dans deux jeudis" }], { aujourdhui: AUJ, le: LE, nouvelId: nid, demander });
+  ok(redit.neufs.length === 0 && redit.objets.find((x) => x.id === pp.id).quand === "2026-11-26", "redit pendant la question : pas doublé, la date se met à jour");
+  ok(E.ranger(q1.objets, [prop("Les crêpes", "c1")], { aujourdhui: AUJ, le: LE, nouvelId: nid, demander }).neufs.length === 1 && E.ranger([...q1.objets, { ...q1.objets[0], id: "z", message: "z", titre: "Le code", etat: "actif" }], [prop("Les crêpes", "c1")], { aujourdhui: AUJ, le: LE, nouvelId: nid, demander }).neufs.length === 0, "les questions comptent dans les trois par jour");
+  // le réglage
+  seuls[LEA] = true;
+  const auto = E.ranger([], [permisP, restoP], { aujourdhui: AUJ, le: LE, nouvelId: nid, demander });
+  ok(auto.objets.every((x) => x.etat === "actif" && !x.demande) && !auto.questions.length && auto.neufs.length === 2, "Léa laisse sa figurine ranger : son permis se range tout de suite ; le resto commun aussi (il suffit de l'un des deux)");
+  seuls[LEA] = false;
+  seuls[MOI] = true;
+  const autoSam = E.ranger([], [permisP, restoP], { aujourdhui: AUJ, le: LE, nouvelId: nid, demander });
+  ok(autoSam.objets.find((x) => x.genre === "date").etat === "propose" && autoSam.objets.find((x) => x.genre === "promesse").etat === "actif", "Sam l'a allumé : le permis de Léa se demande toujours à Léa ; le resto commun se range");
+  seuls[MOI] = false;
+  // l'issue d'une épreuve
+  const epreuve = { ...permisP, id: "permis", le: "2026-11-13T10:00:00.000Z", etat: "actif", quand: "2026-11-19" };
+  const qi = E.questionDIssue([epreuve], ["permis"], { aujourdhui: "2026-11-19", le: "2026-11-19T17:00:00.000Z" });
+  ok(qi.questions.join() === "permis" && qi.objets[0].demande.issue && qi.objets[0].demande.a === LEA && qi.objets[0].etat === "actif" && E.visible(qi.objets[0]), "« JE L'AI !!! » : une question à Léa (le permis reste sur l'étagère en attendant)");
+  ok(E.questionDIssue([epreuve], ["permis"], { aujourdhui: "2026-11-15", le: LE }).questions.length === 0, "avant le jour J : pas de question d'issue");
+  const ouiIssue = E.repondre(qi.objets, "permis", true, { moi8: LEA, le: "2026-11-19T18:00:00.000Z", maintenant: Date.parse("2026-11-19T18:00:00.000Z") });
+  ok(ouiIssue.objets[0].etat === "fierte" && ouiIssue.objets[0].emoji === "🏆" && ouiIssue.objets[0].emojiAvant === "🚗" && !ouiIssue.objets[0].demande && ouiIssue.cartes[0]?.genre === "fierte", "Léa dit oui : le trophée, tout en haut, et la carte de la fierté");
+  const nonIssue = E.repondre(qi.objets, "permis", false, { moi8: LEA, le: "2026-11-19T18:00:00.000Z", maintenant: Date.parse("2026-11-19T18:00:00.000Z") });
+  ok(nonIssue.objets[0].etat === "actif" && nonIssue.objets[0].sansIssue && !nonIssue.objets[0].demande && E.questionDIssue(nonIssue.objets, ["permis"], { aujourdhui: "2026-11-20", le: LE }).questions.length === 0, "Léa dit non : le permis reste, et son issue n'est plus jamais demandée");
+  const vIssue = E.vieillir(qi.objets, "2026-11-22", Date.parse("2026-11-22T09:00:00.000Z"));
+  ok(vIssue.expires === 1 && vIssue.objets[0].etat === "actif" && !vIssue.objets[0].demande, "l'issue sans réponse : plus de question, l'épreuve suit son cours");
+  ok(E.vieillir(qi.objets, "2026-11-21", Date.parse("2026-11-21T09:00:00.000Z")).objets[0].demande?.issue, "l'issue qui attend : l'épreuve reste là le temps de la question");
+  // le dépôt pour l'autre
+  const depot = { ...E.depotValide({ genre: "date", sorte: "evenement", titre: "Ton concert", quand: "2026-11-21", pour: "lui" }, { aujourdhui: AUJ, passe, moi8: MOI, lui8: LEA }).objet, id: "dep", message: "depot-dep", le: LE, etat: "propose", demande: { a: LEA, jusqua: E.jusquaDe(LE, "2026-11-21"), par8: MOI } };
+  ok(E.phraseQuestion(depot, LEA, "Sam") === "Sam veut ranger sur votre étagère : ton concert, samedi 21. D’accord ?" && E.quiDemande(depot, LEA) === "moi", `le dépôt de Sam, chez Léa : « ${E.phraseQuestion(depot, LEA, "Sam")} » (sa propre figurine le demande)`);
+  // les phrases
+  ok(E.phraseQuestion(pp, LEA, "Sam") === "J’ai entendu : ton permis, jeudi 19." && E.quiDemande(pp, LEA) === "moi", `la bulle, une personne : « ${E.phraseQuestion(pp, LEA, "Sam")} »`);
+  ok(E.quiDemande(ditParSam, LEA) === "lui", "Sam l'a dit : chez Léa, c'est la figurine de Sam qui demande");
+  ok(E.phraseQuestion(pr, LEA, "Sam") === "J’ai entendu : le resto italien. On le garde ?", `la bulle, les deux : « ${E.phraseQuestion(pr, LEA, "Sam")} »`);
+  ok(E.phraseQuestion(qi.objets[0], LEA, "Sam") === "J’ai entendu : c’est réussi ! Je range ça dans vos fiertés ? 🏆", "la bulle de l'issue");
+  ok(E.PANNEAU_QUESTION === "📌 Je le range ?" && E.PHRASE_NON === "D’accord, j’oublie.", "le panneau, et le « non »");
+  ok(E.oubliDans("2026-11-15T18:00:00.000Z", AUJ) === "dans 2 jours" && E.oubliDans("2026-11-14T20:00:00.000Z", AUJ) === "demain" && E.oubliDans("2026-11-13T22:30:00.000Z", AUJ) === "ce soir", "« elle oublie dans 2 jours », « demain », « ce soir »");
+  ok(E.notifQuestions(2).titre === "📌 Ta figurine a 2 choses à te demander" && E.notifQuestions(1).titre === "📌 Ta figurine a une chose à te demander", "l'envoi du matin");
+  // la ligne de « Chez moi »
+  const lq = E.ligneEtagere({ question: pp, rappel: null, nouveau: { ...pr, etat: "actif" } }, LEA);
+  ok(lq.txt === "📌 Ta figurine te demande : ton permis ?" && lq.rang === 2.95 && lq.rang < 3 && lq.rang > E.RANGS_LIGNE.rappel, `« Chez moi » : « ${lq.txt} », juste après un message non lu`);
+  // la mesure
+  ok(!E.alertesEtagere({ ...E.STATS_VIDES, oui: 8, refuses: 2, expires: 1 }).length, "une journée normale de questions : pas d'alerte");
+  const aq = E.alertesEtagere({ ...E.STATS_VIDES, oui: 5, refuses: 4, expires: 1, corriges: 1 });
+  ok(aq.some((x) => x.includes("30 %")) && !aq.some((x) => x.includes("50 %")) && aq.some((x) => x.includes("corrigées")), `les alertes : refusées au-dessus de 30 %, dates corrigées au-dessus de 10 % (${aq.join(" | ")})`);
+  ok(E.alertesEtagere({ ...E.STATS_VIDES, oui: 2, expires: 3 }).some((x) => x.includes("50 %")) && !E.alertesEtagere({ ...E.STATS_VIDES, refuses: 3 }).length, "sans réponse au-dessus de 50 % ; moins de cinq questions closes : pas d'alerte");
+  ok(["proposes", "oui", "refuses", "expires", "auto", "corriges"].every((x) => E.STATS_VIDES[x] === 0), "les compteurs du lot E5");
+  // la pierre tombale garde sa raison ; les entrées gardées ne jettent jamais une question
+  ok(E.pierreTombale(pp, LEA, LE).raison === "retire", "retiré : la raison « retire »");
+  const plein = [pp, ...Array.from({ length: 205 }, (_, j) => ({ ...epreuve, id: `t${j}`, message: `t${j}`, etat: "retire", titre: "" }))];
+  ok(E.borner(plein).length === 200 && E.borner(plein).some((x) => x.id === pp.id), "deux cents entrées au plus : les pierres tombales s'en vont, jamais une question qui attend");
+  const textesE5 = [E.PANNEAU_QUESTION, E.PHRASE_NON, E.phraseQuestion(pp, LEA, "Sam"), E.phraseQuestion(pr, LEA, "Sam"), E.phraseQuestion(qi.objets[0], LEA, "Sam"), E.phraseQuestion(depot, LEA, "Sam"), lq.txt, E.notifQuestions(2).titre, E.notifQuestions(2).corps, E.REGLAGE_RANGE_SEUL.titre, E.REGLAGE_RANGE_SEUL.aide, E.REGLES_ETAGERE];
+  ok(textesE5.every((x) => !GENRE.test(x) && passe(x) && !/exemple/i.test(x) && !/\b(l'as|l’as) eu\b/.test(x)), `les mots du lot E5 : sans accord, sans le mot interdit, sans alcool (${textesE5.filter((x) => GENRE.test(x) || !passe(x)).join(" | ") || "tous"})`);
 }
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nles règles de l'étagère tiennent ✓");

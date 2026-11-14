@@ -188,14 +188,25 @@ try {
   await l.locator(".et-feuille-depot.ouverte input[type=text]").fill("Ton gâteau au chocolat");
   await l.locator('.et-feuille-depot.ouverte .et-catalogue button[aria-label="🍰"]').click();
   await l.locator('.et-feuille-depot.ouverte [data-pour="lui"]').click();
+  // 📌 (lot E5) pour l'autre : c'est l'autre qui dit oui
+  ok((await l.locator(".et-feuille-depot.ouverte .et-depot-question").innerText()).includes("Sam recevra la question : rien ne se range sans son oui."), "pour Sam : « 📌 Sam recevra la question : rien ne se range sans son oui. »");
   await l.locator(".et-feuille-depot.ouverte .et-bouton").click();
-  ok(await attendre(() => document.querySelector(".et-page .et-info")?.textContent?.includes("Sam le verra dans votre conversation"), null, 15000, l), "posé : « Sam le verra dans votre conversation »");
-  ok(await attendre(() => [...document.querySelectorAll(".et-page .et-etiquette")].some((x) => x.textContent === "Le gâteau au chocolat de Sam"), null, 15000, l), "chez Léa : « Le gâteau au chocolat de Sam »");
+  ok(await attendre(() => document.querySelector(".et-page .et-info")?.textContent?.includes("Sam recevra la question. Rien ne se range sans son oui."), null, 15000, l), "posé : « Sam recevra la question. Rien ne se range sans son oui. »");
+  ok(!(await l.evaluate(() => [...document.querySelectorAll(".et-page .et-etiquette")].some((x) => x.textContent.includes("gâteau")))), "chez Léa : rien sur leur étagère avant le oui de Sam");
   await l.screenshot({ path: `${D}/etagere-e4-5-leur-etagere.png` });
 
-  // ═══ CHEZ SAM : LA CARTE, LA PLANCHE (il revient sur l'appli : elle se relit) ═══
+  // ═══ CHEZ SAM : « ✨ À RANGER » (il revient sur l'appli : sa planche se relit) ═══
   await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-  ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "4"), "il revient sur l'appli : sa planche se relit, elle passe à 4");
+  ok(await attendre(() => document.querySelector(".et-chez .et-chez-ranger")?.textContent?.includes("✨ 1 à ranger") && document.querySelector(".et-chez")?.getAttribute("data-n") === "3"), "il revient sur l'appli : « ✨ 1 à ranger » sur sa planche (toujours 3 souvenirs)");
+  await p.locator(".et-chez-planche").click();
+  await p.waitForSelector(".et-mienne .et-a-ranger .et-q", { timeout: 15000 });
+  const ar = plat(await p.locator(".et-mienne .et-a-ranger").innerText());
+  ok(ar.includes("✨ À RANGER") && ar.includes("Ton gâteau au chocolat") && ar.includes("déposé par Léa") && ar.includes("Rien ne se range sans ton oui"), `« Mon étagère », en haut : « ${ar} »`);
+  await p.screenshot({ path: `${D}/etagere-e5-a-ranger.png` });
+  await p.locator(".et-mienne .et-a-ranger .et-q-oui").click();
+  ok(await attendre(() => document.querySelector(".et-mienne .et-info")?.textContent?.includes("🍰 Ton gâteau au chocolat : rangé sur votre étagère, Léa et toi") && !document.querySelector(".et-mienne .et-a-ranger")), "« ✓ » : « 🍰 Ton gâteau au chocolat : rangé sur votre étagère, Léa et toi »");
+  await p.locator(".et-mienne .et-retour").click();
+  ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "4" && !document.querySelector(".et-chez .et-chez-ranger")), "sa planche passe à 4");
   await p.goto(`${ALLUME}/collection?v=${Date.now()}#maison`, { waitUntil: "networkidle" });
   ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "4"), "la planche de Sam passe à 4");
   await p.locator(".mc-nav-proches").click();

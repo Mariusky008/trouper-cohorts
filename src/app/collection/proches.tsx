@@ -32,8 +32,8 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
-import { CarteEtagere, CarteNote, CartePoussiere, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
-import { idees, type CarteVue, type ObjetVu } from "@/lib/direct/etagere";
+import { CarteEtagere, CarteNote, CartePoussiere, CarteQuestion, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
+import { idees, type CarteVue, type ObjetVu, type QuestionVue } from "@/lib/direct/etagere";
 import { versLeStudio } from "./vers-le-studio";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
@@ -1160,9 +1160,11 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         ...laisses.map((x) => ({ le: x.le, e: { laisse: x }, i: -1 })),
       ]
     : [];
-  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil; ob?: ObjetVu; ct?: CarteVue; ra?: string }[] = [
+  const elements: { le: string; x?: MessageFil; i: number; g?: GesteFil; a?: AparteVue; e?: Evt; mm?: MemeFil; ob?: ObjetVu; ct?: CarteVue; ra?: string; q?: QuestionVue }[] = [
     ...fil.messages.map((x, i) => ({ le: x.le, x, i })),
     ...cartesEtagere.map((ob) => ({ le: ob.le, ob, i: -1 })),
+    // 📌 (l'étagère, lot E5) « TA FIGURINE TE DEMANDE », à l'heure où la question est née
+    ...et.questions.map((q) => ({ le: q.objet.le, q, i: -1 })),
     ...et.cartes.map((ct) => ({ le: ct.le, ct, i: -1 })),
     ...et.rallumes.map((r) => ({ le: r.le, ra: r.id, i: -1 })),
     ...(fil.memes ?? []).map((mm) => ({ le: mm.le, mm, i: -1 })),
@@ -1188,7 +1190,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     }
   }
   const jeuDe = (qui: "moi" | "lui") => ({
-    note: et.jeu.note?.qui === qui ? { n: et.jeu.note.n } : null,
+    note: et.jeu.note?.qui === qui ? { n: et.jeu.note.n, ...(et.jeu.note.texte ? { texte: et.jeu.note.texte } : {}), ...(et.jeu.note.emoji ? { emoji: et.jeu.note.emoji } : {}) } : null,
     bulle: et.jeu.bulle?.qui === qui ? { texte: et.jeu.bulle.texte, n: et.jeu.bulle.n } : null,
   });
   /** 🎭 (l'étagère, lot E3) leur blague, en mème : le studio s'ouvre avec ses mots, pour lui. */
@@ -1365,8 +1367,9 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       </div>
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
-        {elements.map(({ x, i, g, a, e, le, mm, ob, ct, ra }) => {
+        {elements.map(({ x, i, g, a, e, le, mm, ob, ct, ra, q }) => {
           if (ra) return <CarteRallume key={`ra-${ra}`} prenom={fil.lui.prenom} />;
+          if (q) return <CarteQuestion key={`q-${q.id}`} q={q} onRepondre={(oui, quand) => et.repondre(q, oui, quand)} />;
           if (ct)
             return (
               <CarteEtagere

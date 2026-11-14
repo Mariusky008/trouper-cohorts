@@ -183,7 +183,8 @@ export function Calque({
   anim: Anim | null;
   posture: Posture | "prepare";
   aparte?: { texte: string; second: boolean; n: string } | null;
-  note?: { n: string } | null;
+  /** 📌 l'étagère : « 📌 Noté ! » ; (lot E5) « 📌 Je le range ? », l'objet dans les mains (`emoji`). */
+  note?: { n: string; texte?: string; emoji?: string } | null;
   bulle?: { texte: string; n: string } | null;
 }) {
   const a = anim?.qui === qui ? anim : null;
@@ -216,12 +217,17 @@ export function Calque({
         </span>
       )}
       {note && (
-        <span key={`n-${note.n}`} className="et-note">
-          📌 Noté !
+        <span key={`n-${note.n}`} className={`et-note${note.emoji ? " question" : ""}`}>
+          {note.texte ?? "📌 Noté !"}
+        </span>
+      )}
+      {note?.emoji && (
+        <span key={`t-${note.n}`} className="et-tient">
+          {note.emoji}
         </span>
       )}
       {bulle && !aparte && (
-        <span key={`b-${bulle.n}`} className="pv-aparte et-bulle">
+        <span key={`b-${bulle.n}`} className={`pv-aparte et-bulle${note ? " sous" : ""}`}>
           {bulle.texte}
         </span>
       )}
