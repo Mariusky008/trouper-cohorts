@@ -29,6 +29,7 @@ import { lancerMusiqueUnivers, musiqueCoupee, type MusiqueUnivers } from "@/lib/
 import { IDEES_RETOUCHE_UNIVERS, RETOUCHE_UNIVERS_MAX, type CleUnivers, type EtatUnivers } from "@/lib/direct/univers-creation";
 import { VISIBILITES_DITES, objetDe, type MesVisites } from "@/lib/direct/visites";
 import type { Visibilite } from "@/lib/direct/monde";
+import { ChoixAmbiance } from "../choix-ambiance";
 
 const ROUTE = "/api/direct/univers";
 
@@ -527,6 +528,18 @@ function Decouverte({ etat, occupe, faire, enRetouche }: { etat: EtatUnivers; oc
         </ul>
       )}
       {etat.erreur && <p className="um-erreur">{etat.erreur}</p>}
+      {/* 🎨 son ambiance : en changer refait son décor (une retouche) */}
+      {etat.ambiance && !retouche && (
+        <ChoixAmbiance
+          actuelle={etat.ambiance}
+          occupe={occupe || etat.retouches.restantes <= 0}
+          note={etat.retouches.restantes > 0 ? "Une autre ambiance refait ton décor d’après ton univers : elle compte comme une retouche." : "Plus de retouche aujourd’hui : reviens demain pour changer d’ambiance."}
+          onChoisir={(a) => {
+            enRetouche();
+            void faire({ action: "ambiance", ambiance: a });
+          }}
+        />
+      )}
       {!retouche ? (
         <div className="um-gestes">
           <button type="button" className="um-bouton clair" disabled={occupe || etat.retouches.restantes <= 0} onClick={() => setRetouche(true)}>

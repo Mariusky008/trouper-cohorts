@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, SOUVENIRS_EN_ATTENTE_MAX, objetDe, type ObjetSouvenir, type VueVisite } from "@/lib/direct/visites";
 import { jouerDoux } from "@/lib/direct/sons";
+import { DansLesPieces, VignettesPieces } from "@/app/univers/piece-vivante";
 
 const ROUTE = "/api/direct/visites";
 type Ouvert = Extract<VueVisite, { etat: "ouvert" }>;
@@ -109,6 +110,8 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
   const [envol, setEnvol] = useState(0);
   const [paquets, setPaquets] = useState(vue.mesCadeaux);
   const [montre, setMontre] = useState<string | null>(null);
+  // 🎬 dans ses pièces (laquelle)
+  const [dansPiece, setDansPiece] = useState<number | null>(null);
   const minuteurs = useRef<number[]>([]);
   useEffect(() => () => minuteurs.current.forEach((m) => window.clearTimeout(m)), []);
   const plusTard = (f: () => void, ms: number) => minuteurs.current.push(window.setTimeout(f, ms));
@@ -275,6 +278,15 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
         </section>
       )}
 
+      {/* 🎬 ses pièces, entières et vivantes : un toucher, on entre (sa figurine y est assise) */}
+      {vue.pieces?.length > 0 && (
+        <section className="uv-pieces" aria-label={vue.chezSoi ? "Tes pièces" : `Les pièces de ${vue.prenom}`}>
+          <b className="uv-pieces-titre">🎬 {vue.chezSoi ? "Tes pièces" : `Les pièces de ${vue.prenom}`}</b>
+          <VignettesPieces pieces={vue.pieces} onEntrer={setDansPiece} />
+        </section>
+      )}
+      {dansPiece !== null && vue.pieces?.length > 0 && <DansLesPieces pieces={vue.pieces} depart={dansPiece} figurine={vue.hote.image} onFermer={() => setDansPiece(null)} />}
+
       {!vue.chezSoi && vue.proche && vue.cles.length > 0 && (
         <button type="button" className="uv-bouton clair" aria-pressed={cles} onClick={() => setCles((x) => !x)}>
           🔑 Les clés de son univers
@@ -428,6 +440,8 @@ const STYLES = `
 .uv-liste small{color:#5c4126}
 .uv-pied{display:flex;justify-content:space-between;width:100%;max-width:460px}
 .uv-etagere{width:100%;max-width:460px;box-sizing:border-box;padding:12px 12px 4px;border-radius:18px;background:linear-gradient(180deg,#3d2412,#2a170b);border:5px solid #4d2e16;box-shadow:inset 0 0 30px rgba(0,0,0,.55);color:#FFF4E6}
+.uv-pieces{width:100%;max-width:460px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px}
+.uv-pieces-titre{font-size:15px;font-weight:900;color:#F2C46B}
 .uv-etagere-titre{display:block;margin:0 2px 6px;font-size:15px;font-weight:900;color:#F2C46B}
 .uv-etagere-rang{position:relative;margin:0;padding:0 0 16px;list-style:none;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-around;gap:10px 4px}
 .uv-etagere-rang::after{content:"";position:absolute;left:-12px;right:-12px;bottom:4px;height:10px;background:linear-gradient(180deg,#a5683a,#6b3f1f);box-shadow:0 6px 8px -3px rgba(0,0,0,.7)}

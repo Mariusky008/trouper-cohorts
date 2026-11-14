@@ -29,6 +29,7 @@ import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
 import { depotDans, signer, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
 import { PIECES, type Piece } from "./pieces-serveur";
+import type { Cadre, ObjetsVus, PieceVue } from "./pieces-vivantes";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -59,15 +60,16 @@ const json = (b: Buffer | null) => {
 };
 
 // ─── les pièces : leurs vedettes, et comment elles vivent ─────────────────────────────────────────────
-export type Vedette = { cle: string; nom: string; dit: string; en: string };
+/** Une vedette : son nom, ce qu'on en dit (à lui ; `autre` : à ses visiteurs), et comment le moteur la peint. */
+export type Vedette = { cle: string; nom: string; dit: string; autre: string; en: string };
 type PlanEntier = { quoi: string; vedettes: Vedette[]; etageres: string; vit: string; voisine?: Piece };
 export const PLANS_ENTIERS: Record<Piece, PlanEntier> = {
   salon: {
     quoi: "the LIVING ROOM of this same home",
     vedettes: [
-      { cle: "platine", nom: "📻 Le tourne-disque", dit: "Ta chanson du moment tourne ici.", en: "a vintage record player on a low wooden cabinet, a vinyl record on its platter, a few record sleeves leaning beside it" },
-      { cle: "feu", nom: "🔥 La cheminée", dit: "Le coin du feu, là où l’on se raconte tout.", en: "a fireplace with a small, cosy fire burning in it" },
-      { cle: "fenetre", nom: "🪟 La grande fenêtre", dit: "La vue de chez toi.", en: "a big window with light sheer curtains, looking out on the same landscape as IMAGE 1, in a warm sunset light" },
+      { cle: "platine", nom: "📻 Le tourne-disque", dit: "Ta chanson du moment tourne ici.", autre: "Sa chanson du moment tourne ici.", en: "a vintage record player on a low wooden cabinet, a vinyl record on its platter, a few record sleeves leaning beside it" },
+      { cle: "feu", nom: "🔥 La cheminée", dit: "Le coin du feu, là où l’on se raconte tout.", autre: "Le coin du feu, là où l’on se raconte tout.", en: "a fireplace with a small, cosy fire burning in it" },
+      { cle: "fenetre", nom: "🪟 La grande fenêtre", dit: "La vue de chez toi.", autre: "La vue, depuis son salon.", en: "a big window with light sheer curtains, looking out on the same landscape as IMAGE 1, in a warm sunset light" },
     ],
     etageres: "Along the walls, wooden shelves full of small objects (books, little framed photos, small plants, souvenirs and trinkets), neat and readable: everything else in the room lives on these shelves.",
     vit: "the vinyl record turns slowly on the record player; the flames of the fire flicker and dance; the sheer curtains sway gently in a soft breeze; outside the window, the light of the sunset shimmers and a few clouds drift slowly",
@@ -75,9 +77,9 @@ export const PLANS_ENTIERS: Record<Piece, PlanEntier> = {
   tele: {
     quoi: "the TV ROOM of this same home",
     vedettes: [
-      { cle: "tele", nom: "📺 La télé", dit: "Ce que tu regardes en ce moment.", en: "a large flat television on a low wooden cabinet, seen straight on; it is switched off: its screen is plain, uniform dark glass with nothing on it (a film will be shown on it later)" },
-      { cle: "aquarium", nom: "🐠 L’aquarium", dit: "Ton petit monde à toi.", en: "a big lit aquarium with water plants and a few small colourful fish" },
-      { cle: "bougies", nom: "🕯️ Les bougies", dit: "Une bougie par bonne nouvelle.", en: "a low table with a cluster of lit candles of different heights" },
+      { cle: "tele", nom: "📺 La télé", dit: "Ce que tu regardes en ce moment.", autre: "Ce qui passe ici en ce moment.", en: "a large flat television on a low wooden cabinet, seen straight on; it is switched off: its screen is plain, uniform dark glass with nothing on it (a film will be shown on it later)" },
+      { cle: "aquarium", nom: "🐠 L’aquarium", dit: "Ton petit monde à toi.", autre: "Un petit monde à part.", en: "a big lit aquarium with water plants and a few small colourful fish" },
+      { cle: "bougies", nom: "🕯️ Les bougies", dit: "Une bougie par bonne nouvelle.", autre: "Une bougie par bonne nouvelle.", en: "a low table with a cluster of lit candles of different heights" },
     ],
     etageres: "Along the walls, wooden shelves full of films, books, small plants and souvenirs, neat and readable: everything else in the room lives on these shelves. A deep cosy sofa with cushions and a plaid, turned towards the television.",
     vit: "the small fish swim slowly in the aquarium and tiny bubbles rise; the candle flames flicker softly; the television screen stays dark and perfectly still",
@@ -86,9 +88,9 @@ export const PLANS_ENTIERS: Record<Piece, PlanEntier> = {
   terrasse: {
     quoi: "the TERRACE of this same home, outdoors",
     vedettes: [
-      { cle: "carte", nom: "🗺️ La carte de tes voyages", dit: "Tes voyages, épinglés un par un.", en: "an easel holding a big world map pinned with a few coloured pins" },
-      { cle: "valise", nom: "🧳 Ta valise", dit: "Ton prochain départ.", en: "a vintage leather suitcase covered with travel stickers, standing on the deck" },
-      { cle: "guirlande", nom: "💡 La guirlande", dit: "Les soirs d’été.", en: "a string of warm lights hanging above the deck" },
+      { cle: "carte", nom: "🗺️ La carte de tes voyages", dit: "Tes voyages, épinglés un par un.", autre: "Ses voyages, épinglés un par un.", en: "an easel holding a big world map pinned with a few coloured pins" },
+      { cle: "valise", nom: "🧳 Ta valise", dit: "Ton prochain départ.", autre: "Son prochain départ.", en: "a vintage leather suitcase covered with travel stickers, standing on the deck" },
+      { cle: "guirlande", nom: "💡 La guirlande", dit: "Les soirs d’été.", autre: "Les soirs d’été.", en: "a string of warm lights hanging above the deck" },
     ],
     etageres: "Against the outside wall of the house, a wooden shelf unit with potted plants, lanterns and small travel souvenirs, neat and readable: everything else lives on it. A wooden railing; beyond it, the same landscape as IMAGE 1 at sunset.",
     vit: "the string lights glow and twinkle softly; beyond the railing, the water and the light shimmer and the clouds drift slowly; a light breeze moves the leaves of the potted plants",
@@ -130,8 +132,7 @@ export const consigneObjets = (p: Piece) =>
     'Answer in JSON only: {"objets":[{"cle":"…","x":0,"y":0,"l":0,"h":0}],"place":{"x":0,"y":0,"l":0,"h":0},"ecran":{"x":0,"y":0,"l":0,"h":0} or null}. Leave out an object that is not in the image.',
   ].join("\n");
 
-export type Cadre = { x: number; y: number; l: number; h: number };
-export type ObjetsVus = { objets: (Cadre & { cle: string })[]; place: Cadre | null; ecran: Cadre | null };
+export type { Cadre, ObjetsVus };
 const nombre = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : NaN);
 export function cadreValide(v: unknown): Cadre | null {
   if (!v || typeof v !== "object") return null;
@@ -316,6 +317,34 @@ export async function fabriquerLaPieceVivante(supabase: Supabase, h: string, p: 
   } finally {
     if (json(await d.lire(VERROU).catch(() => null)).qui === qui) await d.effacer(VERROU).catch(() => undefined);
   }
+}
+
+// ─── 🏠 dans « Ma maison » ─────────────────────────────────────────────────────────────────────────
+export const NOMS_PIECES: Record<Piece, string> = { salon: "Le salon", tele: "La pièce télé", terrasse: "La terrasse" };
+export type PieceDeMaMaison = PieceVue & { piece: Piece };
+
+/**
+ * 🏠 Ses pièces prêtes (leur image entière faite), pour l'onglet « Ma maison » : la vue et sa vidéo (signées, une
+ * heure), ses vedettes repérées. Les siennes seulement ; aucune : une liste vide.
+ */
+export async function mesPieces(supabase: Supabase, h: string, o: { pourSesVisiteurs?: boolean } = {}): Promise<PieceDeMaMaison[]> {
+  const pieces = await Promise.all(
+    PIECES.map(async (p): Promise<PieceDeMaMaison | null> => {
+      const d = depotDans(supabase, dossier(h, p));
+      const noms = await d.lister().catch(() => [] as string[]);
+      if (!noms.includes("vue.webp")) return null;
+      const [vue, video, objets] = await Promise.all([
+        signer(supabase, `${dossier(h, p)}/vue.webp`),
+        noms.includes("video.mp4") ? signer(supabase, `${dossier(h, p)}/video.mp4`) : Promise.resolve(""),
+        noms.includes("objets.json") ? d.lire("objets.json").then((b) => objetsValides(p, json(b))).catch(() => null) : Promise.resolve(null),
+      ]);
+      if (!vue) return null;
+      // (à ses visiteurs, ce qu'on en dit change de bouche : « Sa chanson du moment », pas « Ta »)
+      const vedettes = PLANS_ENTIERS[p].vedettes.map((v) => ({ cle: v.cle, nom: v.nom, dit: o.pourSesVisiteurs ? v.autre : v.dit }));
+      return { piece: p, nom: NOMS_PIECES[p], vue, ...(video ? { video } : {}), ...(objets ? { objets } : {}), vedettes };
+    }),
+  );
+  return pieces.filter((x): x is PieceDeMaMaison => Boolean(x));
 }
 
 /** ↩️ Refaire une étape : elle, et ce qui en dépend (l'image : tout ; les objets : eux seuls ; la vidéo : elle). */

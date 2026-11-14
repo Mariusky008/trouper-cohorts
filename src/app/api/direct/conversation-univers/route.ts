@@ -10,6 +10,7 @@
 // POST { action: "proposer" }            → { ok } : « Voir ce que j'imagine » (préparé après la réponse)
 // POST { action: "corriger", texte }     → { ok } : il corrige ou complète la proposition (après la réponse)
 // POST { action: "retirer", id }         → { ok } : un élément de la proposition s'en va
+// POST { action: "ambiance", ambiance }  → { ok } : 🎨 il choisit une autre ambiance que celle de Pablito
 // POST { action: "valider" }             → { version } : « C'est mon univers ! » — la fiche de son univers
 // POST { action: "effacer" }             → { ok } : la conversation s'efface
 import { NextResponse, after } from "next/server";
@@ -17,6 +18,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { habitantCourant } from "@/lib/direct/habitant";
 import {
+  choisirAmbiance,
   commencer,
   demanderCorrection,
   demanderProposition,
@@ -77,6 +79,8 @@ export async function POST(request: Request) {
     }
     case "retirer":
       return repondreJson(await retirerElement(supabase, h, p.id));
+    case "ambiance":
+      return repondreJson(await choisirAmbiance(supabase, h, p.ambiance));
     case "valider": {
       const r = await validerUnivers(supabase, h);
       return repondreJson(r, { version: r.version });

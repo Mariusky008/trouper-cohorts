@@ -7,13 +7,14 @@
 //                                            se font après la réponse (l'écran relit)
 // POST { action: "retoucher", texte }    → { version } : une retouche avec ses mots (une nouvelle version)
 // POST { action: "revenir" }             → { version } : la version d'avant (rien n'est refait)
+// POST { action: "ambiance", ambiance } → { version } : 🎨 une autre ambiance (son décor refait d'après sa fiche ; une retouche)
 // POST { action: "mesurer" }             → { version } : sa figurine relevée sur l'image vedette (un univers créé avant
 //                                            ce relevé ; une fois par version)
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { etatUnivers, fabriquerUnivers, lancerCreation, mesurerSaFigurine, retoucherUnivers, revenirUnivers } from "@/lib/direct/univers-creation-serveur";
+import { changerAmbiance, etatUnivers, fabriquerUnivers, lancerCreation, mesurerSaFigurine, retoucherUnivers, revenirUnivers } from "@/lib/direct/univers-creation-serveur";
 import { fabriquerDecorDeSaison } from "@/lib/direct/saison-serveur";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +54,9 @@ export async function POST(request: Request) {
           ? await revenirUnivers(supabase, h)
           : p?.action === "mesurer"
             ? await mesurerSaFigurine(supabase, h)
-            : { error: "Demande incomplète.", statut: 400 };
+            : p?.action === "ambiance"
+              ? await changerAmbiance(supabase, h, p.ambiance)
+              : { error: "Demande incomplète.", statut: 400 };
   const version = r.version;
   if (version && p?.action !== "revenir" && p?.action !== "mesurer") after(() => fabriquerUnivers(supabase, h, version, avant));
   return NextResponse.json(r.error ? { error: r.error } : { ok: true, version }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });

@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { imageVisage } from "@/lib/direct/guide";
 import { MESSAGE_MAX, NUMEROS_AIDE, PHRASES_FIXES, PREFERE_PAS, type EtatConversation } from "@/lib/direct/conversation-univers";
+import { ChoixAmbiance } from "../choix-ambiance";
 
 const ROUTE = "/api/direct/conversation-univers";
 
@@ -305,6 +306,9 @@ function Proposition({ etat, occupe, faire }: { etat: EtatConversation; occupe: 
           ))}
           <small>{p.lumiere}</small>
         </div>
+      )}
+      {p.ambiance && (
+        <ChoixAmbiance actuelle={p.ambiance} proposee={p.ambiance_proposee} pourquoi={p.ambiance_pourquoi} occupe={occupe || etat.attend} onChoisir={(a) => void faire({ action: "ambiance", ambiance: a })} />
       )}
       <div className="cv-colonne dits">
         <h2>Ce que tu m’as dit</h2>

@@ -17,6 +17,7 @@
 import type { CleUnivers } from "./univers-creation";
 import type { Visibilite } from "./monde";
 import type { VitrineObjet } from "./etagere";
+import type { PieceVue } from "./pieces-vivantes";
 
 /** Les souvenirs qu'on peut laisser : des objets posés par-dessus le décor (rien n'est regénéré). */
 export const OBJETS_SOUVENIR = [
@@ -84,6 +85,8 @@ export type VueVisite =
       chezSoi: boolean;
       /** 📚 (étagère, lot E4) les souvenirs qu'il a choisi de montrer à ses visiteurs */
       etagere: VitrineObjet[];
+      /** 🎬 ses pièces, entières et vivantes (on glisse, on entre ; sa figurine y est assise) */
+      pieces: PieceVue[];
     };
 
 /**
