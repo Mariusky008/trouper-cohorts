@@ -3046,6 +3046,14 @@ panoramas), sur SON univers — `lib/direct/pieces-vivantes-serveur.ts`, `api/ad
   video.mp4) ; refaire l'image efface tout, les objets ou la vidéo eux seuls ; un verrou par pièce.
 - **L'essai** : `essai-pieces-vivantes-route.mjs` (le faux moteur vidéo de `faux-supabase.mjs` : la commande, « en
   train », faite ; l'image reçue exactement à 720 × 1280).
+- **Le premier essai du propriétaire** (14 novembre) : « Ses vedettes repérées — 0 trouvée(s) » et « Le moteur vidéo
+  (sora-2) refuse : 404 ». **Les cadres** : le modèle les avait rendus en pixels ; ils sont maintenant ramenés en
+  pourcentages, quelle que soit la façon dont il les rend (`cadreDuModele` : pixels de l'image vue, 576 × 1024, fractions,
+  `w`/`width`), et un cadre rogné à rien ne compte plus (« Refaire » ses vedettes). **La vidéo** : on la commande là où
+  elle existe (`branchementsVideo` : `OPENAI_VIDEO_API_KEY` / `OPENAI_VIDEO_BASE_URL` d'abord, puis le branchement du
+  moteur d'images, puis `OPENAI_API_KEY` chez OpenAI) ; introuvable (404), les moteurs vidéo du compte sont essayés
+  (`/v1/models`, ceux qui commencent par « sora », le moins cher d'abord) ; sinon le refus dit où et quoi (« sora-2 chez
+  api.openai.com : 404 ») et la clé à ajouter. La commande garde son branchement : elle est suivie au même endroit.
 
 ### 9.0 septquinquagies 🎨 Les ambiances de son univers — l'essai (14 novembre)
 

@@ -140,9 +140,18 @@ const t2 = await appeler(lea, { action: "fabriquer", piece: "tele" });
 ia = (await toutIA()).slice(avantTele);
 ok(ia.some((c) => c.includes("Create the TV ROOM of this same home — the WHOLE of it") && c.includes("switched off") && c.includes("aquarium") && c.includes("IMAGE 2 is another room of this same home")), "📺 la pièce télé : la télé éteinte, l'aquarium, dans le style du salon (IMAGE 2)");
 ok(t2.fait === "objets" && t2.etat?.objets?.ecran?.l === 20 && t2.etat.objets.objets.map((o) => o.cle).join() === "tele,aquarium,bougies", "ses vedettes, et l'écran de la télé (pour ce qu'elle regarde)");
+const tv = t2.etat?.objets?.objets?.[0];
+ok(tv?.x === 8 && tv.y === 30 && tv.l === 24 && tv.h === 20 && t2.etat.objets.ecran.x === 10 && t2.etat.objets.ecran.h === 12, `📐 le modèle a rendu des pixels (et des fractions) : ramenés en pourcentages (${JSON.stringify(tv)})`);
 await appeler(lea, { action: "fabriquer", piece: "tele" });
 ia = (await toutIA()).slice(avantTele);
 ok(ia.some((c) => c.startsWith("VIDEO ") && c.includes("the television screen stays dark and perfectly still") && c.includes("fish swim")), "dans la vidéo : les poissons nagent, l'écran reste noir");
+
+// ─── 🔌 la terrasse : le moteur vidéo introuvable à cette adresse (un 404 sans un mot) ───
+await appeler(lea, { action: "fabriquer", piece: "terrasse" });
+await appeler(lea, { action: "fabriquer", piece: "terrasse" });
+const t404 = await appeler(lea, { action: "fabriquer", piece: "terrasse" });
+ok(t404.statut === 502 && (t404.error ?? "").includes("sora-2 chez 127.0.0.1:54321 : 404") && (t404.error ?? "").includes("OPENAI_VIDEO_API_KEY") && !t404.etat?.videoEnCours, `🔌 la terrasse : le moteur vidéo introuvable — l'adresse et le moteur sont dits, et la clé qui ouvre les vidéos (${t404.error})`);
+ok((await toutIA()).includes("VIDEO-404 sora-2"), "la commande a bien été tentée");
 
 // ─── 📚 un souvenir qu'elle montre (son étagère, « Mon étagère ») : il se posera sur une étagère de ses pièces ───
 await deposer(`${LEA.id}/neutre-essai.png`, PNG, "image/png");
@@ -157,8 +166,8 @@ const mesPieces = async (cookie) => {
   return { statut: r.status, ...(await r.json().catch(() => ({}))) };
 };
 const mp = await mesPieces(lea);
-const [salon, tele] = mp.pieces ?? [];
-ok(mp.statut === 200 && mp.pieces?.length === 2 && salon?.piece === "salon" && salon.nom === "Le salon" && /^http/.test(salon.vue ?? "") && /^http/.test(salon.video ?? "") && salon.objets?.objets?.length === 3 && salon.vedettes?.length === 3, "🏠 ses pièces pour « Ma maison » : le salon (sa vue, sa vidéo, ses vedettes repérées)");
+const [salon, tele, terrasse] = mp.pieces ?? [];
+ok(mp.statut === 200 && mp.pieces?.length === 3 && terrasse?.piece === "terrasse" && !terrasse.video && salon?.piece === "salon" && salon.nom === "Le salon" && /^http/.test(salon.vue ?? "") && /^http/.test(salon.video ?? "") && salon.objets?.objets?.length === 3 && salon.vedettes?.length === 3, "🏠 ses pièces pour « Ma maison » : le salon (sa vue, sa vidéo, ses vedettes repérées)");
 ok(tele?.piece === "tele" && tele.nom === "La pièce télé" && !tele.video && tele.objets?.ecran?.l === 20, "la pièce télé : sa vue et ses vedettes (sa vidéo n'est pas encore faite)");
 ok(salon?.souvenirs?.length === 1 && salon.souvenirs[0].titre.includes("concert") && salon.souvenirs[0].emoji === "🎤" && !tele?.souvenirs, `📚 son souvenir est posé sur une étagère du salon (${JSON.stringify(salon?.souvenirs)})`);
 ok((await mesPieces(sam)).pieces?.length === 0, "Sam : aucune pièce");
