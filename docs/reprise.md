@@ -136,6 +136,22 @@ conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses si
   ouvre encore la visite d'avant (`tuto.tsx` : Créer, Découvrir, Autour, Mes mèmes, Proches, Moi), qui ne suit plus le
   menu à trois.
 
+## 0 sexies. « Ma maison », vivante (14 novembre 2026)
+
+Le propriétaire, sur la maquette des pièces en panorama : c'est « une jolie photo sans âme » — il faut que ça vive, que
+l'œil soit attiré par ce qui bouge ; sur le téléphone on ne voit qu'une tranche de la pièce ; l'univers est difficile
+d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou la montagne. Ses choix :
+
+- **La vue** : les deux — la **maison de poupée** (toute la maison en coupe, vivante, sa figurine qui va d'une pièce à
+  l'autre) pour l'ensemble, le **panorama** en entrant dans une pièce (regarder en tournant le téléphone, dézoomer, et
+  tout bouge). Maquette : `Chez toi en panorama` (artefact), version « Maison de poupée vivante ».
+- **L'accès** : un 4ᵉ onglet « Ma maison » — **fait** (9.0 quinquinquagies 🏠), avec « 🏠 Chez Léa » dans la conversation.
+- **Les ambiances** : Pablito en propose une d'après l'âge et la conversation (cosy, urbaine New York, néon et gaming,
+  pastel), trois vignettes pour changer — **à faire**, d'abord dans la page d'essais.
+- **Une autre session** construit l'étagère E5 (`docs/univers/etagere-accord.md`) puis les messages écrits
+  (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à
+  elle ; l'en-tête de la conversation, le menu et « Ma maison » sont à celle-ci.
+
 ## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
 
 Le propriétaire cherchait « l'utilité » de l'appli, ce qui fera revenir. Sa réponse, sur une maquette : **oui, on la

@@ -2995,6 +2995,26 @@ détail : `docs/univers/etagere.md`, lot E4.
   étagère 📌 ».
 - **La suite** : ces souvenirs sur les étagères de la maison en panorama, chacun avec son « i ».
 
+### 9.0 quinquinquagies 🏠 « Ma maison » a son onglet (14 novembre)
+
+Le propriétaire : « mon univers est difficilement accessible sur l'appli, ça mérite peut-être son onglet direct […] les
+gens doivent y accéder facilement pour découvrir notre univers — peut-être que dans le chat il peut y avoir un accès, et
+sur ma figurine ? » Son choix, parmi deux : un quatrième onglet.
+
+- **Le menu, à quatre** (l'interrupteur « Univers pour tous » allumé) : Découvrir · **Messages** (l'onglet « Chez moi »
+  d'avant, `#proches` : mes conversations, mon humeur et mes visites en pastilles, les demandes, les rappels du matin —
+  sans la fenêtre sur mon univers) · **Ma maison** (`#maison`, en gros bouton, ma figurine dedans) · Autour. L'appli
+  s'ouvre toujours sur « Messages » : la découverte des cadeaux et des visites s'y joue en arrivant.
+- **« Ma maison »** (`app/collection/ma-maison.tsx`) : mon univers en entier (son décor du moment, ma figurine chez
+  elle, les cadeaux posés, la saison), ⚙️ ses réglages, « 👀 Comme la voient mes visiteurs », « 🛠️ La retoucher · qui
+  peut entrer », **mon étagère** (elle quitte « Messages »). Sans univers : ce qui l'attend. Demain : la maison de poupée
+  et ses pièces, vivantes (la maquette du 14 novembre).
+- **Dans une conversation**, en haut : « 🏠 Chez Léa » (à la place de « 🏡 Son univers »), et sa figurine y mène aussi.
+- **Les réglages de mon univers** (`/univers/monde`) : « ← Ma maison », « 🏠 Retour à ma maison » ; son menu de demain :
+  Découvrir · Messages · Ma maison · Autour.
+- **Les essais** : `bascule-univers.mjs` (le menu à quatre, « Ma maison » de Sam et de Marc, la pastille d'humeur dans
+  « Messages », le bouquet posé dans « Ma maison », « 🏠 Chez Marc »), `univers-monde.mjs`, `etagere-mienne.mjs`.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

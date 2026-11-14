@@ -15,6 +15,11 @@
  * 🎁🚪 MES VISITES (le 13 novembre 2026, `visites-recues.tsx`) : sur ma fenêtre, un badge qui se dandine quand un cadeau
  * m'attend ou que quelqu'un a frappé (un toucher : la découverte) ; les cadeaux que j'ai posés chez moi, sur le sol de
  * mon univers, qui scintillent.
+ *
+ * 🏠 LE 14 NOVEMBRE 2026, « MA MAISON » A SON ONGLET (le propriétaire : « mon univers est difficilement accessible sur
+ * l'appli, ça mérite peut-être son onglet direct ») : le menu devient Découvrir · Messages · Ma maison · Autour. Mon
+ * univers part dans « Ma maison » (`ma-maison.tsx`, `FenetreSurMonUnivers` en entier) ; ici, « Messages » garde son
+ * en-tête sans la fenêtre (`sansFenetre`) : mon humeur, mes visites, en pastilles.
  */
 import { useEffect, useRef, useState } from "react";
 import type { EtatUnivers } from "@/lib/direct/univers-creation";
@@ -48,14 +53,17 @@ export function EnteteChezMoi({
   visites = null,
   nouveautes = [],
   onVisites,
+  sansFenetre = false,
 }: {
   actif: boolean;
   onHumeur: () => void;
   visites?: MesVisites | null;
   nouveautes?: ADecouvrir[];
   onVisites?: () => void;
+  /** 🏠 (« Messages », depuis que « Ma maison » a son onglet) : le titre, l'humeur et les visites, sans la fenêtre */
+  sansFenetre?: boolean;
 }) {
-  const etat = useMonUnivers(actif);
+  const etat = useMonUnivers(actif && !sansFenetre);
   const r = useRituel();
   const h = humeurDe(r?.humeur ?? null);
   // (ce que les figurines ont dit de mon humeur, et le mot de la fin de cette nuit : un point sur la pastille)
@@ -63,6 +71,30 @@ export function EnteteChezMoi({
   const pret = etat && etat !== "absent" && etat.etape === "decouverte" && etat.decor;
   const cadeaux = nouveautes.filter((x) => x.genre === "cadeau").length;
   const tocs = nouveautes.length - cadeaux;
+  if (sansFenetre)
+    return (
+      <header className="cm-tete">
+        <div className="cm-titre">
+          <h2>Messages</h2>
+        </div>
+        <div className="cm-rang">
+          <button type="button" className={`cm-humeur${h ? "" : " vide"}`} onClick={onHumeur} aria-label={h ? `Ton humeur : ${h.court}. La changer` : "Ton humeur du jour ?"}>
+            {h ? `${h.emoji} ${h.court}` : "☀️ Ton humeur ?"}
+            {nouveau > 0 && <i aria-label={`${nouveau} nouveau(x)`}>{nouveau}</i>}
+          </button>
+          {nouveautes.length > 0 && onVisites && (
+            <button type="button" className={`cm-badge-visites${cadeaux ? " cadeau" : ""}`} onClick={onVisites}>
+              {cadeaux ? `🎁 ${cadeaux > 1 ? `${cadeaux} cadeaux t’attendent` : "Un cadeau t’attend !"}` : `🚪 Toc toc ! ${tocs > 1 ? `${tocs} visites` : "Une visite"}`}
+            </button>
+          )}
+          {!nouveautes.length && onVisites && visites && (visites.passes.length > 0 || visites.poses.length > 0) && (
+            <button type="button" className="cm-puce-visites" onClick={onVisites}>
+              🚪 Mes visites
+            </button>
+          )}
+        </div>
+      </header>
+    );
   return (
     <header className="cm-tete">
       <div className="cm-titre">
@@ -113,9 +145,10 @@ export function EnteteChezMoi({
 
 /**
  * 🪟 Une fenêtre sur mon univers : la scène entière (2:3, comme `/univers/monde`), vue par une fenêtre plus basse,
- * centrée sur ma figurine. Un toucher : mon univers en grand (`/univers/monde`).
+ * centrée sur ma figurine. Un toucher : mon univers en grand (`/univers/monde`). `entiere` (« Ma maison ») : toute la
+ * scène, sans la couper.
  */
-function FenetreSurMonUnivers({ etat, souvenirs, children }: { etat: EtatUnivers; souvenirs?: SouvenirVu[]; children?: React.ReactNode }) {
+export function FenetreSurMonUnivers({ etat, souvenirs, entiere = false, children }: { etat: EtatUnivers; souvenirs?: SouvenirVu[]; entiere?: boolean; children?: React.ReactNode }) {
   const boite = useRef<HTMLDivElement>(null);
   const [largeur, setLargeur] = useState(0);
   useEffect(() => {
@@ -138,7 +171,7 @@ function FenetreSurMonUnivers({ etat, souvenirs, children }: { etat: EtatUnivers
     : { x: hote.x, bas: Math.max(hote.y, 0.9), hauteur: TAILLE_FIGURINE * Math.min(1.15, Math.max(0.9, hote.echelle)) };
   // (la fenêtre : 0,95 fois sa largeur ; la scène glisse pour que ma figurine soit au milieu)
   const hauteurScene = largeur * 1.5;
-  const hauteurFenetre = largeur * 0.95;
+  const hauteurFenetre = largeur * (entiere ? 1.5 : 0.95);
   const milieu = (Math.max(place.bas, place.hauteur + 0.02) - place.hauteur / 2) * hauteurScene;
   const decalage = Math.max(0, Math.min(hauteurScene - hauteurFenetre, milieu - hauteurFenetre / 2));
   return (
@@ -210,6 +243,9 @@ export const STYLES_CHEZ_MOI = `
 .cm-tete{display:flex;flex-direction:column;gap:12px;margin-bottom:6px}
 .cm-titre{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .cm-titre h2{margin:0;font-size:30px;font-weight:900;letter-spacing:-.02em;color:#FFF4E6}
+/* 🏠 « Messages » : l'humeur et les visites en pastilles, sans la fenêtre */
+.cm-rang{display:flex;flex-wrap:wrap;gap:8px}
+.cm-rang .cm-humeur,.cm-rang .cm-badge-visites,.cm-rang .cm-puce-visites{position:static;animation:none}
 .cm-reglages{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.08);font-size:22px;text-decoration:none}
 .cm-fenetre{position:relative;width:100%;overflow:hidden;border-radius:24px;background:#2b1a0c;box-shadow:0 14px 30px -14px rgba(0,0,0,.8);aspect-ratio:auto}
 .cm-attente{height:240px;animation:cm-lueur 1.4s ease-in-out infinite alternate}

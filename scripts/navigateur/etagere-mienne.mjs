@@ -1,8 +1,8 @@
-// 📚 L'ÉTAGÈRE, LOT E4 « MON ÉTAGÈRE », DANS LE NAVIGATEUR — `app/collection/etagere.tsx` sur « Chez moi » (une seconde
+// 📚 L'ÉTAGÈRE, LOT E4 « MON ÉTAGÈRE », DANS LE NAVIGATEUR — `app/collection/etagere.tsx` dans « Ma maison » (une seconde
 // app, l'interrupteur « Univers pour tous » allumé : `../seconde-app.mjs`), et la visite (`app/univers/chez/[cle]`),
 // contre le faux Supabase, jamais la vraie base.
 //
-// Sur « Chez moi », sous la fenêtre de son univers : la planche de Sam (« 📚 Mon étagère · 2 », ses pivoines et le resto
+// Dans « Ma maison » (son onglet depuis le 14 novembre), sous son univers : la planche de Sam (« 📚 Mon étagère · 2 », ses pivoines et le resto
 // promis, notés avec Léa). « ＋ » : il dépose « Mon concert » (une date, dans trois jours, 🎤), montré à ses visiteurs.
 // Sa page : « À venir » (« Ton concert », 👀), « Ce que j'aime » (« Tes pivoines ») ; la fiche des pivoines : « Noté sur
 // votre étagère, Léa et toi · IA », « 👀 Montrer à mes visiteurs » ; celle du resto : « il reste entre Léa et toi ».
@@ -111,9 +111,9 @@ const debordement = (page = p) => page.evaluate(() => document.documentElement.s
 
 try {
   // ═══ 📚 LA PLANCHE, SUR « CHEZ MOI » ═══
-  await p.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
+  await p.goto(`${ALLUME}/collection#maison`, { waitUntil: "networkidle" });
   await fermerPablito(p);
-  ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "2"), "sous la fenêtre de son univers : sa planche");
+  ok(await attendre(() => document.querySelector("#o-maison .et-chez")?.getAttribute("data-n") === "2"), "🏠 dans « Ma maison », sous son univers : sa planche");
   const planche = await texte(".et-chez-planche");
   ok(planche.includes("📚 Mon étagère · 2") && planche.includes("Rien que pour toi") && planche.includes("💐") && planche.includes("🍝"), `« ${planche} »`);
   ok((await debordement()) <= 0, "rien ne déborde");
@@ -196,8 +196,10 @@ try {
   // ═══ CHEZ SAM : LA CARTE, LA PLANCHE (il revient sur l'appli : elle se relit) ═══
   await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "4"), "il revient sur l'appli : sa planche se relit, elle passe à 4");
-  await p.goto(`${ALLUME}/collection?v=${Date.now()}#proches`, { waitUntil: "networkidle" });
+  await p.goto(`${ALLUME}/collection?v=${Date.now()}#maison`, { waitUntil: "networkidle" });
   ok(await attendre(() => document.querySelector(".et-chez")?.getAttribute("data-n") === "4"), "la planche de Sam passe à 4");
+  await p.locator(".mc-nav-proches").click();
+  await p.waitForSelector(`.cm-liste li[data-cle="${LEA.cle}"] .cm-ligne`, { timeout: 30000 });
   await p.locator(`.cm-liste li[data-cle="${LEA.cle}"] .cm-ligne`).click();
   await p.waitForSelector(".pr-plein .pr-scene", { timeout: 30000 });
   ok(await attendre(() => [...document.querySelectorAll(".pr-plein .pr-fil li.et-carte-fil")].some((x) => x.textContent.includes("✋ DÉPOSÉ SUR VOTRE ÉTAGÈRE") && x.textContent.includes("Ton gâteau au chocolat") && x.textContent.includes("Déposé par Léa"))), "dans leur conversation : « ✋ DÉPOSÉ SUR VOTRE ÉTAGÈRE », « Ton gâteau au chocolat », « Déposé par Léa »");
