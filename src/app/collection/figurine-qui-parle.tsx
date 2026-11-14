@@ -24,6 +24,9 @@
  * secondes) — le son est préparé au toucher même (un iPhone ne laisse jouer qu'un son lancé par un geste), puis joué
  * dès qu'il arrive. LA VOIX EST CHARGÉE EN ENTIER (une adresse `blob:` ou `data:`) : l'iPhone ne lit pas un son servi
  * sans « morceaux », et la mesure du volume demande un son de la même origine.
+ *
+ * `dire(duree)` (✍️ lot M1, les messages écrits) : elle « dit » un écrit SANS AUCUN SON (jamais de voix de synthèse) —
+ * la bouche bat en rythme, le temps passe pour les mots qui apparaissent, puis la fin, comme une voix.
  */
 import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from "react";
 import { SENTIMENTS, sentimentDe, type Expressions, type Sentiment } from "@/lib/direct/ma-figurine";
@@ -32,6 +35,11 @@ import { ressortDe, type RessortVu } from "@/lib/direct/ressort";
 export type FigurineHandle = {
   /** Joue ce son (une adresse, ou de quoi l'obtenir : il est préparé au toucher, joué dès qu'il arrive). */
   jouer: (son: string | (() => Promise<string>)) => Promise<boolean>;
+  /**
+   * ✍️ (lot M1) Elle « dit » un message écrit, SANS AUCUN SON : la bouche bat, le temps passe (`onTemps`) pendant
+   * `duree` secondes, puis `onFin` — comme une voix, sans voix.
+   */
+  dire: (duree: number) => void;
   arreter: () => void;
 };
 
@@ -77,6 +85,8 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
   const raf = useRef(0);
   const pic = useRef(0);
   const tour = useRef(0);
+  // ✍️ un message écrit qu'elle dit sans son : quand il a commencé, combien de temps il dure
+  const muet = useRef<{ debut: number; duree: number } | null>(null);
   // (la lecture continue d'une image à l'autre avec la fonction de son premier tour : le dernier `onTemps` est ici)
   const surTemps = useRef(onTemps);
   const surFin = useRef(onFin);
@@ -163,12 +173,16 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
     const a = new Audio();
     a.preload = "auto";
     a.onended = () => {
+      // (le silence qui ouvre le son, pendant qu'elle dit un écrit : ce n'est pas la fin de l'écrit)
+      if (muet.current) return;
       marquer("lecture", `fini ${a.duration.toFixed(1)} s`);
       setJoue(false);
       bouche(false);
       surFin.current?.();
     };
     a.onpause = () => {
+      // (la voix coupée pour dire un écrit : sa pause arrive après, elle ne doit pas le faire taire)
+      if (muet.current) return;
       setJoue(false);
       bouche(false);
     };
@@ -200,8 +214,50 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
     return local;
   }
 
+  /** ✍️ Une image de l'écrit dit sans son : la bouche en rythme (7 fois par seconde), le temps qui passe, la fin. */
+  function animerMuet() {
+    const x = muet.current;
+    if (!x) return;
+    const t = (performance.now() - x.debut) / 1000;
+    if (t >= x.duree) {
+      muet.current = null;
+      bouche(false);
+      surTemps.current?.(x.duree);
+      marquer("lecture", `fini ${x.duree.toFixed(1)} s`);
+      setJoue(false);
+      surFin.current?.();
+      return;
+    }
+    bouche(Math.floor(t * 7) % 2 === 0);
+    surTemps.current?.(t);
+    raf.current = requestAnimationFrame(animerMuet);
+  }
+
+  function dire(duree: number) {
+    setEnnui("");
+    tour.current++;
+    cancelAnimationFrame(raf.current);
+    muet.current = { debut: performance.now(), duree: Math.max(0.5, Number(duree) || 0) };
+    // AU TOUCHER MÊME, un silence d'un instant : le son reste ouvert pour une voix qui suivrait (« Tout rejouer », iPhone)
+    const a = lecteur();
+    void contexte.current?.resume().catch(() => undefined);
+    a.pause();
+    a.src = SILENCE;
+    void a.play().catch(() => undefined);
+    setCharge(false);
+    marquer("lecture", "muet");
+    setJoue(true);
+    raf.current = requestAnimationFrame(animerMuet);
+  }
+
   async function jouer(son: string | (() => Promise<string>)): Promise<boolean> {
     setEnnui("");
+    // (un écrit qu'elle disait : il s'arrête, sa boucle aussi)
+    if (muet.current) {
+      muet.current = null;
+      cancelAnimationFrame(raf.current);
+      bouche(false);
+    }
     const mon = ++tour.current;
     // AU TOUCHER MÊME : le lecteur et le son s'ouvrent (un iPhone ne joue qu'un son lancé par un geste)
     const a = lecteur();
@@ -237,10 +293,16 @@ export function FigurineQuiParle({ neutre, parle, expressions, src, etiquette = 
 
   const arreter = () => {
     tour.current++;
+    if (muet.current) {
+      muet.current = null;
+      cancelAnimationFrame(raf.current);
+      bouche(false);
+      setJoue(false);
+    }
     audio.current?.pause();
     setCharge(false);
   };
-  useImperativeHandle(ref, () => ({ jouer, arreter }));
+  useImperativeHandle(ref, () => ({ jouer, dire, arreter }));
 
   // ses poses : celle de tous les jours, et chaque expression faite (toutes posées d'avance : le changement est immédiat)
   const poses = [{ cle: "", n: neutre, p: parle }, ...SENTIMENTS.flatMap(({ cle }) => (expressions?.[cle] ? [{ cle, ...expressions[cle]! }] : []))];

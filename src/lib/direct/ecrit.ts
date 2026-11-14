@@ -84,15 +84,18 @@ const LIEN = /https?:\/\/[^\s<>"'«»]+/i;
  */
 export function lienDuTexte(t: string): { url: string; site: string } | null {
   const m = LIEN.exec(t);
-  if (!m) return null;
-  let brut = m[0];
-  // (la ponctuation de la phrase, pas du lien ; une parenthèse fermante seulement si elle n'en ferme pas une du lien)
+  return m ? lienBrut(sansPonctuation(m[0])) : null;
+}
+/** (la ponctuation de la phrase, pas du lien ; une parenthèse fermante seulement si elle n'en ferme pas une du lien) */
+function sansPonctuation(brut: string): string {
   for (;;) {
     const avant = brut;
     brut = brut.replace(/[.,;:!?…]+$/, "");
     if (brut.endsWith(")") && (brut.match(/\(/g)?.length ?? 0) < (brut.match(/\)/g)?.length ?? 0)) brut = brut.slice(0, -1);
-    if (brut === avant) break;
+    if (brut === avant) return brut;
   }
+}
+function lienBrut(brut: string): { url: string; site: string } | null {
   if (brut.length > APERCU.urlMax) return null;
   try {
     const u = new URL(brut);
@@ -102,6 +105,25 @@ export function lienDuTexte(t: string): { url: string; site: string } | null {
   } catch {
     return null;
   }
+}
+/**
+ * 🔗 LE TEXTE EN MORCEAUX, SES LIENS À PART (le fil les rend cliquables, lot M1) : `{ texte }`, ou `{ texte, url, site }`
+ * pour un lien (le texte tel qu'il a été tapé). Recollés, les morceaux redonnent le texte.
+ */
+export function morceauxDuTexte(t: string): { texte: string; url?: string; site?: string }[] {
+  const r: { texte: string; url?: string; site?: string }[] = [];
+  const re = new RegExp(LIEN.source, "gi");
+  let k = 0;
+  for (let m = re.exec(t); m; m = re.exec(t)) {
+    const brut = sansPonctuation(m[0]);
+    const l = lienBrut(brut);
+    if (!l) continue;
+    if (m.index > k) r.push({ texte: t.slice(k, m.index) });
+    r.push({ texte: brut, ...l });
+    k = m.index + brut.length;
+  }
+  if (k < t.length) r.push({ texte: t.slice(k) });
+  return r;
 }
 /** « youtube.com », « lemonde.fr » : le site, sans « www. ». */
 export const siteDe = (hote: string) => hote.toLowerCase().replace(/^www\./, "").slice(0, APERCU.siteMax);

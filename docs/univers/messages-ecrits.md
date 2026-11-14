@@ -1,7 +1,7 @@
 # Écrire, partager — les messages écrits, les liens, les photos et les vidéos (lots M1 à M3, cahier des charges, 14 novembre 2026)
 
-**Statut : validé par le propriétaire. M1 côté serveur construit le 14 novembre 2026** (`docs/figurines.md`, 9.0
-unsexagies ✍️) ; l'écran de M1, puis M2 et M3, restent à faire.
+**Statut : validé par le propriétaire. M1 construit le 14 novembre 2026** : le serveur (`docs/figurines.md`, 9.0
+unsexagies ✍️), puis l'écran (9.0 duosexagies). M2 et M3 restent à faire.
 
 ## 1. Ce que le propriétaire a demandé
 

@@ -10,7 +10,7 @@
 // frappe à sa porte : en arrivant chez lui, Marc les découvre — le paquet qui se dandine, qu'il ouvre (l'objet, le mot),
 // « ✨ Le poser chez moi » ; la porte qui tremble, qu'il ouvre (« C'est Léa ! ») ; le bouquet posé dans sa fenêtre ; ce
 // n'est plus nouveau ensuite ; « Mes visites » : le bilan ; la conversation range ce qui s'est passé (visite, cadeau),
-// 🎭 et 🎁 à côté de « Lui répondre » ; son mème, fait pour Sam, part dans leur conversation, Sam le regarde. Freiné (l'app de la CI,
+// 🎭 et 🎁 dans le « ＋ » de la barre (avec 🪧, lot M1) ; son mème, fait pour Sam, part dans leur conversation, Sam le regarde. Freiné (l'app de la CI,
 // `CLIKME_UNIVERS_POUR_TOUS=0`) : l'appli d'avant. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -284,11 +284,19 @@ await m.locator(`.cm-liste li[data-cle="${cleProfil(SAM.id)}"] .cm-ligne`).click
 await m.waitForSelector(".pr-plein .pr-evt", { timeout: 15000 }).catch(() => null);
 const evts = (await m.locator(".pr-plein .pr-evt").allInnerTexts()).join(" | ");
 ok(evts.includes("Sam a frappé à ta porte") && evts.includes("Un bouquet, de Sam : posé chez toi"), `📐 la conversation avec Sam : sa visite, son bouquet posé chez Marc (${evts})`);
-ok((await m.locator(".pr-plein .pr-geste").count()) === 2 && (await m.locator(".pr-plein .pr-son-univers").count()) === 0, "en bas : 🎭 Mème et 🎁 Cadeau ; Sam n'a pas d'univers : pas de « Son univers »");
-await m.locator(".pr-plein .pr-geste", { hasText: "Cadeau" }).click();
+// (lot M1 : 🎭 et 🎁 sont dans le « ＋ » de la barre, avec 🪧)
+const plusDe = async (t) => {
+  await t.locator(".pr-plein .pr-ecrire-plus").click();
+  await t.waitForSelector(".pr-feuille-plus.ouverte .pr-plus-choix", { timeout: 10000 }).catch(() => null);
+  return t.locator(".pr-feuille-plus .pr-plus-choix").evaluateAll((b) => b.map((x) => x.dataset.plus));
+};
+const choixPlus = await plusDe(m);
+ok(choixPlus.join("|") === "meme|panneau|cadeau" && (await m.locator(".pr-plein .pr-son-univers").count()) === 0, `« ＋ » : 🎭 un mème, 🪧 un panneau, 🎁 un cadeau ; Sam n'a pas d'univers : pas de « Son univers » (${choixPlus.join(" · ")})`);
+await m.locator('.pr-feuille-plus .pr-plus-choix[data-plus="cadeau"]').click();
 ok((await texte(m, ".pr-plein .pr-info")).includes("n’a pas encore d’univers"), "🎁 : Sam n'a pas encore d'univers où poser un cadeau");
 await m.screenshot({ path: `${D}/bascule-3g-conversation.png` });
-await m.locator(".pr-plein .pr-geste", { hasText: "Mème" }).click();
+await plusDe(m);
+await m.locator('.pr-feuille-plus .pr-plus-choix[data-plus="meme"]').click();
 await m.waitForFunction(() => location.hash === "#creer" && !document.querySelector(".pr-plein"), null, { timeout: 10000, polling: 200 }).catch(() => null);
 ok(new URL(m.url()).hash === "#creer" && (await m.locator(".pr-plein").count()) === 0, "🎭 Mème : le studio");
 
@@ -324,7 +332,8 @@ await p.screenshot({ path: `${D}/bascule-3j-meme-recu.png` });
 await p.locator(".pr-regarde-fermer").click();
 await p.waitForSelector(".pr-plein .pr-son-univers", { timeout: 15000 }).catch(() => null);
 ok((await p.locator(".pr-plein .pr-son-univers").getAttribute("href").catch(() => "")) === `/univers/chez/${cleProfil(MARC.id)}` && (await texte(p, ".pr-plein .pr-son-univers")) === "🏠 Chez Marc" && (await p.locator(`.pr-plein a.pr-avatar[href="/univers/chez/${cleProfil(MARC.id)}"]`).count()) === 1, "chez Sam, la conversation avec Marc : « 🏠 Chez Marc », et sa figurine y mène aussi");
-await p.locator(".pr-plein .pr-geste", { hasText: "Cadeau" }).click();
+await plusDe(p);
+await p.locator('.pr-feuille-plus .pr-plus-choix[data-plus="cadeau"]').click();
 await p.waitForSelector(".pr-feuille-cadeau .pr-objets button", { timeout: 10000 }).catch(() => null);
 await p.locator('.pr-feuille-cadeau .pr-objets button[aria-label="Un livre"]').click();
 await p.locator(".pr-feuille-cadeau .pr-bouton.grand").click();

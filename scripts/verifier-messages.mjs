@@ -66,6 +66,15 @@ ok(E.lienDuTexte("(voir https://fr.wikipedia.org/wiki/Dax_(Landes))")?.url === "
 ok(E.lienDuTexte("http://lemonde.fr/article?x=1&y=2, à lire")?.url === "http://lemonde.fr/article?x=1&y=2", "la virgule de la phrase s'en va");
 ok(E.lienDuTexte("pas de lien ici") === null && E.lienDuTexte("ftp://serveur.fr/x") === null && E.lienDuTexte("javascript:alert(1)") === null, "pas de lien, ou ni http ni https : rien");
 ok(E.lienDuTexte("«https://site.fr»")?.url === "https://site.fr/", "les guillemets français ne font pas partie du lien");
+// 🔗 (l'écran de M1) le texte en morceaux : ses liens à part, recollés ils redonnent le texte
+const texteMorceaux = "Regarde https://youtu.be/abc. Et (http://lemonde.fr/a) aussi, puis ftp://x.fr !";
+const morceaux = E.morceauxDuTexte(texteMorceaux);
+ok(
+  morceaux.map((x) => x.texte).join("") === texteMorceaux &&
+    morceaux.filter((x) => x.url).map((x) => `${x.texte}>${x.site}`).join(" | ") === "https://youtu.be/abc>youtu.be | http://lemonde.fr/a>lemonde.fr",
+  `le texte en morceaux : deux liens (sans le point ni la parenthèse de la phrase, pas le ftp), recollés le texte entier (${morceaux.map((x) => (x.url ? `[${x.texte}]` : x.texte)).join("")})`,
+);
+ok(E.morceauxDuTexte("").length === 0 && E.morceauxDuTexte("Pas de lien").length === 1 && !E.morceauxDuTexte("Pas de lien")[0].url, "sans lien : un seul morceau, ou aucun");
 
 // ═══ LES ADRESSES QUE LE SERVEUR REFUSE D'ALLER LIRE ═══
 const refusee = (u, pourquoi) => ok(E.urlLisible(u) === null, `refusée : ${pourquoi} (${u})`);

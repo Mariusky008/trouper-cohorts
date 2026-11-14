@@ -10,7 +10,8 @@ import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { parcoursPremierMeme, statsMemes, type EvenementMeme } from "@/lib/direct/ma-figurine-serveur";
 import { statsReactions } from "@/lib/direct/mes-reactions-serveur";
 import { etatNotifications } from "@/lib/direct/appli-collection-serveur";
-import { statsTalkie } from "@/lib/direct/talkie-serveur";
+import { statsMessages, statsTalkie } from "@/lib/direct/talkie-serveur";
+import { STATS_MESSAGES_VIDES, type StatsJourMessages } from "@/lib/direct/ecrit";
 import { statsEtagere } from "@/lib/direct/etagere-serveur";
 import { GAGS, REACTIONS } from "@/lib/direct/mes-reactions";
 
@@ -39,7 +40,28 @@ const carte: CSSProperties = { padding: 14, borderRadius: 12, background: "#f6f6
 export default async function PageMemes() {
   if (!(await isCurrentUserAdmin())) redirect("/admin");
   const supabase = createAdminClient();
-  const [s, p, rx, nf, tk, et] = await Promise.all([statsMemes(supabase), parcoursPremierMeme(supabase), statsReactions(supabase), etatNotifications(supabase), statsTalkie(supabase), statsEtagere(supabase).catch(() => [])]);
+  const [s, p, rx, nf, tk, et, ms] = await Promise.all([
+    statsMemes(supabase),
+    parcoursPremierMeme(supabase),
+    statsReactions(supabase),
+    etatNotifications(supabase),
+    statsTalkie(supabase),
+    statsEtagere(supabase).catch(() => []),
+    statsMessages(supabase).catch(() => []),
+  ]);
+  // ✍️ les messages (lot M1, `docs/univers/messages-ecrits.md`, section 8) : sur 14 jours, et les vocaux semaine par semaine
+  const sommeMessages = (l: typeof ms) =>
+    l.reduce(
+      (a, x) => {
+        for (const k of Object.keys(a) as (keyof StatsJourMessages)[]) a[k] += Number(x.stats[k]) || 0;
+        return a;
+      },
+      { ...STATS_MESSAGES_VIDES },
+    );
+  const msTout = sommeMessages(ms);
+  const msSemaine = sommeMessages(ms.slice(0, 7));
+  const msAvant = sommeMessages(ms.slice(7));
+  const vocauxEnBaisse = msAvant.vocaux >= 10 && msSemaine.vocaux < msAvant.vocaux * 0.7;
   // 📚 l'étagère (lot E3) : ce qu'on mesure, sur 14 jours
   const etSomme = et.reduce((a, x) => {
     for (const k of Object.keys(x.stats) as (keyof typeof x.stats)[]) a[k] = (a[k] ?? 0) + x.stats[k];
@@ -182,6 +204,33 @@ export default async function PageMemes() {
                   <li key={a}>{a}</li>
                 ))}
             </ul>
+          )}
+          {/* ✍️ LES MESSAGES (lot M1, `docs/univers/messages-ecrits.md`, section 8) : ce que les gens préfèrent ; si les aperçus marchent ; si la voix tient */}
+          <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>✍️ Les messages, sur 14 jours</h2>
+          <p style={{ margin: "0 0 10px", color: "#555" }}>
+            Écrire s’ajoute à la voix, ou la remplace ? À regarder de près : si les vocaux s’effondrent quand l’écrit arrive. La voix et la figurine qui parle font ClikMe.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }} data-messages="">
+            {[
+              { n: "Messages écrits", v: String(msTout.ecrits) },
+              { n: "Messages vocaux", v: String(msTout.vocaux) },
+              { n: "Part des écrits", v: pc(msTout.ecrits, msTout.ecrits + msTout.vocaux) },
+              { n: "Vocaux : 7 derniers jours / 7 d’avant", v: `${msSemaine.vocaux} / ${msAvant.vocaux}` },
+              { n: "Personnes qui écrivent, par jour", v: (msTout.ecrivains / Math.max(1, ms.length)).toFixed(1) },
+              { n: "Liens envoyés", v: String(msTout.liens) },
+              { n: "… avec un aperçu", v: pc(msTout.apercus, msTout.apercus + msTout.sansApercu) },
+              { n: "Messages effacés", v: String(msTout.effaces) },
+            ].map((x) => (
+              <div key={x.n} style={carte}>
+                <small style={{ color: "#666" }}>{x.n}</small>
+                <b style={{ fontSize: 22 }}>{x.v}</b>
+              </div>
+            ))}
+          </div>
+          {vocauxEnBaisse && (
+            <p style={{ margin: "10px 0 0", padding: "10px 14px", borderRadius: 12, background: "#fff4e5", color: "#7a4a12" }} data-messages-alerte="">
+              Les vocaux baissent : {msSemaine.vocaux} ces 7 derniers jours, contre {msAvant.vocaux} les 7 d’avant. Il faudra peut-être remettre la voix en avant.
+            </p>
           )}
           {/* 🔔 LE MÈME DU JOUR À 11 H 30 (le lot 3) : combien l'ont demandé, et ce qu'a donné le dernier envoi */}
           <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>🔔 Le mème du jour à 11 h 30</h2>

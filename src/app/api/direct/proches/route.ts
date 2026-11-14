@@ -5,7 +5,8 @@
 //                                          sa clé (son lien : `/collection?proche=<clé>`)
 // GET ?presence=1                       → { presence } (« Moi »)
 // GET ?moi=1                            → { moi } : sa figurine, de quoi la faire parler (« Envoyer par WhatsApp »)
-// GET ?fil=<clé>                        → { fil } : sa conversation avec ce proche (ils se sont ajoutés tous les deux)
+// GET ?fil=<clé>                        → { fil } : sa conversation avec ce proche (ils se sont ajoutés tous les deux) ;
+//                                          `ecrire` : ✍️ on peut lui écrire (faux quand le frein `CLIKME_ECRIT=0` est tiré)
 // GET ?vivant=<clé>                     → { vivant } : 🎭 la conversation vivante (lot R4a, `lib/direct/vivant.ts`) — s'il
 //                                          prépare un message, leurs panneaux et réactions, l'heure du dernier message
 // POST { action: "la" }                 → { nonLus } : 🟢 ClikMe est ouvert (toutes les minutes, page visible)
@@ -54,7 +55,7 @@ import {
   signalerParole,
 } from "@/lib/direct/talkie-serveur";
 import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
-import { apresEcrit, ecrireMessage, effacerMessage } from "@/lib/direct/ecrit-serveur";
+import { apresEcrit, ecritOuvert, ecrireMessage, effacerMessage } from "@/lib/direct/ecrit-serveur";
 import { effacerEtagere, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
   if (fil) {
     const r = await filAvec(supabase, moi, fil);
     if (!r.fil) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
-    return NextResponse.json({ ok: true, fil: r.fil }, { headers: sansCache });
+    return NextResponse.json({ ok: true, fil: { ...r.fil, ecrire: ecritOuvert() } }, { headers: sansCache });
   }
   const [vivants, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);
   // 📚 la ligne de chacun, ce que l'étagère en dit (lot E2 : un rappel du jour, un souvenir pas encore vu, une relance)

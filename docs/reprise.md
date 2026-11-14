@@ -204,10 +204,11 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   premier qui répond ; sans réponse en 48 heures, rien n'est rangé. Le cahier : `docs/univers/etagere-accord.md`.
 - **Écrire, partager** (lots M1 à M3) : les messages écrits et les liens, puis les photos, puis les vidéos (30 s), dans
   la conversation. Un message écrit est dit par la figurine, sans voix ; les photos passent par la modération avant de
-  partir. Le cahier : `docs/univers/messages-ecrits.md`. **M1, le serveur, est construit** (`docs/figurines.md`, 9.0
-  unsexagies ✍️) : `ecrit.ts`, `ecrit-serveur.ts`, `POST /api/direct/proches` (`ecrire`, `effacer`). **Reste : l'écran
-  de M1** (la barre « Écrire… » à la place du gros bouton, la bulle sans son, l'aperçu dans le fil, « Effacer »), puis M2
-  et M3.
+  partir. Le cahier : `docs/univers/messages-ecrits.md`. **M1 est construit** : le serveur (`docs/figurines.md`, 9.0
+  unsexagies ✍️ : `ecrit.ts`, `ecrit-serveur.ts`, `POST /api/direct/proches` `ecrire`, `effacer`) et l'écran (9.0
+  duosexagies : `app/collection/ecrire.tsx` — la barre « Écrire… », la bulle sans son, l'aperçu dans le fil,
+  « Effacer »). **Reste** : M2 (les photos) et M3 (les vidéos) ; « 🎵 Le ranger dans mon univers ? » ; la page de
+  confidentialité (au propriétaire).
 - **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
   panorama — une seule session à la fois sur ces fichiers.
 
