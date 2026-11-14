@@ -3047,6 +3047,33 @@ panoramas), sur SON univers — `lib/direct/pieces-vivantes-serveur.ts`, `api/ad
 - **L'essai** : `essai-pieces-vivantes-route.mjs` (le faux moteur vidéo de `faux-supabase.mjs` : la commande, « en
   train », faite ; l'image reçue exactement à 720 × 1280).
 
+### 9.0 septquinquagies 🎨 Les ambiances de son univers — l'essai (14 novembre)
+
+Le propriétaire : « il faut des univers beaucoup plus funky et jeunes pour les ados, parce qu'ils ne vont pas vouloir
+d'un décor à la mer ou à la montagne, mais peut-être à New York, et l'intérieur doit être super cool et trendy :
+totalement différent de ce qu'on a fait, qui est davantage pour les plus de 30 ans. » Son choix, parmi trois : **Pablito
+propose** une ambiance d'après ce qu'on lui a raconté, puis trois vignettes pour changer ; d'abord dans la page d'essais
+(`/admin/humain/univers-essais`, « 🎨 Les ambiances de ton univers ») — `lib/direct/ambiances.ts`,
+`lib/direct/ambiances-serveur.ts`, `api/admin/direct/ambiances`, `univers-essais/ambiances.tsx` :
+
+- **Quatre ambiances** : 🛋️ cosy (le style d'aujourd'hui, « Film, chaleureux » : c'est son décor actuel, rien à
+  refaire), 🗽 urbaine (un loft à New York : la brique, les grandes fenêtres sur Manhattan, l'escalier de secours, le
+  street-art, le mur de sneakers, les vinyles, le skate), 🎮 néon et gaming (les néons sans mots, les LED violettes,
+  roses et cyan, le setup, la borne d'arcade), 🌸 pastel, tout doux (rose, lilas, menthe, les lampes-nuages, les
+  peluches). Le même monde y est **réinterprété** : ses éléments et ce qu'ils veulent dire sont gardés, le lieu, la vue,
+  la lumière et les couleurs suivent l'ambiance (`consigneDecorDuMonde(fiche, ambiance)`).
+- **Ce que Pablito propose** (`proposerAmbiance`) : les mots de sa conversation (le lieu imaginé, ses éléments et leurs
+  raisons), cherchés entiers dans un lexique par ambiance (« Minecraft », « console », « néon » ; « skate », « rap »,
+  « New York » ; « kawaii », « peluche »…) ; la plus citée l'emporte, et Pablito le dit en reprenant SON élément : « Tu
+  m'as parlé d'une console branchée sur un grand écran : je te vois bien dans une pièce pleine de néons 🎮 ». Rien
+  trouvé : l'âge que montre sa figurine (ses traits, décrits sur son selfie) — jeune, le loft à New York ; sinon, cosy.
+  Jamais d'accord au masculin ou au féminin (« J'ai imaginé pour toi… »).
+- **L'écran** : Pablito et sa phrase ; son ambiance en grand, sa figurine assise devant ; les trois autres en vignettes
+  (une touche : elle passe en grand) ; « Faire les 3 qui manquent » (une image par ambiance, une à deux minutes, environ
+  0,25 $), « Refaire ». Rangé dans `<h>/ambiances/<ambiance>.webp` ; un verrou.
+- **L'essai** : `essai-ambiances-route.mjs` (Léa et sa console : néon ; Tom, l'air d'un ado : New York ; Zoé et son
+  étagère de livres : cosy — « tag » n'est pas dans « étagère »).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
