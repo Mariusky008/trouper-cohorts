@@ -92,8 +92,8 @@ export default async function PageFigurinesClients() {
             Messages signalés ({duFil.length})
           </h2>
           <p style={{ margin: "0 0 10px", color: "#555" }}>
-            Un vocal, un écrit ou une photo qu’un proche a signalé : il a disparu chez lui. « Remettre » : il revient chez lui. « Effacer pour les
-            deux » : il disparaît de la conversation, avec sa voix ou sa photo.
+            Un vocal, un écrit, une photo ou une vidéo qu’un proche a signalé : il a disparu chez lui. « Remettre » : il revient chez lui.
+            « Effacer pour les deux » : il disparaît de la conversation, avec sa voix, sa photo ou sa vidéo.
           </p>
           {duFil.length === 0 && <p style={{ color: "#555" }}>Aucun.</p>}
           <div style={{ display: "grid", gap: 10 }}>

@@ -225,6 +225,11 @@ export default async function PageMemes() {
               { n: "… refusées par la modération", v: `${msTout.photosRefusees} (${pc(msTout.photosRefusees, msTout.photos + msTout.photosRefusees)})` },
               { n: "… pas vérifiées (service injoignable)", v: String(msTout.photosNonVerifiees) },
               { n: "Ce que pèsent les photos", v: `${(msTout.photosKo / 1024).toFixed(1)} Mo` },
+              // 🎬 (lot M3) les vidéos : le poste qui coûte
+              { n: "Vidéos envoyées", v: String(msTout.videos) },
+              { n: "… refusées par la modération", v: `${msTout.videosRefusees} (${pc(msTout.videosRefusees, msTout.videos + msTout.videosRefusees)})` },
+              { n: "… pas vérifiées (service injoignable)", v: String(msTout.videosNonVerifiees) },
+              { n: "Ce que pèsent les vidéos", v: `${(msTout.videosKo / 1024).toFixed(1)} Mo` },
             ].map((x) => (
               <div key={x.n} style={carte}>
                 <small style={{ color: "#666" }}>{x.n}</small>

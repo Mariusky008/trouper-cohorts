@@ -726,7 +726,9 @@ qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/un
   modération avant de livrer, effacer, signaler, la modération par l'équipe). **M2, l'écran : construit** (9.0
   quinquesexagies : « ＋ » → 📷 Photo, la réduction dans le téléphone, la vignette, le plein écran, la figurine qui la
   montre). Reste de M2 : « 🖼️ La mettre dans mon univers ? » (la session de l'univers).
-- M3 (les vidéos) : pas encore développé.
+- **M3, le serveur : construit** (9.0 sexsexagies 🎬 — le dépôt signé, la durée lue dans le fichier, trois images
+  contrôlées avant de livrer, la vignette, effacer, signaler, la mesure de ce qu'elles pèsent). M3, l'écran : pas
+  encore développé.
 
 ### Plus tard (préparé, pas construit)
 

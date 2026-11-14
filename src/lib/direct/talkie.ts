@@ -21,6 +21,7 @@
 import { sentimentValide, type Expressions, type Sentiment } from "./ma-figurine";
 import { texteLuDeLEcrit } from "./ecrit";
 import { texteLuDeLaPhoto } from "./photo";
+import { texteLuDeLaVideo } from "./video";
 
 /** Un message : 20 secondes au plus — une petite scène, pas un monologue. */
 export const PAROLE_MAX_S = 20;
@@ -45,8 +46,12 @@ export type RepliqueProposee = { de: number; a: number; texte: string; propositi
  * le serveur l'a préparé (l'image, recopiée chez nous) — `connu` : un site de musique ou de vidéo connu (`sorte`).
  * 📷 (lot M2, `photo.ts`) `genre: "photo"` : une photo — pas de voix ; `photo` (son adresse signée, ses dimensions) ;
  * `texte` : sa légende ; une seule réplique (la légende, dans la tête choisie), le temps que la figurine la montre.
+ * 🎬 (lot M3, `video.ts`) `genre: "video"` : une vidéo — `video` (ses adresses signées, sa vignette, sa durée) ; comme une
+ * photo pour le reste (la figurine montre sa vignette ; un toucher la lit en grand, avec son son).
  */
-export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage };
+export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage };
+/** 🎬 (lot M3) la vidéo d'un message : son adresse signée et celle de sa vignette (une heure), ses dimensions, sa durée (s). */
+export type VideoDuMessage = { url: string; vignette: string; l: number; h: number; duree: number };
 /** 📷 (lot M2) la photo d'un message : son adresse signée (une heure), ses dimensions. */
 export type PhotoDuMessage = { url: string; l: number; h: number };
 export type LienDuMessage = { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" };
@@ -72,7 +77,7 @@ export type ProcheVivant = {
   nonLus: number;
   lien: LienProche;
   /** son dernier message (`meme` : c'était un mème, lot 4 ; `ecrit` : un message écrit, lot M1) */
-  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean; ecrit?: boolean; photo?: boolean };
+  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean; ecrit?: boolean; photo?: boolean; video?: boolean };
   venu?: boolean;
   humeur?: Sentiment;
   imageHumeur?: string;
@@ -95,9 +100,10 @@ export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi;
 export type MemeFil = { id: string; moi: boolean; le: string; image: string; texte?: string; video?: string; lien: string; nouveau?: boolean };
 /**
  * (`ecrire` : ✍️ lot M1 — on peut lui écrire ; `false` quand le frein `CLIKME_ECRIT=0` est tiré : le micro seulement ;
- * `photos` : 📷 lot M2 — on peut lui envoyer une photo ; `false` : `CLIKME_PHOTOS=0`)
+ * `photos` : 📷 lot M2 — on peut lui envoyer une photo ; `false` : `CLIKME_PHOTOS=0` ; `videos` : 🎬 lot M3, de même avec
+ * `CLIKME_VIDEOS=0`)
  */
-export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[]; ecrire?: boolean; photos?: boolean };
+export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[]; ecrire?: boolean; photos?: boolean; videos?: boolean };
 
 export const cleValide = (x: unknown): string | null => (typeof x === "string" && /^[a-f0-9]{16}$/.test(x) ? x : null);
 export const texteDuMessage = (r: readonly Replique[]) =>
@@ -114,6 +120,8 @@ export function texteLuDuMessage(f: { genre?: unknown; texte?: unknown; lien?: {
   if (f.genre === "ecrit") return texteLuDeLEcrit(f);
   // 📷 (lot M2) d'une photo, sa légende seulement : jamais l'image
   if (f.genre === "photo") return texteLuDeLaPhoto(f);
+  // 🎬 (lot M3) d'une vidéo, sa légende seulement : jamais la vidéo
+  if (f.genre === "video") return texteLuDeLaVideo(f);
   return texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
 }
 

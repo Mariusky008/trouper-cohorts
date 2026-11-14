@@ -131,13 +131,14 @@ export function MessageDuFilSignale({ m, le }: { m: MessageDuFil; le: string }) 
     setEnvoi(false);
     router.refresh();
   }
-  const quoi = m.genre === "photo" ? "📷 Une photo" : m.genre === "ecrit" ? "✍️ Un écrit" : "🎙️ Un vocal";
+  const quoi = m.genre === "photo" ? "📷 Une photo" : m.genre === "video" ? "🎬 Une vidéo" : m.genre === "ecrit" ? "✍️ Un écrit" : "🎙️ Un vocal";
   return (
     <div className="signale-fil" data-message={m.id} style={{ ...carte, alignItems: "flex-start" }}>
       {m.photo && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={m.photo} alt="La photo signalée" style={{ width: 160, maxHeight: 220, objectFit: "contain", borderRadius: 10, background: "#111" }} />
       )}
+      {m.video && <video src={m.video} controls playsInline preload="metadata" style={{ width: 180, maxHeight: 240, borderRadius: 10, background: "#000" }} />}
       <div style={{ display: "grid", gap: 6, minWidth: 0, flex: 1 }}>
         <span>
           <b>{quoi}</b> de {m.de} <span style={{ color: "#666", fontSize: 13 }}>· signalé par {m.par} le {le}</span>
