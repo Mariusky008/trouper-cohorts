@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { EssaisUnivers } from "./essais";
 import { PablitoAuNouveauStyle } from "./pablito";
-import { SalonEnPanorama } from "./salon";
+import { MaisonEnPanorama } from "./salon";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,7 +27,7 @@ export default async function PageEssaisUnivers() {
         page se met à jour toute seule.
       </p>
       <PablitoAuNouveauStyle />
-      <SalonEnPanorama />
+      <MaisonEnPanorama />
       <EssaisUnivers />
     </main>
   );
