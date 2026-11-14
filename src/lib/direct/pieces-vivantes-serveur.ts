@@ -29,7 +29,8 @@ import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
 import { depotDans, signer, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
 import { PIECES, type Piece } from "./pieces-serveur";
-import type { Cadre, ObjetsVus, PieceVue } from "./pieces-vivantes";
+import { SOUVENIRS_PAR_ETAGERE, SOUVENIRS_PAR_PIECE, type Cadre, type ObjetsVus, type PieceVue, type SouvenirPose } from "./pieces-vivantes";
+import { etagereVitrine } from "./etagere-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -129,7 +130,8 @@ export const consigneObjets = (p: Piece) =>
     "Locate each of these objects as a box, in percent of the image width and height (x, y: its top-left corner; l, h: its width and height; numbers from 0 to 100):",
     ...PLANS_ENTIERS[p].vedettes.map((v) => `- ${v.cle} : ${v.en.split(";")[0]}`),
     'Also locate "place": the empty space in the middle of the floor (where an armchair will stand)' + (PLANS_ENTIERS[p].vedettes.some((v) => v.cle === "tele") ? ', and "ecran": the SCREEN of the television only.' : "."),
-    'Answer in JSON only: {"objets":[{"cle":"…","x":0,"y":0,"l":0,"h":0}],"place":{"x":0,"y":0,"l":0,"h":0},"ecran":{"x":0,"y":0,"l":0,"h":0} or null}. Leave out an object that is not in the image.',
+    'And "etageres": up to three wall shelves, each one the box of the free space just ABOVE its board (where small objects could stand), the clearest first.',
+    'Answer in JSON only: {"objets":[{"cle":"…","x":0,"y":0,"l":0,"h":0}],"place":{"x":0,"y":0,"l":0,"h":0},"ecran":{"x":0,"y":0,"l":0,"h":0} or null,"etageres":[{"x":0,"y":0,"l":0,"h":0}]}. Leave out an object that is not in the image.',
   ].join("\n");
 
 export type { Cadre, ObjetsVus };
@@ -151,7 +153,31 @@ export function objetsValides(p: Piece, v: unknown): ObjetsVus {
     const c = cadreValide(x);
     if (c && connues.has(k) && !objets.some((y) => y.cle === k)) objets.push({ cle: k, ...c });
   }
-  return { objets, place: cadreValide(o.place), ecran: connues.has("tele") ? cadreValide(o.ecran) : null };
+  // (📚 ses étagères : trois au plus, assez larges pour y poser quelque chose)
+  const etageres = (Array.isArray(o.etageres) ? o.etageres : [])
+    .map(cadreValide)
+    .filter((c): c is Cadre => Boolean(c && c.l >= 8))
+    .slice(0, 3);
+  return { objets, place: cadreValide(o.place), ecran: connues.has("tele") ? cadreValide(o.ecran) : null, ...(etageres.length ? { etageres } : {}) };
+}
+
+/** 📚 Ses souvenirs (ce qu'il a choisi de montrer de son étagère), répartis entre ses pièces qui ont des étagères. */
+export function repartirSouvenirs(pieces: { etageres: number }[], souvenirs: SouvenirPose[]): SouvenirPose[][] {
+  const parPiece: SouvenirPose[][] = pieces.map(() => []);
+  const places = pieces.map((p) => Math.min(SOUVENIRS_PAR_PIECE, p.etageres * SOUVENIRS_PAR_ETAGERE));
+  let k = 0;
+  for (const s of souvenirs) {
+    // (une pièce après l'autre, chacune à son tour, tant qu'il reste de la place)
+    let tour = 0;
+    while (tour < pieces.length && parPiece[k % pieces.length].length >= places[k % pieces.length]) {
+      k++;
+      tour++;
+    }
+    if (tour === pieces.length) break;
+    parPiece[k % pieces.length].push(s);
+    k++;
+  }
+  return parPiece;
 }
 
 // ─── où il en est ──────────────────────────────────────────────────────────────────────────────────
@@ -344,7 +370,20 @@ export async function mesPieces(supabase: Supabase, h: string, o: { pourSesVisit
       return { piece: p, nom: NOMS_PIECES[p], vue, ...(video ? { video } : {}), ...(objets ? { objets } : {}), vedettes };
     }),
   );
-  return pieces.filter((x): x is PieceDeMaMaison => Boolean(x));
+  const pretes = pieces.filter((x): x is PieceDeMaMaison => Boolean(x));
+  // 📚 ses souvenirs (ce qu'il montre de son étagère), posés sur les étagères de ses pièces
+  const avecEtageres = pretes.filter((x) => x.objets?.etageres?.length);
+  if (!avecEtageres.length) return pretes;
+  const vitrine = await etagereVitrine(supabase, h).catch(() => []);
+  const souvenirs: SouvenirPose[] = vitrine.map((v) => ({ id: v.id, emoji: v.emoji, titre: v.titre, ...(v.detail ? { detail: v.detail } : {}) }));
+  const parts = repartirSouvenirs(
+    avecEtageres.map((x) => ({ etageres: x.objets!.etageres!.length })),
+    souvenirs,
+  );
+  avecEtageres.forEach((x, k) => {
+    if (parts[k].length) x.souvenirs = parts[k];
+  });
+  return pretes;
 }
 
 /** ↩️ Refaire une étape : elle, et ce qui en dépend (l'image : tout ; les objets : eux seuls ; la vidéo : elle). */

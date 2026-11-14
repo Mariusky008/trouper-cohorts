@@ -3114,9 +3114,16 @@ entière à l'écran, deux ou trois gros objets animés, on y entre.
 - **Chez lui, ses visiteurs aussi** (`/univers/chez/<clé>`, à qui peut entrer) : « 🎬 Les pièces de Léa », en vignettes
   (`VignettesPieces`) ; un toucher, on entre — sa figurine à elle y est assise ; ce qu'on dit des vedettes change de
   bouche (« Sa chanson du moment tourne ici », pas « Ta » : `autre`, `mesPieces(…, { pourSesVisiteurs })`).
-- **Les essais** : `essai-pieces-vivantes-route.mjs` (ses pièces pour « Ma maison » ; Sam, aucune),
-  `bascule-univers.mjs` (le salon de Marc : on glisse, on entre, sa figurine, ses trois vedettes, le tourne-disque),
-  `visite-univers.mjs` (Inès chez Marc : « Les pièces de Marc », elle entre, « Sa chanson du moment »).
+- **📚 Le reste, sur des étagères** (le propriétaire : « deux ou trois gros objets animés, et le reste sur des
+  étagères ») : le modèle qui voit les images repère aussi jusqu'à trois étagères par pièce (le dessus de leur planche,
+  assez large) ; les souvenirs qu'il montre de « Mon étagère » (`etagereVitrine`, ce qu'il a choisi de montrer) s'y
+  posent — trois par étagère, six par pièce, répartis entre ses pièces (`repartirSouvenirs`) ; un toucher : la caméra
+  s'approche de l'étagère, la carte du souvenir monte (« 📚 Sur l'étagère »). Dans « Ma maison » et pour ses visiteurs ;
+  une pièce faite avant (sans étagères repérées) : « Refaire » ses vedettes dans l'essai.
+- **Les essais** : `essai-pieces-vivantes-route.mjs` (ses pièces pour « Ma maison » ; ses étagères ; « Mon concert »,
+  qu'elle montre, posé sur une étagère du salon ; Sam, aucune), `bascule-univers.mjs` (le salon de Marc : on glisse, on
+  entre, sa figurine, ses trois vedettes, le tourne-disque), `visite-univers.mjs` (Inès chez Marc : « Les pièces de
+  Marc », elle entre, « Sa chanson du moment »).
 
 ### 9.1 L'idée en une phrase
 

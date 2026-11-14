@@ -652,7 +652,9 @@ http
           const cles = [...consigne.matchAll(/^- (\w+) :/gm)].map((x) => x[1]);
           const objets = [...cles, "lustre"].map((cle, n) => ({ cle, x: 8 + n * 28, y: 30 + n * 6, l: 24, h: 20 }));
           const ecran = { x: 10, y: 32, l: 20, h: 12 };
-          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ objets, place: { x: 35, y: 72, l: 30, h: 16 }, ecran }) } }] });
+          // (📚 deux étagères, et une trop étroite pour y poser quoi que ce soit)
+          const etageres = consigne.includes('"etageres"') ? [{ x: 5, y: 20, l: 40, h: 6 }, { x: 55, y: 24, l: 40, h: 6 }, { x: 1, y: 1, l: 3, h: 3 }] : [];
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ objets, place: { x: 35, y: 72, l: 30, h: 16 }, ecran, etageres }) } }] });
         }
         // 🎙️ le talkie-walkie : trois têtes par réplique (la honte d'abord, puis le fou rire), parmi celles qu'il peut jouer
         if (consigne.includes("LES TÊTES DE SA FIGURINE")) {
