@@ -36,6 +36,7 @@ import { signatureDe } from "./signature-serveur";
 import { decorDeSaisonAFaire, decorDuMoment, saisonDuMois, tenueDuMois } from "./saison-serveur";
 import { RETOUCHES_OFFERTES, RETOUCHES_PAR_JOUR, retoucheUniversValide, type EtapeCreation, type EtatUnivers } from "./univers-creation";
 import { ambianceDe, ambiancesActives, ambianceValide, pourLeDecor } from "./ambiances";
+import { decorVivant } from "./univers-vivant-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -99,6 +100,8 @@ export async function etatUnivers(supabase: Supabase, h: string | null): Promise
   ]);
   const figurine = a ? { figurine: tenue ? { assise: tenue.n, ...(tenue.p ? { parle: tenue.p } : {}) } : { assise: a, ...(p ? { parle: p } : {}) } } : {};
   const decorSaison = moment.saison ? await signer(supabase, moment.chemin) : "";
+  // (🌟 son décor du moment, vivant — si la vidéo a été faite d'après lui)
+  const vivant = f?.references.decor ? await decorVivant(supabase, h, moment.saison ? moment.chemin : f.references.decor.chemin).catch(() => "") : "";
   const edition = saisonDuMois();
   // (pas encore d'univers : sa figurine dit s'il doit d'abord la faire — l'accueil, `/univers`, l'y mène)
   if (!f) return { ...vide, ...figurine };
@@ -118,6 +121,7 @@ export async function etatUnivers(supabase: Supabase, h: string | null): Promise
     ...(decor ? { saison: { nom: edition.nom, emoji: edition.emoji, decor: Boolean(decorSaison), ...(aFaire ? { enCours: true } : {}), tenue: Boolean(tenue) } } : {}),
     ...(f.version > 1 ? { avant: f.version - 1 } : {}),
     ...(ambiancesActives() ? { ambiance: f.decor_ambiance ?? "cosy" } : {}),
+    ...(vivant ? { decorVivant: vivant } : {}),
   };
   if (enCours(c, f.version)) return { ...commun, etape: "creation", creation: { etape: c.etape as EtapeCreation, ...(c.retouche ? { retouche: c.retouche } : {}) } };
   const erreur = c.version === f.version && c.erreur ? c.erreur : c.version === f.version && c.etape !== "fini" && c.etape ? "La création s’est arrêtée en chemin. Relance-la." : "";

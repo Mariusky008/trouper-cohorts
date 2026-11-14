@@ -28,6 +28,7 @@ import { objetDe, type MesVisites, type SouvenirVu } from "@/lib/direct/visites"
 import type { ADecouvrir } from "./visites-recues";
 import { TAILLE_FIGURINE, useCadreVisible } from "../univers/monde/monde";
 import { useRituel } from "./rituel";
+import { DecorVivant } from "@/app/univers/piece-vivante";
 
 /** Mon univers, tel que le sert `/api/direct/univers` (`null` : pas encore lu). */
 export function useMonUnivers(actif: boolean): EtatUnivers | null | "absent" {
@@ -179,6 +180,8 @@ export function FenetreSurMonUnivers({ etat, souvenirs, entiere = false, childre
       <a className="cm-scene" href="/univers/monde" aria-label="Mon univers, en grand" style={{ transform: `translateY(${-decalage}px)` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="cm-decor" src={etat.decor} alt="Mon univers" />
+        {/* 🌟 mon décor, vivant (s'il l'est) */}
+        {etat.decorVivant && <DecorVivant src={etat.decorVivant} />}
         {/* 🎁 les cadeaux posés chez moi, sur le sol */}
         {(souvenirs ?? []).map((s, k) =>
           typeof s.x === "number" && typeof s.y === "number" ? (

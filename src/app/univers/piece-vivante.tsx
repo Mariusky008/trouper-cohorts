@@ -204,6 +204,39 @@ function UnePiece({ p, figurine, youtube, vise, setVise }: { p: PieceVue; figuri
   );
 }
 
+/**
+ * 🌟 SON DÉCOR, VIVANT : la courte vidéo faite d'après le milieu de son décor (9:16 dans le 2:3 — 864 colonnes sur 1024),
+ * posée exactement dessus, ses bords fondus dans l'image fixe, jouée en boucle sans couture et sans le son.
+ */
+export function DecorVivant({ src }: { src: string }) {
+  const video = useRef<HTMLVideoElement>(null);
+  useBoucle(video);
+  return (
+    <video
+      ref={video}
+      className="decor-vivant"
+      src={src}
+      muted
+      playsInline
+      autoPlay
+      preload="auto"
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        top: 0,
+        left: "7.8125%",
+        width: "84.375%",
+        height: "100%",
+        objectFit: "cover",
+        pointerEvents: "none",
+        transition: "opacity .85s ease",
+        WebkitMaskImage: "linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent)",
+        maskImage: "linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent)",
+      }}
+    />
+  );
+}
+
 /** 🎬 Ses pièces, en vignettes (la page de visite) : un toucher, on entre. */
 export function VignettesPieces({ pieces, onEntrer }: { pieces: PieceVue[]; onEntrer: (n: number) => void }) {
   return (

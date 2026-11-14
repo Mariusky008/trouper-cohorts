@@ -57,6 +57,8 @@ export type EtatUnivers = {
   avant?: number;
   /** 🎨 l'ambiance de son décor (les ambiances ouvertes) : il peut en changer */
   ambiance?: Ambiance;
+  /** 🌟 son décor du moment, vivant (une courte vidéo en boucle, faite d'après lui) : posée sur son milieu */
+  decorVivant?: string;
   branche: boolean;
 };
 

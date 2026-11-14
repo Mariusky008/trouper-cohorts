@@ -64,6 +64,8 @@ export type VueVisite =
       prenom: string;
       proposition: string;
       decor: string;
+      /** 🌟 son décor, vivant (une courte vidéo en boucle posée sur son milieu), s'il l'est */
+      decorVivant?: string;
       /**
        * sa figurine, assise à sa place (la place de l'hôte) — à la même échelle que la conversation chez soi : 36 % de la
        * hauteur du décor, fois l'échelle de la place (le propriétaire, le 13 novembre : « les figurines ne sont pas

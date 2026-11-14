@@ -412,10 +412,11 @@ export async function modelesVeo(): Promise<string[]> {
   const tries = [...vus].sort((a, b) => rang(a) - rang(b) || b.localeCompare(a));
   return [...new Set([...(force ? [force] : []), ...(tries.length ? tries : MODELES_VEO)])].slice(0, 4);
 }
-async function commanderChezVeo(p: Piece, vue: Buffer): Promise<{ id: string; modele: string } | { erreur: string }> {
+const commanderChezVeo = async (p: Piece, vue: Buffer) => commanderUneVideoVeo(consigneVivante(p), await pourLaVideo(vue));
+/** 🎥 Une vidéo commandée chez Veo : sa consigne, et l'image de départ (déjà à 720 × 1280). Aussi pour son univers. */
+export async function commanderUneVideoVeo(prompt: string, image: Buffer): Promise<{ id: string; modele: string } | { erreur: string }> {
   if (!cleGoogle()) return { erreur: "Le moteur vidéo de Google n’est pas branché ici (GEMINI_VIDEO_API_KEY)." };
-  const data = (await pourLaVideo(vue)).toString("base64");
-  const prompt = consigneVivante(p);
+  const data = image.toString("base64");
   // (la forme que l'API attend a changé selon les versions : l'image « inlineData », puis sans réglage de personnes,
   // puis « bytesBase64Encoded » — à la première qui n'est pas refusée pour sa forme)
   const duree = secondesVeo();
@@ -453,7 +454,7 @@ async function commanderChezVeo(p: Piece, vue: Buffer): Promise<{ id: string; mo
   return { erreur: `Le moteur vidéo de Google (Veo) refuse — ${refus.slice(-4).join(" ; ") || "aucun moteur vidéo sur ce compte"}.` };
 }
 /** Où en est l'opération Veo : faite (téléchargée, rangée), ratée (la commande s'efface), ou en train (une estimation). */
-async function suivreChezVeo(d: ReturnType<typeof depotDans>, id: string, depuis: string): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
+export async function suivreChezVeo(d: ReturnType<typeof depotDans>, id: string, depuis: string): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
   if (!/^[\w./-]+$/.test(id)) return { erreur: "La commande de la vidéo est illisible : refais-la." };
   const r = await fetch(`${baseGoogle()}/v1beta/${id}`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(30_000) }).catch(() => null);
   if (!r?.ok) return { erreur: `Le moteur vidéo ne dit pas où en est la vidéo (${r?.status ?? "réseau"}).` };

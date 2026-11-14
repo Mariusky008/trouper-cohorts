@@ -3202,6 +3202,30 @@ l'écran.
 - **Les essais** : `scripts/verifier-messages.mjs` (sans téléphone), `scripts/essai-messages-route.mjs` (le faux site
   des aperçus : `CLIKME_APERCU_ESSAI_BASE`, la CI seulement).
 
+### 9.0 duosexagies 🌟 Son univers, vivant (14 novembre)
+
+Le propriétaire, le matin même : « une jolie photo sans âme […] mon univers doit donner l'impression d'être en vie,
+qu'il s'y passe quelque chose ». Les pièces ont leur photo vivante ; son univers aussi, maintenant qu'une vidéo coûte
+environ 0,20 $ (Veo « Lite », quatre secondes).
+
+- **La vidéo** (`lib/direct/univers-vivant-serveur.ts`) : son décor du moment (celui du mois, s'il est fait) devient
+  une photo vivante — la caméra immobile, seules les choses de son univers vivent (les flammes, les lampes, les
+  plantes, l'eau, les nuages), en boucle ; l'espace dégagé devant, où sa figurine est assise, ne bouge pas ; personne,
+  aucun texte, sans voix. Le décor est en 2:3, la vidéo en 9:16 : elle en reprend le milieu (864 colonnes sur 1024 →
+  720 × 1280) et se pose dessus (`DecorVivant`, `app/univers/piece-vivante.tsx`), ses bords fondus dans l'image fixe.
+  Commandée chez Veo (`commanderUneVideoVeo`, `suivreChezVeo` : les mêmes que pour les pièces), rangée dans
+  `<h>/univers-vivant/` avec le décor d'où elle vient (`decor.json`) : son décor change (une retouche, le décor du mois
+  suivant), elle ne se montre plus (« périmée ») jusqu'à ce qu'elle soit refaite.
+- **L'essai** (`/admin/humain/univers-essais`, « 🌟 Ton univers, vivant », route `/api/admin/direct/univers-vivant` :
+  GET l'état, POST `fabriquer` / `refaire`), sur SON univers : « Le rendre vivant », la page suit la vidéo (huit
+  secondes entre deux questions), puis la montre sur son décor.
+- **Faite, elle se montre** dans « Ma maison » (`EtatUnivers.decorVivant`, `/api/direct/univers`) et à ses visiteurs
+  (`VueVisite.decorVivant`, `/univers/chez/<clé>`), par-dessus le décor. **À décider par le propriétaire** : la faire
+  pour chacun (à la création de l'univers, et chaque mois avec le décor du mois), et quand.
+- **L'essai automatique** : `essai-univers-vivant-route.mjs` (Veo « Lite », 9:16, 4 s, 720 × 1280, la caméra immobile,
+  l'espace devant vide, sans voix ; « en train », puis faite ; dans « Ma maison » et chez Sam en visite ; son décor
+  retouché : périmée, plus montrée ; la refaire).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

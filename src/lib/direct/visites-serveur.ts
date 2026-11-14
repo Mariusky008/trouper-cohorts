@@ -24,6 +24,7 @@ import type { Habitant } from "./habitant";
 import { prevenirUneFoisParJour } from "./appli-collection-serveur";
 import { etagereVitrine } from "./etagere-serveur";
 import { mesPieces } from "./pieces-vivantes-serveur";
+import { decorVivant } from "./univers-vivant-serveur";
 import { completerMonde, lireFicheMonde } from "./fiches-serveur";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
@@ -105,8 +106,13 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
   const hote = await quiEst(supabase, h);
   if (!acces.ok) return { etat: f.visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
   const [decor, assise, moi, visites, souvenirs, tenue, etagere, pieces] = await Promise.all([
-    // (🍂 son décor du mois, quand il est fait ; sa figurine dans sa tenue du mois, si elle l'a méritée)
-    decorDuMoment(supabase, h, f).then((d) => signer(supabase, d.chemin || f.references.decor!.chemin, 3600)),
+    // (🍂 son décor du mois, quand il est fait ; sa figurine dans sa tenue du mois, si elle l'a méritée — 🌟 et son décor
+    // vivant, s'il l'est)
+    decorDuMoment(supabase, h, f).then(async (d) => {
+      const chemin = d.chemin || f.references.decor!.chemin;
+      const [image, vivant] = await Promise.all([signer(supabase, chemin, 3600), decorVivant(supabase, h, chemin).catch(() => "")]);
+      return { image, vivant };
+    }),
     assiseDe(supabase, h).catch(() => undefined),
     visiteur && visiteur.id !== h ? quiEst(supabase, visiteur.id) : Promise.resolve(null),
     lireVisites(supabase, h),
@@ -117,7 +123,7 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     // (🎬 ses pièces, entières et vivantes — chez soi, telles qu'on se les dit ; chez un autre, telles qu'on les lui montre)
     mesPieces(supabase, h, { pourSesVisiteurs: visiteur?.id !== h }).catch(() => []),
   ]);
-  if (!decor || !assise) return { etat: "absent" };
+  if (!decor.image || !assise) return { etat: "absent" };
   const hotePlace = f.scene.places.find((p) => p.id === "hote") ?? { x: 0.36, y: 0.8, echelle: 1 };
   const invite = f.scene.places.find((p) => p.id === "invite") ?? { x: 0.66, y: 0.82, echelle: 0.96 };
   const poses = souvenirs.filter((x) => x.accepte_le);
@@ -130,7 +136,8 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     etat: "ouvert",
     prenom: hote.prenom,
     proposition: f.proposition,
-    decor,
+    decor: decor.image,
+    ...(decor.vivant ? { decorVivant: decor.vivant } : {}),
     // (📏 les deux figurines à leurs places, à la même échelle que la conversation chez soi)
     hote: { image: tenue?.n ?? assise.n, parle: tenue?.p ?? assise.p, x: hotePlace.x, y: hotePlace.y, echelle: hotePlace.echelle },
     invite: { x: invite.x, y: invite.y, echelle: invite.echelle, ...(moi?.image ? { image: moi.image, ...(moi.assise ? { assise: true } : {}) } : {}) },
