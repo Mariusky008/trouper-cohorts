@@ -58,6 +58,9 @@ await json(`${MARC.id}/perso/fiche.json`, perso);
 const M1 = `${MARC.id}/monde/v1`;
 await deposer(`${M1}/decor.png`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
 await deposer(`${M1}/vedette.png`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
+// 🎬 son salon, entier et vivant : sa vue, ses vedettes repérées
+await deposer(`${MARC.id}/pieces-entieres/salon/vue.webp`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
+await json(`${MARC.id}/pieces-entieres/salon/objets.json`, { objets: [{ cle: "platine", x: 60, y: 50, l: 25, h: 14 }], place: { x: 30, y: 72, l: 40, h: 16 }, ecran: null });
 const monde = {
   version: 1,
   style: "film-chaleureux-1",
@@ -121,6 +124,17 @@ await ines.waitForTimeout(250);
 ok((await ines.locator(".uv-scene.toc1 .uv-toc b").count()) === 2, "« Toc toc » : la scène tremble, « Toc ! Toc ! »");
 await ines.waitForSelector(".uv-message", { timeout: 10000 }).catch(() => null);
 ok((await texte(ines, ".uv-message")).includes("Marc verra ta visite") && (await texte(ines, ".uv-geste.porte")).includes("Déjà frappé"), "« Toc toc ! Marc verra ta visite 💛 »");
+// 🎬 ses pièces : « Les pièces de Marc » ; un toucher, Inès entre dans son salon (sa figurine y est assise)
+ok((await texte(ines, ".uv-pieces-titre")) === "🎬 Les pièces de Marc" && (await ines.locator('.uv-pieces .pv-vignette[data-piece="salon"]').count()) === 1, "🎬 « Les pièces de Marc » : son salon, en vignette");
+await ines.locator(".uv-pieces .pv-vignette").first().click();
+await ines.waitForSelector(".pv-plein .pv-objet", { timeout: 5000 }).catch(() => null);
+await ines.locator('.pv-plein .pv-objet[data-objet="platine"]').click();
+await ines.waitForSelector(".pv-plein .pv-carte", { timeout: 3000 }).catch(() => null);
+ok((await ines.locator(".pv-plein .pv-scene.vise").count()) === 1 && (await ines.locator(".pv-plein .pv-figurine").count()) === 1 && (await texte(ines, ".pv-plein .pv-carte")).includes("Sa chanson du moment tourne ici"), "dedans : sa figurine assise ; le tourne-disque — « Sa chanson du moment » (à ses visiteurs, pas « Ta »)");
+await ines.keyboard.press("Escape");
+await ines.keyboard.press("Escape");
+await ines.waitForSelector(".pv-plein", { state: "detached", timeout: 3000 }).catch(() => null);
+ok((await ines.locator(".pv-plein").count()) === 0, "Échap, Échap : elle ressort, chez Marc");
 await ines.locator(".uv-bouton.clair", { hasText: "Les clés de son univers" }).click();
 ok((await texte(ines, ".uv-liste")).includes("je bricole tous les dimanches"), "entre proches : les clés de son univers, ses phrases");
 await ines.locator(".uv-geste.cadeau").click();

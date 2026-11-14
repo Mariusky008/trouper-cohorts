@@ -9,15 +9,8 @@
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 
-export type Cadre = { x: number; y: number; l: number; h: number };
-export type PieceVue = {
-  piece: string;
-  nom: string;
-  vue: string;
-  video?: string;
-  objets?: { objets: (Cadre & { cle: string })[]; place: Cadre | null; ecran: Cadre | null };
-  vedettes: { cle: string; nom: string; dit: string }[];
-};
+import type { Cadre, PieceVue } from "@/lib/direct/pieces-vivantes";
+export type { PieceVue };
 
 /** Le cadre d'un objet, en % de la scène. */
 const style = (c: Cadre) => ({ left: `${c.x}%`, top: `${c.y}%`, width: `${c.l}%`, height: `${c.h}%` });
@@ -183,6 +176,31 @@ function UnePiece({ p, figurine, youtube, vise, setVise }: { p: PieceVue; figuri
     </>
   );
 }
+
+/** 🎬 Ses pièces, en vignettes (la page de visite) : un toucher, on entre. */
+export function VignettesPieces({ pieces, onEntrer }: { pieces: PieceVue[]; onEntrer: (n: number) => void }) {
+  return (
+    <div className="pv-vignettes" role="list">
+      <style>{STYLES_VIGNETTES}</style>
+      {pieces.map((p, n) => (
+        <button key={p.piece} type="button" role="listitem" className="pv-vignette" data-piece={p.piece} onClick={() => onEntrer(n)} aria-label={`Entrer dans ${p.nom.toLowerCase()}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={p.vue} alt="" draggable={false} />
+          <b>{p.nom}</b>
+          {p.video && <i aria-hidden="true">▶</i>}
+        </button>
+      ))}
+    </div>
+  );
+}
+const STYLES_VIGNETTES = `
+.pv-vignettes{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 6px;scrollbar-width:none}
+.pv-vignettes::-webkit-scrollbar{display:none}
+.pv-vignette{position:relative;flex:0 0 38%;max-width:170px;aspect-ratio:9/16;padding:0;border:0;border-radius:16px;overflow:hidden;background:#1a0f14;scroll-snap-align:start;cursor:pointer;box-shadow:0 12px 26px -14px rgba(0,0,0,.8)}
+.pv-vignette img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pv-vignette b{position:absolute;left:8px;right:8px;bottom:8px;padding:5px 8px;border-radius:999px;background:rgba(20,10,14,.66);color:#FFF4E6;font-size:12.5px;font-weight:900;text-align:center;backdrop-filter:blur(6px)}
+.pv-vignette i{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;background:#FF2E9A;color:#fff;font-style:normal;font-size:12px;line-height:26px;text-align:center}
+`;
 
 export const STYLES_PIECE_VIVANTE = `
 .pv-plein{position:fixed;inset:0;z-index:1000;overflow:hidden;background:#0d0705;color:#fff;font-family:system-ui,sans-serif;touch-action:pan-y}

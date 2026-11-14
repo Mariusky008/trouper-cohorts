@@ -23,6 +23,7 @@ import { jourParis } from "@/lib/jour-paris";
 import type { Habitant } from "./habitant";
 import { prevenirUneFoisParJour } from "./appli-collection-serveur";
 import { etagereVitrine } from "./etagere-serveur";
+import { mesPieces } from "./pieces-vivantes-serveur";
 import { completerMonde, lireFicheMonde } from "./fiches-serveur";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
@@ -103,7 +104,7 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
   const acces = await peutEntrer(supabase, visiteur?.id ?? null, h, f);
   const hote = await quiEst(supabase, h);
   if (!acces.ok) return { etat: f.visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
-  const [decor, assise, moi, visites, souvenirs, tenue, etagere] = await Promise.all([
+  const [decor, assise, moi, visites, souvenirs, tenue, etagere, pieces] = await Promise.all([
     // (🍂 son décor du mois, quand il est fait ; sa figurine dans sa tenue du mois, si elle l'a méritée)
     decorDuMoment(supabase, h, f).then((d) => signer(supabase, d.chemin || f.references.decor!.chemin, 3600)),
     assiseDe(supabase, h).catch(() => undefined),
@@ -113,6 +114,8 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     tenueDuMois(supabase, h).catch(() => null),
     // (📚 ce qu'il a choisi de montrer de son étagère)
     etagereVitrine(supabase, h).catch(() => []),
+    // (🎬 ses pièces, entières et vivantes — chez soi, telles qu'on se les dit ; chez un autre, telles qu'on les lui montre)
+    mesPieces(supabase, h, { pourSesVisiteurs: visiteur?.id !== h }).catch(() => []),
   ]);
   if (!decor || !assise) return { etat: "absent" };
   const hotePlace = f.scene.places.find((p) => p.id === "hote") ?? { x: 0.36, y: 0.8, echelle: 1 };
@@ -140,6 +143,7 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     mesCadeaux: visiteur ? souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length : 0,
     chezSoi: visiteur?.id === h,
     etagere,
+    pieces,
   };
 }
 

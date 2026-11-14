@@ -3111,8 +3111,12 @@ entière à l'écran, deux ou trois gros objets animés, on y entre.
   l'image entière est faite (la vue, la vidéo si elle l'est, les vedettes repérées), signées une heure. Aujourd'hui,
   seules les pièces faites dans l'essai existent : **qui en reçoit, et quand** (« elles apparaîtront au fil de tes
   conversations »), c'est au propriétaire de le décider — une pièce coûte environ 0,25 $ d'image et 0,80 $ de vidéo.
+- **Chez lui, ses visiteurs aussi** (`/univers/chez/<clé>`, à qui peut entrer) : « 🎬 Les pièces de Léa », en vignettes
+  (`VignettesPieces`) ; un toucher, on entre — sa figurine à elle y est assise ; ce qu'on dit des vedettes change de
+  bouche (« Sa chanson du moment tourne ici », pas « Ta » : `autre`, `mesPieces(…, { pourSesVisiteurs })`).
 - **Les essais** : `essai-pieces-vivantes-route.mjs` (ses pièces pour « Ma maison » ; Sam, aucune),
-  `bascule-univers.mjs` (le salon de Marc : on glisse, on entre, sa figurine, ses trois vedettes, le tourne-disque).
+  `bascule-univers.mjs` (le salon de Marc : on glisse, on entre, sa figurine, ses trois vedettes, le tourne-disque),
+  `visite-univers.mjs` (Inès chez Marc : « Les pièces de Marc », elle entre, « Sa chanson du moment »).
 
 ### 9.1 L'idée en une phrase
 
