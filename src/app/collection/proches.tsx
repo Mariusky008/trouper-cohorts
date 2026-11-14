@@ -34,6 +34,7 @@ import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { BarreEcrire, BoutonEffacer, BulleEcrite, STYLES_ECRIRE, motsDeLEcrit, type ChoixPlus } from "./ecrire";
 import { BullePhoto, CadrePhoto, FeuillePhoto, PhotoEnGrand, STYLES_PHOTOS } from "./photos";
+import { BulleVideo, CadreVideo, FeuilleVideo, VideoEnGrand, STYLES_VIDEOS } from "./videos";
 import { ECRIT } from "@/lib/direct/ecrit";
 import { CarteEtagere, CarteNote, CartePoussiere, CarteQuestion, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
 import { idees, type CarteVue, type ObjetVu, type QuestionVue } from "@/lib/direct/etagere";
@@ -99,6 +100,8 @@ const quandCourt = (le: string) => {
   if (maintenant.getTime() - d.getTime() < 6 * 86_400_000) return d.toLocaleDateString("fr-FR", { weekday: "short", timeZone: "Europe/Paris" });
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
 };
+/** ✍️ 📷 🎬 (lots M1 à M3) un écrit, une photo, une vidéo : la figurine les dit sans aucun son (le son d'une vidéo : en grand). */
+const sansSon = (m: MessageFil) => m.genre === "ecrit" || m.genre === "photo" || m.genre === "video";
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, "0")}`;
 
 // ─── l'onglet ─────────────────────────────────────────────────────────────────────────────────────
@@ -403,8 +406,8 @@ export function Proches({
       if (!p.dernier) return "Dis-lui bonjour 👋";
       if (p.dernier.meme) return p.dernier.moi ? "Toi : 🎭 un mème" : "🎭 t’a envoyé un mème";
       const t = p.dernier.texte;
-      // 📷 (lot M2) une photo : « 📷 La légende », ou « 📷 Une photo »
-      if (p.dernier.photo) return `${p.dernier.moi ? "Toi : " : ""}${t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t}`;
+      // 📷 (lot M2) une photo : « 📷 La légende », ou « 📷 Une photo » ; 🎬 (lot M3) une vidéo, de même
+      if (p.dernier.photo || p.dernier.video) return `${p.dernier.moi ? "Toi : " : ""}${t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t}`;
       // ✍️ (lot M1) un écrit : ses mots, ou « 🔗 Le titre du lien »
       if (p.dernier.ecrit) {
         const c = t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t;
@@ -808,7 +811,7 @@ function ligneDe(p: ProcheVivant): string {
   if (p.lien === "attend") return `En attente : ${p.prenom} doit t’ajouter aussi.`;
   if (!p.dernier) return "Pas encore de message : dis-lui bonjour 👋";
   if (p.dernier.meme) return `${p.dernier.moi ? "Toi : 🎭 un mème" : "🎭 T’a envoyé un mème"} · ${depuis(p.dernier.le)}`;
-  if (p.dernier.photo) {
+  if (p.dernier.photo || p.dernier.video) {
     const t = p.dernier.texte;
     return `${p.dernier.moi ? "Toi : " : "T’a envoyé : "}${t.length > 46 ? `${t.slice(0, 44).trimEnd()}…` : t} · ${depuis(p.dernier.le)}`;
   }
@@ -901,6 +904,9 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const [photoChoisie, setPhotoChoisie] = useState<File | null>(null);
   const [enGrand, setEnGrand] = useState<MessageFil | null>(null);
   const choixPhoto = useRef<HTMLInputElement>(null);
+  // 🎬 (lot M3) la vidéo choisie (sa feuille d'envoi) ; en grand, c'est `enGrand`
+  const [videoChoisie, setVideoChoisie] = useState<File | null>(null);
+  const choixVideo = useRef<HTMLInputElement>(null);
   const fig = useRef<FigurineHandle>(null);
   const liste = useRef<HTMLOListElement>(null);
   const msgs = useRef<MessageFil[]>([]);
@@ -1066,7 +1072,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     if (l) l.scrollTop = l.scrollHeight;
   }, [nbMessages]);
   // (Échap ferme ; la page ne défile pas dessous)
-  const parDessus = Boolean(photoChoisie || enGrand);
+  const parDessus = Boolean(photoChoisie || videoChoisie || enGrand);
   useEffect(() => {
     // (📷 une photo à envoyer, ou en grand, par-dessus : Échap ne ferme qu'elle)
     const echap = (e: KeyboardEvent) => e.key === "Escape" && !enregistrer && !pageEtagere && !parDessus && onFermer();
@@ -1089,8 +1095,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     setIr(0);
     setActivite(Date.now());
     // ✍️ (lot M1) un écrit : sa figurine le dit sans aucun son, les mots apparaissent l'un après l'autre ; 📷 (lot M2)
-    // une photo : elle la montre, sa légende dans la bulle
-    if (m.genre === "ecrit" || m.genre === "photo") {
+    // une photo : elle la montre, sa légende dans la bulle ; 🎬 (lot M3) une vidéo de même (sa vignette ; le son, en grand)
+    if (sansSon(m)) {
       motsRef.current = 0;
       setMots(0);
       fig.current?.dire(m.duree);
@@ -1102,7 +1108,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   }, []);
   const surTemps = useCallback((t: number) => {
     const ecrit = msgs.current[vueRef.current];
-    if (ecrit?.genre === "ecrit" || ecrit?.genre === "photo") {
+    if (ecrit && sansSon(ecrit)) {
       // (tous les mots sont là aux 85 % du temps : le dernier reste un instant)
       const n = Math.max(1, motsDeLEcrit(ecrit).length);
       const k = Math.min(n, Math.ceil((n * t) / Math.max(0.5, ecrit.duree * 0.85)));
@@ -1167,13 +1173,14 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     setFil((f) => (f ? { ...f, messages: liste } : f));
     jouerMessage(liste.length - 1, false);
   }
-  /** 📷 (lot M2) Sa photo est partie : dans le fil, et sa figurine la montre aussitôt. */
-  function photoEnvoyee(message: MessageFil) {
+  /** 📷 (lot M2) Sa photo est partie — 🎬 (lot M3) ou sa vidéo : dans le fil, et sa figurine la montre aussitôt. */
+  function partageEnvoye(message: MessageFil) {
     if (!fil) return;
     const liste = [...fil.messages.map((y) => ({ ...y, nouveau: false })), message];
     msgs.current = liste;
     setFil((f) => (f ? { ...f, messages: liste } : f));
     setPhotoChoisie(null);
+    setVideoChoisie(null);
     jouerMessage(liste.length - 1, false);
   }
   /** 🗑️ (lot M1) Il efface son message (le sien, dans les 24 heures) : pour les deux. */
@@ -1321,6 +1328,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const plus: ChoixPlus[] = [
     // 📷 (lot M2) une photo : la pellicule, ou l'appareil photo (le frein tiré : pas de photo)
     ...(fil.photos !== false ? [{ cle: "photo", emoji: "📷", nom: "Une photo", onChoisi: () => choixPhoto.current?.click() }] : []),
+    // 🎬 (lot M3) une vidéo : la pellicule, ou la caméra (le frein tiré : pas de vidéo)
+    ...(fil.videos !== false ? [{ cle: "video", emoji: "🎬", nom: "Une vidéo", onChoisi: () => choixVideo.current?.click() }] : []),
     ...(chezMoi ? [{ cle: "meme", emoji: "🎭", nom: "Un mème", onChoisi: () => (retenirMemePour({ cle, prenom: fil.lui.prenom }), chezMoi.onMeme()) }] : []),
     { cle: "panneau", emoji: "🪧", nom: "Un panneau", onChoisi: () => setPanneaux(true) },
     ...(chezMoi
@@ -1418,6 +1427,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           />
           {/* 🖼️ (lot M2) une photo : la figurine la montre, dans un petit cadre */}
           {m?.genre === "photo" && <CadrePhoto m={m} joue={joue} />}
+          {/* 🎬 (lot M3) une vidéo : sa vignette, de même */}
+          {m?.genre === "video" && <CadreVideo m={m} joue={joue} />}
         </div>
         {chez ? (
           <span
@@ -1452,7 +1463,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           </span>
         )}
         {rep?.texte &&
-          (m?.genre === "ecrit" || m?.genre === "photo" ? (
+          (m && sansSon(m) ? (
             // ✍️ (lot M1) un écrit : les mots apparaissent l'un après l'autre, pendant que sa figurine le dit
             <p className="pr-sous-titre pr-dit-ecrit">
               «{" "}
@@ -1469,13 +1480,13 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           ))}
         {!m && <p className="pr-sous-titre">Pas encore de message. Dis bonjour à {fil.lui.prenom} 👋</p>}
         {m && !joue && (
-          <button type="button" className="pr-lire" aria-label={nouveaux.length ? "Écouter ses nouveaux messages" : m.genre === "ecrit" || m.genre === "photo" ? "Revoir ce message" : "Écouter ce message"} onClick={() => (nouveaux.length && vue < 0 ? jouerMessage(nouveaux[0], true) : jouerMessage(iVue, false))}>
+          <button type="button" className="pr-lire" aria-label={nouveaux.length ? "Écouter ses nouveaux messages" : sansSon(m) ? "Revoir ce message" : "Écouter ce message"} onClick={() => (nouveaux.length && vue < 0 ? jouerMessage(nouveaux[0], true) : jouerMessage(iVue, false))}>
             <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M8 4.5v15l12-7.5z" fill="currentColor" />
             </svg>
           </button>
         )}
-        {son && m && m.genre !== "ecrit" && m.genre !== "photo" && (
+        {son && m && !sansSon(m) && (
           <div className="pr-son" aria-hidden="true">
             <span className={`pr-onde${joue ? " joue" : ""}`}>
               {Array.from({ length: 22 }, (_, k) => (
@@ -1601,6 +1612,24 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           const emojis = [...new Set(x.repliques.map((r) => r.tete).filter((t): t is Sentiment => Boolean(t)))].map((t) => sentimentDe(t)?.emoji ?? "").join(" ");
           // 🗑️ (lot M1) son propre message, choisi, dans les 24 heures : « Effacer »
           const effacable = x.moi && i === iVue && maintenant - (Date.parse(x.le) || 0) < ECRIT.effacer;
+          // 🎬 (lot M3) une vidéo : sa vignette, ▶, sa durée ; un toucher la lit en grand (avec le son), puis la figurine la montre
+          if (x.genre === "video")
+            return (
+              <BulleVideo
+                key={x.id}
+                m={x}
+                vu={i === iVue}
+                bas={`🎬 ${emojis ? `${emojis} · ` : ""}${heure(x.le)}${x.nouveau ? " · nouveau" : ""}${reactionsDe(x.id) ? ` · ${reactionsDe(x.id)}` : ""}`}
+                gestes={appui.props(x.id)}
+                onOuvrir={() => {
+                  if (appui.etaitLong()) return;
+                  fig.current?.arreter();
+                  setVue(i);
+                  setEnGrand(x);
+                }}
+                onEffacer={effacable ? () => void effacer(x) : undefined}
+              />
+            );
           // 📷 (lot M2) une photo : sa vignette ; un toucher l'ouvre en grand, puis la figurine la montre
           if (x.genre === "photo")
             return (
@@ -1703,18 +1732,33 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           }
         }}
       />
-      <FeuillePhoto fichier={photoChoisie} cle={fil.cle} prenom={fil.lui.prenom} expressions={fil.moi.expressions} onFermer={() => setPhotoChoisie(null)} onEnvoyee={photoEnvoyee} />
-      {enGrand && (
-        <PhotoEnGrand
-          m={enGrand}
-          prenom={fil.lui.prenom}
-          onFermer={() => {
+      <FeuillePhoto fichier={photoChoisie} cle={fil.cle} prenom={fil.lui.prenom} expressions={fil.moi.expressions} onFermer={() => setPhotoChoisie(null)} onEnvoyee={partageEnvoye} />
+      {/* 🎬 (lot M3) la vidéo choisie, sa feuille d'envoi */}
+      <input
+        ref={choixVideo}
+        className="vd-choix"
+        type="file"
+        accept="video/mp4,video/quicktime,video/webm,video/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0] ?? null;
+          e.target.value = "";
+          if (f) {
+            fig.current?.arreter();
+            setVideoChoisie(f);
+          }
+        }}
+      />
+      <FeuilleVideo fichier={videoChoisie} cle={fil.cle} prenom={fil.lui.prenom} expressions={fil.moi.expressions} onFermer={() => setVideoChoisie(null)} onEnvoyee={partageEnvoye} />
+      {enGrand &&
+        (() => {
+          const fermer = () => {
             const k = fil.messages.findIndex((y) => y.id === enGrand.id);
             setEnGrand(null);
             if (k >= 0) jouerMessage(k, false);
-          }}
-        />
-      )}
+          };
+          return enGrand.genre === "video" ? <VideoEnGrand m={enGrand} prenom={fil.lui.prenom} onFermer={fermer} /> : <PhotoEnGrand m={enGrand} prenom={fil.lui.prenom} onFermer={fermer} />;
+        })()}
       {chezMoi && (
         <Feuille ouverte={offrir} onFermer={() => setOffrir(false)} titre={`Un cadeau pour ${fil.lui.prenom}`} className="pr-feuille pr-feuille-cadeau">
           {/* 🎁 (l'étagère, lot E3) une idée, pas un catalogue : ce qu'il ou elle aime */}
@@ -2678,4 +2722,4 @@ export const STYLES_PROCHES = `
 @keyframes pr-clignote{50%{opacity:.25}}
 @keyframes pr-tourne{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pr *,.pr-plein *{animation:none!important}}
-${STYLES_ECRIRE}${STYLES_PHOTOS}`;
+${STYLES_ECRIRE}${STYLES_PHOTOS}${STYLES_VIDEOS}`;

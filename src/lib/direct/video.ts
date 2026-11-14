@@ -136,6 +136,79 @@ export function dureeDuWebm(o: Uint8Array): number | null {
   return duree !== null && Number.isFinite(duree) && duree > 0 ? (duree * echelle) / 1e9 : null;
 }
 
+/** (les boîtes qui en contiennent d'autres, sur le chemin des positions : `moov/udta/©xyz`, `moov/meta/ilst`…) */
+const CONTENEURS = new Set(["moov", "trak", "udta", "meta", "ilst"]);
+/** (les boîtes de position : `©xyz` — Android, QuickTime —, et `loci` — 3GPP) */
+const POSITIONS = new Set(["©xyz", "loci"]);
+
+/**
+ * 📍 LA POSITION EFFACÉE, DANS LE TÉLÉPHONE, AVANT L'ENVOI (lot M3, l'écran) : un téléphone range souvent dans la vidéo
+ * l'endroit où elle a été tournée — la boîte `©xyz` (Android, QuickTime), `loci`, ou les clés
+ * `com.apple.quicktime.location.…` de l'iPhone (`meta/keys` et `meta/ilst`). On la recouvre de zéros, octet pour octet,
+ * sans rien déplacer : la vidéo se lit pareil (une boîte de position devient une boîte `free`, qu'on ne lit pas).
+ * Rend une copie, ou `null` : rien à effacer (ou pas un MP4 ni un MOV — un WebM du navigateur n'en a pas).
+ */
+export function sansPosition(o: Uint8Array): Uint8Array | null {
+  if (o.length < 16 || !/^(ftyp|moov|mdat|wide|free|skip)$/.test(type4(o, 4))) return null;
+  let copie: Uint8Array | null = null;
+  // (une vraie copie : le `slice` d'un Buffer de Node partage ses octets)
+  const ecrire = () => (copie ??= new Uint8Array(o));
+  const effacer = (de: number, a: number) => ecrire().fill(0, de, a);
+  const parcourir = (debut: number, fin: number, parent: string, cles: Set<number>) => {
+    let i = debut;
+    while (i + 8 <= fin) {
+      let taille = u32(o, i);
+      const t = type4(o, i + 4);
+      let entete = 8;
+      if (taille === 1) {
+        if (i + 16 > fin) return;
+        taille = u64(o, i + 8);
+        entete = 16;
+      } else if (taille === 0) taille = fin - i;
+      if (taille < entete || i + taille > fin) return;
+      if (POSITIONS.has(t) && parent !== "") {
+        const c = ecrire();
+        c.set([0x66, 0x72, 0x65, 0x65], i + 4); // « free »
+        effacer(i + entete, i + taille);
+      } else if (t === "keys" && parent === "meta" && i + 16 <= i + taille) {
+        // (les clés de l'iPhone : leur numéro, à partir de 1 ; celles qui disent « location »)
+        const n = u32(o, i + 12);
+        let k = i + 16;
+        for (let x = 1; x <= n && k + 8 <= i + taille; x++) {
+          const tc = u32(o, k);
+          if (tc < 8 || k + tc > i + taille) break;
+          if (String.fromCharCode(...o.subarray(k + 8, k + tc)).includes("location")) cles.add(x);
+          k += tc;
+        }
+      } else if (parent === "ilst" && cles.has(u32(o, i + 4))) {
+        // (la valeur d'une clé de position : sa boîte `data` garde son en-tête — 16 octets —, sa valeur est effacée)
+        effacer(Math.min(i + taille, i + entete + 16), i + taille);
+      } else if (CONTENEURS.has(t)) {
+        let d = i + entete;
+        // (`meta` est une boîte « pleine » en MP4 — quatre octets de version d'abord —, pas en MOV)
+        if (t === "meta" && d + 4 <= i + taille && u32(o, d) === 0) d += 4;
+        parcourir(d, i + taille, t, t === "meta" ? new Set<number>() : cles);
+      }
+      i += taille;
+    }
+  };
+  // (seulement dans `moov` : les données de la vidéo, `mdat`, ne sont jamais touchées)
+  let i = 0;
+  while (i + 8 <= o.length) {
+    let taille = u32(o, i);
+    let entete = 8;
+    if (taille === 1) {
+      if (i + 16 > o.length) break;
+      taille = u64(o, i + 8);
+      entete = 16;
+    } else if (taille === 0) taille = o.length - i;
+    if (taille < entete || i + taille > o.length) break;
+    if (type4(o, i + 4) === "moov") parcourir(i + entete, i + taille, "moov", new Set<number>());
+    i += taille;
+  }
+  return copie;
+}
+
 /** 🔔 La notification : « 🎬 Léa t'a envoyé une vidéo », et sa légende (le début). */
 export function notifVideo(prenom: string, legende?: string): { titre: string; corps: string } {
   const qui = prenom.trim() || "Un proche";
@@ -158,4 +231,6 @@ export const PHRASES_VIDEO = {
   illisible: "Ce fichier n’est pas une vidéo.",
   format: "Ce format de vidéo n’est pas pris.",
   images: "Les images de ta vidéo ne sont pas arrivées. Réessaie.",
+  /** (l'écran : le téléphone n'arrive pas à la lire, donc à en tirer ses trois images) */
+  lecture: "Ce téléphone n’arrive pas à lire cette vidéo.",
 } as const;

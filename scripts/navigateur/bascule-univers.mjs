@@ -291,7 +291,7 @@ const plusDe = async (t) => {
   return t.locator(".pr-feuille-plus .pr-plus-choix").evaluateAll((b) => b.map((x) => x.dataset.plus));
 };
 const choixPlus = await plusDe(m);
-ok(choixPlus.join("|") === "photo|meme|panneau|cadeau" && (await m.locator(".pr-plein .pr-son-univers").count()) === 0, `« ＋ » : 📷 une photo, 🎭 un mème, 🪧 un panneau, 🎁 un cadeau ; Sam n'a pas d'univers : pas de « Son univers » (${choixPlus.join(" · ")})`);
+ok(choixPlus.join("|") === "photo|video|meme|panneau|cadeau" && (await m.locator(".pr-plein .pr-son-univers").count()) === 0, `« ＋ » : 📷 une photo, 🎬 une vidéo, 🎭 un mème, 🪧 un panneau, 🎁 un cadeau ; Sam n'a pas d'univers : pas de « Son univers » (${choixPlus.join(" · ")})`);
 await m.locator('.pr-feuille-plus .pr-plus-choix[data-plus="cadeau"]').click();
 ok((await texte(m, ".pr-plein .pr-info")).includes("n’a pas encore d’univers"), "🎁 : Sam n'a pas encore d'univers où poser un cadeau");
 await m.screenshot({ path: `${D}/bascule-3g-conversation.png` });

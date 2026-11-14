@@ -2,7 +2,8 @@
 
 **Statut : validé par le propriétaire. M1 construit le 14 novembre 2026** : le serveur (`docs/figurines.md`, 9.0
 unsexagies ✍️), puis l'écran (9.0 duosexagies). **M2 construit** : le serveur (9.0 quattuorsexagies 📷), puis l'écran
-(9.0 quinquesexagies). **M3** : le serveur est construit (9.0 sexsexagies 🎬) ; l'écran reste à faire.
+(9.0 quinquesexagies). **M3 construit** : le serveur (9.0 sexsexagies 🎬), puis l'écran (9.0 septsexagies ; l'endroit où la
+vidéo a été tournée est effacé dans le téléphone).
 
 ## 1. Ce que le propriétaire a demandé
 
@@ -202,6 +203,8 @@ ClikMe ; si elles disparaissent, il faudra remettre la voix en avant.
 | Lien inconnu | « Tu quittes ClikMe pour <site> » |
 | Photo refusée | « Cette photo ne peut pas partir. » |
 | Vidéo trop longue | « 45 s : 30 secondes au plus » |
+| Vidéo refusée | « Cette vidéo ne peut pas partir. » (lot M3) |
+| Vidéo que le téléphone ne lit pas | « Ce téléphone n'arrive pas à lire cette vidéo. » (ajoutée avec l'écran de M3) |
 | Ranger un lien | « 🎵 Le ranger dans mon univers ? » |
 | Ranger une photo | « 🖼️ La mettre dans mon univers ? » |
 

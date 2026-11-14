@@ -5,6 +5,7 @@
 //   mp4Essai(12.3)                    → un MP4 de 12,3 s (mvhd version 0, `moov` avant les données)
 //   mp4Essai(45, { aLaFin: true })    → 45 s, `moov` après les données (comme beaucoup de téléphones)
 //   mp4Essai(20, { version: 1 })      → mvhd version 1 (dates et durée sur 64 bits)
+//   mp4Essai(8, { position: true })   → avec l'endroit où elle a été tournée (Android et iPhone : `POSITION_ESSAI`)
 //   webmEssai(18)                     → un WebM qui dit sa durée ; webmEssai(null) : qui ne la dit pas (le navigateur)
 //   (`poids` : la taille voulue, en octets, remplie de zéros)
 
@@ -16,7 +17,34 @@ const boite = (type, contenu) => {
   return b;
 };
 
-export function mp4Essai(secondes, { aLaFin = false, version = 0, poids = 2000 } = {}) {
+/** (une boîte « pleine » : quatre octets de version d'abord) */
+const pleine = (type, contenu) => boite(type, Buffer.concat([Buffer.alloc(4), contenu]));
+/** 📍 La position d'Android (`moov/udta/©xyz`) et celle de l'iPhone (`moov/meta`, ses clés `com.apple.quicktime.location.…`). */
+export const POSITION_ESSAI = "+43.7102-001.0536+012.000/";
+function positions() {
+  const xyz = boite("©xyz", Buffer.concat([Buffer.from([0, POSITION_ESSAI.length, 0x15, 0xc7]), Buffer.from(POSITION_ESSAI)]));
+  const udta = boite("udta", xyz);
+  const cle = (v) => Buffer.concat([Buffer.alloc(4), Buffer.from("mdta"), Buffer.from(v)]).fill(0, 0, 4);
+  const cles = ["com.apple.quicktime.make", "com.apple.quicktime.location.ISO6709"].map((v) => {
+    const b = cle(v);
+    b.writeUInt32BE(b.length, 0);
+    return b;
+  });
+  const keys = pleine("keys", Buffer.concat([Buffer.from([0, 0, 0, cles.length]), ...cles]));
+  const valeur = (index, texte) => {
+    const data = boite("data", Buffer.concat([Buffer.from([0, 0, 0, 1, 0, 0, 0, 0]), Buffer.from(texte)]));
+    const b = Buffer.alloc(8 + data.length);
+    b.writeUInt32BE(8 + data.length, 0);
+    b.writeUInt32BE(index, 4);
+    data.copy(b, 8);
+    return b;
+  };
+  const ilst = boite("ilst", Buffer.concat([valeur(1, "Apple"), valeur(2, POSITION_ESSAI)]));
+  const meta = boite("meta", Buffer.concat([boite("hdlr", Buffer.concat([Buffer.alloc(8), Buffer.from("mdta"), Buffer.alloc(12)])), keys, ilst]));
+  return Buffer.concat([udta, meta]);
+}
+
+export function mp4Essai(secondes, { aLaFin = false, version = 0, poids = 2000, position = false } = {}) {
   const echelle = 600;
   const duree = Math.round(secondes * echelle);
   let mvhd;
@@ -32,7 +60,7 @@ export function mp4Essai(secondes, { aLaFin = false, version = 0, poids = 2000 }
     mvhd.writeUInt32BE(duree, 16);
   }
   const ftyp = boite("ftyp", Buffer.from("isom\0\0\x02\0isomiso2mp41", "latin1"));
-  const moov = boite("moov", boite("mvhd", mvhd));
+  const moov = boite("moov", Buffer.concat([boite("mvhd", mvhd), ...(position ? [positions()] : [])]));
   const mdat = boite("mdat", Buffer.alloc(Math.max(0, poids - ftyp.length - moov.length - 8)));
   return aLaFin ? Buffer.concat([ftyp, mdat, moov]) : Buffer.concat([ftyp, moov, mdat]);
 }

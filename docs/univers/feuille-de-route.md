@@ -727,8 +727,9 @@ qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/un
   quinquesexagies : « ＋ » → 📷 Photo, la réduction dans le téléphone, la vignette, le plein écran, la figurine qui la
   montre). Reste de M2 : « 🖼️ La mettre dans mon univers ? » (la session de l'univers).
 - **M3, le serveur : construit** (9.0 sexsexagies 🎬 — le dépôt signé, la durée lue dans le fichier, trois images
-  contrôlées avant de livrer, la vignette, effacer, signaler, la mesure de ce qu'elles pèsent). M3, l'écran : pas
-  encore développé.
+  contrôlées avant de livrer, la vignette, effacer, signaler, la mesure de ce qu'elles pèsent). **M3, l'écran :
+  construit** (9.0 septsexagies : « ＋ » → 🎬 Vidéo, la durée dite avant l'envoi, les trois images et l'effacement de
+  la position dans le téléphone, l'envoi en pourcentage, la lecture en grand avec le son, la figurine qui la montre).
 
 ### Plus tard (préparé, pas construit)
 
