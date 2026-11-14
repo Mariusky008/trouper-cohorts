@@ -163,6 +163,20 @@ par une autre session, mise en pause ; le propriétaire a confié tout le chanti
   (les figurines vivent leur vie : chaque jour, une petite scène chez soi avec la figurine d'un proche, et une réponse
   en un toucher) — **sans réponse encore, rien de décidé**.
 
+## 0 quinquies. « Je le range ? » et les messages écrits (14 novembre 2026)
+
+Deux demandes du propriétaire, discutées puis validées (« oui pour les trois, fais le cahier des charges ») ; **rien
+n'est développé** :
+
+- **« Je le range ? »** (lot E5 de l'étagère) : la figurine demande avant de ranger ce qu'elle a entendu. Celui que ça
+  concerne décide seul ; pour ce qui est commun, le premier « oui » des deux ; sans réponse en 48 heures, rien n'est
+  rangé. Le cahier : `docs/univers/etagere-accord.md` (ses phrases et ses choix par défaut sont à valider).
+- **Écrire, partager** (lots M1 à M3) : les messages écrits et les liens, puis les photos, puis les vidéos (30 s), dans
+  la conversation. Un message écrit est dit par la figurine, sans voix ; les photos passent par la modération avant de
+  partir. Le cahier : `docs/univers/messages-ecrits.md`.
+- **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
+  panorama — une seule session à la fois sur ces fichiers.
+
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 
 « Réalise mon vœu » remplacera la question du jour : je dépose un vœu avec ma figurine, les autres l'encouragent avec
