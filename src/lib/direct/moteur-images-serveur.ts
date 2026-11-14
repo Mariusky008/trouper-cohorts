@@ -13,7 +13,11 @@ import sharp from "sharp";
 import { dejaTransparente, detourerSurFondUni, rogner } from "./figurine-pro-serveur";
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
 
-export type DemandeImage = { images: Buffer[]; consigne: string; transparent: boolean; fidelite: "high" | "low"; avant: number; cle: string; base: string; qualite: string };
+/**
+ * (`taille` : en hauteur par défaut, `1024x1536` ; en largeur, `1536x1024` — les pièces en panorama, `pieces-serveur.ts`.
+ * `masque` : une image où ce qui est transparent est à peindre, le reste gardé — la première image prolongée.)
+ */
+export type DemandeImage = { images: Buffer[]; consigne: string; transparent: boolean; fidelite: "high" | "low"; avant: number; cle: string; base: string; qualite: string; taille?: "1024x1536" | "1536x1024"; masque?: Buffer };
 /** L'image rendue (PNG), le modèle qui l'a faite, ses réglages (pour sa signature), ses jetons. */
 export type ImageRendue = { png: Buffer; modele: string; reglages: Record<string, string>; jetons?: number };
 
@@ -23,12 +27,13 @@ export async function demanderUneImage(o: DemandeImage): Promise<ImageRendue | {
   const b = o.base || "https://api.openai.com";
   const { liste } = await moteursDImage(k, b);
   const images = await Promise.all(o.images.map((x) => sharp(x).png().toBuffer()));
+  const masque = o.masque ? await sharp(o.masque).ensureAlpha().png().toBuffer() : null;
   const dessin = images.length === 0;
   let derniere = "Le moteur d’image n’a pas répondu.";
   for (let m = 0; m < liste.length; m++) {
     const modele = liste[m];
     const reglages: Record<string, string> = {
-      size: "1024x1536",
+      size: o.taille ?? "1024x1536",
       quality: o.qualite,
       ...(dessin ? {} : { input_fidelity: o.fidelite }),
       ...(o.transparent ? { background: "transparent" } : {}),
@@ -53,6 +58,7 @@ export async function demanderUneImage(o: DemandeImage): Promise<ImageRendue | {
           forme.append("n", "1");
           for (const [c, v] of Object.entries(reglages)) forme.append(c, v);
           images.forEach((x, i) => forme.append("image[]", new File([new Uint8Array(x)], `image-${i + 1}.png`, { type: "image/png" })));
+          if (masque) forme.append("mask", new File([new Uint8Array(masque)], "masque.png", { type: "image/png" }));
           r = await fetch(`${b}/v1/images/edits`, { method: "POST", headers: { authorization: `Bearer ${k}` }, body: forme, signal: AbortSignal.timeout(reste - 5_000) });
         }
       } catch {

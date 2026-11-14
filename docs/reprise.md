@@ -128,6 +128,10 @@ conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses si
   chanson préférée, la télé avec le film préféré) ; et, pour l'univers partagé, l'univers de départ et les étagères qui
   se remplissent. Ses mots exacts : 9.0 duoquinquagies. Quand les pièces existeront, elles remplaceront la scène
   (`Scene`, dans `app/collection/bienvenue.tsx`).
+- **🏠 Le salon en panorama** (14 novembre) : le propriétaire veut parcourir sa maison à hauteur d'yeux, pièce par pièce
+  (des panoramas qu'on fait glisser, des portes qu'on touche, les objets à leur place, un « i » discret) — la maquette
+  « Chez toi en panorama », puis l'essai d'une vraie pièce dans le style de son univers, à `/admin/humain/univers-essais`
+  (`docs/figurines.md`, 9.0 tresquinquagies). À reprendre avec « l'univers qui grandit ».
 - **La suite** : un tuto par fonctionnalité (« ensuite, on fera des tutos pour chaque feature ») ; aujourd'hui, le logo
   ouvre encore la visite d'avant (`tuto.tsx` : Créer, Découvrir, Autour, Mes mèmes, Proches, Moi), qui ne suit plus le
   menu à trois.
