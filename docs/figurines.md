@@ -3007,13 +3007,45 @@ sur ma figurine ? » Son choix, parmi deux : un quatrième onglet.
   s'ouvre toujours sur « Messages » : la découverte des cadeaux et des visites s'y joue en arrivant.
 - **« Ma maison »** (`app/collection/ma-maison.tsx`) : mon univers en entier (son décor du moment, ma figurine chez
   elle, les cadeaux posés, la saison), ⚙️ ses réglages, « 👀 Comme la voient mes visiteurs », « 🛠️ La retoucher · qui
-  peut entrer », **mon étagère** (elle quitte « Messages »). Sans univers : ce qui l'attend. Demain : la maison de poupée
-  et ses pièces, vivantes (la maquette du 14 novembre).
+  peut entrer », **mon étagère** (elle quitte « Messages »). Sans univers : ce qui l'attend. Demain : ses pièces, chacune
+  entière à l'écran et vivante (l'essai, 9.0 sexquinquagies 🎬).
 - **Dans une conversation**, en haut : « 🏠 Chez Léa » (à la place de « 🏡 Son univers »), et sa figurine y mène aussi.
 - **Les réglages de mon univers** (`/univers/monde`) : « ← Ma maison », « 🏠 Retour à ma maison » ; son menu de demain :
   Découvrir · Messages · Ma maison · Autour.
 - **Les essais** : `bascule-univers.mjs` (le menu à quatre, « Ma maison » de Sam et de Marc, la pastille d'humeur dans
   « Messages », le bouquet posé dans « Ma maison », « 🏠 Chez Marc »), `univers-monde.mjs`, `etagere-mienne.mjs`.
+
+### 9.0 sexquinquagies 🎬 Une pièce entière, vivante — l'essai (14 novembre)
+
+Le propriétaire, sur la maquette « Maison de poupée vivante » : « je n'aime vraiment pas du tout » ; en entrant dans une
+pièce (le panorama), « toujours le même problème ». Ce qu'il veut : « chaque pièce entièrement sur l'écran, comme sur la
+photo [l'image de son univers], mais dézoomée, pour avoir plus de choses visibles. Pour chaque pièce, deux ou trois gros
+objets animés (comme la télé ou un bagage), et le reste sur des étagères. Les étoiles, ça fait étrange et très années
+2000 : il faut que ce soit bien plus wow et immersif. » D'où l'essai, dans `/admin/humain/univers-essais` (au-dessus des
+panoramas), sur SON univers — `lib/direct/pieces-vivantes-serveur.ts`, `api/admin/direct/pieces-vivantes`,
+`admin/humain/univers-essais/vivante.tsx` :
+
+- **Trois pièces**, chacune ses trois **vedettes** : le salon (📻 le tourne-disque, 🔥 la cheminée, 🪟 la grande fenêtre
+  sur le paysage de son univers), la pièce télé (📺 la télé, éteinte, 🐠 l'aquarium, 🕯️ les bougies ; dans le style du
+  salon), la terrasse (🗺️ la carte de ses voyages, 🧳 sa valise, 💡 la guirlande). Tout le reste : **sur des étagères**.
+- **Trois étapes** par pièce. 1. **L'image** (1024 × 1536, une à deux minutes) : la pièce ENTIÈRE, vue de loin (le sol,
+  le fond, les deux côtés, un peu du plafond), ses vedettes grandes et bien à part, ses étagères, une place libre au
+  premier plan pour son fauteuil, personne ; on en garde la vue du téléphone, en 9:16 (864 × 1536). 2. **Les objets** :
+  un modèle qui voit les images repère les vedettes, la place du fauteuil et l'écran de la télé (des cadres en %).
+  3. **La vie** : le **moteur vidéo d'OpenAI** (`OPENAI_VIDEO_MODEL`, `sora-2` par défaut ; 8 s, `OPENAI_VIDEO_SECONDES`)
+  fait de la vue une **photo vivante** — la caméra immobile, seules les vedettes vivent (le disque tourne, le feu danse,
+  les rideaux bougent, les poissons nagent, la guirlande scintille ; l'écran de la télé reste noir). Commandée en un
+  passage, suivie aux suivants (quelques minutes), rangée. Coût, environ : 0,25 $ l'image, 0,80 $ la vidéo.
+- **Dedans, en plein écran** : la pièce entière (l'image fixe, la vidéo en boucle par-dessus — avant la fin, elle
+  s'efface sur l'image fixe, qui est sa première image, et repart en fondu), sa figurine assise à la place repérée
+  (elle respire), « Touche ce qui bouge » ; un point blanc qui s'ouvre sur chaque vedette, trois fois, puis plus rien ;
+  toucher une vedette : la caméra s'en approche, le reste s'assombrit, sa carte monte (« 📻 Le tourne-disque — Ta
+  chanson du moment tourne ici. »). **La télé** passe un lien YouTube (gardé sur ce téléphone), sans le son, posé sur
+  son écran ; « 🔊 Le son » quand on s'en approche.
+- **Rangé** dans `<h>/pieces-entieres/<pièce>/` (image.png, vue.webp, objets.json, video.json — la commande en cours —,
+  video.mp4) ; refaire l'image efface tout, les objets ou la vidéo eux seuls ; un verrou par pièce.
+- **L'essai** : `essai-pieces-vivantes-route.mjs` (le faux moteur vidéo de `faux-supabase.mjs` : la commande, « en
+  train », faite ; l'image reçue exactement à 720 × 1280).
 
 ### 9.1 L'idée en une phrase
 

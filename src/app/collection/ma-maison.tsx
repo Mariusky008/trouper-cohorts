@@ -7,7 +7,8 @@
  *
  * Aujourd'hui : mon univers en entier (son décor du moment, ma figurine chez elle, les cadeaux posés, la saison) ;
  * « 👀 Comme la voient mes visiteurs » (ma page de visite) ; ses réglages (⚙️, `/univers/monde`) ; « Mon étagère »
- * (`EtagereChezMoi`). Demain : la maison de poupée et ses pièces, vivantes (la maquette « Ma maison », 14 novembre).
+ * (`EtagereChezMoi`). Demain : ses pièces, chacune entière à l'écran et vivante (l'essai « Une pièce entière, vivante »,
+ * `lib/direct/pieces-vivantes-serveur.ts`).
  */
 import { EtagereChezMoi } from "./etagere";
 import { FenetreSurMonUnivers, useMonUnivers } from "./chez-moi";

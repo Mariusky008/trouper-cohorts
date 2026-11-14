@@ -611,6 +611,7 @@ async function stockage(req, res, url) {
 const courriels = [];
 /** Les notifications « envoyées » au faux service (les plus récentes à la fin). */
 const pushs = [];
+const videosEssai = new Map();
 const consignesIA = [];
 // 🎲 LES MÈMES « SURPRENDS-MOI ! » DE LA FAUSSE IA : le premier pas encore dans la consigne (« déjà proposés ») ; un goût
 // pour les animaux, le sien ; et un qui parle d'alcool quand on le lui souffle (l'essai vérifie qu'il est écarté)
@@ -645,6 +646,14 @@ http
         const q = JSON.parse((await corps(req)).toString() || "{}");
         const consigne = String(q.messages?.[0]?.content ?? "");
         consignesIA.push(consigne);
+        // 🎬 une pièce entière, vivante : où sont ses vedettes (un cadre chacune, l'une après l'autre), la place du fauteuil,
+        // l'écran de la télé — et un objet qu'elle n'a pas (« lustre »), un écran même sans télé : le serveur les laisse de côté
+        if (consigne.startsWith("LES OBJETS VEDETTES")) {
+          const cles = [...consigne.matchAll(/^- (\w+) :/gm)].map((x) => x[1]);
+          const objets = [...cles, "lustre"].map((cle, n) => ({ cle, x: 8 + n * 28, y: 30 + n * 6, l: 24, h: 20 }));
+          const ecran = { x: 10, y: 32, l: 20, h: 12 };
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ objets, place: { x: 35, y: 72, l: 30, h: 16 }, ecran }) } }] });
+        }
         // 🎙️ le talkie-walkie : trois têtes par réplique (la honte d'abord, puis le fou rire), parmi celles qu'il peut jouer
         if (consigne.includes("LES TÊTES DE SA FIGURINE")) {
           const textes = JSON.parse(/Les répliques \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
@@ -804,6 +813,34 @@ http
             { start: 1.7, end: 3.4, text: " et me voilà au bar avec Thomas, hahaha !" },
           ],
         });
+      }
+      // 🎬 UN FAUX MOTEUR VIDÉO (les pièces vivantes) : une commande (« VIDEO <modèle> <secondes> <taille> <taille de l'image
+      // reçue> <consigne> »), « en train » à la première question, faite à la deuxième ; son contenu : quelques octets
+      if (url.pathname === "/openai/v1/videos" && req.method === "POST") {
+        const brut = await corps(req);
+        const b = brut.toString("latin1");
+        const champ = (n) => new RegExp(`name="${n}"\\r\\n\\r\\n([\\s\\S]*?)\\r\\n--`).exec(b)?.[1] ?? "";
+        const debut = b.indexOf("\r\n\r\n", b.indexOf('name="input_reference"'));
+        const fin = b.indexOf("\r\n--", debut + 4);
+        let dimensions = "aucune";
+        if (b.includes('name="input_reference"') && debut > 0 && fin > debut) {
+          const sharp = (await import("sharp")).default;
+          const m = await sharp(brut.subarray(debut + 4, fin)).metadata().catch(() => null);
+          dimensions = m ? `${m.width}x${m.height}` : "illisible";
+        }
+        consignesIA.push(`VIDEO ${champ("model")} ${champ("seconds")} ${champ("size")} ${dimensions} ${Buffer.from(champ("prompt"), "latin1").toString("utf8")}`);
+        videosEssai.set("video_essai_1", 0);
+        return repondre(res, 200, { id: "video_essai_1", object: "video", status: "queued", progress: 0 });
+      }
+      const video = /^\/openai\/v1\/videos\/([\w-]+)(\/content)?$/.exec(url.pathname);
+      if (video && req.method === "GET" && videosEssai.has(video[1])) {
+        if (video[2]) {
+          res.writeHead(200, { "content-type": "video/mp4" });
+          return res.end(Buffer.from("faux mp4 de la pièce vivante"));
+        }
+        const n = videosEssai.get(video[1]) + 1;
+        videosEssai.set(video[1], n);
+        return repondre(res, 200, n < 2 ? { id: video[1], status: "in_progress", progress: 40 } : { id: video[1], status: "completed", progress: 100 });
       }
       if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
       // UN FAUX GÉOCODEUR (`GEOCODEUR_URL=…/geocodeur/api`, comme Photon) : « gare » trouve la gare de Dax (et, trop loin pour

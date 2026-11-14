@@ -148,6 +148,17 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
 - **L'accès** : un 4ᵉ onglet « Ma maison » — **fait** (9.0 quinquinquagies 🏠), avec « 🏠 Chez Léa » dans la conversation.
 - **Les ambiances** : Pablito en propose une d'après l'âge et la conversation (cosy, urbaine New York, néon et gaming,
   pastel), trois vignettes pour changer — **à faire**, d'abord dans la page d'essais.
+- **Puis, sur la maquette « Maison de poupée vivante »** : « je n'aime vraiment pas du tout », et le panorama en
+  entrant dans une pièce non plus (on n'en voit toujours qu'une tranche). Ce qu'il veut : **chaque pièce ENTIÈRE à
+  l'écran**, comme l'image de son univers, mais **dézoomée** (plus de choses visibles) ; **deux ou trois gros objets
+  animés** par pièce (la télé, une valise…), **le reste sur des étagères** ; et une animation « bien plus wow et
+  immersive » — **plus d'étoiles** (« très années 2000 »). La maison de poupée et les panoramas sont donc abandonnés.
+  **L'essai** (9.0 sexquinquagies 🎬, `/admin/humain/univers-essais`, « Une pièce entière, vivante ») : la pièce entière
+  en hauteur, vue de loin, ses trois vedettes et ses étagères ; les vedettes repérées par un modèle qui voit les
+  images ; puis sa **photo vivante** — huit secondes de vidéo faites par le moteur vidéo d'OpenAI d'après l'image (la
+  caméra immobile, seules les vedettes vivent), jouées en boucle ; on y entre en plein écran, on touche une vedette, on
+  s'en approche ; la télé passe un lien YouTube. **À juger par le propriétaire sur son téléphone** avant d'aller plus
+  loin (la vraie « Ma maison » : une pièce après l'autre, en glissant).
 - **Une autre session** construit l'étagère E5 (`docs/univers/etagere-accord.md`) puis les messages écrits
   (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à
   elle ; l'en-tête de la conversation, le menu et « Ma maison » sont à celle-ci.
