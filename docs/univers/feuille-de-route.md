@@ -707,6 +707,17 @@ l'humeur du matin.
   9.0 novoquadragies 📚) ; E2 « Plus tard » (les rappels du matin, la fierté, les promesses) — **construit** (9.0
   quinquagies 📅) ; E3 « La poussière et les idées » — **construit** (9.0 unquinquagies 🕸️).
 - Il touche `proches.tsx` et `conversation-vivante.tsx` : une seule session à la fois.
+- **E5 « Je le range ? »** (14 novembre, validé, pas encore développé) : la figurine **demande avant de ranger** —
+  celui que ça concerne décide seul, le premier « oui » des deux pour ce qui est commun, rien sans réponse en
+  48 heures. Le cahier : `docs/univers/etagere-accord.md`.
+
+### Lot M — Écrire, partager (14 novembre 2026)
+
+Le propriétaire : « est-ce que les utilisateurs peuvent s'envoyer des messages écrits au lieu du talkie-walkie, avec
+la possibilité de s'envoyer des fichiers comme des photos, des vidéos ou des liens ? » Oui, dans cet ordre : **M1**
+l'écrit et les liens, **M2** les photos, **M3** les vidéos. Un message écrit est dit par la figurine, sans voix ; ce
+qu'on partage peut nourrir son univers, avec son « oui ». **Validé, pas encore développé.** Le cahier :
+`docs/univers/messages-ecrits.md`.
 
 ### Plus tard (préparé, pas construit)
 
