@@ -20,7 +20,7 @@ type Etat = {
   aFaire: Etape[];
   vue?: string;
   video?: string;
-  objets?: { objets: (Cadre & { cle: string })[]; place: Cadre | null; ecran: Cadre | null };
+  objets?: { objets: (Cadre & { cle: string })[]; place: Cadre | null; ecran: Cadre | null; etageres?: Cadre[] };
   vedettes: { cle: string; nom: string; dit: string }[];
   videoEnCours?: { depuis: string; progres?: number };
   figurine?: string;
@@ -163,7 +163,12 @@ export function PieceVivante() {
                   {faite ? "✓ " : train ? "… " : ""}
                   {e.nom}
                   {e.cle === "video" && !faite && ici.videoEnCours && ` — commandée, ${ici.videoEnCours.progres ?? 0} %`}
-                  {e.cle === "objets" && faite && ici.objets && ` — ${ici.objets.objets.length} trouvée(s)${ici.objets.place ? ", la place du fauteuil" : ""}${ici.objets.ecran ? ", l’écran" : ""}`}
+                  {e.cle === "objets" &&
+                    faite &&
+                    ici.objets &&
+                    (ici.objets.objets.length
+                      ? ` — ${ici.objets.objets.length} trouvée(s)${ici.objets.place ? ", la place du fauteuil" : ""}${ici.objets.ecran ? ", l’écran" : ""}${ici.objets.etageres?.length ? `, ${ici.objets.etageres.length} étagère(s)` : ""}`
+                      : " — aucune : touche « Refaire »")}
                 </span>
                 {faite && (
                   <button type="button" disabled={Boolean(occupe)} onClick={() => void refaire(e.cle)} style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid #c9b8a4", background: "#fff", fontWeight: 700 }}>

@@ -650,9 +650,14 @@ http
         // l'écran de la télé — et un objet qu'elle n'a pas (« lustre »), un écran même sans télé : le serveur les laisse de côté
         if (consigne.startsWith("LES OBJETS VEDETTES")) {
           const cles = [...consigne.matchAll(/^- (\w+) :/gm)].map((x) => x[1]);
-          const objets = [...cles, "lustre"].map((cle, n) => ({ cle, x: 8 + n * 28, y: 30 + n * 6, l: 24, h: 20 }));
-          const ecran = { x: 10, y: 32, l: 20, h: 12 };
-          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ objets, place: { x: 35, y: 72, l: 30, h: 16 }, ecran }) } }] });
+          // (📐 la pièce télé : ses vedettes en pixels de l'image vue, 576 × 1024, et son écran en fractions — le serveur
+          // ramène tout en pourcentages)
+          const enPixels = cles.includes("tele");
+          const objets = [...cles, "lustre"].map((cle, n) => (enPixels ? { cle, x: (8 + n * 28) * 5.76, y: (30 + n * 6) * 10.24, w: 24 * 5.76, h: 20 * 10.24 } : { cle, x: 8 + n * 28, y: 30 + n * 6, l: 24, h: 20 }));
+          const ecran = enPixels ? { x: 0.1, y: 0.32, l: 0.2, h: 0.12 } : { x: 10, y: 32, l: 20, h: 12 };
+          // (📚 deux étagères, et une trop étroite pour y poser quoi que ce soit)
+          const etageres = consigne.includes('"etageres"') ? [{ x: 5, y: 20, l: 40, h: 6 }, { x: 55, y: 24, l: 40, h: 6 }, { x: 1, y: 1, l: 3, h: 3 }] : [];
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ objets, place: { x: 35, y: 72, l: 30, h: 16 }, ecran, etageres }) } }] });
         }
         // 🎙️ le talkie-walkie : trois têtes par réplique (la honte d'abord, puis le fou rire), parmi celles qu'il peut jouer
         if (consigne.includes("LES TÊTES DE SA FIGURINE")) {
@@ -827,6 +832,12 @@ http
           const sharp = (await import("sharp")).default;
           const m = await sharp(brut.subarray(debut + 4, fin)).metadata().catch(() => null);
           dimensions = m ? `${m.width}x${m.height}` : "illisible";
+        }
+        // (🔌 la terrasse : le moteur vidéo introuvable à cette adresse — un 404 sans un mot)
+        if (champ("prompt").includes("string lights glow")) {
+          consignesIA.push(`VIDEO-404 ${champ("model")}`);
+          res.writeHead(404);
+          return res.end();
         }
         consignesIA.push(`VIDEO ${champ("model")} ${champ("seconds")} ${champ("size")} ${dimensions} ${Buffer.from(champ("prompt"), "latin1").toString("utf8")}`);
         videosEssai.set("video_essai_1", 0);
