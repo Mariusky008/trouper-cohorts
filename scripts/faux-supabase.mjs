@@ -774,6 +774,8 @@ http
         const champ = (n) => new RegExp(`name="${n}"\\r\\n\\r\\n([\\s\\S]*?)\\r\\n--`).exec(b)?.[1] ?? "";
         const consigne = Buffer.from(champ("prompt"), "latin1").toString("utf8");
         consignesIA.push(`IMAGE ${champ("model")} ${champ("background")} ${champ("input_fidelity")} ${consigne}`);
+        // (🏠 une image prolongée — les pièces en panorama : son masque et sa taille, gardés à part : « MASQUE <taille> »)
+        if (b.includes('name="mask"')) consignesIA.push(`MASQUE ${champ("size")}`);
         const sharp = (await import("sharp")).default;
         const png = await sharp({ create: { width: 64, height: 96, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
           .composite([{ input: await sharp({ create: { width: 32, height: 64, channels: 4, background: { r: 200, g: 90, b: 60, alpha: 1 } } }).png().toBuffer(), left: 16, top: 16 }])

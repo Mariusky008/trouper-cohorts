@@ -2939,6 +2939,33 @@ jour ; il les a enregistrées (la sixième, il l'a gardée telle quelle).
   `essai-bascule-route.mjs` (Pablito adopté : sa figurine debout reprise, puis la première image faite — debout, la
   bouche ouverte — puis ses visages, sur sa figurine assise).
 
+### 9.0 tresquinquagies 🏠 Le salon en panorama : l'essai d'une vraie pièce (14 novembre)
+
+Le propriétaire : « On est dans ta maison, à hauteur d'yeux. On commence dans le salon, moi assis dans mon fauteuil. On
+regarde à gauche ou à droite en glissant. Il y a une porte : on la touche, elle s'ouvre, on passe dans la pièce d'à
+côté. Dans chaque pièce, les choses vivent à leur place : la télé allumée sur ton film, tes photos dans les cadres au mur,
+ton disque sur la platine. Aucune icône qui clignote : un « i » discret apparaît seulement quand on s'arrête sur un objet.
+Chaque pièce est une image très large, dans le style de mon univers ; le premier plan bouge plus vite que le fond ; les
+portes font partie de l'image. » La maquette jouable (« Chez toi en panorama » : le salon, la pièce télé, la terrasse,
+dessinés) ; puis, son accord : « fabriquer une vraie pièce, le salon, dans le style de mon univers, pour juger sur pièce ».
+
+- **L'essai** (`lib/direct/pieces-serveur.ts`, `/api/admin/direct/pieces`, `/admin/humain/univers-essais` : « 🏠 Le
+  salon en panorama ») : réservé à l'administrateur, sur SON univers (son cookie d'habitant). Quatre passages : le
+  centre (en largeur, 1536 × 1024, d'après son décor — une place libre au milieu pour son fauteuil, la platine, les
+  cadres), la gauche (la toile prolongée : la bande de 512 colonnes du centre reprise, le reste à peindre, un masque — la
+  porte de la pièce télé, la bibliothèque), la droite (la baie sur la terrasse), puis l'assemblage en fondu (3584 × 1024,
+  sans moteur). Trois images du moteur, une à deux minutes chacune. Rangé dans `<h>/pieces/salon/` ; refaire une étape
+  efface ce qui en dépend ; un verrou, un passage à la fois.
+- **On le parcourt du doigt** dans la page d'essais : le panorama à la hauteur d'un téléphone, sa figurine assise (avec
+  son fauteuil) posée au milieu, la page ouverte face à elle ; « Ouvrir l'image en grand ».
+- **Le moteur** (`moteur-images-serveur.ts`) apprend la largeur (`taille: "1536x1024"`) et le masque (`masque` : ce qui
+  est transparent est à peindre).
+- **La suite, si le propriétaire l'aime** : les autres pièces (la télé, la terrasse), la profondeur (le premier plan
+  découpé à part), les portes qu'on touche, les objets qui vivent et le « i » (comme dans la maquette) — avec la session
+  de « l'univers qui grandit ».
+- **L'essai** : `essai-pieces-route.mjs` (l'administrateur seulement, sans univers : refusé, les quatre passages et
+  leurs consignes, le masque, les tailles, l'assemblage sans moteur, refaire).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
