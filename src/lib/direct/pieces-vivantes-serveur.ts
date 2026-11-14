@@ -13,7 +13,7 @@
  *      9:16 (`vue.webp`, 864 × 1536 : les deux bords un peu rognés) ;
  *   2. les objets : où sont les vedettes, la place du fauteuil et l'écran de la télé (des cadres en %, lus sur la vue par
  *      un modèle qui voit les images) — on les touche, la caméra s'en approche ;
- *   3. la vie : la vue devient une PHOTO VIVANTE — huit secondes de vidéo faites par un moteur vidéo (Google Veo) d'après
+ *   3. la vie : la vue devient une PHOTO VIVANTE — quatre secondes de vidéo faites par un moteur vidéo (Google, Gemini Omni) d'après
  *      elle (la caméra ne bouge pas ; seuls les objets vivent : le disque tourne, le feu danse, les poissons nagent, la
  *      mer scintille), jouées en boucle par-dessus l'image fixe. La vidéo se fait en quelques minutes : un passage la
  *      commande, les suivants demandent où elle en est, puis la rangent.
@@ -378,96 +378,130 @@ async function commanderLaVideo(p: Piece, vue: Buffer): Promise<{ id: string; br
   }
   return { erreur: refus.length ? `Le moteur vidéo refuse — ${refus.join(" ; ")}. Une clé OpenAI qui ouvre les vidéos (OPENAI_VIDEO_API_KEY) peut être ajoutée dans Vercel.` : "Le moteur vidéo n’est pas branché ici." };
 }
-// ─── 🎥 LE MOTEUR VIDÉO DE GOOGLE (VEO) ───────────────────────────────────────────────────────────────
+// ─── 🎥 LE MOTEUR VIDÉO DE GOOGLE (GEMINI OMNI FLASH) ─────────────────────────────────────────────────
 /**
  * LE 14 NOVEMBRE (le propriétaire : « Sora 2 n'existe plus, il me semble ») : OpenAI a fermé son moteur vidéo (Sora 2,
- * l'API « Videos ») le 24 septembre 2026 — d'où le 404. La vidéo se fait maintenant chez Google : Veo, par l'API Gemini
- * (`GEMINI_VIDEO_API_KEY`, sinon la clé Gemini des figurines, sinon la clé commune ; `GEMINI_VIDEO_BASE_URL`). Le
- * moteur : `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models`, « veo », qui font des vidéos), le moins cher
- * d'abord (le « Lite », puis le rapide), le définitif avant l'aperçu. La commande est une « opération » qu'on suit, puis la vidéo se télécharge.
- * `VIDEO_MOTEUR=openai` revient à OpenAI (si un jour il rouvre).
+ * l'API « Videos ») le 24 septembre 2026. Puis, le soir même, Veo refuse partout (404) : Google a fermé Veo dans l'API
+ * Gemini le 22 octobre 2026 (il ne reste que sur Google Cloud). Son remplaçant, avec la même clé (AI Studio) : GEMINI
+ * OMNI FLASH, par l'API « Interactions » (`POST /v1beta/interactions`, le format du kit officiel `@google/genai` 3.3) —
+ * la consigne et l'image en entrée, une vidéo en sortie (`response_format: { type: "video", aspect_ratio, resolution,
+ * duration }`), faite en arrière-plan (`background`), suivie (`GET /v1beta/interactions/<id>`), puis rendue dans ses
+ * étapes (`steps[].content[]`, `type: "video"` : en ligne, ou à télécharger). L'image est à la fois la PREMIÈRE et la
+ * DERNIÈRE image de la vidéo (`<FIRST_FRAME>@Image1`, `<LAST_FRAME>@Image1`) : une boucle sans couture.
+ *
+ * La clé : `GEMINI_VIDEO_API_KEY`, sinon la clé Gemini des figurines, sinon la clé commune ; `GEMINI_VIDEO_BASE_URL`.
+ * Le moteur : `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models`, « omni »), le plus récent d'abord, le
+ * définitif avant l'aperçu. `VIDEO_MOTEUR=openai` revient à OpenAI (si un jour il rouvre).
  */
 const cleGoogle = () => s(process.env.GEMINI_VIDEO_API_KEY) || s(process.env.FIGURINE_GEMINI_API_KEY) || s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
 const baseGoogle = () => s(process.env.GEMINI_VIDEO_BASE_URL) || s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
-export const moteurVideo = (): "veo" | "openai" => {
+export const moteurVideo = (): "google" | "openai" => {
   const m = s(process.env.VIDEO_MOTEUR).toLowerCase();
-  return m === "veo" || m === "openai" ? m : cleGoogle() ? "veo" : "openai";
+  if (m === "openai") return "openai";
+  return m === "google" || m === "veo" || cleGoogle() ? "google" : "openai";
 };
 /** Si le compte ne dit pas ses moteurs : ceux-ci, dans cet ordre. */
-const MODELES_VEO = ["veo-3.1-lite-generate-001", "veo-3.1-fast-generate-001", "veo-3.1-generate-001", "veo-3.1-lite-generate-preview", "veo-3.1-fast-generate-preview", "veo-3.1-generate-preview"];
+const MODELES_OMNI = ["gemini-omni-1.2-flash", "gemini-omni-1.1-flash", "gemini-omni-flash-preview"];
 /**
- * 💶 LE COÛT (le propriétaire, le 14 novembre : « y a-t-il un moyen de réduire ce coût d'un euro ? ») : Veo se paie à
- * la seconde — 0,40 $ la seconde le standard, 0,10 $ le rapide, 0,05 $ le « Lite » (720p, septembre 2026). Pour une
- * boucle où seules les vedettes bougent, le Lite et QUATRE secondes suffisent : environ 0,20 $ la pièce.
- * `GEMINI_VIDEO_SECONDES` (4, 6 ou 8) et `GEMINI_VIDEO_MODEL` pour autre chose.
+ * 💶 LE COÛT : Omni Flash se paie à la seconde de vidéo (environ 0,10 $ la seconde en 720p, novembre 2026). Pour une
+ * boucle où seules les choses vivent, QUATRE secondes en 720p suffisent : environ 0,40 $ la vidéo.
+ * `GEMINI_VIDEO_SECONDES` (de 3 à 10) et `GEMINI_VIDEO_MODEL` pour autre chose.
  */
-const secondesVeo = () => (["4", "6", "8"].includes(s(process.env.GEMINI_VIDEO_SECONDES)) ? Number(s(process.env.GEMINI_VIDEO_SECONDES)) : 4);
-export async function modelesVeo(): Promise<string[]> {
+const secondesVideo = () => {
+  const n = Number(s(process.env.GEMINI_VIDEO_SECONDES));
+  return Number.isInteger(n) && n >= 3 && n <= 10 ? n : 4;
+};
+export async function modelesOmni(): Promise<string[]> {
   const force = s(process.env.GEMINI_VIDEO_MODEL);
   const r = await fetch(`${baseGoogle()}/v1beta/models?pageSize=1000`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(20_000) }).catch(() => null);
-  const j = (r?.ok ? await r.json().catch(() => ({})) : {}) as { models?: { name?: string; supportedGenerationMethods?: string[] }[] };
-  const vus = (j.models ?? []).filter((m) => /veo/i.test(s(m.name)) && (m.supportedGenerationMethods ?? []).includes("predictLongRunning")).map((m) => s(m.name).replace(/^models\//, ""));
-  // (le moins cher d'abord : le « Lite », puis le rapide, puis le standard ; le définitif avant l'aperçu)
-  const rang = (id: string) => (/lite/i.test(id) ? 0 : /fast/i.test(id) ? 2 : 4) + (/preview/i.test(id) ? 1 : 0);
-  const tries = [...vus].sort((a, b) => rang(a) - rang(b) || b.localeCompare(a));
-  return [...new Set([...(force ? [force] : []), ...(tries.length ? tries : MODELES_VEO)])].slice(0, 4);
+  const j = (r?.ok ? await r.json().catch(() => ({})) : {}) as { models?: { name?: string }[] };
+  const vus = (j.models ?? []).map((m) => s(m.name).replace(/^models\//, "")).filter((n) => /omni/i.test(n));
+  // (le plus récent d'abord ; le définitif avant l'aperçu)
+  const version = (id: string) => Number(/(\d+(?:\.\d+)?)/.exec(id)?.[1] ?? 0);
+  const tries = [...vus].sort((a, b) => Number(/preview/i.test(a)) - Number(/preview/i.test(b)) || version(b) - version(a) || a.localeCompare(b));
+  return [...new Set([...(force ? [force] : []), ...(tries.length ? tries : MODELES_OMNI)])].slice(0, 4);
 }
-async function commanderChezVeo(p: Piece, vue: Buffer): Promise<{ id: string; modele: string } | { erreur: string }> {
+const commanderChezGoogle = async (p: Piece, vue: Buffer) => commanderUneVideoGoogle(consigneVivante(p), await pourLaVideo(vue));
+/** 🎥 Une vidéo commandée chez Google (Omni Flash) : sa consigne, et l'image de départ (déjà à 720 × 1280). Aussi pour son univers. */
+export async function commanderUneVideoGoogle(consigne: string, image: Buffer): Promise<{ id: string; modele: string } | { erreur: string }> {
   if (!cleGoogle()) return { erreur: "Le moteur vidéo de Google n’est pas branché ici (GEMINI_VIDEO_API_KEY)." };
-  const data = (await pourLaVideo(vue)).toString("base64");
-  const prompt = consigneVivante(p);
-  // (la forme que l'API attend a changé selon les versions : l'image « inlineData », puis sans réglage de personnes,
-  // puis « bytesBase64Encoded » — à la première qui n'est pas refusée pour sa forme)
-  const duree = secondesVeo();
+  const texte = `<FIRST_FRAME>@Image1 <LAST_FRAME>@Image1\n${consigne}`;
+  const input = [
+    { type: "text", text: texte },
+    { type: "image", data: image.toString("base64"), mime_type: "image/png" },
+  ];
+  const format = { type: "video", aspect_ratio: "9:16", resolution: "720p" };
+  const duree = `${secondesVideo()}s`;
+  // (refusée pour sa forme : la suivante — sans durée imposée, puis sans arrière-plan : la réponse attend la vidéo)
   const formes = [
-    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", durationSeconds: duree, personGeneration: "allow_adult" } },
-    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", durationSeconds: duree } },
-    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16" } },
-    { instances: [{ prompt, image: { bytesBase64Encoded: data, mimeType: "image/png" } }], parameters: { aspectRatio: "9:16", durationSeconds: duree } },
+    { input, response_format: { ...format, duration: duree }, background: true },
+    { input, response_format: format, background: true },
+    { input, response_format: { ...format, duration: duree } },
+    { input, response_format: format },
   ];
   const refus: string[] = [];
-  for (const modele of await modelesVeo()) {
+  for (const modele of await modelesOmni()) {
     for (const forme of formes) {
-      const r = await fetch(`${baseGoogle()}/v1beta/models/${encodeURIComponent(modele)}:predictLongRunning`, {
+      const r = await fetch(`${baseGoogle()}/v1beta/interactions`, {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": cleGoogle() },
-        body: JSON.stringify(forme),
-        signal: AbortSignal.timeout(60_000),
+        body: JSON.stringify({ model: modele, ...forme }),
+        signal: AbortSignal.timeout(forme.background ? 60_000 : 110_000),
       }).catch(() => null);
       if (!r) {
         refus.push(`${modele} : pas de réponse`);
         break;
       }
       if (r.ok) {
-        const j = (await r.json().catch(() => ({}))) as { name?: string };
-        if (/^[\w./-]+$/.test(s(j.name))) return { id: s(j.name), modele };
+        const j = (await r.json().catch(() => ({}))) as { id?: string; status?: string };
+        if (/^[\w.-]+$/.test(s(j.id))) return { id: s(j.id), modele };
         refus.push(`${modele} : pas de commande rendue`);
         break;
       }
-      const pourquoi = await raison(r);
-      refus.push(`${modele} : ${r.status} ${pourquoi}`.trim());
+      refus.push(`${modele} : ${r.status} ${await raison(r)}`.trim());
       // (refusée pour sa forme : la suivante ; sinon, ce moteur n'est pas pour nous : le suivant)
       if (r.status !== 400) break;
     }
   }
-  return { erreur: `Le moteur vidéo de Google (Veo) refuse — ${refus.slice(-4).join(" ; ") || "aucun moteur vidéo sur ce compte"}.` };
+  return { erreur: `Le moteur vidéo de Google (Gemini Omni) refuse — ${refus.slice(-4).join(" ; ") || "aucun moteur vidéo sur ce compte"}.` };
 }
-/** Où en est l'opération Veo : faite (téléchargée, rangée), ratée (la commande s'efface), ou en train (une estimation). */
-async function suivreChezVeo(d: ReturnType<typeof depotDans>, id: string, depuis: string): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
-  if (!/^[\w./-]+$/.test(id)) return { erreur: "La commande de la vidéo est illisible : refais-la." };
-  const r = await fetch(`${baseGoogle()}/v1beta/${id}`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(30_000) }).catch(() => null);
-  if (!r?.ok) return { erreur: `Le moteur vidéo ne dit pas où en est la vidéo (${r?.status ?? "réseau"}).` };
-  type Op = { done?: boolean; error?: { message?: string }; response?: { generateVideoResponse?: { generatedSamples?: { video?: { uri?: string } }[]; raiMediaFilteredReasons?: string[] } } };
-  const j = (await r.json().catch(() => ({}))) as Op;
+/** La vidéo, dans les étapes de l'interaction (ou ailleurs dans la réponse) : la dernière qui a des octets ou une adresse. */
+function videoRendue(j: unknown): { data?: string; uri?: string } | null {
+  let vue: { data?: string; uri?: string } | null = null;
+  const fouiller = (x: unknown) => {
+    if (Array.isArray(x)) return x.forEach(fouiller);
+    if (!x || typeof x !== "object") return;
+    const o = x as Record<string, unknown>;
+    if ((o.type === "video" || /^video\//.test(s(o.mime_type))) && (s(o.data) || s(o.uri))) vue = { ...(s(o.data) ? { data: s(o.data) } : {}), ...(s(o.uri) ? { uri: s(o.uri) } : {}) };
+    for (const v of Object.values(o)) if (v && typeof v === "object") fouiller(v);
+  };
+  fouiller(j);
+  return vue;
+}
+const ENCORE = new Set(["in_progress", "queued", "requires_continuation"]);
+/** Où en est la vidéo chez Google : faite (téléchargée, rangée), ratée (la commande s'efface), ou en train (une estimation). */
+export async function suivreChezGoogle(d: ReturnType<typeof depotDans>, id: string, depuis: string): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
+  if (!/^[\w.-]+$/.test(id)) return { erreur: "La commande de la vidéo est illisible : refais-la." };
+  const r = await fetch(`${baseGoogle()}/v1beta/interactions/${encodeURIComponent(id)}`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(60_000) }).catch(() => null);
+  if (!r?.ok) return { erreur: `Le moteur vidéo ne dit pas où en est la vidéo (${r ? `${r.status} ${await raison(r)}`.trim() : "réseau"}).` };
+  const j = (await r.json().catch(() => ({}))) as { status?: string; errors?: { message?: string }[]; error?: { message?: string } };
   const rater = async (pourquoi: string) => {
     await d.effacer("video.json").catch(() => undefined);
     return { erreur: `La vidéo a échoué : ${pourquoi}. Touche « Continuer » pour la recommander.` };
   };
-  if (j.error) return rater(s(j.error.message) || "le moteur n’a pas dit pourquoi");
-  if (!j.done) return { progres: Math.min(95, Math.round(((Date.now() - (Date.parse(depuis) || Date.now())) / 120_000) * 100)) };
-  const uri = s(j.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri);
-  if (!uri) return rater(s(j.response?.generateVideoResponse?.raiMediaFilteredReasons?.join(", ")) || "aucune vidéo rendue");
-  const c = await fetch(uri, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(90_000) }).catch(() => null);
+  const statut = s(j.status);
+  if (ENCORE.has(statut)) return { progres: Math.min(95, Math.round(((Date.now() - (Date.parse(depuis) || Date.now())) / 120_000) * 100)) };
+  const pourquoi = [...(j.errors ?? []).map((e) => s(e.message)), s(j.error?.message)].filter(Boolean).join(" ; ");
+  if (statut && statut !== "completed") return rater(`${statut}${pourquoi ? ` (${pourquoi})` : ""}`);
+  const v = videoRendue(j);
+  if (!v) return rater(pourquoi || "aucune vidéo rendue");
+  if (v.data) {
+    await d.ecrire("video.mp4", Buffer.from(v.data, "base64"), "video/mp4");
+    return { fait: true };
+  }
+  // (une adresse : complète, ou un fichier de l'API — `files/<id>`)
+  const adresse = /^https?:\/\//.test(v.uri!) ? v.uri! : `${baseGoogle()}/v1beta/${v.uri!.replace(/^\/+/, "").replace(/^v1beta\//, "")}${v.uri!.includes(":download") ? "" : ":download?alt=media"}`;
+  const c = await fetch(adresse, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(90_000) }).catch(() => null);
   if (!c?.ok) return { erreur: `La vidéo est faite, mais ne se télécharge pas (${c?.status ?? "réseau"}) : réessaie.` };
   await d.ecrire("video.mp4", Buffer.from(await c.arrayBuffer()), "video/mp4");
   return { fait: true };
@@ -531,14 +565,14 @@ export async function fabriquerLaPieceVivante(supabase: Supabase, h: string, p: 
     // la vidéo : commandée une fois, puis suivie
     const commande = json(await d.lire("video.json").catch(() => null));
     if (!s(commande.id)) {
-      // (🎥 chez Google, Veo — OpenAI a fermé le sien ; `VIDEO_MOTEUR=openai` y revient)
-      const veo = moteurVideo() === "veo";
-      const c = veo ? await commanderChezVeo(p, vue) : await commanderLaVideo(p, vue);
+      // (🎥 chez Google, Gemini Omni — OpenAI a fermé le sien ; `VIDEO_MOTEUR=openai` y revient)
+      const google = moteurVideo() === "google";
+      const c = google ? await commanderChezGoogle(p, vue) : await commanderLaVideo(p, vue);
       if ("erreur" in c) return { erreur: c.erreur };
-      await d.ecrire("video.json", Buffer.from(JSON.stringify({ id: c.id, le: new Date().toISOString(), modele: c.modele, ...(veo ? { moteur: "veo" } : { branchement: (c as { branchement?: string }).branchement }) })), "application/json");
+      await d.ecrire("video.json", Buffer.from(JSON.stringify({ id: c.id, le: new Date().toISOString(), modele: c.modele, ...(google ? { moteur: "google" } : { branchement: (c as { branchement?: string }).branchement }) })), "application/json");
       return { progres: 0 };
     }
-    const suite = commande.moteur === "veo" ? await suivreChezVeo(d, s(commande.id), s(commande.le)) : await suivreLaVideo(d, s(commande.id), branchementDe(commande.branchement));
+    const suite = commande.moteur === "google" ? await suivreChezGoogle(d, s(commande.id), s(commande.le)) : await suivreLaVideo(d, s(commande.id), branchementDe(commande.branchement));
     if ("erreur" in suite) return { erreur: suite.erreur };
     if ("progres" in suite) {
       await d.ecrire("video.json", Buffer.from(JSON.stringify({ ...commande, progres: suite.progres })), "application/json");

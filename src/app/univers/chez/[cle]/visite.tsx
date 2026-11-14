@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, SOUVENIRS_EN_ATTENTE_MAX, objetDe, type ObjetSouvenir, type VueVisite } from "@/lib/direct/visites";
 import { jouerDoux } from "@/lib/direct/sons";
-import { DansLesPieces, VignettesPieces } from "@/app/univers/piece-vivante";
+import { DansLesPieces, DecorVivant, VignettesPieces } from "@/app/univers/piece-vivante";
 
 const ROUTE = "/api/direct/visites";
 type Ouvert = Extract<VueVisite, { etat: "ouvert" }>;
@@ -178,6 +178,8 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
       <div className={`uv-scene${toc ? ` toc${toc % 2}` : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="uv-decor" src={vue.decor} alt={`L’univers de ${vue.prenom}`} />
+        {/* 🌟 son décor, vivant (s'il l'est) */}
+        {vue.decorVivant && <DecorVivant src={vue.decorVivant} />}
         {vue.souvenirs.map((s) =>
           typeof s.x === "number" && typeof s.y === "number" ? (
             <button

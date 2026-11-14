@@ -5,8 +5,9 @@
 // 1. l'image — la pièce ENTIÈRE, en hauteur (1024 × 1536), vue de loin, ses trois vedettes (le tourne-disque, la
 // cheminée, la fenêtre), ses étagères, la place du fauteuil, personne ; la vue du téléphone gardée en 9:16 (864 × 1536) ;
 // 2. les objets — les trois vedettes, la place du fauteuil (un objet qu'elle n'a pas est laissé de côté ; pas d'écran
-// sans télé) ; 3. la vie — la vidéo commandée (le modèle, 8 s, 720 × 1280, l'image reçue exactement à cette taille, la
-// caméra immobile, ce qui vit — chez Google, Veo : la forme refusée, la suivante), « en train », puis faite et rangée. Plus rien ensuite ; aucun verrou. La pièce
+// sans télé) ; 3. la vie — la vidéo commandée chez Google (Gemini Omni Flash, le plus récent ; 9:16, 4 s, 720p, en
+// arrière-plan ; l'image reçue exactement à 720 × 1280, la première et la dernière image ; la caméra immobile, ce qui
+// vit), « en train », puis faite (un fichier à télécharger) et rangée. Plus rien ensuite ; aucun verrou. La pièce
 // télé : l'écran de la télé repéré, la télé éteinte qui le reste dans la vidéo, dans le style du salon (IMAGE 2).
 // Refaire la vidéo : elle seule ; l'image : tout. Une pièce inconnue : refusée.
 //
@@ -120,11 +121,11 @@ ok(vus?.objets?.map((o) => o.cle).join() === "platine,feu,fenetre" && vus.place?
 // ─── 3. la vie ───
 const v1 = await appeler(lea, { action: "fabriquer" });
 ia = (await toutIA()).slice(avant);
-const commande = ia.find((c) => c.startsWith("VEO ")) ?? "";
+const commande = ia.find((c) => c.startsWith("OMNI ")) ?? "";
 ok(v1.statut === 200 && v1.progres === 0 && !v1.fait && v1.etat?.videoEnCours?.depuis, "3. la vidéo : commandée (rien de fait encore)");
-ok(ia.includes("VEO-400 veo-3.1-lite-generate-001 personGeneration") && commande.startsWith("VEO veo-3.1-lite-generate-001 9:16 4s 720x1280 ") && commande.includes("no voice") && commande.includes("locked-off tripod shot") && commande.includes("the vinyl record turns slowly") && commande.includes("the flames of the fire flicker") && commande.includes("stays empty"), `le moteur vidéo : 8 s, 720 × 1280, l'image reçue exactement à sa taille ; la caméra immobile, le disque tourne, le feu danse (${commande.slice(0, 48)}…)`);
+ok(commande.startsWith("OMNI gemini-omni-1.2-flash 9:16 4s 720p fond 720x1280 <FIRST_FRAME>@Image1 <LAST_FRAME>@Image1\n") && commande.includes("no voice") && commande.includes("locked-off tripod shot") && commande.includes("the vinyl record turns slowly") && commande.includes("the flames of the fire flicker") && commande.includes("stays empty"), `chez Google (Gemini Omni 1.2 Flash) : 9:16, 4 s, 720p, en arrière-plan ; l'image reçue à 720 × 1280, première et dernière image (une boucle) ; la caméra immobile, le disque tourne, le feu danse (${commande.slice(0, 60)}…)`);
 const v2 = await appeler(lea, { action: "fabriquer" });
-ok(typeof v2.progres === "number" && v2.progres < 95 && !v2.fait && v2.etat?.videoEnCours, `elle se fait (${v2.progres} %, estimé : Veo ne le dit pas)`);
+ok(typeof v2.progres === "number" && v2.progres < 95 && !v2.fait && v2.etat?.videoEnCours, `elle se fait (${v2.progres} %, estimé : Google ne le dit pas)`);
 const v3 = await appeler(lea, { action: "fabriquer" });
 const mp4 = await octets(`${D}/salon/video.mp4`);
 ok(v3.fait === "video" && mp4?.toString() === "faux mp4 de la pièce vivante" && /^http/.test(v3.etat?.video ?? "") && !v3.etat.videoEnCours && v3.etat.aFaire?.length === 0, "faite : rangée, signée ; tout est fait");
@@ -144,14 +145,15 @@ const tv = t2.etat?.objets?.objets?.[0];
 ok(tv?.x === 8 && tv.y === 30 && tv.l === 24 && tv.h === 20 && t2.etat.objets.ecran.x === 10 && t2.etat.objets.ecran.h === 12, `📐 le modèle a rendu des pixels (et des fractions) : ramenés en pourcentages (${JSON.stringify(tv)})`);
 await appeler(lea, { action: "fabriquer", piece: "tele" });
 ia = (await toutIA()).slice(avantTele);
-ok(ia.some((c) => c.startsWith("VEO ") && c.includes("the television screen stays dark and perfectly still") && c.includes("fish swim")), "dans la vidéo : les poissons nagent, l'écran reste noir");
+ok(ia.some((c) => c.startsWith("OMNI ") && c.includes("the television screen stays dark and perfectly still") && c.includes("fish swim")), "dans la vidéo : les poissons nagent, l'écran reste noir");
 
 // ─── 🔌 la terrasse : le moteur vidéo introuvable à cette adresse (un 404 sans un mot) ───
 await appeler(lea, { action: "fabriquer", piece: "terrasse" });
 await appeler(lea, { action: "fabriquer", piece: "terrasse" });
 const t404 = await appeler(lea, { action: "fabriquer", piece: "terrasse" });
-ok(t404.statut === 502 && (t404.error ?? "").includes("Veo") && (t404.error ?? "").includes("veo-3.1-lite-generate-001 : 404") && (t404.error ?? "").includes("is not found") && !t404.etat?.videoEnCours, `🔌 la terrasse : le moteur vidéo introuvable — l'adresse et le moteur sont dits, et la clé qui ouvre les vidéos (${t404.error})`);
-ok((await toutIA()).includes("VEO-404 veo-3.1-lite-generate-001") && (await toutIA()).includes("VEO-404 veo-3.1-fast-generate-001") && (await toutIA()).includes("VEO-404 veo-3.1-generate-001"), "la commande a bien été tentée, chez chacun des moteurs vidéo du compte");
+ok(t404.statut === 502 && (t404.error ?? "").includes("Gemini Omni") && (t404.error ?? "").includes("gemini-omni-1.2-flash : 404") && (t404.error ?? "").includes("is not found") && !t404.etat?.videoEnCours, `🔌 la terrasse : le moteur vidéo introuvable — le moteur et la raison sont dits (${t404.error})`);
+const tentes = (await toutIA()).filter((c) => c.startsWith("OMNI-404 "));
+ok(tentes.join() === "OMNI-404 gemini-omni-1.2-flash,OMNI-404 gemini-omni-1.1-flash,OMNI-404 gemini-omni-flash-preview", "la commande a bien été tentée chez chacun des moteurs vidéo du compte (le plus récent, puis l'aperçu en dernier)");
 
 // ─── 📚 un souvenir qu'elle montre (son étagère, « Mon étagère ») : il se posera sur une étagère de ses pièces ───
 await deposer(`${LEA.id}/neutre-essai.png`, PNG, "image/png");

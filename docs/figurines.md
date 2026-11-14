@@ -3067,6 +3067,20 @@ panoramas), sur SON univers — `lib/direct/pieces-vivantes-serveur.ts`, `api/ad
   0,40 $ le standard, 0,10 $ le rapide, **0,05 $ le « Lite »** (720p). Le Lite d'abord, et **quatre secondes** en boucle
   (`durationSeconds`) : environ **0,20 $ la pièce** au lieu d'un dollar. `GEMINI_VIDEO_SECONDES` (4, 6, 8) et
   `GEMINI_VIDEO_MODEL` pour autre chose.
+- **Puis, le soir même, l'essai du propriétaire : Veo refuse partout (404, « not found for API version v1beta »)** —
+  Google a fermé Veo dans l'API Gemini le 22 octobre 2026 (il ne reste que sur Google Cloud, Vertex AI, avec un projet
+  Cloud et un jeton : une autre installation). Son remplaçant, avec la MÊME clé (AI Studio) : **Gemini Omni Flash**
+  (`gemini-omni-1.2-flash`, `gemini-omni-1.1-flash`, `gemini-omni-flash-preview`), par l'API « Interactions » — le
+  format lu dans le kit officiel `@google/genai` 3.3 (12 novembre 2026) : `POST /v1beta/interactions` avec `model`,
+  `input` (la consigne, puis l'image en ligne : `{ type: "image", data, mime_type }`), `response_format: { type:
+  "video", aspect_ratio: "9:16", resolution: "720p", duration: "4s" }`, `background: true` ; suivie par `GET
+  /v1beta/interactions/<id>` (`in_progress`, puis `completed`) ; la vidéo dans ses étapes (`steps[].content[]`, `type:
+  "video"`, en ligne ou par adresse — `files/<id>` se télécharge). Les formes refusées (400) : sans durée, puis sans
+  arrière-plan. L'image est la première ET la dernière image de la vidéo (`<FIRST_FRAME>@Image1 <LAST_FRAME>@Image1`) :
+  une boucle sans couture. Le moteur : `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models`, « omni »), le
+  plus récent d'abord, le définitif avant l'aperçu (`moteurVideo()` : « google »). **Le coût** : environ 0,10 $ la
+  seconde en 720p, soit **0,40 $** la vidéo de quatre secondes (`GEMINI_VIDEO_SECONDES`, de 3 à 10). Le faux Omni de
+  `faux-supabase.mjs` (`/gemini/v1beta/interactions`) remplace le faux Veo.
 
 ### 9.0 septquinquagies 🎨 Les ambiances de son univers — l'essai (14 novembre)
 
@@ -3241,6 +3255,30 @@ et 8. Le serveur : 9.0 unsexagies. Le fichier : `app/collection/ecrire.tsx`.
   - la page de confidentialité (« ce n'est pas un chiffrement de bout en bout », section 7) : c'est un texte juridique,
     au propriétaire de le valider.
 - **L'essai** : `scripts/navigateur/messages.mjs`.
+
+### 9.0 tresexagies 🌟 Son univers, vivant (14 novembre)
+
+Le propriétaire, le matin même : « une jolie photo sans âme […] mon univers doit donner l'impression d'être en vie,
+qu'il s'y passe quelque chose ». Les pièces ont leur photo vivante ; son univers aussi, maintenant qu'une vidéo coûte
+environ 0,40 $ (Google, Gemini Omni Flash : quatre secondes en 720p).
+
+- **La vidéo** (`lib/direct/univers-vivant-serveur.ts`) : son décor du moment (celui du mois, s'il est fait) devient
+  une photo vivante — la caméra immobile, seules les choses de son univers vivent (les flammes, les lampes, les
+  plantes, l'eau, les nuages), en boucle ; l'espace dégagé devant, où sa figurine est assise, ne bouge pas ; personne,
+  aucun texte, sans voix. Le décor est en 2:3, la vidéo en 9:16 : elle en reprend le milieu (864 colonnes sur 1024 →
+  720 × 1280) et se pose dessus (`DecorVivant`, `app/univers/piece-vivante.tsx`), ses bords fondus dans l'image fixe.
+  Commandée chez Google (`commanderUneVideoGoogle`, `suivreChezGoogle` : les mêmes que pour les pièces), rangée dans
+  `<h>/univers-vivant/` avec le décor d'où elle vient (`decor.json`) : son décor change (une retouche, le décor du mois
+  suivant), elle ne se montre plus (« périmée ») jusqu'à ce qu'elle soit refaite.
+- **L'essai** (`/admin/humain/univers-essais`, « 🌟 Ton univers, vivant », route `/api/admin/direct/univers-vivant` :
+  GET l'état, POST `fabriquer` / `refaire`), sur SON univers : « Le rendre vivant », la page suit la vidéo (huit
+  secondes entre deux questions), puis la montre sur son décor.
+- **Faite, elle se montre** dans « Ma maison » (`EtatUnivers.decorVivant`, `/api/direct/univers`) et à ses visiteurs
+  (`VueVisite.decorVivant`, `/univers/chez/<clé>`), par-dessus le décor. **À décider par le propriétaire** : la faire
+  pour chacun (à la création de l'univers, et chaque mois avec le décor du mois), et quand.
+- **L'essai automatique** : `essai-univers-vivant-route.mjs` (Gemini Omni, 9:16, 4 s, 720p, 720 × 1280, la caméra immobile,
+  l'espace devant vide, sans voix ; « en train », puis faite ; dans « Ma maison » et chez Sam en visite ; son décor
+  retouché : périmée, plus montrée ; la refaire).
 
 ### 9.1 L'idée en une phrase
 
