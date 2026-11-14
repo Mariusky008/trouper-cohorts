@@ -1,7 +1,12 @@
 # « Je le range ? » — l'étagère demande avant de ranger (lot E5, cahier des charges, 14 novembre 2026)
 
-**Statut : validé par le propriétaire, pas encore développé.** Ce cahier modifie l'étagère construite (lots E1 à E4,
-`docs/univers/etagere.md`). Le lire avec celui-là : tout ce qui n'est pas dit ici reste comme il est.
+**Statut : validé par le propriétaire, construit le 14 novembre 2026** (`docs/figurines.md`, 9.0 quinquinquagies 📌).
+Ce cahier modifie l'étagère construite (lots E1 à E4, `docs/univers/etagere.md`). Le lire avec celui-là : tout ce qui
+n'est pas dit ici reste comme il est.
+
+**Ce qui a changé en le construisant** : la bulle de l'issue dit « J'ai entendu : c'est réussi ! Je range ça dans vos
+fiertés ? 🏆 » (« tu l'as eu » s'accordait avec l'objet : « tu l'as eue » pour une finale) ; dans « Mon étagère », la
+planche dit aussi « ✨ 2 à ranger ».
 
 ## 1. Ce que le propriétaire a demandé
 
@@ -38,7 +43,7 @@ ton accord ».
 ## 4. Les cas particuliers
 
 - **L'issue d'une épreuve** (« JE L'AI !!! ») : aujourd'hui, le modèle la range seul en fierté. Demain, c'est une
-  question à celui que ça concerne : « J'ai entendu : tu l'as eu ! Je le range dans vos fiertés ? » Un raté ou un
+  question à celui que ça concerne : « J'ai entendu : c'est réussi ! Je range ça dans vos fiertés ? 🏆 » Un raté ou un
   report se règle sans bruit, comme aujourd'hui (rien n'est rangé, donc rien à demander).
 - **« ＋ Déposer » (lot E4)** : déposer pour moi, ou pour nous deux, se range tout de suite (c'est déjà un geste
   volontaire). **Déposer pour l'autre devient une question à l'autre** : « Marc veut ranger sur votre étagère : ton
@@ -147,7 +152,7 @@ Les chiffres d'avant (« retirés », « dates changées ») restent, pour compa
 | Le panneau | « 📌 Je le range ? » |
 | La bulle, une personne | « J'ai entendu : ton permis, jeudi 19. » |
 | La bulle, les deux | « J'ai entendu : le resto italien. On le garde ? » |
-| L'issue | « J'ai entendu : tu l'as eu ! Je le range dans vos fiertés ? » |
+| L'issue | « J'ai entendu : c'est réussi ! Je range ça dans vos fiertés ? 🏆 » |
 | Le dépôt de l'autre | « Marc veut ranger sur votre étagère : ton concert, samedi. D'accord ? » |
 | Au « non » | « D'accord, j'oublie. » |
 | La carte | « 📌 TA FIGURINE TE DEMANDE » · « Sans réponse, elle oublie dans 2 jours » |

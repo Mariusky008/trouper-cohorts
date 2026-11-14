@@ -24,9 +24,16 @@ export type SorteDate = (typeof SORTES)[number];
 /**
  * `actif` : sur l'étagère ; `tenue` : une promesse tenue (lot E2) ; `fierte` : une épreuve réussie (lot E2) ; `passe` :
  * partie sans bruit (rien n'en reste à l'écran) ; `sommeil` : une promesse qu'on ne relance plus ; `retire` : retirée par
- * l'un des deux (une pierre tombale : ce message ne sera plus jamais noté).
+ * l'un des deux (une pierre tombale : ce message ne sera plus jamais noté) ; (lot E5) `propose` : la figurine demande
+ * avant de ranger (« 📌 Je le range ? ») — rien ne se voit avant un « oui ».
  */
-export type EtatObjet = "actif" | "tenue" | "fierte" | "passe" | "sommeil" | "retire";
+export type EtatObjet = "actif" | "tenue" | "fierte" | "passe" | "sommeil" | "retire" | "propose";
+/**
+ * 📌 (lot E5) LA QUESTION : à qui elle est posée (8 signes tirés de son identifiant, ou « deux » : le premier qui
+ * répond décide), jusqu'à quand ; `issue` : une épreuve réussie à ranger dans les fiertés ; `par8` : un dépôt de
+ * l'autre (« Marc veut ranger sur votre étagère »).
+ */
+export type Demande = { a: string; jusqua: string; issue?: true; par8?: string };
 export type RayonCle = "fiertes" | "avenir" | "aime";
 
 /** Ce que le seau garde (`fils/<paire>/etagere.json`). Jamais l'identifiant d'un habitant : 8 signes tirés de lui. */
@@ -64,6 +71,12 @@ export type ObjetGarde = {
   emojiAvant?: string;
   /** ✋ (lot E4) déposé à la main, pas noté par les figurines : pas de citation ; `de8` : qui l'a déposé. */
   depose?: true;
+  /** 📌 (lot E5) la question qui attend (un souvenir proposé, ou l'issue d'une épreuve). */
+  demande?: Demande;
+  /** 🪦 (lot E5) pourquoi c'est une pierre tombale : un « non », 48 heures sans réponse, ou retiré. */
+  raison?: "non" | "sans-reponse" | "retire";
+  /** (lot E5) l'issue de cette épreuve a reçu un « non » : elle n'est plus jamais demandée. */
+  sansIssue?: true;
 };
 
 /**
@@ -125,7 +138,16 @@ export type EtagereScene = {
   etat?: EtatEtagere;
   poussiere?: { jours: number; texte: string; bouton: string };
   rallumes?: CarteRallume[];
+  /** 📌 (lot E5) les questions qui l'attendent, lui ; `aJouer` : celle que la scène joue (une par jour). */
+  questions?: QuestionVue[];
+  aJouer?: string;
 };
+
+/**
+ * 📌 (lot E5) UNE QUESTION, telle que celui qui décide la voit : le souvenir (déjà tourné pour lui), jusqu'à quand,
+ * la phrase de la figurine, et laquelle des deux figurines la pose (`qui`).
+ */
+export type QuestionVue = { id: string; objet: ObjetVu; jusqua: string; issue?: true; depot?: true; phrase: string; qui: "moi" | "lui" };
 
 /** 📚 La page « Votre étagère ». */
 export type EtagereVue = {
@@ -166,6 +188,9 @@ export const ETAGERE = {
   /** Les entrées gardées (les pierres tombales comprises). */
   gardes: 200,
 } as const;
+
+/** 📌 (lot E5) « Je le range ? » : 48 heures pour répondre ; une date plus proche : jusqu'à son soir (20 h UTC), et au moins trois heures. */
+export const ACCORD = { heures: 48, soirUtc: "20:00:00", auMoins: 3 * 3_600_000 } as const;
 
 // ─── le catalogue des emojis ───────────────────────────────────────────────────────────────────────
 /**
@@ -467,10 +492,19 @@ export function dateQuiTient(x: unknown, dit: string, aujourdhui: string, annuel
  * chose (même genre et même titre, ou même message) n'est notée qu'une fois — elle est mise à jour (sa date) ; un
  * message dont un objet a été retiré ne l'est plus jamais ; quarante objets visibles au plus (au-delà, le plus ancien
  * goût s'en va, jamais une fierté ni une date). Rend la liste rangée, et les objets tout neufs.
+ *
+ * 📌 (lot E5) `demander` : la question à poser pour ce souvenir (il se range alors « proposé », rien ne se voit avant
+ * un « oui ») ; `null` : il se range tout de suite (le réglage « Ma figurine range sans me demander »). Une question
+ * qui attend compte comme un souvenir : elle n'est pas notée deux fois, et compte dans les trois par jour.
  */
-export function ranger(objets: readonly ObjetGarde[], proposes: readonly ObjetPropose[], o: { aujourdhui: string; le: string; nouvelId: () => string }): { objets: ObjetGarde[]; neufs: string[] } {
+export function ranger(
+  objets: readonly ObjetGarde[],
+  proposes: readonly ObjetPropose[],
+  o: { aujourdhui: string; le: string; nouvelId: () => string; demander?: (p: ObjetPropose) => Demande | null },
+): { objets: ObjetGarde[]; neufs: string[]; questions: string[] } {
   const liste = objets.map((x) => ({ ...x }));
   const neufs: string[] = [];
+  const questions: string[] = [];
   // (ce qu'ils ont déposé à la main ne compte pas : trois par jour, c'est pour les figurines)
   let duJour = liste.filter((x) => x.etat !== "retire" && !x.depose && jourDe(x.le) === o.aujourdhui).length;
   for (const p of proposes.slice(0, ETAGERE.parPassage)) {
@@ -478,7 +512,7 @@ export function ranger(objets: readonly ObjetGarde[], proposes: readonly ObjetPr
     const meme = liste.find((x) => x.etat !== "retire" && x.etat !== "passe" && ((x.genre === p.genre && aPlat(x.titre) === aPlat(p.titre)) || x.message === p.message));
     if (meme) {
       // (la même chose, redite : la date se met à jour)
-      if (p.quand && meme.etat === "actif") {
+      if (p.quand && (meme.etat === "actif" || meme.etat === "propose")) {
         meme.quand = p.quand;
         if (p.ditQuand) meme.ditQuand = p.ditQuand;
       }
@@ -486,27 +520,36 @@ export function ranger(objets: readonly ObjetGarde[], proposes: readonly ObjetPr
     }
     if (duJour >= ETAGERE.parJour) continue;
     const id = o.nouvelId();
-    liste.push({ ...p, id, le: o.le, etat: "actif" });
+    const demande = o.demander?.(p) ?? null;
+    liste.push(demande ? { ...p, id, le: o.le, etat: "propose", demande } : { ...p, id, le: o.le, etat: "actif" });
     neufs.push(id);
+    if (demande) questions.push(id);
     duJour++;
   }
-  // (quarante au plus : le plus ancien goût s'en va)
+  return { objets: borner(liste), neufs, questions };
+}
+
+/**
+ * Quarante souvenirs visibles au plus (au-delà, le plus ancien goût s'en va) ; deux cents entrées gardées (les pierres
+ * tombales et les objets partis s'en vont d'abord — jamais une question qui attend).
+ */
+export function borner(objets: readonly ObjetGarde[]): ObjetGarde[] {
+  const liste = objets.map((x) => ({ ...x }));
   while (liste.filter(visible).length > ETAGERE.max) {
     const vieux = liste.filter((x) => x.genre === "gout" && x.etat === "actif").sort((a, b) => a.le.localeCompare(b.le))[0];
     if (!vieux) break;
     Object.assign(vieux, { etat: "passe" as const });
   }
-  // (les entrées gardées : les pierres tombales et les objets partis d'abord)
   let rangees = liste;
   while (rangees.length > ETAGERE.gardes) {
-    const k = rangees.findIndex((x) => !visible(x));
+    const k = rangees.findIndex((x) => !visible(x) && x.etat !== "propose");
     rangees = k >= 0 ? rangees.filter((_, i) => i !== k) : rangees.slice(1);
   }
-  return { objets: rangees, neufs };
+  return rangees;
 }
 
-/** 🪦 Une pierre tombale : plus aucun texte, seulement de quoi ne jamais renoter ce message. */
-export const pierreTombale = (x: ObjetGarde, par8: string, le: string): ObjetGarde => ({
+/** 🪦 Une pierre tombale : plus aucun texte, seulement de quoi ne jamais renoter ce message — et (lot E5) pourquoi. */
+export const pierreTombale = (x: ObjetGarde, par8: string, le: string, raison: NonNullable<ObjetGarde["raison"]> = "retire"): ObjetGarde => ({
   id: x.id,
   genre: x.genre,
   emoji: "",
@@ -518,7 +561,106 @@ export const pierreTombale = (x: ObjetGarde, par8: string, le: string): ObjetGar
   le: x.le,
   etat: "retire",
   change: { le, par8 },
+  raison,
 });
+
+// ─── lot E5 : « Je le range ? » (le 14 novembre 2026, `docs/univers/etagere-accord.md`) ──────────
+/**
+ * ⏳ JUSQU'À QUAND la question attend : 48 heures ; pour une date plus proche, jusqu'au soir de ce jour-là (et au moins
+ * trois heures, pour qu'une question posée le soir même ait le temps d'être vue).
+ */
+export function jusquaDe(le: string, quand?: string): string {
+  const t = Date.parse(le) || Date.now();
+  let fin = t + ACCORD.heures * 3_600_000;
+  const soir = quand && jourValide(quand) ? Date.parse(`${quand}T${ACCORD.soirUtc}Z`) : NaN;
+  if (!Number.isNaN(soir) && soir < fin) fin = Math.max(soir, t + ACCORD.auMoins);
+  return new Date(fin).toISOString();
+}
+/** À qui se pose la question d'un souvenir : celui qu'il concerne (même si c'est l'autre qui l'a dit), ou « deux ». */
+export const aQuiDemander = (o: Pick<ObjetGarde, "concerne">) => (o.concerne === "deux" ? "deux" : o.concerne);
+/** La question attend encore : un souvenir proposé, ou l'issue d'une épreuve, avant `jusqua`. */
+export const enQuestion = (o: Pick<ObjetGarde, "etat" | "demande">, maintenant = Date.now()) =>
+  Boolean(o.demande) && (o.etat === "propose" || (o.etat === "actif" && Boolean(o.demande?.issue))) && Date.parse(o.demande!.jusqua) > maintenant;
+/** C'est à lui de répondre (celui à qui elle est posée ; « deux » : l'un ou l'autre). */
+export const decide = (o: Pick<ObjetGarde, "demande">, moi8: string) => Boolean(o.demande) && (o.demande!.a === moi8 || o.demande!.a === "deux");
+
+/** 🏆 L'issue d'une épreuve (« JE L'AI !!! ») devient une question à celui qu'elle concerne (jamais deux fois après un « non »). */
+export function questionDIssue(objets: readonly ObjetGarde[], ids: readonly string[], o: { aujourdhui: string; le: string }): { objets: ObjetGarde[]; questions: string[] } {
+  const questions: string[] = [];
+  const l = objets.map((x) => {
+    if (!ids.includes(x.id) || !issueAttendue(x, o.aujourdhui) || x.sansIssue || x.demande) return x;
+    questions.push(x.id);
+    return { ...x, demande: { a: aQuiDemander(x), jusqua: jusquaDe(o.le), issue: true as const } };
+  });
+  return { objets: l, questions };
+}
+
+/**
+ * ✓ / ✗ LA RÉPONSE de celui qui décide : « oui » range le souvenir (une épreuve réussie : la fierté, sa carte) ; « non »
+ * l'écarte pour toujours (la pierre tombale « non » ; une issue : plus jamais demandée) ; `quand` : le jour corrigé avant
+ * de ranger (ça vaut un « oui »). L'autre n'est pas prévenu d'un « non ».
+ */
+export function repondre(
+  objets: readonly ObjetGarde[],
+  id: string,
+  oui: boolean,
+  c: { moi8: string; le: string; quand?: string; maintenant?: number },
+): { objets: ObjetGarde[]; cartes: CarteGardee[] } | { erreur: string; statut: number } {
+  const o = objets.find((x) => x.id === id);
+  if (!o || !enQuestion(o, c.maintenant)) return { erreur: "Cette question n’attend plus de réponse.", statut: 404 };
+  if (!decide(o, c.moi8)) return { erreur: "C’est à celui que ça concerne de répondre.", statut: 403 };
+  const change = { le: c.le, par8: c.moi8 };
+  const sans = (x: ObjetGarde): ObjetGarde => {
+    const y = { ...x };
+    delete y.demande;
+    return y;
+  };
+  if (o.demande?.issue) {
+    if (!oui) return { objets: objets.map((x) => (x === o ? { ...sans(x), sansIssue: true as const } : x)), cartes: [] };
+    return {
+      objets: objets.map((x) => (x === o ? { ...sans(x), etat: "fierte" as const, emojiAvant: x.emoji, emoji: "🏆", change } : x)),
+      cartes: [{ id: `f-${o.id}`, genre: "fierte", objet: o.id, le: c.le }],
+    };
+  }
+  if (!oui) return { objets: objets.map((x) => (x === o ? pierreTombale(x, c.moi8, c.le, "non") : x)), cartes: [] };
+  return { objets: borner(objets.map((x) => (x === o ? { ...sans(x), etat: "actif" as const, change, ...(c.quand ? { quand: c.quand, ditQuand: undefined } : {}) } : x))), cartes: [] };
+}
+
+/** Le panneau que brandit la figurine. */
+export const PANNEAU_QUESTION = "📌 Je le range ?";
+/** Au « non » : elle range l'objet dans sa poche. */
+export const PHRASE_NON = "D’accord, j’oublie.";
+/** « , jeudi 19 », « , le 4 décembre » : le jour d'un souvenir, dit en passant. */
+const jourEnPassant = (o: Pick<ObjetGarde, "quand" | "annuel">) => (o.quand ? (o.annuel ? `, ${leJourDuMois(o.quand)}` : `, ${jourCourt(o.quand).split(" ").slice(0, 2).join(" ")}`) : "");
+/**
+ * 🗨️ LA BULLE DE LA QUESTION (validée par le propriétaire le 14 novembre 2026) : « J'ai entendu : ton permis, jeudi
+ * 19. » ; à deux : « J'ai entendu : le resto italien. On le garde ? » ; l'issue : « J'ai entendu : c'est réussi ! Je
+ * range ça dans vos fiertés ? 🏆 » ; le dépôt de l'autre : « Marc veut ranger sur votre étagère : ton concert, samedi.
+ * D'accord ? »
+ */
+export function phraseQuestion(o: ObjetGarde, moi8: string, prenomAutre: string): string {
+  if (o.demande?.issue) return "J’ai entendu : c’est réussi ! Je range ça dans vos fiertés ? 🏆";
+  if (o.depose && o.demande?.par8 && o.demande.par8 !== moi8) return `${prenomAutre} veut ranger sur votre étagère : ${sonTitre(o, moi8)}${jourEnPassant(o)}. D’accord ?`;
+  if (o.concerne === "deux") return `J’ai entendu : ${minuscule(o.titre)}${jourEnPassant(o)}. On le garde ?`;
+  return `J’ai entendu : ${sonTitre(o, moi8)}${jourEnPassant(o)}.`;
+}
+/** Laquelle des deux figurines pose la question : celle de celui qui l'a dit ; une issue, un dépôt : la sienne. */
+export const quiDemande = (o: ObjetGarde, moi8: string): "moi" | "lui" => (o.demande?.issue || o.depose ? "moi" : o.de8 === moi8 ? "moi" : "lui");
+/** « Sans réponse, elle oublie dans 2 jours » (« demain », « ce soir »). */
+export function oubliDans(jusqua: string, aujourdhui: string): string {
+  const e = ecartJours(aujourdhui, jourDe(jusqua) || aujourdhui);
+  return e >= 2 ? `dans ${e} jours` : e === 1 ? "demain" : "ce soir";
+}
+/** 🔔 L'envoi du matin, quand il n'a rien d'autre à dire : « 📌 Ta figurine a 2 choses à te demander ». */
+export const notifQuestions = (n: number): { titre: string; corps: string } => ({
+  titre: `📌 Ta figurine a ${n > 1 ? `${n} choses` : "une chose"} à te demander`,
+  corps: "Elle attend ton oui pour les ranger sur ton étagère.",
+});
+/** ⚙️ Le réglage (dans « Moi »). */
+export const REGLAGE_RANGE_SEUL = {
+  titre: "Ma figurine range sans me demander",
+  aide: "Ce que vos figurines notent sur toi se range tout de suite sur votre étagère, sans « Je le range ? ». Ce qu’un proche y dépose pour toi se demande toujours.",
+} as const;
 
 // ─── ce que dit la figurine qui voit noter ────────────────────────────────────────────────────────
 /** 🗨️ La phrase de l'autre figurine quand un objet se pose (une au hasard, jamais deux fois de suite) — validées par le propriétaire le 13 novembre 2026. */
@@ -537,7 +679,7 @@ export function phraseDeNote(genre: GenreObjet, graine: string, avant = ""): str
 
 /** Les règles, en clair (la page de l'étagère). */
 export const REGLES_ETAGERE =
-  "Vos figurines notent une ou deux choses par conversation, au plus. Rien de sensible (santé, argent, amours). Tout se voit des deux côtés, et chacun peut retirer un souvenir. Les visiteurs de ton univers ne voient pas votre étagère.";
+  "Vos figurines notent une ou deux choses par conversation, au plus, et demandent avant de les ranger. Rien de sensible (santé, argent, amours). Tout se voit des deux côtés, et chacun peut retirer un souvenir. Les visiteurs de ton univers ne voient pas votre étagère.";
 
 // ─── lot E2 : plus tard ────────────────────────────────────────────────────────────────────────────
 /** Le titre, sa première lettre en minuscule (« le permis de Léa »). */
@@ -547,11 +689,28 @@ export const minuscule = (t: string) => (t ? t[0].toLocaleLowerCase("fr-FR") + t
  * ⏳ LE TEMPS PASSE SUR L'ÉTAGÈRE (sans bruit) : une épreuve sans nouvelles trois jours après s'en va ; un événement
  * s'en va le surlendemain ; un anniversaire passé revient l'année suivante ; une promesse relancée deux fois s'endort
  * (elle reste, on ne la relance plus).
+ *
+ * 📌 (lot E5) Une question sans réponse à temps s'en va, sans bruit, et n'est plus reproposée (la pierre tombale
+ * « sans-reponse ») ; l'issue d'une épreuve sans réponse : plus de question (l'épreuve suit son cours). `expires` : combien.
  */
-export function vieillir(objets: readonly ObjetGarde[], aujourdhui: string): { objets: ObjetGarde[]; change: boolean } {
+export function vieillir(objets: readonly ObjetGarde[], aujourdhui: string, maintenant = Date.now()): { objets: ObjetGarde[]; change: boolean; expires: number } {
   let change = false;
-  const l = objets.map((o) => {
-    if (o.etat !== "actif") return o;
+  let expires = 0;
+  const l = objets.map((x) => {
+    if (x.etat === "propose") {
+      if (enQuestion(x, maintenant)) return x;
+      expires++;
+      return (change = true), pierreTombale(x, "", new Date(maintenant).toISOString(), "sans-reponse");
+    }
+    if (x.etat !== "actif") return x;
+    // (l'issue qui attend sa réponse : l'épreuve reste là le temps de la question)
+    if (x.demande?.issue && enQuestion(x, maintenant)) return x;
+    const o = { ...x };
+    if (o.demande) {
+      expires++;
+      change = true;
+      delete o.demande;
+    }
     if (o.genre === "date" && o.quand) {
       const e = ecartJours(o.quand, aujourdhui);
       if (o.sorte === "epreuve" && e > 3) return (change = true), { ...o, etat: "passe" as const };
@@ -565,7 +724,7 @@ export function vieillir(objets: readonly ObjetGarde[], aujourdhui: string): { o
     if (o.genre === "promesse" && !o.quand && ecartJours(jourDe(o.le), aujourdhui) >= ETAGERE_E2.sommeil) return (change = true), { ...o, etat: "sommeil" as const };
     return o;
   });
-  return { objets: l, change };
+  return { objets: l, change, expires };
 }
 
 export const ETAGERE_E2 = {
@@ -706,8 +865,10 @@ export function sonTitre(o: Pick<ObjetGarde, "titre" | "titreToi" | "concerne">,
 export type LigneEtagere = { txt: string; rang: number };
 /** ☀️ Un rappel du matin, tel que « Chez moi » le montre (jamais l'identifiant d'un habitant : sa clé). */
 export type RappelVu = { id: string; cle: string; prenom: string; image: string; cas: CasRappel; texte: string; emoji: string; meme: string; fait: boolean };
-export const RANGS_LIGNE = { rappel: 2.9, note: 2.8, relance: 2.7 } as const;
-export function ligneEtagere(x: { rappel?: Rappel | null; nouveau?: ObjetGarde | null; relance?: { objet: ObjetGarde; n: number } | null }, moi8: string): LigneEtagere | null {
+export const RANGS_LIGNE = { question: 2.95, rappel: 2.9, note: 2.8, relance: 2.7 } as const;
+export function ligneEtagere(x: { question?: ObjetGarde | null; rappel?: Rappel | null; nouveau?: ObjetGarde | null; relance?: { objet: ObjetGarde; n: number } | null }, moi8: string): LigneEtagere | null {
+  // 📌 (lot E5) une question qui l'attend : juste après un message non lu
+  if (x.question) return { txt: `📌 Ta figurine te demande : ${sonTitre(x.question, moi8)} ?`, rang: RANGS_LIGNE.question };
   if (x.rappel && x.rappel.cas !== "encourage") {
     const o = x.rappel.objet;
     const quand = x.rappel.cas === "anniv3" ? "Dans 3 jours" : x.rappel.cas === "lendemain" ? "Hier" : "Aujourd’hui";
@@ -781,7 +942,7 @@ export function phraseEtat(etat: EtatEtagere | null | undefined, x: { jours: num
  */
 export function carteDePoussiere(objets: readonly ObjetGarde[], moi8: string, prenomAutre: string, jours: number, aujourdhui: string): { texte: string; bouton: string } {
   const base = `${jours} jours sans un mot… Votre étagère prend la poussière.`;
-  const ev = objets.filter((o) => o.genre === "date" && o.sorte === "evenement" && o.etat !== "retire" && o.titre && o.quand && o.quand < aujourdhui).sort((a, b) => (a.quand ?? "").localeCompare(b.quand ?? "")).pop();
+  const ev = objets.filter((o) => o.genre === "date" && o.sorte === "evenement" && o.etat !== "retire" && o.etat !== "propose" && o.titre && o.quand && o.quand < aujourdhui).sort((a, b) => (a.quand ?? "").localeCompare(b.quand ?? "")).pop();
   if (ev?.quand) {
     const qui = ev.concerne === "deux" ? "Vous aviez" : ev.concerne === moi8 ? "Tu avais" : `${prenomAutre} avait`;
     return { texte: `${base} ${qui} ${sonTitre(ev, moi8).replace(/^son /, ev.concerne === "deux" ? "votre " : ev.concerne === moi8 ? "ton " : "son ")} ${leJourDuMois(ev.quand)} ${ev.emoji}`.replace(/  +/g, " "), bouton: "🎙️ Lui demander comment c’était" };
@@ -822,15 +983,40 @@ export const memeDeLaBlague = (o: Pick<ObjetGarde, "titre" | "emoji">) => `${o.t
 
 // ─── lot E3 : ce qu'on mesure (13) ─────────────────────────────────────────────────────────────────
 /** Les compteurs du jour (`stats/etagere/<jour>.json`). */
-export type StatsJourEtagere = { notes: number; paires: number; retires: number; dates: number; rappels: number; suivis: number; tenues: number; rallumees: number; deposes: number };
-export const STATS_VIDES: StatsJourEtagere = { notes: 0, paires: 0, retires: 0, dates: 0, rappels: 0, suivis: 0, tenues: 0, rallumees: 0, deposes: 0 };
-/** Les seuils d'alerte : plus de 2 souvenirs par paire et par jour ; plus de 15 % retirés ; plus de 10 % de dates changées ; moins de 30 % de rappels suivis. */
+export type StatsJourEtagere = {
+  notes: number;
+  paires: number;
+  retires: number;
+  dates: number;
+  rappels: number;
+  suivis: number;
+  tenues: number;
+  rallumees: number;
+  deposes: number;
+  /** 📌 (lot E5) les questions posées ; rangées par un « oui » ; refusées ; sans réponse ; rangées par le réglage ; dates corrigées avant de ranger. */
+  proposes: number;
+  oui: number;
+  refuses: number;
+  expires: number;
+  auto: number;
+  corriges: number;
+};
+export const STATS_VIDES: StatsJourEtagere = { notes: 0, paires: 0, retires: 0, dates: 0, rappels: 0, suivis: 0, tenues: 0, rallumees: 0, deposes: 0, proposes: 0, oui: 0, refuses: 0, expires: 0, auto: 0, corriges: 0 };
+/**
+ * Les seuils d'alerte : plus de 2 souvenirs par paire et par jour ; plus de 15 % retirés ; plus de 10 % de dates
+ * changées ; moins de 30 % de rappels suivis ; (lot E5, sur cinq questions closes au moins) plus de 30 % refusées, plus
+ * de 50 % sans réponse, plus de 10 % de dates corrigées avant de ranger.
+ */
 export function alertesEtagere(s: StatsJourEtagere): string[] {
   const a: string[] = [];
   if (s.paires && s.notes / s.paires > 2) a.push("Plus de 2 souvenirs par paire et par jour : la consigne note trop.");
   if (s.notes && s.retires / s.notes > 0.15) a.push("Plus de 15 % des souvenirs retirés : la consigne note trop, ou mal.");
   if (s.notes && s.dates / s.notes > 0.1) a.push("Plus de 10 % de dates changées à la main : le modèle comprend mal les jours.");
   if (s.rappels >= 5 && s.suivis / s.rappels < 0.3) a.push("Moins de 30 % des rappels suivis d'un message : le rappel ne sert pas assez.");
+  const closes = (s.oui || 0) + (s.refuses || 0) + (s.expires || 0);
+  if (closes >= 5 && s.refuses / closes > 0.3) a.push("Plus de 30 % des « Je le range ? » refusés : la consigne note mal.");
+  if (closes >= 5 && s.expires / closes > 0.5) a.push("Plus de 50 % des « Je le range ? » sans réponse : la question passe inaperçue.");
+  if (s.oui >= 5 && s.corriges / s.oui > 0.1) a.push("Plus de 10 % des dates corrigées avant de ranger : le modèle comprend mal les jours.");
   return a;
 }
 
@@ -971,4 +1157,6 @@ export type MonEtagereVue = {
   /** J'ai un univers (sinon, rien à montrer : personne ne me rend visite) ; ma clé, pour le voir comme mes visiteurs. */
   univers: boolean;
   cle?: string;
+  /** 📌 (lot E5) « ✨ À ranger » : mes questions en attente, de toutes mes conversations (l'objet dit d'où il vient). */
+  aRanger?: QuestionVue[];
 };

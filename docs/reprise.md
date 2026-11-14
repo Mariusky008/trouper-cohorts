@@ -165,15 +165,15 @@ par une autre session, mise en pause ; le propriétaire a confié tout le chanti
 
 ## 0 quinquies. « Je le range ? » et les messages écrits (14 novembre 2026)
 
-Deux demandes du propriétaire, discutées puis validées (« oui pour les trois, fais le cahier des charges ») ; **rien
-n'est développé** :
+Deux demandes du propriétaire, discutées puis validées (« oui pour les trois, fais le cahier des charges ») :
 
-- **« Je le range ? »** (lot E5 de l'étagère) : la figurine demande avant de ranger ce qu'elle a entendu. Celui que ça
-  concerne décide seul ; pour ce qui est commun, le premier « oui » des deux ; sans réponse en 48 heures, rien n'est
-  rangé. Le cahier : `docs/univers/etagere-accord.md` (ses phrases et ses choix par défaut sont à valider).
+- **« Je le range ? »** (lot E5 de l'étagère) — **construit** (`docs/figurines.md`, 9.0 quinquinquagies 📌) : la
+  figurine demande avant de ranger ce qu'elle a entendu. Celui que ça concerne décide seul ; pour ce qui est commun, le
+  premier qui répond ; sans réponse en 48 heures, rien n'est rangé. Le cahier : `docs/univers/etagere-accord.md`.
 - **Écrire, partager** (lots M1 à M3) : les messages écrits et les liens, puis les photos, puis les vidéos (30 s), dans
   la conversation. Un message écrit est dit par la figurine, sans voix ; les photos passent par la modération avant de
-  partir. Le cahier : `docs/univers/messages-ecrits.md`.
+  partir. Le cahier : `docs/univers/messages-ecrits.md`. **Pas encore développé** : M1 d'abord, le serveur puis
+  l'écran.
 - **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
   panorama — une seule session à la fois sur ces fichiers.
 

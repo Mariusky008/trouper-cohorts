@@ -707,7 +707,7 @@ l'humeur du matin.
   9.0 novoquadragies 📚) ; E2 « Plus tard » (les rappels du matin, la fierté, les promesses) — **construit** (9.0
   quinquagies 📅) ; E3 « La poussière et les idées » — **construit** (9.0 unquinquagies 🕸️).
 - Il touche `proches.tsx` et `conversation-vivante.tsx` : une seule session à la fois.
-- **E5 « Je le range ? »** (14 novembre, validé, pas encore développé) : la figurine **demande avant de ranger** —
+- **E5 « Je le range ? »** (14 novembre) — **construit** (`docs/figurines.md`, 9.0 quinquinquagies 📌) : la figurine **demande avant de ranger** —
   celui que ça concerne décide seul, le premier « oui » des deux pour ce qui est commun, rien sans réponse en
   48 heures. Le cahier : `docs/univers/etagere-accord.md`.
 

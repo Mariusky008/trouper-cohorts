@@ -6,7 +6,9 @@
 // son marathon (avec Inès) — pas le permis de Léa, qui est chez elle. DÉPOSER : sur la sienne, « Mon concert »,
 // aujourd'hui, montré à ses visiteurs (le rappel du matin : « Aujourd'hui : ton concert 🎤… ») ; sur la leur, pour
 // Léa, « Ton anniversaire » tapé avec son année de naissance (sa prochaine fois ; « Ton anniversaire » chez elle,
-// « L'anniversaire de Léa » chez lui ; il s'envolera chez elle, pas chez lui). MONTRER : ses pivoines oui, le resto
+// « L'anniversaire de Léa » chez lui ; il s'envolera chez elle, pas chez lui) — (lot E5) c'est d'abord une question à
+// Léa (« Sam veut ranger sur votre étagère… »), même si elle laisse sa figurine ranger seule ; « ✨ À ranger » sur « Mon
+// étagère » ; son « oui » le range. MONTRER : ses pivoines oui, le resto
 // (à eux deux) non ; Léa, en visite chez Sam, voit son concert et ses pivoines — ni la phrase, ni avec qui. CACHER :
 // le marathon n'est plus chez lui, il reste sur leur étagère. LES GARDE-FOUS : un sujet sensible, un jour passé, deux
 // fois la même chose, douze par jour.
@@ -128,13 +130,25 @@ const rs = (await voir(SAM, "etagere?rappels=1")).rappels ?? [];
 ok(rs.length === 1 && rs[0].cas === "mien" && rs[0].texte === "Aujourd’hui : ton concert 🎤 Tu l’avais posé sur ton étagère 📌" && rs[0].fait === false && rs[0].cle === "", `☀️ le matin, sa figurine le lui rappelle : « ${rs[0]?.texte} »`);
 
 // ═══ ✋ DÉPOSER, SUR LA LEUR (POUR LÉA) ═══
+// (📌 lot E5 : Léa laisse sa figurine ranger seule — ça ne vaut pas pour un dépôt de l'autre)
+await json(`${LEA.id}/reglages.json`, { rangeSeul: true });
 const a1 = await agir(SAM, { action: "deposer", avec: LEA.cle, pour: "lui", genre: "date", sorte: "fete", titre: "Ton anniversaire", emoji: "🎂", quand: "1995-12-02" });
-ok(a1.statut === 200 && a1.id, `Sam dépose, sur leur étagère, pour Léa, « Ton anniversaire » (avec son année de naissance) (${a1.statut} ${a1.error ?? ""})`);
+ok(a1.statut === 200 && a1.id && a1.demande === true, `Sam dépose, sur leur étagère, pour Léa, « Ton anniversaire » (avec son année de naissance) : une question à Léa (${a1.statut} ${a1.error ?? ""})`);
 const fe = await lire(`fils/${paire(SAM, LEA)}/etagere.json`);
 const an = fe?.objets?.find((o) => o.id === a1.id);
 const prochain = jour.slice(5) <= "12-02" ? `${jour.slice(0, 4)}-12-02` : `${Number(jour.slice(0, 4)) + 1}-12-02`;
 ok(an?.concerne === qui8(LEA.id) && an.de8 === qui8(SAM.id) && an.depose === true && an.annuel === true && an.quand === prochain && an.titre === "L’anniversaire" && an.titreToi === "Ton anniversaire" && an.citation === "", `sur leur étagère : il concerne Léa, déposé par Sam, tous les ans, le ${an?.quand}`);
+ok(an?.etat === "propose" && an.demande?.a === qui8(LEA.id) && an.demande.par8 === qui8(SAM.id), "📌 proposé : la question est à Léa (même avec son réglage allumé)");
 ok(fe?.vus?.[qui8(SAM.id)]?.includes(a1.id) && !fe.vus[qui8(LEA.id)]?.includes(a1.id), "Sam l'a déjà vu ; chez Léa, il reste à voir se poser");
+ok(!(await voir(LEA, `etagere?avec=${SAM.cle}`)).etagere?.objets?.some((o) => o.id === a1.id), "avant son « oui » : rien sur leur étagère");
+const qd = (await voir(LEA, `proches?vivant=${SAM.cle}`)).vivant?.etagere?.questions?.find((q) => q.id === a1.id);
+ok(qd?.depot && qd.qui === "moi" && qd.phrase === "Sam veut ranger sur votre étagère : ton anniversaire, le 2 décembre. D’accord ?", `chez Léa, la question : « ${qd?.phrase} »`);
+ok(!(await voir(SAM, `proches?vivant=${LEA.cle}`)).vivant?.etagere?.questions?.length, "chez Sam : pas de question");
+const ar = (await mienne(LEA))?.aRanger?.find((q) => q.id === a1.id);
+ok(ar?.objet.avec?.prenom === "Sam" && ar.objet.avec.cle === SAM.cle && ar.depot, "« ✨ À ranger » sur « Mon étagère » de Léa (déposé par Sam)");
+ok((await agir(SAM, { action: "oui", avec: LEA.cle, id: a1.id })).statut === 403, "Sam ne dit pas oui à la place de Léa (403)");
+ok((await agir(LEA, { action: "oui", avec: SAM.cle, id: a1.id })).statut === 200 && !(await mienne(LEA))?.aRanger?.length, "Léa dit oui : plus rien à ranger");
+await json(`${LEA.id}/reglages.json`, {});
 const el = (await voir(LEA, `etagere?avec=${SAM.cle}`)).etagere;
 const anL = el?.objets?.find((o) => o.id === a1.id);
 ok(anL?.titre === "Ton anniversaire" && anL.depose === true && anL.de === "lui" && anL.ditPar === "Sam" && anL.rayon === "avenir", "chez Léa : « Ton anniversaire », déposé par Sam, à venir");
