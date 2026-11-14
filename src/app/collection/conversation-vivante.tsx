@@ -23,6 +23,7 @@ export function useVivant(cle: string, dernierConnu: number, rappels: { onNouvea
   const vus = useRef<Set<string> | null>(null);
   const apartesVus = useRef<Set<string> | null>(null);
   const connu = useRef(dernierConnu);
+  const dejaLu = useRef(false);
   const r = useRef(rappels);
   useEffect(() => {
     r.current = rappels;
@@ -32,6 +33,7 @@ export function useVivant(cle: string, dernierConnu: number, rappels: { onNouvea
   }, [dernierConnu]);
   useEffect(() => {
     let fini = false;
+    dejaLu.current = false;
     const lire = () => {
       if (document.visibilityState === "hidden") return;
       fetch(`/api/direct/proches?vivant=${cle}`, { cache: "no-store" })
@@ -58,12 +60,14 @@ export function useVivant(cle: string, dernierConnu: number, rappels: { onNouvea
             neuf.forEach((a) => apartesVus.current!.add(a.id));
             if (neuf.length) r.current.onAparte(neuf[neuf.length - 1]);
           }
-          // (un message arrivé depuis : elle se relit — une seule fois par message)
+          // (un message arrivé depuis : elle se relit — une seule fois par message ; à la première lecture, rien n'est
+          // nouveau, même si la conversation n'est pas encore lue — et le tout premier message d'une conversation vide
+          // arrive aussi, lot M1)
           if (v.dernier > connu.current) {
-            const avant = connu.current;
             connu.current = v.dernier;
-            if (avant > 0) r.current.onNouveau();
+            if (dejaLu.current) r.current.onNouveau();
           }
+          dejaLu.current = true;
           setVivant({ ...v, apartes });
         })
         .catch(() => undefined);

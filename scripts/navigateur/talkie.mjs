@@ -154,7 +154,7 @@ ok(tetesLea.includes("joie") && (await zoe.locator(".pr-plein .pr-scene .fqp[dat
 await capture(zoe, "2-conversation");
 
 // ═══ « LUI RÉPONDRE » : ELLE PARLE, SA FIGURINE COMPREND ═══
-await zoe.locator(".pr-plein .pr-bas .pr-bouton").click();
+await zoe.locator(".pr-plein .pr-ecrire-micro").click();
 await zoe.waitForSelector(".pr-plein.pr-parler .pr-micro", { timeout: 15000 });
 ok((await texte(zoe, ".pr-plein.pr-parler .pr-qui")).includes("À Léa") && (await texte(zoe, ".pr-plein.pr-parler")).includes("20 s au plus"), "« À Léa », 20 s au plus");
 await zoe.locator(".pr-plein.pr-parler .pr-micro").click();

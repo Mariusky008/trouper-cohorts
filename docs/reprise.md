@@ -166,7 +166,7 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
   en plein écran. **À décider par le propriétaire** : qui reçoit des pièces, et quand (coût : environ 0,45 $ la
   pièce — 0,25 $ d'image, 0,40 $ de vidéo chez Google, Gemini Omni Flash, quatre secondes ; Sora d'OpenAI a fermé, et
   Veo dans l'API Gemini aussi, le 22 octobre 2026).
-  **Son univers, vivant** (9.0 duosexagies 🌟) : son décor du moment en photo vivante (Gemini Omni, environ 0,40 $), posée par-dessus
+  **Son univers, vivant** (9.0 tresexagies 🌟) : son décor du moment en photo vivante (Gemini Omni, environ 0,40 $), posée par-dessus
   dans « Ma maison » et chez ses visiteurs ; d'abord par l'essai de l'administrateur — à décider : la faire pour chacun.
 - **Une autre session** construit l'étagère E5 (`docs/univers/etagere-accord.md`) puis les messages écrits
   (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à
@@ -208,10 +208,11 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   premier qui répond ; sans réponse en 48 heures, rien n'est rangé. Le cahier : `docs/univers/etagere-accord.md`.
 - **Écrire, partager** (lots M1 à M3) : les messages écrits et les liens, puis les photos, puis les vidéos (30 s), dans
   la conversation. Un message écrit est dit par la figurine, sans voix ; les photos passent par la modération avant de
-  partir. Le cahier : `docs/univers/messages-ecrits.md`. **M1, le serveur, est construit** (`docs/figurines.md`, 9.0
-  unsexagies ✍️) : `ecrit.ts`, `ecrit-serveur.ts`, `POST /api/direct/proches` (`ecrire`, `effacer`). **Reste : l'écran
-  de M1** (la barre « Écrire… » à la place du gros bouton, la bulle sans son, l'aperçu dans le fil, « Effacer »), puis M2
-  et M3.
+  partir. Le cahier : `docs/univers/messages-ecrits.md`. **M1 est construit** : le serveur (`docs/figurines.md`, 9.0
+  unsexagies ✍️ : `ecrit.ts`, `ecrit-serveur.ts`, `POST /api/direct/proches` `ecrire`, `effacer`) et l'écran (9.0
+  duosexagies : `app/collection/ecrire.tsx` — la barre « Écrire… », la bulle sans son, l'aperçu dans le fil,
+  « Effacer »). **Reste** : M2 (les photos) et M3 (les vidéos) ; « 🎵 Le ranger dans mon univers ? » ; la page de
+  confidentialité (au propriétaire).
 - **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
   panorama — une seule session à la fois sur ces fichiers.
 

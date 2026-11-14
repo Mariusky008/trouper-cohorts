@@ -32,6 +32,8 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
+import { BarreEcrire, BoutonEffacer, BulleEcrite, STYLES_ECRIRE, motsDeLEcrit, type ChoixPlus } from "./ecrire";
+import { ECRIT } from "@/lib/direct/ecrit";
 import { CarteEtagere, CarteNote, CartePoussiere, CarteQuestion, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
 import { idees, type CarteVue, type ObjetVu, type QuestionVue } from "@/lib/direct/etagere";
 import { versLeStudio } from "./vers-le-studio";
@@ -400,6 +402,11 @@ export function Proches({
       if (!p.dernier) return "Dis-lui bonjour 👋";
       if (p.dernier.meme) return p.dernier.moi ? "Toi : 🎭 un mème" : "🎭 t’a envoyé un mème";
       const t = p.dernier.texte;
+      // ✍️ (lot M1) un écrit : ses mots, ou « 🔗 Le titre du lien »
+      if (p.dernier.ecrit) {
+        const c = t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t;
+        return `${p.dernier.moi ? "Toi : " : ""}${t.startsWith("🔗") ? c : `« ${c} »`}`;
+      }
       return `${p.dernier.moi ? "Toi : " : ""}${t ? `🎙️ « ${t.length > 60 ? `${t.slice(0, 58).trimEnd()}…` : t} »` : "🎙️ Message vocal"}`;
     };
     // 📐 (lot 2, la maquette validée) TOUT EST RANGÉ PAR PERSONNE : sa ligne dit ce qui s'est passé avec lui — un cadeau
@@ -798,6 +805,11 @@ function ligneDe(p: ProcheVivant): string {
   if (p.lien === "attend") return `En attente : ${p.prenom} doit t’ajouter aussi.`;
   if (!p.dernier) return "Pas encore de message : dis-lui bonjour 👋";
   if (p.dernier.meme) return `${p.dernier.moi ? "Toi : 🎭 un mème" : "🎭 T’a envoyé un mème"} · ${depuis(p.dernier.le)}`;
+  if (p.dernier.ecrit) {
+    const t = p.dernier.texte;
+    const c = t.length > 46 ? `${t.slice(0, 44).trimEnd()}…` : t;
+    return `${p.dernier.moi ? "Toi : " : "T’a écrit : "}${t.startsWith("🔗") ? c : `« ${c} »`} · ${depuis(p.dernier.le)}`;
+  }
   const dit = p.dernier.texte ? `« ${p.dernier.texte.length > 46 ? `${p.dernier.texte.slice(0, 44).trimEnd()}…` : p.dernier.texte} »` : "🎙️ un message";
   return `${p.dernier.moi ? "Toi : " : "T’a parlé : "}${dit} · ${depuis(p.dernier.le)}`;
 }
@@ -874,6 +886,10 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const [joue, setJoue] = useState(false);
   const [son, setSon] = useState(false);
   const [menu, setMenu] = useState(false);
+  // ✍️ (lot M1) les mots d'un écrit déjà dits dans la bulle (`null` : tous) ; il est en train d'écrire
+  const [mots, setMots] = useState<number | null>(null);
+  const motsRef = useRef<number | null>(null);
+  const [tape, setTape] = useState(false);
   const fig = useRef<FigurineHandle>(null);
   const liste = useRef<HTMLOListElement>(null);
   const msgs = useRef<MessageFil[]>([]);
@@ -951,9 +967,11 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     const t = window.setInterval(() => setMaintenant(Date.now()), 2000);
     return () => window.clearInterval(t);
   }, []);
-  // ✍️ il prépare un message : sa figurine se penche chez l'autre (redit toutes les 5 s, et « fini » en refermant)
+  // ✍️ il prépare un message (il enregistre, ou il écrit) : sa figurine se penche chez l'autre (redit toutes les 5 s, et
+  // « fini » en refermant)
+  const prepare = enregistrer || tape;
   useEffect(() => {
-    if (!enregistrer) return;
+    if (!prepare) return;
     const dire = (oui: boolean) =>
       void fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", cle, oui }) }).catch(() => undefined);
     dire(true);
@@ -962,7 +980,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       window.clearInterval(t);
       dire(false);
     };
-  }, [enregistrer, cle]);
+  }, [prepare, cle]);
   /** 🪧👏 Son geste : sa figurine le fait tout de suite, il part ensuite (refusé, il s'en va). */
   async function faireUnGeste(type: "panneau" | "reaction", quoi: string, idMessage?: string) {
     if (!fil) return;
@@ -1014,6 +1032,20 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   useEffect(() => {
     msgs.current = fil?.messages ?? [];
   }, [fil]);
+  // 🔗 (lot M1) l'aperçu d'un lien se prépare après l'envoi, en quelques secondes : la conversation se relit (six fois au
+  // plus, pendant les 20 premières secondes du message)
+  const attendApercu = Boolean(fil?.messages.some((x) => x.lien && !x.lien.titre && !x.lien.image && Math.abs(maintenant - (Date.parse(x.le) || 0)) < 20_000));
+  const essaisApercu = useRef(0);
+  useEffect(() => {
+    if (!attendApercu) {
+      essaisApercu.current = 0;
+      return;
+    }
+    if (essaisApercu.current >= 6) return;
+    essaisApercu.current++;
+    const t = window.setTimeout(() => setTour((x) => x + 1), 3500);
+    return () => window.clearTimeout(t);
+  }, [attendApercu, fil]);
   // (la liste, en bas : les derniers messages en vue — et les panneaux)
   // (ce qui est posé : pas ce qui attend de s'envoler, ni ce qui vole)
   const cartesEtagere = et.objets.filter((o) => !et.attente.has(o.id) && o.id !== et.vol);
@@ -1043,9 +1075,29 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     setVue(i);
     setIr(0);
     setActivite(Date.now());
+    // ✍️ (lot M1) un écrit : sa figurine le dit sans aucun son, les mots apparaissent l'un après l'autre
+    if (m.genre === "ecrit") {
+      motsRef.current = 0;
+      setMots(0);
+      fig.current?.dire(m.duree);
+      return;
+    }
+    motsRef.current = null;
+    setMots(null);
     void fig.current?.jouer(m.son);
   }, []);
   const surTemps = useCallback((t: number) => {
+    const ecrit = msgs.current[vueRef.current];
+    if (ecrit?.genre === "ecrit") {
+      // (tous les mots sont là aux 85 % du temps : le dernier reste un instant)
+      const n = Math.max(1, motsDeLEcrit(ecrit).length);
+      const k = Math.min(n, Math.ceil((n * t) / Math.max(0.5, ecrit.duree * 0.85)));
+      if (k !== motsRef.current) {
+        motsRef.current = k;
+        setMots(k);
+      }
+      return;
+    }
     const r = msgs.current[vueRef.current]?.repliques ?? [];
     const x = repliqueA(r, t);
     const k = x ? r.indexOf(x) : 0;
@@ -1056,6 +1108,8 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   }, []);
   const surFin = useCallback(() => {
     const n = vueRef.current + 1;
+    motsRef.current = null;
+    setMots(null);
     setActivite(Date.now());
     if (suite.current && n < msgs.current.length) jouerMessage(n, true);
     else suite.current = false;
@@ -1085,6 +1139,27 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       await demander({ action: "signaler", cle: fil.cle, id: dernier.id });
       fig.current?.arreter();
       setFil({ ...fil, messages: fil.messages.filter((m) => m.id !== dernier.id) });
+      setVue(-1);
+    } catch (e) {
+      setErreur(message(e));
+    }
+  }
+  /** ✍️ (lot M1) Il écrit : le message part, sa figurine le dit aussitôt dans la scène (sans aucun son). */
+  async function ecrire(texte: string, tete: Sentiment) {
+    if (!fil) return;
+    const j = await demander<{ message: MessageFil }>({ action: "ecrire", cle: fil.cle, texte, tete });
+    const liste = [...fil.messages.map((y) => ({ ...y, nouveau: false })), j.message];
+    msgs.current = liste;
+    setFil((f) => (f ? { ...f, messages: liste } : f));
+    jouerMessage(liste.length - 1, false);
+  }
+  /** 🗑️ (lot M1) Il efface son message (le sien, dans les 24 heures) : pour les deux. */
+  async function effacer(x: MessageFil) {
+    if (!fil || !(await demanderOui({ emoji: "🗑️", titre: "Effacer ce message ?", texte: "Il disparaît pour vous deux.", oui: "Effacer", danger: true }))) return;
+    try {
+      await demander({ action: "effacer", cle: fil.cle, id: x.id });
+      fig.current?.arreter();
+      setFil((f) => (f ? { ...f, messages: f.messages.filter((y) => y.id !== x.id) } : f));
       setVue(-1);
     } catch (e) {
       setErreur(message(e));
@@ -1219,6 +1294,21 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
       setErreur(message(e));
     }
   }
+  // ✍️ (lot M1) ce que le « ＋ » de la barre propose : 🎭 un mème (chez moi), 🪧 un panneau, 🎁 un cadeau (chez moi)
+  const plus: ChoixPlus[] = [
+    ...(chezMoi ? [{ cle: "meme", emoji: "🎭", nom: "Un mème", onChoisi: () => (retenirMemePour({ cle, prenom: fil.lui.prenom }), chezMoi.onMeme()) }] : []),
+    { cle: "panneau", emoji: "🪧", nom: "Un panneau", onChoisi: () => setPanneaux(true) },
+    ...(chezMoi
+      ? [
+          {
+            cle: "cadeau",
+            emoji: "🎁",
+            nom: "Un cadeau",
+            onChoisi: () => (chezMoi.univers ? (setInfo(""), setOffrir(true)) : setInfo(`🎁 ${fil.lui.prenom} n’a pas encore d’univers où poser un cadeau.`)),
+          },
+        ]
+      : []),
+  ];
   const aparteDe = (qui: "moi" | "lui") => {
     if (!aparteJoue) return null;
     const k = aparteJoue.mots.findIndex((x) => x.moi === (qui === "moi"));
@@ -1334,16 +1424,31 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
             <small>{s.court}</small>
           </span>
         )}
-        {rep?.texte && <p className="pr-sous-titre">« {rep.texte} »</p>}
+        {rep?.texte &&
+          (m?.genre === "ecrit" ? (
+            // ✍️ (lot M1) un écrit : les mots apparaissent l'un après l'autre, pendant que sa figurine le dit
+            <p className="pr-sous-titre pr-dit-ecrit">
+              «{" "}
+              {motsDeLEcrit(m).map((w, k) => (
+                <span key={k} className={`pr-mot${joue && mots !== null && k >= mots ? " cache" : ""}`}>
+                  {k ? " " : ""}
+                  {w}
+                </span>
+              ))}{" "}
+              »
+            </p>
+          ) : (
+            <p className="pr-sous-titre">« {rep.texte} »</p>
+          ))}
         {!m && <p className="pr-sous-titre">Pas encore de message. Dis bonjour à {fil.lui.prenom} 👋</p>}
         {m && !joue && (
-          <button type="button" className="pr-lire" aria-label={nouveaux.length ? "Écouter ses nouveaux messages" : "Écouter ce message"} onClick={() => (nouveaux.length && vue < 0 ? jouerMessage(nouveaux[0], true) : jouerMessage(iVue, false))}>
+          <button type="button" className="pr-lire" aria-label={nouveaux.length ? "Écouter ses nouveaux messages" : m.genre === "ecrit" ? "Revoir ce message" : "Écouter ce message"} onClick={() => (nouveaux.length && vue < 0 ? jouerMessage(nouveaux[0], true) : jouerMessage(iVue, false))}>
             <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M8 4.5v15l12-7.5z" fill="currentColor" />
             </svg>
           </button>
         )}
-        {son && m && (
+        {son && m && m.genre !== "ecrit" && (
           <div className="pr-son" aria-hidden="true">
             <span className={`pr-onde${joue ? " joue" : ""}`}>
               {Array.from({ length: 22 }, (_, k) => (
@@ -1467,9 +1572,26 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           const t0 = x.repliques.find((r) => r.tete)?.tete;
           const img = (t0 && qui.expressions[t0]?.n) || qui.neutre;
           const emojis = [...new Set(x.repliques.map((r) => r.tete).filter((t): t is Sentiment => Boolean(t)))].map((t) => sentimentDe(t)?.emoji ?? "").join(" ");
+          // 🗑️ (lot M1) son propre message, choisi, dans les 24 heures : « Effacer »
+          const effacable = x.moi && i === iVue && maintenant - (Date.parse(x.le) || 0) < ECRIT.effacer;
+          if (x.genre === "ecrit")
+            return (
+              <BulleEcrite
+                key={x.id}
+                m={x}
+                img={img}
+                vu={i === iVue}
+                bas={`✍️ ${emojis ? `${emojis} · ` : ""}${heure(x.le)}${x.nouveau ? " · nouveau" : ""}${reactionsDe(x.id) ? ` · ${reactionsDe(x.id)}` : ""}`}
+                gestes={appui.props(x.id)}
+                onJouer={() => {
+                  if (!appui.etaitLong()) jouerMessage(i, false);
+                }}
+                onEffacer={effacable ? () => void effacer(x) : undefined}
+              />
+            );
           const texte = texteDuMessage(x.repliques);
           return (
-            <li key={x.id} className={x.moi ? "moi" : "lui"}>
+            <li key={x.id} className={`${x.moi ? "moi" : "lui"}${effacable ? " avec-effacer" : ""}`}>
               <button
                 type="button"
                 className={`${i === iVue ? "vu" : ""}${x.nouveau ? " nouveau" : ""}`}
@@ -1490,6 +1612,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
                   </small>
                 </span>
               </button>
+              {effacable && <BoutonEffacer onEffacer={() => void effacer(x)} />}
             </li>
           );
         })}
@@ -1508,30 +1631,17 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         </p>
       )}
 
-      <div className="pr-bas">
-        <button type="button" className="pv-bouton-panneau" aria-label="Brandir un panneau" onClick={() => setPanneaux(true)}>
-          🪧
-        </button>
-        {chezMoi && (
-          <button type="button" className="pr-geste" aria-label="Lui faire un mème" onClick={() => (retenirMemePour({ cle, prenom: fil.lui.prenom }), chezMoi.onMeme())}>
-            🎭<small>Mème</small>
-          </button>
-        )}
-        <button type="button" className="pr-bouton grand" onClick={() => (fig.current?.arreter(), setActivite(Date.now()), setEnregistrer(true))}>
-          <IconeMicro />
-          {fil.messages.length ? "Lui répondre" : "Lui parler"}
-        </button>
-        {chezMoi && (
-          <button
-            type="button"
-            className="pr-geste"
-            aria-label={`Laisser un cadeau chez ${fil.lui.prenom}`}
-            onClick={() => (chezMoi.univers ? (setInfo(""), setOffrir(true)) : setInfo(`🎁 ${fil.lui.prenom} n’a pas encore d’univers où poser un cadeau.`))}
-          >
-            🎁<small>Cadeau</small>
-          </button>
-        )}
-      </div>
+      {/* ✍️ (lot M1) LA BARRE DU BAS : « ＋ » (mème, panneau, cadeau), « Écrire… », le micro ou la flèche */}
+      <BarreEcrire
+        prenom={fil.lui.prenom}
+        expressions={fil.moi.expressions}
+        ecrire={fil.ecrire !== false}
+        premier={!fil.messages.length}
+        plus={plus}
+        onMicro={() => (fig.current?.arreter(), setActivite(Date.now()), setEnregistrer(true))}
+        onEnvoyer={ecrire}
+        onTape={setTape}
+      />
       {chezMoi && (
         <Feuille ouverte={offrir} onFermer={() => setOffrir(false)} titre={`Un cadeau pour ${fil.lui.prenom}`} className="pr-feuille pr-feuille-cadeau">
           {/* 🎁 (l'étagère, lot E3) une idée, pas un catalogue : ce qu'il ou elle aime */}
@@ -2495,4 +2605,4 @@ export const STYLES_PROCHES = `
 @keyframes pr-clignote{50%{opacity:.25}}
 @keyframes pr-tourne{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pr *,.pr-plein *{animation:none!important}}
-`;
+${STYLES_ECRIRE}`;

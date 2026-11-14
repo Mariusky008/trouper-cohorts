@@ -3216,7 +3216,47 @@ l'écran.
 - **Les essais** : `scripts/verifier-messages.mjs` (sans téléphone), `scripts/essai-messages-route.mjs` (le faux site
   des aperçus : `CLIKME_APERCU_ESSAI_BASE`, la CI seulement).
 
-### 9.0 duosexagies 🌟 Son univers, vivant (14 novembre)
+### 9.0 duosexagies ✍️ Écrire, partager — lot M1, l'écran : « Écrire… », la bulle sans son, l'aperçu (14 novembre)
+
+Le propriétaire : « oui, lance l'écran de M1 ». Le cahier : `docs/univers/messages-ecrits.md`, sections 3, 4.1 à 4.3, 7
+et 8. Le serveur : 9.0 unsexagies. Le fichier : `app/collection/ecrire.tsx`.
+
+- **La barre du bas** prend la place du gros bouton « Lui répondre », comme une messagerie qu'on connaît déjà :
+  - « ＋ » à gauche : 🎭 un mème, 🪧 un panneau, 🎁 un cadeau (le mème et le cadeau chez moi seulement) — les photos et
+    les vidéos y viendront avec M2 et M3 ;
+  - le champ « Écrire… » (il grandit jusqu'à cinq lignes ; Entrée envoie à l'ordinateur, va à la ligne au téléphone) ;
+  - à droite, le micro quand le champ est vide (son geste d'aujourd'hui), la flèche dès qu'on tape ;
+  - trois petites têtes au-dessus du champ (les règles des vocaux, sans modèle) : la première d'office, un toucher en
+    change ;
+  - le compteur après 900 signes (« Un message de 1 000 signes au plus. » au-delà, la flèche s'éteint) ; un refus du
+    serveur (un mot interdit…) s'écrit au-dessus du champ, le texte reste ;
+  - pendant qu'il écrit, sa figurine se penche chez l'autre, comme pendant un vocal ;
+  - le frein tiré (`CLIKME_ECRIT=0`, `fil.ecrire` faux) : « ＋ » et le gros bouton du micro, comme avant.
+- **Dans la scène** : sa figurine prend la tête choisie et « dit » le message (`FigurineQuiParle.dire`) — les mots
+  apparaissent l'un après l'autre dans la bulle, la bouche bat, **aucun son** ; « Juste le son » ne montre rien pour un
+  écrit. Envoyé, l'écrit est dit tout de suite chez soi.
+- **Dans le fil** : le texte en entier, ses liens soulignés, ✍️, l'heure, les réactions (appui long).
+- **Un lien** : sa carte, sous la bulle — l'image (servie par chez nous), le titre, le site ; sans aperçu, le lien tout
+  simple. L'aperçu se prépare en quelques secondes : la conversation se relit d'elle-même (six fois au plus). Un toucher
+  l'ouvre dans un nouvel onglet ; un site que ClikMe ne connaît pas passe d'abord par « Tu quittes ClikMe pour <site> ».
+  **Le site montré est toujours le domaine de l'adresse**, jamais le nom que la page se donne (elle le choisit
+  elle-même). YouTube : l'affiche et ▶ ; Spotify, Deezer, Apple Music : la pochette.
+- **Effacer** : sous son propre message choisi (vocal ou écrit), dans les 24 heures — « Effacer ce message ? », « Il
+  disparaît pour vous deux. »
+- **La ligne de « Messages »** : « T'a écrit : « On se voit samedi ? » », « Toi : 🔗 Le titre du lien ».
+- **Le tout premier message d'une conversation vide** arrive maintenant tout seul quand elle est ouverte (avant : il
+  fallait la rouvrir), écrit ou vocal.
+- **La mesure** (page admin des mèmes, « ✍️ Les messages ») : écrits, vocaux, la part des écrits, les vocaux semaine
+  contre semaine (une alerte s'ils baissent de 30 %), les personnes qui écrivent, les liens et la part avec un aperçu,
+  les messages effacés.
+- **Pas dans ce lot** :
+  - « 🎵 Le ranger dans mon univers ? » sous un lien de musique ou de vidéo : le rangement relève de la session de
+    l'univers ;
+  - la page de confidentialité (« ce n'est pas un chiffrement de bout en bout », section 7) : c'est un texte juridique,
+    au propriétaire de le valider.
+- **L'essai** : `scripts/navigateur/messages.mjs`.
+
+### 9.0 tresexagies 🌟 Son univers, vivant (14 novembre)
 
 Le propriétaire, le matin même : « une jolie photo sans âme […] mon univers doit donner l'impression d'être en vie,
 qu'il s'y passe quelque chose ». Les pièces ont leur photo vivante ; son univers aussi, maintenant qu'une vidéo coûte
