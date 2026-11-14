@@ -254,7 +254,13 @@ const PAROLES_PAR_JOUR = 30;
  * 🎙️ PRÉVENIR QU'UN PROCHE LUI A PARLÉ — s'il a les notifications ; jamais à soi-même ; trente par jour au plus (une
  * seule à la fois par proche : `tag`). Appelé après l'envoi, jamais bloquant.
  */
-export async function prevenirDUneParole(supabase: Supabase, pour: string, deQui: string, prenom: string, o: { url: string; cle: string; facon?: "parle" | "repond" | "premiere"; panneau?: string }): Promise<"envoye" | "rien"> {
+export async function prevenirDUneParole(
+  supabase: Supabase,
+  pour: string,
+  deQui: string,
+  prenom: string,
+  o: { url: string; cle: string; facon?: "parle" | "repond" | "premiere"; panneau?: string; ecrit?: { titre: string; corps: string } },
+): Promise<"envoye" | "rien"> {
   if (!pour || !deQui || pour === deQui || !vapid()) return "rien";
   const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(pour));
   const abs = sesAbonnements(f);
@@ -263,7 +269,8 @@ export async function prevenirDUneParole(supabase: Supabase, pour: string, deQui
   const n = Number((await lireJson<{ n?: number }>(supabase, compte)).n) || 0;
   if (n >= PAROLES_PAR_JOUR) return "rien";
   await ecrireJson(supabase, compte, { n: n + 1 });
-  const notif = notifParole(prenom, o.url, o.cle, o.facon, o.panneau);
+  // ✍️ (lot M1) un message écrit : « ✍️ Léa t'a écrit », « 🔗 Léa t'a envoyé un lien » (`notifEcrit`, `ecrit.ts`)
+  const notif = o.ecrit ? { titre: o.ecrit.titre, corps: o.ecrit.corps, url: o.url, tag: `parole-${o.cle}` } : notifParole(prenom, o.url, o.cle, o.facon, o.panneau);
   const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
   const morts = abs.filter((_, i) => issues[i] === "mort");
   if (morts.length) {

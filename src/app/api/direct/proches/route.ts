@@ -27,6 +27,10 @@
 //      pour quelqu'un qui n'a pas ClikMe (trois par jour)
 // POST { action: "lien-repondre", id, son, duree, repliques } → { message, cle } : il répond au lien avec sa figurine ;
 //      ils deviennent proches, l'auteur est prévenu. (Sa figurine, s'il n'en a pas : `ma-figurine`, « photo », avec `lien`.)
+// ✍️ LOT M1, ÉCRIRE (`lib/direct/ecrit.ts`, `ecrit-serveur.ts`) :
+// POST { action: "ecrire", cle, texte, tete? } → { message } : un message écrit (1 000 signes) ; après la réponse,
+//      l'aperçu de son lien, puis la notification (« ✍️ Léa t'a écrit »). Le frein : `CLIKME_ECRIT=0` (404).
+// POST { action: "effacer", cle, id }   → { ok } : 🗑️ il efface son message (le sien, dans les 24 heures), pour les deux
 // Un proche se désigne toujours par sa clé de profil, jamais par son identifiant.
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -50,6 +54,7 @@ import {
   signalerParole,
 } from "@/lib/direct/talkie-serveur";
 import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
+import { apresEcrit, ecrireMessage, effacerMessage } from "@/lib/direct/ecrit-serveur";
 import { effacerEtagere, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
@@ -115,6 +120,20 @@ export async function POST(request: Request) {
     const a = r.aPrevenir;
     if (a) after(() => prevenirDeLaParole(supabase, moi, a));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
+  }
+  // ✍️ (lot M1) un message écrit ; après la réponse, l'aperçu de son lien, puis « ✍️ Léa t'a écrit »
+  if (p?.action === "ecrire") {
+    const r = await ecrireMessage(supabase, moi, p.cle, p.texte, p.tete);
+    if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    const a = r.apres;
+    if (a) after(() => apresEcrit(supabase, moi, a).catch(() => undefined));
+    return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
+  }
+  // 🗑️ (lot M1) il efface son message, dans les 24 heures : pour les deux ; ce que l'étagère en avait noté s'en va
+  if (p?.action === "effacer") {
+    const r = await effacerMessage(supabase, moi, p.cle, p.id);
+    if (r.ok) await oublierMessage(supabase, moi, p.cle, p.id).catch(() => undefined);
+    return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   // 📲 par WhatsApp : son message en lien ; la réponse de celui qui l'a reçu
   if (p?.action === "lien-creer") {

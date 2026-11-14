@@ -18,7 +18,7 @@ import type { Habitant } from "./habitant";
 import { ecrireJson, lireJson, lireLigne } from "./ma-figurine-serveur";
 import { iaBranchee, motPasse, parlePourLui, styleDe } from "./rituel-serveur";
 import { motPropre } from "./rituel";
-import { repliquesValides, texteDuMessage } from "./talkie";
+import { texteLuDuMessage } from "./talkie";
 import { prevenirDUneParole } from "./appli-collection-serveur";
 import { hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { etagereDansLaScene } from "./etagere-serveur";
@@ -169,10 +169,11 @@ export async function preparerAparte(supabase: Supabase, a: { h: string; pair: s
   const [pa, pb] = await Promise.all([parlePourLui(supabase, moi.id), parlePourLui(supabase, a.h)]);
   if (!pa || !pb) return garder({ rien: "se-tait" });
   const noms = (await nomsDuFil(supabase, a.pair)).filter((n) => n.ts <= a.jusqua && n.ts >= a.jusqua - APARTE.fenetre).slice(-12);
-  const fiches = await Promise.all(noms.map((n) => lireJson<{ id?: string; de?: string; duree?: number; repliques?: unknown }>(supabase, `fils/${a.pair}/m/${n.nom}`)));
+  const fiches = await Promise.all(noms.map((n) => lireJson<{ id?: string; de?: string; duree?: number; repliques?: unknown; genre?: string; texte?: string; lien?: { titre?: string } }>(supabase, `fils/${a.pair}/m/${n.nom}`)));
   const [ca, cb] = await Promise.all([parolesCachees(supabase, moi.id), parolesCachees(supabase, a.h)]);
   if (fiches.some((x) => ca.has(s(x.id)) || cb.has(s(x.id)))) return garder({ rien: "signale" });
-  const paroles = fiches.map((x) => ({ de: s(x.de), texte: texteDuMessage(repliquesValides(x.repliques, Number(x.duree)) ?? []) })).filter((x) => (x.de === moi.id || x.de === a.h) && x.texte);
+  // (✍️ lot M1 : un message écrit se lit aussi — d'un lien, son titre seulement)
+  const paroles = fiches.map((x) => ({ de: s(x.de), texte: texteLuDuMessage(x) })).filter((x) => (x.de === moi.id || x.de === a.h) && x.texte);
   if (!paroles.length) return garder({ rien: "vide" });
   const premier = paroles[0].de;
   const second = premier === moi.id ? a.h : moi.id;

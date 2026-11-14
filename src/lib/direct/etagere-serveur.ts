@@ -45,7 +45,7 @@ import type { Habitant } from "./habitant";
 import { lireFicheMonde } from "./fiches-serveur";
 import { ecrireJson, lireJson, lireLigne, prochesDe } from "./ma-figurine-serveur";
 import { iaBranchee, motPasse, parlePourLui } from "./rituel-serveur";
-import { repliquesValides, texteDuMessage } from "./talkie";
+import { texteLuDuMessage } from "./talkie";
 import { cheminReglages, figurineVue, hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import {
   CATALOGUE,
@@ -138,7 +138,7 @@ type FicheEtagere = {
   /** 📌 (lot E5) le jour où chacun a vu sa question jouée dans la scène. */
   jouees?: Record<string, string>;
 };
-type FicheMessage = { id?: string; de?: string; le?: string; duree?: number; repliques?: unknown };
+type FicheMessage = { id?: string; de?: string; le?: string; duree?: number; repliques?: unknown; genre?: string; texte?: string; lien?: { titre?: string } };
 
 // ─── lot E5 : le réglage « Ma figurine range sans me demander » (éteint d'office) ────────────────────
 /** Il laisse sa figurine ranger sans lui demander. */
@@ -431,7 +431,7 @@ export async function preparerNotes(supabase: Supabase, a: string, b: string): P
   const [ca, cb] = await Promise.all([parolesCachees(supabase, a), parolesCachees(supabase, b)]);
   if (fiches.some((x) => ca.has(s(x.id)) || cb.has(s(x.id)))) return conclure();
   const messages = fiches
-    .map((x, i) => ({ n: i + 1, id: s(x.id), de: s(x.de), le: s(x.le) || new Date(lus[i].ts).toISOString(), jour: jourDe(lus[i].ts), texte: texteDuMessage(repliquesValides(x.repliques, Number(x.duree)) ?? []).slice(0, ETAGERE.signesMessage) }))
+    .map((x, i) => ({ n: i + 1, id: s(x.id), de: s(x.de), le: s(x.le) || new Date(lus[i].ts).toISOString(), jour: jourDe(lus[i].ts), texte: texteLuDuMessage(x).slice(0, ETAGERE.signesMessage) }))
     .filter((x) => x.id && (x.de === a || x.de === b) && x.texte);
   // (une épreuve attend son issue : un « JE L'AI !!! » tout court compte)
   const attendues = f.objets.some((o) => issueAttendue(o, jour) && !o.demande && !o.sansIssue);

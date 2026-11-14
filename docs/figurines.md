@@ -3146,6 +3146,34 @@ y lance E5 ». Le détail : `docs/univers/etagere-accord.md`.
   (50 %), rangées par le réglage, dates corrigées avant de ranger (10 %).
 - **Les souvenirs rangés avant le lot restent rangés** : rien n'est redemandé.
 
+### 9.0 unsexagies ✍️ Écrire, partager — lot M1, le serveur : les messages écrits et les liens (14 novembre)
+
+Le propriétaire : « est-ce que les utilisateurs peuvent s'envoyer des messages écrits au lieu du talkie-walkie, avec la
+possibilité de s'envoyer des fichiers comme des photos, des vidéos ou des liens ? » Ses « oui », puis « lance M1, le
+serveur d'abord ». Le cahier : `docs/univers/messages-ecrits.md`. **L'écran vient ensuite** : rien ne change encore à
+l'écran.
+
+- **Un message écrit** (`lib/direct/ecrit.ts`, `ecrit-serveur.ts`, `POST /api/direct/proches` `{ action: "ecrire", cle,
+  texte, tete? }`) : 1 000 signes, rien d'invisible, les emojis tels quels, aucun mot interdit (la phrase des vocaux) ;
+  trois cents par jour. Il se range dans le même dossier que les vocaux (`fils/<paire>/m/`, `genre: "ecrit"`) : le fil
+  les montre tous dans l'ordre. La tête : la sienne, sinon les règles des vocaux (« mdr » : le rire), sans modèle. Dans
+  le fil, une seule réplique (les 140 premiers signes, le temps que la figurine le dise), sans voix.
+- **Un lien** : son aperçu se prépare après la réponse — le titre, le site, l'image recopiée chez nous (WebP, 600
+  pixels : le site ne sait pas qui a reçu le lien). **Le serveur ne lit jamais le réseau interne** : pas d'adresse IP
+  nue, pas de nom interne, un port habituel ; le nom traduit en adresse est vérifié au moment même de la connexion, et
+  chaque redirection aussi ; cinq secondes, 1 Mo. Sans aperçu : le lien tout simple. YouTube, Spotify, Deezer, Apple
+  Music : une carte « musique » ou « vidéo ».
+- **La notification** : « ✍️ Léa t'a écrit » (le début du message), « 🔗 Léa t'a envoyé un lien » (son titre) ; la ligne
+  dans « Messages » : le message, ou « 🔗 Le titre du lien » ; les non-lus comptent l'écrit.
+- **Les figurines lisent l'écrit** (l'étagère, l'aparté, le mot de la fin) : le texte, et d'un lien son titre seulement.
+- **Effacer** (`{ action: "effacer", cle, id }`) : son message, vocal ou écrit, dans les 24 heures, pour les deux (avec
+  sa voix ou l'image de son aperçu ; ce que l'étagère en avait noté s'en va). « Signaler » vaut aussi pour un écrit.
+- **La mesure** : `stats/messages/<jour>.json` (écrits, vocaux, liens, aperçus, sans aperçu, effacés, personnes qui
+  écrivent).
+- **Le frein** : `CLIKME_ECRIT=0` (on ne peut plus écrire ; ce qui a été écrit reste lisible, et s'efface toujours).
+- **Les essais** : `scripts/verifier-messages.mjs` (sans téléphone), `scripts/essai-messages-route.mjs` (le faux site
+  des aperçus : `CLIKME_APERCU_ESSAI_BASE`, la CI seulement).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

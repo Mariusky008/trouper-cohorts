@@ -613,6 +613,7 @@ const courriels = [];
 const pushs = [];
 const videosEssai = new Map();
 const consignesIA = [];
+const pagesLues = [];
 // 🎲 LES MÈMES « SURPRENDS-MOI ! » DE LA FAUSSE IA : le premier pas encore dans la consigne (« déjà proposés ») ; un goût
 // pour les animaux, le sien ; et un qui parle d'alcool quand on le lui souffle (l'essai vérifie qu'il est écarté)
 const MEMES_IA = [
@@ -843,6 +844,37 @@ http
         return repondre(res, 200, n < 2 ? { id: video[1], status: "in_progress", progress: 40 } : { id: video[1], status: "completed", progress: 100 });
       }
       if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
+      // ✍️ (lot M1) LE FAUX SITE DES APERÇUS DE LIENS (`CLIKME_APERCU_ESSAI_BASE`, les noms en `.essai.invalid`) : une page
+      // avec ses balises de partage et son affiche ; une page sans titre ; une page lente (plus de 5 s) ; une redirection ;
+      // `/__pages` : les pages demandées (le serveur n'est jamais venu lire ce qu'il devait refuser).
+      if (url.pathname.startsWith("/pages/")) {
+        pagesLues.push(url.pathname);
+        const page = (titre, image) =>
+          `<!doctype html><html><head><meta charset="utf-8"><title>Titre de secours</title><meta property="og:title" content="${titre}"><meta content="Cinéma &amp; Co" property="og:site_name">${image ? `<meta property="og:image" content="${image}">` : ""}</head><body><p>Le texte de la page, que personne ne lit.</p></body></html>`;
+        if (url.pathname === "/pages/film") {
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+          return res.end(page("Le Grand Bleu &mdash; la bande-annonce", "/pages/affiche.webp"));
+        }
+        if (url.pathname === "/pages/vers-film") {
+          res.writeHead(302, { location: "http://pages.essai.invalid/pages/film" });
+          return res.end();
+        }
+        if (url.pathname === "/pages/sans-titre") {
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+          return res.end("<!doctype html><html><head></head><body>rien</body></html>");
+        }
+        if (url.pathname === "/pages/lente") {
+          await new Promise((r) => setTimeout(r, 7000));
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+          return res.end(page("Trop tard", ""));
+        }
+        if (url.pathname === "/pages/affiche.webp") {
+          res.writeHead(200, { "content-type": "image/webp" });
+          return res.end(fs.readFileSync(new URL("../public/direct/double/pied/salut-1.webp", import.meta.url)));
+        }
+        return repondre(res, 404, { erreur: "pas de page" });
+      }
+      if (url.pathname === "/__pages") return repondre(res, 200, pagesLues);
       // UN FAUX GÉOCODEUR (`GEOCODEUR_URL=…/geocodeur/api`, comme Photon) : « gare » trouve la gare de Dax (et, trop loin pour
       // la ville, celle de Bordeaux) ; le reste, rien — rien ne part chez komoot
       if (url.pathname === "/geocodeur/api") {
