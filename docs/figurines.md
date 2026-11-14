@@ -2960,6 +2960,12 @@ dessinés) ; puis, son accord : « fabriquer une vraie pièce, le salon, dans le
   son fauteuil) posée au milieu, la page ouverte face à elle ; « Ouvrir l'image en grand ».
 - **Le moteur** (`moteur-images-serveur.ts`) apprend la largeur (`taille: "1536x1024"`) et le masque (`masque` : ce qui
   est transparent est à peindre).
+- **Le salon fait et aimé, « fais la pièce télé et la terrasse »** (le même jour) : l'essai devient « 🏠 Ta maison en
+  panorama », une pièce à la fois (le salon, la pièce télé, la terrasse ; `?piece=` et `piece`). La pièce télé : la
+  télé éteinte au milieu, son écran sombre et uni (pour y passer son film), le canapé, ses films et ses livres, la porte
+  du salon à droite — dans le style de son salon (son centre en IMAGE 2). La terrasse : la vue qu'on a par la baie du
+  salon (sa droite en IMAGE 2), la carte de ses voyages et sa valise, la baie du salon à gauche, la chaise longue et
+  l'olivier à droite. La maison se tient : chaque pièce reprend sa voisine, si elle est faite.
 - **La suite, si le propriétaire l'aime** : les autres pièces (la télé, la terrasse), la profondeur (le premier plan
   découpé à part), les portes qu'on touche, les objets qui vivent et le « i » (comme dans la maquette) — avec la session
   de « l'univers qui grandit ».

@@ -1,11 +1,13 @@
-// 🏠 LES PIÈCES EN PANORAMA, L'ESSAI DU SALON (`lib/direct/pieces-serveur.ts`, `app/api/admin/direct/pieces`) — contre
+// 🏠 LES PIÈCES EN PANORAMA, L'ESSAI DE SA MAISON (`lib/direct/pieces-serveur.ts`, `app/api/admin/direct/pieces`) — contre
 // le faux Supabase et son faux moteur d'image, jamais la vraie base, jamais OpenAI.
 //
 // Réservé à l'administrateur, sur SON univers (le cookie d'habitant de son téléphone). Léa a sa figurine assise et son
 // univers (son décor) ; Sam n'a pas d'univers. Quatre passages : le centre (en largeur, d'après son décor, une place
 // libre pour son fauteuil), la gauche (la toile prolongée : un masque — la porte de la pièce télé), la droite (la baie
-// sur la terrasse), puis l'assemblage (3584 × 1024, sans moteur). Plus rien à faire ensuite ; refaire un côté efface
-// lui et le panorama ; aucun verrou ne reste.
+// sur la terrasse), puis l'assemblage (3584 × 1024, sans moteur). Plus rien à faire ensuite ; aucun verrou ne reste. La
+// pièce télé : la télé éteinte (pour son film), dans le style de son salon (IMAGE 2), la porte du salon à droite ; la
+// terrasse : la vue par la baie du salon, la carte de ses voyages, la baie du salon à gauche. Une pièce inconnue :
+// refusée. Refaire un côté efface lui et le panorama ; le centre, tout.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
@@ -100,10 +102,10 @@ const centre = await sharp(await octets(`${LEA.id}/pieces/salon/centre.png`)).me
 ok(centre.width === 1536 && centre.height === 1024, `à la taille de la toile, en largeur (${centre.width} × ${centre.height})`);
 const c2 = await appeler(lea, { action: "fabriquer" });
 ia = (await toutIA()).slice(avant);
-ok(c2.fait === "gauche" && ia.some((c) => c.includes("Extend the room to the LEFT") && c.includes("closed wooden door") && c.includes(" high ")) && ia.includes("MASQUE 1536x1024"), "2. la gauche : la toile prolongée (un masque, en largeur), la porte de la pièce télé");
+ok(c2.fait === "gauche" && ia.some((c) => c.includes("Extend the scene to the LEFT") && c.includes("closed wooden door") && c.includes(" high ")) && ia.includes("MASQUE 1536x1024"), "2. la gauche : la toile prolongée (un masque, en largeur), la porte de la pièce télé");
 const c3 = await appeler(lea, { action: "fabriquer" });
 ia = (await toutIA()).slice(avant);
-ok(c3.fait === "droite" && ia.some((c) => c.includes("Extend the room to the RIGHT") && c.includes("bay window")) && ia.filter((c) => c.startsWith("MASQUE")).length === 2, "3. la droite : la baie sur la terrasse");
+ok(c3.fait === "droite" && ia.some((c) => c.includes("Extend the scene to the RIGHT") && c.includes("bay window")) && ia.filter((c) => c.startsWith("MASQUE")).length === 2, "3. la droite : la baie sur la terrasse");
 const n3 = (await toutIA()).length;
 const c4 = await appeler(lea, { action: "fabriquer" });
 const pano = await sharp(await octets(`${LEA.id}/pieces/salon/panorama.webp`)).metadata();
@@ -112,6 +114,25 @@ ok(c4.etat?.aFaire?.length === 0 && /^http/.test(c4.etat.images?.panorama ?? "")
 const c5 = await appeler(lea, { action: "fabriquer" });
 ok(c5.statut === 200 && !c5.fait, "plus rien à faire");
 ok((await octets(`${LEA.id}/pieces/salon/verrou.json`)) === null, "aucun verrou ne reste");
+
+// ─── 📺 la pièce télé, 🌅 la terrasse ───
+ok((await appeler(lea, { action: "fabriquer", piece: "cuisine" })).statut === 400 && (await fetch(`${ROUTE}?piece=cuisine`, { headers: { cookie: lea } })).status === 400, "une pièce inconnue : refusée");
+const avantTele = (await toutIA()).length;
+const t1 = await appeler(lea, { action: "fabriquer", piece: "tele" });
+ia = (await toutIA()).slice(avantTele);
+ok(t1.fait === "centre" && t1.etat?.piece === "tele" && ia.some((c) => c.includes("Create the TV ROOM") && c.includes("switched off") && c.includes("IMAGE 2 shows the LIVING ROOM")), "📺 la pièce télé : la télé éteinte (pour son film), dans le style de son salon");
+for (let k = 0; k < 3; k++) await appeler(lea, { action: "fabriquer", piece: "tele" });
+ia = (await toutIA()).slice(avantTele);
+const tele = await sharp(await octets(`${LEA.id}/pieces/tele/panorama.webp`)).metadata();
+const et = await appeler(lea);
+ok(ia.some((c) => c.includes("films and books")) && ia.some((c) => c.includes("leads back to the living room")) && tele.width === 3584 && et.etat?.pieces?.tele === 4 && et.etat.pieces.salon === 4 && et.etat.pieces.terrasse === 0, `ses films et ses livres, la porte du salon ; assemblée (${tele.width} × ${tele.height}) ; chaque pièce, où elle en est`);
+const avantTerrasse = (await toutIA()).length;
+const r0 = await appeler(lea, { action: "fabriquer", piece: "terrasse" });
+ia = (await toutIA()).slice(avantTerrasse);
+ok(r0.fait === "centre" && ia.some((c) => c.includes("Create the TERRACE") && c.includes("world map") && c.includes("through its bay window")), "🌅 la terrasse : la vue par la baie du salon, la carte de ses voyages, une place libre");
+await appeler(lea, { action: "fabriquer", piece: "terrasse" });
+ia = (await toutIA()).slice(avantTerrasse);
+ok(ia.some((c) => c.includes("Extend the scene to the LEFT") && c.includes("glass bay window doors") && c.includes("IMAGE 3 shows")), "sa gauche : la baie du salon (la maison se tient : IMAGE 3)");
 
 // ─── refaire ───
 const r1 = await appeler(lea, { action: "refaire", etape: "gauche" });
