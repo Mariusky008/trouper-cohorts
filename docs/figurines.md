@@ -3054,6 +3054,16 @@ panoramas), sur SON univers — `lib/direct/pieces-vivantes-serveur.ts`, `api/ad
   moteur d'images, puis `OPENAI_API_KEY` chez OpenAI) ; introuvable (404), les moteurs vidéo du compte sont essayés
   (`/v1/models`, ceux qui commencent par « sora », le moins cher d'abord) ; sinon le refus dit où et quoi (« sora-2 chez
   api.openai.com : 404 ») et la clé à ajouter. La commande garde son branchement : elle est suivie au même endroit.
+- **Puis, le propriétaire : « Sora 2 n'existe plus, il me semble »** — juste : OpenAI a fermé son moteur vidéo (Sora 2,
+  l'API « Videos ») le 24 septembre 2026. **La vidéo se fait chez Google, Veo**, par l'API Gemini (`moteurVideo()` :
+  Veo dès qu'une clé Gemini est là — `GEMINI_VIDEO_API_KEY`, sinon `FIGURINE_GEMINI_API_KEY`, `GEMINI_API_KEY`,
+  `GOOGLE_API_KEY` ; `GEMINI_VIDEO_BASE_URL` ; `VIDEO_MOTEUR=openai` reviendrait à OpenAI). Le moteur :
+  `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models` : « veo », qui font des vidéos), le rapide d'abord (le
+  moins cher), le définitif avant l'aperçu. La commande (`:predictLongRunning`, l'image en 9:16, « no voice, no
+  dialogue, no music » — et la vidéo est toujours jouée sans le son) essaie trois formes de requête (la première refusée
+  pour sa forme, la suivante) ; l'opération est suivie (Veo ne dit pas où il en est : une estimation sur deux minutes),
+  puis la vidéo se télécharge. Le faux Veo de `faux-supabase.mjs` (`/gemini/…`) ; la CI a `GEMINI_VIDEO_*` faux. Coût,
+  environ 1 $ la vidéo.
 
 ### 9.0 septquinquagies 🎨 Les ambiances de son univers — l'essai (14 novembre)
 

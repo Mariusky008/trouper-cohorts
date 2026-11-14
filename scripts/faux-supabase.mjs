@@ -853,6 +853,49 @@ http
         videosEssai.set(video[1], n);
         return repondre(res, 200, n < 2 ? { id: video[1], status: "in_progress", progress: 40 } : { id: video[1], status: "completed", progress: 100 });
       }
+      // 🎥 UN FAUX VEO (l'API Gemini de Google, `GEMINI_VIDEO_BASE_URL=…/gemini`) : ses moteurs (un texte, deux vidéos) ;
+      // une commande (« VEO <moteur> <format> <taille de l'image reçue> <consigne> ») — la première forme, avec
+      // « personGeneration », est refusée (400), la suivante passe ; « en train » à la première question, faite à la
+      // deuxième ; la vidéo se télécharge. La terrasse : aucun moteur vidéo trouvé (404).
+      if (url.pathname === "/gemini/v1beta/models" && req.method === "GET") {
+        return repondre(res, 200, {
+          models: [
+            { name: "models/gemini-2.5-flash", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/veo-3.1-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
+            { name: "models/veo-3.1-fast-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
+          ],
+        });
+      }
+      const veo = /^\/gemini\/v1beta\/models\/([\w.-]+):predictLongRunning$/.exec(url.pathname);
+      if (veo && req.method === "POST") {
+        if (req.headers["x-goog-api-key"] !== "faux") return repondre(res, 401, { error: { code: 401, message: "API key not valid" } });
+        const q = JSON.parse((await corps(req)).toString() || "{}");
+        const inst = q.instances?.[0] ?? {};
+        const img = inst.image?.inlineData?.data ?? inst.image?.bytesBase64Encoded ?? "";
+        const sharp = (await import("sharp")).default;
+        const m = img ? await sharp(Buffer.from(img, "base64")).metadata().catch(() => null) : null;
+        if (String(inst.prompt ?? "").includes("string lights glow")) {
+          consignesIA.push(`VEO-404 ${veo[1]}`);
+          return repondre(res, 404, { error: { code: 404, message: `models/${veo[1]} is not found for API version v1beta` } });
+        }
+        if (q.parameters?.personGeneration) {
+          consignesIA.push(`VEO-400 ${veo[1]} personGeneration`);
+          return repondre(res, 400, { error: { code: 400, message: "personGeneration isn't supported by this model" } });
+        }
+        consignesIA.push(`VEO ${veo[1]} ${q.parameters?.aspectRatio ?? ""} ${m ? `${m.width}x${m.height}` : "aucune"} ${inst.prompt ?? ""}`);
+        videosEssai.set("op1", 0);
+        return repondre(res, 200, { name: `models/${veo[1]}/operations/op1` });
+      }
+      const operation = /^\/gemini\/v1beta\/models\/[\w.-]+\/operations\/(\w+)$/.exec(url.pathname);
+      if (operation && req.method === "GET" && videosEssai.has(operation[1])) {
+        const n = videosEssai.get(operation[1]) + 1;
+        videosEssai.set(operation[1], n);
+        return repondre(res, 200, n < 2 ? { done: false } : { done: true, response: { generateVideoResponse: { generatedSamples: [{ video: { uri: "http://127.0.0.1:54321/gemini/v1beta/files/video1:download?alt=media" } }] } } });
+      }
+      if (url.pathname === "/gemini/v1beta/files/video1:download" && req.headers["x-goog-api-key"] === "faux") {
+        res.writeHead(200, { "content-type": "video/mp4" });
+        return res.end(Buffer.from("faux mp4 de la pièce vivante"));
+      }
       if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
       // UN FAUX GÉOCODEUR (`GEOCODEUR_URL=…/geocodeur/api`, comme Photon) : « gare » trouve la gare de Dax (et, trop loin pour
       // la ville, celle de Bordeaux) ; le reste, rien — rien ne part chez komoot

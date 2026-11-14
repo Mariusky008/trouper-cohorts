@@ -13,7 +13,7 @@
  *      9:16 (`vue.webp`, 864 × 1536 : les deux bords un peu rognés) ;
  *   2. les objets : où sont les vedettes, la place du fauteuil et l'écran de la télé (des cadres en %, lus sur la vue par
  *      un modèle qui voit les images) — on les touche, la caméra s'en approche ;
- *   3. la vie : la vue devient une PHOTO VIVANTE — huit secondes de vidéo faites par le moteur vidéo d'OpenAI d'après
+ *   3. la vie : la vue devient une PHOTO VIVANTE — huit secondes de vidéo faites par un moteur vidéo (Google Veo) d'après
  *      elle (la caméra ne bouge pas ; seuls les objets vivent : le disque tourne, le feu danse, les poissons nagent, la
  *      mer scintille), jouées en boucle par-dessus l'image fixe. La vidéo se fait en quelques minutes : un passage la
  *      commande, les suivants demandent où elle en est, puis la rangent.
@@ -121,6 +121,7 @@ export const consigneVivante = (p: Piece) =>
     "The camera does not move at all: a locked-off tripod shot, no zoom, no pan, no tilt. The room, every object, the light and the framing stay exactly as they are.",
     `Only these things move, softly and continuously, in a calm loop: ${PLANS_ENTIERS[p].vit}.`,
     "Nothing appears and nothing disappears. No people, no characters, no text. The empty space in the middle of the floor stays empty. The last moment looks like the first one.",
+    "Sound: only the soft ambience of the room — no voice, no dialogue, no music.",
   ].join("\n");
 
 /** 2. Où sont les vedettes, la place du fauteuil et (la télé) son écran — en % de la vue. */
@@ -377,6 +378,91 @@ async function commanderLaVideo(p: Piece, vue: Buffer): Promise<{ id: string; br
   }
   return { erreur: refus.length ? `Le moteur vidéo refuse — ${refus.join(" ; ")}. Une clé OpenAI qui ouvre les vidéos (OPENAI_VIDEO_API_KEY) peut être ajoutée dans Vercel.` : "Le moteur vidéo n’est pas branché ici." };
 }
+// ─── 🎥 LE MOTEUR VIDÉO DE GOOGLE (VEO) ───────────────────────────────────────────────────────────────
+/**
+ * LE 14 NOVEMBRE (le propriétaire : « Sora 2 n'existe plus, il me semble ») : OpenAI a fermé son moteur vidéo (Sora 2,
+ * l'API « Videos ») le 24 septembre 2026 — d'où le 404. La vidéo se fait maintenant chez Google : Veo, par l'API Gemini
+ * (`GEMINI_VIDEO_API_KEY`, sinon la clé Gemini des figurines, sinon la clé commune ; `GEMINI_VIDEO_BASE_URL`). Le
+ * moteur : `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models`, « veo », qui font des vidéos), le rapide d'abord
+ * (le moins cher), le définitif avant l'aperçu. La commande est une « opération » qu'on suit, puis la vidéo se télécharge.
+ * `VIDEO_MOTEUR=openai` revient à OpenAI (si un jour il rouvre).
+ */
+const cleGoogle = () => s(process.env.GEMINI_VIDEO_API_KEY) || s(process.env.FIGURINE_GEMINI_API_KEY) || s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
+const baseGoogle = () => s(process.env.GEMINI_VIDEO_BASE_URL) || s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
+export const moteurVideo = (): "veo" | "openai" => {
+  const m = s(process.env.VIDEO_MOTEUR).toLowerCase();
+  return m === "veo" || m === "openai" ? m : cleGoogle() ? "veo" : "openai";
+};
+/** Si le compte ne dit pas ses moteurs : ceux-ci, dans cet ordre. */
+const MODELES_VEO = ["veo-3.1-fast-generate-001", "veo-3.1-generate-001", "veo-3.0-fast-generate-001", "veo-3.0-generate-001", "veo-3.1-fast-generate-preview", "veo-3.1-generate-preview"];
+export async function modelesVeo(): Promise<string[]> {
+  const force = s(process.env.GEMINI_VIDEO_MODEL);
+  const r = await fetch(`${baseGoogle()}/v1beta/models?pageSize=1000`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(20_000) }).catch(() => null);
+  const j = (r?.ok ? await r.json().catch(() => ({})) : {}) as { models?: { name?: string; supportedGenerationMethods?: string[] }[] };
+  const vus = (j.models ?? []).filter((m) => /veo/i.test(s(m.name)) && (m.supportedGenerationMethods ?? []).includes("predictLongRunning")).map((m) => s(m.name).replace(/^models\//, ""));
+  const rang = (id: string) => (/fast/i.test(id) ? 0 : 2) + (/preview/i.test(id) ? 1 : 0);
+  const tries = [...vus].sort((a, b) => rang(a) - rang(b) || b.localeCompare(a));
+  return [...new Set([...(force ? [force] : []), ...(tries.length ? tries : MODELES_VEO)])].slice(0, 4);
+}
+async function commanderChezVeo(p: Piece, vue: Buffer): Promise<{ id: string; modele: string } | { erreur: string }> {
+  if (!cleGoogle()) return { erreur: "Le moteur vidéo de Google n’est pas branché ici (GEMINI_VIDEO_API_KEY)." };
+  const data = (await pourLaVideo(vue)).toString("base64");
+  const prompt = consigneVivante(p);
+  // (la forme que l'API attend a changé selon les versions : l'image « inlineData », puis sans réglage de personnes,
+  // puis « bytesBase64Encoded » — à la première qui n'est pas refusée pour sa forme)
+  const formes = [
+    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", personGeneration: "allow_adult" } },
+    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16" } },
+    { instances: [{ prompt, image: { bytesBase64Encoded: data, mimeType: "image/png" } }], parameters: { aspectRatio: "9:16" } },
+  ];
+  const refus: string[] = [];
+  for (const modele of await modelesVeo()) {
+    for (const forme of formes) {
+      const r = await fetch(`${baseGoogle()}/v1beta/models/${encodeURIComponent(modele)}:predictLongRunning`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": cleGoogle() },
+        body: JSON.stringify(forme),
+        signal: AbortSignal.timeout(60_000),
+      }).catch(() => null);
+      if (!r) {
+        refus.push(`${modele} : pas de réponse`);
+        break;
+      }
+      if (r.ok) {
+        const j = (await r.json().catch(() => ({}))) as { name?: string };
+        if (/^[\w./-]+$/.test(s(j.name))) return { id: s(j.name), modele };
+        refus.push(`${modele} : pas de commande rendue`);
+        break;
+      }
+      const pourquoi = await raison(r);
+      refus.push(`${modele} : ${r.status} ${pourquoi}`.trim());
+      // (refusée pour sa forme : la suivante ; sinon, ce moteur n'est pas pour nous : le suivant)
+      if (r.status !== 400) break;
+    }
+  }
+  return { erreur: `Le moteur vidéo de Google (Veo) refuse — ${refus.slice(-4).join(" ; ") || "aucun moteur vidéo sur ce compte"}.` };
+}
+/** Où en est l'opération Veo : faite (téléchargée, rangée), ratée (la commande s'efface), ou en train (une estimation). */
+async function suivreChezVeo(d: ReturnType<typeof depotDans>, id: string, depuis: string): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
+  if (!/^[\w./-]+$/.test(id)) return { erreur: "La commande de la vidéo est illisible : refais-la." };
+  const r = await fetch(`${baseGoogle()}/v1beta/${id}`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(30_000) }).catch(() => null);
+  if (!r?.ok) return { erreur: `Le moteur vidéo ne dit pas où en est la vidéo (${r?.status ?? "réseau"}).` };
+  type Op = { done?: boolean; error?: { message?: string }; response?: { generateVideoResponse?: { generatedSamples?: { video?: { uri?: string } }[]; raiMediaFilteredReasons?: string[] } } };
+  const j = (await r.json().catch(() => ({}))) as Op;
+  const rater = async (pourquoi: string) => {
+    await d.effacer("video.json").catch(() => undefined);
+    return { erreur: `La vidéo a échoué : ${pourquoi}. Touche « Continuer » pour la recommander.` };
+  };
+  if (j.error) return rater(s(j.error.message) || "le moteur n’a pas dit pourquoi");
+  if (!j.done) return { progres: Math.min(95, Math.round(((Date.now() - (Date.parse(depuis) || Date.now())) / 120_000) * 100)) };
+  const uri = s(j.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri);
+  if (!uri) return rater(s(j.response?.generateVideoResponse?.raiMediaFilteredReasons?.join(", ")) || "aucune vidéo rendue");
+  const c = await fetch(uri, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(90_000) }).catch(() => null);
+  if (!c?.ok) return { erreur: `La vidéo est faite, mais ne se télécharge pas (${c?.status ?? "réseau"}) : réessaie.` };
+  await d.ecrire("video.mp4", Buffer.from(await c.arrayBuffer()), "video/mp4");
+  return { fait: true };
+}
+
 const branchementDe = (nom: unknown) => branchementsVideo().find((b) => b.nom === nom) ?? branchementsVideo()[0] ?? { nom: "images" as const, base: base(), cle: cle() };
 
 /** Où en est la vidéo commandée : faite (et rangée), ratée (la commande s'efface), ou en train. */
@@ -435,12 +521,14 @@ export async function fabriquerLaPieceVivante(supabase: Supabase, h: string, p: 
     // la vidéo : commandée une fois, puis suivie
     const commande = json(await d.lire("video.json").catch(() => null));
     if (!s(commande.id)) {
-      const c = await commanderLaVideo(p, vue);
+      // (🎥 chez Google, Veo — OpenAI a fermé le sien ; `VIDEO_MOTEUR=openai` y revient)
+      const veo = moteurVideo() === "veo";
+      const c = veo ? await commanderChezVeo(p, vue) : await commanderLaVideo(p, vue);
       if ("erreur" in c) return { erreur: c.erreur };
-      await d.ecrire("video.json", Buffer.from(JSON.stringify({ id: c.id, le: new Date().toISOString(), modele: c.modele, branchement: c.branchement })), "application/json");
+      await d.ecrire("video.json", Buffer.from(JSON.stringify({ id: c.id, le: new Date().toISOString(), modele: c.modele, ...(veo ? { moteur: "veo" } : { branchement: (c as { branchement?: string }).branchement }) })), "application/json");
       return { progres: 0 };
     }
-    const suite = await suivreLaVideo(d, s(commande.id), branchementDe(commande.branchement));
+    const suite = commande.moteur === "veo" ? await suivreChezVeo(d, s(commande.id), s(commande.le)) : await suivreLaVideo(d, s(commande.id), branchementDe(commande.branchement));
     if ("erreur" in suite) return { erreur: suite.erreur };
     if ("progres" in suite) {
       await d.ecrire("video.json", Buffer.from(JSON.stringify({ ...commande, progres: suite.progres })), "application/json");
