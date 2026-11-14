@@ -148,9 +148,10 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
 - **L'accès** : un 4ᵉ onglet « Ma maison » — **fait** (9.0 quinquinquagies 🏠), avec « 🏠 Chez Léa » dans la conversation.
 - **Les ambiances** : Pablito en propose une d'après l'âge et la conversation (cosy, urbaine New York, néon et gaming,
   pastel), trois vignettes pour changer — **l'essai est fait** (9.0 septquinquagies 🎨, « Les ambiances de ton
-  univers » dans la page d'essais) : son monde réinterprété dans chaque ambiance, celle de Pablito en grand. **À juger
-  par le propriétaire** ; ensuite, la brancher dans la création de l'univers (Pablito la propose à la fin de la
-  conversation, la fiche du monde garde l'ambiance choisie).
+  univers » dans la page d'essais) : son monde réinterprété dans chaque ambiance, celle de Pablito en grand. **Et elles
+  sont branchées dans la création** (9.0 octoquinquagies) : Pablito en propose une avec sa proposition, on en choisit
+  une autre d'un toucher, la fiche garde `decor_ambiance`, le décor est peint dedans ; dans `/univers/monde`, on change
+  d'ambiance (une retouche). Le frein : `CLIKME_AMBIANCES=0`.
 - **Puis, sur la maquette « Maison de poupée vivante »** : « je n'aime vraiment pas du tout », et le panorama en
   entrant dans une pièce non plus (on n'en voit toujours qu'une tranche). Ce qu'il veut : **chaque pièce ENTIÈRE à
   l'écran**, comme l'image de son univers, mais **dézoomée** (plus de choses visibles) ; **deux ou trois gros objets

@@ -3074,6 +3074,28 @@ propose** une ambiance d'après ce qu'on lui a raconté, puis trois vignettes po
 - **L'essai** : `essai-ambiances-route.mjs` (Léa et sa console : néon ; Tom, l'air d'un ado : New York ; Zoé et son
   étagère de livres : cosy — « tag » n'est pas dans « étagère »).
 
+### 9.0 octoquinquagies 🎨 Les ambiances, branchées dans la création de l'univers (14 novembre)
+
+Le propriétaire : « branche les ambiances dans la création de l'univers ». Pour tous (le frein : `CLIKME_AMBIANCES=0`,
+Pablito ne propose plus rien et chaque décor reste cosy) :
+
+- **Dans la conversation** (`/univers/conversation`) : avec sa proposition, Pablito propose une ambiance
+  (`proposerAmbiance` : ce qu'il lui a raconté, sinon l'âge que montre sa figurine) et dit pourquoi ; sous son texte,
+  « 🎨 L'ambiance de ton univers » — la sienne en grand, les trois autres en vignettes (`app/univers/choix-ambiance.tsx`) ;
+  un toucher en choisit une autre (`POST { action: "ambiance", ambiance }`), et une correction garde SON choix
+  (`ambiance_choisie`). La proposition garde aussi celle de Pablito (`ambiance_proposee`, « Pablito » sur sa vignette).
+- **« C'est mon univers ! »** : la fiche de son monde garde l'ambiance (`decor_ambiance`, `monde.ts`).
+- **La création** : un décor neuf est peint dans l'ambiance de sa fiche (`consigneDecorDuMonde(f, pourLeDecor(...))` :
+  son monde réinterprété) ; cosy, la consigne d'aujourd'hui, mot pour mot. Une retouche part du décor d'avant : elle
+  garde son ambiance ; la saison aussi.
+- **Changer d'ambiance** (`/univers/monde`, sous son univers : les mêmes vignettes) : `POST /api/direct/univers
+  { action: "ambiance", ambiance }` — une nouvelle version, son décor refait d'après sa fiche dans la nouvelle ambiance
+  (puis ses places, son image vedette) ; elle compte comme une retouche ; la même ambiance est refusée. (Ses retouches
+  écrites d'avant ne sont pas rejouées : elles retouchaient l'ancien décor.) L'écran connaît son ambiance
+  (`EtatUnivers.ambiance`).
+- **L'essai** : `essai-ambiances-univers-route.mjs` (Tom et ses soirées Minecraft : néon proposé, pastel choisi, gardé
+  après une correction, peint en pastel, puis New York ; Zoé : cosy, la consigne d'aujourd'hui).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

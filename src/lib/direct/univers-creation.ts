@@ -17,6 +17,7 @@
  * serveur).
  */
 import type { SceneMonde, SourceElement } from "./monde";
+import type { Ambiance } from "./ambiances";
 
 /** Les retouches de l'univers offertes à la création (section 9 de la feuille de route), puis une par jour. */
 export const RETOUCHES_OFFERTES = 3;
@@ -54,6 +55,8 @@ export type EtatUnivers = {
   retouches: { restantes: number; offertes: number };
   /** la version d'avant existe : il peut y revenir */
   avant?: number;
+  /** 🎨 l'ambiance de son décor (les ambiances ouvertes) : il peut en changer */
+  ambiance?: Ambiance;
   branche: boolean;
 };
 

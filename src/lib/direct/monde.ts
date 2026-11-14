@@ -17,6 +17,7 @@
  * FICHIER PUR : il se vérifie sans téléphone (`scripts/verifier-fiches.mjs`).
  */
 import { cheminValide, couleurValide, etapesValides, referenceValide, type Etape, type Reference } from "./perso";
+import { ambianceValide, type Ambiance } from "./ambiances";
 
 /** « Film, chaleureux » : la charte des univers validée au lot 0 (12 novembre 2026). */
 export const STYLES_MONDE = ["film-chaleureux-1"] as const;
@@ -77,6 +78,8 @@ export type FicheMonde = {
   souvenirs: Souvenir[];
   /** ✏️ les retouches qu'il a demandées avec ses mots, dans l'ordre (la dernière : celle de son décor) */
   retouches?: string[];
+  /** 🎨 l'ambiance de son décor (`ambiances.ts`) : proposée par Pablito, choisie par lui ; sans elle, cosy */
+  decor_ambiance?: Ambiance;
   historique: Etape[];
 };
 
@@ -166,6 +169,8 @@ export function ficheMondeValide(x: unknown): FicheMonde | null {
   if (date(o.validee_le)) f.validee_le = date(o.validee_le);
   const retouches = textes(o.retouches, 10);
   if (retouches.length) f.retouches = retouches;
+  const decorAmbiance = ambianceValide(o.decor_ambiance);
+  if (decorAmbiance) f.decor_ambiance = decorAmbiance;
   return f;
 }
 

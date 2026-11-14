@@ -18,6 +18,8 @@ import { STYLE_FILM_CHALEUREUX } from "./monde-consignes";
 export const AMBIANCES = [
   {
     cle: "cosy",
+    /** ses couleurs, pour sa carte à l'écran */
+    couleurs: ["#f2b765", "#7a4b2a"],
     /** Pablito : « je te vois bien … » */
     chez: "dans un coin cosy",
     nom: "Cosy",
@@ -28,6 +30,8 @@ export const AMBIANCES = [
   },
   {
     cle: "new-york",
+    /** ses couleurs, pour sa carte à l'écran */
+    couleurs: ["#c0573f", "#253552"],
     /** Pablito : « je te vois bien … » */
     chez: "dans un loft à New York",
     nom: "Urbaine, New York",
@@ -39,6 +43,8 @@ export const AMBIANCES = [
   },
   {
     cle: "neon",
+    /** ses couleurs, pour sa carte à l'écran */
+    couleurs: ["#8a2be2", "#00d9ff"],
     /** Pablito : « je te vois bien … » */
     chez: "dans une pièce pleine de néons",
     nom: "Néon et gaming",
@@ -50,6 +56,8 @@ export const AMBIANCES = [
   },
   {
     cle: "pastel",
+    /** ses couleurs, pour sa carte à l'écran */
+    couleurs: ["#ffc6de", "#c7b6ff"],
     /** Pablito : « je te vois bien … » */
     chez: "dans un cocon tout pastel",
     nom: "Pastel, tout doux",
@@ -61,6 +69,13 @@ export const AMBIANCES = [
   },
 ] as const;
 export type Ambiance = (typeof AMBIANCES)[number]["cle"];
+/** 🚦 Le frein : `CLIKME_AMBIANCES=0` (Pablito ne propose plus d'ambiance, chaque décor reste cosy). */
+export const ambiancesActives = () => String(process.env.CLIKME_AMBIANCES ?? "").trim() !== "0";
+/** Ce que le décor reçoit d'une ambiance (`consigneDecorDuMonde`) ; cosy : rien, le style d'aujourd'hui. */
+export const pourLeDecor = (a?: string | null) => {
+  const amb = AMBIANCES.find((x) => x.cle === a && x.cle !== "cosy");
+  return amb ? { style: amb.style, lieu: amb.lieu } : undefined;
+};
 export const ambianceValide = (x: unknown): Ambiance | null => AMBIANCES.find((a) => a.cle === x)?.cle ?? null;
 export const ambianceDe = (c: Ambiance) => AMBIANCES.find((a) => a.cle === c)!;
 

@@ -35,6 +35,7 @@ import { consigneFauteuil, consigneMemeFigurine } from "./perso-consignes";
 import { signatureDe } from "./signature-serveur";
 import { decorDeSaisonAFaire, decorDuMoment, saisonDuMois, tenueDuMois } from "./saison-serveur";
 import { RETOUCHES_OFFERTES, RETOUCHES_PAR_JOUR, retoucheUniversValide, type EtapeCreation, type EtatUnivers } from "./univers-creation";
+import { ambianceDe, ambiancesActives, ambianceValide, pourLeDecor } from "./ambiances";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -116,6 +117,7 @@ export async function etatUnivers(supabase: Supabase, h: string | null): Promise
     ...(vedette ? { vedette } : {}),
     ...(decor ? { saison: { nom: edition.nom, emoji: edition.emoji, decor: Boolean(decorSaison), ...(aFaire ? { enCours: true } : {}), tenue: Boolean(tenue) } } : {}),
     ...(f.version > 1 ? { avant: f.version - 1 } : {}),
+    ...(ambiancesActives() ? { ambiance: f.decor_ambiance ?? "cosy" } : {}),
   };
   if (enCours(c, f.version)) return { ...commun, etape: "creation", creation: { etape: c.etape as EtapeCreation, ...(c.retouche ? { retouche: c.retouche } : {}) } };
   const erreur = c.version === f.version && c.erreur ? c.erreur : c.version === f.version && c.etape !== "fini" && c.etape ? "La création s’est arrêtée en chemin. Relance-la." : "";
@@ -167,6 +169,42 @@ export async function retoucherUnivers(supabase: Supabase, h: string, texte: unk
     depuis: new Date().toISOString(),
     retouche: mots,
     depuisDecor: f.references.decor.chemin,
+    retouchesFaites: (Number(c.retouchesFaites) || 0) + 1,
+    jour,
+    retouchesDuJour: offertes ? duJour : duJour + 1,
+  });
+  return { version: r.fiche.version };
+}
+
+/**
+ * 🎨 Changer d'ambiance : une nouvelle version, son décor refait d'après sa fiche dans la nouvelle ambiance (puis ses
+ * places, son image vedette) ; elle compte comme une retouche.
+ */
+export async function changerAmbiance(supabase: Supabase, h: string, x: unknown): Promise<{ version?: number; error?: string; statut?: number }> {
+  const a = ambianceValide(x);
+  if (!a) return { error: "Quelle ambiance ?", statut: 400 };
+  if (!ambiancesActives()) return { error: "Les ambiances ne sont pas ouvertes.", statut: 409 };
+  if (!moteurUniversBranche()) return { error: "Le moteur d’image n’est pas branché ici.", statut: 503 };
+  const f = await lireFicheMonde(supabase, h);
+  if (!f?.references.decor) return { error: "Crée d’abord ton univers.", statut: 400 };
+  if ((f.decor_ambiance ?? "cosy") === a) return { error: "C’est déjà son ambiance 🙂", statut: 409 };
+  const c = await lireCreation(supabase, h);
+  if (enCours(c, f.version)) return { error: "Ton univers se construit déjà : un instant 🙂", statut: 409 };
+  if (retouchesRestantes(c) <= 0) return { error: "Assez de retouches pour aujourd’hui : reviens demain.", statut: 429 };
+  const contenu: Record<string, unknown> = { ...f, references: {}, decor_ambiance: a };
+  delete contenu.version;
+  delete contenu.historique;
+  delete contenu.creee_le;
+  contenu.elements = f.elements.map((e) => ({ ...e, zone: undefined }));
+  const r = await enregistrerVersionMonde(supabase, h, contenu as Omit<FicheMonde, "version" | "historique" | "creee_le">, `ambiance : ${ambianceDe(a).nom}`);
+  if (!r.fiche) return { error: r.error ?? "Ça n’a pas marché. Réessaie.", statut: 502 };
+  const jour = jourParis();
+  const offertes = (Number(c.retouchesFaites) || 0) < RETOUCHES_OFFERTES;
+  const duJour = c.jour === jour ? Number(c.retouchesDuJour) || 0 : 0;
+  await ecrireCreation(supabase, h, {
+    version: r.fiche.version,
+    etape: "decor",
+    depuis: new Date().toISOString(),
     retouchesFaites: (Number(c.retouchesFaites) || 0) + 1,
     jour,
     retouchesDuJour: offertes ? duJour : duJour + 1,
@@ -308,7 +346,8 @@ export async function fabriquerUnivers(supabase: Supabase, h: string, version: n
     if (!f.references.decor) {
       const precedent = c.retouche && c.depuisDecor ? await telecharger(supabase, c.depuisDecor) : null;
       if (c.retouche && !precedent) return void (await rater("Le décor d’avant est introuvable."));
-      const consigne = precedent ? consigneRetoucheDecor(c.retouche!) : consigneDecorDuMonde(f);
+      // (🎨 un décor neuf, dans l'ambiance de sa fiche ; une retouche garde celle du décor d'avant)
+      const consigne = precedent ? consigneRetoucheDecor(c.retouche!) : consigneDecorDuMonde(f, ambiancesActives() ? pourLeDecor(f.decor_ambiance) : undefined);
       const debut = Date.now();
       const r = await demanderUneImage({ images: precedent ? [precedent] : [], consigne, transparent: false, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high" });
       if ("erreur" in r) return void (await rater(r.erreur));
