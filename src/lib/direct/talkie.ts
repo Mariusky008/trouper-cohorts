@@ -19,6 +19,7 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici.
  */
 import { sentimentValide, type Expressions, type Sentiment } from "./ma-figurine";
+import { texteLuDeLEcrit } from "./ecrit";
 
 /** Un message : 20 secondes au plus — une petite scène, pas un monologue. */
 export const PAROLE_MAX_S = 20;
@@ -37,7 +38,13 @@ export type Replique = { de: number; a: number; texte: string; tete: Sentiment |
 /** Une réplique comprise, avant qu'il décide : trois têtes proposées, la première d'office. */
 export type RepliqueProposee = { de: number; a: number; texte: string; propositions: Sentiment[] };
 /** Un message de la conversation (son son : une adresse signée). `nouveau` : il ne l'a pas encore vu. */
-export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean };
+/**
+ * ✍️ (lot M1, `ecrit.ts`) `genre: "ecrit"` : un message écrit — pas de voix (`son` vide) ; `texte` en entier ; une seule
+ * réplique, les 140 premiers signes dans la tête choisie, le temps que la figurine le dise ; `lien` : son aperçu, quand
+ * le serveur l'a préparé (l'image, recopiée chez nous) — `connu` : un site de musique ou de vidéo connu (`sorte`).
+ */
+export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit"; texte?: string; lien?: LienDuMessage };
+export type LienDuMessage = { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" };
 /** Une figurine, de quoi la faire parler : ses images de tous les jours, et ses têtes faites. */
 /**
  * `assise` (chantier « Univers », lot 5) : sa figurine du nouveau style, détourée, assise dans son fauteuil (`n` bouche
@@ -59,8 +66,8 @@ export type ProcheVivant = {
   la: boolean;
   nonLus: number;
   lien: LienProche;
-  /** son dernier message (`meme` : c'était un mème, lot 4) */
-  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean };
+  /** son dernier message (`meme` : c'était un mème, lot 4 ; `ecrit` : un message écrit, lot M1) */
+  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean; ecrit?: boolean };
   venu?: boolean;
   humeur?: Sentiment;
   imageHumeur?: string;
@@ -90,6 +97,14 @@ export const texteDuMessage = (r: readonly Replique[]) =>
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
+/**
+ * 👀 CE QUE LES FIGURINES LISENT D'UN MESSAGE (l'aparté, le mot de la fin, l'étagère) : d'un vocal, ses mots transcrits ;
+ * (lot M1) d'un message écrit, son texte (et d'un lien, son titre seulement).
+ */
+export function texteLuDuMessage(f: { genre?: unknown; texte?: unknown; lien?: { titre?: unknown } | null; repliques?: unknown; duree?: unknown }): string {
+  if (f.genre === "ecrit") return texteLuDeLEcrit(f);
+  return texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
+}
 
 const sansAccents = (t: string) =>
   t

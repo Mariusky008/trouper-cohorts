@@ -9,6 +9,8 @@
  *   · `<habitant>/fils-lus.json` = { <proche>: l'instant où il a vu leurs messages } ;
  *   · `<habitant>/la.json` = { le } (« Là maintenant » : ClikMe ouvert il y a moins de 2 min 30) ;
  *     `<habitant>/reglages.json` = { presence: false } s'il le coupe ;
+ *     (lot M1, `ecrit-serveur.ts`) un message ÉCRIT se range dans le même dossier : `{ id, de, le, genre: "ecrit",
+ *     texte, tete, lien? }` — l'image de l'aperçu d'un lien : `fils/<a>_<b>/a/<id>.webp` ;
  *   · `<habitant>/paroles-cachees.json` = les messages qu'il a signalés (il ne les voit plus) ;
  *     `moderation/paroles/<id>.json` = le signalement, pour l'équipe.
  * Un proche se désigne par sa clé de profil (`cleProfil`, celle d'« Autour ») : jamais par son identifiant.
@@ -54,6 +56,7 @@ import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
 import { memesDuFil, memesRanges } from "./memes-proches-serveur";
 import { decorDuMoment } from "./saison-serveur";
 import { humeurValide } from "./rituel";
+import { STATS_MESSAGES_VIDES, dureeDeLecture, ligneDeLEcrit, texteDeBulle, type StatsJourMessages } from "./ecrit";
 import {
   LIENS_PAR_JOUR,
   LIEN_JOURS,
@@ -68,6 +71,7 @@ import {
   repliquesValides,
   tetesJouables,
   texteDuMessage,
+  texteLuDuMessage,
   type ChezMoi,
   type Fil,
   type FigurineVue,
@@ -96,8 +100,8 @@ const court = (x: string, n: number) => createHash("sha256").update(`clikme-talk
 /** Qui l'a dit, dans le nom d'un message (8 signes tirés de son identifiant, jamais l'identifiant). */
 export const qui8 = (h: string) => court(`qui:${h}`, 8);
 export const pairDe = (a: string, b: string) => [a, b].sort().join("_");
-const dossierMessages = (pair: string) => `fils/${pair}/m`;
-const nomMessage = (ts: number, de: string, id: string) => `${String(ts).padStart(13, "0")}-${qui8(de)}-${id}.json`;
+export const dossierMessages = (pair: string) => `fils/${pair}/m`;
+export const nomMessage = (ts: number, de: string, id: string) => `${String(ts).padStart(13, "0")}-${qui8(de)}-${id}.json`;
 const lireNom = (n: string) => {
   const m = /^(\d{13})-([0-9a-f]{8})-([a-z0-9]+)\.json$/.exec(n);
   return m ? { nom: n, ts: Number(m[1]), de8: m[2], id: m[3] } : null;
@@ -112,6 +116,33 @@ const cheminCaches = (h: string) => `${h}/paroles-cachees.json`;
 const cheminCompteur = (h: string) => `${h}/talkie-jour.json`;
 
 type Fiche = { id: string; de: string; le: string; duree: number; son: string; type: string; repliques: Replique[] };
+/** ✍️ (lot M1) Un message, vocal ou écrit, tel que le seau le garde. */
+export type FicheMessage = Partial<Fiche> & { id?: string; de?: string; le?: string; genre?: "ecrit"; texte?: string; tete?: Sentiment | null; lien?: { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" } };
+
+/**
+ * ✍️ (lot M1) UN MESSAGE ÉCRIT, TEL QU'IL SE VOIT : pas de voix ; une seule réplique (les 140 premiers signes, dans la
+ * tête choisie, le temps que la figurine le dise) ; le texte en entier ; l'aperçu du lien, son image signée.
+ */
+export async function vueDeLEcrit(supabase: Supabase, f: FicheMessage, moi: string, nouveau = false): Promise<MessageFil | null> {
+  const texte = s(f.texte);
+  if (!s(f.id) || !texte) return null;
+  const duree = dureeDeLecture(texte);
+  const image = f.lien?.image ? await signer(supabase, s(f.lien.image), 3600) : "";
+  return {
+    id: s(f.id),
+    moi: f.de === moi,
+    le: s(f.le),
+    duree,
+    son: "",
+    repliques: [{ de: 0, a: duree, texte: texteDeBulle(texte), tete: sentimentValide(f.tete) ?? null }],
+    genre: "ecrit",
+    texte,
+    ...(f.lien?.url
+      ? { lien: { url: s(f.lien.url), site: s(f.lien.site), ...(f.lien.titre ? { titre: s(f.lien.titre) } : {}), ...(image ? { image } : {}), ...(f.lien.sorte ? { sorte: f.lien.sorte } : {}) } }
+      : {}),
+    ...(nouveau ? { nouveau: true } : {}),
+  };
+}
 
 // ─── qui est qui ──────────────────────────────────────────────────────────────────────────────────
 /** Sa clé de profil se retrouve : la fiche `profils/<clé>.json` est posée s'il n'en avait pas (« Autour » le fait aussi). */
@@ -206,9 +237,9 @@ export async function nomsDuFil(supabase: Supabase, pair: string) {
  */
 export async function parolesDuJour(supabase: Supabase, pair: string, jour: string): Promise<{ id: string; de: string; texte: string; ts: number }[]> {
   const noms = (await nomsDuFil(supabase, pair)).filter((n) => jourParis(new Date(n.ts)) === jour).slice(-30);
-  const fiches = await Promise.all(noms.map((n) => lireJson<Fiche>(supabase, `${dossierMessages(pair)}/${n.nom}`)));
+  const fiches = await Promise.all(noms.map((n) => lireJson<FicheMessage>(supabase, `${dossierMessages(pair)}/${n.nom}`)));
   return fiches
-    .map((f, i) => ({ id: s(f.id), de: s(f.de), texte: texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []), ts: noms[i].ts }))
+    .map((f, i) => ({ id: s(f.id), de: s(f.de), texte: texteLuDuMessage(f), ts: noms[i].ts }))
     .filter((x) => x.id && x.de);
 }
 /** Les messages qu'il a signalés (il ne les voit plus). */
@@ -285,8 +316,12 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
         nonLus = noms.filter((n) => n.de8 !== moi8 && n.ts > vu).length;
         const d = noms[noms.length - 1];
         if (d) {
-          const m = await lireJson<Fiche>(supabase, `${dossierMessages(pair)}/${d.nom}`);
-          dernier = { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
+          const m = await lireJson<FicheMessage>(supabase, `${dossierMessages(pair)}/${d.nom}`);
+          // ✍️ (lot M1) un message écrit : son début, ou « 🔗 Le titre du lien »
+          dernier =
+            m.genre === "ecrit"
+              ? { texte: ligneDeLEcrit(m), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, ecrit: true }
+              : { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
         }
         // 🎭 (lot 4) les mèmes envoyés entre eux : ils comptent dans les non lus ; le dernier, s'il est plus récent
         const memes = await memesRanges(supabase, moi.id, h).catch(() => []);
@@ -356,11 +391,14 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
   const cachees = new Set((Array.isArray(caches.ids) ? caches.ids : []).map(s));
   const vu = Number(lus[h]) || 0;
   const derniers = noms.slice(-MESSAGES_LUS);
-  const fiches = await Promise.all(derniers.map((n) => lireJson<Fiche>(supabase, `${dossierMessages(pair)}/${n.nom}`)));
+  const fiches = await Promise.all(derniers.map((n) => lireJson<FicheMessage>(supabase, `${dossierMessages(pair)}/${n.nom}`)));
   const messages = (
     await Promise.all(
       fiches.map(async (f, i): Promise<MessageFil | null> => {
-        if (!f.id || !f.son || cachees.has(s(f.id))) return null;
+        if (!f.id || cachees.has(s(f.id))) return null;
+        // ✍️ (lot M1) un message écrit, dans le même fil, à son heure
+        if (f.genre === "ecrit") return vueDeLEcrit(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
+        if (!f.son) return null;
         const son = await signer(supabase, s(f.son), 3600);
         if (!son) return null;
         const nouveau = f.de !== moi.id && derniers[i].ts > vu;
@@ -462,7 +500,7 @@ async function proposerParLeModele(textes: string[], dispo: readonly Sentiment[]
 }
 
 /** Les têtes qu'il peut jouer : ses premières, et celles qu'il a déjà. */
-async function sesTetesJouables(supabase: Supabase, h: string): Promise<Sentiment[] | null> {
+export async function sesTetesJouables(supabase: Supabase, h: string): Promise<Sentiment[] | null> {
   const { ligne } = await lireLigne(supabase, h);
   if (!ligne?.prete_le || !s(ligne.neutre)) return null;
   const noms = await depotDans(supabase, dossierExpressions(h, s(ligne.neutre))).lister();
@@ -507,7 +545,7 @@ export async function comprendre(supabase: Supabase, moi: Habitant, son: unknown
 
 // ─── envoyer ──────────────────────────────────────────────────────────────────────────────────────
 /** 📈 Un geste du talkie-walkie (jamais bloquant ; sans la table, rien ne se compte). */
-async function noter(supabase: Supabase, pair: string, de: string, type: "cree" | "reponse" | "vu"): Promise<void> {
+export async function noter(supabase: Supabase, pair: string, de: string, type: "cree" | "reponse" | "vu"): Promise<void> {
   try {
     await supabase.from("clik_meme_evenement").insert({ message_id: `t-${court(pair, 12)}-${court(de, 8)}`, type });
   } catch {
@@ -551,7 +589,8 @@ export async function envoyerParole(
   const fiche: Fiche = { id, de: moi.id, le, duree: d, son: chemin, type: v.type, repliques: r };
   if (!(await ecrireJson(supabase, `${dossierMessages(pair)}/${nomMessage(ts, moi.id, id)}`, fiche))) return { error: "Ton message n’est pas parti. Réessaie dans un instant.", statut: 502 };
   await ecrireJson(supabase, compteur, { jour, n: n + 1 });
-  // la mesure : un message ; une réponse s'il répond au dernier message de l'autre
+  // la mesure : un message ; une réponse s'il répond au dernier message de l'autre ; (lot M1) un vocal de plus
+  await noterStatsMessages(supabase, { vocaux: 1 });
   const dernier = avant[avant.length - 1];
   await noter(supabase, pair, moi.id, "cree");
   if (dernier && dernier.de8 !== qui8(moi.id)) await noter(supabase, pair, moi.id, "reponse");
@@ -787,6 +826,29 @@ export async function signalerParole(supabase: Supabase, moi: Habitant, cle: unk
     ecrireJson(supabase, `moderation/paroles/${i}.json`, { par: moi.id, message: `${dossierMessages(pair)}/${nom.nom}`, le: new Date().toISOString() }),
   ]);
   return { ok: true };
+}
+
+// ─── ✍️ (lot M1) ce qu'on mesure des messages, jour par jour ───────────────────────────────────────
+const cheminStatsMessages = (jour: string) => `stats/messages/${jour}.json`;
+/** Des compteurs du jour, de plus, en une seule écriture (relire, puis écrire : la dernière gagne, accepté pour une mesure). */
+export async function noterStatsMessages(supabase: Supabase, plus: Partial<StatsJourMessages>): Promise<void> {
+  const cles = (Object.keys(plus) as (keyof StatsJourMessages)[]).filter((k) => plus[k]);
+  if (!cles.length) return;
+  const jour = jourParis();
+  const x = await lireJson<Partial<StatsJourMessages>>(supabase, cheminStatsMessages(jour));
+  const neuf: StatsJourMessages = { ...STATS_MESSAGES_VIDES, ...x };
+  for (const k of cles) neuf[k] = (Number(x[k]) || 0) + (plus[k] ?? 0);
+  await ecrireJson(supabase, cheminStatsMessages(jour), neuf).catch(() => false);
+}
+/** 📊 Les messages, jour par jour (la page des mesures) : écrits, vocaux, liens avec et sans aperçu, effacés. */
+export async function statsMessages(supabase: Supabase, jours = 14): Promise<{ jour: string; stats: StatsJourMessages }[]> {
+  const aujourdhui = jourParis();
+  return Promise.all(
+    Array.from({ length: jours }, async (_, k) => {
+      const jour = new Date(Date.parse(`${aujourdhui}T12:00:00Z`) - k * 86_400_000).toISOString().slice(0, 10);
+      return { jour, stats: { ...STATS_MESSAGES_VIDES, ...(await lireJson<Partial<StatsJourMessages>>(supabase, cheminStatsMessages(jour))) } };
+    }),
+  );
 }
 
 // ─── la mesure, chaque semaine ────────────────────────────────────────────────────────────────────

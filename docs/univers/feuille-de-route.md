@@ -716,8 +716,11 @@ l'humeur du matin.
 Le propriétaire : « est-ce que les utilisateurs peuvent s'envoyer des messages écrits au lieu du talkie-walkie, avec
 la possibilité de s'envoyer des fichiers comme des photos, des vidéos ou des liens ? » Oui, dans cet ordre : **M1**
 l'écrit et les liens, **M2** les photos, **M3** les vidéos. Un message écrit est dit par la figurine, sans voix ; ce
-qu'on partage peut nourrir son univers, avec son « oui ». **Validé, pas encore développé.** Le cahier :
-`docs/univers/messages-ecrits.md`.
+qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/univers/messages-ecrits.md`.
+
+- **M1, le serveur : construit** (`docs/figurines.md`, 9.0 unsexagies ✍️) — écrire, l'aperçu des liens, effacer, les
+  figurines qui lisent l'écrit. **M1, l'écran : à faire** (la barre « Écrire… », la bulle sans son, l'aperçu dans le fil).
+- M2 (les photos) et M3 (les vidéos) : pas encore développés.
 
 ### Plus tard (préparé, pas construit)
 
