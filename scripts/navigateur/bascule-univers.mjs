@@ -220,7 +220,9 @@ ok((await texte(m, ".vr-titre")).includes("C’est Léa") && (await texte(m, ".v
 await m.screenshot({ path: `${D}/bascule-3d-porte-ouverte.png` });
 await m.locator(".vr-lien", { hasText: "Fermer" }).click();
 await m.waitForSelector(".vr", { state: "detached", timeout: 5000 }).catch(() => null);
-ok((await m.locator(".vr").count()) === 0 && (await m.locator(".cm-badge-visites").count()) === 0, "refermé : plus rien ne l'attend");
+// (ses visites, marquées vues puis relues : la pastille part avec la réponse)
+await m.waitForSelector(".cm-badge-visites", { state: "detached", timeout: 8000 }).catch(() => null);
+ok((await m.locator(".vr").count()) === 0 && (await m.locator(".cm-badge-visites").count()) === 0, `refermé : plus rien ne l'attend${(await m.locator(".cm-badge-visites").count()) ? ` (encore : « ${await m.locator(".cm-badge-visites").first().textContent()} »)` : ""}`);
 await m.locator(".mc-nav-maison").click();
 await m.waitForSelector("#o-maison .cm-fenetre .cm-souvenir", { timeout: 10000 }).catch(() => null);
 ok((await m.locator("#o-maison .cm-fenetre .cm-souvenir").count()) === 1, "🏠 le bouquet est posé chez lui, dans « Ma maison »");
@@ -285,11 +287,12 @@ ok((await texte(m, ".pr-plein .pr-meme.moi")).includes("Moi le lundi matin"), "�
 await m.locator(".pr-plein .pr-retour").click();
 
 // 🎁 Sam laisse un livre chez Marc, depuis leur conversation (Marc a son univers : « 🏡 Son univers »)
-await p.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
+await p.goto(`${ALLUME}/collection?v=${Date.now()}#proches`, { waitUntil: "networkidle" });
 await fermerPablito(p);
 // (🎭 lot 4 : chez Sam, la ligne de Marc dit son mème)
 await p.waitForFunction((c) => document.querySelector(`.cm-liste li[data-cle="${c}"] .cm-texte`)?.textContent?.includes("mème"), cleProfil(MARC.id), { timeout: 15000, polling: 200 }).catch(() => null);
-ok((await texte(p, `.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-texte`)).includes("🎭 t’a envoyé un mème"), "🎭 chez Sam : « Marc — 🎭 t'a envoyé un mème »");
+const ligneMeme = await texte(p, `.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-texte`);
+ok(ligneMeme.includes("🎭 t’a envoyé un mème"), `🎭 chez Sam : « Marc — 🎭 t'a envoyé un mème »${ligneMeme.includes("mème") ? "" : ` (la ligne dit : « ${ligneMeme} »)`}`);
 await p.locator(`.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-ligne`).click();
 await p.waitForSelector(".pr-plein .pr-meme.lui", { timeout: 15000 }).catch(() => null);
 await p.locator(".pr-plein .pr-meme.lui button").click();
