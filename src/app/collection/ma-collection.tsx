@@ -54,6 +54,7 @@ import { STYLES_VIVANT } from "./conversation-vivante";
 import { STYLES_ETAGERE } from "./etagere";
 import { PageEnVisite, STYLES_TUTO, VisiteTuto, ecrireTuto, lireTuto, pageTuto, type PageTuto } from "./tuto";
 import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
+import { MaMaison, STYLES_MA_MAISON } from "./ma-maison";
 import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
@@ -65,7 +66,7 @@ const MENU = [
   { cle: "memes", nom: "Mes mèmes" },
   { cle: "proches", nom: "Proches" },
 ] as const;
-type Onglet = (typeof MENU)[number]["cle"];
+type Onglet = (typeof MENU)[number]["cle"] | "maison";
 /**
  * 🏡 LE MENU DE DEMAIN (l'interrupteur « Univers pour tous » allumé, `lib/direct/univers-pour-tous.ts`), À TROIS :
  * Découvrir · CHEZ MOI au milieu · Autour (le propriétaire, le 13 novembre 2026 : « l'application devrait tourner autour
@@ -73,10 +74,17 @@ type Onglet = (typeof MENU)[number]["cle"];
  * moi” » ; la maquette validée le même jour). « Chez moi » (`chez-moi.tsx`) : mon univers en haut, mes conversations
  * dessous ; c'est l'onglet « Proches » d'avant (ses adresses, `#proches`, ses notifications), rhabillé. « Créer » a quitté
  * le menu : « ＋ Nouveau › Créer un mème » et « Moi » y mènent (`#creer`, `#figurine`) ; « Mes mèmes » est dans « Moi ».
+ *
+ * 🏠 PUIS À QUATRE, le 14 novembre 2026 (le propriétaire : « mon univers est difficilement accessible sur l'appli, ça
+ * mérite peut-être son onglet direct ») : Découvrir · MESSAGES (l'onglet « Chez moi » d'avant, sans la fenêtre sur mon
+ * univers : mes conversations, `#proches`) · MA MAISON (`ma-maison.tsx`, `#maison` : mon univers en entier, mon étagère ;
+ * sa figurine sur le bouton) · Autour. L'appli s'ouvre toujours sur « Messages » (la découverte des cadeaux et des
+ * visites s'y joue, en arrivant).
  */
 const MENU_UNIVERS = [
   { cle: "decouvrir", nom: "Découvrir" },
-  { cle: "proches", nom: "Chez moi" },
+  { cle: "proches", nom: "Messages" },
+  { cle: "maison", nom: "Ma maison" },
   { cle: "autour", nom: "Autour" },
 ] as const;
 /** Les vues : les onglets du menu, et « Moi » (sous son prénom, en haut). */
@@ -111,6 +119,9 @@ const ALIAS: Record<string, Vue> = {
   // (🎙️ le talkie-walkie : la notification « Léa t'a parlé ! » et le lien d'un proche y mènent)
   proches: "proches",
   parler: "proches",
+  // (🏠 « Ma maison », son onglet depuis le 14 novembre 2026)
+  maison: "maison",
+  "ma-maison": "maison",
   presence: "personnage",
 };
 
@@ -362,6 +373,15 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
           </section>
         )}
 
+        {/* 🏠 MA MAISON (14 novembre 2026) : mon univers en entier, mon étagère */}
+        {univers && ouverts.has("maison") && (
+          <section className="mc-onglet" id="o-maison" hidden={vue !== "maison"} aria-label="Ma maison">
+            <OngletVisible.Provider value={vue === "maison"}>
+              <MaMaison actif={vue === "maison"} />
+            </OngletVisible.Provider>
+          </section>
+        )}
+
         {/* 🎙️ PROCHES : le talkie-walkie des figurines */}
         {ouverts.has("proches") && (
           <section className="mc-onglet" id="o-proches" hidden={vue !== "proches"} aria-label="Proches">
@@ -423,21 +443,21 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;
           au milieu, en gros bouton rond avec SA figurine dedans : « Créer » (7 novembre 2026), puis « Chez moi » (le menu à
           trois, 13 novembre 2026) */}
-      <nav className={`mc-nav${univers ? " trois" : ""}`} aria-label="ClikMe">
+      <nav className={`mc-nav${univers ? " quatre" : ""}`} aria-label="ClikMe">
         {(univers ? MENU_UNIVERS : MENU).map((o) => (
           <button
             key={o.cle}
             type="button"
-            className={`mc-nav-${o.cle}${o.cle === (univers ? "proches" : "figurine") ? " mc-nav-centre" : ""}${onglet === o.cle ? " pris" : ""}`}
+            className={`mc-nav-${o.cle}${o.cle === (univers ? "maison" : "figurine") ? " mc-nav-centre" : ""}${onglet === o.cle ? " pris" : ""}`}
             aria-current={onglet === o.cle ? "page" : undefined}
             onClick={() => aller(o.cle, undefined, false, true)}
           >
             <span className="mc-nav-ico" aria-hidden="true">
-              {o.cle === (univers ? "proches" : "figurine") && prete && etat?.neutre ? (
+              {o.cle === (univers ? "maison" : "figurine") && prete && etat?.neutre ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={etat.neutre} alt="" draggable={false} />
               ) : (
-                <IconeOnglet cle={univers && o.cle === "proches" ? "univers" : o.cle} />
+                <IconeOnglet cle={univers && o.cle === "proches" ? "messages" : o.cle === "maison" ? "univers" : o.cle} />
               )}
               {pastilles[o.cle as Onglet] && <i className={pastilles[o.cle as Onglet] === "!" || pastilles[o.cle as Onglet] === "1" || o.cle === "proches" ? "pulse" : ""}>{pastilles[o.cle as Onglet]}</i>}
             </span>
@@ -445,7 +465,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_MA_MAISON}</style>
     </main>
   );
 }
@@ -454,7 +474,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
  * Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, deux
  * personnages) ; et « Moi » (une carte de personnage), pour la visite.
  */
-function IconeOnglet({ cle }: { cle: Vue | "univers" }) {
+function IconeOnglet({ cle }: { cle: Vue | "univers" | "messages" }) {
   const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
   return (
     <svg viewBox="0 0 24 24" width="24" height="24">
@@ -463,6 +483,12 @@ function IconeOnglet({ cle }: { cle: Vue | "univers" }) {
           <rect x="5" y="3" width="14" height="18" rx="2.5" {...trait} />
           <circle cx="12" cy="10" r="3" {...trait} />
           <path d="M8.5 17a4 4 0 0 1 7 0" {...trait} />
+        </>
+      ) : cle === "messages" ? (
+        <>
+          {/* 🏠 (« Messages ») deux bulles */}
+          <path d="M4 5.5h11a2 2 0 0 1 2 2v5.5a2 2 0 0 1-2 2H9l-3.5 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z" {...trait} />
+          <path d="M19.5 9.5h.5a2 2 0 0 1 2 2V16a2 2 0 0 1-2 2h-1v2.5L16 18h-3.5" {...trait} />
         </>
       ) : cle === "univers" ? (
         <>
@@ -546,6 +572,7 @@ button.mc-moi i{position:absolute;right:-3px;top:-4px;display:grid;place-items:c
   box-shadow:0 18px 40px -14px rgba(0,0,0,.95),inset 0 0 0 1px rgba(255,255,255,.09),inset 0 1px 0 rgba(255,200,230,.14)}
 .mc-nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,46,154,.85),rgba(242,196,107,.85),transparent)}
 .mc-nav.trois{grid-template-columns:1fr 1.15fr 1fr;max-width:420px}
+.mc-nav.quatre{grid-template-columns:1fr 1fr 1.15fr 1fr;max-width:460px}
 .mc-nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:4px 0 2px;border:0;background:none;color:#9C8290;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .2s}
 .mc-nav button.pris{color:#FFF4E6}
 .mc-nav-ico{position:relative;display:grid;place-items:center;width:44px;height:34px;border-radius:14px;transition:transform .3s cubic-bezier(.2,1.6,.4,1),background .25s}

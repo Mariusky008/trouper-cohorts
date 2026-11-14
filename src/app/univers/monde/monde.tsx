@@ -60,9 +60,9 @@ const marquerVu = (v: number | string) => {
 // plus qu'un, `app/collection/chez-moi.tsx`)
 const MENU_DE_DEMAIN = [
   { ico: "🔥", nom: "Découvrir", href: "/collection#decouvrir" },
+  { ico: "💬", nom: "Messages", href: "/collection#proches" },
+  { ico: "🏠", nom: "Ma maison", href: "/collection#maison" },
   { ico: "📍", nom: "Autour", href: "/collection#autour" },
-  { ico: "✏️", nom: "Créer", href: "/collection#figurine" },
-  { ico: "🏡", nom: "Chez moi", href: "/collection#proches" },
 ] as const;
 
 export function Monde({ accueil = false }: { accueil?: boolean }) {
@@ -139,10 +139,10 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
   const [c1, c2, c3] = etat?.palette?.length === 3 ? etat.palette : ["#f6d9a8", "#e7b77a", "#7a4b2a"];
   return (
     <main className={`um${accueil ? " accueil" : ""}`} data-etape={etat?.etape ?? "chargement"} style={{ ["--c1" as string]: c1, ["--c2" as string]: c2, ["--c3" as string]: c3 }}>
-      {/* (🏡 ses réglages, derrière ⚙️ de « Chez moi » : le retour, en haut) */}
+      {/* (🏡 ses réglages, derrière ⚙️ de « Ma maison » : le retour, en haut) */}
       {!accueil && etat?.etape === "decouverte" && (
-        <a className="um-retour" href="/collection#proches">
-          ← Chez moi
+        <a className="um-retour" href="/collection#maison">
+          ← Ma maison
         </a>
       )}
       {etat?.etape === "decouverte" && <h1 className="um-entete">Mon univers</h1>}
@@ -210,8 +210,8 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
         </p>
       )}
       {!accueil && etat?.etape === "decouverte" && (
-        <a className="um-lien" href="/collection#proches">
-          🏡 Retour chez moi
+        <a className="um-lien" href="/collection#maison">
+          🏠 Retour à ma maison
         </a>
       )}
       {/* 📥 ses mèmes sont rangés dans « Mon univers » (le menu de demain n'a plus d'onglet « Mes mèmes ») */}

@@ -66,7 +66,7 @@ export function Visite({ cle }: { cle: string }) {
       ) : vue.etat !== "ouvert" ? (
         <section className="uv-carte">
           <p className="uv-titre">{vue.etat === "absent" ? "Cet univers n’existe pas (encore)" : vue.etat === "ferme" ? `${vue.prenom} garde son univers pour soi` : `L’univers de ${vue.prenom} est réservé à ses proches`}</p>
-          <p className="uv-doux">{vue.etat === "reserve" ? "Ajoutez-vous tous les deux dans « Chez moi », et la porte s’ouvrira." : "Reviens un autre jour 🙂"}</p>
+          <p className="uv-doux">{vue.etat === "reserve" ? "Ajoutez-vous tous les deux dans « Messages », et la porte s’ouvrira." : "Reviens un autre jour 🙂"}</p>
           <a className="uv-bouton" href="/collection#proches">
             Ouvrir ClikMe
           </a>
