@@ -9,7 +9,7 @@
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 
-import type { Cadre, PieceVue } from "@/lib/direct/pieces-vivantes";
+import { SOUVENIRS_PAR_ETAGERE, type Cadre, type PieceVue } from "@/lib/direct/pieces-vivantes";
 export type { PieceVue };
 
 /** Le cadre d'un objet, en % de la scène. */
@@ -114,7 +114,12 @@ function UnePiece({ p, figurine, youtube, vise, setVise }: { p: PieceVue; figuri
   const [son, setSon] = useState(false);
   useBoucle(video);
   const objets = p.objets?.objets ?? [];
-  const cible = objets.find((o) => o.cle === vise);
+  // 📚 ses souvenirs, posés sur les étagères de la pièce (trois par étagère, dans l'ordre)
+  const etageres = p.objets?.etageres ?? [];
+  const poses = (p.souvenirs ?? []).map((s, k) => ({ s, e: etageres[Math.floor(k / SOUVENIRS_PAR_ETAGERE)], rang: k % SOUVENIRS_PAR_ETAGERE })).filter((x) => x.e);
+  const parEtagere = (e: Cadre) => poses.filter((x) => x.e === e).length;
+  const souvenirVise = poses.find((x) => vise === `souvenir:${x.s.id}`);
+  const cible = objets.find((o) => o.cle === vise) ?? souvenirVise?.e;
   // (s'approcher : le centre de l'objet au centre de l'écran, assez gros pour le voir — jamais plus de 2,6 fois ; près
   // d'un bord, le cadre s'arrête au bord de la pièce : jamais de vide à côté)
   const zoom = cible ? Math.max(1.4, Math.min(2.6, 70 / cible.l, 52 / cible.h)) : 1;
@@ -159,9 +164,31 @@ function UnePiece({ p, figurine, youtube, vise, setVise }: { p: PieceVue; figuri
             <i style={{ animationDelay: `${0.6 + k * 0.35}s` }} />
           </button>
         ))}
+        {poses.map(({ s, e, rang }) => (
+          <button
+            key={s.id}
+            type="button"
+            className="pv-souvenir"
+            data-souvenir={s.id}
+            style={{ left: `${e.x + ((rang + 0.5) * e.l) / parEtagere(e)}%`, top: `${e.y + e.h}%` }}
+            onClick={() => setVise(vise === `souvenir:${s.id}` ? null : `souvenir:${s.id}`)}
+            aria-label={s.titre}
+          >
+            {s.emoji}
+          </button>
+        ))}
       </div>
       <div className={`pv-voile${cible ? " la" : ""}`} aria-hidden="true" onClick={() => setVise(null)} />
       {!vise && objets.length > 0 && <p className="pv-indice">Touche ce qui bouge</p>}
+      {souvenirVise && (
+        <div className="pv-carte" role="status">
+          <b>
+            {souvenirVise.s.emoji} {souvenirVise.s.titre}
+          </b>
+          {souvenirVise.s.detail && <span>{souvenirVise.s.detail}</span>}
+          <small className="pv-carte-de">📚 Sur l’étagère</small>
+        </div>
+      )}
       {vedette && (
         <div className="pv-carte" role="status">
           <b>{vedette.nom}</b>
@@ -216,6 +243,9 @@ export const STYLES_PIECE_VIVANTE = `
 .pv-objet i{position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.7);opacity:0;animation:pv-repere 2.4s ease-out 3 both}
 @keyframes pv-repere{0%{opacity:0;box-shadow:0 0 0 0 rgba(255,255,255,.75)}15%{opacity:.95}70%{opacity:.9;box-shadow:0 0 0 22px rgba(255,255,255,0)}100%{opacity:0;box-shadow:0 0 0 22px rgba(255,255,255,0)}}
 .pv-scene.vise .pv-objet i{display:none}
+.pv-souvenir{position:absolute;transform:translate(-50%,-92%);padding:0;border:0;background:none;font-size:calc(min(100vw,56.25dvh) * .075);line-height:1;filter:drop-shadow(0 4px 3px rgba(0,0,0,.55));cursor:pointer;animation:pv-pose .6s cubic-bezier(.3,1.5,.5,1) both;-webkit-tap-highlight-color:transparent}
+@keyframes pv-pose{from{opacity:0;transform:translate(-50%,-160%)}to{opacity:1;transform:translate(-50%,-92%)}}
+.pv-carte-de{font-size:12.5px;opacity:.7}
 .pv-voile{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,rgba(0,0,0,0) 34%,rgba(0,0,0,.62) 78%);opacity:0;transition:opacity .9s ease}
 .pv-voile.la{opacity:1;pointer-events:auto}
 .pv-tete{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 14px 10px}

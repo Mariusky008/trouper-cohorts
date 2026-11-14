@@ -142,6 +142,9 @@ jobs:
       # 🧸 La nouvelle figurine (« Univers », lot 2) : le même faux moteur ; rien ne part chez OpenAI.
       OPENAI_PERSO_API_KEY: faux
       OPENAI_PERSO_BASE_URL: http://127.0.0.1:54321/openai
+      # 🎥 La pièce vivante : la vidéo se fait chez Google (Veo). Le faux est dans le faux Supabase ; rien ne part.
+      GEMINI_VIDEO_API_KEY: faux
+      GEMINI_VIDEO_BASE_URL: http://127.0.0.1:54321/gemini
       # 🔔 Le mème du jour à 11 h 30 : les notifications partent vers le faux service du faux Supabase (rien ne part chez
       # Apple ni Google). Les clés VAPID sont fabriquées à chaque passage, juste avant la construction (aucune n'est écrite ici).
       PUSH_ESSAI_ORIGINE: http://127.0.0.1:54321

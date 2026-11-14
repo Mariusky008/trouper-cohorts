@@ -13,7 +13,7 @@
  *      9:16 (`vue.webp`, 864 × 1536 : les deux bords un peu rognés) ;
  *   2. les objets : où sont les vedettes, la place du fauteuil et l'écran de la télé (des cadres en %, lus sur la vue par
  *      un modèle qui voit les images) — on les touche, la caméra s'en approche ;
- *   3. la vie : la vue devient une PHOTO VIVANTE — huit secondes de vidéo faites par le moteur vidéo d'OpenAI d'après
+ *   3. la vie : la vue devient une PHOTO VIVANTE — huit secondes de vidéo faites par un moteur vidéo (Google Veo) d'après
  *      elle (la caméra ne bouge pas ; seuls les objets vivent : le disque tourne, le feu danse, les poissons nagent, la
  *      mer scintille), jouées en boucle par-dessus l'image fixe. La vidéo se fait en quelques minutes : un passage la
  *      commande, les suivants demandent où elle en est, puis la rangent.
@@ -29,7 +29,8 @@ import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
 import { depotDans, signer, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
 import { PIECES, type Piece } from "./pieces-serveur";
-import type { Cadre, ObjetsVus, PieceVue } from "./pieces-vivantes";
+import { SOUVENIRS_PAR_ETAGERE, SOUVENIRS_PAR_PIECE, type Cadre, type ObjetsVus, type PieceVue, type SouvenirPose } from "./pieces-vivantes";
+import { etagereVitrine } from "./etagere-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -120,16 +121,18 @@ export const consigneVivante = (p: Piece) =>
     "The camera does not move at all: a locked-off tripod shot, no zoom, no pan, no tilt. The room, every object, the light and the framing stay exactly as they are.",
     `Only these things move, softly and continuously, in a calm loop: ${PLANS_ENTIERS[p].vit}.`,
     "Nothing appears and nothing disappears. No people, no characters, no text. The empty space in the middle of the floor stays empty. The last moment looks like the first one.",
+    "Sound: only the soft ambience of the room — no voice, no dialogue, no music.",
   ].join("\n");
 
 /** 2. Où sont les vedettes, la place du fauteuil et (la télé) son écran — en % de la vue. */
 export const consigneObjets = (p: Piece) =>
   [
     "LES OBJETS VEDETTES — this is a portrait image of a room (a 3D miniature diorama).",
-    "Locate each of these objects as a box, in percent of the image width and height (x, y: its top-left corner; l, h: its width and height; numbers from 0 to 100):",
+    "Locate each of these objects as a box, in PERCENT of the image width and height — not pixels (x, y: its top-left corner; l, h: its width and height; numbers from 0 to 100):",
     ...PLANS_ENTIERS[p].vedettes.map((v) => `- ${v.cle} : ${v.en.split(";")[0]}`),
     'Also locate "place": the empty space in the middle of the floor (where an armchair will stand)' + (PLANS_ENTIERS[p].vedettes.some((v) => v.cle === "tele") ? ', and "ecran": the SCREEN of the television only.' : "."),
-    'Answer in JSON only: {"objets":[{"cle":"…","x":0,"y":0,"l":0,"h":0}],"place":{"x":0,"y":0,"l":0,"h":0},"ecran":{"x":0,"y":0,"l":0,"h":0} or null}. Leave out an object that is not in the image.',
+    'And "etageres": up to three wall shelves, each one the box of the free space just ABOVE its board (where small objects could stand), the clearest first.',
+    'Answer in JSON only: {"objets":[{"cle":"…","x":0,"y":0,"l":0,"h":0}],"place":{"x":0,"y":0,"l":0,"h":0},"ecran":{"x":0,"y":0,"l":0,"h":0} or null,"etageres":[{"x":0,"y":0,"l":0,"h":0}]}. Leave out an object that is not in the image.',
   ].join("\n");
 
 export type { Cadre, ObjetsVus };
@@ -138,8 +141,54 @@ export function cadreValide(v: unknown): Cadre | null {
   if (!v || typeof v !== "object") return null;
   const o = v as Record<string, unknown>;
   const c = { x: nombre(o.x), y: nombre(o.y), l: nombre(o.l), h: nombre(o.h) };
-  if (Object.values(c).some(Number.isNaN) || c.l < 1 || c.h < 1) return null;
-  return { x: c.x, y: c.y, l: Math.min(c.l, 100 - c.x), h: Math.min(c.h, 100 - c.y) };
+  if (Object.values(c).some(Number.isNaN)) return null;
+  // (dans l'image : un cadre qui déborde est rogné ; trop petit une fois rogné, il ne compte pas)
+  const r = { x: c.x, y: c.y, l: Math.min(c.l, 100 - c.x), h: Math.min(c.h, 100 - c.y) };
+  return r.l < 1 || r.h < 1 ? null : r;
+}
+
+/** L'image que le modèle regarde (la vue, réduite) : ses cadres en pixels se ramènent à des pourcentages. */
+export const VUE_REGARDEE = { l: 576, h: 1024 };
+const arrondi = (v: number) => Math.round(v * 100) / 100;
+const valeur = (o: Record<string, unknown>, ...cles: string[]) => {
+  for (const k of cles) {
+    const v = typeof o[k] === "string" ? Number(o[k]) : o[k];
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+  }
+  return NaN;
+};
+/**
+ * 📐 UN CADRE COMME LE MODÈLE L'A RENDU, EN POURCENTAGES (le 14 novembre, l'essai du propriétaire : « 0 trouvée(s) » —
+ * le modèle avait rendu ses cadres en pixels) : les noms qu'il emploie (l ou w, width ; h ou height ; left, top),
+ * des fractions (tout ≤ 1 : fois 100), des pixels (plus de 100 : rapportés à l'image qu'il a vue), des pourcentages.
+ */
+export function cadreDuModele(v: unknown): Cadre | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const c = { x: valeur(o, "x", "left"), y: valeur(o, "y", "top"), l: valeur(o, "l", "w", "width"), h: valeur(o, "h", "height") };
+  if (Object.values(c).some(Number.isNaN) || Object.values(c).some((n) => n < 0)) return null;
+  const fraction = Math.max(c.x, c.y, c.l, c.h) <= 1;
+  const pixels = !fraction && (c.x + c.l > 101 || c.y + c.h > 101);
+  const r = fraction
+    ? { x: c.x * 100, y: c.y * 100, l: c.l * 100, h: c.h * 100 }
+    : pixels
+      ? { x: (c.x * 100) / VUE_REGARDEE.l, y: (c.y * 100) / VUE_REGARDEE.h, l: (c.l * 100) / VUE_REGARDEE.l, h: (c.h * 100) / VUE_REGARDEE.h }
+      : c;
+  return cadreValide({ x: arrondi(r.x), y: arrondi(r.y), l: arrondi(r.l), h: arrondi(r.h) });
+}
+/** Ce que le modèle a rendu, ses cadres ramenés en pourcentages (avant `objetsValides`). */
+export function enPourcentages(v: unknown): Record<string, unknown> {
+  const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const cadre = (x: unknown) => cadreDuModele(x) ?? undefined;
+  return {
+    objets: (Array.isArray(o.objets) ? o.objets : []).map((x) => {
+      const c = cadreDuModele(x);
+      return c ? { cle: s((x as Record<string, unknown>)?.cle).toLowerCase(), ...c } : null;
+    }),
+    place: cadre(o.place),
+    ecran: cadre(o.ecran),
+    etageres: (Array.isArray(o.etageres) ? o.etageres : []).map(cadre),
+  };
 }
 /** Ce que le modèle a vu, tenu : les vedettes connues de la pièce, une fois chacune, des cadres dans l'image. */
 export function objetsValides(p: Piece, v: unknown): ObjetsVus {
@@ -151,7 +200,31 @@ export function objetsValides(p: Piece, v: unknown): ObjetsVus {
     const c = cadreValide(x);
     if (c && connues.has(k) && !objets.some((y) => y.cle === k)) objets.push({ cle: k, ...c });
   }
-  return { objets, place: cadreValide(o.place), ecran: connues.has("tele") ? cadreValide(o.ecran) : null };
+  // (📚 ses étagères : trois au plus, assez larges pour y poser quelque chose)
+  const etageres = (Array.isArray(o.etageres) ? o.etageres : [])
+    .map(cadreValide)
+    .filter((c): c is Cadre => Boolean(c && c.l >= 8))
+    .slice(0, 3);
+  return { objets, place: cadreValide(o.place), ecran: connues.has("tele") ? cadreValide(o.ecran) : null, ...(etageres.length ? { etageres } : {}) };
+}
+
+/** 📚 Ses souvenirs (ce qu'il a choisi de montrer de son étagère), répartis entre ses pièces qui ont des étagères. */
+export function repartirSouvenirs(pieces: { etageres: number }[], souvenirs: SouvenirPose[]): SouvenirPose[][] {
+  const parPiece: SouvenirPose[][] = pieces.map(() => []);
+  const places = pieces.map((p) => Math.min(SOUVENIRS_PAR_PIECE, p.etageres * SOUVENIRS_PAR_ETAGERE));
+  let k = 0;
+  for (const s of souvenirs) {
+    // (une pièce après l'autre, chacune à son tour, tant qu'il reste de la place)
+    let tour = 0;
+    while (tour < pieces.length && parPiece[k % pieces.length].length >= places[k % pieces.length]) {
+      k++;
+      tour++;
+    }
+    if (tour === pieces.length) break;
+    parPiece[k % pieces.length].push(s);
+    k++;
+  }
+  return parPiece;
 }
 
 // ─── où il en est ──────────────────────────────────────────────────────────────────────────────────
@@ -221,7 +294,7 @@ async function voirLesObjets(p: Piece, vue: Buffer): Promise<ObjetsVus | { erreu
   }).catch(() => null);
   if (!r?.ok) return { erreur: `Le modèle qui voit les images n’a pas répondu (${r?.status ?? "réseau"}).` };
   const j = (await r.json().catch(() => ({}))) as { choices?: { message?: { content?: string } }[] };
-  const vus = objetsValides(p, json(Buffer.from(j.choices?.[0]?.message?.content ?? "{}")));
+  const vus = objetsValides(p, enPourcentages(json(Buffer.from(j.choices?.[0]?.message?.content ?? "{}"))));
   return vus.objets.length ? vus : { erreur: "Le modèle n’a trouvé aucune des vedettes dans l’image : refais l’image." };
 }
 
@@ -231,23 +304,180 @@ const raison = async (r: Response) => {
   return s((json(Buffer.from(t)).error as { message?: string } | undefined)?.message || t).slice(0, 220);
 };
 
-async function commanderLaVideo(p: Piece, vue: Buffer): Promise<{ id: string } | { erreur: string }> {
-  const forme = new FormData();
-  forme.append("model", modeleVideo());
-  forme.append("prompt", consigneVivante(p));
-  forme.append("seconds", secondes());
-  forme.append("size", `${TAILLE_VIDEO.l}x${TAILLE_VIDEO.h}`);
-  forme.append("input_reference", new File([new Uint8Array(await pourLaVideo(vue))], "piece.png", { type: "image/png" }));
-  const r = await fetch(`${base()}/v1/videos`, { method: "POST", headers: { authorization: `Bearer ${cle()}` }, body: forme, signal: AbortSignal.timeout(60_000) }).catch(() => null);
-  if (!r) return { erreur: "Le moteur vidéo ne répond pas." };
-  if (!r.ok) return { erreur: `Le moteur vidéo (${modeleVideo()}) refuse : ${r.status} ${await raison(r)}` };
-  const j = (await r.json().catch(() => ({}))) as { id?: string };
-  return s(j.id) ? { id: s(j.id) } : { erreur: "Le moteur vidéo n’a pas rendu de commande." };
+/**
+ * 🔌 OÙ COMMANDER LA VIDÉO (le 14 novembre, l'essai du propriétaire : « sora-2 refuse : 404 », sans un mot — l'adresse
+ * du moteur d'images ne connaissait pas les vidéos) : `OPENAI_VIDEO_API_KEY` (et `OPENAI_VIDEO_BASE_URL`, sinon OpenAI)
+ * d'abord ; puis le branchement du moteur d'images ; puis `OPENAI_API_KEY`, chez OpenAI, s'il est différent.
+ */
+type Branchement = { nom: "video" | "images" | "openai"; base: string; cle: string };
+const OPENAI = "https://api.openai.com";
+export function branchementsVideo(): Branchement[] {
+  const l: Branchement[] = [];
+  const ajouter = (b: Branchement) => b.cle && !l.some((x) => x.base === b.base && x.cle === b.cle) && l.push(b);
+  ajouter({ nom: "video", base: s(process.env.OPENAI_VIDEO_BASE_URL) || OPENAI, cle: s(process.env.OPENAI_VIDEO_API_KEY) });
+  ajouter({ nom: "images", base: base(), cle: cle() });
+  ajouter({ nom: "openai", base: OPENAI, cle: s(process.env.OPENAI_API_KEY) });
+  return l;
+}
+const hote = (u: string) => {
+  try {
+    return new URL(u).host;
+  } catch {
+    return u;
+  }
+};
+/** Les moteurs vidéo du compte (ceux dont le nom commence par « sora ») : le moins cher d'abord. */
+async function modelesVideoDuCompte(b: Branchement): Promise<string[]> {
+  const r = await fetch(`${b.base}/v1/models`, { headers: { authorization: `Bearer ${b.cle}` }, signal: AbortSignal.timeout(20_000) }).catch(() => null);
+  if (!r?.ok) return [];
+  const j = (await r.json().catch(() => ({}))) as { data?: { id?: string }[] };
+  const ids = (j.data ?? []).map((m) => s(m.id)).filter((id) => /^sora/i.test(id));
+  return [...ids.filter((id) => !/pro/i.test(id)), ...ids.filter((id) => /pro/i.test(id))];
 }
 
+async function commanderLaVideo(p: Piece, vue: Buffer): Promise<{ id: string; branchement: Branchement["nom"]; modele: string } | { erreur: string }> {
+  const image = await pourLaVideo(vue);
+  const essayer = async (b: Branchement, modele: string) => {
+    const forme = new FormData();
+    forme.append("model", modele);
+    forme.append("prompt", consigneVivante(p));
+    forme.append("seconds", secondes());
+    forme.append("size", `${TAILLE_VIDEO.l}x${TAILLE_VIDEO.h}`);
+    forme.append("input_reference", new File([new Uint8Array(image)], "piece.png", { type: "image/png" }));
+    return fetch(`${b.base}/v1/videos`, { method: "POST", headers: { authorization: `Bearer ${b.cle}` }, body: forme, signal: AbortSignal.timeout(60_000) }).catch(() => null);
+  };
+  const refus: string[] = [];
+  for (const b of branchementsVideo()) {
+    const deja = new Set<string>();
+    for (const modele of [modeleVideo()]) {
+      deja.add(modele);
+      let r = await essayer(b, modele);
+      // (introuvable : ce moteur, ici, n'existe pas — les moteurs vidéo du compte, s'il en a d'autres)
+      if (r?.status === 404) {
+        refus.push(`${modele} chez ${hote(b.base)} : 404 ${await raison(r)}`.trim());
+        for (const autre of (await modelesVideoDuCompte(b)).filter((m) => !deja.has(m)).slice(0, 2)) {
+          deja.add(autre);
+          r = await essayer(b, autre);
+          if (r?.ok) {
+            const j = (await r.json().catch(() => ({}))) as { id?: string };
+            if (s(j.id)) return { id: s(j.id), branchement: b.nom, modele: autre };
+          }
+          if (r) refus.push(`${autre} chez ${hote(b.base)} : ${r.status} ${r.ok ? "" : await raison(r)}`.trim());
+        }
+        continue;
+      }
+      if (!r) {
+        refus.push(`chez ${hote(b.base)} : pas de réponse`);
+        continue;
+      }
+      if (!r.ok) return { erreur: `Le moteur vidéo (${modele}, chez ${hote(b.base)}) refuse : ${r.status} ${await raison(r)}`.trim() };
+      const j = (await r.json().catch(() => ({}))) as { id?: string };
+      if (s(j.id)) return { id: s(j.id), branchement: b.nom, modele };
+      refus.push(`${modele} chez ${hote(b.base)} : pas de commande rendue`);
+    }
+  }
+  return { erreur: refus.length ? `Le moteur vidéo refuse — ${refus.join(" ; ")}. Une clé OpenAI qui ouvre les vidéos (OPENAI_VIDEO_API_KEY) peut être ajoutée dans Vercel.` : "Le moteur vidéo n’est pas branché ici." };
+}
+// ─── 🎥 LE MOTEUR VIDÉO DE GOOGLE (VEO) ───────────────────────────────────────────────────────────────
+/**
+ * LE 14 NOVEMBRE (le propriétaire : « Sora 2 n'existe plus, il me semble ») : OpenAI a fermé son moteur vidéo (Sora 2,
+ * l'API « Videos ») le 24 septembre 2026 — d'où le 404. La vidéo se fait maintenant chez Google : Veo, par l'API Gemini
+ * (`GEMINI_VIDEO_API_KEY`, sinon la clé Gemini des figurines, sinon la clé commune ; `GEMINI_VIDEO_BASE_URL`). Le
+ * moteur : `GEMINI_VIDEO_MODEL`, sinon ceux du compte (`/v1beta/models`, « veo », qui font des vidéos), le moins cher
+ * d'abord (le « Lite », puis le rapide), le définitif avant l'aperçu. La commande est une « opération » qu'on suit, puis la vidéo se télécharge.
+ * `VIDEO_MOTEUR=openai` revient à OpenAI (si un jour il rouvre).
+ */
+const cleGoogle = () => s(process.env.GEMINI_VIDEO_API_KEY) || s(process.env.FIGURINE_GEMINI_API_KEY) || s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
+const baseGoogle = () => s(process.env.GEMINI_VIDEO_BASE_URL) || s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
+export const moteurVideo = (): "veo" | "openai" => {
+  const m = s(process.env.VIDEO_MOTEUR).toLowerCase();
+  return m === "veo" || m === "openai" ? m : cleGoogle() ? "veo" : "openai";
+};
+/** Si le compte ne dit pas ses moteurs : ceux-ci, dans cet ordre. */
+const MODELES_VEO = ["veo-3.1-lite-generate-001", "veo-3.1-fast-generate-001", "veo-3.1-generate-001", "veo-3.1-lite-generate-preview", "veo-3.1-fast-generate-preview", "veo-3.1-generate-preview"];
+/**
+ * 💶 LE COÛT (le propriétaire, le 14 novembre : « y a-t-il un moyen de réduire ce coût d'un euro ? ») : Veo se paie à
+ * la seconde — 0,40 $ la seconde le standard, 0,10 $ le rapide, 0,05 $ le « Lite » (720p, septembre 2026). Pour une
+ * boucle où seules les vedettes bougent, le Lite et QUATRE secondes suffisent : environ 0,20 $ la pièce.
+ * `GEMINI_VIDEO_SECONDES` (4, 6 ou 8) et `GEMINI_VIDEO_MODEL` pour autre chose.
+ */
+const secondesVeo = () => (["4", "6", "8"].includes(s(process.env.GEMINI_VIDEO_SECONDES)) ? Number(s(process.env.GEMINI_VIDEO_SECONDES)) : 4);
+export async function modelesVeo(): Promise<string[]> {
+  const force = s(process.env.GEMINI_VIDEO_MODEL);
+  const r = await fetch(`${baseGoogle()}/v1beta/models?pageSize=1000`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(20_000) }).catch(() => null);
+  const j = (r?.ok ? await r.json().catch(() => ({})) : {}) as { models?: { name?: string; supportedGenerationMethods?: string[] }[] };
+  const vus = (j.models ?? []).filter((m) => /veo/i.test(s(m.name)) && (m.supportedGenerationMethods ?? []).includes("predictLongRunning")).map((m) => s(m.name).replace(/^models\//, ""));
+  // (le moins cher d'abord : le « Lite », puis le rapide, puis le standard ; le définitif avant l'aperçu)
+  const rang = (id: string) => (/lite/i.test(id) ? 0 : /fast/i.test(id) ? 2 : 4) + (/preview/i.test(id) ? 1 : 0);
+  const tries = [...vus].sort((a, b) => rang(a) - rang(b) || b.localeCompare(a));
+  return [...new Set([...(force ? [force] : []), ...(tries.length ? tries : MODELES_VEO)])].slice(0, 4);
+}
+async function commanderChezVeo(p: Piece, vue: Buffer): Promise<{ id: string; modele: string } | { erreur: string }> {
+  if (!cleGoogle()) return { erreur: "Le moteur vidéo de Google n’est pas branché ici (GEMINI_VIDEO_API_KEY)." };
+  const data = (await pourLaVideo(vue)).toString("base64");
+  const prompt = consigneVivante(p);
+  // (la forme que l'API attend a changé selon les versions : l'image « inlineData », puis sans réglage de personnes,
+  // puis « bytesBase64Encoded » — à la première qui n'est pas refusée pour sa forme)
+  const duree = secondesVeo();
+  const formes = [
+    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", durationSeconds: duree, personGeneration: "allow_adult" } },
+    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16", durationSeconds: duree } },
+    { instances: [{ prompt, image: { inlineData: { mimeType: "image/png", data } } }], parameters: { aspectRatio: "9:16" } },
+    { instances: [{ prompt, image: { bytesBase64Encoded: data, mimeType: "image/png" } }], parameters: { aspectRatio: "9:16", durationSeconds: duree } },
+  ];
+  const refus: string[] = [];
+  for (const modele of await modelesVeo()) {
+    for (const forme of formes) {
+      const r = await fetch(`${baseGoogle()}/v1beta/models/${encodeURIComponent(modele)}:predictLongRunning`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": cleGoogle() },
+        body: JSON.stringify(forme),
+        signal: AbortSignal.timeout(60_000),
+      }).catch(() => null);
+      if (!r) {
+        refus.push(`${modele} : pas de réponse`);
+        break;
+      }
+      if (r.ok) {
+        const j = (await r.json().catch(() => ({}))) as { name?: string };
+        if (/^[\w./-]+$/.test(s(j.name))) return { id: s(j.name), modele };
+        refus.push(`${modele} : pas de commande rendue`);
+        break;
+      }
+      const pourquoi = await raison(r);
+      refus.push(`${modele} : ${r.status} ${pourquoi}`.trim());
+      // (refusée pour sa forme : la suivante ; sinon, ce moteur n'est pas pour nous : le suivant)
+      if (r.status !== 400) break;
+    }
+  }
+  return { erreur: `Le moteur vidéo de Google (Veo) refuse — ${refus.slice(-4).join(" ; ") || "aucun moteur vidéo sur ce compte"}.` };
+}
+/** Où en est l'opération Veo : faite (téléchargée, rangée), ratée (la commande s'efface), ou en train (une estimation). */
+async function suivreChezVeo(d: ReturnType<typeof depotDans>, id: string, depuis: string): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
+  if (!/^[\w./-]+$/.test(id)) return { erreur: "La commande de la vidéo est illisible : refais-la." };
+  const r = await fetch(`${baseGoogle()}/v1beta/${id}`, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(30_000) }).catch(() => null);
+  if (!r?.ok) return { erreur: `Le moteur vidéo ne dit pas où en est la vidéo (${r?.status ?? "réseau"}).` };
+  type Op = { done?: boolean; error?: { message?: string }; response?: { generateVideoResponse?: { generatedSamples?: { video?: { uri?: string } }[]; raiMediaFilteredReasons?: string[] } } };
+  const j = (await r.json().catch(() => ({}))) as Op;
+  const rater = async (pourquoi: string) => {
+    await d.effacer("video.json").catch(() => undefined);
+    return { erreur: `La vidéo a échoué : ${pourquoi}. Touche « Continuer » pour la recommander.` };
+  };
+  if (j.error) return rater(s(j.error.message) || "le moteur n’a pas dit pourquoi");
+  if (!j.done) return { progres: Math.min(95, Math.round(((Date.now() - (Date.parse(depuis) || Date.now())) / 120_000) * 100)) };
+  const uri = s(j.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri);
+  if (!uri) return rater(s(j.response?.generateVideoResponse?.raiMediaFilteredReasons?.join(", ")) || "aucune vidéo rendue");
+  const c = await fetch(uri, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(90_000) }).catch(() => null);
+  if (!c?.ok) return { erreur: `La vidéo est faite, mais ne se télécharge pas (${c?.status ?? "réseau"}) : réessaie.` };
+  await d.ecrire("video.mp4", Buffer.from(await c.arrayBuffer()), "video/mp4");
+  return { fait: true };
+}
+
+const branchementDe = (nom: unknown) => branchementsVideo().find((b) => b.nom === nom) ?? branchementsVideo()[0] ?? { nom: "images" as const, base: base(), cle: cle() };
+
 /** Où en est la vidéo commandée : faite (et rangée), ratée (la commande s'efface), ou en train. */
-async function suivreLaVideo(d: ReturnType<typeof depotDans>, id: string): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
-  const r = await fetch(`${base()}/v1/videos/${encodeURIComponent(id)}`, { headers: { authorization: `Bearer ${cle()}` }, signal: AbortSignal.timeout(30_000) }).catch(() => null);
+async function suivreLaVideo(d: ReturnType<typeof depotDans>, id: string, b: Branchement): Promise<{ fait: true } | { erreur: string } | { progres: number }> {
+  const r = await fetch(`${b.base}/v1/videos/${encodeURIComponent(id)}`, { headers: { authorization: `Bearer ${b.cle}` }, signal: AbortSignal.timeout(30_000) }).catch(() => null);
   if (!r?.ok) return { erreur: `Le moteur vidéo ne dit pas où en est la vidéo (${r?.status ?? "réseau"}).` };
   const j = (await r.json().catch(() => ({}))) as { status?: string; progress?: number; error?: { message?: string } };
   if (j.status === "failed") {
@@ -255,7 +485,7 @@ async function suivreLaVideo(d: ReturnType<typeof depotDans>, id: string): Promi
     return { erreur: `La vidéo a échoué : ${s(j.error?.message) || "le moteur n’a pas dit pourquoi"}. Touche « Continuer » pour la recommander.` };
   }
   if (j.status !== "completed") return { progres: typeof j.progress === "number" ? Math.round(j.progress) : 0 };
-  const c = await fetch(`${base()}/v1/videos/${encodeURIComponent(id)}/content`, { headers: { authorization: `Bearer ${cle()}` }, signal: AbortSignal.timeout(90_000) }).catch(() => null);
+  const c = await fetch(`${b.base}/v1/videos/${encodeURIComponent(id)}/content`, { headers: { authorization: `Bearer ${b.cle}` }, signal: AbortSignal.timeout(90_000) }).catch(() => null);
   if (!c?.ok) return { erreur: `La vidéo est faite, mais ne se télécharge pas (${c?.status ?? "réseau"}) : réessaie.` };
   await d.ecrire("video.mp4", Buffer.from(await c.arrayBuffer()), "video/mp4");
   return { fait: true };
@@ -301,12 +531,14 @@ export async function fabriquerLaPieceVivante(supabase: Supabase, h: string, p: 
     // la vidéo : commandée une fois, puis suivie
     const commande = json(await d.lire("video.json").catch(() => null));
     if (!s(commande.id)) {
-      const c = await commanderLaVideo(p, vue);
+      // (🎥 chez Google, Veo — OpenAI a fermé le sien ; `VIDEO_MOTEUR=openai` y revient)
+      const veo = moteurVideo() === "veo";
+      const c = veo ? await commanderChezVeo(p, vue) : await commanderLaVideo(p, vue);
       if ("erreur" in c) return { erreur: c.erreur };
-      await d.ecrire("video.json", Buffer.from(JSON.stringify({ id: c.id, le: new Date().toISOString(), modele: modeleVideo() })), "application/json");
+      await d.ecrire("video.json", Buffer.from(JSON.stringify({ id: c.id, le: new Date().toISOString(), modele: c.modele, ...(veo ? { moteur: "veo" } : { branchement: (c as { branchement?: string }).branchement }) })), "application/json");
       return { progres: 0 };
     }
-    const suite = await suivreLaVideo(d, s(commande.id));
+    const suite = commande.moteur === "veo" ? await suivreChezVeo(d, s(commande.id), s(commande.le)) : await suivreLaVideo(d, s(commande.id), branchementDe(commande.branchement));
     if ("erreur" in suite) return { erreur: suite.erreur };
     if ("progres" in suite) {
       await d.ecrire("video.json", Buffer.from(JSON.stringify({ ...commande, progres: suite.progres })), "application/json");
@@ -344,7 +576,20 @@ export async function mesPieces(supabase: Supabase, h: string, o: { pourSesVisit
       return { piece: p, nom: NOMS_PIECES[p], vue, ...(video ? { video } : {}), ...(objets ? { objets } : {}), vedettes };
     }),
   );
-  return pieces.filter((x): x is PieceDeMaMaison => Boolean(x));
+  const pretes = pieces.filter((x): x is PieceDeMaMaison => Boolean(x));
+  // 📚 ses souvenirs (ce qu'il montre de son étagère), posés sur les étagères de ses pièces
+  const avecEtageres = pretes.filter((x) => x.objets?.etageres?.length);
+  if (!avecEtageres.length) return pretes;
+  const vitrine = await etagereVitrine(supabase, h).catch(() => []);
+  const souvenirs: SouvenirPose[] = vitrine.map((v) => ({ id: v.id, emoji: v.emoji, titre: v.titre, ...(v.detail ? { detail: v.detail } : {}) }));
+  const parts = repartirSouvenirs(
+    avecEtageres.map((x) => ({ etageres: x.objets!.etageres!.length })),
+    souvenirs,
+  );
+  avecEtageres.forEach((x, k) => {
+    if (parts[k].length) x.souvenirs = parts[k];
+  });
+  return pretes;
 }
 
 /** ↩️ Refaire une étape : elle, et ce qui en dépend (l'image : tout ; les objets : eux seuls ; la vidéo : elle). */

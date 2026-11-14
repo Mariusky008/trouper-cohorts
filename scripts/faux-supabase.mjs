@@ -651,9 +651,14 @@ http
         // l'écran de la télé — et un objet qu'elle n'a pas (« lustre »), un écran même sans télé : le serveur les laisse de côté
         if (consigne.startsWith("LES OBJETS VEDETTES")) {
           const cles = [...consigne.matchAll(/^- (\w+) :/gm)].map((x) => x[1]);
-          const objets = [...cles, "lustre"].map((cle, n) => ({ cle, x: 8 + n * 28, y: 30 + n * 6, l: 24, h: 20 }));
-          const ecran = { x: 10, y: 32, l: 20, h: 12 };
-          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ objets, place: { x: 35, y: 72, l: 30, h: 16 }, ecran }) } }] });
+          // (📐 la pièce télé : ses vedettes en pixels de l'image vue, 576 × 1024, et son écran en fractions — le serveur
+          // ramène tout en pourcentages)
+          const enPixels = cles.includes("tele");
+          const objets = [...cles, "lustre"].map((cle, n) => (enPixels ? { cle, x: (8 + n * 28) * 5.76, y: (30 + n * 6) * 10.24, w: 24 * 5.76, h: 20 * 10.24 } : { cle, x: 8 + n * 28, y: 30 + n * 6, l: 24, h: 20 }));
+          const ecran = enPixels ? { x: 0.1, y: 0.32, l: 0.2, h: 0.12 } : { x: 10, y: 32, l: 20, h: 12 };
+          // (📚 deux étagères, et une trop étroite pour y poser quoi que ce soit)
+          const etageres = consigne.includes('"etageres"') ? [{ x: 5, y: 20, l: 40, h: 6 }, { x: 55, y: 24, l: 40, h: 6 }, { x: 1, y: 1, l: 3, h: 3 }] : [];
+          return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ objets, place: { x: 35, y: 72, l: 30, h: 16 }, ecran, etageres }) } }] });
         }
         // 🎙️ le talkie-walkie : trois têtes par réplique (la honte d'abord, puis le fou rire), parmi celles qu'il peut jouer
         if (consigne.includes("LES TÊTES DE SA FIGURINE")) {
@@ -829,6 +834,12 @@ http
           const m = await sharp(brut.subarray(debut + 4, fin)).metadata().catch(() => null);
           dimensions = m ? `${m.width}x${m.height}` : "illisible";
         }
+        // (🔌 la terrasse : le moteur vidéo introuvable à cette adresse — un 404 sans un mot)
+        if (champ("prompt").includes("string lights glow")) {
+          consignesIA.push(`VIDEO-404 ${champ("model")}`);
+          res.writeHead(404);
+          return res.end();
+        }
         consignesIA.push(`VIDEO ${champ("model")} ${champ("seconds")} ${champ("size")} ${dimensions} ${Buffer.from(champ("prompt"), "latin1").toString("utf8")}`);
         videosEssai.set("video_essai_1", 0);
         return repondre(res, 200, { id: "video_essai_1", object: "video", status: "queued", progress: 0 });
@@ -842,6 +853,50 @@ http
         const n = videosEssai.get(video[1]) + 1;
         videosEssai.set(video[1], n);
         return repondre(res, 200, n < 2 ? { id: video[1], status: "in_progress", progress: 40 } : { id: video[1], status: "completed", progress: 100 });
+      }
+      // 🎥 UN FAUX VEO (l'API Gemini de Google, `GEMINI_VIDEO_BASE_URL=…/gemini`) : ses moteurs (un texte, deux vidéos) ;
+      // une commande (« VEO <moteur> <format> <durée>s <taille de l'image reçue> <consigne> ») — la première forme, avec
+      // « personGeneration », est refusée (400), la suivante passe ; « en train » à la première question, faite à la
+      // deuxième ; la vidéo se télécharge. La terrasse : aucun moteur vidéo trouvé (404).
+      if (url.pathname === "/gemini/v1beta/models" && req.method === "GET") {
+        return repondre(res, 200, {
+          models: [
+            { name: "models/gemini-2.5-flash", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/veo-3.1-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
+            { name: "models/veo-3.1-fast-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
+            { name: "models/veo-3.1-lite-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
+          ],
+        });
+      }
+      const veo = /^\/gemini\/v1beta\/models\/([\w.-]+):predictLongRunning$/.exec(url.pathname);
+      if (veo && req.method === "POST") {
+        if (req.headers["x-goog-api-key"] !== "faux") return repondre(res, 401, { error: { code: 401, message: "API key not valid" } });
+        const q = JSON.parse((await corps(req)).toString() || "{}");
+        const inst = q.instances?.[0] ?? {};
+        const img = inst.image?.inlineData?.data ?? inst.image?.bytesBase64Encoded ?? "";
+        const sharp = (await import("sharp")).default;
+        const m = img ? await sharp(Buffer.from(img, "base64")).metadata().catch(() => null) : null;
+        if (String(inst.prompt ?? "").includes("string lights glow")) {
+          consignesIA.push(`VEO-404 ${veo[1]}`);
+          return repondre(res, 404, { error: { code: 404, message: `models/${veo[1]} is not found for API version v1beta` } });
+        }
+        if (q.parameters?.personGeneration) {
+          consignesIA.push(`VEO-400 ${veo[1]} personGeneration`);
+          return repondre(res, 400, { error: { code: 400, message: "personGeneration isn't supported by this model" } });
+        }
+        consignesIA.push(`VEO ${veo[1]} ${q.parameters?.aspectRatio ?? ""} ${q.parameters?.durationSeconds ?? "-"}s ${m ? `${m.width}x${m.height}` : "aucune"} ${inst.prompt ?? ""}`);
+        videosEssai.set("op1", 0);
+        return repondre(res, 200, { name: `models/${veo[1]}/operations/op1` });
+      }
+      const operation = /^\/gemini\/v1beta\/models\/[\w.-]+\/operations\/(\w+)$/.exec(url.pathname);
+      if (operation && req.method === "GET" && videosEssai.has(operation[1])) {
+        const n = videosEssai.get(operation[1]) + 1;
+        videosEssai.set(operation[1], n);
+        return repondre(res, 200, n < 2 ? { done: false } : { done: true, response: { generateVideoResponse: { generatedSamples: [{ video: { uri: "http://127.0.0.1:54321/gemini/v1beta/files/video1:download?alt=media" } }] } } });
+      }
+      if (url.pathname === "/gemini/v1beta/files/video1:download" && req.headers["x-goog-api-key"] === "faux") {
+        res.writeHead(200, { "content-type": "video/mp4" });
+        return res.end(Buffer.from("faux mp4 de la pièce vivante"));
       }
       if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
       // ✍️ (lot M1) LE FAUX SITE DES APERÇUS DE LIENS (`CLIKME_APERCU_ESSAI_BASE`, les noms en `.essai.invalid`) : une page
