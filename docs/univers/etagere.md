@@ -398,6 +398,9 @@ un message non lu, une visite, le mot de l'humeur ou de la fin) ; les cas de l'�
 
 - **Des deux, et de personne d'autre.** Jamais en visite, jamais dans « Découvrir » ni « Autour », jamais dans un
   mème sans un geste de l'un des deux.
+- **(Lot E4)** Une seule exception, choisie souvenir par souvenir : ce qui ne concerne que moi, je peux le montrer aux
+  visiteurs de mon univers (l'emoji, le titre, le jour ; jamais la phrase dite, ni avec qui). Ce qui est à nous deux
+  reste entre nous.
 - Sur chaque carte et chaque fiche : « Noté par vos figurines · IA ». C'est la règle de la maison (« écrit par la
   figurine de … · IA »).
 
@@ -518,6 +521,57 @@ Le cœur : noter, ranger, montrer, retirer.
 - Les états, la scène grise, la carte rien que pour moi, se rallumer (9) ; la ligne de « Chez moi » (cas 5) ;
 - les goûts à J-3 et dans « Offrir » (7.4) ; le mème de la blague (7.5) ;
 - la page des mesures (13).
+
+### Lot E4 — « Mon étagère » (14 novembre 2026, demandé et validé par le propriétaire)
+
+Le propriétaire : « il faudra aussi des étagères pour que les choses (infos, dates, événements…) que je dis dans mes
+conversations s'ajoutent aussi dans mon univers, en dehors de celui avec qui je parle, qui a aussi les étagères. Et il
+faudra aussi que je puisse manuellement en déposer si j'en ai envie. » Le plan proposé, puis « Ok parfait » :
+
+1. **Mon étagère, chez moi** : tout ce qui me concerne (moi, ou nous deux), sur toutes mes étagères partagées, quel que
+   soit celui qui l'a dit. Ce qui concerne l'autre va dans son univers à lui. Chaque souvenir garde d'où il vient
+   (« Noté sur votre étagère, Léa et toi »). Retiré de l'étagère commune : il disparaît de la mienne.
+2. **« ＋ Déposer »**, sur mon étagère ET sur celle que je partage avec un proche : ce que c'est (une date — un
+   événement, une épreuve, tous les ans —, une promesse, un goût, une envie, une blague), son nom, son jour, son objet
+   parmi les 70 du catalogue. Une date donne le même rappel du matin.
+3. **Rien que pour moi par défaut** ; souvenir par souvenir, « 👀 Montrer à mes visiteurs ».
+4. **Plus tard** : sur les étagères de la maison en panorama, chacun avec son « i ».
+
+Ce qui est construit (les points 1 à 3) :
+
+- **La planche, sous la fenêtre de mon univers** (« Chez moi », `EtagereChezMoi`) : les six derniers posés, « 📚 Mon
+  étagère · 7 », « 2 montrés à tes visiteurs » ou « Rien que pour toi », et « ＋ ». Un toucher : la page.
+- **La page « Mon étagère »** (`PageMonEtagere`) : trois rayons, « Mes fiertés », « À venir », « Ce que j'aime » ; 👀
+  sur ce qui est montré ; les compteurs (souvenirs, fiertés, montrés) ; « ＋ Déposer sur mon étagère » ; « 👀 Voir ce que
+  voient mes visiteurs » (sa page de visite). La fiche d'un souvenir : d'où il vient ; « 👀 Montrer à mes visiteurs » /
+  « 🙈 Ne plus le montrer » (seulement ce qui ne concerne que moi : ce qui est à nous deux « reste entre Léa et toi ») ;
+  « Ne plus le garder chez moi » (il reste sur l'étagère commune) ; ce que j'ai déposé : changer la date, « ✅ C'est
+  fait ! », « 🏆 C'est réussi », « Retirer de mon étagère ».
+- **« ＋ Déposer »** (`FeuilleDeposer`) : sur la mienne, « 👀 Mes visiteurs peuvent le voir » (si j'ai un univers) ; sur
+  la nôtre (la page « Votre étagère », « ＋ Déposer sur votre étagère »), « C'est pour qui ? » — « Moi », « Léa »,
+  « Nous deux ». On écrit comme on parle (« Ton anniversaire », « Mon permis ») : c'est rangé sans possessif (« Le
+  permis » ; « Ton permis » pour celui que ça concerne, « Le permis de Léa » pour l'autre). « Tous les ans » accepte
+  l'année de naissance (sa prochaine fois). Sur la nôtre, l'autre le voit se poser dans notre conversation (« ✋ DÉPOSÉ
+  SUR VOTRE ÉTAGÈRE », « Déposé par Sam »), jamais celui qui l'a déposé.
+- **Les garde-fous** : un nom de 2 à 28 signes, sans mot interdit, rien d'alcoolisé, ni numéro ni adresse ; **rien de
+  sensible** (la même liste que pour les figurines : « L'étagère garde les bons moments : rien sur la santé, l'argent ou
+  les amours ») ; un jour à venir, dans l'année ; pas deux fois la même chose ; douze dépôts par jour, toutes étagères
+  confondues ; quarante souvenirs sur une étagère partagée, quatre-vingts sur la mienne, quarante montrés.
+- **Ce que voient mes visiteurs** (`/univers/chez/<clé>`, « 📚 L'étagère de Sam ») : l'emoji, le titre, le jour (« Les
+  pivoines · Sam adore ») ; jamais la phrase dite, ni avec qui. Ceux qui peuvent entrer chez moi, seulement.
+- **Le rappel du matin de ce que j'ai déposé** : « 📌 DE TON ÉTAGÈRE — Aujourd'hui : ton concert 🎤 Tu l'avais posé sur
+  ton étagère 📌 » (une épreuve : l'encouragement de sa figurine) ; la notification : « 📌 Aujourd'hui : ton concert
+  🎤 ». Deux rappels au plus le matin, les miens compris.
+- **Les données** : `<habitant>/etagere-perso.json` = { v: 1, objets, montres, caches, depots: { jour, n } } ; un
+  souvenir déposé porte `depose: true`, pas de citation, `message: "depot-<id>"`. Sur une étagère partagée, il est rangé
+  comme les autres (les figurines ne le renotent pas ; il ne compte pas dans leurs trois par jour).
+- **Les routes** (`/api/direct/etagere`) : `GET ?moi=1` ; `POST { action: "deposer", … }` (`avec` : sur la nôtre) ;
+  `montrer`, `cacher` ; `retirer`, `date`, `tenue`, `annuler-tenue`, `reussi` avec `mien: true`. La visite
+  (`visiterUnivers`) reçoit `etagere`.
+- **La mesure** : « Souvenirs déposés à la main » sur la page des mesures ; ce qui est déposé ne compte ni dans les
+  souvenirs retirés ni dans les dates changées (ce qu'on mesure, c'est la justesse des figurines).
+- **Les essais** : `verifier-etagere.mjs` (le titre déposé, ce qui est refusé, mes rappels, ce que voit un visiteur),
+  `essai-etagere-mienne-route.mjs`, `navigateur/etagere-mienne.mjs`.
 
 ## 15. Les essais
 

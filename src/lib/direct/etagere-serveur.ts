@@ -36,6 +36,7 @@ import { randomUUID } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { jourParis } from "@/lib/jour-paris";
 import type { Habitant } from "./habitant";
+import { lireFicheMonde } from "./fiches-serveur";
 import { ecrireJson, lireJson, lireLigne, prochesDe } from "./ma-figurine-serveur";
 import { iaBranchee, motPasse, parlePourLui } from "./rituel-serveur";
 import { repliquesValides, texteDuMessage } from "./talkie";
@@ -53,6 +54,14 @@ import {
   joursSurSept,
   phraseEtat,
   rallumages,
+  DEPOT,
+  aPlat,
+  depotValide,
+  meConcerne,
+  rappelsMiens,
+  vitrineDe,
+  type MonEtagereVue,
+  type VitrineObjet,
   type StatsJourEtagere,
   appliquerIssues,
   ecartJours,
@@ -87,6 +96,7 @@ import {
   type LigneEtagere,
   type ObjetGarde,
   type ObjetPropose,
+  type ObjetVu,
   type RappelVu,
 } from "./etagere";
 
@@ -462,7 +472,8 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
   }
   const o = f.objets.find((x) => x.id === s(p.id) && visible(x));
   if (!o) return { error: "Ce souvenir n’est plus sur votre étagère.", statut: 404 };
-  if (p.action === "retirer") void noterStat(supabase, "retires").catch(() => undefined);
+  // (📊 ce qu'on mesure, c'est la justesse des figurines : ce qu'on a déposé à la main n'y compte pas)
+  if (p.action === "retirer" && !o.depose) void noterStat(supabase, "retires").catch(() => undefined);
   if (p.action === "retirer") return ecrire({ ...f, objets: f.objets.map((x) => (x === o ? pierreTombale(x, moi8, le) : x)), cartes: (f.cartes ?? []).filter((c) => c.objet !== o.id) });
   // 🏆 celui que ça concerne le dit lui-même, son jour arrivé
   if (p.action === "reussi") {
@@ -487,7 +498,7 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
     const e = quand ? ecartJours(jourParis(), quand) : -1;
     if (!quand || e < 0 || e > ETAGERE.joursMax) return { error: "Choisis un jour à venir (dans l’année).", statut: 400 };
     if (!(o.genre === "date" || o.genre === "promesse") || o.etat !== "actif") return { error: "Ce souvenir n’a pas de date.", statut: 400 };
-    void noterStat(supabase, "dates").catch(() => undefined);
+    if (!o.depose) void noterStat(supabase, "dates").catch(() => undefined);
     return ecrire({ ...f, objets: f.objets.map((x) => (x === o ? { ...x, quand, ditQuand: undefined, change: { le, par8: moi8 } } : x)) });
   }
   return { error: "Demande incomplète.", statut: 400 };
@@ -523,10 +534,16 @@ async function sesProchesParlants(supabase: Supabase, moi: string): Promise<stri
   const ok = await Promise.all(miens.map(async (h) => (await prochesDe(supabase, h)).has(moi)));
   return miens.filter((_, i) => ok[i]);
 }
-/** Ses rappels d'aujourd'hui, calculés (sur toutes ses étagères). */
+/** Ses rappels d'aujourd'hui, calculés (sur toutes ses étagères, et la sienne : lot E4). */
 async function calculerRappels(supabase: Supabase, moi: string): Promise<RappelGarde[]> {
   const jour = jourParis();
   const moi8 = qui8(moi);
+  // 🏡 (lot E4) ce qu'il a posé sur SON étagère, le jour venu
+  const perso = vieillir((await lirePerso(supabase, moi)).objets, jour).objets;
+  const miens = rappelsMiens(perso, jour).map((x): RappelGarde => {
+    const titre = titrePour(x.objet, moi8, "");
+    return { id: x.objet.id, cle: "", h: moi, prenom: "", cas: x.cas, rang: x.rang, emoji: x.objet.emoji, texte: phraseRappel(x.cas, titre, x.objet.emoji, [], `${x.objet.id}${jour}`), meme: memeDuRappel(x.cas, x.objet.emoji) };
+  });
   const tous = await Promise.all(
     (await sesProchesParlants(supabase, moi)).map(async (h) => {
       const pair = pairDe(moi, h);
@@ -542,7 +559,7 @@ async function calculerRappels(supabase: Supabase, moi: string): Promise<RappelG
       });
     }),
   );
-  return garderRappels(tous.flat());
+  return garderRappels([...miens, ...tous.flat()]);
 }
 /** Ses rappels du jour : calculés une fois (la première ouverture, ou l'envoi du matin), gardés. */
 async function rappelsDuJour(supabase: Supabase, moi: string): Promise<RappelGarde[]> {
@@ -551,7 +568,8 @@ async function rappelsDuJour(supabase: Supabase, moi: string): Promise<RappelGar
   if (g.jour === jour && Array.isArray(g.liste)) return g.liste;
   const liste = await calculerRappels(supabase, moi);
   await ecrireJson(supabase, cheminRappels(moi), { jour, liste });
-  await noterStat(supabase, "rappels", liste.filter((x) => x.cas !== "encourage").length);
+  // (📊 les rappels qu'un message peut suivre : pas l'encouragement, pas ce qu'il a posé pour lui-même)
+  await noterStat(supabase, "rappels", liste.filter((x) => x.cas !== "encourage" && x.cas !== "mien").length);
   return liste;
 }
 /** Il a envoyé un message à cette personne aujourd'hui (le rappel s'efface : « ✓ Envoyé à Léa »). */
@@ -571,7 +589,7 @@ export async function mesRappels(supabase: Supabase, moi: Habitant): Promise<Rap
   const vus = await Promise.all(
     l.map(async (x) => {
       const { h, ...r } = x;
-      const fait = r.cas === "encourage" ? false : await luiAEcritAujourdhui(supabase, moi.id, h);
+      const fait = r.cas === "encourage" || r.cas === "mien" ? false : await luiAEcritAujourdhui(supabase, moi.id, h);
       return { id: r.id, cle: r.cle, prenom: r.prenom, cas: r.cas, texte: r.texte, emoji: r.emoji, meme: r.meme, image: mienne, fait };
     }),
   );
@@ -593,6 +611,11 @@ export async function notifDesRappels(supabase: Supabase, h: string): Promise<{ 
   await ecrireJson(supabase, cheminRappels(h), { jour: jourParis(), liste: l });
   const r = l.find((x) => x.cas !== "encourage");
   if (!r) return null;
+  // 🏡 (lot E4) ce qu'il a posé sur son étagère
+  if (r.cas === "mien") {
+    const o = (await lirePerso(supabase, h)).objets.find((x) => x.id === r.id);
+    return o ? notifRappel("mien", titrePour(o, qui8(h), ""), o.emoji) : null;
+  }
   const f = await lireEtagere(supabase, pairDe(h, r.h));
   const o = f.objets.find((x) => x.id === r.id);
   if (!o) return null;
@@ -650,4 +673,199 @@ export async function goutsDe(supabase: Supabase, moi: Habitant, cle: unknown): 
     .sort((a, b) => b.le.localeCompare(a.le))
     .slice(0, 2)
     .map((o) => ({ emoji: o.emoji, titre: minuscule(o.titre) }));
+}
+
+// ─── lot E4 : « Mon étagère », déposer à la main, ce que voient mes visiteurs ─────────────────────
+/**
+ * 🏡 SON ÉTAGÈRE À LUI : `<habitant>/etagere-perso.json` = { v: 1, objets, montres, caches, depots: { jour, n } } —
+ * `objets` : ce qu'il a déposé sur la sienne ; `montres` : les souvenirs que ses visiteurs voient (les siens, et ceux de
+ * ses étagères partagées qui ne concernent que lui) ; `caches` : ceux des étagères partagées qu'il ne garde plus chez
+ * lui (ils restent sur l'étagère commune) ; `depots` : ce qu'il a déposé aujourd'hui (douze au plus, partout).
+ */
+const cheminPerso = (h: string) => `${h}/etagere-perso.json`;
+type FichePerso = { v: 1; objets: ObjetGarde[]; montres: string[]; caches: string[]; depots?: { jour: string; n: number } };
+async function lirePerso(supabase: Supabase, h: string): Promise<FichePerso> {
+  const f = await lireJson<Partial<FichePerso>>(supabase, cheminPerso(h));
+  const ids = (x: unknown) => (Array.isArray(x) ? x.map(s).filter(Boolean) : []);
+  return {
+    v: 1,
+    objets: (Array.isArray(f.objets) ? f.objets : []).map(objetLu).filter((o): o is ObjetGarde => Boolean(o)),
+    montres: ids(f.montres),
+    caches: ids(f.caches),
+    ...(f.depots?.jour ? { depots: { jour: s(f.depots.jour), n: Number(f.depots.n) || 0 } } : {}),
+  };
+}
+const ecrirePerso = (supabase: Supabase, h: string, f: FichePerso) => ecrireJson(supabase, cheminPerso(h), f);
+const nouvelId = () => randomUUID().replace(/-/g, "").slice(0, 12);
+/** ⏳ Le temps passe aussi sur la sienne (un événement passé s'en va, un anniversaire revient). */
+async function persoAJour(supabase: Supabase, h: string, f: FichePerso): Promise<FichePerso> {
+  const v = vieillir(f.objets, jourParis());
+  if (!v.change) return f;
+  const g = { ...f, objets: v.objets };
+  await ecrirePerso(supabase, h, g);
+  return g;
+}
+/** Ses étagères partagées (avec les proches avec qui il se parle) : chacune, et le proche. */
+async function sesEtageres(supabase: Supabase, moi: string) {
+  return Promise.all((await sesProchesParlants(supabase, moi)).map(async (h) => ({ h, pair: pairDe(moi, h), f: await lireEtagere(supabase, pairDe(moi, h)) })));
+}
+
+/**
+ * 🏡 LA PAGE « MON ÉTAGÈRE » : ce qui le concerne (lui, ou eux deux) sur toutes ses étagères partagées — d'où ça vient
+ * (« noté avec Léa ») — et ce qu'il a déposé sur la sienne ; ce qu'il montre à ses visiteurs.
+ */
+export async function monEtagere(supabase: Supabase, moi: Habitant): Promise<Resultat<{ etagere?: MonEtagereVue }>> {
+  if (!etagereAllumee()) return { error: "L’étagère n’est pas ouverte.", statut: 404 };
+  const jour = jourParis();
+  const moi8 = qui8(moi.id);
+  const [perso0, etageres, prenomMoi, mienne, monde] = await Promise.all([
+    lirePerso(supabase, moi.id),
+    sesEtageres(supabase, moi.id),
+    prenomDe(supabase, moi.id, "Toi"),
+    figurineVue(supabase, moi.id, false),
+    lireFicheMonde(supabase, moi.id).catch(() => null),
+  ]);
+  const perso = await persoAJour(supabase, moi.id, perso0);
+  const montres = new Set(perso.montres);
+  const caches = new Set(perso.caches);
+  const deLeurs = await Promise.all(
+    etageres.map(async ({ h, f }) => {
+      const miens = vieillir(f.objets, jour).objets.filter((o) => meConcerne(o, moi8) && !caches.has(o.id));
+      if (!miens.length) return [];
+      const [prenom, cle] = await Promise.all([prenomDe(supabase, h, "Ton proche"), poserProfil(supabase, h)]);
+      return miens.map((o): ObjetVu => ({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: prenom, aujourdhui: jour }), avec: { prenom, cle }, peutMontrer: o.concerne === moi8, montre: o.concerne === moi8 && montres.has(o.id) }));
+    }),
+  );
+  const deposes = perso.objets.filter(visible).map((o): ObjetVu => ({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), peutMontrer: true, montre: montres.has(o.id) }));
+  const objets = [...deposes, ...deLeurs.flat()].sort((a, b) => a.le.localeCompare(b.le)).slice(-160);
+  const univers = Boolean(monde?.references.decor);
+  const cle = univers ? await poserProfil(supabase, moi.id) : "";
+  return { etagere: { image: mienne?.neutre ?? "", objets, montres: objets.filter((o) => o.montre).length, univers, ...(cle ? { cle } : {}) } };
+}
+
+/**
+ * ✋ DÉPOSER À LA MAIN (« ＋ Déposer ») : sur la sienne (sans `avec`), ou sur celle qu'il partage avec un proche (`avec` :
+ * sa clé ; `pour` : moi, lui, ou nous deux — l'autre le verra se poser dans leur conversation). Douze par jour au plus,
+ * toutes étagères confondues ; quarante souvenirs sur une étagère partagée, quatre-vingts sur la sienne.
+ */
+export async function deposerSurEtagere(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ok?: true; id?: string }>> {
+  if (!etagereAllumee()) return { error: "L’étagère n’est pas ouverte.", statut: 404 };
+  const jour = jourParis();
+  const moi8 = qui8(moi.id);
+  const perso = await lirePerso(supabase, moi.id);
+  const depots = perso.depots?.jour === jour ? perso.depots.n : 0;
+  if (depots >= DEPOT.parJour) return { error: "Tu as déjà beaucoup déposé aujourd’hui : la suite demain 🙂", statut: 429 };
+  const le = new Date().toISOString();
+  const id = nouvelId();
+  const compter = (f: FichePerso): FichePerso => ({ ...f, depots: { jour, n: depots + 1 } });
+  const deja = (objets: ObjetGarde[], o: { genre: string; titre: string }) => objets.some((x) => visible(x) && x.genre === o.genre && aPlat(x.titre) === aPlat(o.titre));
+  if (p.avec != null && s(p.avec)) {
+    const q = await avecQui(supabase, moi, p.avec);
+    if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
+    const d = depotValide(p, { aujourdhui: jour, passe: motPasse, moi8, lui8: qui8(q.h) });
+    if ("erreur" in d) return { error: d.erreur, statut: 400 };
+    const f = await lireEtagere(supabase, q.pair);
+    if (deja(f.objets, d.objet)) return { error: "C’est déjà sur votre étagère.", statut: 409 };
+    if (f.objets.filter(visible).length >= ETAGERE.max) return { error: "Votre étagère est pleine : retires-en un souvenir d’abord.", statut: 409 };
+    const o: ObjetGarde = { ...d.objet, id, message: `depot-${id}`, le, etat: "actif" };
+    // (lui l'a déjà vu : il ne s'envole que chez l'autre)
+    const vus = [...(f.vus?.[moi8] ?? []), id].slice(-ETAGERE.vusGardes);
+    if (!(await ecrireEtagere(supabase, q.pair, { ...f, objets: [...f.objets, o], vus: { ...(f.vus ?? {}), [moi8]: vus } }))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+    await ecrirePerso(supabase, moi.id, compter(perso));
+    await noterStat(supabase, "deposes");
+    return { ok: true, id };
+  }
+  const d = depotValide(p, { aujourdhui: jour, passe: motPasse, moi8 });
+  if ("erreur" in d) return { error: d.erreur, statut: 400 };
+  if (deja(perso.objets, d.objet)) return { error: "C’est déjà sur ton étagère.", statut: 409 };
+  if (perso.objets.filter(visible).length >= DEPOT.perso) return { error: "Ton étagère est pleine : retires-en un souvenir d’abord.", statut: 409 };
+  const o: ObjetGarde = { ...d.objet, id, message: `depot-${id}`, le, etat: "actif" };
+  const montres = p.montre === true && perso.montres.length < DEPOT.montres ? [...perso.montres, id] : perso.montres;
+  if (!(await ecrirePerso(supabase, moi.id, compter({ ...perso, objets: [...perso.objets, o].slice(-200), montres })))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  await noterStat(supabase, "deposes");
+  return { ok: true, id };
+}
+
+/**
+ * ✋ SUR « MON ÉTAGÈRE » :
+ *   · `montrer` (+ `id`, `oui`, et `avec` pour un souvenir d'une étagère partagée) : ses visiteurs le voient — seulement
+ *     ce qui ne concerne que lui (quarante au plus) ;
+ *   · `cacher` (+ `id`, `avec`) : un souvenir d'une étagère partagée qu'il ne garde plus chez lui (il reste sur la leur) ;
+ *   · ce qu'il a déposé sur la sienne (`mien: true`) : `retirer`, `date` (+ `quand`), `tenue`, `annuler-tenue`, `reussi`.
+ */
+export async function agirSurMonEtagere(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ok?: true }>> {
+  if (!etagereAllumee()) return { error: "L’étagère n’est pas ouverte.", statut: 404 };
+  const moi8 = qui8(moi.id);
+  const id = s(p.id);
+  const perso = await lirePerso(supabase, moi.id);
+  const ecrire = async (g: FichePerso): Promise<Resultat<{ ok?: true }>> => ((await ecrirePerso(supabase, moi.id, g)) ? { ok: true } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 });
+  const PARTI = { error: "Ce souvenir n’est plus sur ton étagère.", statut: 404 };
+  /** Le souvenir d'une étagère partagée, s'il le concerne. */
+  const partage = async () => {
+    const q = await avecQui(supabase, moi, p.avec);
+    if (!q.pair) return null;
+    return (await lireEtagere(supabase, q.pair)).objets.find((o) => o.id === id && meConcerne(o, moi8)) ?? null;
+  };
+  if (p.action === "montrer") {
+    if (p.oui === false) return ecrire({ ...perso, montres: perso.montres.filter((x) => x !== id) });
+    const o = perso.objets.find((x) => x.id === id && visible(x)) ?? (p.avec ? await partage() : null);
+    if (!o) return PARTI;
+    if (o.concerne !== moi8) return { error: "Ce souvenir est à vous deux : il reste entre vous.", statut: 403 };
+    if (perso.montres.includes(id)) return { ok: true };
+    if (perso.montres.length >= DEPOT.montres) return { error: `Tu en montres déjà ${DEPOT.montres} : caches-en un d’abord.`, statut: 409 };
+    return ecrire({ ...perso, montres: [...perso.montres, id] });
+  }
+  if (p.action === "cacher") {
+    if (!(await partage())) return PARTI;
+    return ecrire({ ...perso, caches: [...new Set([...perso.caches, id])].slice(-300), montres: perso.montres.filter((x) => x !== id) });
+  }
+  const o = perso.objets.find((x) => x.id === id && visible(x));
+  if (!o) return PARTI;
+  const le = new Date().toISOString();
+  const changer = (x: Partial<ObjetGarde>) => ecrire({ ...perso, objets: perso.objets.map((y) => (y === o ? { ...y, ...x, change: { le, par8: moi8 } } : y)) });
+  if (p.action === "retirer") return ecrire({ ...perso, objets: perso.objets.filter((y) => y !== o), montres: perso.montres.filter((x) => x !== id) });
+  if (p.action === "date") {
+    const quand = jourValide(p.quand);
+    const e = quand ? ecartJours(jourParis(), quand) : -1;
+    if (!quand || e < 0 || e > ETAGERE.joursMax) return { error: "Choisis un jour à venir (dans l’année).", statut: 400 };
+    if (!(o.genre === "date" || o.genre === "promesse") || o.etat !== "actif") return { error: "Ce souvenir n’a pas de date.", statut: 400 };
+    return changer({ quand, ditQuand: undefined });
+  }
+  if (p.action === "tenue") {
+    if (o.genre !== "promesse" || (o.etat !== "actif" && o.etat !== "sommeil")) return { error: "Cette promesse est déjà tenue.", statut: 400 };
+    return changer({ etat: "tenue" });
+  }
+  if (p.action === "annuler-tenue") {
+    if (o.etat !== "tenue" || Date.now() - (Date.parse(o.change?.le ?? "") || 0) > ETAGERE_E2.annuler) return { error: "Elle ne peut plus être annulée.", statut: 400 };
+    return changer({ etat: "actif" });
+  }
+  if (p.action === "reussi") {
+    if (!issueAttendue(o, jourParis())) return { error: "Le jour n’est pas encore arrivé.", statut: 400 };
+    const i = appliquerIssues(perso.objets, [{ id: o.id, resultat: "reussi" }], { aujourdhui: jourParis(), le, par8: moi8 });
+    return ecrire({ ...perso, objets: i.objets });
+  }
+  return { error: "Demande incomplète.", statut: 400 };
+}
+
+/**
+ * 👀 CE QUE VOIENT SES VISITEURS (la page de visite de son univers, `visiterUnivers`) : les souvenirs qu'il a choisi de
+ * montrer — l'emoji, le titre, le détail ; jamais la phrase dite, ni avec qui.
+ */
+export async function etagereVitrine(supabase: Supabase, h: string): Promise<VitrineObjet[]> {
+  if (!etagereAllumee()) return [];
+  const perso = await lirePerso(supabase, h);
+  if (!perso.montres.length) return [];
+  const montres = new Set(perso.montres);
+  const caches = new Set(perso.caches);
+  const h8 = qui8(h);
+  const jour = jourParis();
+  const etageres = await sesEtageres(supabase, h);
+  const choisis = [...perso.objets.filter((o) => montres.has(o.id)), ...etageres.flatMap(({ f }) => f.objets.filter((o) => montres.has(o.id) && !caches.has(o.id) && o.concerne === h8))];
+  const objets = vieillir(choisis, jour).objets.filter(visible);
+  if (!objets.length) return [];
+  const prenom = await prenomDe(supabase, h, "Quelqu’un");
+  return objets
+    .sort((a, b) => b.le.localeCompare(a.le))
+    .slice(0, DEPOT.montres)
+    .map((o) => vitrineDe(o, prenom, jour));
 }

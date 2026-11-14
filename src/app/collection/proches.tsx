@@ -32,7 +32,7 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
-import { CarteEtagere, CarteNote, CartePoussiere, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
+import { CarteEtagere, CarteNote, CartePoussiere, CarteRallume, EtagereChezMoi, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
 import { idees, type CarteVue, type ObjetVu } from "@/lib/direct/etagere";
 import { versLeStudio } from "./vers-le-studio";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
@@ -453,6 +453,8 @@ export function Proches({
                 <i />
               </div>
             )}
+            {/* 📚 (l'étagère, lot E4) MON étagère : ce qui me concerne dans toutes mes conversations, et ce que j'y dépose */}
+            <EtagereChezMoi actif={visible} />
             {/* ☀️ (l'étagère, lot E2) les rappels du matin : ma figurine me les dit, sous la fenêtre de mon univers */}
             <RappelsDuMatin actif={visible} onParler={(c) => ouvrirFil(c, true)} />
             {/* 👋 les demandes des inconnus qui ont frappé : l'ajouter, voir son univers, ignorer */}

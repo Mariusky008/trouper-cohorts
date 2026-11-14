@@ -13,7 +13,9 @@
  *     saura qui est passé) et, entre proches, « 🎁 Offrir » (un objet, un mot : le paquet s'envole et se pose à ses
  *     pieds ; il le découvrira en ouvrant ClikMe, dans « Chez moi ») ;
  *   · entre proches : « 🔑 Les clés de son univers » (ses phrases) ; « 🚩 Signaler » ; un univers fermé, ou réservé à
- *     ses proches : on le dit, simplement.
+ *     ses proches : on le dit, simplement ;
+ *   · 📚 (étagère, lot E4) « Son étagère » : les souvenirs qu'il a choisi de montrer (l'emoji, le titre, le jour ; jamais
+ *     la phrase dite, ni avec qui).
  *
  * FICHIER NAVIGATEUR.
  */
@@ -257,6 +259,22 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
 
       {vue.proposition && <p className="uv-proposition">{vue.proposition}</p>}
 
+      {/* 📚 (étagère, lot E4) ce qu'il a choisi de montrer de son étagère */}
+      {vue.etagere?.length > 0 && (
+        <section className="uv-etagere" aria-label={vue.chezSoi ? "Ce que tu montres de ton étagère" : `L’étagère de ${vue.prenom}`}>
+          <b className="uv-etagere-titre">📚 {vue.chezSoi ? "Ce que tu montres de ton étagère" : `L’étagère de ${vue.prenom}`}</b>
+          <ul className="uv-etagere-rang">
+            {vue.etagere.map((o) => (
+              <li key={o.id} data-objet={o.id}>
+                <span aria-hidden="true">{o.emoji}</span>
+                <b>{o.titre}</b>
+                {o.detail && <small>{o.detail}</small>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {!vue.chezSoi && vue.proche && vue.cles.length > 0 && (
         <button type="button" className="uv-bouton clair" aria-pressed={cles} onClick={() => setCles((x) => !x)}>
           🔑 Les clés de son univers
@@ -409,6 +427,15 @@ const STYLES = `
 .uv-liste li{border-radius:12px;padding:9px 12px;background:rgba(255,250,240,.88);display:flex;flex-direction:column;gap:2px}
 .uv-liste small{color:#5c4126}
 .uv-pied{display:flex;justify-content:space-between;width:100%;max-width:460px}
+.uv-etagere{width:100%;max-width:460px;box-sizing:border-box;padding:12px 12px 4px;border-radius:18px;background:linear-gradient(180deg,#3d2412,#2a170b);border:5px solid #4d2e16;box-shadow:inset 0 0 30px rgba(0,0,0,.55);color:#FFF4E6}
+.uv-etagere-titre{display:block;margin:0 2px 6px;font-size:15px;font-weight:900;color:#F2C46B}
+.uv-etagere-rang{position:relative;margin:0;padding:0 0 16px;list-style:none;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-around;gap:10px 4px}
+.uv-etagere-rang::after{content:"";position:absolute;left:-12px;right:-12px;bottom:4px;height:10px;background:linear-gradient(180deg,#a5683a,#6b3f1f);box-shadow:0 6px 8px -3px rgba(0,0,0,.7)}
+.uv-etagere-rang li{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:3px;width:31%;max-width:120px;text-align:center}
+.uv-etagere-rang span{font-size:36px;line-height:1;filter:drop-shadow(0 5px 3px rgba(0,0,0,.55))}
+.uv-etagere-rang b{padding:1px 7px 2px;border-radius:3px;background:#fbf0d9;color:#2b1a0c;font-size:13.5px;font-weight:800;line-height:1.15;rotate:-2deg;overflow-wrap:anywhere}
+.uv-etagere-rang li:nth-child(2n) b{rotate:2deg}
+.uv-etagere-rang small{font-size:11.5px;color:#E9D5DD}
 .uv-lien{border:0;background:none;color:#4a3017;font:inherit;font-size:14px;text-decoration:underline;padding:6px;cursor:pointer}
 @keyframes uv-entre{from{opacity:0;translate:30% 0}to{opacity:1;translate:0 0}}
 @keyframes uv-tremble{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px) rotate(-.6deg)}30%{transform:translateX(5px) rotate(.5deg)}45%{transform:translateX(-4px)}60%{transform:translateX(3px)}75%{transform:translateX(-1px)}}

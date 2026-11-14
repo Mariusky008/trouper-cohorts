@@ -238,5 +238,54 @@ ok(!E.alertesEtagere({ ...E.STATS_VIDES, notes: 4, paires: 3, retires: 0, rappel
 const al = E.alertesEtagere({ ...E.STATS_VIDES, notes: 10, paires: 2, retires: 3, dates: 2, rappels: 10, suivis: 1 });
 ok(al.length === 4, `les quatre seuils : trop de souvenirs, trop de retirés, trop de dates changées, des rappels pas suivis (${al.length})`);
 
+// ═══ 🏡 LOT E4 : MON ÉTAGÈRE, DÉPOSER À LA MAIN ═══
+// (dans son bloc : ses noms ne croisent pas ceux d'au-dessus)
+{
+  const td = (t, deux = false) => E.titreDepose(t, deux);
+  ok(td("Mon permis").titre === "Le permis" && td("Mon permis").titreToi === "Ton permis", "« Mon permis » : rangé « Le permis », « Ton permis » pour celui que ça concerne");
+  ok(td("ma finale").titre === "La finale" && td("ma finale").titreToi === "Ta finale" && td("Mes pivoines").titre === "Les pivoines" && td("Mes pivoines").titreToi === "Tes pivoines", "« ma finale », « Mes pivoines » : « La finale » / « Ta finale », « Les pivoines » / « Tes pivoines »");
+  ok(td("Son anniversaire").titre === "L’anniversaire" && td("Son anniversaire").titreToi === "Ton anniversaire" && td("Ton amie Zoé").titre === "L’amie Zoé", "devant une voyelle : « L’anniversaire » (« Ton anniversaire »)");
+  ok(td("Mon resto", true).titre === "Le resto" && !td("Mon resto", true).titreToi && td("Notre resto", true).titre === "Notre resto" && td("Le concert").titre === "Le concert" && !td("Le concert").titreToi, "pour nous deux : « Le resto » (sans « ton ») ; « Notre resto » reste ; « Le concert » reste");
+  const AUJ4 = "2026-11-14";
+  const cd = { aujourdhui: AUJ4, passe, moi8: MOI };
+  const dv = (x, c = cd) => E.depotValide(x, c);
+  const dp1 = dv({ genre: "date", titre: "Mon concert", emoji: "🎤", quand: "2026-11-20" });
+  ok(dp1.objet && dp1.objet.genre === "date" && dp1.objet.sorte === "evenement" && dp1.objet.titre === "Le concert" && dp1.objet.titreToi === "Ton concert" && dp1.objet.concerne === MOI && dp1.objet.de8 === MOI && dp1.objet.depose === true && dp1.objet.citation === "" && dp1.objet.quand === "2026-11-20" && dp1.objet.emoji === "🎤", `une date déposée sur mon étagère (${JSON.stringify(dp1)})`);
+  ok(dv({ genre: "date", sorte: "fete", titre: "Mon anniversaire", emoji: "🎂", quand: "1990-03-12" }).objet?.quand === "2027-03-12" && dv({ genre: "date", sorte: "fete", titre: "La fête", quand: "1990-11-14" }).objet?.quand === "2026-11-14", "« tous les ans », tapé avec l'année de naissance : sa prochaine fois (aujourd'hui compris)");
+  ok(dv({ genre: "envie", titre: "Le saut en parachute", emoji: "🍺" }).objet?.genre === "gout" && dv({ genre: "envie", titre: "Le saut en parachute" }).objet?.nuance === "envie" && dv({ genre: "envie", titre: "Le saut en parachute", emoji: "🍺" }).objet?.emoji === "💛", "une envie : le genre « goût », sa nuance ; un emoji hors du catalogue : celui du genre");
+  ok(dv({ genre: "promesse", titre: "Le resto" }).objet && !dv({ genre: "promesse", titre: "Le resto" }).objet.quand && dv({ genre: "promesse", titre: "Le resto", quand: "2026-11-21" }).objet?.quand === "2026-11-21", "une promesse : un jour, s'il est dit");
+  const refuse = (x, pourquoi, re) => {
+    const r = dv(x);
+    ok(Boolean(r.erreur) && (!re || re.test(r.erreur)), `refusé : ${pourquoi} (« ${r.erreur} »)`);
+  };
+  refuse({ titre: "Le concert" }, "sans dire ce que c'est");
+  refuse({ genre: "date", titre: "Le concert" }, "une date sans jour", /jour/);
+  refuse({ genre: "date", titre: "Le concert", quand: "2026-11-13" }, "un jour passé", /jour/);
+  refuse({ genre: "date", titre: "Le concert", quand: "2028-01-01" }, "un jour à plus de 400 jours", /jour/);
+  refuse({ genre: "gout", titre: "X" }, "un nom d'une lettre", /nom/);
+  refuse({ genre: "gout", titre: "Le plus beau concert de toute ma vie" }, "un nom de plus de 28 signes", /28/);
+  refuse({ genre: "gout", titre: "Les mojitos" }, "de l'alcool", /ne passe pas/);
+  refuse({ genre: "gout", titre: "Appelle le 0612345678" }, "un numéro", /ne passe pas/);
+  refuse({ genre: "date", titre: "Le dentiste", quand: "2026-11-20" }, "un sujet sensible (la santé)", /bons moments/);
+  const cp = { ...cd, lui8: LEA };
+  ok(dv({ genre: "date", sorte: "epreuve", titre: "Ton permis", quand: "2026-11-19", pour: "lui" }, cp).objet?.concerne === LEA && dv({ genre: "date", sorte: "epreuve", titre: "Ton permis", quand: "2026-11-19", pour: "lui" }, cp).objet?.titre === "Le permis", "sur la nôtre, pour lui : « Ton permis » se range « Le permis », il le concerne");
+  ok(dv({ genre: "gout", titre: "Notre chanson" }, cp).objet?.concerne === "deux" && dv({ genre: "gout", titre: "Le resto", pour: "moi" }, cp).objet?.concerne === MOI && dv({ genre: "gout", titre: "Le resto", pour: "lui" }, cd).objet?.concerne === MOI, "pour nous deux par défaut ; pour moi ; sur la mienne, toujours moi");
+  const ob4 = (x) => ({ id: "x", genre: "date", emoji: "🎤", titre: "Le concert", titreToi: "Ton concert", concerne: MOI, citation: "", de8: MOI, message: "depot-x", le: "2026-11-10T10:00:00.000Z", etat: "actif", depose: true, ...x });
+  const rm = E.rappelsMiens([ob4({ id: "a", sorte: "evenement", quand: AUJ4 }), ob4({ id: "b", sorte: "epreuve", quand: AUJ4 }), ob4({ id: "c", sorte: "evenement", quand: "2026-11-15" }), ob4({ id: "d", genre: "promesse", quand: AUJ4 }), ob4({ id: "e", quand: AUJ4, etat: "passe" })], AUJ4);
+  ok(rm.map((r) => `${r.objet.id}:${r.cas}`).join(",") === "a:mien,b:encourage,d:mien", `mes rappels : le jour venu (une épreuve : l'encouragement), pas avant, pas ce qui est parti (${rm.map((r) => `${r.objet.id}:${r.cas}`)})`);
+  ok(E.phraseRappel("mien", "Ton concert", "🎤") === "Aujourd’hui : ton concert 🎤 Tu l’avais posé sur ton étagère 📌" && E.notifRappel("mien", "Ton concert", "🎤").titre === "📌 Aujourd’hui : ton concert 🎤", "« Aujourd'hui : ton concert 🎤 Tu l'avais posé sur ton étagère 📌 », et la notification");
+  ok(E.garderRappels([...rm, { cas: "evenement", objet: ob4({ id: "f" }), rang: 4 }]).map((r) => r.cas).join() === "encourage,mien,mien", "deux rappels au plus le matin, les miens d'abord (et l'encouragement, à part)");
+  ok(E.detailPour(ob4({ genre: "blague", titre: "Le canard" }), MOI, "Léa", AUJ4) === "ta blague" && E.detailPour(ob4({ genre: "blague", titre: "Le canard", concerne: LEA }), MOI, "Léa", AUJ4) === "la blague de Léa", "une blague à moi : « ta blague » ; à Léa : « la blague de Léa »");
+  const vt = E.vitrineDe(ob4({ genre: "gout", nuance: "aime", emoji: "💐", titre: "Les pivoines", titreToi: "Tes pivoines" }), "Inès", AUJ4);
+  ok(vt.titre === "Les pivoines" && vt.detail === "Inès adore" && vt.rayon === "aime" && !("citation" in vt) && !("de" in vt) && Object.keys(vt).join() === "id,emoji,titre,detail,rayon", `ce que voit un visiteur : « Les pivoines · Inès adore », ni la phrase ni avec qui (${JSON.stringify(vt)})`);
+  ok(E.meConcerne({ etat: "actif", concerne: MOI }, MOI) && E.meConcerne({ etat: "tenue", concerne: "deux" }, MOI) && !E.meConcerne({ etat: "actif", concerne: LEA }, MOI) && !E.meConcerne({ etat: "retire", concerne: MOI }, MOI), "sur mon étagère : ce qui me concerne (ou nous deux), pas ce qui concerne l'autre, pas ce qui est retiré");
+  const deposes3 = [1, 2, 3].map((k) => ob4({ id: `d${k}`, genre: "gout", titre: `Le goût ${k}`, le: `${AUJ4}T09:0${k}:00.000Z`, message: `depot-d${k}` }));
+  const rg = E.ranger(deposes3, [{ genre: "gout", emoji: "💐", titre: "Les pivoines", concerne: LEA, citation: "j'adore les pivoines", de8: LEA, message: "m9", nuance: "aime" }], { aujourdhui: AUJ4, le: `${AUJ4}T10:00:00.000Z`, nouvelId: () => "neuf" });
+  ok(rg.neufs.join() === "neuf", "trois déposés à la main aujourd'hui : les figurines peuvent encore noter (leurs trois par jour sont à elles)");
+  ok(E.STATS_VIDES.deposes === 0 && E.GENRES_DEPOT.length === 5 && E.SORTES_DEPOT.length === 3 && E.RAYONS_MIENS.map((r) => r.nom).join("|") === "Mes fiertés|À venir|Ce que j’aime", "les déposés se comptent ; cinq genres, trois sortes de jour ; mes trois rayons");
+  const textesE4 = [E.REGLES_MON_ETAGERE, ...E.GENRES_DEPOT.flatMap((g) => [g.nom, g.indice]), ...E.SORTES_DEPOT.map((x) => x.nom), E.phraseRappel("mien", "Ton concert", "🎤"), E.notifRappel("mien", "Ton concert", "🎤").corps];
+  ok(textesE4.every((x) => !GENRE.test(x) && passe(x) && !/exemple/i.test(x)), "les mots du lot E4 : sans accord, sans le mot interdit, sans alcool");
+}
+
 console.log(echecs ? `\n${echecs} échec(s)` : "\nles règles de l'étagère tiennent ✓");
 process.exit(echecs ? 1 : 0);

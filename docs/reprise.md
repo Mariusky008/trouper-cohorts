@@ -149,6 +149,10 @@ par une autre session, mise en pause ; le propriétaire a confié tout le chanti
   relances, la ligne de « Chez moi ».
   **E3 « La poussière et les idées » aussi** (9.0 unquinquagies 🕸️) : la poussière, se rallumer, les idées de
   cadeau, le mème de la blague, la page des mesures. **Tout le cahier est construit.**
+  **E4 « Mon étagère »** (14 novembre, demandé par le propriétaire ; 9.0 quaterquinquagies 📚) : ce qui me concerne
+  dans toutes mes conversations, rangé aussi chez moi (la planche sous la fenêtre de mon univers, sa page) ;
+  « ＋ Déposer » sur la mienne et sur la nôtre ; « 👀 Montrer à mes visiteurs ». Reste : ces souvenirs sur les étagères
+  de la maison en panorama (avec la session de « l'univers qui grandit »).
 - **Validé** (13 novembre) : toutes les phrases des figurines, et tous les choix des sections 16 et 16 bis du cahier.
 - **La suite** : ses retours sur son iPhone ; les mesures, le 20 novembre (un rappel est programmé dans cette session) :
   la page admin des mèmes, « 📚 L'étagère » — il copie les chiffres, on règle la consigne du modèle et les seuils.
