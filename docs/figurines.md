@@ -3280,6 +3280,44 @@ environ 0,40 $ (Google, Gemini Omni Flash : quatre secondes en 720p).
   l'espace devant vide, sans voix ; « en train », puis faite ; dans « Ma maison » et chez Sam en visite ; son décor
   retouché : périmée, plus montrée ; la refaire).
 
+### 9.0 quattuorsexagies 📷 Écrire, partager — lot M2, le serveur : les photos (14 novembre)
+
+Le propriétaire : « ensuite lance M2, le serveur d'abord ». Le cahier : `docs/univers/messages-ecrits.md`, section 5.
+**L'écran vient ensuite** : rien ne change encore à l'écran. Les fichiers : `lib/direct/photo.ts` (les règles, partagé)
+et `photo-serveur.ts`.
+
+- **Le chemin d'une photo** (`POST /api/direct/proches`) :
+  - `{ action: "photo-depot", cle }` : une adresse signée pour SA photo seule, `fils/<paire>/p/<qui>-<id>-brut` — elle
+    part tout droit du téléphone au seau, déjà réduite et sans ses métadonnées (l'écran le fera) ;
+  - `{ action: "photo", cle, id, legende?, tete? }` : le serveur la relit (5 Mo au plus) et la **réencode** (tournée
+    comme elle a été prise, 1 600 pixels au plus, WebP) : **rien ne survit de l'original**, ni la position GPS, ni
+    l'appareil, ni l'auteur ;
+  - puis la **modération** d'OpenAI la contrôle, la légende aussi (`omni-moderation-latest`, gratuit) : refusée, elle
+    est effacée et ne part pas (« Cette photo ne peut pas partir. ») ; **sans service joignable, elle ne part pas non
+    plus** (« La photo n'a pas pu être vérifiée. Réessaie dans un instant. ») — gardée, il peut réessayer ;
+  - acceptée : rangée (`fils/<paire>/p/<id>.webp`), le message posé dans le même dossier que les vocaux et les écrits
+    (`{ genre: "photo", media: { chemin, l, h }, legende?, tete }`).
+- **La clé de la modération** : `OPENAI_MODERATION_API_KEY` (et `_BASE_URL`, `_MODEL`), sinon celle du talkie
+  (`OPENAI_TALKIE_API_KEY`) : **rien à configurer de plus** chez l'hébergeur.
+- **Dans le fil** : `genre: "photo"`, son adresse signée (une heure) et ses dimensions, la légende (200 signes), une
+  seule réplique (la légende, dans la tête choisie : la sienne, sinon les règles des vocaux), le temps que la figurine
+  la montre (4 s).
+- **La notification** : « 📷 Léa t'a envoyé une photo » (et la légende) ; la ligne de « Chez moi » : « 📷 La légende »,
+  ou « 📷 Une photo » ; les non-lus la comptent.
+- **Les figurines lisent la légende** (l'étagère, l'aparté, le mot de la fin), **jamais l'image**.
+- **Trente photos par personne et par jour** ; une légende avec un mot interdit est refusée (la phrase des vocaux).
+- **Effacer** (la sienne, dans les 24 heures) l'efface pour les deux, avec sa photo.
+- **Signaler** : elle disparaît chez celui qui signale. **L'équipe la voit** dans `/admin/humain/figurines-clients`,
+  « Messages signalés » — nouveau, pour tous les messages de conversation (un vocal, un écrit, une photo) :
+  « Remettre » (il revient chez celui qui l'avait signalé) ou « Effacer pour les deux » (avec sa voix ou sa photo).
+- **La mesure** (« ✍️ Les messages », page admin des mèmes) : les photos envoyées, refusées par la modération, pas
+  vérifiées faute de service, et ce qu'elles pèsent.
+- **Le frein** : `CLIKME_PHOTOS=0` (plus de photo ; celles qui sont parties restent visibles ; `fil.photos` faux).
+- **Les essais** : `scripts/essai-photos-route.mjs` (la fausse modération du faux Supabase : une image de 321 pixels de
+  large est refusée, de 322 le service ne répond pas), et le vérificateur `scripts/verifier-messages.mjs`.
+- **Pas dans ce lot** : les dépôts jamais envoyés (`…-brut`) restent dans le seau ; « 🖼️ La mettre dans mon
+  univers ? » relève de la session de l'univers.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

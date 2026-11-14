@@ -269,7 +269,8 @@ export async function prevenirDUneParole(
   const n = Number((await lireJson<{ n?: number }>(supabase, compte)).n) || 0;
   if (n >= PAROLES_PAR_JOUR) return "rien";
   await ecrireJson(supabase, compte, { n: n + 1 });
-  // ✍️ (lot M1) un message écrit : « ✍️ Léa t'a écrit », « 🔗 Léa t'a envoyé un lien » (`notifEcrit`, `ecrit.ts`)
+  // ✍️ (lot M1) un message écrit : « ✍️ Léa t'a écrit », « 🔗 Léa t'a envoyé un lien » (`notifEcrit`, `ecrit.ts`) ;
+  // 📷 (lot M2) une photo : « 📷 Léa t'a envoyé une photo » (`notifPhoto`, `photo.ts`)
   const notif = o.ecrit ? { titre: o.ecrit.titre, corps: o.ecrit.corps, url: o.url, tag: `parole-${o.cle}` } : notifParole(prenom, o.url, o.cle, o.facon, o.panneau);
   const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
   const morts = abs.filter((_, i) => issues[i] === "mort");

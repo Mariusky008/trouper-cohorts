@@ -20,6 +20,7 @@
  */
 import { sentimentValide, type Expressions, type Sentiment } from "./ma-figurine";
 import { texteLuDeLEcrit } from "./ecrit";
+import { texteLuDeLaPhoto } from "./photo";
 
 /** Un message : 20 secondes au plus — une petite scène, pas un monologue. */
 export const PAROLE_MAX_S = 20;
@@ -42,8 +43,12 @@ export type RepliqueProposee = { de: number; a: number; texte: string; propositi
  * ✍️ (lot M1, `ecrit.ts`) `genre: "ecrit"` : un message écrit — pas de voix (`son` vide) ; `texte` en entier ; une seule
  * réplique, les 140 premiers signes dans la tête choisie, le temps que la figurine le dise ; `lien` : son aperçu, quand
  * le serveur l'a préparé (l'image, recopiée chez nous) — `connu` : un site de musique ou de vidéo connu (`sorte`).
+ * 📷 (lot M2, `photo.ts`) `genre: "photo"` : une photo — pas de voix ; `photo` (son adresse signée, ses dimensions) ;
+ * `texte` : sa légende ; une seule réplique (la légende, dans la tête choisie), le temps que la figurine la montre.
  */
-export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit"; texte?: string; lien?: LienDuMessage };
+export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage };
+/** 📷 (lot M2) la photo d'un message : son adresse signée (une heure), ses dimensions. */
+export type PhotoDuMessage = { url: string; l: number; h: number };
 export type LienDuMessage = { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" };
 /** Une figurine, de quoi la faire parler : ses images de tous les jours, et ses têtes faites. */
 /**
@@ -67,7 +72,7 @@ export type ProcheVivant = {
   nonLus: number;
   lien: LienProche;
   /** son dernier message (`meme` : c'était un mème, lot 4 ; `ecrit` : un message écrit, lot M1) */
-  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean; ecrit?: boolean };
+  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean; ecrit?: boolean; photo?: boolean };
   venu?: boolean;
   humeur?: Sentiment;
   imageHumeur?: string;
@@ -88,8 +93,11 @@ export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi;
 // (`FigurineVue.chez` : seulement la sienne, pour la vidéo qu'il envoie par WhatsApp — « chez celui qui envoie », lot 5b)
 /** 🎭 Un mème envoyé dans leur conversation (la nouvelle interface, lot 4, `memes-proches-serveur.ts`). */
 export type MemeFil = { id: string; moi: boolean; le: string; image: string; texte?: string; video?: string; lien: string; nouveau?: boolean };
-/** (`ecrire` : ✍️ lot M1 — on peut lui écrire ; `false` quand le frein `CLIKME_ECRIT=0` est tiré : le micro seulement) */
-export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[]; ecrire?: boolean };
+/**
+ * (`ecrire` : ✍️ lot M1 — on peut lui écrire ; `false` quand le frein `CLIKME_ECRIT=0` est tiré : le micro seulement ;
+ * `photos` : 📷 lot M2 — on peut lui envoyer une photo ; `false` : `CLIKME_PHOTOS=0`)
+ */
+export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[]; ecrire?: boolean; photos?: boolean };
 
 export const cleValide = (x: unknown): string | null => (typeof x === "string" && /^[a-f0-9]{16}$/.test(x) ? x : null);
 export const texteDuMessage = (r: readonly Replique[]) =>
@@ -102,8 +110,10 @@ export const texteDuMessage = (r: readonly Replique[]) =>
  * 👀 CE QUE LES FIGURINES LISENT D'UN MESSAGE (l'aparté, le mot de la fin, l'étagère) : d'un vocal, ses mots transcrits ;
  * (lot M1) d'un message écrit, son texte (et d'un lien, son titre seulement).
  */
-export function texteLuDuMessage(f: { genre?: unknown; texte?: unknown; lien?: { titre?: unknown } | null; repliques?: unknown; duree?: unknown }): string {
+export function texteLuDuMessage(f: { genre?: unknown; texte?: unknown; lien?: { titre?: unknown } | null; legende?: unknown; repliques?: unknown; duree?: unknown }): string {
   if (f.genre === "ecrit") return texteLuDeLEcrit(f);
+  // 📷 (lot M2) d'une photo, sa légende seulement : jamais l'image
+  if (f.genre === "photo") return texteLuDeLaPhoto(f);
   return texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
 }
 

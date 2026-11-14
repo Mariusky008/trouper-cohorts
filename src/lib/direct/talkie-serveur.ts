@@ -11,6 +11,8 @@
  *     `<habitant>/reglages.json` = { presence: false } s'il le coupe ;
  *     (lot M1, `ecrit-serveur.ts`) un message ÉCRIT se range dans le même dossier : `{ id, de, le, genre: "ecrit",
  *     texte, tete, lien? }` — l'image de l'aperçu d'un lien : `fils/<a>_<b>/a/<id>.webp` ;
+ *     (lot M2, `photo-serveur.ts`) une PHOTO aussi : `{ id, de, le, genre: "photo", media: { chemin, l, h }, legende?,
+ *     tete }` — la photo, réencodée et contrôlée : `fils/<a>_<b>/p/<id>.webp` (`<id>-brut` le temps du contrôle) ;
  *   · `<habitant>/paroles-cachees.json` = les messages qu'il a signalés (il ne les voit plus) ;
  *     `moderation/paroles/<id>.json` = le signalement, pour l'équipe.
  * Un proche se désigne par sa clé de profil (`cleProfil`, celle d'« Autour ») : jamais par son identifiant.
@@ -57,6 +59,7 @@ import { memesDuFil, memesRanges } from "./memes-proches-serveur";
 import { decorDuMoment } from "./saison-serveur";
 import { humeurValide } from "./rituel";
 import { STATS_MESSAGES_VIDES, dureeDeLecture, ligneDeLEcrit, texteDeBulle, type StatsJourMessages } from "./ecrit";
+import { PHOTO, lignePhoto } from "./photo";
 import {
   LIENS_PAR_JOUR,
   LIEN_JOURS,
@@ -117,7 +120,42 @@ const cheminCompteur = (h: string) => `${h}/talkie-jour.json`;
 
 type Fiche = { id: string; de: string; le: string; duree: number; son: string; type: string; repliques: Replique[] };
 /** ✍️ (lot M1) Un message, vocal ou écrit, tel que le seau le garde. */
-export type FicheMessage = Partial<Fiche> & { id?: string; de?: string; le?: string; genre?: "ecrit"; texte?: string; tete?: Sentiment | null; lien?: { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" } };
+export type FicheMessage = Partial<Fiche> & {
+  id?: string;
+  de?: string;
+  le?: string;
+  genre?: "ecrit" | "photo";
+  texte?: string;
+  tete?: Sentiment | null;
+  lien?: { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" };
+  /** 📷 (lot M2) la photo, dans le seau (`fils/<paire>/p/<id>.webp`), et ses dimensions ; sa légende */
+  media?: { chemin: string; l: number; h: number };
+  legende?: string;
+};
+
+/**
+ * 📷 (lot M2) UNE PHOTO, TELLE QU'ELLE SE VOIT : pas de voix ; son adresse signée (une heure) ; une seule réplique (sa
+ * légende, dans la tête choisie), le temps que la figurine la montre ; `texte` : la légende.
+ */
+export async function vueDeLaPhoto(supabase: Supabase, f: FicheMessage, moi: string, nouveau = false): Promise<MessageFil | null> {
+  const chemin = s(f.media?.chemin);
+  if (!s(f.id) || !chemin) return null;
+  const url = await signer(supabase, chemin, 3600);
+  if (!url) return null;
+  const legende = s(f.legende).trim();
+  return {
+    id: s(f.id),
+    moi: f.de === moi,
+    le: s(f.le),
+    duree: PHOTO.montre,
+    son: "",
+    repliques: [{ de: 0, a: PHOTO.montre, texte: legende ? texteDeBulle(legende) : "", tete: sentimentValide(f.tete) ?? null }],
+    genre: "photo",
+    ...(legende ? { texte: legende } : {}),
+    photo: { url, l: Number(f.media?.l) || 0, h: Number(f.media?.h) || 0 },
+    ...(nouveau ? { nouveau: true } : {}),
+  };
+}
 
 /**
  * ✍️ (lot M1) UN MESSAGE ÉCRIT, TEL QU'IL SE VOIT : pas de voix ; une seule réplique (les 140 premiers signes, dans la
@@ -318,10 +356,13 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
         if (d) {
           const m = await lireJson<FicheMessage>(supabase, `${dossierMessages(pair)}/${d.nom}`);
           // ✍️ (lot M1) un message écrit : son début, ou « 🔗 Le titre du lien »
+          // 📷 (lot M2) une photo : « 📷 La légende », ou « 📷 Une photo »
           dernier =
             m.genre === "ecrit"
               ? { texte: ligneDeLEcrit(m), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, ecrit: true }
-              : { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
+              : m.genre === "photo"
+                ? { texte: lignePhoto(m.legende), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, photo: true }
+                : { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
         }
         // 🎭 (lot 4) les mèmes envoyés entre eux : ils comptent dans les non lus ; le dernier, s'il est plus récent
         const memes = await memesRanges(supabase, moi.id, h).catch(() => []);
@@ -398,6 +439,8 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
         if (!f.id || cachees.has(s(f.id))) return null;
         // ✍️ (lot M1) un message écrit, dans le même fil, à son heure
         if (f.genre === "ecrit") return vueDeLEcrit(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
+        // 📷 (lot M2) une photo, à son heure
+        if (f.genre === "photo") return vueDeLaPhoto(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
         if (!f.son) return null;
         const son = await signer(supabase, s(f.son), 3600);
         if (!son) return null;
@@ -823,9 +866,69 @@ export async function signalerParole(supabase: Supabase, moi: Habitant, cle: unk
   const ids = (Array.isArray(c.ids) ? c.ids : []).map(s);
   await Promise.all([
     ecrireJson(supabase, cheminCaches(moi.id), { ids: [...new Set([...ids, i])].slice(-500) }),
-    ecrireJson(supabase, `moderation/paroles/${i}.json`, { par: moi.id, message: `${dossierMessages(pair)}/${nom.nom}`, le: new Date().toISOString() }),
+    ecrireJson(supabase, cheminSignalement(i), { par: moi.id, message: `${dossierMessages(pair)}/${nom.nom}`, le: new Date().toISOString() }),
   ]);
   return { ok: true };
+}
+
+// ─── 🚩 les messages signalés, pour l'équipe (lot M2 : une photo aussi) ─────────────────────────────
+/** Un message signalé, tel que l'équipe le voit (`/admin/humain/figurines-clients`) : ce qui a été envoyé, par qui, et qui l'a signalé. */
+export type MessageSignale = { id: string; genre: "vocal" | "ecrit" | "photo"; de: string; par: string; le: string; texte: string; son?: string; photo?: string };
+const cheminSignalement = (id: string) => `moderation/paroles/${id}.json`;
+/** (le chemin d'un message, tel que le signalement le garde : jamais autre chose qu'un message d'un fil) */
+const cheminDeMessage = (x: unknown) => (typeof x === "string" && /^fils\/[0-9a-f-]+_[0-9a-f-]+\/m\/\d{13}-[0-9a-f]{8}-[a-z0-9]{12}\.json$/.test(x) ? x : null);
+
+/** 🚩 Les messages signalés (vocaux, écrits, photos), les plus récents d'abord : ils ont disparu chez celui qui les a signalés. */
+export async function messagesSignales(supabase: Supabase): Promise<MessageSignale[]> {
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list("moderation/paroles", { limit: 200 });
+  const noms = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => s(f.name)).filter((n) => /^[a-z0-9]{12}\.json$/.test(n));
+  const vus = await Promise.all(
+    noms.map(async (n) => {
+      const sig = await lireJson<{ par?: string; message?: string; le?: string }>(supabase, `moderation/paroles/${n}`);
+      const chemin = cheminDeMessage(sig.message);
+      if (!chemin) return null;
+      const f = await lireJson<FicheMessage>(supabase, chemin);
+      if (!f.id) return null;
+      const genre: MessageSignale["genre"] = f.genre === "ecrit" ? "ecrit" : f.genre === "photo" ? "photo" : "vocal";
+      const [son, photo] = await Promise.all([
+        genre === "vocal" && f.son ? signer(supabase, s(f.son), 3600) : Promise.resolve(""),
+        genre === "photo" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
+      ]);
+      const texte = genre === "ecrit" ? s(f.texte) : genre === "photo" ? s(f.legende) : texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
+      return { id: s(f.id), genre, de: s(f.de), par: s(sig.par), le: s(sig.le), texte, ...(son ? { son } : {}), ...(photo ? { photo } : {}) };
+    }),
+  );
+  const l = vus.filter((x): x is MessageSignale => x !== null);
+  const ids = [...new Set(l.flatMap((x) => [x.de, x.par]).filter(Boolean))];
+  const { data: figs } = ids.length ? await supabase.from("clik_ma_figurine").select("habitant_id, prenom").in("habitant_id", ids) : { data: [] };
+  const prenoms = new Map(((Array.isArray(figs) ? figs : []) as { habitant_id?: string; prenom?: string }[]).map((x) => [s(x.habitant_id), s(x.prenom)]));
+  return l.map((x) => ({ ...x, de: prenoms.get(x.de) || "Sans prénom", par: prenoms.get(x.par) || "Sans prénom" })).sort((a, b) => b.le.localeCompare(a.le));
+}
+
+/**
+ * « Remettre » (signalé à tort : il revient chez celui qui l'avait signalé) ou « Retirer pour de bon » (effacé pour les
+ * deux, avec sa voix, l'image de son aperçu ou sa photo). Le signalement s'en va.
+ */
+export async function modererMessage(supabase: Supabase, id: unknown, geste: unknown): Promise<{ error?: string }> {
+  if (geste !== "remettre" && geste !== "retirer") return { error: "Demande incomplète." };
+  const i = s(id);
+  if (!/^[a-z0-9]{12}$/.test(i)) return { error: "Ce message n’existe plus." };
+  const sig = await lireJson<{ par?: string; message?: string }>(supabase, cheminSignalement(i));
+  const chemin = cheminDeMessage(sig.message);
+  if (!chemin) return { error: "Ce signalement n’existe plus." };
+  if (geste === "remettre") {
+    const par = s(sig.par);
+    if (par) {
+      const c = await lireJson<{ ids?: string[] }>(supabase, cheminCaches(par));
+      await ecrireJson(supabase, cheminCaches(par), { ids: (Array.isArray(c.ids) ? c.ids : []).map(s).filter((x) => x !== i) });
+    }
+  } else {
+    const f = await lireJson<FicheMessage>(supabase, chemin);
+    const { error } = await supabase.storage.from(SEAU_FIGURINES).remove([chemin, s(f.son), s(f.lien?.image), s(f.media?.chemin)].filter(Boolean));
+    if (error) return { error: "Ça n’a pas marché. Réessaie." };
+  }
+  await supabase.storage.from(SEAU_FIGURINES).remove([cheminSignalement(i)]);
+  return {};
 }
 
 // ─── ✍️ (lot M1) ce qu'on mesure des messages, jour par jour ───────────────────────────────────────

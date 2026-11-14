@@ -211,8 +211,9 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   partir. Le cahier : `docs/univers/messages-ecrits.md`. **M1 est construit** : le serveur (`docs/figurines.md`, 9.0
   unsexagies ✍️ : `ecrit.ts`, `ecrit-serveur.ts`, `POST /api/direct/proches` `ecrire`, `effacer`) et l'écran (9.0
   duosexagies : `app/collection/ecrire.tsx` — la barre « Écrire… », la bulle sans son, l'aperçu dans le fil,
-  « Effacer »). **Reste** : M2 (les photos) et M3 (les vidéos) ; « 🎵 Le ranger dans mon univers ? » ; la page de
-  confidentialité (au propriétaire).
+  « Effacer »). **M2, le serveur, est construit** (9.0 quattuorsexagies 📷 : `photo.ts`, `photo-serveur.ts`, `photo-depot`
+  et `photo`, la modération). **Reste** : l'écran de M2, puis M3 (les vidéos) ; « 🎵 Le ranger dans mon univers ? » ;
+  la page de confidentialité (au propriétaire).
 - **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
   panorama — une seule session à la fois sur ces fichiers.
 

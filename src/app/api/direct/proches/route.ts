@@ -6,7 +6,8 @@
 // GET ?presence=1                       → { presence } (« Moi »)
 // GET ?moi=1                            → { moi } : sa figurine, de quoi la faire parler (« Envoyer par WhatsApp »)
 // GET ?fil=<clé>                        → { fil } : sa conversation avec ce proche (ils se sont ajoutés tous les deux) ;
-//                                          `ecrire` : ✍️ on peut lui écrire (faux quand le frein `CLIKME_ECRIT=0` est tiré)
+//                                          `ecrire` : ✍️ on peut lui écrire (faux quand le frein `CLIKME_ECRIT=0` est tiré) ;
+//                                          `photos` : 📷 on peut lui envoyer une photo (faux : `CLIKME_PHOTOS=0`)
 // GET ?vivant=<clé>                     → { vivant } : 🎭 la conversation vivante (lot R4a, `lib/direct/vivant.ts`) — s'il
 //                                          prépare un message, leurs panneaux et réactions, l'heure du dernier message
 // POST { action: "la" }                 → { nonLus } : 🟢 ClikMe est ouvert (toutes les minutes, page visible)
@@ -32,6 +33,13 @@
 // POST { action: "ecrire", cle, texte, tete? } → { message } : un message écrit (1 000 signes) ; après la réponse,
 //      l'aperçu de son lien, puis la notification (« ✍️ Léa t'a écrit »). Le frein : `CLIKME_ECRIT=0` (404).
 // POST { action: "effacer", cle, id }   → { ok } : 🗑️ il efface son message (le sien, dans les 24 heures), pour les deux
+//      (sa voix, l'image de l'aperçu ou sa photo avec)
+// 📷 LOT M2, LES PHOTOS (`lib/direct/photo.ts`, `photo-serveur.ts`) :
+// POST { action: "photo-depot", cle }   → { seau, chemin, jeton, id } : où déposer sa photo (une adresse signée, un seul
+//      dépôt), depuis le téléphone, déjà réduite et sans ses métadonnées
+// POST { action: "photo", cle, id, legende?, tete? } → { message } : la photo déposée part — réencodée, contrôlée par
+//      la modération (refusée : 422 ; sans service : 503, elle attend), puis « 📷 Léa t'a envoyé une photo » après la
+//      réponse. Trente par jour. Le frein : `CLIKME_PHOTOS=0` (404).
 // Un proche se désigne toujours par sa clé de profil, jamais par son identifiant.
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -56,6 +64,7 @@ import {
 } from "@/lib/direct/talkie-serveur";
 import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
 import { apresEcrit, ecritOuvert, ecrireMessage, effacerMessage } from "@/lib/direct/ecrit-serveur";
+import { apresPhoto, depotPhoto, envoyerPhoto, photosOuvertes } from "@/lib/direct/photo-serveur";
 import { effacerEtagere, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
@@ -92,7 +101,7 @@ export async function GET(request: Request) {
   if (fil) {
     const r = await filAvec(supabase, moi, fil);
     if (!r.fil) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
-    return NextResponse.json({ ok: true, fil: { ...r.fil, ecrire: ecritOuvert() } }, { headers: sansCache });
+    return NextResponse.json({ ok: true, fil: { ...r.fil, ecrire: ecritOuvert(), photos: photosOuvertes() } }, { headers: sansCache });
   }
   const [vivants, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);
   // 📚 la ligne de chacun, ce que l'étagère en dit (lot E2 : un rappel du jour, un souvenir pas encore vu, une relance)
@@ -128,6 +137,19 @@ export async function POST(request: Request) {
     if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     const a = r.apres;
     if (a) after(() => apresEcrit(supabase, moi, a).catch(() => undefined));
+    return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
+  }
+  // 📷 (lot M2) où déposer sa photo ; puis elle part (réencodée, contrôlée) et l'autre est prévenu après la réponse
+  if (p?.action === "photo-depot") {
+    const r = await depotPhoto(supabase, moi, p.cle);
+    if (!r.jeton) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, seau: r.seau, chemin: r.chemin, jeton: r.jeton, id: r.id }, { headers: sansCache });
+  }
+  if (p?.action === "photo") {
+    const r = await envoyerPhoto(supabase, moi, p.cle, p.id, p.legende, p.tete);
+    if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    const a = r.apres;
+    if (a) after(() => apresPhoto(supabase, moi, a).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
   // 🗑️ (lot M1) il efface son message, dans les 24 heures : pour les deux ; ce que l'étagère en avait noté s'en va
