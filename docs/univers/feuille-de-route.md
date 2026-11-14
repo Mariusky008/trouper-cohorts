@@ -719,7 +719,9 @@ l'écrit et les liens, **M2** les photos, **M3** les vidéos. Un message écrit 
 qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/univers/messages-ecrits.md`.
 
 - **M1, le serveur : construit** (`docs/figurines.md`, 9.0 unsexagies ✍️) — écrire, l'aperçu des liens, effacer, les
-  figurines qui lisent l'écrit. **M1, l'écran : à faire** (la barre « Écrire… », la bulle sans son, l'aperçu dans le fil).
+  figurines qui lisent l'écrit. **M1, l'écran : construit** (9.0 duosexagies : la barre « Écrire… », la bulle sans son,
+  l'aperçu dans le fil, « Effacer », la mesure). Reste de M1 : « 🎵 Le ranger dans mon univers ? » (la session de
+  l'univers), et la page de confidentialité (au propriétaire).
 - M2 (les photos) et M3 (les vidéos) : pas encore développés.
 
 ### Plus tard (préparé, pas construit)

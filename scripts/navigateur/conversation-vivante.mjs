@@ -118,11 +118,11 @@ const lea = await tel(LEA);
 const zoe = await tel(ZOE);
 await ouvrirAvec(lea, ZOE);
 await ouvrirAvec(zoe, LEA);
-ok((await lea.locator(".pr-plein .pr-fil li.lui button").count()) === 1 && (await lea.locator(".pr-plein .pv-bouton-panneau").count()) === 1 && (await texte(lea, ".pr-plein .pv-astuce")).includes("Appui long sur un message"), "Léa : le message de Zoé, le bouton 🪧, « Appui long sur un message : ta figurine réagit »");
+ok((await lea.locator(".pr-plein .pr-fil li.lui button").count()) === 1 && (await lea.locator(".pr-plein .pr-ecrire-plus").count()) === 1 && (await lea.locator(".pr-plein .pr-ecrire-champ").count()) === 1 && (await texte(lea, ".pr-plein .pv-astuce")).includes("Appui long sur un message"), "Léa : le message de Zoé, la barre (« ＋ », « Écrire… »), « Appui long sur un message : ta figurine réagit »");
 
 // ═══ ✍️ ZOÉ PRÉPARE UNE RÉPONSE : CHEZ LÉA, SA FIGURINE SE PENCHE ═══
 ok((await lea.locator(".pr-plein .pv-calque.lui .pv-prepare").count()) === 0, "rien ne se prépare encore");
-await zoe.locator(".pr-plein .pr-bas .pr-bouton").click();
+await zoe.locator(".pr-plein .pr-ecrire-micro").click();
 await zoe.waitForSelector(".pr-plein.pr-parler", { timeout: 15000 });
 const penche = await attendre(lea, () => Boolean(document.querySelector(".pr-plein .pv-calque.lui .pv-prepare")) && Boolean(document.querySelector('.pr-plein .pr-scene [data-posture="prepare"]')));
 ok(penche, "Zoé prépare une réponse : chez Léa, la figurine de Zoé se penche, « … »");
@@ -134,7 +134,10 @@ ok(await attendre(lea, () => !document.querySelector(".pr-plein .pv-calque.lui .
 const telLea = telephone("lea-vivant");
 const abonne = await lea.evaluate(async (abonnement) => (await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "notif", abonnement }) })).status, telLea.abonnement);
 ok(abonne === 200, "Léa a les notifications");
-await zoe.locator(".pr-plein .pv-bouton-panneau").click();
+// (le panneau est dans le « ＋ » de la barre, lot M1)
+await zoe.locator(".pr-plein .pr-ecrire-plus").click();
+await zoe.waitForSelector('.pr-feuille-plus.ouverte .pr-plus-choix[data-plus="panneau"]', { timeout: 10000 });
+await zoe.locator('.pr-feuille-plus .pr-plus-choix[data-plus="panneau"]').click();
 await zoe.waitForSelector(".pv-feuille.ouverte .pv-panneaux button", { timeout: 10000 });
 const panneaux = (await zoe.locator(".pv-feuille .pv-panneaux button").allInnerTexts()).map(plat);
 ok(panneaux.join("|") === "MDR|J’arrive !|Rappelle-moi|Bravo !|Pas dispo 😴|Je pense à toi|Merci !|Ce soir ?", `les huit panneaux validés (${panneaux.join(" · ")})`);

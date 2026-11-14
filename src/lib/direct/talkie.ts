@@ -88,7 +88,8 @@ export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi;
 // (`FigurineVue.chez` : seulement la sienne, pour la vidéo qu'il envoie par WhatsApp — « chez celui qui envoie », lot 5b)
 /** 🎭 Un mème envoyé dans leur conversation (la nouvelle interface, lot 4, `memes-proches-serveur.ts`). */
 export type MemeFil = { id: string; moi: boolean; le: string; image: string; texte?: string; video?: string; lien: string; nouveau?: boolean };
-export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[] };
+/** (`ecrire` : ✍️ lot M1 — on peut lui écrire ; `false` quand le frein `CLIKME_ECRIT=0` est tiré : le micro seulement) */
+export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[]; ecrire?: boolean };
 
 export const cleValide = (x: unknown): string | null => (typeof x === "string" && /^[a-f0-9]{16}$/.test(x) ? x : null);
 export const texteDuMessage = (r: readonly Replique[]) =>
