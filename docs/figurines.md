@@ -3344,6 +3344,52 @@ Le serveur : 9.0 quattuorsexagies. Le fichier : `app/collection/photos.tsx`.
   métadonnée).
 - **Pas dans ce lot** : « 🖼️ La mettre dans mon univers ? » (la session de l'univers).
 
+### 9.0 sexsexagies 🎬 Écrire, partager — lot M3, le serveur : les vidéos (14 novembre)
+
+Le propriétaire : « ensuite lance M3, le serveur d'abord ». Le cahier : `docs/univers/messages-ecrits.md`, section 6.
+**L'écran vient ensuite** : rien ne change encore à l'écran (l'appli ne propose pas d'envoyer une vidéo). Les
+fichiers : `lib/direct/video.ts` (les règles, partagé) et `video-serveur.ts`.
+
+- **Le chemin d'une vidéo** (`POST /api/direct/proches`) :
+  - `{ action: "video-depot", cle, type }` : une adresse signée pour SA vidéo seule,
+    `fils/<paire>/v/<qui>-<id>-brut.<ext>` — elle part tout droit du téléphone au seau. Les formats pris : MP4
+    (Android), MOV (iPhone), WebM (le navigateur) ;
+  - `{ action: "video", cle, id, type, duree, images, legende?, tete? }`, avec **les trois images que le téléphone en a
+    tirées** (au début, au milieu, à la fin ; des adresses `data:`, 600 Ko chacune au plus) : le serveur relit la
+    vidéo (25 Mo au plus) et **lit sa durée dans son en-tête**, sans rien décoder (il n'a pas de quoi : MP4 et MOV, la
+    boîte `moov/mvhd`, où qu'elle soit dans le fichier ; WebM, `Segment/Info/Duration`). **30 secondes au plus** (une
+    demi-seconde de tolérance), sinon « 45 s : 30 secondes au plus ». Un WebM enregistré par le navigateur ne dit
+    souvent pas sa durée : celle que le téléphone a lue (`duree`), alors ;
+  - puis la **modération** contrôle les trois images (la légende avec la première), celle des photos
+    (`modererPhoto`) : une refusée, la vidéo est effacée et ne part pas (« Cette vidéo ne peut pas partir. ») ; **sans
+    service joignable, elle ne part pas non plus** (« La vidéo n'a pas pu être vérifiée. Réessaie dans un
+    instant. ») — gardée, il peut réessayer. **Le son n'est pas contrôlé** : une limite connue, dite dans le cahier ;
+  - acceptée : **déplacée** sous son nom (`fils/<paire>/v/<id>.<ext>`, sans la recopier), sa **vignette** (l'image du
+    milieu, WebP de 480 pixels, `fils/<paire>/v/<id>.webp`), le message posé dans le même dossier que les vocaux, les
+    écrits et les photos (`{ genre: "video", media: { chemin, l, h, vignette, duree, type }, legende?, tete }`).
+- **Dans le fil** : `genre: "video"`, ses adresses signées (la vidéo, la vignette ; une heure), ses dimensions et sa
+  durée, la légende, une seule réplique (la légende, dans la tête choisie), le temps que la figurine montre sa
+  vignette (4 s). `fil.videos` : on peut lui en envoyer.
+- **La notification** : « 🎬 Léa t'a envoyé une vidéo » (et la légende) ; la ligne de « Chez moi » : « 🎬 La
+  légende », ou « 🎬 Une vidéo » ; les non-lus la comptent.
+- **Les figurines lisent la légende**, **jamais la vidéo**.
+- **Dix vidéos par personne et par jour** ; la légende suit les règles de celle des photos (200 signes, les mots
+  interdits).
+- **Effacer** (la sienne, dans les 24 heures) l'efface pour les deux, avec sa vidéo et sa vignette. **Signaler** : elle
+  disparaît chez celui qui signale ; l'équipe la voit dans « Messages signalés » (« 🎬 Une vidéo », à regarder) :
+  « Remettre », ou « Effacer pour les deux » (avec sa vidéo et sa vignette).
+- **La mesure** (« ✍️ Les messages », page admin des mèmes) : les vidéos envoyées, refusées par la modération, pas
+  vérifiées faute de service, et **ce qu'elles pèsent : c'est le poste qui coûte**.
+- **Le frein** : `CLIKME_VIDEOS=0` (plus de vidéo ; celles qui sont parties restent visibles ; `fil.videos` faux).
+- **Les essais** : `scripts/essai-videos-route.mjs` (des vidéos fabriquées octet par octet,
+  `scripts/fixtures/videos-essai.mjs` : un MP4, un MP4 dont l'en-tête est à la fin, un MOV en version 1, un WebM avec
+  et sans durée ; la fausse modération refuse une image de 321 pixels de large, ne répond pas pour 322 ; le faux
+  Supabase sait maintenant déplacer un fichier), et le vérificateur `scripts/verifier-messages.mjs`. La lecture de la
+  durée a aussi été essayée sur de vraies vidéos (MP4, MP4 « faststart », MOV, WebM).
+- **Pas dans ce lot** : l'écran (« ＋ » → 🎬 Vidéo, la vignette et les trois images tirées dans le téléphone, la
+  lecture en grand) ; réencoder les vidéos trop lourdes (plus tard, dit le cahier) ; les dépôts jamais envoyés
+  (`…-brut`) restent dans le seau, comme ceux des photos.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

@@ -545,6 +545,16 @@ async function stockage(req, res, url) {
       return repondre(res, 200, { Key: cle });
     }
   }
+  // DÉPLACER UN FICHIER (`move`, lot M3 : la vidéo contrôlée quitte son nom de dépôt)
+  if (p === "move" && req.method === "POST") {
+    const b = JSON.parse((await corps(req)).toString() || "{}");
+    const de = `${b.bucketId}/${b.sourceKey}`;
+    const vers = `${b.bucketId}/${b.destinationKey}`;
+    if (!fichiers.has(de)) return repondre(res, 400, { statusCode: "404", error: "not_found", message: "Object not found" });
+    fichiers.set(vers, { ...fichiers.get(de), cree: maintenant() });
+    fichiers.delete(de);
+    return repondre(res, 200, { message: "Successfully moved" });
+  }
   if (p.startsWith("sign/")) {
     const cle = p.slice(5);
     if (req.method === "POST") {

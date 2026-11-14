@@ -15,6 +15,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { mp4Essai, webmEssai } from "./fixtures/videos-essai.mjs";
 
 const exige = createRequire(import.meta.url);
 const ts = exige("typescript");
@@ -35,6 +36,7 @@ const charger = (chemin) => {
 const E = charger("src/lib/direct/ecrit.ts");
 const T = charger("src/lib/direct/talkie.ts");
 const P = charger("src/lib/direct/photo.ts");
+const V = charger("src/lib/direct/video.ts");
 const { motInterdit } = charger("src/lib/direct/mots-interdits.ts");
 
 let echecs = 0;
@@ -129,7 +131,17 @@ ok(np.titre === "📷 Léa t’a envoyé une photo" && np.corps === "Viens voir 
 ok(P.lignePhoto("") === "📷 Une photo" && P.lignePhoto(" La plage ") === "📷 La plage", "la ligne de « Chez moi » : « 📷 La légende », ou « 📷 Une photo »");
 ok(T.texteLuDuMessage({ genre: "photo", legende: "La plage", media: { chemin: "x" } }) === "La plage" && T.texteLuDuMessage({ genre: "photo" }) === "", "les figurines lisent la légende d'une photo, jamais l'image");
 ok(P.PHOTO.max === 5 * 1024 * 1024 && P.PHOTO.parJour === 30 && P.PHOTO.cote === 1600 && P.PHOTO.legende === 200, "les limites du cahier : 5 Mo, 30 par jour, 1 600 pixels, 200 signes de légende");
-const phrases = [...Object.values(E.PHRASES_ECRIT), n1.titre, n2.titre, E.phraseDepart("site.fr"), ...Object.values(P.PHRASES_PHOTO), np.titre];
+// 🎬 (lot M3) les vidéos : la durée lue dans le fichier (sans rien décoder), les formats, la notification, la ligne
+const proche = (a, b) => a !== null && Math.abs(a - b) < 0.01;
+ok(proche(V.dureeDuMp4(mp4Essai(12.3)), 12.3) && proche(V.dureeDuMp4(mp4Essai(45, { aLaFin: true })), 45) && proche(V.dureeDuMp4(mp4Essai(20, { version: 1 })), 20), "la durée d'un MP4 ou d'un MOV : la boîte mvhd, où qu'elle soit (avant ou après les données), en version 0 ou 1");
+ok(V.dureeDuMp4(Buffer.from("ceci n'est pas une vidéo, juste du texte")) === null && V.dureeDuMp4(webmEssai(10)) === null && V.dureeDuMp4(Buffer.alloc(3)) === null, "pas un MP4 : pas de durée");
+ok(proche(V.dureeDuWebm(webmEssai(18)), 18) && V.dureeDuWebm(webmEssai(null)) === null && V.dureeDuWebm(mp4Essai(10)) === null, "la durée d'un WebM : Segment/Info/Duration ; un WebM qui ne la dit pas (le navigateur) : rien");
+ok(V.extVideo("video/mp4") === "mp4" && V.extVideo("video/quicktime") === "mov" && V.extVideo("video/webm;codecs=vp9") === "webm" && V.extVideo("video/avi") === null && V.extVideo(undefined) === null, "les formats : MP4, MOV, WebM — pas les autres");
+ok(V.phraseTropLongue(45.2) === "45 s : 30 secondes au plus" && V.tropLongue(30.4) === false && V.tropLongue(30.6) === true, "trop longue : « 45 s : 30 secondes au plus » (une demi-seconde de tolérance)");
+const nv = V.notifVideo("Léa", "");
+ok(nv.titre === "🎬 Léa t’a envoyé une vidéo" && nv.corps === "Viens voir 👀" && V.ligneVideo("") === "🎬 Une vidéo" && V.ligneVideo(" Le concert ") === "🎬 Le concert", "la notification « 🎬 Léa t'a envoyé une vidéo », la ligne « 🎬 La légende »");
+ok(T.texteLuDuMessage({ genre: "video", legende: "Le concert" }) === "Le concert" && V.VIDEO.max === 25 * 1024 * 1024 && V.VIDEO.parJour === 10 && V.VIDEO.duree === 30, "les figurines lisent la légende d'une vidéo ; les limites : 25 Mo, 10 par jour, 30 secondes");
+const phrases = [...Object.values(E.PHRASES_ECRIT), n1.titre, n2.titre, E.phraseDepart("site.fr"), ...Object.values(P.PHRASES_PHOTO), np.titre, ...Object.values(V.PHRASES_VIDEO), nv.titre, V.phraseTropLongue(45)];
 ok(phrases.every((x) => !GENRE.test(x) && !/exemple/i.test(x) && !motInterdit(x)), `les phrases : sans accord, sans le mot interdit (${phrases.filter((x) => GENRE.test(x) || /exemple/i.test(x)).join(" | ") || "toutes"})`);
 ok(E.ECRIT.max === 1000 && E.ECRIT.parJour === 300 && E.ECRIT.bulle === 140 && E.APERCU.delai === 5000 && E.APERCU.page === 1024 * 1024 && E.APERCU.largeur === 600, "les limites du cahier : 1 000 signes, 300 par jour, la bulle à 140, l'aperçu en 5 s et 1 Mo, l'image à 600 pixels");
 

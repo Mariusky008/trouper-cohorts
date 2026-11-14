@@ -2,7 +2,7 @@
 
 **Statut : validé par le propriétaire. M1 construit le 14 novembre 2026** : le serveur (`docs/figurines.md`, 9.0
 unsexagies ✍️), puis l'écran (9.0 duosexagies). **M2 construit** : le serveur (9.0 quattuorsexagies 📷), puis l'écran
-(9.0 quinquesexagies). M3 reste à faire.
+(9.0 quinquesexagies). **M3** : le serveur est construit (9.0 sexsexagies 🎬) ; l'écran reste à faire.
 
 ## 1. Ce que le propriétaire a demandé
 

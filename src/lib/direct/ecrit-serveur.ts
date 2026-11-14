@@ -274,8 +274,8 @@ export async function effacerMessage(supabase: Supabase, moi: Habitant, cle: unk
   const f = await lireJson<FicheMessage>(supabase, chemin);
   if (f.de !== moi.id) return { error: PHRASES_ECRIT.effaceAutre, statut: 403 };
   if (Date.now() - (Date.parse(s(f.le)) || nom.ts) > ECRIT.effacer) return { error: PHRASES_ECRIT.effaceTrop, statut: 400 };
-  // (📷 lot M2 : sa photo aussi)
-  const fichiers = [chemin, s(f.son), s(f.lien?.image), s(f.media?.chemin)].filter(Boolean);
+  // (📷 lot M2 : sa photo aussi ; 🎬 lot M3 : sa vidéo et sa vignette)
+  const fichiers = [chemin, s(f.son), s(f.lien?.image), s(f.media?.chemin), s(f.media?.vignette)].filter(Boolean);
   const { error } = await supabase.storage.from(SEAU_FIGURINES).remove(fichiers);
   if (error) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await noterStatsMessages(supabase, { effaces: 1 });
