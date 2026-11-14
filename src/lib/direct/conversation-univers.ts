@@ -24,6 +24,7 @@
  *
  * Ce fichier est partagé (l'écran et le serveur). FICHIER PUR.
  */
+import type { Ambiance } from "./ambiances";
 
 /** Son message : 500 caractères au plus. */
 export const MESSAGE_MAX = 500;
@@ -87,7 +88,20 @@ export type Esquisse = { couleurs: string[]; vignettes: string[] };
 /** Les trois colonnes : ce qu'il a dit (sa phrase), ce qu'on interprète (pourquoi), ce qu'on ne sait pas. */
 export type Comprehension = { dits: { quoi: string; phrase: string }[]; interpretations: { quoi: string; pourquoi: string }[]; inconnus: string[] };
 export type ElementPropose = { id: string; quoi: string; pourquoi: string; source: "dit" | "interpretation" };
-export type PropositionUnivers = { texte: string; lumiere: string; palette: string[]; elements: ElementPropose[]; regles: string[]; inconnus: string[] };
+export type PropositionUnivers = {
+  texte: string;
+  lumiere: string;
+  palette: string[];
+  elements: ElementPropose[];
+  regles: string[];
+  inconnus: string[];
+  /** 🎨 l'ambiance de son décor (celle qu'il a choisie, `ambiance_choisie`, sinon celle de Pablito) ; celle que Pablito
+   * propose, et pourquoi */
+  ambiance?: Ambiance;
+  ambiance_proposee?: Ambiance;
+  ambiance_pourquoi?: string;
+  ambiance_choisie?: true;
+};
 
 export type EtapeConversation = "transition" | "conversation" | "aide" | "proposition" | "validee";
 export type EtatConversation = {

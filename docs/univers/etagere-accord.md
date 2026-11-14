@@ -1,6 +1,6 @@
 # « Je le range ? » — l'étagère demande avant de ranger (lot E5, cahier des charges, 14 novembre 2026)
 
-**Statut : validé par le propriétaire, construit le 14 novembre 2026** (`docs/figurines.md`, 9.0 quinquinquagies 📌).
+**Statut : validé par le propriétaire, construit le 14 novembre 2026** (`docs/figurines.md`, 9.0 sexagies 📌).
 Ce cahier modifie l'étagère construite (lots E1 à E4, `docs/univers/etagere.md`). Le lire avec celui-là : tout ce qui
 n'est pas dit ici reste comme il est.
 

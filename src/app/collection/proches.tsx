@@ -32,7 +32,7 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
-import { CarteEtagere, CarteNote, CartePoussiere, CarteQuestion, CarteRallume, EtagereChezMoi, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
+import { CarteEtagere, CarteNote, CartePoussiere, CarteQuestion, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
 import { idees, type CarteVue, type ObjetVu, type QuestionVue } from "@/lib/direct/etagere";
 import { versLeStudio } from "./vers-le-studio";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
@@ -443,7 +443,8 @@ export function Proches({
     }
     return (
       <div className="pr cm">
-        <EnteteChezMoi actif={visible && compte !== null} onHumeur={() => setHumeurOuverte(true)} visites={visites} nouveautes={nouveautes} onVisites={decouvrir} />
+        {/* 🏠 (14 novembre 2026) « Messages » : mon univers est parti dans « Ma maison » (`ma-maison.tsx`) */}
+        <EnteteChezMoi actif={visible && compte !== null} onHumeur={() => setHumeurOuverte(true)} visites={visites} nouveautes={nouveautes} onVisites={decouvrir} sansFenetre />
         {compte === null ? null : !compte || !prete ? (
           <p className="cm-doux">Tes conversations arriveront ici, dès que ta figurine sera là.</p>
         ) : (
@@ -453,8 +454,6 @@ export function Proches({
                 <i />
               </div>
             )}
-            {/* 📚 (l'étagère, lot E4) MON étagère : ce qui me concerne dans toutes mes conversations, et ce que j'y dépose */}
-            <EtagereChezMoi actif={visible} />
             {/* ☀️ (l'étagère, lot E2) les rappels du matin : ma figurine me les dit, sous la fenêtre de mon univers */}
             <RappelsDuMatin actif={visible} onParler={(c) => ouvrirFil(c, true)} />
             {/* 👋 les demandes des inconnus qui ont frappé : l'ajouter, voir son univers, ignorer */}
@@ -1232,17 +1231,25 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         <button type="button" className="pr-retour" aria-label="Revenir à tes proches" onClick={onFermer}>
           <IconeRetour />
         </button>
-        <span className={`pr-avatar${fil.la ? " la" : ""}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={avatar} alt="" draggable={false} />
-        </span>
+        {/* 🏠 (14 novembre 2026, « les gens doivent accéder facilement à notre univers ») sa figurine mène chez lui */}
+        {chezMoi?.univers ? (
+          <a className={`pr-avatar${fil.la ? " la" : ""}`} href={`/univers/chez/${cle}`} aria-label={`Aller chez ${fil.lui.prenom}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatar} alt="" draggable={false} />
+          </a>
+        ) : (
+          <span className={`pr-avatar${fil.la ? " la" : ""}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatar} alt="" draggable={false} />
+          </span>
+        )}
         <span className="pr-qui">
           <b>{fil.lui.prenom}</b>
           {fil.la && <small className="vert">Là maintenant</small>}
         </span>
         {chezMoi?.univers && (
           <a className="pr-son-univers" href={`/univers/chez/${cle}`}>
-            🏡 Son univers
+            🏠 Chez {fil.lui.prenom}
           </a>
         )}
         <PastilleEtagere n={cartesEtagere.length} onOuvrir={() => setPageEtagere(true)} />
@@ -2343,7 +2350,7 @@ export const STYLES_PROCHES = `
 .pr-haut{position:relative;z-index:6;display:flex;align-items:center;gap:10px;min-height:56px;flex:none}
 .pr-retour,.pr-menu-bouton{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-left:-8px;border:0;border-radius:50%;background:none;color:#FFF4E6;font:inherit;font-size:22px;cursor:pointer}
 .pr-menu-bouton{margin:0 -6px 0 0;color:#CDB4C0}
-.pr-avatar{position:relative;flex:none;width:40px;height:40px}
+.pr-avatar{position:relative;flex:none;display:block;width:40px;height:40px}
 .pr-avatar img{display:block;width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#3A1A30}
 .pr-avatar.la::after{content:"";position:absolute;right:-1px;bottom:0;width:12px;height:12px;border-radius:50%;background:#3DDC84;border:2.5px solid #12060F}
 .pr-qui{display:flex;flex-direction:column;flex:1;min-width:0}

@@ -2995,7 +2995,130 @@ détail : `docs/univers/etagere.md`, lot E4.
   étagère 📌 ».
 - **La suite** : ces souvenirs sur les étagères de la maison en panorama, chacun avec son « i ».
 
-### 9.0 quinquinquagies 📌 « Je le range ? » : la figurine demande avant de ranger (14 novembre)
+### 9.0 quinquinquagies 🏠 « Ma maison » a son onglet (14 novembre)
+
+Le propriétaire : « mon univers est difficilement accessible sur l'appli, ça mérite peut-être son onglet direct […] les
+gens doivent y accéder facilement pour découvrir notre univers — peut-être que dans le chat il peut y avoir un accès, et
+sur ma figurine ? » Son choix, parmi deux : un quatrième onglet.
+
+- **Le menu, à quatre** (l'interrupteur « Univers pour tous » allumé) : Découvrir · **Messages** (l'onglet « Chez moi »
+  d'avant, `#proches` : mes conversations, mon humeur et mes visites en pastilles, les demandes, les rappels du matin —
+  sans la fenêtre sur mon univers) · **Ma maison** (`#maison`, en gros bouton, ma figurine dedans) · Autour. L'appli
+  s'ouvre toujours sur « Messages » : la découverte des cadeaux et des visites s'y joue en arrivant.
+- **« Ma maison »** (`app/collection/ma-maison.tsx`) : mon univers en entier (son décor du moment, ma figurine chez
+  elle, les cadeaux posés, la saison), ⚙️ ses réglages, « 👀 Comme la voient mes visiteurs », « 🛠️ La retoucher · qui
+  peut entrer », **mon étagère** (elle quitte « Messages »). Sans univers : ce qui l'attend. Demain : ses pièces, chacune
+  entière à l'écran et vivante (l'essai, 9.0 sexquinquagies 🎬).
+- **Dans une conversation**, en haut : « 🏠 Chez Léa » (à la place de « 🏡 Son univers »), et sa figurine y mène aussi.
+- **Les réglages de mon univers** (`/univers/monde`) : « ← Ma maison », « 🏠 Retour à ma maison » ; son menu de demain :
+  Découvrir · Messages · Ma maison · Autour.
+- **Les essais** : `bascule-univers.mjs` (le menu à quatre, « Ma maison » de Sam et de Marc, la pastille d'humeur dans
+  « Messages », le bouquet posé dans « Ma maison », « 🏠 Chez Marc »), `univers-monde.mjs`, `etagere-mienne.mjs`.
+
+### 9.0 sexquinquagies 🎬 Une pièce entière, vivante — l'essai (14 novembre)
+
+Le propriétaire, sur la maquette « Maison de poupée vivante » : « je n'aime vraiment pas du tout » ; en entrant dans une
+pièce (le panorama), « toujours le même problème ». Ce qu'il veut : « chaque pièce entièrement sur l'écran, comme sur la
+photo [l'image de son univers], mais dézoomée, pour avoir plus de choses visibles. Pour chaque pièce, deux ou trois gros
+objets animés (comme la télé ou un bagage), et le reste sur des étagères. Les étoiles, ça fait étrange et très années
+2000 : il faut que ce soit bien plus wow et immersif. » D'où l'essai, dans `/admin/humain/univers-essais` (au-dessus des
+panoramas), sur SON univers — `lib/direct/pieces-vivantes-serveur.ts`, `api/admin/direct/pieces-vivantes`,
+`admin/humain/univers-essais/vivante.tsx` :
+
+- **Trois pièces**, chacune ses trois **vedettes** : le salon (📻 le tourne-disque, 🔥 la cheminée, 🪟 la grande fenêtre
+  sur le paysage de son univers), la pièce télé (📺 la télé, éteinte, 🐠 l'aquarium, 🕯️ les bougies ; dans le style du
+  salon), la terrasse (🗺️ la carte de ses voyages, 🧳 sa valise, 💡 la guirlande). Tout le reste : **sur des étagères**.
+- **Trois étapes** par pièce. 1. **L'image** (1024 × 1536, une à deux minutes) : la pièce ENTIÈRE, vue de loin (le sol,
+  le fond, les deux côtés, un peu du plafond), ses vedettes grandes et bien à part, ses étagères, une place libre au
+  premier plan pour son fauteuil, personne ; on en garde la vue du téléphone, en 9:16 (864 × 1536). 2. **Les objets** :
+  un modèle qui voit les images repère les vedettes, la place du fauteuil et l'écran de la télé (des cadres en %).
+  3. **La vie** : le **moteur vidéo d'OpenAI** (`OPENAI_VIDEO_MODEL`, `sora-2` par défaut ; 8 s, `OPENAI_VIDEO_SECONDES`)
+  fait de la vue une **photo vivante** — la caméra immobile, seules les vedettes vivent (le disque tourne, le feu danse,
+  les rideaux bougent, les poissons nagent, la guirlande scintille ; l'écran de la télé reste noir). Commandée en un
+  passage, suivie aux suivants (quelques minutes), rangée. Coût, environ : 0,25 $ l'image, 0,80 $ la vidéo.
+- **Dedans, en plein écran** : la pièce entière (l'image fixe, la vidéo en boucle par-dessus — avant la fin, elle
+  s'efface sur l'image fixe, qui est sa première image, et repart en fondu), sa figurine assise à la place repérée
+  (elle respire), « Touche ce qui bouge » ; un point blanc qui s'ouvre sur chaque vedette, trois fois, puis plus rien ;
+  toucher une vedette : la caméra s'en approche, le reste s'assombrit, sa carte monte (« 📻 Le tourne-disque — Ta
+  chanson du moment tourne ici. »). **La télé** passe un lien YouTube (gardé sur ce téléphone), sans le son, posé sur
+  son écran ; « 🔊 Le son » quand on s'en approche.
+- **Rangé** dans `<h>/pieces-entieres/<pièce>/` (image.png, vue.webp, objets.json, video.json — la commande en cours —,
+  video.mp4) ; refaire l'image efface tout, les objets ou la vidéo eux seuls ; un verrou par pièce.
+- **L'essai** : `essai-pieces-vivantes-route.mjs` (le faux moteur vidéo de `faux-supabase.mjs` : la commande, « en
+  train », faite ; l'image reçue exactement à 720 × 1280).
+
+### 9.0 septquinquagies 🎨 Les ambiances de son univers — l'essai (14 novembre)
+
+Le propriétaire : « il faut des univers beaucoup plus funky et jeunes pour les ados, parce qu'ils ne vont pas vouloir
+d'un décor à la mer ou à la montagne, mais peut-être à New York, et l'intérieur doit être super cool et trendy :
+totalement différent de ce qu'on a fait, qui est davantage pour les plus de 30 ans. » Son choix, parmi trois : **Pablito
+propose** une ambiance d'après ce qu'on lui a raconté, puis trois vignettes pour changer ; d'abord dans la page d'essais
+(`/admin/humain/univers-essais`, « 🎨 Les ambiances de ton univers ») — `lib/direct/ambiances.ts`,
+`lib/direct/ambiances-serveur.ts`, `api/admin/direct/ambiances`, `univers-essais/ambiances.tsx` :
+
+- **Quatre ambiances** : 🛋️ cosy (le style d'aujourd'hui, « Film, chaleureux » : c'est son décor actuel, rien à
+  refaire), 🗽 urbaine (un loft à New York : la brique, les grandes fenêtres sur Manhattan, l'escalier de secours, le
+  street-art, le mur de sneakers, les vinyles, le skate), 🎮 néon et gaming (les néons sans mots, les LED violettes,
+  roses et cyan, le setup, la borne d'arcade), 🌸 pastel, tout doux (rose, lilas, menthe, les lampes-nuages, les
+  peluches). Le même monde y est **réinterprété** : ses éléments et ce qu'ils veulent dire sont gardés, le lieu, la vue,
+  la lumière et les couleurs suivent l'ambiance (`consigneDecorDuMonde(fiche, ambiance)`).
+- **Ce que Pablito propose** (`proposerAmbiance`) : les mots de sa conversation (le lieu imaginé, ses éléments et leurs
+  raisons), cherchés entiers dans un lexique par ambiance (« Minecraft », « console », « néon » ; « skate », « rap »,
+  « New York » ; « kawaii », « peluche »…) ; la plus citée l'emporte, et Pablito le dit en reprenant SON élément : « Tu
+  m'as parlé d'une console branchée sur un grand écran : je te vois bien dans une pièce pleine de néons 🎮 ». Rien
+  trouvé : l'âge que montre sa figurine (ses traits, décrits sur son selfie) — jeune, le loft à New York ; sinon, cosy.
+  Jamais d'accord au masculin ou au féminin (« J'ai imaginé pour toi… »).
+- **L'écran** : Pablito et sa phrase ; son ambiance en grand, sa figurine assise devant ; les trois autres en vignettes
+  (une touche : elle passe en grand) ; « Faire les 3 qui manquent » (une image par ambiance, une à deux minutes, environ
+  0,25 $), « Refaire ». Rangé dans `<h>/ambiances/<ambiance>.webp` ; un verrou.
+- **L'essai** : `essai-ambiances-route.mjs` (Léa et sa console : néon ; Tom, l'air d'un ado : New York ; Zoé et son
+  étagère de livres : cosy — « tag » n'est pas dans « étagère »).
+
+### 9.0 octoquinquagies 🎨 Les ambiances, branchées dans la création de l'univers (14 novembre)
+
+Le propriétaire : « branche les ambiances dans la création de l'univers ». Pour tous (le frein : `CLIKME_AMBIANCES=0`,
+Pablito ne propose plus rien et chaque décor reste cosy) :
+
+- **Dans la conversation** (`/univers/conversation`) : avec sa proposition, Pablito propose une ambiance
+  (`proposerAmbiance` : ce qu'il lui a raconté, sinon l'âge que montre sa figurine) et dit pourquoi ; sous son texte,
+  « 🎨 L'ambiance de ton univers » — la sienne en grand, les trois autres en vignettes (`app/univers/choix-ambiance.tsx`) ;
+  un toucher en choisit une autre (`POST { action: "ambiance", ambiance }`), et une correction garde SON choix
+  (`ambiance_choisie`). La proposition garde aussi celle de Pablito (`ambiance_proposee`, « Pablito » sur sa vignette).
+- **« C'est mon univers ! »** : la fiche de son monde garde l'ambiance (`decor_ambiance`, `monde.ts`).
+- **La création** : un décor neuf est peint dans l'ambiance de sa fiche (`consigneDecorDuMonde(f, pourLeDecor(...))` :
+  son monde réinterprété) ; cosy, la consigne d'aujourd'hui, mot pour mot. Une retouche part du décor d'avant : elle
+  garde son ambiance ; la saison aussi.
+- **Changer d'ambiance** (`/univers/monde`, sous son univers : les mêmes vignettes) : `POST /api/direct/univers
+  { action: "ambiance", ambiance }` — une nouvelle version, son décor refait d'après sa fiche dans la nouvelle ambiance
+  (puis ses places, son image vedette) ; elle compte comme une retouche ; la même ambiance est refusée. (Ses retouches
+  écrites d'avant ne sont pas rejouées : elles retouchaient l'ancien décor.) L'écran connaît son ambiance
+  (`EtatUnivers.ambiance`).
+- **L'essai** : `essai-ambiances-univers-route.mjs` (Tom et ses soirées Minecraft : néon proposé, pastel choisi, gardé
+  après une correction, peint en pastel, puis New York ; Zoé : cosy, la consigne d'aujourd'hui).
+
+### 9.0 novoquinquagies 🎬 « Ma maison » : ses pièces, entières et vivantes (14 novembre)
+
+La suite de « Ma maison » (le propriétaire : « attaque la suite de Ma maison ») — ce qu'il a demandé : chaque pièce
+entière à l'écran, deux ou trois gros objets animés, on y entre.
+
+- **Dans l'onglet** (`app/collection/ma-maison.tsx`) : quand il a des pièces prêtes, son univers puis ses pièces
+  défilent (on glisse ; des points et le nom de la pièce dessous, « Glisse pour visiter tes pièces → ») ; la vidéo de
+  celle qu'on regarde joue en boucle, les autres attendent ; « ▶ Entrer » : en plein écran.
+- **Dedans** (`app/univers/piece-vivante.tsx`, partagé avec l'essai de l'administrateur) : la pièce entière, sa vidéo
+  en boucle sans couture, sa figurine assise à la place repérée, ses vedettes (un toucher : la caméra s'en approche, sa
+  carte monte) ; d'une pièce à l'autre, glisser ou les flèches ‹ › et des points ; Échap ou « ← Sortir ».
+- **Ses pièces** : `GET /api/direct/mes-pieces` (`mesPieces`, `pieces-vivantes-serveur.ts`) — les siennes, celles dont
+  l'image entière est faite (la vue, la vidéo si elle l'est, les vedettes repérées), signées une heure. Aujourd'hui,
+  seules les pièces faites dans l'essai existent : **qui en reçoit, et quand** (« elles apparaîtront au fil de tes
+  conversations »), c'est au propriétaire de le décider — une pièce coûte environ 0,25 $ d'image et 0,80 $ de vidéo.
+- **Chez lui, ses visiteurs aussi** (`/univers/chez/<clé>`, à qui peut entrer) : « 🎬 Les pièces de Léa », en vignettes
+  (`VignettesPieces`) ; un toucher, on entre — sa figurine à elle y est assise ; ce qu'on dit des vedettes change de
+  bouche (« Sa chanson du moment tourne ici », pas « Ta » : `autre`, `mesPieces(…, { pourSesVisiteurs })`).
+- **Les essais** : `essai-pieces-vivantes-route.mjs` (ses pièces pour « Ma maison » ; Sam, aucune),
+  `bascule-univers.mjs` (le salon de Marc : on glisse, on entre, sa figurine, ses trois vedettes, le tourne-disque),
+  `visite-univers.mjs` (Inès chez Marc : « Les pièces de Marc », elle entre, « Sa chanson du moment »).
+
+### 9.0 sexagies 📌 « Je le range ? » : la figurine demande avant de ranger (14 novembre)
 
 Le propriétaire : la figurine « ne devrait-elle pas demander aux deux personnes, ou à celle qui est concernée, si l'info
 est à ranger dans l'univers, pour être certain qu'elle ne fait pas n'importe quoi ? » Ses trois « oui », puis « oui vas
@@ -3010,8 +3133,9 @@ y lance E5 ». Le détail : `docs/univers/etagere-accord.md`.
   dans les mains, et dit « J'ai entendu : ton permis, jeudi 19. » ; la carte « 📌 TA FIGURINE TE DEMANDE » (« ✓ Oui,
   range-le », « Non », « Changer la date ») ; au « oui », l'envol d'avant (« 📌 Noté ! ») ; au « non », « D'accord,
   j'oublie. »
-- **Ailleurs** : « 📌 Ta figurine te demande : ton permis ? » sur la ligne de « Chez moi » (juste après un message non
-  lu) ; « ✨ À ranger » en haut de « Mon étagère » (et « ✨ 2 à ranger » sur la planche) ; l'envoi du matin, quand il
+- **Ailleurs** : « 📌 Ta figurine te demande : ton permis ? » sur la ligne de la personne, dans « Messages » (juste
+  après un message non lu) ; « ✨ À ranger » en haut de « Mon étagère » (et « ✨ 2 à ranger » sur sa planche, dans « Ma
+  maison ») ; l'envoi du matin, quand il
   n'a rien d'autre à dire : « 📌 Ta figurine a 2 choses à te demander ».
 - **Les cas particuliers** : « JE L'AI !!! » devient « J'ai entendu : c'est réussi ! Je range ça dans vos fiertés ? 🏆 »
   (la phrase du cahier, « tu l'as eu », s'accordait avec l'objet : changée) ; un dépôt pour l'autre est une question à

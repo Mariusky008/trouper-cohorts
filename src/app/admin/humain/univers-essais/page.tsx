@@ -8,6 +8,8 @@ import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { EssaisUnivers } from "./essais";
 import { PablitoAuNouveauStyle } from "./pablito";
 import { MaisonEnPanorama } from "./salon";
+import { PieceVivante } from "./vivante";
+import { AmbiancesDeTonUnivers } from "./ambiances";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,6 +29,8 @@ export default async function PageEssaisUnivers() {
         page se met à jour toute seule.
       </p>
       <PablitoAuNouveauStyle />
+      <PieceVivante />
+      <AmbiancesDeTonUnivers />
       <MaisonEnPanorama />
       <EssaisUnivers />
     </main>

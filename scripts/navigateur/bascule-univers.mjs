@@ -81,6 +81,10 @@ const monde = {
 await json(`${M1}/fiche.json`, monde);
 await json(`${MARC.id}/monde/fiche.json`, monde);
 await json(`${MARC.id}/monde/creation.json`, { version: 1, etape: "fini", mesure: 1 });
+// 🎬 son salon, entier et vivant (l'essai « Une pièce entière, vivante ») : sa vue, ses vedettes repérées
+const S1 = `${MARC.id}/pieces-entieres/salon`;
+await deposer(`${S1}/vue.webp`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
+await json(`${S1}/objets.json`, { objets: [{ cle: "platine", x: 60, y: 50, l: 25, h: 14 }, { cle: "feu", x: 8, y: 40, l: 28, h: 22 }, { cle: "fenetre", x: 30, y: 10, l: 40, h: 25 }], place: { x: 30, y: 72, l: 40, h: 16 }, ecran: null });
 for (const x of [SAM, MARC]) await json(`profils/${cleProfil(x.id)}.json`, { h: x.id });
 await json(`${MARC.id}/proches.json`, { ids: [SAM.id] });
 await json(`${SAM.id}/proches.json`, { ids: [MARC.id] });
@@ -112,10 +116,12 @@ const p = await tel(ALLUME, SAM);
 await p.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
 await fermerPablito(p);
 await p.waitForSelector(".cm-tete", { timeout: 20000 }).catch(() => null);
-ok(new URL(p.url()).hash === "#proches" && (await texte(p, ".cm-titre h2")) === "Chez moi", `l'appli s'ouvre sur « Chez moi » (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
-ok((await menu(p)) === "Découvrir · Chez moi · Autour" && (await p.locator(".mc-nav-proches.mc-nav-centre.pris").count()) === 1, `le menu du bas, à trois, « Chez moi » au milieu : ${await menu(p)}`);
-await p.waitForSelector(".cm-attend", { timeout: 20000 }).catch(() => null);
-ok((await texte(p, ".cm-attend b")) === "Ton univers t’attend 🏡" && (await p.locator('.cm-attend[href="/univers"]').count()) === 1, `sans univers encore : ce qui l'attend (${await texte(p, ".cm-attend b")})`);
+ok(new URL(p.url()).hash === "#proches" && (await texte(p, "#o-proches .cm-titre h2")) === "Messages" && (await p.locator("#o-proches .cm-fenetre, #o-proches .cm-attend").count()) === 0, `l'appli s'ouvre sur « Messages », sans la fenêtre sur son univers (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
+ok((await menu(p)) === "Découvrir · Messages · Ma maison · Autour" && (await p.locator(".mc-nav-proches.pris").count()) === 1 && (await p.locator(".mc-nav-maison.mc-nav-centre").count()) === 1, `🏠 le menu du bas, à quatre, « Ma maison » en gros bouton : ${await menu(p)}`);
+await p.locator(".mc-nav-maison").click();
+await p.waitForSelector("#o-maison .cm-attend", { timeout: 20000 }).catch(() => null);
+ok(new URL(p.url()).hash === "#maison" && (await texte(p, "#o-maison .cm-titre h2")) === "Ma maison" && (await texte(p, "#o-maison .cm-attend b")) === "Ta maison t’attend 🏡" && (await p.locator('#o-maison .cm-attend[href="/univers"]').count()) === 1, `🏠 « Ma maison », sans univers encore : ce qui l'attend (${await texte(p, "#o-maison .cm-attend b")})`);
+await p.locator(".mc-nav-proches").click();
 await p.waitForSelector(".cm-liste li[data-cle]", { timeout: 20000 }).catch(() => null);
 const ligneMarc = await texte(p, ".cm-liste li[data-cle] .cm-ligne");
 ok(ligneMarc.includes("Marc") && ligneMarc.includes("Dis-lui bonjour") && (await p.locator(".pr-grille, .pr-wa, .pr-lien").count()) === 0, `ses conversations, comme WhatsApp : Marc (${ligneMarc}) ; plus de cartes ni de blocs`);
@@ -145,26 +151,52 @@ await p.waitForFunction(() => location.hash === "#memes", null, { timeout: 10000
 ok(new URL(p.url()).hash === "#memes", "« Mes mèmes envoyés » : là où ils sont");
 await p.locator(".mc-nav-proches").click();
 
-// ═══ 🏡 MARC, QUI A SON UNIVERS : la fenêtre sur son univers, sa pastille d'humeur, ⚙️ ═══
+// ═══ 🏡 MARC, QUI A SON UNIVERS : « Ma maison » (son univers en entier, ⚙️) ; sa pastille d'humeur, dans « Messages » ═══
 const m = await tel(ALLUME, MARC);
 await m.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
 await fermerPablito(m);
-await m.waitForSelector(".cm-fenetre .cm-place img", { timeout: 20000 }).catch(() => null);
+await m.waitForSelector("#o-proches .cm-tete", { timeout: 20000 }).catch(() => null);
+await m.locator(".mc-nav-maison").click();
+await m.waitForSelector("#o-maison .cm-fenetre .cm-place img", { timeout: 20000 }).catch(() => null);
 const fen = await m.evaluate(() => {
-  const f = document.querySelector(".cm-fenetre")?.getBoundingClientRect();
-  const fig = document.querySelector(".cm-place img")?.getBoundingClientRect();
+  const f = document.querySelector("#o-maison .cm-fenetre")?.getBoundingClientRect();
+  const fig = document.querySelector("#o-maison .cm-place img")?.getBoundingClientRect();
   return f && fig ? { h: f.height / f.width, dedans: fig.top >= f.top - 2 && fig.bottom <= f.bottom + 40, figH: fig.height / f.height } : null;
 });
-ok(Boolean(fen) && fen.h < 1.05 && fen.dedans && fen.figH > 0.35, `la fenêtre sur son univers : sa figurine chez elle, au milieu (${JSON.stringify(fen)})`);
-ok((await m.locator('.cm-reglages[href="/univers/monde"]').count()) === 1 && (await texte(m, ".cm-humeur")) === "☀️ Ton humeur ?", "⚙️ : les réglages de son univers ; la pastille « Ton humeur ? »");
-await m.locator(".cm-humeur").click();
+ok(Boolean(fen) && fen.h > 1.4 && fen.dedans && fen.figH > 0.2, `🏠 « Ma maison » : son univers en entier, sa figurine chez elle (${JSON.stringify(fen)})`);
+ok((await m.locator('#o-maison .cm-reglages[href="/univers/monde"]').count()) === 1, "⚙️ : les réglages de son univers");
+await m.waitForSelector("#o-maison .mm-bouton[href^='/univers/chez/']", { timeout: 10000 }).catch(() => null);
+ok((await m.locator("#o-maison .mm-bouton").first().getAttribute("href")) === `/univers/chez/${cleProfil(MARC.id)}`, "« 👀 Comme la voient mes visiteurs » : sa page de visite");
+// 🎬 ses pièces : son univers, puis son salon — on glisse ; un toucher, on entre (sa figurine, ses vedettes)
+await m.waitForSelector("#o-maison .mm-piece", { timeout: 10000 }).catch(() => null);
+ok((await m.locator("#o-maison .mm-page").count()) === 2 && (await texte(m, "#o-maison .mm-points span")).includes("Glisse pour visiter tes pièces"), "🎬 « Ma maison » : son univers, puis son salon (« Glisse pour visiter tes pièces → »)");
+await m.locator("#o-maison .mm-points button").nth(1).click();
+await m.waitForFunction(() => document.querySelector("#o-maison .mm-points span")?.textContent === "Le salon", null, { timeout: 5000, polling: 150 }).catch(() => null);
+ok((await texte(m, "#o-maison .mm-points span")) === "Le salon", "on glisse : « Le salon »");
+await m.locator("#o-maison .mm-piece").click();
+await m.waitForSelector(".pv-plein .pv-objet", { timeout: 5000 }).catch(() => null);
+ok((await m.locator(".pv-plein .pv-objet").count()) === 3 && (await texte(m, ".pv-plein .pv-nom")) === "Le salon" && (await m.locator(".pv-plein .pv-figurine").count()) === 1, "un toucher : dedans, en plein écran — sa figurine, ses trois vedettes");
+await m.locator('.pv-plein .pv-objet[data-objet="platine"]').click();
+await m.waitForSelector(".pv-plein .pv-carte", { timeout: 3000 }).catch(() => null);
+ok((await texte(m, ".pv-plein .pv-carte")).includes("Le tourne-disque") && (await m.locator(".pv-plein .pv-scene.vise").count()) === 1, "il touche le tourne-disque : la caméra s'en approche, sa carte monte");
+await m.screenshot({ path: `${D}/bascule-2c-piece-vivante.png` });
+await m.keyboard.press("Escape");
+await m.keyboard.press("Escape");
+await m.waitForSelector(".pv-plein", { state: "detached", timeout: 3000 }).catch(() => null);
+ok((await m.locator(".pv-plein").count()) === 0, "Échap, Échap : il ressort");
+await m.locator("#o-maison .mm-points button").first().click();
+await m.screenshot({ path: `${D}/bascule-2-ma-maison.png` });
+await m.locator(".mc-nav-proches").click();
+await m.waitForSelector("#o-proches .cm-humeur", { timeout: 10000 }).catch(() => null);
+ok((await texte(m, "#o-proches .cm-humeur")) === "☀️ Ton humeur ?" && (await m.locator("#o-proches .cm-fenetre").count()) === 0, "« Messages » : la pastille « Ton humeur ? », sans la fenêtre");
+await m.locator("#o-proches .cm-humeur").click();
 await m.waitForSelector(".cm-feuille .rt-bloc", { timeout: 10000 }).catch(() => null);
 ok((await m.locator(".cm-feuille .rt-bloc").count()) >= 1, "la pastille ouvre son humeur du jour (la feuille de toujours)");
 await m.screenshot({ path: `${D}/bascule-2-chez-moi-univers.png` });
 await m.keyboard.press("Escape");
 await m.goto(`${ALLUME}/univers/monde`, { waitUntil: "networkidle" });
 await m.waitForSelector(".um-retour", { timeout: 20000 }).catch(() => null);
-ok((await m.locator('.um-retour[href="/collection#proches"]').count()) === 1, "ses réglages : « ← Chez moi » en haut");
+ok((await m.locator('.um-retour[href="/collection#maison"]').count()) === 1, "ses réglages : « ← Ma maison » en haut");
 await m.goto(`${ALLUME}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(m);
 await m.waitForSelector(".tf-moi, .tf", { timeout: 20000 }).catch(() => null);
@@ -210,13 +242,17 @@ ok((await texte(m, ".vr-titre")).includes("C’est Léa") && (await texte(m, ".v
 await m.screenshot({ path: `${D}/bascule-3d-porte-ouverte.png` });
 await m.locator(".vr-lien", { hasText: "Fermer" }).click();
 await m.waitForSelector(".vr", { state: "detached", timeout: 5000 }).catch(() => null);
-await m.waitForSelector(".cm-fenetre .cm-souvenir", { timeout: 10000 }).catch(() => null);
-ok((await m.locator(".vr").count()) === 0 && (await m.locator(".cm-fenetre .cm-souvenir").count()) === 1 && (await m.locator(".cm-badge-visites").count()) === 0, "refermé : le bouquet est posé dans sa fenêtre ; plus rien ne l'attend");
+// (ses visites, marquées vues puis relues : la pastille part avec la réponse)
+await m.waitForSelector(".cm-badge-visites", { state: "detached", timeout: 8000 }).catch(() => null);
+ok((await m.locator(".vr").count()) === 0 && (await m.locator(".cm-badge-visites").count()) === 0, `refermé : plus rien ne l'attend${(await m.locator(".cm-badge-visites").count()) ? ` (encore : « ${await m.locator(".cm-badge-visites").first().textContent()} »)` : ""}`);
+await m.locator(".mc-nav-maison").click();
+await m.waitForSelector("#o-maison .cm-fenetre .cm-souvenir", { timeout: 10000 }).catch(() => null);
+ok((await m.locator("#o-maison .cm-fenetre .cm-souvenir").count()) === 1, "🏠 le bouquet est posé chez lui, dans « Ma maison »");
 await m.screenshot({ path: `${D}/bascule-3e-bouquet-pose.png` });
-await m.reload({ waitUntil: "networkidle" });
+await m.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
 await m.waitForSelector(".cm-visites", { timeout: 20000 }).catch(() => null);
 await m.waitForTimeout(1200);
-ok((await m.locator(".vr").count()) === 0 && (await texte(m, ".cm-puce-visites")).includes("Mes visites"), "en revenant : plus de découverte (c'est vu) ; « 🚪 Mes visites » sur sa fenêtre");
+ok((await m.locator(".vr").count()) === 0 && (await texte(m, ".cm-puce-visites")).includes("Mes visites"), "en revenant : plus de découverte (c'est vu) ; « 🚪 Mes visites », en pastille");
 await m.locator(".cm-puce-visites").click();
 await m.waitForSelector(".vr-carte.bilan", { timeout: 5000 }).catch(() => null);
 const bilan = await texte(m, ".vr-carte.bilan");
@@ -273,11 +309,12 @@ ok((await texte(m, ".pr-plein .pr-meme.moi")).includes("Moi le lundi matin"), "�
 await m.locator(".pr-plein .pr-retour").click();
 
 // 🎁 Sam laisse un livre chez Marc, depuis leur conversation (Marc a son univers : « 🏡 Son univers »)
-await p.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
+await p.goto(`${ALLUME}/collection?v=${Date.now()}#proches`, { waitUntil: "networkidle" });
 await fermerPablito(p);
 // (🎭 lot 4 : chez Sam, la ligne de Marc dit son mème)
 await p.waitForFunction((c) => document.querySelector(`.cm-liste li[data-cle="${c}"] .cm-texte`)?.textContent?.includes("mème"), cleProfil(MARC.id), { timeout: 15000, polling: 200 }).catch(() => null);
-ok((await texte(p, `.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-texte`)).includes("🎭 t’a envoyé un mème"), "🎭 chez Sam : « Marc — 🎭 t'a envoyé un mème »");
+const ligneMeme = await texte(p, `.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-texte`);
+ok(ligneMeme.includes("🎭 t’a envoyé un mème"), `🎭 chez Sam : « Marc — 🎭 t'a envoyé un mème »${ligneMeme.includes("mème") ? "" : ` (la ligne dit : « ${ligneMeme} »)`}`);
 await p.locator(`.cm-liste li[data-cle="${cleProfil(MARC.id)}"] .cm-ligne`).click();
 await p.waitForSelector(".pr-plein .pr-meme.lui", { timeout: 15000 }).catch(() => null);
 await p.locator(".pr-plein .pr-meme.lui button").click();
@@ -286,7 +323,7 @@ ok((await p.locator(".pr-regarde video").count()) === 1 && (await p.locator(".pr
 await p.screenshot({ path: `${D}/bascule-3j-meme-recu.png` });
 await p.locator(".pr-regarde-fermer").click();
 await p.waitForSelector(".pr-plein .pr-son-univers", { timeout: 15000 }).catch(() => null);
-ok((await p.locator(".pr-plein .pr-son-univers").getAttribute("href").catch(() => "")) === `/univers/chez/${cleProfil(MARC.id)}`, "chez Sam, la conversation avec Marc : « 🏡 Son univers »");
+ok((await p.locator(".pr-plein .pr-son-univers").getAttribute("href").catch(() => "")) === `/univers/chez/${cleProfil(MARC.id)}` && (await texte(p, ".pr-plein .pr-son-univers")) === "🏠 Chez Marc" && (await p.locator(`.pr-plein a.pr-avatar[href="/univers/chez/${cleProfil(MARC.id)}"]`).count()) === 1, "chez Sam, la conversation avec Marc : « 🏠 Chez Marc », et sa figurine y mène aussi");
 await p.locator(".pr-plein .pr-geste", { hasText: "Cadeau" }).click();
 await p.waitForSelector(".pr-feuille-cadeau .pr-objets button", { timeout: 10000 }).catch(() => null);
 await p.locator('.pr-feuille-cadeau .pr-objets button[aria-label="Un livre"]').click();

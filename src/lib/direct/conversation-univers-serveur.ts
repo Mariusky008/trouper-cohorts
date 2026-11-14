@@ -25,6 +25,7 @@ import { parleDAlcool } from "./meme-surprise";
 import { transcrire } from "./talkie-serveur";
 import { enregistrerVersionMonde, lireFicheMonde, lireFichePerso } from "./fiches-serveur";
 import { elementsVerifies, sesMots, VISIBILITE_PAR_DEFAUT, type ElementMonde } from "./monde";
+import { ambiancesActives, ambianceValide, proposerAmbiance } from "./ambiances";
 import {
   CORRECTIONS_MAX,
   ESQUISSE_DE_DEPART,
@@ -441,6 +442,15 @@ export async function preparerProposition(supabase: Supabase, h: string): Promis
     await ecrire(supabase, h, { ...apres, messages: [...messagesDe(apres), pablito("Mon pinceau a glissé… Réessaie dans un instant ?")], attend: undefined });
     return;
   }
+  // 🎨 L'AMBIANCE : celle que Pablito propose d'après ce qu'il lui a raconté (et l'âge que montre sa figurine) ; s'il en
+  // avait choisi une autre, elle reste
+  if (ambiancesActives()) {
+    const avant = apres.proposition;
+    const perso = await lireFichePerso(supabase, h).catch(() => ({ fiche: null }));
+    const a = proposerAmbiance({ proposition: p.texte, elements: p.elements }, s(perso.fiche?.traits?.age));
+    const garde = avant?.ambiance_choisie && avant.ambiance ? avant.ambiance : null;
+    Object.assign(p, { ambiance_proposee: a.ambiance, ambiance_pourquoi: a.pourquoi, ambiance: garde ?? a.ambiance, ...(garde ? { ambiance_choisie: true as const } : {}) });
+  }
   await ecrire(supabase, h, {
     ...apres,
     proposition: p,
@@ -457,6 +467,17 @@ export async function retirerElement(supabase: Supabase, h: string, el: unknown)
   const elements = c.proposition.elements.filter((e) => e.id !== s(el));
   if (elements.length === c.proposition.elements.length) return { error: "Cet élément n’est plus là.", statut: 404 };
   await ecrire(supabase, h, { ...c, proposition: { ...c.proposition, elements } });
+  return {};
+}
+
+/** 🎨 Il choisit une autre ambiance que celle de Pablito (avant de valider). */
+export async function choisirAmbiance(supabase: Supabase, h: string, x: unknown): Promise<{ error?: string; statut?: number }> {
+  const a = ambianceValide(x);
+  if (!a) return { error: "Quelle ambiance ?", statut: 400 };
+  if (!ambiancesActives()) return { error: "Les ambiances ne sont pas ouvertes.", statut: 409 };
+  const c = await lire(supabase, h);
+  if (!c.proposition || c.validee) return { error: "Il n’y a rien à changer.", statut: 409 };
+  await ecrire(supabase, h, { ...c, proposition: { ...c.proposition, ambiance: a, ambiance_choisie: true } });
   return {};
 }
 
@@ -509,6 +530,8 @@ export async function validerUnivers(supabase: Supabase, h: string): Promise<{ v
       references: {},
       visibilite: deja?.visibilite ?? VISIBILITE_PAR_DEFAUT,
       souvenirs: deja?.souvenirs ?? [],
+      // 🎨 (l'ambiance de son décor : celle qu'il a gardée ou choisie)
+      ...(ambiancesActives() && p.ambiance ? { decor_ambiance: p.ambiance } : {}),
     },
     deja ? "sa conversation, refaite" : "sa conversation avec Pablito",
   );
