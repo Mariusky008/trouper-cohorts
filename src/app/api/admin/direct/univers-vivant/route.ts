@@ -1,5 +1,5 @@
 // 🌟 SON UNIVERS, VIVANT — L'ESSAI (`lib/direct/univers-vivant-serveur.ts`) : son décor du moment devient une photo
-// vivante (Google Veo). Réservé à l'administrateur, sur SON univers (le cookie d'habitant de ce téléphone).
+// vivante (Google, Gemini Omni Flash). Réservé à l'administrateur, sur SON univers (le cookie d'habitant de ce téléphone).
 //
 // GET                              → { etat } : son décor (signé), la vidéo si elle est faite d'après lui, la commande
 //                                    en cours, une vidéo d'un autre décor (`perimee`), le moteur branché

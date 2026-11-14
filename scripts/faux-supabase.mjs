@@ -612,6 +612,8 @@ const courriels = [];
 /** Les notifications « envoyées » au faux service (les plus récentes à la fin). */
 const pushs = [];
 const videosEssai = new Map();
+// (🎥 le faux Omni : chaque interaction, sa vidéo rendue en ligne ou en fichier)
+const interactionsEssai = new Map();
 const consignesIA = [];
 const pagesLues = [];
 // 🎲 LES MÈMES « SURPRENDS-MOI ! » DE LA FAUSSE IA : le premier pas encore dans la consigne (« déjà proposés ») ; un goût
@@ -854,45 +856,47 @@ http
         videosEssai.set(video[1], n);
         return repondre(res, 200, n < 2 ? { id: video[1], status: "in_progress", progress: 40 } : { id: video[1], status: "completed", progress: 100 });
       }
-      // 🎥 UN FAUX VEO (l'API Gemini de Google, `GEMINI_VIDEO_BASE_URL=…/gemini`) : ses moteurs (un texte, deux vidéos) ;
-      // une commande (« VEO <moteur> <format> <durée>s <taille de l'image reçue> <consigne> ») — la première forme, avec
-      // « personGeneration », est refusée (400), la suivante passe ; « en train » à la première question, faite à la
-      // deuxième ; la vidéo se télécharge. La terrasse : aucun moteur vidéo trouvé (404).
+      // 🎥 UN FAUX GEMINI OMNI FLASH (l'API Gemini de Google, `GEMINI_VIDEO_BASE_URL=…/gemini` ; Veo y est fermé depuis le
+      // 22 octobre 2026) : ses moteurs (un texte, trois vidéos) ; une commande par l'API « Interactions » (« OMNI <moteur>
+      // <format> <durée> <résolution> <fond|attente> <taille de l'image reçue> <consigne> ») ; « en train » à la première
+      // question, faite à la deuxième — son univers : la vidéo en ligne (base64) ; une pièce : un fichier à télécharger.
+      // La terrasse : aucun moteur trouvé (404).
       if (url.pathname === "/gemini/v1beta/models" && req.method === "GET") {
         return repondre(res, 200, {
           models: [
             { name: "models/gemini-2.5-flash", supportedGenerationMethods: ["generateContent"] },
-            { name: "models/veo-3.1-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
-            { name: "models/veo-3.1-fast-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
-            { name: "models/veo-3.1-lite-generate-001", supportedGenerationMethods: ["predictLongRunning"] },
+            { name: "models/gemini-omni-flash-preview", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/gemini-omni-1.1-flash", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/gemini-omni-1.2-flash", supportedGenerationMethods: ["generateContent"] },
           ],
         });
       }
-      const veo = /^\/gemini\/v1beta\/models\/([\w.-]+):predictLongRunning$/.exec(url.pathname);
-      if (veo && req.method === "POST") {
+      if (url.pathname === "/gemini/v1beta/interactions" && req.method === "POST") {
         if (req.headers["x-goog-api-key"] !== "faux") return repondre(res, 401, { error: { code: 401, message: "API key not valid" } });
         const q = JSON.parse((await corps(req)).toString() || "{}");
-        const inst = q.instances?.[0] ?? {};
-        const img = inst.image?.inlineData?.data ?? inst.image?.bytesBase64Encoded ?? "";
+        const entree = Array.isArray(q.input) ? q.input : [];
+        const texte = String(entree.find((c) => c?.type === "text")?.text ?? "");
+        const img = entree.find((c) => c?.type === "image")?.data ?? "";
         const sharp = (await import("sharp")).default;
         const m = img ? await sharp(Buffer.from(img, "base64")).metadata().catch(() => null) : null;
-        if (String(inst.prompt ?? "").includes("string lights glow")) {
-          consignesIA.push(`VEO-404 ${veo[1]}`);
-          return repondre(res, 404, { error: { code: 404, message: `models/${veo[1]} is not found for API version v1beta` } });
+        if (texte.includes("string lights glow")) {
+          consignesIA.push(`OMNI-404 ${q.model}`);
+          return repondre(res, 404, { error: { code: 404, message: `models/${q.model} is not found for API version v1beta` } });
         }
-        if (q.parameters?.personGeneration) {
-          consignesIA.push(`VEO-400 ${veo[1]} personGeneration`);
-          return repondre(res, 400, { error: { code: 400, message: "personGeneration isn't supported by this model" } });
-        }
-        consignesIA.push(`VEO ${veo[1]} ${q.parameters?.aspectRatio ?? ""} ${q.parameters?.durationSeconds ?? "-"}s ${m ? `${m.width}x${m.height}` : "aucune"} ${inst.prompt ?? ""}`);
-        videosEssai.set("op1", 0);
-        return repondre(res, 200, { name: `models/${veo[1]}/operations/op1` });
+        const f = q.response_format ?? {};
+        consignesIA.push(`OMNI ${q.model} ${f.aspect_ratio ?? ""} ${f.duration ?? "-"} ${f.resolution ?? "-"} ${q.background ? "fond" : "attente"} ${m ? `${m.width}x${m.height}` : "aucune"} ${texte}`);
+        const id = `int${videosEssai.size + 1}`;
+        videosEssai.set(id, 0);
+        interactionsEssai.set(id, texte.includes("ambient things of this place") ? "en-ligne" : "fichier");
+        return repondre(res, 200, { id, status: "in_progress", model: q.model });
       }
-      const operation = /^\/gemini\/v1beta\/models\/[\w.-]+\/operations\/(\w+)$/.exec(url.pathname);
-      if (operation && req.method === "GET" && videosEssai.has(operation[1])) {
-        const n = videosEssai.get(operation[1]) + 1;
-        videosEssai.set(operation[1], n);
-        return repondre(res, 200, n < 2 ? { done: false } : { done: true, response: { generateVideoResponse: { generatedSamples: [{ video: { uri: "http://127.0.0.1:54321/gemini/v1beta/files/video1:download?alt=media" } }] } } });
+      const interaction = /^\/gemini\/v1beta\/interactions\/(\w+)$/.exec(url.pathname);
+      if (interaction && req.method === "GET" && interactionsEssai.has(interaction[1])) {
+        const n = videosEssai.get(interaction[1]) + 1;
+        videosEssai.set(interaction[1], n);
+        if (n < 2) return repondre(res, 200, { id: interaction[1], status: "in_progress" });
+        const video = interactionsEssai.get(interaction[1]) === "en-ligne" ? { type: "video", mime_type: "video/mp4", data: Buffer.from("faux mp4 de son univers vivant").toString("base64") } : { type: "video", mime_type: "video/mp4", uri: "files/video1" };
+        return repondre(res, 200, { id: interaction[1], status: "completed", steps: [{ type: "user_input", content: [{ type: "text", text: "…" }] }, { type: "model_output", content: [video] }] });
       }
       if (url.pathname === "/gemini/v1beta/files/video1:download" && req.headers["x-goog-api-key"] === "faux") {
         res.writeHead(200, { "content-type": "video/mp4" });

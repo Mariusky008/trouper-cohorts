@@ -164,8 +164,9 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
   s'en approche ; la télé passe un lien YouTube. **À juger par le propriétaire sur son téléphone.** Et dans l'onglet
   « Ma maison » (9.0 novoquinquagies) : quand on a des pièces, son univers puis ses pièces défilent, on glisse, on entre
   en plein écran. **À décider par le propriétaire** : qui reçoit des pièces, et quand (coût : environ 0,45 $ la
-  pièce — 0,25 $ d'image, 0,20 $ de vidéo chez Google Veo « Lite », quatre secondes ; Sora d'OpenAI a fermé).
-  **Son univers, vivant** (9.0 duosexagies 🌟) : son décor du moment en photo vivante (Veo, environ 0,20 $), posée par-dessus
+  pièce — 0,25 $ d'image, 0,40 $ de vidéo chez Google, Gemini Omni Flash, quatre secondes ; Sora d'OpenAI a fermé, et
+  Veo dans l'API Gemini aussi, le 22 octobre 2026).
+  **Son univers, vivant** (9.0 duosexagies 🌟) : son décor du moment en photo vivante (Gemini Omni, environ 0,40 $), posée par-dessus
   dans « Ma maison » et chez ses visiteurs ; d'abord par l'essai de l'administrateur — à décider : la faire pour chacun.
 - **Une autre session** construit l'étagère E5 (`docs/univers/etagere-accord.md`) puis les messages écrits
   (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à

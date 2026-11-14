@@ -1,8 +1,8 @@
 // 🌟 SON UNIVERS, VIVANT — L'ESSAI (`lib/direct/univers-vivant-serveur.ts`, `app/api/admin/direct/univers-vivant`) —
-// contre le faux Supabase et son faux Veo, jamais la vraie base, jamais Google.
+// contre le faux Supabase et son faux Google (Gemini Omni), jamais la vraie base, jamais Google.
 //
 // Réservé à l'administrateur, sur SON univers. Léa a sa figurine assise et son décor ; Sam n'a pas d'univers. La vidéo
-// commandée (Veo « Lite », 9:16, 4 s, 720 × 1280 : le milieu de son décor ; la caméra immobile, l'espace devant vide,
+// commandée (Gemini Omni Flash, 9:16, 4 s, 720p ; le milieu de son décor à 720 × 1280 ; la caméra immobile, l'espace devant vide,
 // sans voix), « en train », puis faite et rangée, d'après son décor du moment (celui du mois, fait à sa première
 // visite). Elle se montre dans « Ma maison » (`/api/direct/univers` : `decorVivant`) et à ses visiteurs
 // (`/api/direct/visites?cle=` : `decorVivant`). Son décor change (une retouche) : elle ne se montre plus (« périmée ») ;
@@ -121,24 +121,24 @@ ok(duMois, "🍂 son décor du mois est fait (sa première visite du mois) : c'e
 const avant = (await toutIA()).length;
 const c1 = await appeler(lea, { action: "fabriquer" });
 const ia = (await toutIA()).slice(avant);
-const commande = ia.find((c) => c.startsWith("VEO ")) ?? "";
+const commande = ia.find((c) => c.startsWith("OMNI ")) ?? "";
 ok(c1.statut === 200 && c1.progres === 0 && !c1.fait && c1.etat?.enCours?.depuis, "la vidéo : commandée (rien de fait encore)");
 ok(
-  commande.startsWith("VEO veo-3.1-lite-generate-001 9:16 4s 720x1280 ") && commande.includes("A living photo") && commande.includes("locked-off tripod shot") && commande.includes("The open space at the bottom in the middle stays empty and perfectly still") && commande.includes("no voice"),
-  `chez Veo « Lite » : 9:16, 4 s, le milieu de son décor (720 × 1280) ; la caméra immobile, l'espace devant vide, sans voix (${commande.slice(0, 48)}…)`,
+  commande.startsWith("OMNI gemini-omni-1.2-flash 9:16 4s 720p fond 720x1280 <FIRST_FRAME>@Image1 <LAST_FRAME>@Image1\n") && commande.includes("A living photo") && commande.includes("locked-off tripod shot") && commande.includes("The open space at the bottom in the middle stays empty and perfectly still") && commande.includes("no voice"),
+  `chez Google (Gemini Omni) : 9:16, 4 s, 720p, le milieu de son décor (720 × 1280), première et dernière image ; la caméra immobile, l'espace devant vide, sans voix (${commande.slice(0, 60)}…)`,
 );
 const c2 = await appeler(lea, { action: "fabriquer" });
 ok(typeof c2.progres === "number" && c2.progres < 95 && !c2.fait && c2.etat?.enCours, `elle se fait (${c2.progres} %, estimé)`);
 const c3 = await appeler(lea, { action: "fabriquer" });
 const mp4 = await octets(`${D}/video.mp4`);
-ok(c3.fait === true && mp4?.toString() === "faux mp4 de la pièce vivante" && /^http/.test(c3.etat?.video ?? "") && !c3.etat.enCours && !c3.etat.perimee, "faite : rangée, signée");
+ok(c3.fait === true && mp4?.toString() === "faux mp4 de son univers vivant" && /^http/.test(c3.etat?.video ?? "") && !c3.etat.enCours && !c3.etat.perimee, "faite (la vidéo rendue en ligne) : rangée, signée");
 const resteCommande = await octets(`${D}/video.json`);
 const resteVerrou = await octets(`${D}/verrou.json`);
 ok(resteCommande === null && resteVerrou === null, `ni commande ni verrou ne restent (${resteCommande?.toString() ?? "-"} ${resteVerrou?.toString() ?? "-"})`);
 const source = (await octets(`${D}/decor.json`))?.toString() ?? "";
 ok(JSON.parse(source || "{}").chemin?.startsWith(`${LEA.id}/monde/saisons/`), `le décor d'où elle vient est noté : son décor du mois (${source})`);
 const c4 = await appeler(lea, { action: "fabriquer" });
-ok(c4.statut === 200 && !c4.fait && c4.progres === undefined && (await toutIA()).slice(avant).filter((c) => c.startsWith("VEO ")).length === 1, "plus rien à faire (aucune autre commande)");
+ok(c4.statut === 200 && !c4.fait && c4.progres === undefined && (await toutIA()).slice(avant).filter((c) => c.startsWith("OMNI ")).length === 1, "plus rien à faire (aucune autre commande)");
 
 // ─── 🏠 « Ma maison » et ses visiteurs : son univers vit ───
 const m1 = await maMaison();
@@ -160,7 +160,7 @@ const r1 = await appeler(lea, { action: "refaire" });
 ok(r1.statut === 200 && !r1.etat?.perimee && !r1.etat.video && (await octets(`${D}/video.mp4`)) === null && (await octets(`${D}/decor.json`)) === null, "la refaire : tout s'efface");
 const avantBis = (await toutIA()).length;
 const n1 = await appeler(lea, { action: "fabriquer" });
-ok(n1.progres === 0 && (await toutIA()).slice(avantBis).some((c) => c.startsWith("VEO veo-3.1-lite-generate-001 9:16 4s 720x1280 ")), "et une nouvelle se commande, d'après son nouveau décor");
+ok(n1.progres === 0 && (await toutIA()).slice(avantBis).some((c) => c.startsWith("OMNI gemini-omni-1.2-flash 9:16 4s 720p fond 720x1280 ")), "et une nouvelle se commande, d'après son nouveau décor");
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);

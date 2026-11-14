@@ -3,7 +3,7 @@
 /**
  * 🌟 TON UNIVERS, VIVANT — L'ESSAI (`lib/direct/univers-vivant-serveur.ts`, 14 novembre 2026 : « une jolie photo sans
  * âme […] mon univers doit donner l'impression d'être en vie ») : ton décor du moment devient une photo vivante (Google
- * Veo « Lite », quatre secondes en boucle, environ 0,20 $). Faite, elle se montre dans « Ma maison » et à tes visiteurs.
+ * Gemini Omni Flash, quatre secondes en boucle, environ 0,40 $). Faite, elle se montre dans « Ma maison » et à tes visiteurs.
  */
 import { useCallback, useEffect, useState } from "react";
 import { DecorVivant } from "@/app/univers/piece-vivante";
@@ -58,7 +58,7 @@ export function UniversVivant() {
       <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🌟 Ton univers, vivant (essai)</h2>
       <p style={{ margin: "0 0 12px", color: "#555", lineHeight: 1.45 }}>
         Ton décor du moment devient une photo vivante : la caméra ne bouge pas, seules les choses de ton univers vivent (les flammes, les lampes, les plantes,
-        l’eau, les nuages), en boucle. Google Veo, quatre secondes, environ 0,20 $. Faite, elle se montre dans « Ma maison » et à tes visiteurs.
+        l’eau, les nuages), en boucle. Google (Gemini Omni), quatre secondes, environ 0,40 $. Faite, elle se montre dans « Ma maison » et à tes visiteurs.
       </p>
       {etat && !etat.univers && <p style={{ color: "#b3261e" }}>Ton univers n’a pas encore son décor : crée-le d’abord (/univers/monde).</p>}
       {etat && !etat.moteur && <p style={{ color: "#b3261e" }}>Le moteur vidéo de Google n’est pas branché : ajoute GEMINI_VIDEO_API_KEY dans Vercel.</p>}

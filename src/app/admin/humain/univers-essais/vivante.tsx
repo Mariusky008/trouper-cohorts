@@ -112,8 +112,8 @@ export function PieceVivante() {
       <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🎬 Une pièce entière, vivante (essai)</h2>
       <p style={{ margin: "0 0 10px", color: "#555", lineHeight: 1.45 }}>
         Chaque pièce entière à l’écran, vue de loin, comme l’image de ton univers : deux ou trois gros objets (ce sont eux qui vivent), le reste sur des étagères.
-        Puis le moteur vidéo de Google (Veo) en fait une <b>photo vivante</b> : la caméra ne bouge pas, seuls les objets vivent (le disque tourne, le feu danse, les
-        poissons nagent, la lumière scintille), en boucle. Ensuite, entre dedans : touche un objet, on s’en approche. Coût, environ : 0,25 $ l’image, 0,20 $ la
+        Puis le moteur vidéo de Google (Gemini Omni) en fait une <b>photo vivante</b> : la caméra ne bouge pas, seuls les objets vivent (le disque tourne, le feu danse, les
+        poissons nagent, la lumière scintille), en boucle. Ensuite, entre dedans : touche un objet, on s’en approche. Coût, environ : 0,25 $ l’image, 0,40 $ la
         vidéo.
       </p>
       <div role="tablist" aria-label="Les pièces" style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "0 0 12px" }}>

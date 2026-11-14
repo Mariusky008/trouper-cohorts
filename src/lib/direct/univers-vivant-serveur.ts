@@ -1,8 +1,8 @@
 /**
  * 🌟 SON UNIVERS, VIVANT — l'essai (14 novembre 2026). Le propriétaire, le matin même : « une jolie photo sans âme […]
  * mon univers doit donner l'impression d'être en vie, qu'il s'y passe quelque chose ». Les pièces ont leur photo
- * vivante (`pieces-vivantes-serveur.ts`) ; son univers aussi, maintenant qu'une vidéo coûte environ 0,20 $ (Veo
- * « Lite », quatre secondes) : son décor du moment (celui du mois, s'il est fait) devient une photo vivante — la
+ * vivante (`pieces-vivantes-serveur.ts`) ; son univers aussi (Google, Gemini Omni Flash : quatre secondes en 720p,
+ * environ 0,40 $) : son décor du moment (celui du mois, s'il est fait) devient une photo vivante — la
  * caméra immobile, seules les choses de sa pièce vivent (les flammes, les lampes, les plantes, l'eau, les nuages) ;
  * l'espace dégagé devant, où sa figurine est assise, ne bouge pas.
  *
@@ -18,7 +18,7 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFicheMonde } from "./fiches-serveur";
 import { depotDans, signer, telecharger } from "./ma-figurine-serveur";
-import { commanderUneVideoVeo, moteurVideo, suivreChezVeo, TAILLE_VIDEO, VUE } from "./pieces-vivantes-serveur";
+import { commanderUneVideoGoogle, moteurVideo, suivreChezGoogle, TAILLE_VIDEO, VUE } from "./pieces-vivantes-serveur";
 import { decorDuMoment } from "./saison-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -66,7 +66,7 @@ export type EtatUniversVivant = { univers: boolean; decor?: string; video?: stri
 
 export async function etatUniversVivant(supabase: Supabase, h: string): Promise<EtatUniversVivant> {
   const chemin = await decorActuel(supabase, h);
-  const moteur = moteurVideo() === "veo";
+  const moteur = moteurVideo() === "google";
   if (!chemin) return { univers: false, moteur };
   const d = depotDans(supabase, dossier(h));
   const noms = await d.lister().catch(() => [] as string[]);
@@ -98,7 +98,7 @@ export async function decorVivant(supabase: Supabase, h: string, cheminDuMoment:
 
 /** 🛠️ Un passage : la commander (d'après son décor du moment), puis la suivre ; faite, la ranger. */
 export async function fabriquerUniversVivant(supabase: Supabase, h: string): Promise<{ fait?: true; progres?: number; erreur?: string }> {
-  if (moteurVideo() !== "veo") return { erreur: "La vidéo se fait chez Google (Veo) : sa clé n’est pas branchée ici (GEMINI_VIDEO_API_KEY)." };
+  if (moteurVideo() !== "google") return { erreur: "La vidéo se fait chez Google (Gemini Omni) : sa clé n’est pas branchée ici (GEMINI_VIDEO_API_KEY)." };
   const chemin = await decorActuel(supabase, h);
   if (!chemin) return { erreur: "Crée d’abord ton univers (/univers/monde)." };
   const d = depotDans(supabase, dossier(h));
@@ -116,12 +116,12 @@ export async function fabriquerUniversVivant(supabase: Supabase, h: string): Pro
     if (!s(commande.id) || s(commande.decor) !== chemin) {
       const decor = await telecharger(supabase, chemin);
       if (!decor) return { erreur: "Le décor de ton univers est introuvable." };
-      const c = await commanderUneVideoVeo(CONSIGNE_UNIVERS_VIVANT, await milieuDuDecor(decor));
+      const c = await commanderUneVideoGoogle(CONSIGNE_UNIVERS_VIVANT, await milieuDuDecor(decor));
       if ("erreur" in c) return { erreur: c.erreur };
       await d.ecrire("video.json", Buffer.from(JSON.stringify({ id: c.id, le: new Date().toISOString(), modele: c.modele, decor: chemin })), "application/json");
       return { progres: 0 };
     }
-    const suite = await suivreChezVeo(d, s(commande.id), s(commande.le));
+    const suite = await suivreChezGoogle(d, s(commande.id), s(commande.le));
     if ("erreur" in suite) return { erreur: suite.erreur };
     if ("progres" in suite) {
       await d.ecrire("video.json", Buffer.from(JSON.stringify({ ...commande, progres: suite.progres })), "application/json");
