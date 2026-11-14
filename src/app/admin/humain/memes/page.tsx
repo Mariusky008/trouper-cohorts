@@ -165,6 +165,7 @@ export default async function PageMemes() {
               { n: "… suivis d’un message le jour même", v: pc(etSomme.suivis ?? 0, etSomme.rappels ?? 0) },
               { n: "Promesses tenues", v: String(etSomme.tenues ?? 0) },
               { n: "Étagères rallumées", v: String(etSomme.rallumees ?? 0) },
+              { n: "Souvenirs déposés à la main", v: String(etSomme.deposes ?? 0) },
             ].map((x) => (
               <div key={x.n} style={carte}>
                 <small style={{ color: "#666" }}>{x.n}</small>

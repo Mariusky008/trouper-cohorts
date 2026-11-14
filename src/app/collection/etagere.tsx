@@ -23,6 +23,10 @@
  *   · 🕸️ LOT E3 « LA POUSSIÈRE ET LES IDÉES » : l'étagère qui prend la poussière (la scène grise, les toiles, les
  *     figurines endormies, le meuble terne ; `CartePoussiere` : rien que pour lui, de sa figurine) ; « ✨ L'ÉTAGÈRE SE
  *     RALLUME » (`CarteRallume`, la scène qui se réveille) ; « 🎭 Un mème avec votre blague » ; l'état sur la page.
+ *   · 🏡 LOT E4 « MON ÉTAGÈRE » (le 14 novembre 2026) : `EtagereChezMoi`, la planche sous la fenêtre de mon univers
+ *     (« 📚 Mon étagère ») ; `PageMonEtagere` : ce qui me concerne dans toutes mes conversations (d'où ça vient) et ce que
+ *     j'ai déposé, « 👀 Montrer à mes visiteurs » souvenir par souvenir ; `FeuilleDeposer` : « ＋ Déposer », sur la mienne
+ *     ou sur la nôtre (pour moi, pour lui, pour nous deux).
  *
  * LE MOT : à l'écran, « souvenir » ; dans le code, `objet`.
  */
@@ -32,9 +36,19 @@ import { Feuille } from "./ma-figurine";
 import { retenirMemePour } from "./meme-pour";
 import { versLeStudio } from "./vers-le-studio";
 import {
+  CATALOGUE,
+  EMOJI_DU_GENRE,
+  ETAGERE,
   ETAGERE_E2,
+  GENRES_DEPOT,
   RAYONS,
+  RAYONS_MIENS,
   REGLES_ETAGERE,
+  REGLES_MON_ETAGERE,
+  SORTES_DEPOT,
+  type GenreDepot,
+  type MonEtagereVue,
+  type SorteDate,
   dureeRelance,
   ecartJours,
   jourDe,
@@ -344,7 +358,7 @@ export function CarteNote({ o, prenom, onVoir, onRetirer }: { o: ObjetVu; prenom
   return (
     <li className="et-carte-fil" data-objet={o.id}>
       <div>
-        <b className="et-entete">📌 NOTÉ SUR VOTRE ÉTAGÈRE</b>
+        <b className="et-entete">{o.depose ? "✋ DÉPOSÉ SUR VOTRE ÉTAGÈRE" : "📌 NOTÉ SUR VOTRE ÉTAGÈRE"}</b>
         <span className="et-objet">
           <span className="et-e" aria-hidden="true">
             {o.emoji}
@@ -362,7 +376,9 @@ export function CarteNote({ o, prenom, onVoir, onRetirer }: { o: ObjetVu; prenom
             Retirer
           </button>
         </span>
-        <small className="et-pied">Noté par vos figurines · IA · visible de {prenom} et toi</small>
+        <small className="et-pied">
+          {o.depose ? `Déposé par ${o.de === "moi" ? "toi" : o.ditPar}` : "Noté par vos figurines · IA"} · visible de {prenom} et toi
+        </small>
       </div>
     </li>
   );
@@ -425,9 +441,15 @@ export function CarteEtagere({ c, prenom, tenues, onVoir, onCadeau, onPanneau, o
     <li className="et-carte-fil" data-carte={c.id}>
       <div>
         <b className="et-entete">{o.emoji} VOS FIGURINES SE SOUVIENNENT</b>
-        <blockquote>
-          « {o.citation} »<cite>{o.de === "moi" ? "Toi" : o.ditPar}, {leJourLong(o.ditLe)}</cite>
-        </blockquote>
+        {o.depose ? (
+          <p className="et-texte">
+            {o.titre} <small className="et-pied">· déposé par {o.de === "moi" ? "toi" : o.ditPar}, {leJourLong(o.ditLe)}</small>
+          </p>
+        ) : (
+          <blockquote>
+            « {o.citation} »<cite>{o.de === "moi" ? "Toi" : o.ditPar}, {leJourLong(o.ditLe)}</cite>
+          </blockquote>
+        )}
         <span className="et-duree">{dureeRelance(c.n ?? 0)}</span>
         {enCours ? (
           <span className="et-actions boutons">
@@ -470,7 +492,7 @@ export function RappelsDuMatin({ actif, onParler }: { actif: boolean; onParler: 
   return (
     <div className="et-rappels">
       {rappels.map((r) => (
-        <div key={`${r.cas}-${r.id}`} className={`et-rappel${r.cas === "encourage" ? " moi" : ""}`} data-objet={r.id}>
+        <div key={`${r.cas}-${r.id}`} className={`et-rappel${r.cas === "encourage" || r.cas === "mien" ? " moi" : ""}`} data-objet={r.id}>
           {r.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={r.image} alt="" draggable={false} />
@@ -478,9 +500,10 @@ export function RappelsDuMatin({ actif, onParler }: { actif: boolean; onParler: 
             <span aria-hidden="true">{r.emoji}</span>
           )}
           <div>
-            <small>{r.cas === "encourage" ? "💪 DE TA FIGURINE" : `📌 DE VOTRE ÉTAGÈRE, ${r.prenom.toLocaleUpperCase("fr-FR")} ET TOI`}</small>
+            <small>{r.cas === "encourage" ? "💪 DE TA FIGURINE" : r.cas === "mien" ? "📌 DE TON ÉTAGÈRE" : `📌 DE VOTRE ÉTAGÈRE, ${r.prenom.toLocaleUpperCase("fr-FR")} ET TOI`}</small>
             <p>{r.texte}</p>
             {r.cas !== "encourage" &&
+              r.cas !== "mien" &&
               (r.fait ? (
                 <p className="et-fait">✓ Envoyé à {r.prenom}</p>
               ) : (
@@ -509,6 +532,8 @@ export function FicheObjet({
   onDate,
   onFaire,
   onMeme,
+  mienne = false,
+  onMontrer,
 }: {
   o: ObjetVu | null;
   prenom: string;
@@ -517,6 +542,9 @@ export function FicheObjet({
   onDate: (o: ObjetVu, quand: string) => Promise<void>;
   onFaire?: (o: ObjetVu, action: "reussi" | "tenue" | "annuler-tenue") => Promise<void>;
   onMeme?: (texte: string) => void;
+  /** 🏡 (lot E4) sur « Mon étagère » : d'où il vient, « Montrer à mes visiteurs », « Ne plus le garder chez moi ». */
+  mienne?: boolean;
+  onMontrer?: (o: ObjetVu, oui: boolean) => Promise<void>;
 }) {
   const [changer, setChanger] = useState(false);
   const [quand, setQuand] = useState("");
@@ -556,10 +584,29 @@ export function FicheObjet({
           </span>
           <b className="et-fiche-titre">{o.titre}</b>
           <small className="et-fiche-detail">{o.detail}</small>
-          <blockquote>
-            « {o.citation} »<cite>Dit par {o.de === "moi" ? "toi" : o.ditPar} · {momentCourt(o.ditLe)}</cite>
-          </blockquote>
-          <small className="et-pied">Noté par vos figurines · IA · visible de {prenom} et toi</small>
+          {o.depose ? (
+            <p className="et-depose">
+              ✋ Déposé par {o.de === "moi" ? "toi" : o.ditPar} · {momentCourt(o.ditLe)}
+            </p>
+          ) : (
+            <blockquote>
+              « {o.citation} »<cite>Dit par {o.de === "moi" ? "toi" : o.ditPar} · {momentCourt(o.ditLe)}</cite>
+            </blockquote>
+          )}
+          <small className="et-pied">
+            {mienne
+              ? o.avec
+                ? `${o.depose ? "Sur" : "Noté sur"} votre étagère, ${o.avec.prenom} et toi${o.depose ? "" : " · IA"}`
+                : `Sur ton étagère · ${o.montre ? "tes visiteurs le voient" : "rien que pour toi"}`
+              : `${o.depose ? "Déposé à la main" : "Noté par vos figurines · IA"} · visible de ${prenom} et toi`}
+          </small>
+          {/* 👀 (lot E4) ce qui ne concerne que moi : mes visiteurs peuvent le voir (jamais la phrase, ni avec qui) */}
+          {mienne && onMontrer && o.peutMontrer && (
+            <button type="button" className={`et-bouton${o.montre ? " clair" : " or"}`} disabled={occupe} onClick={() => void faire(() => onMontrer(o, !o.montre))}>
+              {o.montre ? "🙈 Ne plus le montrer à mes visiteurs" : "👀 Montrer à mes visiteurs"}
+            </button>
+          )}
+          {mienne && o.avec && !o.peutMontrer && <p className="et-note-douce">🤝 Il est à vous deux : il reste entre {o.avec.prenom} et toi.</p>}
           {o.genre === "date" && avenir && !reussir && <p className="et-note-douce">⏰ Ta figurine te le rappellera le jour venu, au moment de ton humeur du matin.</p>}
           {reussir && (
             <button type="button" className="et-bouton or" disabled={occupe} onClick={() => void faire(() => onFaire!(o, "reussi"))}>
@@ -600,8 +647,9 @@ export function FicheObjet({
             </>
           )}
           <button type="button" className="et-bouton clair" disabled={occupe} onClick={() => void faire(() => onRetirer(o))}>
-            Retirer de l’étagère
+            {mienne ? (o.avec ? "Ne plus le garder chez moi" : "Retirer de mon étagère") : "Retirer de l’étagère"}
           </button>
+          {mienne && o.avec && <small className="et-pied">(Il reste sur votre étagère, {o.avec.prenom} et toi.)</small>}
           {erreur && (
             <p className="et-erreur" role="alert">
               {erreur}
@@ -623,6 +671,7 @@ export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; 
   const [fiche, setFiche] = useState<ObjetVu | null>(null);
   const [info, setInfo] = useState("");
   const [tour, setTour] = useState(0);
+  const [depot, setDepot] = useState(false);
   useEffect(() => {
     let fini = false;
     fetch(`${ROUTE}?avec=${cle}`, { cache: "no-store" })
@@ -749,6 +798,10 @@ export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; 
               {info}
             </p>
           )}
+          {/* ✋ (lot E4) déposer à la main, sur la nôtre */}
+          <button type="button" className="et-bouton et-deposer" onClick={() => setDepot(true)}>
+            ＋ Déposer sur votre étagère
+          </button>
           <p className="et-regles">{REGLES_ETAGERE}</p>
           {/* 🎭 (lot E3) leur blague, en mème */}
           {blague && onMeme && (
@@ -774,6 +827,407 @@ export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; 
         </>
       )}
       <FicheObjet o={fiche} prenom={vue?.prenom ?? ""} onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} onFaire={faireSur} onMeme={onMeme} />
+      <FeuilleDeposer
+        ouverte={depot}
+        avec={vue ? { cle, prenom: vue.prenom } : undefined}
+        onFermer={() => setDepot(false)}
+        onPose={(t) => {
+          setDepot(false);
+          setInfo(`✋ ${t} : posé sur votre étagère. ${vue?.prenom ?? "Ton proche"} le verra dans votre conversation.`);
+          setTour((x) => x + 1);
+        }}
+      />
+    </div>
+  );
+  return typeof document === "undefined" ? null : createPortal(contenu, document.body);
+}
+
+/**
+ * ✋ (lot E4) « ＋ DÉPOSER » : ce que c'est (une date, une promesse, un goût, une envie, une blague), son nom, son jour,
+ * son objet (le catalogue) ; sur la nôtre : pour qui ; sur la mienne : le montrer, ou non, à mes visiteurs.
+ */
+export function FeuilleDeposer({
+  ouverte,
+  avec,
+  visiteurs = false,
+  onFermer,
+  onPose,
+}: {
+  ouverte: boolean;
+  avec?: { cle: string; prenom: string };
+  /** (sur la mienne, quand j'ai un univers) « 👀 Mes visiteurs peuvent le voir » */
+  visiteurs?: boolean;
+  onFermer: () => void;
+  onPose: (titre: string) => void;
+}) {
+  const [genre, setGenre] = useState<GenreDepot | "">("");
+  const [sorte, setSorte] = useState<SorteDate>("evenement");
+  const [titre, setTitre] = useState("");
+  const [quand, setQuand] = useState("");
+  const [emoji, setEmoji] = useState("");
+  const [pour, setPour] = useState<"moi" | "lui" | "deux">("deux");
+  const [montre, setMontre] = useState(false);
+  const [occupe, setOccupe] = useState(false);
+  const [erreur, setErreur] = useState("");
+  // (rouverte : tout repart de zéro)
+  useEffect(() => {
+    if (!ouverte) return;
+    void Promise.resolve().then(() => {
+      setGenre("");
+      setSorte("evenement");
+      setTitre("");
+      setQuand("");
+      setEmoji("");
+      setPour("deux");
+      setMontre(false);
+      setErreur("");
+    });
+  }, [ouverte]);
+  const g = GENRES_DEPOT.find((x) => x.cle === genre);
+  const objet = emoji || (genre ? EMOJI_DU_GENRE[genre === "envie" ? "gout" : genre] : "📦");
+  const dateExigee = genre === "date";
+  const pret = Boolean(genre) && titre.trim().length >= 2 && (!dateExigee || Boolean(quand));
+  async function poser() {
+    setOccupe(true);
+    setErreur("");
+    try {
+      await agir({
+        action: "deposer",
+        genre,
+        titre,
+        emoji: objet,
+        ...(quand && (genre === "date" || genre === "promesse") ? { quand } : {}),
+        ...(genre === "date" ? { sorte } : {}),
+        ...(avec ? { avec: avec.cle, pour } : { montre: visiteurs && montre }),
+      });
+      onPose(`${objet} ${titre.trim()}`);
+    } catch (e) {
+      setErreur((e as Error).message || "Ça n’a pas marché. Réessaie.");
+    } finally {
+      setOccupe(false);
+    }
+  }
+  return (
+    <Feuille ouverte={ouverte} onFermer={onFermer} titre={avec ? `Déposer sur votre étagère, ${avec.prenom} et toi` : "Déposer sur mon étagère"} className="et-feuille et-feuille-depot">
+      <div className="et-depot">
+        <b className="et-fiche-titre">{avec ? `Sur votre étagère, ${avec.prenom} et toi` : "Sur mon étagère"}</b>
+        <span className="et-depot-libelle">C’est…</span>
+        <span className="et-puces" role="radiogroup" aria-label="Ce que c’est">
+          {GENRES_DEPOT.map((x) => (
+            <button key={x.cle} type="button" role="radio" aria-checked={genre === x.cle} className={`et-puce${genre === x.cle ? " prise" : ""}`} data-genre={x.cle} onClick={() => setGenre(x.cle)}>
+              {x.emoji} {x.nom}
+            </button>
+          ))}
+        </span>
+        {genre === "date" && (
+          <span className="et-puces petites" role="radiogroup" aria-label="Quel jour">
+            {SORTES_DEPOT.map((x) => (
+              <button key={x.cle} type="button" role="radio" aria-checked={sorte === x.cle} className={`et-puce${sorte === x.cle ? " prise" : ""}`} data-sorte={x.cle} onClick={() => setSorte(x.cle)}>
+                {x.nom}
+              </button>
+            ))}
+          </span>
+        )}
+        <label className="et-champ">
+          <span className="et-depot-libelle">Son nom</span>
+          <input type="text" maxLength={ETAGERE.titreMax} value={titre} onChange={(e) => setTitre(e.target.value)} placeholder={g?.indice ?? "Le concert"} aria-label="Son nom" />
+          <small>
+            {titre.trim().length}/{ETAGERE.titreMax}
+          </small>
+        </label>
+        {(genre === "date" || genre === "promesse") && (
+          <label className="et-champ">
+            <span className="et-depot-libelle">{genre === "date" ? (sorte === "fete" ? "Le jour (il revient tous les ans)" : "Le jour") : "Pour quand ? (si c’est prévu)"}</span>
+            <input type="date" value={quand} min={sorte === "fete" && genre === "date" ? undefined : aujourdhui()} onChange={(e) => setQuand(e.target.value)} aria-label="Le jour" />
+          </label>
+        )}
+        <span className="et-depot-libelle">
+          Son objet <b className="et-objet-choisi">{objet}</b>
+        </span>
+        <span className="et-catalogue" role="radiogroup" aria-label="Son objet">
+          {CATALOGUE.map((e) => (
+            <button key={e} type="button" role="radio" aria-checked={objet === e} aria-label={e} className={objet === e ? "pris" : ""} onClick={() => setEmoji(e)}>
+              {e}
+            </button>
+          ))}
+        </span>
+        {avec ? (
+          <>
+            <span className="et-depot-libelle">C’est pour qui ?</span>
+            <span className="et-puces" role="radiogroup" aria-label="Pour qui">
+              {(
+                [
+                  ["moi", "Moi"],
+                  ["lui", avec.prenom],
+                  ["deux", "Nous deux"],
+                ] as const
+              ).map(([c, n]) => (
+                <button key={c} type="button" role="radio" aria-checked={pour === c} className={`et-puce${pour === c ? " prise" : ""}`} data-pour={c} onClick={() => setPour(c)}>
+                  {n}
+                </button>
+              ))}
+            </span>
+          </>
+        ) : (
+          visiteurs && (
+            <label className="et-coche">
+              <input type="checkbox" checked={montre} onChange={(e) => setMontre(e.target.checked)} />
+              <span>👀 Mes visiteurs peuvent le voir</span>
+            </label>
+          )
+        )}
+        <button type="button" className="et-bouton" disabled={!pret || occupe} onClick={() => void poser()}>
+          {occupe ? "…" : "Poser sur l’étagère"}
+        </button>
+        {erreur && (
+          <p className="et-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+      </div>
+    </Feuille>
+  );
+}
+
+/** 🏡 (lot E4) Ma page : la charger, et la recharger après un geste. */
+function useMonEtagere(actif: boolean) {
+  const [vue, setVue] = useState<MonEtagereVue | null>(null);
+  const [erreur, setErreur] = useState("");
+  const [tour, setTour] = useState(0);
+  useEffect(() => {
+    if (!actif) return;
+    let fini = false;
+    fetch(`${ROUTE}?moi=1`, { cache: "no-store" })
+      .then(async (r) => ({
+        ok: r.ok,
+        j: (await r.json().catch(() => ({}))) as {
+          etagere?: MonEtagereVue;
+          error?: string;
+        },
+      }))
+      .then(({ ok, j }) => {
+        if (fini) return;
+        if (ok && j.etagere) {
+          setVue(j.etagere);
+          setErreur("");
+        } else setErreur(j.error || "Ton étagère ne s’ouvre pas. Réessaie.");
+      })
+      .catch(() => !fini && setErreur("Ton étagère ne s’ouvre pas. Réessaie."));
+    return () => {
+      fini = true;
+    };
+  }, [actif, tour]);
+  return { vue, erreur, recharger: () => setTour((t) => t + 1) };
+}
+
+/**
+ * 📚 (lot E4) SOUS LA FENÊTRE DE MON UNIVERS : ma planche (les six derniers posés) ; « 📚 Mon étagère · 7 » ; « ＋ ».
+ * Un toucher : la page « Mon étagère ».
+ */
+export function EtagereChezMoi({ actif }: { actif: boolean }) {
+  const [ouverte, setOuverte] = useState(false);
+  const [depot, setDepot] = useState(false);
+  const { vue, erreur, recharger } = useMonEtagere(actif && !ouverte);
+  // (le frein, ou pas encore lue : rien)
+  if (!vue || erreur) return null;
+  const objets = vue?.objets ?? [];
+  const n = objets.length;
+  return (
+    <div className="et-chez" data-n={n}>
+      <button type="button" className="et-chez-planche" onClick={() => setOuverte(true)} aria-label={`Mon étagère : ${n} souvenir${n > 1 ? "s" : ""}`}>
+        <span className="et-rang">
+          {n ? (
+            objets.slice(-6).map((o) => (
+              <span key={o.id} data-objet={o.id}>
+                {o.emoji}
+              </span>
+            ))
+          ) : (
+            <span className="et-chez-vide">📚</span>
+          )}
+        </span>
+        <span className="et-planche" aria-hidden="true" />
+        <span className="et-chez-texte">
+          <b>📚 Mon étagère{n ? ` · ${n}` : ""}</b>
+          <small>{n ? (vue?.montres ? `${vue.montres} montré${vue.montres > 1 ? "s" : ""} à tes visiteurs` : "Rien que pour toi") : "Ce que tes figurines notent sur toi, et ce que tu y poses"}</small>
+        </span>
+      </button>
+      <button type="button" className="et-chez-plus" aria-label="Déposer sur mon étagère" onClick={() => setDepot(true)}>
+        ＋
+      </button>
+      {ouverte && <PageMonEtagere onFermer={() => (setOuverte(false), recharger())} />}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <FeuilleDeposer
+            ouverte={depot}
+            visiteurs={vue.univers}
+            onFermer={() => setDepot(false)}
+            onPose={() => {
+              setDepot(false);
+              recharger();
+            }}
+          />,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+/**
+ * 🏡 (lot E4) « MON ÉTAGÈRE » : mes fiertés, ce qui m'attend, ce que j'aime — notés dans toutes mes conversations (d'où ça
+ * vient, dans la fiche) et déposés par moi ; 👀 ceux que mes visiteurs voient ; « ＋ Déposer » ; ce que voient mes
+ * visiteurs (mon univers, vu par eux).
+ */
+export function PageMonEtagere({ onFermer }: { onFermer: () => void }) {
+  const { vue, erreur, recharger } = useMonEtagere(true);
+  const [fiche, setFiche] = useState<ObjetVu | null>(null);
+  const [info, setInfo] = useState("");
+  const [depot, setDepot] = useState(false);
+  useEffect(() => {
+    const echap = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector(".et-feuille.ouverte") && onFermer();
+    window.addEventListener("keydown", echap);
+    return () => window.removeEventListener("keydown", echap);
+  }, [onFermer]);
+  // (un geste sur un souvenir d'une étagère partagée part sur la nôtre ; sur ce que j'ai déposé, sur la mienne)
+  const ou = (o: ObjetVu) => (o.avec ? { avec: o.avec.cle } : { mien: true });
+  const apres = (texte: string) => {
+    setFiche(null);
+    setInfo(texte);
+    recharger();
+  };
+  async function retirer(o: ObjetVu) {
+    await agir(o.avec ? { action: "cacher", avec: o.avec.cle, id: o.id } : { action: "retirer", mien: true, id: o.id });
+    apres(o.avec ? `${o.emoji} Il n’est plus chez toi (il reste sur votre étagère, ${o.avec.prenom} et toi)` : `${o.emoji} Retiré de ton étagère`);
+  }
+  async function dater(o: ObjetVu, quand: string) {
+    await agir({ action: "date", ...ou(o), id: o.id, quand });
+    apres(`📅 C’est noté : ${o.titre.charAt(0).toLowerCase()}${o.titre.slice(1)}, à la nouvelle date`);
+  }
+  async function faireSur(o: ObjetVu, action: "reussi" | "tenue" | "annuler-tenue") {
+    await agir({ action, ...ou(o), id: o.id });
+    apres(action === "reussi" ? "🏆 Rangé tout en haut, avec tes fiertés !" : action === "tenue" ? `✅ ${o.titre} : promesse tenue !` : "Annulé : elle attend encore d’être tenue.");
+  }
+  async function montrer(o: ObjetVu, oui: boolean) {
+    await agir({
+      action: "montrer",
+      id: o.id,
+      oui,
+      ...(o.avec ? { avec: o.avec.cle } : {}),
+    });
+    apres(oui ? `👀 ${o.titre} : tes visiteurs le voient maintenant` : `🙈 ${o.titre} : rien que pour toi`);
+  }
+  const objets = vue?.objets ?? [];
+  const rayon = (cleRayon: string) => {
+    const l = objets.filter((o) => o.rayon === cleRayon);
+    if (cleRayon === "avenir") return l.sort((a, b) => (a.quand ?? "9999").localeCompare(b.quand ?? "9999"));
+    return l.sort((a, b) => b.le.localeCompare(a.le));
+  };
+  const fiertes = objets.filter((o) => o.rayon === "fiertes").length;
+  const contenu = (
+    <div className="et-page et-mienne" role="dialog" aria-modal="true" aria-label="Mon étagère">
+      <header className="et-tete">
+        <button type="button" className="et-retour" aria-label="Revenir chez moi" onClick={onFermer}>
+          ←
+        </button>
+        <span className="et-qui">
+          <b>Mon étagère</b>
+          <small>Chez moi, dans mon univers</small>
+        </span>
+        {vue?.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="et-avatar" src={vue.image} alt="" draggable={false} />
+        )}
+      </header>
+      {!vue && !erreur && (
+        <div className="mc-attente">
+          <i />
+        </div>
+      )}
+      {erreur && (
+        <p className="et-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+      {vue && (
+        <>
+          <div className="et-compteurs">
+            <div>
+              <b>{objets.length}</b>
+              <span>souvenir{objets.length > 1 ? "s" : ""}</span>
+            </div>
+            <div>
+              <b>{fiertes}</b>
+              <span>fierté{fiertes > 1 ? "s" : ""}</span>
+            </div>
+            <div>
+              <b>{vue.montres}</b>
+              <span>montré{vue.montres > 1 ? "s" : ""} aux visiteurs</span>
+            </div>
+          </div>
+          <div className="et-meuble">
+            {RAYONS_MIENS.map((r) => {
+              const l = rayon(r.cle);
+              return (
+                <div key={r.cle} className="et-rayon" data-rayon={r.cle}>
+                  <span className="et-nom-rayon">{r.nom}</span>
+                  {l.length ? (
+                    l.map((o) => (
+                      <button
+                        key={o.id}
+                        type="button"
+                        className={`et-objet-rayon${o.etat === "fierte" ? " haut" : ""}`}
+                        data-objet={o.id}
+                        data-avec={o.avec?.prenom ?? ""}
+                        onClick={() => setFiche(o)}
+                        aria-label={`${o.titre}, ${o.detail}${o.avec ? `, noté avec ${o.avec.prenom}` : ""}`}
+                      >
+                        <span className="et-e" aria-hidden="true">
+                          {o.emoji}
+                        </span>
+                        <span className="et-etiquette">{o.titre}</span>
+                        {o.etat === "tenue" && <i className="et-tenue">✓</i>}
+                        {o.montre && (
+                          <i className="et-vu" aria-label="Tes visiteurs le voient">
+                            👀
+                          </i>
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="et-rien">rien encore</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {info && (
+            <p className="et-info" role="status">
+              {info}
+            </p>
+          )}
+          <button type="button" className="et-bouton et-deposer" onClick={() => setDepot(true)}>
+            ＋ Déposer sur mon étagère
+          </button>
+          <p className="et-regles">{REGLES_MON_ETAGERE}</p>
+          {vue.univers && vue.cle && vue.montres > 0 && (
+            <a className="et-lien et-voir-visiteurs" href={`/univers/chez/${vue.cle}`}>
+              👀 Voir ce que voient mes visiteurs
+            </a>
+          )}
+          {!vue.univers && <p className="et-regles">🏡 Quand tu auras ton univers, tu pourras y montrer tes souvenirs à tes visiteurs.</p>}
+        </>
+      )}
+      <FicheObjet o={fiche} prenom="" mienne onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} onFaire={faireSur} onMontrer={vue?.univers ? montrer : undefined} />
+      <FeuilleDeposer
+        ouverte={depot}
+        visiteurs={Boolean(vue?.univers)}
+        onFermer={() => setDepot(false)}
+        onPose={(t) => {
+          setDepot(false);
+          setInfo(`✋ ${t} : posé sur ton étagère`);
+          recharger();
+        }}
+      />
     </div>
   );
   return typeof document === "undefined" ? null : createPortal(contenu, document.body);
@@ -881,6 +1335,38 @@ export const STYLES_ETAGERE = `
 .et-rappel p{margin:3px 0 10px;font-size:15.5px;font-weight:600;line-height:1.35}
 .et-rappel.moi p{margin-bottom:0}
 .et-rappel .et-fait{margin:0;font-size:13.5px;font-weight:800;color:#9FF0C4}
+/* 🏡 (lot E4) mon étagère, sous la fenêtre de mon univers ; la page ; « ＋ Déposer » */
+.et-chez{position:relative;display:flex;align-items:stretch;gap:8px;margin:12px 0 2px}
+.et-chez-planche{flex:1;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:12px;align-items:center;padding:10px 12px;border:0;border-radius:20px;background:linear-gradient(180deg,#3d2412,#2a170b);box-shadow:inset 0 0 26px rgba(0,0,0,.5),0 12px 22px -16px rgba(0,0,0,.9);color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.et-chez-planche .et-rang{grid-row:1;grid-column:1;min-width:0;max-width:44vw;height:30px;padding:0 4px;justify-content:flex-start;gap:3px;overflow:hidden}
+.et-chez-planche .et-rang span{font-size:22px}
+.et-chez-planche .et-planche{grid-row:2;grid-column:1;height:6px}
+.et-chez-texte{grid-row:1 / span 2;grid-column:2;display:flex;flex-direction:column;gap:2px;min-width:0}
+.et-chez-texte b{font-size:15.5px;font-weight:900;color:#F2C46B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.et-chez-texte small{font-size:12.5px;line-height:1.3;color:#E9D5DD}
+.et-chez-vide{opacity:.55}
+.et-chez-plus{flex:none;width:52px;border:0;border-radius:18px;background:#FF2E9A;color:#fff;font:inherit;font-size:26px;font-weight:900;cursor:pointer;box-shadow:0 8px 18px -8px rgba(255,46,154,.9)}
+.et-chez-plus:active{transform:scale(.96)}
+.et-vu{position:absolute;top:4px;left:12%;font-size:15px;font-style:normal;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+.et-deposer{margin-top:0}
+.et-depose{align-self:stretch;margin:8px 0 2px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.06);font-size:14px;color:#E9D5DD}
+.et-voir-visiteurs{align-self:center;font-size:14px}
+.et-depot{display:flex;flex-direction:column;gap:9px;padding-bottom:8px}
+.et-depot .et-fiche-titre{text-align:center;margin-bottom:2px}
+.et-depot-libelle{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#CDB4C0}
+.et-objet-choisi{font-size:24px;letter-spacing:0;text-transform:none}
+.et-puces{display:flex;flex-wrap:wrap;gap:7px}
+.et-puce{padding:8px 12px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.et-puce.prise{border-color:#F2C46B;background:#F2C46B;color:#2b1a0c}
+.et-puces.petites .et-puce{padding:6px 10px;font-size:13px}
+.et-champ{display:flex;flex-direction:column;gap:6px}
+.et-champ input{min-height:46px;padding:0 12px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#2A1422;color:#FFF4E6;font:inherit;font-size:16px;color-scheme:dark;box-sizing:border-box;width:100%}
+.et-champ small{align-self:flex-end;font-size:11.5px;color:#9C8592}
+.et-catalogue{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:4px;max-height:142px;overflow-y:auto;padding:6px;border-radius:14px;background:rgba(255,255,255,.04);overscroll-behavior:contain}
+.et-catalogue button{height:40px;border:0;border-radius:10px;background:none;font-size:23px;line-height:1;cursor:pointer}
+.et-catalogue button.pris{background:rgba(242,196,107,.28);box-shadow:inset 0 0 0 2px #F2C46B}
+.et-coche{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);font-size:14.5px;font-weight:700;cursor:pointer}
+.et-coche input{width:20px;height:20px;accent-color:#F2C46B}
 @keyframes et-pose{0%{transform:translateY(-10px) scale(1.5)}60%{transform:translateY(2px) scale(.9)}100%{transform:none}}
 @keyframes et-monte{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.et-rang span.arrive,.pr-fil li.et-carte-fil > div,.pv-calque .et-note{animation:none}}

@@ -2972,6 +2972,24 @@ dessinés) ; puis, son accord : « fabriquer une vraie pièce, le salon, dans le
 - **L'essai** : `essai-pieces-route.mjs` (l'administrateur seulement, sans univers : refusé, les quatre passages et
   leurs consignes, le masque, les tailles, l'assemblage sans moteur, refaire).
 
+### 9.0 quaterquinquagies 📚 « Mon étagère » : ce qui me concerne, chez moi, et déposer à la main (14 novembre)
+
+Le propriétaire : « il faudra aussi des étagères pour que les choses que je dis dans mes conversations s'ajoutent aussi
+dans mon univers […] et que je puisse manuellement en déposer si j'en ai envie. » Le plan, puis « Ok parfait ». Le
+détail : `docs/univers/etagere.md`, lot E4.
+
+- **Sous la fenêtre de mon univers, ma planche** (« 📚 Mon étagère · 7 », « ＋ ») ; **ma page** : ce que nos figurines
+  ont noté qui me concerne (moi, ou nous deux), dans toutes mes conversations — d'où ça vient, dans la fiche — et ce que
+  j'y ai déposé ; mes trois rayons (« Mes fiertés », « À venir », « Ce que j'aime »).
+- **« ＋ Déposer »**, sur la mienne et sur la nôtre (pour moi, pour lui, pour nous deux) : une date (un événement, une
+  épreuve, tous les ans), une promesse, un goût, une envie, une blague ; son nom, son jour, son objet parmi les 70.
+  L'autre le voit se poser dans notre conversation (« ✋ DÉPOSÉ SUR VOTRE ÉTAGÈRE »).
+- **Rien que pour moi**, sauf ce que je choisis de montrer à mes visiteurs (ce qui ne concerne que moi) : sur ma page
+  de visite, « 📚 L'étagère de Sam » — l'emoji, le titre, le jour, jamais la phrase ni avec qui.
+- **Le matin**, ce que j'ai déposé pour aujourd'hui : « Aujourd'hui : ton concert 🎤 Tu l'avais posé sur ton
+  étagère 📌 ».
+- **La suite** : ces souvenirs sur les étagères de la maison en panorama, chacun avec son « i ».
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

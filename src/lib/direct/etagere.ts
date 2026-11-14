@@ -62,6 +62,8 @@ export type ObjetGarde = {
   change?: { le: string; par8: string };
   /** 🏆 Une fierté : l'emoji d'avant (la voiture devenue trophée). */
   emojiAvant?: string;
+  /** ✋ (lot E4) déposé à la main, pas noté par les figurines : pas de citation ; `de8` : qui l'a déposé. */
+  depose?: true;
 };
 
 /**
@@ -98,6 +100,13 @@ export type ObjetVu = {
   deux: boolean;
   /** ✅ Quand la promesse a été tenue (« Annuler » pendant 24 h). */
   tenueLe?: string;
+  /** ✋ (lot E4) déposé à la main (« Déposé par toi ») : pas de citation. */
+  depose?: true;
+  /** 🏡 (lot E4, « Mon étagère ») d'où il vient : l'étagère avec ce proche (sa clé) ; rien : déposé sur la mienne. */
+  avec?: { prenom: string; cle: string };
+  /** 👀 (lot E4) montré aux visiteurs de mon univers ; `peutMontrer` : ça ne concerne que moi. */
+  montre?: boolean;
+  peutMontrer?: boolean;
 };
 
 /** 🎭 L'étagère dans la scène de la conversation (relue avec la conversation vivante, toutes les 4 s). */
@@ -313,7 +322,9 @@ export function detailPour(o: ObjetGarde, moi8: string, prenomAutre: string, auj
     if (o.concerne === moi8) return envie ? "tu en as envie" : "tu adores";
     return envie ? `${prenomAutre} en a envie` : `${prenomAutre} adore`;
   }
-  return "votre blague";
+  // (lot E4 : une blague déposée sur sa propre étagère, ou vue par un visiteur)
+  if (o.concerne === moi8) return "ta blague";
+  return o.concerne === "deux" ? "votre blague" : `la blague ${deDevant(prenomAutre)}`;
 }
 
 /** Les trois rayons : « Nos fiertés », « À venir », « Ce qu'on aime ». */
@@ -350,6 +361,7 @@ export function vueDe(o: ObjetGarde, c: { moi8: string; prenomMoi: string; preno
     pourMoi: o.concerne === c.moi8,
     deux: o.concerne === "deux",
     ...(o.etat === "tenue" && o.change?.le ? { tenueLe: o.change.le } : {}),
+    ...(o.depose ? { depose: true as const } : {}),
   };
 }
 
@@ -459,7 +471,8 @@ export function dateQuiTient(x: unknown, dit: string, aujourdhui: string, annuel
 export function ranger(objets: readonly ObjetGarde[], proposes: readonly ObjetPropose[], o: { aujourdhui: string; le: string; nouvelId: () => string }): { objets: ObjetGarde[]; neufs: string[] } {
   const liste = objets.map((x) => ({ ...x }));
   const neufs: string[] = [];
-  let duJour = liste.filter((x) => x.etat !== "retire" && jourDe(x.le) === o.aujourdhui).length;
+  // (ce qu'ils ont déposé à la main ne compte pas : trois par jour, c'est pour les figurines)
+  let duJour = liste.filter((x) => x.etat !== "retire" && !x.depose && jourDe(x.le) === o.aujourdhui).length;
   for (const p of proposes.slice(0, ETAGERE.parPassage)) {
     if (liste.some((x) => x.message === p.message && x.etat === "retire")) continue;
     const meme = liste.find((x) => x.etat !== "retire" && x.etat !== "passe" && ((x.genre === p.genre && aPlat(x.titre) === aPlat(p.titre)) || x.message === p.message));
@@ -617,9 +630,12 @@ export function appliquerIssues(objets: readonly ObjetGarde[], issues: readonly 
 }
 
 // ─── les rappels du matin (7.1) ────────────────────────────────────────────────────────────────────
-/** epreuve, anniv, anniv3, evenement, lendemain : pour l'autre ; encourage : pour celui que ça concerne. */
-export type CasRappel = "epreuve" | "anniv" | "anniv3" | "evenement" | "lendemain" | "encourage";
-const RANG_RAPPEL: Record<CasRappel, number> = { epreuve: 1, encourage: 1, anniv: 2, anniv3: 3, evenement: 4, lendemain: 5 };
+/**
+ * epreuve, anniv, anniv3, evenement, lendemain : pour l'autre ; encourage : pour celui que ça concerne ; (lot E4) mien :
+ * un jour qu'il a posé lui-même sur SON étagère.
+ */
+export type CasRappel = "epreuve" | "anniv" | "anniv3" | "evenement" | "lendemain" | "encourage" | "mien";
+const RANG_RAPPEL: Record<CasRappel, number> = { epreuve: 1, encourage: 1, mien: 1.5, anniv: 2, anniv3: 3, evenement: 4, lendemain: 5 };
 export type Rappel = { cas: CasRappel; objet: ObjetGarde; rang: number };
 /** Les rappels d'aujourd'hui sur une étagère, pour celui qui regarde (`moi8`). */
 export function rappelsDe(objets: readonly ObjetGarde[], moi8: string, aujourdhui: string): Rappel[] {
@@ -654,6 +670,7 @@ export function phraseRappel(cas: CasRappel, titre: string, emoji: string, idees
   if (cas === "anniv") return /anniv/i.test(titre) ? `C’est ${t} ${emoji} Tu lui souhaites ?` : `Aujourd’hui, c’est ${t} ${emoji} Un petit mot ?`;
   if (cas === "anniv3") return `Dans 3 jours, ${t} ${emoji}${idees.length ? ` Des idées : ${idees.join(", ")}` : ""}`;
   if (cas === "evenement") return `Aujourd’hui, ${t} ${emoji}`;
+  if (cas === "mien") return `Aujourd’hui : ${t} ${emoji} Tu l’avais posé sur ton étagère 📌`;
   return `Hier, c’était ${t} ${emoji} Tu lui demandes comment c’était ?`;
 }
 /** 🔔 La notification du matin, quand il y a un rappel : le rappel fait le titre (7.2). */
@@ -661,6 +678,7 @@ export function notifRappel(cas: CasRappel, titre: string, emoji: string, idees 
   const t = minuscule(titre);
   if (cas === "anniv3") return { titre: `📌 Dans 3 jours : ${t} ${emoji}`, corps: idees ? "Ta figurine a des idées. Viens voir 👀" : "Ta figurine t’en parle ce matin." };
   if (cas === "lendemain") return { titre: `📌 Hier : ${t} ${emoji}`, corps: "Tu lui demandes comment c’était ? Ta figurine t’attend." };
+  if (cas === "mien") return { titre: `📌 Aujourd’hui : ${t} ${emoji}`, corps: "Tu l’avais posé sur ton étagère. Ta figurine t’en parle ce matin." };
   const corps = cas === "epreuve" ? "Un petit mot avant le départ ? Ta figurine t’attend." : cas === "anniv" ? "Tu lui souhaites ? Ta figurine t’attend." : "Un petit mot ? Ta figurine t’attend.";
   return { titre: `📌 Aujourd’hui : ${t} ${emoji}`, corps };
 }
@@ -804,8 +822,8 @@ export const memeDeLaBlague = (o: Pick<ObjetGarde, "titre" | "emoji">) => `${o.t
 
 // ─── lot E3 : ce qu'on mesure (13) ─────────────────────────────────────────────────────────────────
 /** Les compteurs du jour (`stats/etagere/<jour>.json`). */
-export type StatsJourEtagere = { notes: number; paires: number; retires: number; dates: number; rappels: number; suivis: number; tenues: number; rallumees: number };
-export const STATS_VIDES: StatsJourEtagere = { notes: 0, paires: 0, retires: 0, dates: 0, rappels: 0, suivis: 0, tenues: 0, rallumees: 0 };
+export type StatsJourEtagere = { notes: number; paires: number; retires: number; dates: number; rappels: number; suivis: number; tenues: number; rallumees: number; deposes: number };
+export const STATS_VIDES: StatsJourEtagere = { notes: 0, paires: 0, retires: 0, dates: 0, rappels: 0, suivis: 0, tenues: 0, rallumees: 0, deposes: 0 };
 /** Les seuils d'alerte : plus de 2 souvenirs par paire et par jour ; plus de 15 % retirés ; plus de 10 % de dates changées ; moins de 30 % de rappels suivis. */
 export function alertesEtagere(s: StatsJourEtagere): string[] {
   const a: string[] = [];
@@ -815,3 +833,142 @@ export function alertesEtagere(s: StatsJourEtagere): string[] {
   if (s.rappels >= 5 && s.suivis / s.rappels < 0.3) a.push("Moins de 30 % des rappels suivis d'un message : le rappel ne sert pas assez.");
   return a;
 }
+
+// ─── lot E4 : « Mon étagère », et déposer à la main (le 14 novembre 2026) ─────────────────────────
+/**
+ * 🏡 MON ÉTAGÈRE, CHEZ MOI (le propriétaire : « que les choses que je dis dans mes conversations s'ajoutent aussi dans
+ * mon univers […] et que je puisse manuellement en déposer si j'en ai envie ») : ce que nos figurines notent qui me
+ * concerne (moi, ou nous deux), dans toutes mes conversations — chaque souvenir garde d'où il vient (« noté avec
+ * Léa ») ; et ce que je dépose moi-même (« ＋ Déposer »), ici ou sur l'étagère que je partage avec un proche. Rien que
+ * pour moi : je choisis, souvenir par souvenir, ce que les visiteurs de mon univers voient (seulement ce qui ne
+ * concerne que moi ; jamais la phrase dite, ni avec qui).
+ */
+export const RAYONS_MIENS: { cle: RayonCle; nom: string }[] = [
+  { cle: "fiertes", nom: "Mes fiertés" },
+  { cle: "avenir", nom: "À venir" },
+  { cle: "aime", nom: "Ce que j’aime" },
+];
+export const REGLES_MON_ETAGERE =
+  "Ce que vos figurines notent sur toi, dans toutes tes conversations, se range aussi ici. Tu peux y déposer ce que tu veux. Rien que pour toi : tu choisis ce que tes visiteurs voient.";
+export const DEPOT = {
+  /** Ce qu'on peut déposer en un jour (toutes étagères confondues). */
+  parJour: 12,
+  /** Les souvenirs déposés sur mon étagère, au plus. */
+  perso: 80,
+  /** Mon étagère : les souvenirs montrés, au plus. */
+  montres: 40,
+} as const;
+
+/** Ce qu'on dépose : son genre (un goût ou une envie : le genre « goût », sa nuance). */
+export type GenreDepot = "date" | "promesse" | "gout" | "envie" | "blague";
+export const GENRES_DEPOT: { cle: GenreDepot; nom: string; emoji: string; indice: string }[] = [
+  { cle: "date", nom: "Une date", emoji: "📅", indice: "Le concert" },
+  { cle: "promesse", nom: "Une promesse", emoji: "🤝", indice: "Le resto promis" },
+  { cle: "gout", nom: "Un goût", emoji: "💛", indice: "Les pivoines" },
+  { cle: "envie", nom: "Une envie", emoji: "✨", indice: "Le saut en parachute" },
+  { cle: "blague", nom: "Une blague", emoji: "😂", indice: "Le canard" },
+];
+/** Une date : un événement (le rappel le jour même), une épreuve (l'encouragement, puis « 🏆 C'est réussi »), tous les ans. */
+export const SORTES_DEPOT: { cle: SorteDate; nom: string }[] = [
+  { cle: "evenement", nom: "🎉 Un événement" },
+  { cle: "epreuve", nom: "🍀 Une épreuve" },
+  { cle: "fete", nom: "🎂 Tous les ans" },
+];
+
+const POSSESSIFS_DEPOT: Record<string, "le" | "la" | "les"> = { mon: "le", ton: "le", son: "le", ma: "la", ta: "la", sa: "la", mes: "les", tes: "les", ses: "les" };
+/**
+ * ✍️ LE TITRE D'UN SOUVENIR DÉPOSÉ : on l'écrit comme on parle (« Mon permis », « Ton anniversaire ») ; il se range comme
+ * ceux des figurines, sans possessif (« Le permis », « L’anniversaire ») — « Ton permis » pour celui que ça concerne,
+ * « Le permis de Léa » pour l'autre. « Notre », « nos » restent (« nous deux » : le même titre des deux côtés).
+ */
+export function titreDepose(t: unknown, deux: boolean): { titre: string; titreToi?: string } {
+  const x = majuscule(nettoyer(t));
+  const m = /^(mon|ton|son|ma|ta|sa|mes|tes|ses)\s+(.+)$/i.exec(x);
+  if (!m) return { titre: x };
+  const art = POSSESSIFS_DEPOT[m[1].toLowerCase()];
+  const reste = m[2];
+  const voyelle = /^[aeiouyàâäéèêëîïôöùûü]/i.test(reste);
+  const titre = art === "les" ? `Les ${reste}` : voyelle ? `L’${reste}` : `${art === "la" ? "La" : "Le"} ${reste}`;
+  if (deux) return { titre };
+  return { titre, titreToi: art === "les" ? `Tes ${reste}` : art === "la" && !voyelle ? `Ta ${reste}` : `Ton ${reste}` };
+}
+
+/** 🎂 La prochaine fois qu'un jour revient (un anniversaire tapé avec l'année de naissance). */
+export function prochaineFois(iso: string, aujourdhui: string): string | null {
+  const j = jourValide(iso);
+  if (!j) return null;
+  const md = j.slice(5);
+  for (let an = Number(aujourdhui.slice(0, 4)); an <= Number(aujourdhui.slice(0, 4)) + 1; an++) {
+    const q = jourValide(`${an}-${md}`) ?? `${an}-02-28`;
+    if (ecartJours(aujourdhui, q) >= 0) return q;
+  }
+  return null;
+}
+
+/** Un souvenir déposé, prêt à ranger (l'identifiant, l'heure et le « message » sont posés par le serveur). */
+export type Depot = Omit<ObjetGarde, "id" | "le" | "etat" | "change" | "message">;
+/**
+ * ✅ CE QU'ON DÉPOSE, VÉRIFIÉ : un genre ; un nom (2 à 28 signes ; aucun mot interdit, rien d'alcoolisé, pas de numéro
+ * ni d'adresse ; rien de sensible : l'étagère garde les bons moments) ; un emoji du catalogue (sinon celui du genre) ;
+ * une date pour une date (dans l'année qui vient ; « tous les ans » : sa prochaine fois), un jour possible pour une
+ * promesse ; pour qui (sur mon étagère : moi ; sur la nôtre : moi, lui, ou nous deux).
+ */
+export function depotValide(x: unknown, c: { aujourdhui: string; passe: (t: string) => boolean; moi8: string; lui8?: string }): { objet: Depot } | { erreur: string } {
+  if (!x || typeof x !== "object") return { erreur: "Demande incomplète." };
+  const b = x as Record<string, unknown>;
+  const g = GENRES_DEPOT.find((d) => d.cle === b.genre)?.cle;
+  if (!g) return { erreur: "Dis ce que c’est : une date, une promesse, un goût…" };
+  const genre: GenreObjet = g === "envie" ? "gout" : g;
+  const pour = c.lui8 ? (b.pour === "moi" ? c.moi8 : b.pour === "lui" ? c.lui8 : "deux") : c.moi8;
+  const t = titreDepose(b.titre, pour === "deux");
+  if (t.titre.length < 2) return { erreur: "Donne-lui un nom." };
+  if (t.titre.length > ETAGERE.titreMax) return { erreur: `Un nom court : ${ETAGERE.titreMax} signes au plus.` };
+  const textes = [t.titre, t.titreToi ?? ""].filter(Boolean);
+  if (!textes.every((y) => c.passe(y)) || textes.some(prive)) return { erreur: "Ce nom ne passe pas : choisis-en un autre." };
+  if (echangeSensible(textes)) return { erreur: "L’étagère garde les bons moments : rien sur la santé, l’argent ou les amours." };
+  const o: Depot = { genre, emoji: emojiDuCatalogue(b.emoji, genre), titre: t.titre, concerne: pour, citation: "", de8: c.moi8, depose: true };
+  if (t.titreToi && pour !== "deux" && t.titreToi.length <= ETAGERE.titreMax) o.titreToi = t.titreToi;
+  if (genre === "gout") o.nuance = g === "envie" ? "envie" : "aime";
+  if (genre === "date") {
+    o.sorte = (SORTES as readonly string[]).includes(String(b.sorte)) ? (b.sorte as SorteDate) : "evenement";
+    if (o.sorte === "fete") o.annuel = true;
+  }
+  if (genre === "date" || (genre === "promesse" && b.quand)) {
+    const q = o.annuel ? prochaineFois(String(b.quand ?? ""), c.aujourdhui) : jourValide(b.quand);
+    const e = q ? ecartJours(c.aujourdhui, q) : -1;
+    if (!q || e < 0 || e > ETAGERE.joursMax) return { erreur: "Choisis un jour à venir (dans l’année qui vient)." };
+    o.quand = q;
+  }
+  return { objet: o };
+}
+
+/** Il me concerne : moi, ou nous deux (ce qui se range aussi sur mon étagère). */
+export const meConcerne = (o: Pick<ObjetGarde, "etat" | "concerne">, moi8: string) => visible(o) && (o.concerne === moi8 || o.concerne === "deux");
+
+/** ☀️ Les rappels du matin de ce que j'ai posé sur mon étagère : le jour venu (une épreuve : l'encouragement). */
+export function rappelsMiens(objets: readonly ObjetGarde[], aujourdhui: string): Rappel[] {
+  return objets
+    .filter((o) => o.etat === "actif" && o.quand === aujourdhui && (o.genre === "date" || o.genre === "promesse"))
+    .map((o): Rappel => (o.genre === "date" && o.sorte === "epreuve" ? { cas: "encourage", objet: o, rang: RANG_RAPPEL.encourage } : { cas: "mien", objet: o, rang: RANG_RAPPEL.mien }));
+}
+
+/** 👀 Ce qu'un visiteur voit d'un souvenir montré : l'emoji, le titre (sans « ton »), le détail ; jamais la phrase, ni avec qui. */
+export type VitrineObjet = { id: string; emoji: string; titre: string; detail: string; rayon: RayonCle };
+export const vitrineDe = (o: ObjetGarde, prenomHote: string, aujourdhui: string): VitrineObjet => ({
+  id: o.id,
+  emoji: o.emoji,
+  titre: o.titre,
+  detail: detailPour(o, "", prenomHote, aujourdhui),
+  rayon: rayonDe(o),
+});
+
+/** 🏡 La page « Mon étagère ». */
+export type MonEtagereVue = {
+  image: string;
+  objets: ObjetVu[];
+  /** Combien sont montrés aux visiteurs. */
+  montres: number;
+  /** J'ai un univers (sinon, rien à montrer : personne ne me rend visite) ; ma clé, pour le voir comme mes visiteurs. */
+  univers: boolean;
+  cle?: string;
+};
