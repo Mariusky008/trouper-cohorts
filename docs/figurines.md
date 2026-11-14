@@ -3118,6 +3118,34 @@ entière à l'écran, deux ou trois gros objets animés, on y entre.
   `bascule-univers.mjs` (le salon de Marc : on glisse, on entre, sa figurine, ses trois vedettes, le tourne-disque),
   `visite-univers.mjs` (Inès chez Marc : « Les pièces de Marc », elle entre, « Sa chanson du moment »).
 
+### 9.0 sexagies 📌 « Je le range ? » : la figurine demande avant de ranger (14 novembre)
+
+Le propriétaire : la figurine « ne devrait-elle pas demander aux deux personnes, ou à celle qui est concernée, si l'info
+est à ranger dans l'univers, pour être certain qu'elle ne fait pas n'importe quoi ? » Ses trois « oui », puis « oui vas
+y lance E5 ». Le détail : `docs/univers/etagere-accord.md`.
+
+- **Rien ne se pose sans un « oui »** : ce que les figurines notent se range « proposé » (`etat: "propose"`) ; rien ne
+  se voit (ni le mur, ni la page, ni « Mon étagère », ni les rappels) avant le « oui ».
+- **Qui décide** : celui que ça concerne, seul (même si c'est l'autre qui l'a dit) ; pour ce qui est commun, le premier
+  qui répond (« oui » ou « non »). Un « non » est définitif ; sans réponse en 48 heures (ou le soir d'une date plus
+  proche), rien n'est rangé, sans bruit.
+- **Dans la conversation**, une fois par jour : la figurine de celui qui l'a dit brandit « 📌 Je le range ? », l'objet
+  dans les mains, et dit « J'ai entendu : ton permis, jeudi 19. » ; la carte « 📌 TA FIGURINE TE DEMANDE » (« ✓ Oui,
+  range-le », « Non », « Changer la date ») ; au « oui », l'envol d'avant (« 📌 Noté ! ») ; au « non », « D'accord,
+  j'oublie. »
+- **Ailleurs** : « 📌 Ta figurine te demande : ton permis ? » sur la ligne de la personne, dans « Messages » (juste
+  après un message non lu) ; « ✨ À ranger » en haut de « Mon étagère » (et « ✨ 2 à ranger » sur sa planche, dans « Ma
+  maison ») ; l'envoi du matin, quand il
+  n'a rien d'autre à dire : « 📌 Ta figurine a 2 choses à te demander ».
+- **Les cas particuliers** : « JE L'AI !!! » devient « J'ai entendu : c'est réussi ! Je range ça dans vos fiertés ? 🏆 »
+  (la phrase du cahier, « tu l'as eu », s'accordait avec l'objet : changée) ; un dépôt pour l'autre est une question à
+  l'autre (« Sam veut ranger sur votre étagère : ton concert, samedi 21. D'accord ? »).
+- **Le réglage**, dans « Moi » : « Ma figurine range sans me demander » (éteint d'office ; pour ce qui est commun, il
+  suffit que l'un des deux l'ait allumé ; jamais pour un dépôt de l'autre).
+- **La mesure** (« 📚 L'étagère ») : proposées, rangées par un « oui », refusées (alerte au-delà de 30 %), sans réponse
+  (50 %), rangées par le réglage, dates corrigées avant de ranger (10 %).
+- **Les souvenirs rangés avant le lot restent rangés** : rien n'est redemandé.
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

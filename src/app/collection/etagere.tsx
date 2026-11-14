@@ -27,6 +27,11 @@
  *     (« 📚 Mon étagère ») ; `PageMonEtagere` : ce qui me concerne dans toutes mes conversations (d'où ça vient) et ce que
  *     j'ai déposé, « 👀 Montrer à mes visiteurs » souvenir par souvenir ; `FeuilleDeposer` : « ＋ Déposer », sur la mienne
  *     ou sur la nôtre (pour moi, pour lui, pour nous deux).
+ *   · 📌 LOT E5 « JE LE RANGE ? » (le 14 novembre 2026, `docs/univers/etagere-accord.md`) : la figurine demande avant de
+ *     ranger. Dans la scène, une fois par conversation et par jour, la figurine de celui qui l'a dit brandit « 📌 Je le
+ *     range ? », l'objet dans les mains, et dit ce qu'elle a entendu ; `CarteQuestion` : « 📌 TA FIGURINE TE DEMANDE »
+ *     dans le fil (« ✓ Oui, range-le », « Non », « Changer la date ») ; au « oui », l'envol d'aujourd'hui ; au « non »,
+ *     « D'accord, j'oublie. » ; « ✨ À ranger » en haut de « Mon étagère » ; `RangeSansDemander` : le réglage, dans « Moi ».
  *
  * LE MOT : à l'écran, « souvenir » ; dans le code, `objet`.
  */
@@ -38,6 +43,11 @@ import { versLeStudio } from "./vers-le-studio";
 import {
   CATALOGUE,
   EMOJI_DU_GENRE,
+  PANNEAU_QUESTION,
+  PHRASE_NON,
+  REGLAGE_RANGE_SEUL,
+  oubliDans,
+  type QuestionVue,
   ETAGERE,
   ETAGERE_E2,
   GENRES_DEPOT,
@@ -68,10 +78,11 @@ import {
 } from "@/lib/direct/etagere";
 
 const ROUTE = "/api/direct/etagere";
-async function agir(corps: Record<string, unknown>): Promise<void> {
+async function agir(corps: Record<string, unknown>): Promise<{ demande?: boolean }> {
   const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
-  const j = (await r.json().catch(() => ({}))) as { error?: string };
+  const j = (await r.json().catch(() => ({}))) as { error?: string; demande?: boolean };
   if (!r.ok || j.error) throw new Error(j.error || "Ça n’a pas marché. Réessaie.");
+  return j;
 }
 const calme = () => {
   try {
@@ -83,7 +94,7 @@ const calme = () => {
 const aujourdhui = () => jourDe(Date.now());
 
 /** Ce qui se joue par-dessus une figurine pendant qu'un objet se pose (et, lot E2, pendant une fête : qui saute). */
-export type JeuEtagere = { note: { qui: "moi" | "lui"; n: string } | null; bulle: { qui: "moi" | "lui"; texte: string; n: string } | null; saute?: ("moi" | "lui")[] };
+export type JeuEtagere = { note: { qui: "moi" | "lui"; n: string; texte?: string; emoji?: string } | null; bulle: { qui: "moi" | "lui"; texte: string; n: string } | null; saute?: ("moi" | "lui")[] };
 
 /** 🎉 Des confettis, dans la scène (pas si le téléphone préfère moins de mouvement). */
 function confettis(zone: HTMLElement | null) {
@@ -117,12 +128,17 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
   const [retires, setRetires] = useState<ReadonlySet<string>>(() => new Set());
   const [poses, setPoses] = useState<ReadonlySet<string>>(() => new Set());
   const [fetees, setFetees] = useState<ReadonlySet<string>>(() => new Set());
+  // 📌 (lot E5) les questions auxquelles il vient de répondre ; celle que la scène vient de jouer
+  const [repondues, setRepondues] = useState<ReadonlySet<string>>(() => new Set());
+  const [jouee, setJouee] = useState("");
   const [vol, setVol] = useState("");
   const [arrive, setArrive] = useState("");
   const [jeu, setJeu] = useState<JeuEtagere>({ note: null, bulle: null });
   const envols = useRef(0);
   const enCours = useRef(false);
   const derniere = useRef("");
+  // 📌 (lot E5) finir la question qui se joue (au bout du temps, ou dès qu'il répond)
+  const finQuestion = useRef<(() => void) | null>(null);
   const minuteurs = useRef<number[]>([]);
   const plusTard = (ms: number, f: () => void) => minuteurs.current.push(window.setTimeout(f, ms));
   useEffect(() => () => minuteurs.current.forEach((t) => window.clearTimeout(t)), []);
@@ -133,7 +149,10 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
   const cartes = (scene?.cartes ?? []).filter((c) => !retires.has(c.objet.id));
   const rallumes = scene?.rallumes ?? [];
   const aFeter = [...cartes.filter((c) => c.nouvelle && !fetees.has(c.id)).map((c) => `c:${c.id}`), ...rallumes.filter((r) => r.nouvelle && !fetees.has(r.id)).map((r) => `c:${r.id}`)];
-  const cleAttente = [...attente, ...aFeter].join(",");
+  // 📌 (lot E5) ses questions ; celle du jour se joue dans la scène (après les envols et les fêtes)
+  const questions = (scene?.questions ?? []).filter((q) => !repondues.has(q.id));
+  const aJouerQ = scene?.aJouer && !jouee && questions.some((q) => q.id === scene.aJouer) ? scene.aJouer : "";
+  const cleAttente = [...attente, ...aFeter, ...(aJouerQ ? [`q:${aJouerQ}`] : [])].join(",");
 
   const poser = useCallback(
     (ids: string[]) => {
@@ -157,8 +176,33 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
     // (rien ne se joue avant que la conversation soit là : la scène, les figurines, son prénom)
     if (!pret || enCours.current || !cleAttente) return;
     const tous = cleAttente.split(",");
-    const ids = tous.filter((x) => !x.startsWith("c:"));
+    const ids = tous.filter((x) => !x.startsWith("c:") && !x.startsWith("q:"));
     const aJouer = tous.filter((x) => x.startsWith("c:")).map((x) => x.slice(2));
+    // 📌 (lot E5) « Je le range ? » : la figurine brandit le panneau, l'objet dans les mains, puis dit ce qu'elle a entendu
+    const question = !ids.length && !aJouer.length ? questions.find((q) => `q:${q.id}` === tous.find((x) => x.startsWith("q:"))) : undefined;
+    if (question) {
+      const marquer = () => {
+        setJouee(question.id);
+        void agir({ action: "question-jouee", avec: cle }).catch(() => undefined);
+        // (le suivant, s'il y en a : un souvenir qu'il vient de ranger s'envole)
+        setPoses((p) => new Set(p));
+      };
+      if (calme()) return void Promise.resolve().then(marquer);
+      enCours.current = true;
+      const n = `q-${question.id}`;
+      const finir = () => {
+        if (finQuestion.current !== finir) return;
+        finQuestion.current = null;
+        setJeu((j) => (j.note?.n === n || j.bulle?.n === n ? { note: null, bulle: null } : j));
+        enCours.current = false;
+        marquer();
+      };
+      finQuestion.current = finir;
+      plusTard(800, () => finQuestion.current === finir && setJeu({ note: { qui: question.qui, n, texte: PANNEAU_QUESTION, emoji: question.objet.emoji }, bulle: null }));
+      plusTard(1400, () => finQuestion.current === finir && setJeu((j) => ({ ...j, bulle: { qui: question.qui, texte: question.phrase, n } })));
+      plusTard(7400, finir);
+      return;
+    }
     // 🎉 (lot E2) une carte qu'il n'a pas encore vue se jouer : la fierté, la promesse tenue, la relance
     if (!ids.length) {
       // ✨ (lot E3) l'étagère se rallume : les toiles s'envolent, les deux figurines sursautent, l'une parle
@@ -277,8 +321,25 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
   /** (retiré ailleurs — la page : il s'en va d'ici aussi) */
   const oublier = useCallback((id: string) => setRetires((r) => new Set([...r, id])), []);
   /** ✋ (lot E2) « 🏆 C'est réussi », « ✅ C'est fait ! », « Annuler » : la scène le montre à la relecture suivante. */
-  const faire = useCallback((action: "reussi" | "tenue" | "annuler-tenue", id: string) => agir({ action, avec: cle, id }), [cle]);
-  return { objets, cartes, rallumes, attente: new Set(attente.filter((id) => id !== vol)), vol, arrive, jeu, retirer, oublier, faire, tenues: scene?.tenues ?? 0, pause: scene?.pause ?? null, etat: scene?.etat ?? null, poussiere: scene?.poussiere ?? null };
+  const faire = useCallback(async (action: "reussi" | "tenue" | "annuler-tenue", id: string) => void (await agir({ action, avec: cle, id })), [cle]);
+  /**
+   * 📌 (lot E5) sa réponse : « oui » (le souvenir s'envole à la relecture suivante, comme un souvenir noté) ; « non » :
+   * la figurine range l'objet dans sa poche (« D'accord, j'oublie. ») ; `quand` : le jour corrigé, et rangé.
+   */
+  const repondre = useCallback(
+    async (q: QuestionVue, oui: boolean, quand?: string) => {
+      await agir(quand ? { action: "date", avec: cle, id: q.id, quand } : { action: oui ? "oui" : "non", avec: cle, id: q.id });
+      setRepondues((r) => new Set([...r, q.id]));
+      // (il a répondu : le panneau se baisse tout de suite)
+      finQuestion.current?.();
+      if (oui || calme()) return;
+      const n = `non-${q.id}`;
+      setJeu((j) => ({ ...j, note: null, bulle: { qui: q.qui, texte: PHRASE_NON, n } }));
+      plusTard(3400, () => setJeu((j) => (j.bulle?.n === n ? { ...j, bulle: null } : j)));
+    },
+    [cle],
+  );
+  return { objets, cartes, rallumes, questions, repondre, attente: new Set(attente.filter((id) => id !== vol)), vol, arrive, jeu, retirer, oublier, faire, tenues: scene?.tenues ?? 0, pause: scene?.pause ?? null, etat: scene?.etat ?? null, poussiere: scene?.poussiere ?? null };
 }
 
 /** 📚 La planche, en haut de la scène : les cinq derniers posés ; « 📚 Votre étagère · 6 ». Vide : rien. */
@@ -378,6 +439,82 @@ export function CarteNote({ o, prenom, onVoir, onRetirer }: { o: ObjetVu; prenom
         </span>
         <small className="et-pied">
           {o.depose ? `Déposé par ${o.de === "moi" ? "toi" : o.ditPar}` : "Noté par vos figurines · IA"} · visible de {prenom} et toi
+        </small>
+      </div>
+    </li>
+  );
+}
+
+/**
+ * 📌 (lot E5) « TA FIGURINE TE DEMANDE », dans le fil, à l'heure où la question est née — visible de celui qui décide
+ * (des deux pour un souvenir commun) : le souvenir, la phrase dite et qui l'a dite, « ✓ Oui, range-le », « Non », et
+ * pour une date « Changer la date » (le jour se corrige avant de ranger : ça vaut un « oui »).
+ */
+export function CarteQuestion({ q, onRepondre }: { q: QuestionVue; onRepondre: (oui: boolean, quand?: string) => Promise<void> }) {
+  const [changer, setChanger] = useState(false);
+  const [quand, setQuand] = useState(q.objet.quand ?? "");
+  const [occupe, setOccupe] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const o = q.objet;
+  const date = !q.issue && (o.genre === "date" || o.genre === "promesse") && Boolean(o.quand);
+  async function faire(oui: boolean, jour?: string) {
+    setOccupe(true);
+    setErreur("");
+    try {
+      await onRepondre(oui, jour);
+    } catch (e) {
+      setErreur((e as Error).message || "Ça n’a pas marché. Réessaie.");
+      setOccupe(false);
+    }
+  }
+  return (
+    <li className="et-carte-fil question" data-question={q.id}>
+      <div>
+        <b className="et-entete">📌 TA FIGURINE TE DEMANDE</b>
+        <span className="et-objet">
+          <span className="et-e" aria-hidden="true">
+            {q.issue ? "🏆" : o.emoji}
+          </span>
+          <span>
+            <b>{o.titre}</b>
+            {o.detail && <small>{o.detail}</small>}
+          </span>
+        </span>
+        {q.issue || q.depot || !o.citation ? (
+          <p className="et-texte">{q.phrase}</p>
+        ) : (
+          <blockquote>
+            « {o.citation} »<cite>{o.de === "moi" ? "Toi" : o.ditPar}, {leJourLong(o.ditLe)}</cite>
+          </blockquote>
+        )}
+        <span className="et-actions boutons">
+          <button type="button" className="et-petit or" disabled={occupe} onClick={() => void faire(true)}>
+            ✓ Oui, range-le
+          </button>
+          <button type="button" className="et-petit clair" disabled={occupe} onClick={() => void faire(false)}>
+            Non
+          </button>
+          {date && !changer && (
+            <button type="button" className="et-petit clair" disabled={occupe} onClick={() => setChanger(true)}>
+              📅 Changer la date
+            </button>
+          )}
+        </span>
+        {changer && (
+          <span className="et-date">
+            <input type="date" aria-label="Le bon jour" min={aujourdhui()} value={quand} onChange={(e) => setQuand(e.target.value)} />
+            <button type="button" className="et-bouton" disabled={!quand || occupe} onClick={() => void faire(true, quand)}>
+              Ranger à ce jour
+            </button>
+          </span>
+        )}
+        {erreur && (
+          <p className="et-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+        <small className="et-pied">
+          Sans réponse, elle oublie {oubliDans(q.jusqua, aujourdhui())} · {q.depot ? `Déposé par ${o.ditPar}` : "Noté par vos figurines · IA"}
         </small>
       </div>
     </li>
@@ -831,9 +968,9 @@ export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; 
         ouverte={depot}
         avec={vue ? { cle, prenom: vue.prenom } : undefined}
         onFermer={() => setDepot(false)}
-        onPose={(t) => {
+        onPose={(t, demande) => {
           setDepot(false);
-          setInfo(`✋ ${t} : posé sur votre étagère. ${vue?.prenom ?? "Ton proche"} le verra dans votre conversation.`);
+          setInfo(demande ? `📌 ${t} : ${vue?.prenom ?? "Ton proche"} recevra la question. Rien ne se range sans son oui.` : `✋ ${t} : posé sur votre étagère. ${vue?.prenom ?? "Ton proche"} le verra dans votre conversation.`);
           setTour((x) => x + 1);
         }}
       />
@@ -858,7 +995,8 @@ export function FeuilleDeposer({
   /** (sur la mienne, quand j'ai un univers) « 👀 Mes visiteurs peuvent le voir » */
   visiteurs?: boolean;
   onFermer: () => void;
-  onPose: (titre: string) => void;
+  /** `demande` : (lot E5) déposé pour l'autre, c'est une question à l'autre. */
+  onPose: (titre: string, demande?: boolean) => void;
 }) {
   const [genre, setGenre] = useState<GenreDepot | "">("");
   const [sorte, setSorte] = useState<SorteDate>("evenement");
@@ -891,7 +1029,7 @@ export function FeuilleDeposer({
     setOccupe(true);
     setErreur("");
     try {
-      await agir({
+      const r = await agir({
         action: "deposer",
         genre,
         titre,
@@ -900,7 +1038,7 @@ export function FeuilleDeposer({
         ...(genre === "date" ? { sorte } : {}),
         ...(avec ? { avec: avec.cle, pour } : { montre: visiteurs && montre }),
       });
-      onPose(`${objet} ${titre.trim()}`);
+      onPose(`${objet} ${titre.trim()}`, Boolean(r.demande));
     } catch (e) {
       setErreur((e as Error).message || "Ça n’a pas marché. Réessaie.");
     } finally {
@@ -967,6 +1105,8 @@ export function FeuilleDeposer({
                 </button>
               ))}
             </span>
+            {/* 📌 (lot E5) pour l'autre : c'est l'autre qui dit oui */}
+            {pour === "lui" && <p className="et-note-douce et-depot-question">📌 {avec.prenom} recevra la question : rien ne se range sans son oui.</p>}
           </>
         ) : (
           visiteurs && (
@@ -1039,6 +1179,7 @@ export function EtagereChezMoi({ actif }: { actif: boolean }) {
   if (!vue || erreur) return null;
   const objets = vue?.objets ?? [];
   const n = objets.length;
+  const aRanger = vue.aRanger?.length ?? 0;
   return (
     <div className="et-chez" data-n={n}>
       <button type="button" className="et-chez-planche" onClick={() => setOuverte(true)} aria-label={`Mon étagère : ${n} souvenir${n > 1 ? "s" : ""}`}>
@@ -1056,7 +1197,10 @@ export function EtagereChezMoi({ actif }: { actif: boolean }) {
         <span className="et-planche" aria-hidden="true" />
         <span className="et-chez-texte">
           <b>📚 Mon étagère{n ? ` · ${n}` : ""}</b>
-          <small>{n ? (vue?.montres ? `${vue.montres} montré${vue.montres > 1 ? "s" : ""} à tes visiteurs` : "Rien que pour toi") : "Ce que tes figurines notent sur toi, et ce que tu y poses"}</small>
+          <small>
+            {aRanger ? <b className="et-chez-ranger">✨ {aRanger} à ranger · </b> : null}
+            {n ? (vue?.montres ? `${vue.montres} montré${vue.montres > 1 ? "s" : ""} à tes visiteurs` : "Rien que pour toi") : "Ce que tes figurines notent sur toi, et ce que tu y poses"}
+          </small>
         </span>
       </button>
       <button type="button" className="et-chez-plus" aria-label="Déposer sur mon étagère" onClick={() => setDepot(true)}>
@@ -1114,6 +1258,16 @@ export function PageMonEtagere({ onFermer }: { onFermer: () => void }) {
     await agir({ action, ...ou(o), id: o.id });
     apres(action === "reussi" ? "🏆 Rangé tout en haut, avec tes fiertés !" : action === "tenue" ? `✅ ${o.titre} : promesse tenue !` : "Annulé : elle attend encore d’être tenue.");
   }
+  /** 📌 (lot E5) « ✨ À ranger » : oui, non, depuis ma page (la question part sur l'étagère d'où elle vient). */
+  async function repondre(q: QuestionVue, oui: boolean) {
+    if (!q.objet.avec) return;
+    try {
+      await agir({ action: oui ? "oui" : "non", avec: q.objet.avec.cle, id: q.id });
+      apres(oui ? `${q.issue ? "🏆" : q.objet.emoji} ${q.objet.titre} : rangé sur votre étagère, ${q.objet.avec.prenom} et toi` : `🤷 ${PHRASE_NON}`);
+    } catch (e) {
+      apres((e as Error).message || "Ça n’a pas marché. Réessaie.");
+    }
+  }
   async function montrer(o: ObjetVu, oui: boolean) {
     await agir({
       action: "montrer",
@@ -1157,6 +1311,33 @@ export function PageMonEtagere({ onFermer }: { onFermer: () => void }) {
       )}
       {vue && (
         <>
+          {/* 📌 (lot E5) mes questions en attente, de toutes mes conversations : on répond à plusieurs d'un coup */}
+          {vue.aRanger?.length ? (
+            <div className="et-a-ranger" aria-label="À ranger">
+              <b className="et-entete">✨ À RANGER</b>
+              {vue.aRanger.map((q) => (
+                <div key={q.id} className="et-q" data-question={q.id}>
+                  <span className="et-e" aria-hidden="true">
+                    {q.issue ? "🏆" : q.objet.emoji}
+                  </span>
+                  <span className="et-q-texte">
+                    <b>{q.objet.titre}</b>
+                    <small>
+                      {q.issue ? "c’est réussi : dans vos fiertés ?" : q.depot ? `déposé par ${q.objet.avec?.prenom}` : `noté avec ${q.objet.avec?.prenom}`}
+                      {q.objet.detail && !q.issue ? ` · ${q.objet.detail}` : ""}
+                    </small>
+                  </span>
+                  <button type="button" className="et-q-oui" aria-label={`Oui, ranger ${q.objet.titre}`} onClick={() => void repondre(q, true)}>
+                    ✓
+                  </button>
+                  <button type="button" className="et-q-non" onClick={() => void repondre(q, false)}>
+                    Non
+                  </button>
+                </div>
+              ))}
+              <small className="et-pied">Rien ne se range sans ton oui. Sans réponse, ta figurine oublie au bout de 2 jours.</small>
+            </div>
+          ) : null}
           <div className="et-compteurs">
             <div>
               <b>{objets.length}</b>
@@ -1238,6 +1419,45 @@ export function PageMonEtagere({ onFermer }: { onFermer: () => void }) {
     </div>
   );
   return typeof document === "undefined" ? null : createPortal(contenu, document.body);
+}
+
+/**
+ * ⚙️ (lot E5) DANS « MOI » : « Ma figurine range sans me demander » (éteint d'office) — ce qui le concerne se range tout
+ * de suite ; ce qu'un proche dépose pour lui se demande toujours. Le frein de l'étagère : rien.
+ */
+export function RangeSansDemander() {
+  const [oui, setOui] = useState<boolean | null>(null);
+  useEffect(() => {
+    let fini = false;
+    fetch(`${ROUTE}?reglage=1`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { rangeSeul?: unknown } | null) => !fini && typeof j?.rangeSeul === "boolean" && setOui(j.rangeSeul))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, []);
+  if (oui === null) return null;
+  async function basculer() {
+    const v = !oui;
+    setOui(v);
+    try {
+      await agir({ action: "range-seul", oui: v });
+    } catch {
+      setOui(!v);
+    }
+  }
+  return (
+    <div className="rt-reglage" id="range-seul">
+      <span>
+        <b>{REGLAGE_RANGE_SEUL.titre}</b>
+        <small>{REGLAGE_RANGE_SEUL.aide}</small>
+      </span>
+      <button type="button" role="switch" aria-checked={oui} aria-label={REGLAGE_RANGE_SEUL.titre} className={oui ? "oui" : ""} onClick={() => void basculer()}>
+        <i />
+      </button>
+    </div>
+  );
 }
 
 export const STYLES_ETAGERE = `
@@ -1374,7 +1594,23 @@ export const STYLES_ETAGERE = `
 .et-catalogue button.pris{background:rgba(242,196,107,.28);box-shadow:inset 0 0 0 2px #F2C46B}
 .et-coche{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);font-size:14.5px;font-weight:700;cursor:pointer}
 .et-coche input{width:20px;height:20px;accent-color:#F2C46B}
+/* 📌 (lot E5) « Je le range ? » : le panneau, l'objet dans les mains, la bulle dessous ; la carte ; « À ranger » */
+.pv-calque .et-note.question{animation-duration:6.4s}
+.pv-calque .et-tient{position:absolute;left:50%;top:46%;z-index:4;translate:-50% 0;font-size:46px;line-height:1;filter:drop-shadow(0 6px 4px rgba(0,0,0,.55));animation:et-tient 6.4s cubic-bezier(.2,1.4,.4,1) both}
+.pv-calque .et-bulle.sous{top:62px}
+.pr-fil li.et-carte-fil.question > div{background:linear-gradient(140deg,rgba(242,196,107,.2),rgba(255,46,154,.08));border-style:solid}
+.et-depot-question{margin:0}
+.et-chez-ranger{color:#F2C46B;font-weight:900}
+.et-a-ranger{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:18px;background:linear-gradient(140deg,rgba(242,196,107,.18),rgba(255,46,154,.1));border:1px solid rgba(242,196,107,.4)}
+.et-q{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px}
+.et-q .et-e{font-size:28px;line-height:1}
+.et-q-texte{display:flex;flex-direction:column;min-width:0}
+.et-q-texte b{font-size:15px;line-height:1.25;overflow-wrap:anywhere}
+.et-q-texte small{font-size:12.5px;color:#CDB4C0}
+.et-q-oui{width:42px;height:42px;border:0;border-radius:50%;background:#F2C46B;color:#2b1a0c;font:inherit;font-size:18px;font-weight:900;cursor:pointer}
+.et-q-non{min-height:42px;padding:0 12px;border:0;border-radius:999px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+@keyframes et-tient{0%{transform:translateY(30px) scale(.4);opacity:0}14%{transform:translateY(0) scale(1.15);opacity:1}22%,86%{transform:scale(1)}100%{transform:translateY(16px) scale(.8);opacity:0}}
 @keyframes et-pose{0%{transform:translateY(-10px) scale(1.5)}60%{transform:translateY(2px) scale(.9)}100%{transform:none}}
 @keyframes et-monte{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.et-rang span.arrive,.pr-fil li.et-carte-fil > div,.pv-calque .et-note{animation:none}}
+@media (prefers-reduced-motion:reduce){.et-rang span.arrive,.pr-fil li.et-carte-fil > div,.pv-calque .et-note,.pv-calque .et-tient{animation:none}}
 `;

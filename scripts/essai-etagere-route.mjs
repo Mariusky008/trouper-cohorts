@@ -12,6 +12,12 @@
 // un proche retiré (l'étagère s'efface). Sans session : 401 ; pas proches : 403. Le frein (`CLIKME_ETAGERE=0`, une
 // seconde app) : rien d'affiché, rien de noté.
 //
+// 📌 (lot E5) « Je le range ? » : le permis se range « proposé » — une question à Léa seule (Sam ne voit rien, et ne
+// peut pas répondre à sa place : 403) ; la scène la joue une fois par jour ; son « oui » le range. Ses pivoines :
+// « non », plus jamais proposées. Le resto (Zoé) : une question aux deux, le premier « oui » le range. Une date
+// corrigée sur une question la range (Nico). 48 heures sans réponse : rien n'est rangé. Le réglage « Ma figurine
+// range sans me demander » (Paul) : ses pivoines se rangent tout de suite. La mesure.
+//
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-etagere-route.mjs
@@ -126,10 +132,28 @@ const vide = await vivant(SAM, LEA);
 ok(vide && !vide.etagere?.objets?.length, "avant que les figurines lisent : l'étagère est vide");
 const f1 = await lireEchange(SAM, LEA);
 const p = f1?.objets?.[0];
-ok(f1?.objets?.length === 1 && p.genre === "date" && p.sorte === "epreuve" && p.emoji === "🚗" && p.message === idPermis && p.de8 === qui8(LEA.id) && p.concerne === qui8(LEA.id) && p.etat === "actif", `noté : le permis, dit par Léa, la concerne (${JSON.stringify(p)})`);
+ok(f1?.objets?.length === 1 && p.genre === "date" && p.sorte === "epreuve" && p.emoji === "🚗" && p.message === idPermis && p.de8 === qui8(LEA.id) && p.concerne === qui8(LEA.id) && p.etat === "propose", `noté, et proposé : le permis, dit par Léa, la concerne (${JSON.stringify(p)})`);
 const quand = jeudiApres(jour);
 ok(p?.quand === quand && p.ditQuand === "jeudi prochain", `le jeudi qui suit (${p?.quand})`);
+ok(p?.demande?.a === qui8(LEA.id) && Date.parse(p.demande.jusqua) - Date.now() > 3 * 3_600_000, `📌 la question est posée à Léa seule, jusqu'à ${p?.demande?.jusqua}`);
 ok(!JSON.stringify(f1).includes(LEA.id) && !JSON.stringify(f1).includes(SAM.id), "jamais l'identifiant d'un habitant dans leur étagère");
+// 📌 (lot E5) Sam ne voit rien ; Léa voit la question
+const qSam = (await vivant(SAM, LEA))?.etagere;
+ok(!qSam?.objets?.length && !qSam?.questions?.length && !qSam?.aJouer, "chez Sam : rien (ni sur l'étagère, ni de question)");
+const qLea = (await vivant(LEA, SAM))?.etagere;
+const q0 = qLea?.questions?.[0];
+ok(!qLea?.objets?.length && qLea?.questions?.length === 1 && q0.id === p.id && q0.objet.titre === "Ton permis" && q0.objet.etat === "propose" && q0.qui === "moi" && q0.phrase === `J’ai entendu : ton permis, ${court(quand).split(" ").slice(0, 2).join(" ")}.`, `chez Léa : la question (« ${q0?.phrase} »), rien sur l'étagère`);
+ok(qLea.aJouer === p.id, "la scène de Léa jouera la question");
+ok((await voir(LEA, `etagere?avec=${SAM.cle}`)).etagere?.objets?.length === 0 && (await voir(SAM, `etagere?avec=${LEA.cle}`)).etagere?.objets?.length === 0, "la page de l'étagère : rien avant le « oui »");
+const ligneQ = (await voir(LEA, "proches"))?.proches?.find((x) => x.cle === SAM.cle)?.etagere;
+ok(ligneQ?.txt === "📌 Ta figurine te demande : ton permis ?" && ligneQ.rang === 2.95 && !(await voir(SAM, "proches"))?.proches?.find((x) => x.cle === LEA.cle)?.etagere, `« Chez moi », chez Léa : « ${ligneQ?.txt} » ; chez Sam : rien`);
+ok((await agir(SAM, { action: "oui", avec: LEA.cle, id: p.id })).statut === 403 && (await agir(SAM, { action: "non", avec: LEA.cle, id: p.id })).statut === 403, "Sam répond à la place de Léa : refusé (403)");
+ok((await agir(SAM, { action: "date", avec: LEA.cle, id: p.id, quand })).statut === 403, "Sam corrige le jour de la question de Léa : refusé (403)");
+ok((await agir(LEA, { action: "question-jouee", avec: SAM.cle })).statut === 200 && !(await vivant(LEA, SAM)).etagere.aJouer && (await vivant(LEA, SAM)).etagere.questions.length === 1, "la scène l'a jouée : plus aujourd'hui (la carte reste)");
+ok((await agir(LEA, { action: "oui", avec: SAM.cle, id: p.id })).statut === 200, "Léa : « ✓ Oui, range-le »");
+ok((await agir(LEA, { action: "oui", avec: SAM.cle, id: p.id })).statut === 404, "répondre deux fois : la question n'attend plus (404)");
+const rangee = (await lire(`fils/${paire(LEA, SAM)}/etagere.json`)).objets.find((x) => x.id === p.id);
+ok(rangee?.etat === "actif" && !rangee.demande && rangee.change?.par8 === qui8(LEA.id), "rangé : le permis est sur leur étagère");
 const chezSam = (await vivant(SAM, LEA))?.etagere;
 const chezLea = (await vivant(LEA, SAM))?.etagere;
 const os = chezSam?.objets?.[0];
@@ -151,6 +175,7 @@ ok((await agir(SAM, { action: "date", avec: LEA.cle, id: p.id, quand: autreJour 
 
 // ═══ RETIRER ═══
 ok((await agir(LEA, { action: "retirer", avec: SAM.cle, id: p.id })).statut === 200, "Léa le retire");
+ok((await lire(`fils/${paire(LEA, SAM)}/etagere.json`)).objets.find((x) => x.id === p.id)?.raison === "retire", "la pierre tombale garde sa raison : retiré");
 ok(!(await vivant(SAM, LEA)).etagere.objets.length && !(await vivant(LEA, SAM)).etagere.objets.length, "parti pour les deux");
 const tombe = (await lire(`fils/${paire(LEA, SAM)}/etagere.json`)).objets.find((x) => x.id === p.id);
 ok(tombe?.etat === "retire" && !tombe.titre && !tombe.citation, "il n'en reste qu'une pierre tombale, sans texte");
@@ -158,6 +183,26 @@ await json(`fils/${paire(LEA, SAM)}/etagere.json`, { ...(await lire(`fils/${pair
 const f3 = await lireEchange(SAM, LEA);
 ok(f3.objets.filter((x) => x.etat !== "retire").length === 0, "même si les figurines relisent tout : jamais renoté");
 ok((await agir(LEA, { action: "retirer", avec: SAM.cle, id: p.id })).statut === 404, "le retirer deux fois : il n'est plus là");
+
+// ═══ 📌 (lot E5) « NON », PUIS PLUS JAMAIS ; 48 HEURES SANS RÉPONSE ═══
+const idJardin = await message(LEA, SAM, "Les pivoines du jardin, je les adore", 2);
+const fj = await lireEchange(LEA, SAM);
+const pj = fj.objets.find((x) => x.message === idJardin);
+ok(pj?.etat === "propose" && pj.demande?.a === qui8(LEA.id), "ses pivoines : une question à Léa");
+ok((await agir(LEA, { action: "non", avec: SAM.cle, id: pj.id })).statut === 200, "Léa : « Non »");
+const tj = (await lire(`fils/${paire(LEA, SAM)}/etagere.json`)).objets.find((x) => x.id === pj.id);
+ok(tj?.etat === "retire" && tj.raison === "non" && !tj.titre && !tj.citation, "une pierre tombale « non », sans texte (Sam n'est pas prévenu)");
+ok(!(await vivant(LEA, SAM)).etagere?.questions?.length && !(await vivant(SAM, LEA)).etagere?.objets?.length, "plus de question, rien sur l'étagère");
+await json(`fils/${paire(LEA, SAM)}/etagere.json`, { ...(await lire(`fils/${paire(LEA, SAM)}/etagere.json`)), lu: 0 });
+const fj2 = await lireEchange(LEA, SAM);
+ok(!fj2.objets.some((x) => x.etat !== "retire"), "même si les figurines relisent tout : jamais reproposé");
+// (une question posée il y a plus de 48 heures)
+const vieille = { id: "vieille0001", genre: "gout", emoji: "🍰", titre: "Les tartes", titreToi: "Tes tartes", concerne: qui8(LEA.id), nuance: "aime", citation: "j'adore les tartes", de8: qui8(LEA.id), message: "seed-vieille", le: new Date(Date.now() - 49 * 3_600_000).toISOString(), etat: "propose", demande: { a: qui8(LEA.id), jusqua: new Date(Date.now() - 3_600_000).toISOString() } };
+await json(`fils/${paire(LEA, SAM)}/etagere.json`, { ...(await lire(`fils/${paire(LEA, SAM)}/etagere.json`)), objets: [...(await lire(`fils/${paire(LEA, SAM)}/etagere.json`)).objets, vieille] });
+const v48 = (await vivant(LEA, SAM)).etagere;
+const t48 = (await lire(`fils/${paire(LEA, SAM)}/etagere.json`)).objets.find((x) => x.id === "vieille0001");
+ok(!v48?.questions?.length && t48?.etat === "retire" && t48.raison === "sans-reponse" && !t48.titre, "48 heures sans réponse : la question s'en va, sans bruit (rien n'est rangé)");
+ok((await agir(LEA, { action: "oui", avec: SAM.cle, id: "vieille0001" })).statut === 404, "trop tard pour dire oui");
 
 // ═══ CE QUI NE SE NOTE PAS ═══
 await message(INES, LEA, "Je suis malade, le permis est repoussé", 4);
@@ -187,16 +232,42 @@ await attendre(100);
 await json(`fils/${paire(LEA, ZOE)}/etagere.json`, { ...(await lire(`fils/${paire(LEA, ZOE)}/etagere.json`)), lu: 0 });
 await message(ZOE, LEA, "Le resto italien, on le fait quand ?", 2);
 const fz2 = await lireEchange(LEA, ZOE);
-ok(fz2.objets?.length === 1 && fz2.objets[0].genre === "promesse" && fz2.objets[0].concerne === "deux", "relancée : le resto italien, une promesse pour les deux");
+ok(fz2.objets?.length === 1 && fz2.objets[0].genre === "promesse" && fz2.objets[0].concerne === "deux" && fz2.objets[0].demande?.a === "deux", "relancée : le resto italien, une promesse pour les deux — une question aux deux");
+// 📌 (lot E5) les deux voient la question ; le premier « oui » le range
+const qz = (await vivant(ZOE, LEA)).etagere?.questions?.[0];
+ok(qz?.phrase === "J’ai entendu : le resto italien. On le garde ?" && (await vivant(LEA, ZOE)).etagere?.questions?.length === 1, `les deux voient la question (« ${qz?.phrase} »)`);
+ok((await agir(ZOE, { action: "oui", avec: LEA.cle, id: fz2.objets[0].id })).statut === 200, "Zoé dit oui la première");
+ok((await agir(LEA, { action: "non", avec: ZOE.cle, id: fz2.objets[0].id })).statut === 404 && !(await vivant(LEA, ZOE)).etagere?.questions?.length, "Léa ne peut plus dire non : il est rangé");
 const vz = (await vivant(LEA, ZOE)).etagere.objets[0];
 ok(vz.titre === "Le resto italien" && vz.deux && /^promis le /.test(vz.detail), `« Le resto italien » · ${vz.detail}`);
+
+// ═══ 📌 (lot E5) UNE DATE CORRIGÉE SUR UNE QUESTION (Nico) ═══
+const dans10 = new Date(Date.now() + 10 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+const dans12 = new Date(Date.now() + 12 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+const concert = { id: "concert0001", genre: "date", sorte: "evenement", emoji: "🎧", titre: "Le concert", titreToi: "Ton concert", concerne: qui8(NICO.id), citation: "le concert", de8: qui8(NICO.id), message: "seed-concert", le: new Date().toISOString(), quand: dans10, etat: "propose", demande: { a: qui8(NICO.id), jusqua: new Date(Date.now() + 48 * 3_600_000).toISOString() } };
+await json(`fils/${paire(LEA, NICO)}/etagere.json`, { ...(await lire(`fils/${paire(LEA, NICO)}/etagere.json`)), objets: [concert] });
+ok((await agir(NICO, { action: "date", avec: LEA.cle, id: "concert0001", quand: "2020-01-01" })).statut === 400, "un jour passé : refusé");
+ok((await agir(NICO, { action: "date", avec: LEA.cle, id: "concert0001", quand: dans12 })).statut === 200, "Nico corrige le jour de la question");
+const cn = (await lire(`fils/${paire(LEA, NICO)}/etagere.json`)).objets.find((x) => x.id === "concert0001");
+ok(cn?.etat === "actif" && cn.quand === dans12 && !cn.demande && (await vivant(LEA, NICO)).etagere?.objets?.[0]?.titre === "Le concert de Nico", "le bon jour, et rangé (ça vaut un « oui ») : Léa le voit");
+
+// ═══ 📌 (lot E5) LE RÉGLAGE « MA FIGURINE RANGE SANS ME DEMANDER » (Paul) ═══
+ok((await voir(PAUL, "etagere?reglage=1")).rangeSeul === false, "éteint d'office");
+const rs = await agir(PAUL, { action: "range-seul", oui: true });
+ok(rs.statut === 200 && rs.rangeSeul === true && (await voir(PAUL, "etagere?reglage=1")).rangeSeul === true && (await lire(`${PAUL.id}/reglages.json`))?.rangeSeul === true, "Paul l'allume");
 
 // ═══ UN MESSAGE SIGNALÉ APRÈS COUP ═══
 const idPivoines = await message(PAUL, LEA, "Les pivoines, c'est les plus belles fleurs du monde", 3);
 const fp = await lireEchange(LEA, PAUL);
-ok(fp.objets?.[0]?.genre === "gout" && (await vivant(LEA, PAUL)).etagere.objets[0].titre === "Les pivoines de Paul" && (await vivant(PAUL, LEA)).etagere.objets[0].titre === "Tes pivoines", "les pivoines : « Les pivoines de Paul » chez Léa, « Tes pivoines » chez Paul");
+ok(fp.objets?.[0]?.genre === "gout" && fp.objets[0].etat === "actif" && !fp.objets[0].demande, "📌 Paul laisse sa figurine ranger : ses pivoines se rangent tout de suite, sans question");
+ok((await vivant(LEA, PAUL)).etagere.objets[0].titre === "Les pivoines de Paul" && (await vivant(PAUL, LEA)).etagere.objets[0].titre === "Tes pivoines", "les pivoines : « Les pivoines de Paul » chez Léa, « Tes pivoines » chez Paul");
 const sig = await fetch(`${BASE}/api/direct/proches`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${LEA.jeton}` }, body: JSON.stringify({ action: "signaler", cle: PAUL.cle, id: idPivoines }) });
 ok(sig.status === 200 && !(await vivant(PAUL, LEA)).etagere.objets.length, "Léa signale ce message : les pivoines s'en vont, chez les deux");
+
+// ═══ 📌 (lot E5) LA MESURE ═══
+const st = await lire(`stats/etagere/${jour}.json`);
+ok(st?.proposes >= 3 && st.oui >= 2 && st.refuses >= 1 && st.expires >= 1 && st.auto >= 1 && st.corriges >= 1, `les compteurs du jour : ${st?.proposes} proposés, ${st?.oui} oui, ${st?.refuses} refusés, ${st?.expires} sans réponse, ${st?.auto} rangés par le réglage, ${st?.corriges} date corrigée`);
+ok((await agir(PAUL, { action: "range-seul", oui: false })).rangeSeul === false && (await lire(`${PAUL.id}/reglages.json`))?.rangeSeul === undefined, "Paul l'éteint");
 
 // ═══ UN PROCHE RETIRÉ ═══
 const ret = await fetch(`${BASE}/api/direct/proches`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${ZOE.jeton}` }, body: JSON.stringify({ action: "proche", cle: LEA.cle, oui: false }) });
@@ -213,6 +284,8 @@ try {
   ok(vf && !vf.etagere && ff.objets.filter((x) => x.etat !== "retire").length === 0, "le frein serré : rien d'affiché, rien de noté");
   const r = await fetch(`${seconde.base}/api/direct/etagere?avec=${SAM.cle}`, { headers: { cookie: `clikme_habitant=${LEA.jeton}` } });
   ok(r.status === 404, "le frein serré : la page ne s'ouvre pas (404)");
+  const rr = await fetch(`${seconde.base}/api/direct/etagere?reglage=1`, { headers: { cookie: `clikme_habitant=${LEA.jeton}` } });
+  ok(rr.status === 404, "le frein serré : pas de réglage à régler (404)");
 } finally {
   seconde.arreter();
 }

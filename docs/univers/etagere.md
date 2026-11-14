@@ -7,6 +7,10 @@ propriétaire a validé toutes les phrases des figurines (sections 5, 7.1, 7.3, 
 choix des sections 16 et 16 bis (« ok »).** Ce document dit tout ce qu'il faut
 pour la construire. Il ne remplace pas `docs/univers/feuille-de-route.md` : il s'y ajoute (lot E).
 
+> **📌 Lot E5 « Je le range ? » (14 novembre 2026, construit)** : la figurine **demande avant de ranger** — rien ne se
+> pose sur l'étagère sans un « oui » (celui que ça concerne, ou le premier des deux ; 48 heures). Ce qui suit, quand il
+> dit « elle range tout de suite », vaut désormais pour ce qui a reçu son « oui ». Le cahier : `docs/univers/etagere-accord.md`.
+
 > **Ce qui a changé depuis l'écriture de ce cahier** (la nouvelle interface, lots 1 à 4, fusionnés le 13 novembre) :
 > le menu à trois onglets est tranché (« Chez moi » au centre) ; le mème part dans le fil d'une conversation (🎭 à
 > côté de « Lui répondre », puis « Envoyer à Léa » sous le mème prêt) ; la conversation range déjà visites et

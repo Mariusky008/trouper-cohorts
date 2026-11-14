@@ -7,8 +7,8 @@
 // LE MATIN : ses deux rappels (le permis de Léa, son anniversaire dans 3 jours avec des idées), pas le concert (deux au
 // plus) ; Léa, elle, a l'encouragement de sa figurine ; « Chez moi » : la ligne de Léa (« 📌 Aujourd'hui : son
 // permis 🚗 »), celle de Paul (la relance) ; l'envoi du matin : « 📌 Aujourd'hui : le permis de Léa 🚗 » ; Sam écrit
-// à Léa : « ✓ Envoyé ». LA FIERTÉ : Léa dit « JE L'AI !!! » ; leurs figurines le lisent : le permis devient un trophée,
-// la carte « fierté » chez les deux ; « C'est réussi » : seulement celui que ça concerne. LES PROMESSES : la relance de
+// à Léa : « ✓ Envoyé ». LA FIERTÉ : Léa dit « JE L'AI !!! » ; leurs figurines le lisent : (lot E5) une question à Léa
+// seule, « Je range ça dans vos fiertés ? » ; son « oui » : le permis devient un trophée, la carte « fierté » chez les deux ; « C'est réussi » : seulement celui que ça concerne. LES PROMESSES : la relance de
 // Paul (21 jours) ; « C'est fait ! » (le compteur, la carte), « Annuler », puis tenue pour de bon. LE TEMPS : le code
 // de Zoé, sans nouvelles depuis cinq jours, s'en est allé sans bruit.
 //
@@ -121,12 +121,20 @@ const ts = Date.now() - 2 * 60_000;
 await deposer(`fils/${pair}/s/jelai0000001.mp3`, fs.readFileSync("scripts/fixtures/voix-essai.mp3"), "audio/mpeg");
 await json(`fils/${pair}/m/${String(ts).padStart(13, "0")}-${qui8(LEA.id)}-jelai0000001.json`, { id: "jelai0000001", de: LEA.id, le: new Date(ts).toISOString(), duree: 2, son: `fils/${pair}/s/jelai0000001.mp3`, type: "audio/mpeg", repliques: [{ de: 0, a: 2, texte: "JE L'AI !!! 🎉", tete: null }] });
 await vivant(SAM, LEA);
-let fierte = null;
-for (let k = 0; k < 40 && !fierte; k++) {
+// 📌 (lot E5) l'issue devient une question à Léa
+let issue = null;
+for (let k = 0; k < 40 && !issue; k++) {
   await attendre(300);
-  fierte = (await lire(`fils/${pair}/etagere.json`))?.objets?.find((o) => o.id === "permis" && o.etat === "fierte");
+  issue = (await lire(`fils/${pair}/etagere.json`))?.objets?.find((o) => o.id === "permis" && o.demande?.issue);
 }
-ok(fierte?.emoji === "🏆" && fierte.emojiAvant === "🚗", "leurs figurines ont lu « JE L'AI !!! » : le permis devient un trophée");
+ok(issue?.etat === "actif" && issue.demande.a === qui8(LEA.id), "leurs figurines ont lu « JE L'AI !!! » : une question à Léa (le permis reste là en attendant)");
+ok(!(await vivant(SAM, LEA))?.questions?.length && (await vivant(SAM, LEA))?.objets?.find((o) => o.id === "permis")?.etat === "actif", "chez Sam : pas de question, le permis toujours « à venir »");
+const qi = (await vivant(LEA, SAM))?.questions?.find((q) => q.id === "permis");
+ok(qi?.issue && qi.phrase === "J’ai entendu : c’est réussi ! Je range ça dans vos fiertés ? 🏆" && qi.qui === "moi", `chez Léa : « ${qi?.phrase} »`);
+ok((await agir(SAM, { action: "oui", avec: LEA.cle, id: "permis" })).statut === 403, "Sam ne répond pas à sa place (403)");
+ok((await agir(LEA, { action: "oui", avec: SAM.cle, id: "permis" })).statut === 200, "Léa : « ✓ Oui »");
+const fierte = (await lire(`fils/${pair}/etagere.json`))?.objets?.find((o) => o.id === "permis" && o.etat === "fierte");
+ok(fierte?.emoji === "🏆" && fierte.emojiAvant === "🚗" && !fierte.demande, "le permis devient un trophée");
 const es = await vivant(SAM, LEA);
 const cf = es?.cartes?.find((c) => c.genre === "fierte" && c.objet.id === "permis");
 ok(cf?.nouvelle && cf.objet.titre === "Le permis de Léa" && /^réussi le /.test(cf.objet.detail) && cf.objet.rayon === "fiertes", `chez Sam : la carte « fierté » (${cf?.objet.titre} · ${cf?.objet.detail})`);

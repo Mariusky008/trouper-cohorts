@@ -51,7 +51,7 @@ import { STYLES_MEME_POUR } from "./meme-pour";
 import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } from "./rituel";
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
-import { STYLES_ETAGERE } from "./etagere";
+import { RangeSansDemander, STYLES_ETAGERE } from "./etagere";
 import { PageEnVisite, STYLES_TUTO, VisiteTuto, ecrireTuto, lireTuto, pageTuto, type PageTuto } from "./tuto";
 import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
 import { MaMaison, STYLES_MA_MAISON } from "./ma-maison";
@@ -369,6 +369,8 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
               {compte && prete && <MaPresence />}
               {/* ☀️ « Ma figurine parle pour moi » : le mot de sa figurine sur l'humeur de ses proches (lot R) */}
               {compte && prete && <MaFigurineParle />}
+              {/* 📌 (l'étagère, lot E5) « Ma figurine range sans me demander » : éteint d'office */}
+              {compte && prete && <RangeSansDemander />}
             </OngletVisible.Provider>
           </section>
         )}
