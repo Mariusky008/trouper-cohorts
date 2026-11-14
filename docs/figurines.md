@@ -2966,6 +2966,11 @@ dessinés) ; puis, son accord : « fabriquer une vraie pièce, le salon, dans le
   du salon à droite — dans le style de son salon (son centre en IMAGE 2). La terrasse : la vue qu'on a par la baie du
   salon (sa droite en IMAGE 2), la carte de ses voyages et sa valise, la baie du salon à gauche, la chaise longue et
   l'olivier à droite. La maison se tient : chaque pièce reprend sa voisine, si elle est faite.
+- **Les deux pièces faites, dans la maquette** (le même jour) : la pièce télé (son film qui passe dans l'écran, « Tes
+  films », « Tes livres », la porte du salon) et la terrasse (« Tes voyages » sur la carte, « Le prochain départ » sur
+  la valise, la baie du salon). Un défaut : la terrasse avait **deux soleils** (sa droite en avait peint un second).
+  Les côtés reçoivent une règle de plus : un seul soleil (ou une seule lune), rien d'unique répété (la télé, une
+  porte, le chevalet). « Refaire » la droite de la terrasse donne un seul soleil.
 - **La suite, si le propriétaire l'aime** : les autres pièces (la télé, la terrasse), la profondeur (le premier plan
   découpé à part), les portes qu'on touche, les objets qui vivent et le « i » (comme dans la maquette) — avec la session
   de « l'univers qui grandit ».
