@@ -3318,6 +3318,32 @@ et `photo-serveur.ts`.
 - **Pas dans ce lot** : les dépôts jamais envoyés (`…-brut`) restent dans le seau ; « 🖼️ La mettre dans mon
   univers ? » relève de la session de l'univers.
 
+### 9.0 quinquesexagies 📷 Écrire, partager — lot M2, l'écran : 📷 Une photo, la vignette, la figurine qui la montre (14 novembre)
+
+Le propriétaire : « ensuite lance l'écran de M2 ». Le cahier : `docs/univers/messages-ecrits.md`, sections 5.1 et 5.3.
+Le serveur : 9.0 quattuorsexagies. Le fichier : `app/collection/photos.tsx`.
+
+- **« ＋ » → 📷 Une photo** (en premier dans le « ＋ » ; pas de photo quand le frein `CLIKME_PHOTOS=0` est tiré) : la
+  pellicule du téléphone, ou l'appareil photo.
+- **La feuille** : la photo est **réduite dans le téléphone** (1 600 pixels au plus, WebP, sinon JPEG) en la
+  redessinant — **aucune de ses métadonnées ne part**, la position GPS d'abord ; une légende si on veut (200
+  signes) ; trois petites têtes (les règles des vocaux sur la légende) ; « Envoyer à Léa » (« Envoi… », puis
+  « Vérification… » pendant que le serveur la contrôle).
+  - refusée : « Cette photo ne peut pas partir. », « Choisir une autre photo » ;
+  - la modération ne répond pas : « Réessayer » (la même photo, sans la redéposer) ;
+  - pas une photo : « Ce fichier n'est pas une photo. » ;
+  - « Elle reste dans votre conversation : Léa ne peut pas la montrer ailleurs depuis ClikMe. »
+- **Dans le fil** : la vignette, sa légende, 📷, l'heure, les réactions (appui long), « 🗑️ Effacer » sous la sienne.
+  Un toucher l'ouvre **en grand** (glisser vers le bas, Échap ou un toucher sur le fond la ferme ; pas d'appui long
+  pour l'enregistrer), puis la figurine la montre.
+- **Dans la scène** : la figurine de celui qui l'envoie la montre **dans un petit cadre qu'elle tient**, sans son ; la
+  légende dans sa bulle, mot après mot. Envoyée, elle la montre aussitôt.
+- **La ligne de « Messages »** : « T'a envoyé : 📷 La légende », « Toi : 📷 Une photo ».
+- **Corrigé au passage** : Échap, sur une photo à envoyer ou en grand, fermait aussi toute la conversation.
+- **L'essai** : `scripts/navigateur/photos.mjs` (ce qui part du téléphone est vérifié : un WebP sans aucune
+  métadonnée).
+- **Pas dans ce lot** : « 🖼️ La mettre dans mon univers ? » (la session de l'univers).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

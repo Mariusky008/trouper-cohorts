@@ -723,8 +723,9 @@ qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/un
   l'aperçu dans le fil, « Effacer », la mesure). Reste de M1 : « 🎵 Le ranger dans mon univers ? » (la session de
   l'univers), et la page de confidentialité (au propriétaire).
 - **M2, le serveur : construit** (9.0 quattuorsexagies 📷 — le dépôt signé, la photo réencodée sans métadonnées, la
-  modération avant de livrer, effacer, signaler, la modération par l'équipe). **M2, l'écran : à faire** (« ＋ » →
-  📷 Photo, la réduction dans le téléphone, la vignette, le plein écran, la figurine qui la montre).
+  modération avant de livrer, effacer, signaler, la modération par l'équipe). **M2, l'écran : construit** (9.0
+  quinquesexagies : « ＋ » → 📷 Photo, la réduction dans le téléphone, la vignette, le plein écran, la figurine qui la
+  montre). Reste de M2 : « 🖼️ La mettre dans mon univers ? » (la session de l'univers).
 - M3 (les vidéos) : pas encore développé.
 
 ### Plus tard (préparé, pas construit)
