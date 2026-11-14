@@ -122,12 +122,16 @@ export const consigneCentre = (p: Piece, voisine = false) =>
     ...PLANS[p].centre,
     SANS,
   ].join("\n");
+/** Ce qui est unique dans la pièce le reste : un seul soleil, une seule télé, une seule porte vers chaque pièce. */
+export const UN_SEUL = "Never paint a second sun or moon, and never repeat a unique object that is already painted (the sun, a TV, a door, the easel): the whole panorama has only one of each.";
 /** 2 et 3. Un côté : la toile prolongée (IMAGE 1, son masque), dans le style de son décor (IMAGE 2) et de sa voisine. */
 export const consigneCote = (p: Piece, c: "gauche" | "droite", voisine = false) =>
   [
     `IMAGE 1 is part of a wide panorama of ${PLANS[p].quoi.split(",")[0]}: its ${c === "gauche" ? "right" : "left"} part is already painted, the rest is empty and must be painted.`,
     `Extend the scene to the ${c === "gauche" ? "LEFT" : "RIGHT"}, continuing ${PLANS[p].suite} seamlessly from the painted part, which stays exactly as it is.`,
     `On this new part: ${PLANS[p][c]}`,
+    // (le 14 novembre 2026, la terrasse avait deux soleils : la droite en avait peint un second)
+    UN_SEUL,
     `IMAGE 2 is the home universe this place belongs to: ${STYLE}.`,
     ...(voisine && PLANS[p].voisine ? [`IMAGE 3 shows ${PLANS[p].voisine!.dit}.`] : []),
     `The far edge simply continues the scene (${BORDS}).`,

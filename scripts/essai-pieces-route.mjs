@@ -106,6 +106,7 @@ ok(c2.fait === "gauche" && ia.some((c) => c.includes("Extend the scene to the LE
 const c3 = await appeler(lea, { action: "fabriquer" });
 ia = (await toutIA()).slice(avant);
 ok(c3.fait === "droite" && ia.some((c) => c.includes("Extend the scene to the RIGHT") && c.includes("bay window")) && ia.filter((c) => c.startsWith("MASQUE")).length === 2, "3. la droite : la baie sur la terrasse");
+ok(ia.filter((c) => c.includes("Extend the scene to the") && c.includes("Never paint a second sun or moon")).length === 2, "les deux côtés : un seul soleil, rien d'unique répété (la terrasse avait deux soleils)");
 const n3 = (await toutIA()).length;
 const c4 = await appeler(lea, { action: "fabriquer" });
 const pano = await sharp(await octets(`${LEA.id}/pieces/salon/panorama.webp`)).metadata();
