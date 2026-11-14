@@ -220,6 +220,11 @@ export default async function PageMemes() {
               { n: "Liens envoyés", v: String(msTout.liens) },
               { n: "… avec un aperçu", v: pc(msTout.apercus, msTout.apercus + msTout.sansApercu) },
               { n: "Messages effacés", v: String(msTout.effaces) },
+              // 📷 (lot M2) les photos : si le filtre est trop dur, ou utile ; ce qu'elles coûtent
+              { n: "Photos envoyées", v: String(msTout.photos) },
+              { n: "… refusées par la modération", v: `${msTout.photosRefusees} (${pc(msTout.photosRefusees, msTout.photos + msTout.photosRefusees)})` },
+              { n: "… pas vérifiées (service injoignable)", v: String(msTout.photosNonVerifiees) },
+              { n: "Ce que pèsent les photos", v: `${(msTout.photosKo / 1024).toFixed(1)} Mo` },
             ].map((x) => (
               <div key={x.n} style={carte}>
                 <small style={{ color: "#666" }}>{x.n}</small>

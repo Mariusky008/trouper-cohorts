@@ -722,7 +722,10 @@ qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/un
   figurines qui lisent l'écrit. **M1, l'écran : construit** (9.0 duosexagies : la barre « Écrire… », la bulle sans son,
   l'aperçu dans le fil, « Effacer », la mesure). Reste de M1 : « 🎵 Le ranger dans mon univers ? » (la session de
   l'univers), et la page de confidentialité (au propriétaire).
-- M2 (les photos) et M3 (les vidéos) : pas encore développés.
+- **M2, le serveur : construit** (9.0 quattuorsexagies 📷 — le dépôt signé, la photo réencodée sans métadonnées, la
+  modération avant de livrer, effacer, signaler, la modération par l'équipe). **M2, l'écran : à faire** (« ＋ » →
+  📷 Photo, la réduction dans le téléphone, la vignette, le plein écran, la figurine qui la montre).
+- M3 (les vidéos) : pas encore développé.
 
 ### Plus tard (préparé, pas construit)
 

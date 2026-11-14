@@ -822,6 +822,24 @@ http
           ],
         });
       }
+      // 🛡️ (lot M2) UN FAUX SERVICE DE MODÉRATION (`OPENAI_TALKIE_BASE_URL=…/openai`) : la photo est lue ; 321 pixels de
+      // large : refusée ; 322 : le service ne répond pas (une panne) ; sinon, acceptée. La demande est gardée dans
+      // `/__ia` (« MODERATION <modèle> <largeur> <légende> »)
+      if (url.pathname === "/openai/v1/moderations" && req.method === "POST") {
+        const j = JSON.parse((await corps(req)).toString("utf8") || "{}");
+        const entrees = Array.isArray(j.input) ? j.input : [];
+        const image = entrees.find((x) => x?.type === "image_url")?.image_url?.url ?? "";
+        const texte = entrees.find((x) => x?.type === "text")?.text ?? "";
+        let largeur = 0;
+        const b64 = /^data:image\/[a-z]+;base64,(.+)$/.exec(image)?.[1];
+        if (b64) {
+          const sharp = (await import("sharp")).default;
+          largeur = (await sharp(Buffer.from(b64, "base64")).metadata().catch(() => ({}))).width ?? 0;
+        }
+        consignesIA.push(`MODERATION ${j.model ?? ""} ${largeur} ${texte}`.trim());
+        if (largeur === 322) return repondre(res, 503, { error: { message: "indisponible" } });
+        return repondre(res, 200, { id: "modr-essai", model: j.model, results: [{ flagged: largeur === 321, categories: {}, category_scores: {} }] });
+      }
       // 🎬 UN FAUX MOTEUR VIDÉO (les pièces vivantes) : une commande (« VIDEO <modèle> <secondes> <taille> <taille de l'image
       // reçue> <consigne> »), « en train » à la première question, faite à la deuxième ; son contenu : quelques octets
       if (url.pathname === "/openai/v1/videos" && req.method === "POST") {

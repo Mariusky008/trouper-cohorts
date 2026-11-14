@@ -4,11 +4,14 @@
 // POST { action: "refuser", habitant, raison } : sa photo ne peut pas servir ; il en renverra une autre.
 // POST { action: "moderer", id, geste: "remettre" | "retirer" } : un mème signalé (`moderation-serveur.ts`) — le remettre,
 //      ou le retirer pour de bon (de la carte d'« Autour », de « Découvrir » et du mème du jour aussi).
+// POST { action: "moderer-message", id, geste: "remettre" | "retirer" } : 🚩 un message de conversation signalé (un vocal,
+//      un écrit, une photo — `talkie-serveur.ts`) : le remettre chez celui qui l'avait signalé, ou l'effacer pour les deux.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { poserImagesFigurine, refuserPhoto } from "@/lib/direct/ma-figurine-serveur";
 import { modererMeme } from "@/lib/direct/moderation-serveur";
+import { modererMessage } from "@/lib/direct/talkie-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,8 @@ export async function POST(request: Request) {
         ? await refuserPhoto(supabase, habitant, p.raison)
         : p?.action === "moderer"
           ? await modererMeme(supabase, String(p.id ?? ""), p.geste)
-          : { error: "Demande incomplète." };
+          : p?.action === "moderer-message"
+            ? await modererMessage(supabase, p.id, p.geste)
+            : { error: "Demande incomplète." };
   return NextResponse.json(r.error ? { error: r.error } : { ok: true }, { status: r.error ? 400 : 200 });
 }

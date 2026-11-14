@@ -34,6 +34,7 @@ const charger = (chemin) => {
 };
 const E = charger("src/lib/direct/ecrit.ts");
 const T = charger("src/lib/direct/talkie.ts");
+const P = charger("src/lib/direct/photo.ts");
 const { motInterdit } = charger("src/lib/direct/mots-interdits.ts");
 
 let echecs = 0;
@@ -119,7 +120,16 @@ const n2 = E.notifEcrit("Léa", { texte: "https://youtu.be/xyz", lien: { titre: 
 ok(n2.titre === "🔗 Léa t’a envoyé un lien" && n2.corps === "Le Grand Bleu", `un lien seul : « ${n2.titre} » — « ${n2.corps} »`);
 ok(E.ligneDeLEcrit({ texte: "On se voit samedi ?" }) === "On se voit samedi ?" && E.ligneDeLEcrit({ texte: "https://youtu.be/x", lien: { titre: "Le Grand Bleu" } }) === "🔗 Le Grand Bleu", "la ligne de « Chez moi » : le message, ou « 🔗 Le titre du lien »");
 const GENRE = /\b(content|contente|heureux|heureuse|seul|seule|fatigu[ée]e?|prête?|fière?|motivée?|ravie?|surprise?|occupée?|parti|partie)\b/i;
-const phrases = [...Object.values(E.PHRASES_ECRIT), n1.titre, n2.titre, E.phraseDepart("site.fr")];
+// 📷 (lot M2) les photos : la légende, la notification, la ligne, ce que les figurines en lisent, les limites
+ok(P.legendePhoto(undefined) === "" && P.legendePhoto("  La  plage\n au soleil ") === "La plage au soleil" && P.legendePhoto("Coucou\u200b🌅") === "Coucou 🌅" && P.legendePhoto(42) === null, "la légende : sur une ligne, sans espaces en trop ni caractère invisible, les emojis tels quels");
+ok(P.legendePhoto("é".repeat(200)) === "é".repeat(200) && P.legendePhoto("é".repeat(201)) === null && P.legendePhoto("🌅".repeat(200)) !== null, "la légende : 200 signes au plus (un emoji compte pour un)");
+const np = P.notifPhoto("Léa", "");
+const npLongue = P.notifPhoto("Léa", "On a fait le tour du lac à vélo, il faisait si beau qu'on est restés jusqu'au soir");
+ok(np.titre === "📷 Léa t’a envoyé une photo" && np.corps === "Viens voir 👀" && [...npLongue.corps].length <= 60 && npLongue.corps.endsWith("…"), `la notification : « ${np.titre} » — « ${npLongue.corps} »`);
+ok(P.lignePhoto("") === "📷 Une photo" && P.lignePhoto(" La plage ") === "📷 La plage", "la ligne de « Chez moi » : « 📷 La légende », ou « 📷 Une photo »");
+ok(T.texteLuDuMessage({ genre: "photo", legende: "La plage", media: { chemin: "x" } }) === "La plage" && T.texteLuDuMessage({ genre: "photo" }) === "", "les figurines lisent la légende d'une photo, jamais l'image");
+ok(P.PHOTO.max === 5 * 1024 * 1024 && P.PHOTO.parJour === 30 && P.PHOTO.cote === 1600 && P.PHOTO.legende === 200, "les limites du cahier : 5 Mo, 30 par jour, 1 600 pixels, 200 signes de légende");
+const phrases = [...Object.values(E.PHRASES_ECRIT), n1.titre, n2.titre, E.phraseDepart("site.fr"), ...Object.values(P.PHRASES_PHOTO), np.titre];
 ok(phrases.every((x) => !GENRE.test(x) && !/exemple/i.test(x) && !motInterdit(x)), `les phrases : sans accord, sans le mot interdit (${phrases.filter((x) => GENRE.test(x) || /exemple/i.test(x)).join(" | ") || "toutes"})`);
 ok(E.ECRIT.max === 1000 && E.ECRIT.parJour === 300 && E.ECRIT.bulle === 140 && E.APERCU.delai === 5000 && E.APERCU.page === 1024 * 1024 && E.APERCU.largeur === 600, "les limites du cahier : 1 000 signes, 300 par jour, la bulle à 140, l'aperçu en 5 s et 1 Mo, l'image à 600 pixels");
 

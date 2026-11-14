@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FigurineAFaire } from "@/lib/direct/ma-figurine-serveur";
 import type { MemeSignale } from "@/lib/direct/moderation-serveur";
+import type { MessageSignale as MessageDuFil } from "@/lib/direct/talkie-serveur";
 import { reduireImage } from "@/lib/direct/reduire-image";
 
 async function poster(corps: Record<string, unknown>): Promise<string> {
@@ -114,6 +115,44 @@ export function MessageSignale({ m, le }: { m: MemeSignale; le: string }) {
             Retirer pour de bon
           </button>
         </span>
+      </div>
+    </div>
+  );
+}
+
+/** 🚩 Un message de conversation signalé (un vocal, un écrit, une photo) : le voir, puis le remettre ou l'effacer pour les deux. */
+export function MessageDuFilSignale({ m, le }: { m: MessageDuFil; le: string }) {
+  const router = useRouter();
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  async function moderer(geste: "remettre" | "retirer") {
+    setEnvoi(true);
+    setErreur(await poster({ action: "moderer-message", id: m.id, geste }));
+    setEnvoi(false);
+    router.refresh();
+  }
+  const quoi = m.genre === "photo" ? "📷 Une photo" : m.genre === "ecrit" ? "✍️ Un écrit" : "🎙️ Un vocal";
+  return (
+    <div className="signale-fil" data-message={m.id} style={{ ...carte, alignItems: "flex-start" }}>
+      {m.photo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={m.photo} alt="La photo signalée" style={{ width: 160, maxHeight: 220, objectFit: "contain", borderRadius: 10, background: "#111" }} />
+      )}
+      <div style={{ display: "grid", gap: 6, minWidth: 0, flex: 1 }}>
+        <span>
+          <b>{quoi}</b> de {m.de} <span style={{ color: "#666", fontSize: 13 }}>· signalé par {m.par} le {le}</span>
+        </span>
+        {m.texte && <span className="mots" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>« {m.texte} »</span>}
+        {m.son && <audio controls src={m.son} preload="none" />}
+        <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" className="remettre" disabled={envoi} onClick={() => moderer("remettre")}>
+            Remettre
+          </button>
+          <button type="button" className="retirer" disabled={envoi} onClick={() => moderer("retirer")}>
+            Effacer pour les deux
+          </button>
+        </span>
+        {erreur && <span style={{ color: "#a11" }}>{erreur}</span>}
       </div>
     </div>
   );

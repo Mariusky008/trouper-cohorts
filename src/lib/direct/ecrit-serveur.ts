@@ -259,8 +259,8 @@ export async function preparerApercu(supabase: Supabase, pair: string, nom: stri
 
 // ─── effacer son message ───────────────────────────────────────────────────────────────────────────
 /**
- * 🗑️ IL EFFACE SON MESSAGE (le sien, dans les 24 heures) : pour les deux, avec sa voix ou l'image de son aperçu. Un
- * vocal comme un écrit. Ce que l'étagère en avait noté s'en va aussi (la route s'en charge, comme pour un signalement).
+ * 🗑️ IL EFFACE SON MESSAGE (le sien, dans les 24 heures) : pour les deux, avec sa voix, l'image de son aperçu ou sa
+ * photo. Un vocal, un écrit ou une photo (lot M2). Ce que l'étagère en avait noté s'en va aussi (la route s'en charge, comme pour un signalement).
  */
 export async function effacerMessage(supabase: Supabase, moi: Habitant, cle: unknown, id: unknown): Promise<Resultat<{ ok?: true }>> {
   const h = await hDeCle(supabase, cle);
@@ -274,7 +274,8 @@ export async function effacerMessage(supabase: Supabase, moi: Habitant, cle: unk
   const f = await lireJson<FicheMessage>(supabase, chemin);
   if (f.de !== moi.id) return { error: PHRASES_ECRIT.effaceAutre, statut: 403 };
   if (Date.now() - (Date.parse(s(f.le)) || nom.ts) > ECRIT.effacer) return { error: PHRASES_ECRIT.effaceTrop, statut: 400 };
-  const fichiers = [chemin, s(f.son), s(f.lien?.image)].filter(Boolean);
+  // (📷 lot M2 : sa photo aussi)
+  const fichiers = [chemin, s(f.son), s(f.lien?.image), s(f.media?.chemin)].filter(Boolean);
   const { error } = await supabase.storage.from(SEAU_FIGURINES).remove(fichiers);
   if (error) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await noterStatsMessages(supabase, { effaces: 1 });

@@ -296,5 +296,6 @@ export function ligneDeLEcrit(x: { texte?: string; lien?: { titre?: string; site
 
 // ─── ce qu'on mesure (section 8) ───────────────────────────────────────────────────────────────────
 /** Les compteurs du jour (`stats/messages/<jour>.json`). */
-export type StatsJourMessages = { ecrits: number; vocaux: number; liens: number; apercus: number; sansApercu: number; effaces: number; ecrivains: number };
-export const STATS_MESSAGES_VIDES: StatsJourMessages = { ecrits: 0, vocaux: 0, liens: 0, apercus: 0, sansApercu: 0, effaces: 0, ecrivains: 0 };
+/** (📷 lot M2 : les photos parties, refusées par la modération, non vérifiées faute de service, et leur poids en Ko) */
+export type StatsJourMessages = { ecrits: number; vocaux: number; liens: number; apercus: number; sansApercu: number; effaces: number; ecrivains: number; photos: number; photosRefusees: number; photosNonVerifiees: number; photosKo: number };
+export const STATS_MESSAGES_VIDES: StatsJourMessages = { ecrits: 0, vocaux: 0, liens: 0, apercus: 0, sansApercu: 0, effaces: 0, ecrivains: 0, photos: 0, photosRefusees: 0, photosNonVerifiees: 0, photosKo: 0 };
