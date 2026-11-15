@@ -96,6 +96,10 @@
     {
       "path": "/api/cron/voeu-soir-ete",
       "schedule": "5 17 * * *"
+    },
+    {
+      "path": "/api/cron/direct-nettoyage",
+      "schedule": "40 3 * * *"
     }
   ]
 }

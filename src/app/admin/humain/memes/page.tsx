@@ -230,6 +230,9 @@ export default async function PageMemes() {
               { n: "… refusées par la modération", v: `${msTout.videosRefusees} (${pc(msTout.videosRefusees, msTout.videos + msTout.videosRefusees)})` },
               { n: "… pas vérifiées (service injoignable)", v: String(msTout.videosNonVerifiees) },
               { n: "Ce que pèsent les vidéos", v: `${(msTout.videosKo / 1024).toFixed(1)} Mo` },
+              // 🧹 le nettoyage de la nuit : les dépôts jamais envoyés, les fichiers qu'aucun message ne cite
+              { n: "Fichiers effacés par le nettoyage", v: String(msTout.nettoyes) },
+              { n: "… place rendue", v: `${(msTout.nettoyesKo / 1024).toFixed(1)} Mo` },
             ].map((x) => (
               <div key={x.n} style={carte}>
                 <small style={{ color: "#666" }}>{x.n}</small>

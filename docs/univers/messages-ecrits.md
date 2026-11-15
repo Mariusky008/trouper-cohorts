@@ -3,7 +3,8 @@
 **Statut : validé par le propriétaire. M1 construit le 14 novembre 2026** : le serveur (`docs/figurines.md`, 9.0
 unsexagies ✍️), puis l'écran (9.0 duosexagies). **M2 construit** : le serveur (9.0 quattuorsexagies 📷), puis l'écran
 (9.0 quinquesexagies). **M3 construit** : le serveur (9.0 sexsexagies 🎬), puis l'écran (9.0 septsexagies ; l'endroit où la
-vidéo a été tournée est effacé dans le téléphone).
+vidéo a été tournée est effacé dans le téléphone). **Le nettoyage du stockage** (9.0 octosexagies 🧹) : chaque nuit,
+les photos et vidéos déposées mais jamais envoyées, et les fichiers qu'aucun message ne cite, de plus de 24 heures.
 
 ## 1. Ce que le propriétaire a demandé
 

@@ -214,8 +214,13 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   « Effacer »). **M2, le serveur, est construit** (9.0 quattuorsexagies 📷 : `photo.ts`, `photo-serveur.ts`, `photo-depot`
   et `photo`, la modération) et son écran (9.0 quinquesexagies : `app/collection/photos.tsx`). **M3, le serveur, est
   construit** (9.0 sexsexagies 🎬 : `video.ts`, `video-serveur.ts`, `video-depot` et `video`) et son écran (9.0
-  septsexagies : `app/collection/videos.tsx`). **Reste** : « 🎵 Le ranger dans mon univers ? » et « 🖼️ La mettre dans
-  mon univers ? » ; la page de confidentialité (au propriétaire).
+  septsexagies : `app/collection/videos.tsx`). **Le nettoyage du stockage aussi** (9.0 octosexagies 🧹 : chaque nuit,
+  les dépôts jamais envoyés et les fichiers qu'aucun message ne cite). **Reste** : « 🎵 Le ranger dans mon univers ? »
+  et « 🖼️ La mettre dans mon univers ? » — **le propriétaire a dit oui** ; ils sont à la session de l'univers, le relais
+  est dans `docs/univers/feuille-de-route.md` (lot M, « 📨 Relais ») ; la page de confidentialité (au propriétaire).
+- **Écart repéré, à décider par le propriétaire** : le cahier (section 7) dit qu'« un proche retiré, un compte effacé :
+  la conversation, ses photos et ses vidéos sont effacées ». Ce n'est pas fait : retirer un proche (`retirerProche`)
+  ne touche pas à leur conversation.
 - **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
   panorama — une seule session à la fois sur ces fichiers.
 
