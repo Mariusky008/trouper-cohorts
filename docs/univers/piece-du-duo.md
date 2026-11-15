@@ -297,7 +297,7 @@ la photo du cadre et les souvenirs de l'étagère sont ceux de l'essai (« ⚙�
 3. **Le zoom** : chaque emplacement relevé est touchable (« 👆 Les objets » les montre ; ceux dont la zone n'est pas
    posée sur cette pièce sont nommés, avec où les poser — la page d'essais, « ✋ ») ; la caméra s'en approche. **La
    télé est celle de la section 11** (`TeleDuo`, branchée comme prévu : de loin elle montre ce qui passe, de près « ▶
-   Allumer la télé ») : le lien collé dans « ⚙️ Pour l'essai », sinon le clip de secours du jour (la liste rangée par le
+   Allumer la télé » ; en perspective quand ses quatre coins sont posés, `coins={emplacements.teleCoins}`) : le lien collé dans « ⚙️ Pour l'essai », sinon le clip de secours du jour (la liste rangée par le
    propriétaire, sinon ses cinq premiers) ; le cadre montre la photo choisie ;
    l'étagère, trois souvenirs ; la platine, des notes qui montent ; la fenêtre, le choix de la lumière ; le coin du
    chat, la place du compagnon.

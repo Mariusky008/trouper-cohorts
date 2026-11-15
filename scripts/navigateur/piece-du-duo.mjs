@@ -58,6 +58,8 @@ await json("pieces-duo/salon/releve.json", {
   ajuste: true,
   emplacements: {
     tele: [0.06, 0.28, 0.3, 0.14],
+    // (l'écran posé par ses quatre coins : en perspective, le bord droit plus haut)
+    teleCoins: [[0.06, 0.3], [0.36, 0.28], [0.36, 0.42], [0.06, 0.4]],
     platine: [0.68, 0.5, 0.24, 0.1],
     cadres: [[0.4, 0.12, 0.16, 0.14]],
     etagere: [0.62, 0.3, 0.3, 0.08],
@@ -125,6 +127,7 @@ await p.getByRole("button", { name: "🏠 La pièce" }).click();
 ok(await attendre(async () => (await attr("data-plan")) === "piece"), "« 🏠 La pièce » : la pièce entière");
 const tv = p.locator(".md-tele .tv");
 ok((await tv.getAttribute("data-programme")) === "secours", "la télé de la session de l'univers, posée sur l'écran : sans lien, le clip du jour");
+ok(/en-perspective/.test((await tv.getAttribute("class")) ?? ""), "ses quatre coins posés : la télé en perspective");
 await tv.click();
 ok(await attendre(async () => (await attr("data-plan")) === "objet"), "la télé touchée : la caméra s'en approche");
 ok(/En attendant votre premier lien/.test(await tv.innerText()) && /clip du jour/.test(await p.locator(".md-objet-dit").innerText()), "de près : « En attendant votre premier lien »");

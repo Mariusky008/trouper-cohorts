@@ -347,10 +347,10 @@ export function MaquetteDuo() {
             </span>
           )}
 
-          {/* la télé : celle de la session de l'univers, posée sur l'écran relevé */}
+          {/* la télé : celle de la session de l'univers, posée sur l'écran relevé (en perspective, par ses quatre coins s'ils sont posés) */}
           {zTele && (
             <span className="md-tele" data-objet="tele">
-              <TeleDuo programme={programme} secours={secours} zone={zTele} proche={vise === "tele"} onToucher={() => viser("tele")} />
+              <TeleDuo programme={programme} secours={secours} zone={zTele} coins={p.emplacements?.teleCoins} proche={vise === "tele"} onToucher={() => viser("tele")} />
             </span>
           )}
           {zTele && (aide || nouveaute?.objet === "tele") && (
