@@ -175,7 +175,7 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
 ## 0 septies. La conversation à revoir : l'univers commun du duo (15 novembre 2026)
 
 Le propriétaire, sur la conversation avec un proche : « pas mal de choses qui ne fonctionnent pas suffisamment bien pour
-être utilisables » — sept points (9.0 novosexagies). Fait : les figurines plus grandes, au premier plan ; « Tout
+être utilisables » — sept points (9.0 septuagies). Fait : les figurines plus grandes, au premier plan ; « Tout
 rejouer » et « Juste le son » dans le menu ⋯ ; plus rien qui saute en entier (une figurine sans son visage respire) ;
 l'ouverture (ce que l'écran montrait la dernière fois, tout de suite). **À juger** : la maquette « L'univers commun du
 duo » (artefact Design, quatre écrans) — la scène devient l'univers commun du duo, leur étagère au centre toujours

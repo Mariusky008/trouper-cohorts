@@ -3459,7 +3459,28 @@ Le propriétaire : « oui, lance le nettoyage du stockage ». Le fichier : `lib/
 - **⚠️ Pour l'univers** : une photo ou une image d'aperçu rangée dans l'univers doit y être **recopiée**, jamais citée
   depuis `fils/` (effacer le message l'efface, et le nettoyage efface ce qu'aucun message ne cite).
 
-### 9.0 novosexagies 🎭 La conversation, d'abord : plus grandes, moins de boutons, plus rien qui saute en entier, l'ouverture (15 novembre)
+### 9.0 novosexagies 📅 L'étagère note aussi un rendez-vous, même écrit (15 novembre)
+
+Le propriétaire : « dans une conversation j'ai bien dit que demain on avait un rendez-vous (foot) mais ma figurine ne
+m'a pas demandé de le rajouter à mes étagères » — il avait écrit « demain on a foot en salle n oubli pas ».
+
+- **Pourquoi** : l'étagère lisait bien le message écrit (lot M1), mais sa consigne ne faisait noter que « les jours qui
+  comptent » (un examen, un match, un anniversaire, un concert…) et rappelait : « Le plus souvent, rien ». Un
+  rendez-vous ordinaire n'y entrait pas ; et elle parlait encore de « messages vocaux ».
+- **Ce qui change** (la consigne du modèle, `notesParLeModele`, `etagere-serveur.ts`) : **un rendez-vous qu'ils se
+  donnent pour un jour précis** (« demain on a foot », « samedi on se fait un ciné ») se note toujours, en `date` de
+  sorte `evenement` (le rappel du matin du jour J ; il s'en va ensuite) ; les messages sont « vocaux ou écrits ». Comme
+  tout depuis le lot E5, la figurine demande d'abord « Je le range ? » (aux deux, pour un rendez-vous commun). Le
+  cahier : `docs/univers/etagere.md`, 3.1.
+- **Ce qui ne change pas** : la figurine relit un échange une minute après son dernier message (la conversation
+  ouverte), à l'ouverture de « Chez moi », ou le matin ; rien de sensible (un rendez-vous chez le médecin ne se note
+  pas) ; six passages par jour et par conversation.
+- **L'essai** : `scripts/essai-etagere-rendez-vous-route.mjs` (un message écrit « demain on a foot en salle n oubli
+  pas » → « Le foot », demain, proposé aux deux ; le « oui » de l'un le range). Le faux modèle ne note ce rendez-vous
+  que si la consigne dit qu'un rendez-vous se note. **Le vrai modèle, lui, n'a pas pu être essayé ici** (pas de clé
+  dans les essais) : à vérifier en vrai, après le déploiement.
+
+### 9.0 septuagies 🎭 La conversation, d'abord : plus grandes, moins de boutons, plus rien qui saute en entier, l'ouverture (15 novembre)
 
 Le propriétaire, sur la conversation avec un proche (sept points, « qui ne fonctionnent pas suffisamment bien pour être
 utilisables ») : les figurines toutes petites dans le décor ; « Juste le son » et « Tout rejouer », trop gros, et on ne

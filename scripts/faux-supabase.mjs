@@ -769,6 +769,8 @@ http
             if (/volcan/i.test(t)) objets.push({ genre: "gout", emoji: "🌋", titre: "Les volcans", concerne: m.de, nuance: "aime", citation: "J'adore les volcans en éruption", message: m.n });
             if (/mojito/i.test(t)) objets.push({ genre: "gout", emoji: "🍹", titre: "Les mojitos", concerne: m.de, nuance: "aime", citation: t, message: m.n });
             if (/concert/i.test(t)) objets.push({ genre: "date", sorte: "evenement", emoji: "🎧", titre: "Le concert", concerne: m.de, citation: t, message: m.n, quand: jeudiApres(m.date), dit: "samedi" });
+            // 📅 « demain on a foot » : un rendez-vous (seulement si la consigne dit qu'un rendez-vous se note)
+            if (/foot/i.test(t) && /UN RENDEZ-VOUS/.test(consigne)) objets.push({ genre: "date", sorte: "evenement", emoji: "⚽", titre: "Le foot", concerne: "les deux", citation: t, message: m.n, quand: new Date(Date.parse(`${m.date}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10), dit: "demain" });
             if (/Bonnie/.test(t)) objets.push({ genre: "gout", emoji: "🐶", titre: `Le chien de ${m.de}`, concerne: m.de, nuance: "aime", citation: t, message: m.n });
           }
           // 🏆 (lot E2) « JE L'AI » : l'épreuve qui attendait son issue est réussie ; « raté » : ratée
