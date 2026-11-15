@@ -4,8 +4,10 @@
 #   1. types et lint : le code se type (Vercel refuse désormais un code qui ne se type pas),
 #      et les fichiers de l'échange passent le lint ;
 #   2. essais SQL : toutes les migrations de l'échange sur un Postgres neuf, puis leurs essais ;
-#   3. l'app : construite et lancée sur le faux Supabase, puis l'essai de la route de l'échange
-#      et trois essais navigateur (moitié prix, équipe, factures).
+#   3. l'app : construite et lancée sur le faux Supabase, puis les essais des routes et du navigateur
+#      (`scripts/navigateur/lancer-essais.sh`) — EN QUATRE GROUPES, sur quatre machines en même temps (15 novembre
+#      2026 : 76 essais à la suite prenaient 28 minutes ; en quatre, une douzaine). La tâche « Route et navigateur »
+#      attend les quatre groupes, et n'est verte que s'ils le sont tous.
 # Rien ici n'a besoin de secret.
 name: ClikMe — vérifications
 
@@ -104,11 +106,16 @@ jobs:
       - run: bash scripts/essais-sql-echanges.sh
 
   essais-app:
-    name: Route et navigateur
+    name: Route et navigateur ${{ matrix.groupe }}/4
     # (Ubuntu 24.04 fixé : le 7 novembre 2026, « ubuntu-latest » est passé à 26.04, où Playwright 1.56 ne sait pas installer
     # Chromium — « Playwright does not support chromium on ubuntu26.04-x64 »)
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 30
+    strategy:
+      # (un groupe qui échoue n'arrête pas les autres : on voit d'un coup tout ce qui est rouge)
+      fail-fast: false
+      matrix:
+        groupe: [1, 2, 3, 4]
     env:
       # 🔀 l'interrupteur « Univers pour tous » est allumé (13 novembre 2026) : les essais d'avant tournent FREINÉS (« 0 »,
       # l'appli d'avant) ; ceux de la bascule lancent une seconde app allumée (`scripts/seconde-app.mjs`)
@@ -169,6 +176,14 @@ jobs:
           npx playwright install --with-deps chromium || npx playwright install chromium
       - name: Des clés de notification, pour les essais seulement
         run: node -e "const k=require('web-push').generateVAPIDKeys();console.log('NEXT_PUBLIC_VAPID_PUBLIC_KEY='+k.publicKey);console.log('VAPID_PRIVATE_KEY='+k.privateKey)" >> "$GITHUB_ENV"
+      - name: La mémoire de la construction
+        # (le cache de webpack d'un passage à l'autre : la construction repart de ce qui n'a pas changé)
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.*', 'public/**/*.json') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
       - name: Construire l'app
         run: |
           node scripts/faux-supabase.mjs > /tmp/faux-construction.log 2>&1 &
@@ -181,15 +196,33 @@ jobs:
           for _ in $(seq 1 60); do curl -fs -o /dev/null http://localhost:3821/autour-de-moi/assistante && exit 0; sleep 2; done
           echo "L'app ne répond pas :"; tail -50 /tmp/next.log; exit 1
       - name: Essais
+        env:
+          ESSAIS_GROUPES: "4"
+          ESSAIS_GROUPE: ${{ matrix.groupe }}
         run: bash scripts/navigateur/lancer-essais.sh
       - name: Captures et journaux
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: clikme-captures
+          name: clikme-captures-${{ matrix.groupe }}
           path: |
             captures
             /tmp/next.log
             /tmp/essai.log
             /tmp/faux-supabase.log
           if-no-files-found: ignore
+
+  # ✅ « Route et navigateur » : vert seulement si les quatre groupes le sont (le nom d'avant, que GitHub attend sur
+  # chaque PR, reste le même)
+  essais-app-bilan:
+    name: Route et navigateur
+    needs: essais-app
+    # (pas `always()` : un passage annulé par un push plus récent resterait annulé, pas rouge — la croix rouge de #182)
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Les quatre groupes
+        run: |
+          echo "Les quatre groupes : ${{ needs.essais-app.result }}"
+          test "${{ needs.essais-app.result }}" = "success"

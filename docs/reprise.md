@@ -317,7 +317,15 @@ leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est 
   - Commits en français, terminés par les deux lignes d'attribution que la session donne.
   - Pas d'identifiant de modèle dans les commits, les PR ou le code.
 - **La CI** (`.github/workflows/clikme-verifications.yml`) a 4 vérifications : Human Suite, Types et lint, Essais SQL,
-  Route et navigateur. Elle prend environ 15 min.
+  Route et navigateur.
+  - **Depuis le 15 novembre 2026, « Route et navigateur » joue ses essais en quatre groupes, sur quatre machines en
+    même temps** (« Route et navigateur 1/4 » à « 4/4 », puis le bilan « Route et navigateur », vert seulement si les
+    quatre le sont). Avant : 76 essais à la suite, environ 34 minutes ; maintenant, une douzaine. La construction garde
+    aussi sa mémoire (le cache de webpack) d'un passage à l'autre.
+  - **Ajouter un essai** : l'ajouter à la liste `ESSAIS=(…)` de `scripts/navigateur/lancer-essais.sh`, rien d'autre
+    (il tombe tout seul dans un groupe).
+  - **Rejouer un groupe en local** : `ESSAIS_GROUPES=4 ESSAIS_GROUPE=2 bash scripts/navigateur/lancer-essais.sh` (sans
+    ces variables, tous les essais, comme avant).
   - On l'attend avec un `sleep 1260` **en arrière-plan**, puis on lit `get_check_runs` de la PR.
   - On fusionne en `merge`, avec `expectedHeadSha` (le SHA complet, `git rev-parse HEAD`).
   - Puis on réaligne la branche :
