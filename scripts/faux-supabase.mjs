@@ -624,6 +624,8 @@ const pushs = [];
 const videosEssai = new Map();
 // (🎥 le faux Omni : chaque interaction, sa vidéo rendue en ligne ou en fichier)
 const interactionsEssai = new Map();
+/** Une fausse MP4 : « ftyp » à son cinquième octet, comme une vraie, puis sa marque. */
+const fauxMp4 = (marque) => Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftypmp42"), Buffer.alloc(1200), Buffer.from(marque)]);
 const consignesIA = [];
 const pagesLues = [];
 // 🎲 LES MÈMES « SURPRENDS-MOI ! » DE LA FAUSSE IA : le premier pas encore dans la consigne (« déjà proposés ») ; un goût
@@ -923,12 +925,17 @@ http
         const n = videosEssai.get(interaction[1]) + 1;
         videosEssai.set(interaction[1], n);
         if (n < 2) return repondre(res, 200, { id: interaction[1], status: "in_progress" });
-        const video = interactionsEssai.get(interaction[1]) === "en-ligne" ? { type: "video", mime_type: "video/mp4", data: Buffer.from("faux mp4 de son univers vivant").toString("base64") } : { type: "video", mime_type: "video/mp4", uri: "files/video1" };
+        // (une pièce : l'adresse de la FICHE du fichier, comme Google — ses octets sont à « :download »)
+        const video = interactionsEssai.get(interaction[1]) === "en-ligne" ? { type: "video", mime_type: "video/mp4", data: fauxMp4("faux mp4 de son univers vivant").toString("base64") } : { type: "video", mime_type: "video/mp4", uri: "http://127.0.0.1:54321/gemini/v1beta/files/video1" };
         return repondre(res, 200, { id: interaction[1], status: "completed", steps: [{ type: "user_input", content: [{ type: "text", text: "…" }] }, { type: "model_output", content: [video] }] });
       }
       if (url.pathname === "/gemini/v1beta/files/video1:download" && req.headers["x-goog-api-key"] === "faux") {
         res.writeHead(200, { "content-type": "video/mp4" });
-        return res.end(Buffer.from("faux mp4 de la pièce vivante"));
+        return res.end(fauxMp4("faux mp4 de la pièce vivante"));
+      }
+      // (la fiche du fichier : du JSON, pas la vidéo)
+      if (url.pathname === "/gemini/v1beta/files/video1" && req.headers["x-goog-api-key"] === "faux") {
+        return repondre(res, 200, { name: "files/video1", mimeType: "video/mp4", uri: "http://127.0.0.1:54321/gemini/v1beta/files/video1", downloadUri: "http://127.0.0.1:54321/gemini/v1beta/files/video1:download?alt=media", state: "ACTIVE" });
       }
       if (url.pathname === "/__ia") return repondre(res, 200, consignesIA);
       // ✍️ (lot M1) LE FAUX SITE DES APERÇUS DE LIENS (`CLIKME_APERCU_ESSAI_BASE`, les noms en `.essai.invalid`) : une page

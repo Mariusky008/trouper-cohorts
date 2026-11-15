@@ -3276,6 +3276,16 @@ environ 0,40 $ (Google, Gemini Omni Flash : quatre secondes en 720p).
 - **Faite, elle se montre** dans « Ma maison » (`EtatUnivers.decorVivant`, `/api/direct/univers`) et à ses visiteurs
   (`VueVisite.decorVivant`, `/univers/chez/<clé>`), par-dessus le décor. **À décider par le propriétaire** : la faire
   pour chacun (à la création de l'univers, et chaque mois avec le décor du mois), et quand.
+- **Le 15 novembre, son essai : « je ne vois rien bouger »** (la page disait « Ton univers est vivant »). Le plus
+  probable : l'adresse rendue par Google était celle de la FICHE du fichier (`…/files/<id>`, du JSON), pas ses octets
+  (`…/files/<id>:download?alt=media`) — rangée comme `video.mp4`, elle ne se lit pas, et le décor reste immobile. Donc :
+  ce qui est rendu est vérifié (`estUneVideo` : « ftyp » au cinquième octet d'une MP4, l'en-tête d'une WebM) ; une
+  adresse de fichier se télécharge par `:download` ; une fiche JSON donne son adresse (`downloadUri`, `uri`) ; sinon
+  « ce qui est rendu n'est pas une vidéo (…) », plutôt que « faite ». Une vidéo déjà rangée qui n'en est pas une
+  (`verifierLaVideo`, à l'ouverture de la page d'essais) : **réparée sans rien repayer** si c'est la fiche du fichier,
+  sinon effacée, et dite (🩺). La page d'essais dit ce que le téléphone lit de la vidéo (« 4,0 s, 720 × 1280 », ou
+  qu'il ne la lit pas) et « Ouvrir la vidéo seule » ; dans les pièces aussi. Et la consigne demande un mouvement
+  « visible d'un coup d'œil sur un téléphone, dès la première seconde — jamais une image fixe » (la lumière vit aussi).
 - **L'essai automatique** : `essai-univers-vivant-route.mjs` (Gemini Omni, 9:16, 4 s, 720p, 720 × 1280, la caméra immobile,
   l'espace devant vide, sans voix ; « en train », puis faite ; dans « Ma maison » et chez Sam en visite ; son décor
   retouché : périmée, plus montrée ; la refaire).

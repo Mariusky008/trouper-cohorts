@@ -128,7 +128,7 @@ const v2 = await appeler(lea, { action: "fabriquer" });
 ok(typeof v2.progres === "number" && v2.progres < 95 && !v2.fait && v2.etat?.videoEnCours, `elle se fait (${v2.progres} %, estimé : Google ne le dit pas)`);
 const v3 = await appeler(lea, { action: "fabriquer" });
 const mp4 = await octets(`${D}/salon/video.mp4`);
-ok(v3.fait === "video" && mp4?.toString() === "faux mp4 de la pièce vivante" && /^http/.test(v3.etat?.video ?? "") && !v3.etat.videoEnCours && v3.etat.aFaire?.length === 0, "faite : rangée, signée ; tout est fait");
+ok(v3.fait === "video" && mp4?.subarray(4, 8).toString() === "ftyp" && mp4.toString().includes("faux mp4 de la pièce vivante") && /^http/.test(v3.etat?.video ?? "") && !v3.etat.videoEnCours && v3.etat.aFaire?.length === 0, "faite : ses octets téléchargés (l'adresse rendue était la fiche du fichier : « :download »), rangée, signée ; tout est fait");
 ok((await octets(`${D}/salon/video.json`)) === null && (await octets(`${D}/salon/verrou.json`)) === null, "ni commande ni verrou ne restent");
 const v4 = await appeler(lea, { action: "fabriquer" });
 ok(v4.statut === 200 && !v4.fait && v4.progres === undefined, "plus rien à faire");

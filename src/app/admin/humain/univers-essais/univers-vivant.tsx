@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { DecorVivant } from "@/app/univers/piece-vivante";
 
-type Etat = { univers: boolean; decor?: string; video?: string; enCours?: { depuis: string; progres?: number }; perimee?: boolean; moteur: boolean };
+type Etat = { univers: boolean; decor?: string; video?: string; enCours?: { depuis: string; progres?: number }; perimee?: boolean; moteur: boolean; alerte?: string };
 const ROUTE = "/api/admin/direct/univers-vivant";
 const pause = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
@@ -16,6 +16,8 @@ export function UniversVivant() {
   const [etat, setEtat] = useState<Etat | null>(null);
   const [occupe, setOccupe] = useState<number | null>(null);
   const [dit, setDit] = useState("");
+  // 🩺 ce que le téléphone lit de la vidéo (sa durée, sa taille) — ou qu'il ne la lit pas
+  const [lue, setLue] = useState("");
   const charger = useCallback(async () => {
     const j = (await (await fetch(ROUTE, { cache: "no-store" })).json().catch(() => ({}))) as { etat?: Etat; error?: string };
     if (j.etat) setEtat(j.etat);
@@ -68,6 +70,24 @@ export function UniversVivant() {
           <img src={etat.decor} alt="Ton univers" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
           {etat.video && <DecorVivant src={etat.video} />}
         </div>
+      )}
+      {etat?.alerte && <p style={{ margin: "0 0 10px", color: "#8a5a00" }}>🩺 {etat.alerte}</p>}
+      {etat?.video && (
+        <p className="uvv-lue" style={{ margin: "0 0 10px", color: "#555", fontSize: 14 }}>
+          <video
+            key={etat.video}
+            src={etat.video}
+            preload="metadata"
+            muted
+            style={{ display: "none" }}
+            onLoadedMetadata={(e) => setLue(`La vidéo se lit : ${e.currentTarget.duration.toFixed(1).replace(".", ",")} s, ${e.currentTarget.videoWidth} × ${e.currentTarget.videoHeight}.`)}
+            onError={() => setLue("⚠️ Ce téléphone ne lit pas la vidéo rangée : touche « Refaire ».")}
+          />
+          {lue || "La vidéo se charge…"}{" "}
+          <a href={etat.video} target="_blank" rel="noreferrer">
+            Ouvrir la vidéo seule
+          </a>
+        </p>
       )}
       {etat?.perimee && <p style={{ margin: "0 0 10px", color: "#8a5a00" }}>Ton décor a changé depuis (une retouche, ou le décor du mois) : refais-la pour qu’il vive à nouveau.</p>}
       {etat?.univers && (
