@@ -139,15 +139,15 @@ export async function etatPiecesDuo(supabase: Supabase): Promise<EtatPiecesDuo> 
   return { pieces, moteurs: { image: Boolean(cle()), regard: analyseConfiguree() } };
 }
 
-/** Le verrou d'une pièce : de deux passages arrivés ensemble, seul le dernier qui a écrit continue. */
-async function prendre(d: ReturnType<typeof depotDans>): Promise<string | null> {
+/** Le verrou d'une pièce (ou de l'essai du collage) : de deux passages arrivés ensemble, seul le dernier qui a écrit continue. */
+export async function prendre(d: ReturnType<typeof depotDans>): Promise<string | null> {
   if ((await d.lister().catch(() => [] as string[])).includes(VERROU) && Date.now() - (Number(json(await d.lire(VERROU).catch(() => null)).le) || 0) < DUREE_VERROU) return null;
   const qui = randomUUID();
   await d.ecrire(VERROU, Buffer.from(JSON.stringify({ le: Date.now(), qui })), "application/json");
   await new Promise((ok) => setTimeout(ok, 300));
   return json(await d.lire(VERROU).catch(() => null)).qui === qui ? qui : null;
 }
-async function rendre(d: ReturnType<typeof depotDans>, qui: string) {
+export async function rendre(d: ReturnType<typeof depotDans>, qui: string) {
   if (json(await d.lire(VERROU).catch(() => null)).qui === qui) await d.effacer(VERROU).catch(() => undefined);
 }
 
