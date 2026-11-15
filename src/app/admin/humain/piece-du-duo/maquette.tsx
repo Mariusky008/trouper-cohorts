@@ -489,7 +489,7 @@ export function MaquetteDuo() {
 .md-objet.aide{box-shadow:0 0 0 1.5px rgba(255,255,255,.9),0 0 10px rgba(255,255,255,.6);animation:md-pulse 1.2s ease-in-out infinite}
 .md-objet.neuf{box-shadow:0 0 0 2px #ffd36b,0 0 14px #ffd36b;animation:md-pulse 1s ease-in-out infinite}
 @keyframes md-pulse{50%{opacity:.35}}
-.md-neuf,.md-installe{position:absolute;left:12px;right:12px;top:12px;margin:0;padding:9px 12px;border-radius:14px;background:rgba(20,14,8,.78);color:#fff;font-size:14px;line-height:1.35;backdrop-filter:blur(6px)}
+.md-neuf,.md-installe{position:absolute;left:12px;right:12px;top:12px;margin:0;pointer-events:none;padding:9px 12px;border-radius:14px;background:rgba(20,14,8,.78);color:#fff;font-size:14px;line-height:1.35;backdrop-filter:blur(6px)}
 .md-installe{top:auto;bottom:12px;font-size:13px}
 .md-bulles{position:absolute;left:10px;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .md-bulle{margin:0;max-width:78%;padding:8px 11px;border-radius:16px;font-size:14px;line-height:1.35;animation:md-bulle .35s ease}

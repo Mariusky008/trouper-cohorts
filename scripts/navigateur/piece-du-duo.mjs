@@ -154,7 +154,8 @@ ok((await p.locator(".md-anneau.neuf").count()) === 1, "l'anneau sur la télé")
 await capture("4-neuf");
 
 // ─── la fenêtre : la lumière ───
-await p.locator('[data-objet="fenetre"]').click({ force: true });
+// (un clic comme un doigt, sans forcer : un mot posé sur la pièce ne doit pas prendre le toucher)
+await p.locator('[data-objet="fenetre"]').click();
 const avant = await attr("data-moment");
 const autre = ["matin", "soir", "nuit"].find((x) => x !== avant);
 await p.locator(".md-moments button").nth(["matin", "soir", "nuit"].indexOf(autre)).click();
