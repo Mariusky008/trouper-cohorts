@@ -346,7 +346,15 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
 export function MurEtagere({ objets, attente, vol, arrive, onOuvrir, poussiere = false }: { objets: ObjetVu[]; attente: ReadonlySet<string>; vol: string; arrive: string; onOuvrir: () => void; poussiere?: boolean }) {
   const la = objets.filter((o) => !attente.has(o.id) || o.id === vol);
   const n = la.filter((o) => o.id !== vol).length;
-  if (!la.length) return null;
+  // (15 novembre 2026, point 4) vide, elle reste au mur : sa planche, et de quoi y poser le premier souvenir
+  if (!la.length)
+    return (
+      <button type="button" className="et-mur vide" onClick={onOuvrir} aria-label="Votre étagère, encore vide : y poser un souvenir">
+        <span className="et-rang" aria-hidden="true" />
+        <span className="et-planche" aria-hidden="true" />
+        <small>📚 Votre étagère · ＋ un souvenir</small>
+      </button>
+    );
   return (
     <>
       {/* 🕸️ (lot E3) la poussière : deux toiles d'araignée */}
@@ -404,12 +412,14 @@ export function CarteRallume({ prenom }: { prenom: string }) {
   );
 }
 
-/** « 📚 6 », dans l'en-tête de la conversation. */
+/**
+ * « 📚 6 », dans l'en-tête de la conversation — toujours là, même vide (15 novembre 2026, le propriétaire, point 4 : « il
+ * manque un accès aux étagères de ce duo ») : vide, elle ouvre l'étagère, où l'on pose le premier souvenir.
+ */
 export function PastilleEtagere({ n, onOuvrir }: { n: number; onOuvrir: () => void }) {
-  if (!n) return null;
   return (
-    <button type="button" className="et-pastille" onClick={onOuvrir} aria-label={`Votre étagère : ${n} souvenir${n > 1 ? "s" : ""}`}>
-      📚 <span>{n}</span>
+    <button type="button" className={`et-pastille${n ? "" : " vide"}`} onClick={onOuvrir} aria-label={n ? `Votre étagère : ${n} souvenir${n > 1 ? "s" : ""}` : "Votre étagère, encore vide"}>
+      📚 <span>{n || "＋"}</span>
     </button>
   );
 }
@@ -1535,6 +1545,9 @@ export const STYLES_ETAGERE = `
 .et-toile.g{left:18%}
 .et-toile.d{right:16%;top:22px;transform:scaleX(-1)}
 .et-mur.terne .et-rang span{filter:grayscale(1) brightness(.7)}
+.et-mur.vide .et-rang{height:18px}
+.et-mur.vide .et-planche{opacity:.75}
+.et-pastille.vide{opacity:.85}
 .et-etat{margin:0;padding:9px 12px;border-radius:14px;background:rgba(242,196,107,.12);color:#F2C46B;font-size:13.5px;font-weight:700}
 .et-etat.gris{background:rgba(255,255,255,.06);color:#BFA6B3}
 .et-meuble.poussiere{filter:grayscale(.8) brightness(.7)}

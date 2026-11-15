@@ -172,6 +172,13 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
   (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à
   elle ; l'en-tête de la conversation, le menu et « Ma maison » sont à celle-ci.
 
+## ⚠️ Qui touche à quoi (15 novembre 2026)
+
+**Le propriétaire a confié à la session de l'univers les points 4, 6 et 7 de la conversation** (« fais les chantiers
+4, 6 et 7 ») : la scène de la conversation, le fil (`proches.tsx`) et l'étagère dans la scène (`etagere.tsx` :
+`MurEtagere`, `PastilleEtagere`), et le moment du duo (`moment-du-duo.tsx`). **L'autre session n'y touche pas sans le
+dire au propriétaire d'abord** : une seule session à la fois sur ces fichiers.
+
 ## 0 septies. La conversation à revoir : l'univers commun du duo (15 novembre 2026)
 
 Le propriétaire, sur la conversation avec un proche : « pas mal de choses qui ne fonctionnent pas suffisamment bien pour
@@ -180,8 +187,7 @@ rejouer » et « Juste le son » dans le menu ⋯ ; plus rien qui saute en entie
 l'ouverture (ce que l'écran montrait la dernière fois, tout de suite). **À juger** : la maquette « L'univers commun du
 duo » (artefact Design, quatre écrans) — la scène devient l'univers commun du duo, leur étagère au centre toujours
 visible, ce qui vient de s'y passer joué à l'arrivée (un souvenir posé, « Je le range ? », un commentaire de figurine),
-les messages vocaux en bulles du fil. **À décider** : qui construit l'univers commun et le fil plus large — le fil et
-l'étagère sont le chantier de l'autre session.
+les messages vocaux en bulles du fil. **Fait ensuite** (9.0 duoseptuagies 🎬) : l'étagère toujours là, le fil en grand, le moment du duo à l'arrivée.
 
 ## 0 octies. Le compagnon : l'essai du chat (lot C0, 15 novembre 2026)
 

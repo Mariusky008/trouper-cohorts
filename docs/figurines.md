@@ -3538,6 +3538,26 @@ figurine.
 - **L'essai automatique** : `essai-compagnon-route.mjs` (la référence dans le style de SA figurine, détourée ; la pose
   « dort » ; la vidéo sur fond vert chez Google, la première et la dernière image ; une vraie vidéo rangée ; refaire).
 
+### 9.0 duoseptuagies 🎬 L'univers commun du duo : l'étagère toujours là, le fil en grand, le moment du duo (15 novembre)
+
+Le propriétaire, sur les points 4, 6 et 7 de la conversation (9.0 septuagies) : « fais les chantiers 4, 6 et 7 » — ils
+étaient dans le chantier de l'autre session (le fil, l'étagère) ; il les a confiés à celle-ci (`docs/reprise.md`).
+
+- **4. L'étagère du duo, toujours là** (`etagere.tsx`) : la pastille de l'en-tête (`PastilleEtagere`) ne disparaît plus
+  quand l'étagère est vide (« 📚 ＋ ») ; le mur de la scène (`MurEtagere`) non plus : sa planche, et « 📚 Votre étagère ·
+  ＋ un souvenir », qui ouvre l'étagère (où l'on dépose le premier). « 🏠 Chez <prénom> » reste dans l'en-tête quand il
+  a son univers.
+- **6. Le fil en grand** (`proches.tsx`) : « ⌃ Le fil en grand », en bas de la scène, la replie en une ligne (leurs deux
+  visages, « Chez toi, avec Marius », ce qui se lit ou s'écoute, « ⌄ La scène ») ; le fil prend la place. La scène reste
+  là, cachée : un message vocal s'y écoute, sa bulle s'allume dans le fil. Le choix est retenu sur ce téléphone.
+- **7. Le moment du duo, à l'arrivée** (`moment-du-duo.tsx`) : juste sous l'en-tête, ce qui vient de se passer entre
+  eux deux, dit par la figurine qui le porte — d'abord une demande « Je le range ? » qui attend (« ✓ Range-le » /
+  « Non », là) ; sinon un souvenir posé sur leur étagère ces trois derniers jours (« Voir votre étagère ») ; sinon le
+  dernier aparté de leurs figurines sur la conversation, ces deux derniers jours. Sinon, le mot du jour de leurs
+  figurines garde sa place. Un moment vu se ferme (×) et ne revient plus sur ce téléphone. Rien de neuf côté serveur.
+- **L'essai** : `etagere.mjs` (l'étagère vide, dans l'en-tête et au mur ; la question dans le moment du duo ; puis le
+  souvenir rangé ; le fil en grand, et la scène qui revient).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
