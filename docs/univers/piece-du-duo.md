@@ -217,3 +217,36 @@ Les quatre points, réglés avant de généraliser (`pieces-duo-collage-serveur.
 
 Sur la page d'essais, la section « 🧩 L'effet collage » montre maintenant la version générée en premier (la posée
 reste dessous, pour comparer), et on y choisit la lumière (🌤️ 🌇 🌙) parmi celles qui sont faites.
+
+## 11. La maquette de la pièce du duo (15 novembre 2026)
+
+**Où** : `/admin/humain/piece-du-duo` (le bouton « ▶ Ouvrir la maquette » dans « 🧩 L'effet collage »), en plein écran au
+format téléphone. Les pièces refaites, leurs lumières et l'image du duo sont les vraies ; les bulles, le lien de la télé,
+la photo du cadre et les souvenirs de l'étagère sont ceux de l'essai (« ⚙️ Pour l'essai »).
+
+**Ce qu'on y vit** :
+
+1. **L'arrivée** : la pièce entière, dans la lumière de l'heure à Paris (`momentDuoDe` ; celle de la pièce si cette
+   lumière n'est pas faite). Si quelque chose a changé depuis la dernière visite de cette pièce (un lien sur la télé, une
+   photo dans le cadre), un mot (« ✨ Depuis ta dernière visite : Léa a mis un lien sur la télé ») et un anneau sur
+   l'objet ; sinon rien.
+2. **La conversation** : au bout de deux secondes (trois et demie s'il y avait du neuf), la caméra glisse vers les deux
+   places (`zoneDesPlaces`, la même zone que le masque du duo) ; les bulles arrivent une à une (les trois dernières).
+3. **Le zoom** : chaque emplacement relevé est touchable (« 👆 Les objets » les montre) ; la caméra s'en approche. La télé
+   joue le lien collé (« ▶ Allumer » : sur iPhone, le son demande un geste) ; le cadre montre la photo choisie ;
+   l'étagère, trois souvenirs ; la platine, des notes qui montent ; la fenêtre, le choix de la lumière ; le coin du
+   chat, la place du compagnon.
+4. **Changer de pièce** : « 🚪 Changer de pièce » (on invite : « Invitation envoyée… », puis « … arrive sur la terrasse »,
+   et on y est), ou une invitation reçue (« Léa t'invite dans la cuisine » — « Venir » / « Pas maintenant »).
+
+**L'image du duo** se fait toute seule à la première visite d'une pièce dans une lumière (« Vos figurines
+s'installent… »), environ 0,17 € ; les deux poses sans fauteuil, une fois pour toutes (`fabriquerDuoVivant`,
+`app/api/admin/direct/piece-vivante`). Le duo est celui choisi dans l'essai du collage.
+
+**Ce qui n'y est pas encore** : la vraie conversation (les vrais messages, les vrais liens), les objets branchés (la
+télé, la platine, les cadres, l'étagère : la session de l'univers, une fois la maquette validée), le chat dans son
+coin.
+
+**Les essais** : `scripts/essai-piece-vivante-route.mjs` (la route : sans duo, le duo, la première visite, une autre
+lumière, les refus) et `scripts/navigateur/piece-du-duo.mjs` (l'arrivée, le glissé, les bulles, la télé, les deux
+invitations, ce qui a changé, la fenêtre).

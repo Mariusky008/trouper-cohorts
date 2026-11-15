@@ -1,0 +1,150 @@
+// 🛋️ LA PIÈCE DU DUO — LA MAQUETTE, DANS UN NAVIGATEUR DE TÉLÉPHONE (`app/admin/humain/piece-du-duo`,
+// `docs/univers/piece-du-duo.md`, section 11) — contre le faux Supabase et son faux moteur d'image ; aucune vidéo YouTube
+// n'est chargée (ses adresses sont coupées).
+//
+// Léa (ce téléphone) et une volontaire du lot 0, choisies dans l'essai du collage ; le salon (ses trois lumières, ses
+// emplacements) et la cuisine. L'arrivée : la pièce entière, l'image du duo faite toute seule (première visite), puis la
+// caméra glisse vers les deux places et les bulles arrivent ; « 🏠 La pièce » ; la télé touchée : le zoom, sans lien le mot
+// pour en coller un ; un lien collé, « ▶ Allumer » : la télé le joue ; une invitation reçue (« … t'invite dans la
+// cuisine ») : « Venir » ; changer de pièce (on invite) : envoyée, acceptée, et on y est ; de retour au salon : « Depuis
+// ta dernière visite : … a mis un lien sur la télé », l'anneau sur la télé ; la fenêtre : la lumière change. Ni
+// débordement, ni erreur, ni le mot « exemple ».
+import sharp from "sharp";
+import { BASE, D, F, lancer } from "./commun.mjs";
+
+const STOCK = F.replace("/rest/v1", "/storage/v1/object");
+const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
+const deposer = (chemin, corps, type) => fetch(`${STOCK}/figurines-clients/${chemin}`, { method: "POST", headers: { "content-type": type }, body: corps });
+const json = (chemin, x) => deposer(chemin, JSON.stringify(x), "application/json");
+
+let echecs = 0;
+const ok = (c, m) => {
+  if (!c) echecs++;
+  console.log(c ? "  ok  " : "ÉCHEC ", m);
+};
+
+const ADMIN = "00000000-0000-4000-8000-0000000ad001";
+await semer("admins", [{ user_id: ADMIN }]);
+const b64 = (x) => Buffer.from(JSON.stringify(x)).toString("base64url");
+const session = {
+  access_token: "faux-admin",
+  token_type: "bearer",
+  expires_in: 86400,
+  expires_at: Math.floor(Date.now() / 1000) + 86400,
+  refresh_token: "faux",
+  user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {} },
+};
+const LEA = { id: "aeaeaeae-0000-4000-8000-000000000d02", jeton: "jeton-lea-maquette-duo-00001" };
+await semer("human_habitants", [{ id: LEA.id, device_token: LEA.jeton, prenom: "Léa", ville_slug: "dax" }]);
+
+// ─── Léa, la volontaire, le salon (trois lumières, ses emplacements), la cuisine ; le duo choisi ───
+const maintenant = new Date().toISOString();
+const uni = (r, g, b) => sharp({ create: { width: 512, height: 768, channels: 4, background: { r, g, b, alpha: 1 } } }).png().toBuffer();
+const P1 = `${LEA.id}/perso/v1`;
+await deposer(`${P1}/assise.png`, await uni(200, 140, 90), "image/png");
+const perso = { version: 1, style: "collection-1", creee_le: maintenant, validee_le: maintenant, references: { assise: { chemin: `${P1}/assise.png` } }, historique: [{ version: 1, le: maintenant, raison: "« C’est moi ! »", style: "collection-1" }] };
+await json(`${P1}/fiche.json`, perso);
+await json(`${LEA.id}/perso/fiche.json`, perso);
+const L0 = "essais-univers";
+await json(`${L0}/personnes/vvvvvvvvvvv4.json`, { id: "vvvvvvvvvvv4", nom: "Volontaire 4", accordLe: maintenant, le: maintenant, traits: null });
+await json(`${L0}/resultats/aimeeaimee04.json`, { id: "aimeeaimee04", personne: "vvvvvvvvvvv4", type: "figurine", variante: "sculptee", avis: "oui", etat: "fait", qualite: "high", taille: "1024x1536", le: maintenant, consigne: "…" });
+await deposer(`${L0}/resultats/aimeeaimee04.png`, await uni(90, 120, 200), "image/png");
+await deposer("pieces-duo/salon/decor.png", await uni(70, 60, 80), "image/png");
+await deposer("pieces-duo/salon/lumiere-matin.png", await uni(150, 170, 190), "image/png");
+await deposer("pieces-duo/salon/lumiere-nuit.png", await uni(20, 25, 50), "image/png");
+await json("pieces-duo/salon/releve.json", {
+  le: maintenant,
+  ajuste: true,
+  emplacements: {
+    tele: [0.06, 0.28, 0.3, 0.14],
+    platine: [0.68, 0.5, 0.24, 0.1],
+    cadres: [[0.4, 0.12, 0.16, 0.14]],
+    etagere: [0.62, 0.3, 0.3, 0.08],
+    fenetre: [0.62, 0.04, 0.32, 0.22],
+    places: [{ x: 0.38, y: 0.74, hauteur: 0.3 }, { x: 0.62, y: 0.74, hauteur: 0.3 }],
+    chat: { x: 0.14, y: 0.88 },
+  },
+});
+await deposer("pieces-duo/cuisine/decor.png", await uni(220, 190, 90), "image/png");
+await json("pieces-duo/collage/choix.json", { piece: "salon", a: "moi", b: "aimeeaimee04" });
+
+const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+const b = await lancer();
+const erreurs = [];
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
+await ctx.addCookies([
+  { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE },
+  { name: "clikme_habitant", value: LEA.jeton, url: BASE },
+]);
+await ctx.route(/youtube/, (r) => r.abort());
+const p = await ctx.newPage();
+p.on("pageerror", (e) => erreurs.push(String(e)));
+const scene = p.locator(".md-scene");
+const attr = (n) => scene.getAttribute(n);
+const attendre = async (fn, ms = 8000) => {
+  for (const fin = Date.now() + ms; Date.now() < fin; await p.waitForTimeout(150)) if (await fn()) return true;
+  return false;
+};
+const capture = (nom) => p.screenshot({ path: `${D}/piece-du-duo-${nom}.png`, fullPage: true });
+// (« ⚙️ Pour l’essai » s'ouvre et se ferme du même bouton : on ne l'ouvre que s'il est fermé)
+const ouvrirReglages = async () => {
+  if (!(await p.locator('.md-panneau[aria-label="Pour l’essai"]').count())) await p.getByRole("button", { name: "⚙️ Pour l’essai" }).click();
+};
+
+// ─── l'arrivée ───
+await p.goto(`${BASE}/admin/humain/piece-du-duo`, { waitUntil: "domcontentloaded" });
+await scene.waitFor({ timeout: 15000 });
+ok((await attr("data-piece")) === "salon" && (await attr("data-plan")) === "piece", "l'arrivée : le salon, la pièce entière");
+ok(/avec Volontaire 4/.test(await p.locator(".md-titre").innerText()), "« avec Volontaire 4 » : le duo choisi dans l'essai du collage");
+ok(await attendre(async () => (await p.locator(".md-fond[data-duo]").count()) > 0, 15000), "l'image du duo, faite toute seule à la première visite (puis montrée)");
+ok(await attendre(async () => (await attr("data-plan")) === "places"), "puis la caméra glisse vers les deux places");
+ok(await attendre(async () => (await p.locator(".md-bulle").count()) >= 2), "les bulles arrivent, une à une");
+await capture("1-places");
+
+// ─── la pièce, la télé ───
+await p.getByRole("button", { name: "🏠 La pièce" }).click();
+ok(await attendre(async () => (await attr("data-plan")) === "piece"), "« 🏠 La pièce » : la pièce entière");
+await p.locator('[data-objet="tele"]').click();
+ok(await attendre(async () => (await attr("data-plan")) === "objet"), "la télé touchée : la caméra s'en approche");
+ok(/Colle un lien YouTube/.test(await p.locator(".md-objet-dit").innerText()), "sans lien : le mot pour en coller un");
+await p.getByRole("button", { name: "← Revenir" }).click();
+await ouvrirReglages();
+await p.locator('.md-panneau input[type="url"]').fill("https://youtu.be/dQw4w9WgXcQ");
+await p.locator('[data-objet="tele"]').click({ force: true });
+await p.getByRole("button", { name: "▶ Allumer" }).click();
+ok(((await p.locator("iframe.md-ecran").getAttribute("src").catch(() => "")) ?? "").includes("youtube-nocookie.com/embed/dQw4w9WgXcQ"), "un lien collé, « ▶ Allumer » : la télé le joue");
+await capture("2-tele");
+await p.getByRole("button", { name: "← Revenir" }).click();
+
+// ─── une invitation reçue ───
+await ouvrirReglages();
+await p.locator(".md-panneau").getByRole("button", { name: "🍳" }).click();
+ok(/Volontaire 4 t’invite dans la cuisine/.test(await p.locator(".md-carte").innerText()), "une invitation : « Volontaire 4 t’invite dans la cuisine »");
+await capture("3-invitation");
+await p.getByRole("button", { name: "Venir" }).click();
+ok(await attendre(async () => (await attr("data-piece")) === "cuisine"), "« Venir » : on y est");
+
+// ─── changer de pièce (on invite) ; de retour au salon, ce qui a changé ───
+await p.getByRole("button", { name: "🏠 La pièce" }).click().catch(() => undefined);
+await p.getByRole("button", { name: "🚪 Changer de pièce" }).click();
+await p.locator(".md-pieces button", { hasText: "Le salon" }).click();
+ok(/Invitation envoyée à Volontaire 4/.test(await p.locator(".md-neuf").innerText().catch(() => "")), "on invite : « Invitation envoyée à Volontaire 4… »");
+ok(await attendre(async () => (await attr("data-piece")) === "salon"), "acceptée : on est au salon");
+ok(await attendre(async () => /Depuis ta dernière visite : Volontaire 4 a mis un lien sur la télé/.test(await p.locator(".md-neuf").innerText().catch(() => ""))), "de retour au salon : « Depuis ta dernière visite : … a mis un lien sur la télé »");
+ok((await p.locator('[data-objet="tele"].neuf').count()) === 1, "l'anneau sur la télé");
+await capture("4-neuf");
+
+// ─── la fenêtre : la lumière ───
+await p.locator('[data-objet="fenetre"]').click({ force: true });
+const avant = await attr("data-moment");
+const autre = ["matin", "soir", "nuit"].find((x) => x !== avant);
+await p.locator(".md-moments button").nth(["matin", "soir", "nuit"].indexOf(autre)).click();
+ok(await attendre(async () => (await attr("data-moment")) === autre), `la fenêtre : la lumière change (${avant} → ${autre})`);
+
+ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 1, "rien ne déborde sur le côté");
+ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
+ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs[0]})` : ""}`);
+
+await b.close();
+console.log(echecs ? `\n${echecs} échec(s)` : "\nla maquette de la pièce du duo tient ✓");
+process.exit(echecs ? 1 : 0);

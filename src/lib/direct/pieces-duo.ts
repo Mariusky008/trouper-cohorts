@@ -270,3 +270,26 @@ export const PLACES_PAR_DEFAUT: PlaceDuo[] = [
 export const ANCRE_ASSISE = 0.66;
 /** 💶 Deux poses sans fauteuil et une image du duo, environ. */
 export const COUT_COLLAGE = 0.55;
+
+/**
+ * 🎭 LA ZONE DES DEUX PLACES (en fractions de l'image : x, y, largeur, hauteur) : de la tête aux pieds des deux figurines
+ * assises, avec de la marge. Elle sert au masque du duo (seule cette zone est peinte, puis recollée), et à la caméra de
+ * la pièce vivante (elle glisse vers les deux places pour la conversation). La taille d'une figurine assise compte pour au
+ * moins `HAUTEUR_MIN_DUO` de l'image (les relevés la donnent souvent trop petite : l'essai du collage l'a montré).
+ * `ratio` : la hauteur de l'image sur sa largeur (1,5 pour 1024 × 1536).
+ */
+export const HAUTEUR_MIN_DUO = 0.34;
+export function zoneDesPlaces(places: PlaceDuo[], ratio = 1.5): Zone {
+  const ps = places.length ? places : PLACES_PAR_DEFAUT;
+  const hz = Math.max(HAUTEUR_MIN_DUO, ...ps.map((p) => p.hauteur));
+  const x1 = Math.max(0, Math.min(...ps.map((p) => p.x)) - 0.55 * hz * ratio);
+  const x2 = Math.min(1, Math.max(...ps.map((p) => p.x)) + 0.55 * hz * ratio);
+  const y1 = Math.max(0, Math.min(...ps.map((p) => p.y)) - ANCRE_ASSISE * hz - 0.06);
+  const y2 = Math.min(1, Math.max(...ps.map((p) => p.y)) + (1 - ANCRE_ASSISE) * hz + 0.04);
+  return [x1, y1, Math.max(0.01, x2 - x1), Math.max(0.01, y2 - y1)];
+}
+
+/** 🛋️ La pièce vivante : le duo (ses deux prénoms) et ses images faites, par « pièce-moment ». */
+export type DuoVivant = { a: { id: string; nom: string }; b: { id: string; nom: string }; duos: Partial<Record<string, string>> };
+/** Ce que la maquette reçoit : les pièces (leurs lumières, leurs emplacements), le duo, et le moment de l'heure à Paris. */
+export type EtatPieceVivante = { pieces: PieceDuoVue[]; duo: DuoVivant | null; maintenant: MomentDuo; moteur: boolean };
