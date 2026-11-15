@@ -26,7 +26,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFichePerso } from "./fiches-serveur";
 import { SEAU_FIGURINES, depotDans, lireJson, signer, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
-import { ANCRE_ASSISE, PLACES_PAR_DEFAUT, avisCollageValide, momentDuoValide, pieceDuoDe, pieceDuoValide, type ChoixCollage, type EtatCollage, type FigurineDuo, type MomentDuo, type PieceDuo, type PlaceDuo } from "./pieces-duo";
+import { MOMENTS_DUO, PIECES_DUO, PLACES_PAR_DEFAUT, zoneDesPlaces, avisCollageValide, momentDuoValide, pieceDuoDe, pieceDuoValide, type ChoixCollage, type DuoVivant, type EtatCollage, type FigurineDuo, type MomentDuo, type PieceDuo, type PlaceDuo } from "./pieces-duo";
 import { etatPiecesDuo, prendre, rendre } from "./pieces-duo-serveur";
 import { estDetouree, type ResultatEssai } from "./univers-essais";
 
@@ -68,23 +68,14 @@ export function consigneDuoDansLaPiece(places: PlaceDuo[]): string {
   ].join("\n");
 }
 
-/**
- * 🎭 LA ZONE DES DEUX PLACES, en pixels (le masque, puis le recollage) : de la tête au pied des deux figurines assises,
- * avec de la marge. La hauteur d'une figurine assise compte pour au moins `HAUTEUR_MIN_DUO` de l'image (les relevés la
- * donnent souvent trop petite : l'essai du collage l'a montré).
- */
-const HAUTEUR_MIN_DUO = 0.34;
-export function zoneDesPlaces(places: PlaceDuo[], l: number, h: number): { left: number; top: number; width: number; height: number } {
-  const hz = Math.max(HAUTEUR_MIN_DUO, ...places.map((p) => p.hauteur));
-  const x1 = Math.max(0, Math.min(...places.map((p) => p.x)) * l - 0.55 * hz * h);
-  const x2 = Math.min(l, Math.max(...places.map((p) => p.x)) * l + 0.55 * hz * h);
-  const y1 = Math.max(0, (Math.min(...places.map((p) => p.y)) - ANCRE_ASSISE * hz - 0.06) * h);
-  const y2 = Math.min(h, (Math.max(...places.map((p) => p.y)) + (1 - ANCRE_ASSISE) * hz + 0.04) * h);
-  return { left: Math.round(x1), top: Math.round(y1), width: Math.max(1, Math.round(x2 - x1)), height: Math.max(1, Math.round(y2 - y1)) };
+/** 🎭 La zone des deux places, en pixels (le masque, puis le recollage) — d'après `zoneDesPlaces` (`pieces-duo.ts`). */
+function zoneEnPixels(places: PlaceDuo[], l: number, h: number): { left: number; top: number; width: number; height: number } {
+  const [x, y, w, ht] = zoneDesPlaces(places, h / l);
+  return { left: Math.round(x * l), top: Math.round(y * h), width: Math.max(1, Math.round(w * l)), height: Math.max(1, Math.round(ht * h)) };
 }
 
 /** Le masque : opaque partout, transparent dans la zone (là seulement, le moteur peint). */
-async function masqueDe(l: number, h: number, z: ReturnType<typeof zoneDesPlaces>): Promise<Buffer> {
+async function masqueDe(l: number, h: number, z: ReturnType<typeof zoneEnPixels>): Promise<Buffer> {
   const brut = Buffer.alloc(l * h * 4, 255);
   for (let y = z.top; y < z.top + z.height; y++) for (let x = z.left; x < z.left + z.width; x++) brut[(y * l + x) * 4 + 3] = 0;
   return sharp(brut, { raw: { width: l, height: h, channels: 4 } }).png().toBuffer();
@@ -95,7 +86,7 @@ async function masqueDe(l: number, h: number, z: ReturnType<typeof zoneDesPlaces
  * d'origine. La télé, les cadres, l'étagère restent alors exactement à leur place relevée, au pixel près (le moteur,
  * même masqué, retouche parfois un peu le reste).
  */
-async function recoller(piece: Buffer, rendue: Buffer, l: number, h: number, z: ReturnType<typeof zoneDesPlaces>): Promise<Buffer> {
+async function recoller(piece: Buffer, rendue: Buffer, l: number, h: number, z: ReturnType<typeof zoneEnPixels>): Promise<Buffer> {
   // (le fondu fait à la main, pixel par pixel : les canaux et l'ordre des opérations de sharp ne sont pas les mêmes
   // partout — dans l'app, un calque avec sa transparence ajoutée passait entier par-dessus la pièce)
   const brut = (b: Buffer) => sharp(b).resize(l, h, { fit: "fill" }).removeAlpha().toColourspace("srgb").raw().toBuffer();
@@ -215,6 +206,15 @@ export async function fabriquerCollage(supabase: Supabase, moi: string | null, a
   const a = srcs.find((x) => x.id === choix?.a);
   const b = srcs.find((x) => x.id === choix?.b);
   if (!choix || !a || !b) return { erreur: "Choisis d’abord une pièce et deux figurines." };
+  return fabriquerDuo(supabase, a, b, choix.piece, momentDuChoix(choix), avant);
+}
+
+/**
+ * La fabrication d'un duo dans une pièce et une lumière, un passage à la fois : la pose sans fauteuil de la première
+ * figurine, celle de la seconde (faites une fois, gardées pour toutes les pièces), puis le duo (une fois par pièce et
+ * par lumière). Rien quand tout est fait.
+ */
+async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: PieceDuo, moment: MomentDuo, avant: number): Promise<{ fait?: "pose-a" | "pose-b" | "duo"; erreur?: string }> {
   if (!cle()) return { erreur: "Le moteur d’image n’est pas branché ici." };
   const d = depotDans(supabase, DOSSIER);
   const qui = await prendre(d);
@@ -241,7 +241,7 @@ export async function fabriquerCollage(supabase: Supabase, moi: string | null, a
       await depotDans(supabase, `${DOSSIER}/poses`).ecrire(`${empreinte(src.chemin)}.png`, png, "image/png");
       return { fait: k === "a" ? "pose-a" : "pose-b" };
     }
-    const duo = nomDuo(choix.piece, momentDuChoix(choix), a, b);
+    const duo = nomDuo(pieceDuo, moment, a, b);
     if (
       (
         await depotDans(supabase, `${DOSSIER}/duos`)
@@ -250,14 +250,14 @@ export async function fabriquerCollage(supabase: Supabase, moi: string | null, a
       ).includes(duo)
     )
       return {};
-    const piece = await telecharger(supabase, cheminDecor(choix.piece, momentDuChoix(choix)));
+    const piece = await telecharger(supabase, cheminDecor(pieceDuo, moment));
     const [pa, pb] = await Promise.all([telecharger(supabase, cheminPose(a)), telecharger(supabase, cheminPose(b))]);
     if (!piece || !pa || !pb) return { erreur: "La pièce ou une pose est introuvable." };
-    const { places } = await placesDe(supabase, choix.piece, momentDuChoix(choix));
+    const { places } = await placesDe(supabase, pieceDuo, moment);
     const meta = await sharp(piece).metadata();
     const [l, h] = [meta.width ?? 0, meta.height ?? 0];
     if (!l || !h) return { erreur: "La pièce n’a pas pu être lue." };
-    const zone = zoneDesPlaces(places, l, h);
+    const zone = zoneEnPixels(places, l, h);
     const masque = await masqueDe(l, h, zone);
     const r = await demanderUneImage({ images: [piece, pa, pb], masque, consigne: consigneDuoDansLaPiece(places), transparent: false, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high", taille: "1024x1536" });
     if ("erreur" in r) return { erreur: r.erreur };
@@ -266,6 +266,37 @@ export async function fabriquerCollage(supabase: Supabase, moi: string | null, a
   } finally {
     await rendre(d, qui);
   }
+}
+
+// ─── 🛋️ LA PIÈCE VIVANTE (la maquette, `docs/univers/piece-du-duo.md`, section 12) ──────────────────────────────────
+/** Le duo de la maquette : les deux figurines choisies dans l'essai du collage, et ses images faites (pièce, lumière). */
+export async function duoVivant(supabase: Supabase, moi: string | null): Promise<DuoVivant | null> {
+  const [choix, srcs] = await Promise.all([lireChoix(supabase), sources(supabase, moi)]);
+  const a = srcs.find((x) => x.id === choix?.a);
+  const b = srcs.find((x) => x.id === choix?.b);
+  if (!a || !b) return null;
+  const faits = await depotDans(supabase, `${DOSSIER}/duos`)
+    .lister()
+    .catch(() => [] as string[]);
+  const duos: DuoVivant["duos"] = {};
+  for (const p of PIECES_DUO)
+    for (const m of MOMENTS_DUO) {
+      const n = nomDuo(p.cle, m.cle, a, b);
+      if (faits.includes(n)) duos[`${p.cle}-${m.cle}`] = await signer(supabase, `${DOSSIER}/duos/${n}`);
+    }
+  const prenom = (x: Source) => (x.id === "moi" ? "Toi" : x.nom.replace(/ 👍$/, ""));
+  return { a: { id: a.id, nom: prenom(a) }, b: { id: b.id, nom: prenom(b) }, duos };
+}
+
+/** Un passage pour le duo de la maquette dans une pièce et une lumière (à sa première visite). */
+export async function fabriquerDuoVivant(supabase: Supabase, moi: string | null, piece: unknown, moment: unknown, avant: number): Promise<{ fait?: "pose-a" | "pose-b" | "duo"; erreur?: string }> {
+  if (!pieceDuoValide(piece) || !momentDuoValide(moment)) return { erreur: "Quelle pièce, quelle lumière ?" };
+  const [choix, srcs] = await Promise.all([lireChoix(supabase), sources(supabase, moi)]);
+  const a = srcs.find((x) => x.id === choix?.a);
+  const b = srcs.find((x) => x.id === choix?.b);
+  if (!a || !b) return { erreur: "Choisis d’abord vos deux figurines dans l’essai du collage." };
+  if (!(await placesDe(supabase, piece, moment)).decor) return { erreur: "Cette pièce n’est pas encore faite dans cette lumière." };
+  return fabriquerDuo(supabase, a, b, piece, moment, avant);
 }
 
 /** Refaire les deux poses (et donc le duo), ou le duo seul. */

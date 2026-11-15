@@ -114,6 +114,12 @@ export function CollageDuo() {
         0,17 € par autre lumière.
       </p>
       {etat && !etat.moteur && <p style={{ color: "#b3261e" }}>Le moteur d’image n’est pas branché ici.</p>}
+      <p style={{ margin: "0 0 10px" }}>
+        <a href="/admin/humain/piece-du-duo" className="cd-maquette">
+          ▶ Ouvrir la maquette de la pièce du duo
+        </a>{" "}
+        <small style={{ color: "#666" }}>(avec le duo choisi ici)</small>
+      </p>
 
       <h3 className="cd-titre">1. La pièce</h3>
       {faites.length ? (
@@ -220,6 +226,7 @@ export function CollageDuo() {
       )}
       <style>{`
 .cd-titre{margin:14px 0 8px;font-size:15px}
+.cd-maquette{display:inline-block;padding:9px 14px;border-radius:999px;background:#2b1a0c;color:#fff;font-weight:800;font-size:14px;text-decoration:none}
 .cd-chips{display:flex;gap:8px;flex-wrap:wrap}
 .cd-chips button,.cd-principal{padding:8px 12px;border-radius:999px;border:1px solid #ff2e9a;background:#fff;color:#c2186f;font-weight:700;font-size:13px;cursor:pointer}
 .cd-chips button.elue,.cd-principal{background:#ff2e9a;color:#fff}
