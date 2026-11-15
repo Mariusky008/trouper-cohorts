@@ -343,10 +343,52 @@ export function useEtagere(cle: string, scene: EtagereScene | undefined, refScen
   return { objets, cartes, rallumes, questions, repondre, attente: new Set(attente.filter((id) => id !== vol)), vol, arrive, jeu, retirer, oublier, faire, tenues: scene?.tenues ?? 0, pause: scene?.pause ?? null, etat: scene?.etat ?? null, poussiere: scene?.poussiere ?? null };
 }
 
-/** 📚 La planche, en haut de la scène : les cinq derniers posés ; « 📚 Votre étagère · 6 ». Vide : rien. */
-export function MurEtagere({ objets, attente, vol, arrive, onOuvrir, poussiere = false }: { objets: ObjetVu[]; attente: ReadonlySet<string>; vol: string; arrive: string; onOuvrir: () => void; poussiere?: boolean }) {
+/**
+ * 📚 La planche, en haut de la scène : les cinq derniers posés ; « 📚 Votre étagère · 6 ». Vide : rien.
+ * 🪵 (15 novembre 2026) `surface` : l'étagère est peinte dans le décor (`etagere-peinte-serveur.ts`) — les souvenirs se
+ * posent sur sa planche, à sa taille, avec leur ombre ; pas de planche dessinée, pas d'étiquette. Un toucher : l'étagère.
+ */
+export function MurEtagere({
+  objets,
+  attente,
+  vol,
+  arrive,
+  onOuvrir,
+  poussiere = false,
+  surface,
+}: {
+  objets: ObjetVu[];
+  attente: ReadonlySet<string>;
+  vol: string;
+  arrive: string;
+  onOuvrir: () => void;
+  poussiere?: boolean;
+  surface?: { x1: number; x2: number; y: number };
+}) {
   const la = objets.filter((o) => !attente.has(o.id) || o.id === vol);
   const n = la.filter((o) => o.id !== vol).length;
+  if (surface)
+    return (
+      <button
+        type="button"
+        className={`et-mur et-peinte${poussiere ? " terne" : ""}${la.length ? "" : " vide"}`}
+        onClick={onOuvrir}
+        aria-label={n ? `Votre étagère : ${n} souvenir${n > 1 ? "s" : ""}` : "Votre étagère, encore vide : y poser un souvenir"}
+        style={{
+          left: `${(surface.x1 * 100).toFixed(2)}%`,
+          width: `${((surface.x2 - surface.x1) * 100).toFixed(2)}%`,
+          bottom: `calc(100cqw * 1.5 * ${(1 - surface.y).toFixed(4)})`,
+        }}
+      >
+        <span className="et-rang">
+          {la.slice(-7).map((o) => (
+            <span key={o.id} data-objet={o.id} className={o.id === vol ? "vient" : o.id === arrive ? "arrive" : ""}>
+              {o.emoji}
+            </span>
+          ))}
+        </span>
+      </button>
+    );
   // (15 novembre 2026, point 4) vide, elle reste au mur : sa planche, et de quoi y poser le premier souvenir
   if (!la.length)
     return (
@@ -1490,6 +1532,12 @@ export function RangeSansDemander() {
 }
 
 export const STYLES_ETAGERE = `
+/* 🪵 (15 novembre 2026) sur l'étagère peinte dans le décor : les souvenirs debout sur sa planche, leur ombre dessous */
+.et-mur.et-peinte{top:auto;translate:none;height:calc(100cqw * .13);flex-direction:row;align-items:flex-end;gap:0}
+.et-mur.et-peinte .et-rang{width:100%;min-width:0;height:100%;padding:0 2%;justify-content:space-evenly;gap:0}
+.et-mur.et-peinte .et-rang span{position:relative;font-size:calc(100cqw * .064);filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.5)) saturate(.92)}
+.et-mur.et-peinte .et-rang span::after{content:"";position:absolute;left:8%;right:8%;bottom:-.08em;height:.16em;border-radius:50%;background:radial-gradient(closest-side,rgba(20,10,4,.55),transparent);z-index:-1}
+.et-mur.et-peinte.vide{height:calc(100cqw * .08)}
 /* 🖼️ (« Le ranger dans mon univers ? ») une pochette, une vignette, une photo encadrée */
 .et-img{display:block;width:auto;height:44px;max-width:72px;object-fit:cover;border-radius:4px;box-shadow:0 5px 8px -3px rgba(0,0,0,.7);background:#2a170b}
 .et-img.musique{border-radius:3px}

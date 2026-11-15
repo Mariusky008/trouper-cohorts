@@ -57,6 +57,7 @@ import { motInterdit } from "./mots-interdits";
 import { lireFicheMonde, lireFichePerso } from "./fiches-serveur";
 import { memesDuFil, memesRanges } from "./memes-proches-serveur";
 import { decorDuMoment } from "./saison-serveur";
+import { etagerePeinteDe } from "./etagere-peinte-serveur";
 import { humeurValide } from "./rituel";
 import { STATS_MESSAGES_VIDES, dureeDeLecture, ligneDeLEcrit, texteDeBulle, type StatsJourMessages } from "./ecrit";
 import { PHOTO, lignePhoto } from "./photo";
@@ -264,17 +265,25 @@ export async function assiseDe(supabase: Supabase, h: string): Promise<{ n: stri
 }
 
 /** 🏡 Chez lui (« Univers », lot 5) : son décor et ses places, quand son univers est créé ; `undefined` sinon. */
-export async function chezLui(supabase: Supabase, h: string): Promise<ChezMoi | undefined> {
+export async function chezLui(supabase: Supabase, h: string, o: { etagere?: boolean } = {}): Promise<ChezMoi | undefined> {
   const f = await lireFicheMonde(supabase, h);
   if (!f?.references.decor) return undefined;
-  // (🍂 son décor du mois, quand il est fait)
-  const decor = await signer(supabase, (await decorDuMoment(supabase, h, f)).chemin || f.references.decor.chemin, 3600);
+  // (🍂 son décor du mois, quand il est fait ; 🪵 dans la conversation, celui où leur étagère est peinte, s'il l'est)
+  const chemin = (await decorDuMoment(supabase, h, f)).chemin || f.references.decor.chemin;
+  const peinte = o.etagere && s(process.env.CLIKME_ETAGERE) !== "0" ? await etagerePeinteDe(supabase, chemin).catch(() => null) : null;
+  const decor = await signer(supabase, peinte?.chemin ?? chemin, 3600);
   if (!decor) return undefined;
   const place = (id: string, defaut: PlaceChezMoi): PlaceChezMoi => {
     const p = f.scene.places.find((x) => x.id === id);
     return p ? { x: p.x, y: p.y, echelle: p.echelle } : defaut;
   };
-  return { decor, hote: place("hote", { x: 0.36, y: 0.8, echelle: 1 }), invite: place("invite", { x: 0.66, y: 0.82, echelle: 0.96 }), ...(f.scene.figurine ? { figurine: f.scene.figurine } : {}) };
+  return {
+    decor,
+    hote: place("hote", { x: 0.36, y: 0.8, echelle: 1 }),
+    invite: place("invite", { x: 0.66, y: 0.82, echelle: 0.96 }),
+    ...(f.scene.figurine ? { figurine: f.scene.figurine } : {}),
+    ...(peinte ? { etagere: peinte.surface } : {}),
+  };
 }
 
 /** ☀️ Son humeur du jour (lot R : elle s'efface à minuit, l'heure de Paris). */
@@ -453,7 +462,7 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
     estLa(supabase, h),
     lireJson<{ ids?: string[] }>(supabase, cheminCaches(moi.id)),
     // 🏡 « Univers », lot 5 : la conversation se joue chez moi, quand mon univers est créé ; l'autre y entre
-    chezLui(supabase, moi.id).catch(() => undefined),
+    chezLui(supabase, moi.id, { etagere: true }).catch(() => undefined),
     assiseDe(supabase, h).catch(() => undefined),
     assiseDe(supabase, moi.id).catch(() => undefined),
   ]);

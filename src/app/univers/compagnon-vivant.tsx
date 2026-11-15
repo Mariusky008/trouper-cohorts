@@ -14,9 +14,18 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 /** (la toile : assez fine pour un animal de la taille d'une figurine, assez légère pour un téléphone) */
 const LARGEUR = 270;
 const HAUTEUR = 480;
-/** Le vert : ce qui est « plus vert que rouge et bleu » de plus de VERT_PLEIN est transparent ; jusqu'à VERT_BORD, à demi. */
-const VERT_BORD = 18;
-const VERT_PLEIN = 70;
+/**
+ * Le vert (15 novembre 2026, « parfois il y a le détourage vert kaki autour du chat ») : la couleur du fond est mesurée
+ * sur le bord de chaque image (sa médiane : un vert vif, plus sombre, un peu kaki) ; un point est d'autant plus « fond »
+ * qu'il est plus vert que la moyenne de son rouge et de son bleu, rapporté à ce que l'est le fond — jusqu'à PART_BORD,
+ * plein ; au-delà de PART_PLEIN, transparent ; entre les deux, à demi. Un point à demi est « démêlé » : on lui retire la
+ * part du fond (il retrouve la couleur de l'animal, sans liseré) ; plus sombre que le fond, c'est une ombre — elle reste
+ * une ombre, grise et douce. Le reflet vert des points pleins s'éteint, et le bord se resserre d'un point.
+ */
+const PART_BORD = 0.16;
+const PART_PLEIN = 0.5;
+/** (le fond qu'on attend, quand le bord ne dit rien de vert) */
+const FOND_PAR_DEFAUT = [20, 180, 60] as const;
 
 type Video = HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number; cancelVideoFrameCallback?: (id: number) => void };
 
@@ -53,20 +62,69 @@ export function CompagnonVivant({ src, titre, brut = false, className, style }: 
         return;
       }
       const d = img.data;
-      for (let i = 0; i < d.length; i += 4) {
+      // (la couleur du fond : la médiane du bord de l'image)
+      const rs: number[] = [];
+      const gs: number[] = [];
+      const bs: number[] = [];
+      const prendre = (x: number, y: number) => {
+        const k = (y * LARGEUR + x) * 4;
+        rs.push(d[k]);
+        gs.push(d[k + 1]);
+        bs.push(d[k + 2]);
+      };
+      for (let x = 0; x < LARGEUR; x += 4) prendre(x, 0);
+      for (let y = 0; y < HAUTEUR; y += 4) {
+        prendre(0, y);
+        prendre(LARGEUR - 1, y);
+      }
+      const mediane = (l: number[]) => l.sort((p, q) => p - q)[l.length >> 1];
+      let fond: readonly number[] = [mediane(rs), mediane(gs), mediane(bs)];
+      if (fond[1] - (fond[0] + fond[2]) / 2 < 60) fond = FOND_PAR_DEFAUT;
+      const vertDuFond = fond[1] - (fond[0] + fond[2]) / 2;
+      const alpha = new Uint8Array(LARGEUR * HAUTEUR);
+      for (let i = 0, k = 0; i < d.length; i += 4, k++) {
         const r = d[i];
         const g = d[i + 1];
         const b = d[i + 2];
-        const autre = r > b ? r : b;
-        const vert = g - autre;
-        if (vert <= VERT_BORD) continue;
-        if (vert >= VERT_PLEIN) {
-          d[i + 3] = 0;
+        const part = (g - (r + b) / 2) / vertDuFond;
+        if (part <= PART_BORD) {
+          alpha[k] = 255;
+          // (le reflet vert d'un point plein : éteint)
+          if (g > r && g > b) d[i + 1] = r > b ? r : b;
           continue;
         }
-        d[i + 3] = Math.round(255 * (1 - (vert - VERT_BORD) / (VERT_PLEIN - VERT_BORD)));
-        // (le reflet vert des bords : éteint)
-        d[i + 1] = autre;
+        if (part >= PART_PLEIN) {
+          alpha[k] = 0;
+          continue;
+        }
+        const f = 1 - (part - PART_BORD) / (PART_PLEIN - PART_BORD);
+        const h = 1 - f;
+        alpha[k] = Math.round(255 * f);
+        // (à demi : on retire la part du fond ; plus sombre que le fond, c'est une ombre — grise et douce)
+        const r2 = (r - h * fond[0]) / f;
+        const g2 = (g - h * fond[1]) / f;
+        const b2 = (b - h * fond[2]) / f;
+        if (g2 < 0) {
+          const n = Math.min(r, b) * 0.5;
+          d[i] = n;
+          d[i + 1] = n * 0.95;
+          d[i + 2] = n * 0.9;
+          continue;
+        }
+        d[i] = r2;
+        d[i + 2] = b2;
+        d[i + 1] = Math.min(g2, Math.max(r2, b2));
+      }
+      // (le bord resserré d'un point : un point garde le moins opaque de lui et de ses quatre voisins)
+      for (let y = 0, k = 0; y < HAUTEUR; y++) {
+        for (let x = 0; x < LARGEUR; x++, k++) {
+          let a = alpha[k];
+          if (a && x > 0 && alpha[k - 1] < a) a = alpha[k - 1];
+          if (a && x < LARGEUR - 1 && alpha[k + 1] < a) a = alpha[k + 1];
+          if (a && y > 0 && alpha[k - LARGEUR] < a) a = alpha[k - LARGEUR];
+          if (a && y < HAUTEUR - 1 && alpha[k + LARGEUR] < a) a = alpha[k + LARGEUR];
+          d[k * 4 + 3] = a;
+        }
       }
       ctx.putImageData(img, 0, 0);
     };

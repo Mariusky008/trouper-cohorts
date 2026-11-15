@@ -7,7 +7,7 @@
  * « chez toi » : ton décor, ta figurine assise, et le chat à côté d'elle ou sur ses genoux, le vert retiré dans le
  * téléphone. Le verdict (le style, la constance, le poids) décide de la suite ; rien d'autre ne commence avant.
  */
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { BOUCLES, COUT, type Boucle, type EtatCompagnonEssai } from "@/lib/direct/compagnons";
 import { CompagnonVivant } from "@/app/univers/compagnon-vivant";
 
@@ -27,6 +27,9 @@ export function CompagnonEssai() {
   const [dit, setDit] = useState("");
   const [vue, setVue] = useState<Boucle>("assis");
   const [brut, setBrut] = useState(false);
+  // 🔊 (15 novembre 2026, « il faudrait qu'on l'entende ronronner ») son vrai son, dans l'aperçu — coupé au départ
+  const [avecSon, setAvecSon] = useState(false);
+  const son = useRef<HTMLAudioElement>(null);
 
   const charger = useCallback(async () => {
     const j = (await (await fetch(`${ROUTE}?espece=chat`, { cache: "no-store" })).json().catch(() => ({}))) as Reponse;
@@ -80,6 +83,22 @@ export function CompagnonEssai() {
       setOccupe(null);
     }
   }
+  /** 🔊 Il dépose le vrai son d'une boucle (un enregistrement : mp3, m4a, wav), ou l'enlève. */
+  async function deposerSon(cible: Boucle, f: File | null) {
+    setDit("");
+    const donnees = f
+      ? await new Promise<string>((ok) => {
+          const lecteur = new FileReader();
+          lecteur.onload = () => ok(String(lecteur.result ?? "").replace(/^data:[^,]*,/, ""));
+          lecteur.onerror = () => ok("");
+          lecteur.readAsDataURL(f);
+        })
+      : "";
+    if (f && !donnees) return setDit("Ce fichier ne se lit pas.");
+    const j = await envoyer({ action: "son", cible, type: f?.type || "audio/mpeg", donnees });
+    if (j.etat) setEtat(j.etat);
+    setDit(j.error || (f ? "Son son est déposé : écoute-le chez toi, plus bas (« 🔈 Avec son son »)." : "Son son est enlevé."));
+  }
   async function refaire(cible: string, etape?: "pose" | "video") {
     setDit("");
     const j = await envoyer({ action: "refaire", cible, ...(etape ? { etape } : {}) });
@@ -95,6 +114,10 @@ export function CompagnonEssai() {
   const bas = plan.ou === "genoux" ? 1 - place.y + hauteurFigurine * 0.3 : 1 - place.y - 0.03;
   const gauche = plan.ou === "genoux" ? place.x : Math.min(0.85, place.x + 0.22);
   const faites = etat?.boucles.filter((b) => b.video).length ?? 0;
+  // (le son joue doucement, en boucle, avec la boucle vue)
+  useEffect(() => {
+    if (son.current) son.current.volume = 0.45;
+  }, [avecSon, ici?.son]);
 
   return (
     <section aria-label="Le compagnon, l'essai du chat" style={{ margin: "18px 0", padding: 16, border: "1px solid #e3d7c8", borderRadius: 16, background: "#fffaf3" }}>
@@ -152,6 +175,17 @@ export function CompagnonEssai() {
             <small style={{ color: "#555" }}>
               {b.video ? "✓ faite" : b.enCours ? `vidéo commandée, ${b.enCours.progres ?? 0} %` : b.pose ? "la pose est faite" : "à faire"}
             </small>
+            {/* 🔊 son vrai son : un enregistrement (le ronronnement, sur les genoux) — jamais fabriqué */}
+            <label className="ce-son" style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#555" }}>
+              {b.son ? "🔊 Son son (enregistré)" : "🔊 Un son ? (un vrai enregistrement)"}
+              {b.son && <audio src={b.son} controls preload="none" style={{ width: "100%", height: 30 }} />}
+              <input type="file" accept="audio/*" style={{ fontSize: 11, maxWidth: "100%" }} onChange={(e) => void deposerSon(b.cle, e.target.files?.[0] ?? null)} />
+            </label>
+            {b.son && (
+              <button type="button" onClick={() => void deposerSon(b.cle, null)} style={{ ...bouton, padding: "2px 8px", fontSize: 12, alignSelf: "flex-start" }}>
+                Enlever le son
+              </button>
+            )}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {!b.video && (
                 <button type="button" disabled={Boolean(occupe) || !etat?.reference} onClick={() => void faire(b.cle)} style={{ ...bouton, padding: "4px 10px" }}>
@@ -174,6 +208,12 @@ export function CompagnonEssai() {
       </ul>
 
       <h3 style={{ margin: "16px 0 6px", fontSize: 16 }}>3. Chez toi : « {plan.nom} »</h3>
+      <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 14, marginBottom: 8 }}>
+        <input type="checkbox" className="ce-avec-son" checked={avecSon} onChange={(e) => setAvecSon(e.target.checked)} /> 🔈 Avec son son {ici?.son ? "" : "(cette boucle n’en a pas encore)"}
+      </label>
+      {avecSon && ici?.son && <audio key={ici.son} ref={son} src={ici.son} autoPlay loop aria-hidden="true" />}
+      {/* 🚶 (« quand le chat marche, il marche sur place ») il traverse la pièce : vers la gauche (il regarde à gauche), puis il se retourne */}
+      <style>{`@keyframes ce-promene{0%{left:80%}48%,50%{left:22%}98%,100%{left:80%}}@keyframes ce-sens{0%,49.9%{transform:scaleX(1)}50%,99.9%{transform:scaleX(-1)}100%{transform:scaleX(1)}}`}</style>
       {etat?.decor ? (
         <div className="ce-chez-toi" style={{ position: "relative", width: "min(100%, 340px)", aspectRatio: "2 / 3", borderRadius: 22, overflow: "hidden", background: "#140a08" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -182,7 +222,11 @@ export function CompagnonEssai() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={etat.figurine} alt="Ta figurine assise" style={{ position: "absolute", left: `${place.x * 100}%`, bottom: `${(1 - place.y) * 100}%`, height: `${hauteurFigurine * 100}%`, transform: "translateX(-50%)", filter: "drop-shadow(0 10px 10px rgba(0,0,0,.4))" }} />
           )}
-          {ici?.video ? (
+          {ici?.video && plan.cle === "marche" ? (
+            <span className="ce-promene" style={{ position: "absolute", left: "80%", bottom: `${(bas - PIED * H) * 100}%`, height: `${H * 100}%`, aspectRatio: "9 / 16", transform: "translateX(-50%)", zIndex: 2, animation: "ce-promene 12s linear infinite" }}>
+              <CompagnonVivant src={ici.video} titre={`Le chat : ${plan.nom}`} brut={brut} style={{ width: "100%", height: "100%", animation: "ce-sens 12s linear infinite" }} />
+            </span>
+          ) : ici?.video ? (
             <CompagnonVivant src={ici.video} titre={`Le chat : ${plan.nom}`} brut={brut} style={{ position: "absolute", left: `${gauche * 100}%`, bottom: `${(bas - PIED * H) * 100}%`, height: `${H * 100}%`, aspectRatio: "9 / 16", transform: "translateX(-50%)", zIndex: 2 }} />
           ) : (
             <p style={{ position: "absolute", left: 10, right: 10, bottom: 10, margin: 0, padding: "6px 10px", borderRadius: 10, background: "rgba(255,250,243,.9)", fontSize: 13 }}>Cette boucle n’est pas encore faite.</p>

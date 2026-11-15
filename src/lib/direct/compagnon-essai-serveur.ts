@@ -59,7 +59,7 @@ export const consignePose = (b: Boucle) =>
   [
     "IMAGE 1 is a small vinyl toy animal. Show EXACTLY the same animal — the same design, colors, proportions, materials, eyes and face — only its pose changes:",
     `${boucleDe(b).pose}.`,
-    "The whole animal, centered, nothing cropped, at the same size as in IMAGE 1. Plain uniform background: no floor, no shadow, nothing else, no text.",
+    "The whole animal, centered, nothing cropped, at the same size as in IMAGE 1. Plain uniform background: no floor, no shadow (not even a soft contact shadow under it), nothing else, no text.",
   ].join("\n");
 
 /** 3. Le mouvement : une boucle sans couture, sur un fond vert uni, la caméra immobile. */
@@ -69,14 +69,22 @@ export const consigneBoucle = (b: Boucle) =>
     "The camera does not move at all: a locked-off tripod shot, no zoom, no pan, no tilt.",
     `The animal stays whole and fully inside the frame, at the same size: ${boucleDe(b).mouvement}.`,
     "Its look never changes: the same design, colors, eyes and materials as in the image, in every frame.",
-    "The background stays perfectly flat, uniform pure green: no shadow, no floor, no light change; nothing appears and nothing disappears. No people, no text.",
+    "The background stays perfectly flat, uniform pure green in every frame, right up to the animal's outline: no shadow under or around it, no floor, no ground plane, no vignette, no gradient, no light change; nothing appears and nothing disappears. No people, no text.",
     "The last moment looks exactly like the first one.",
     "Sound: only the soft natural sounds of the animal — no voice, no music.",
   ].join("\n");
 
-/** La pose (détourée), posée sur le fond vert de la vidéo (720 × 1280) : au milieu, un peu bas — de la place pour sauter. */
+/**
+ * La pose (détourée), posée sur le fond vert de la vidéo (720 × 1280) : au milieu, un peu bas — de la place pour sauter.
+ * (15 novembre 2026, le propriétaire : « parfois il y a le détourage vert kaki autour du chat ») : ce qui est à demi
+ * transparent dans la pose — l'ombre douce sous l'animal, le flou de ses bords — devient transparent ou plein, avant
+ * d'être posé sur le vert : sinon il se mêle au vert (une ombre kaki sous lui, un liseré autour) et le moteur vidéo le
+ * garde.
+ */
 export async function surFondVert(pose: Buffer): Promise<Buffer> {
-  const animal = await sharp(pose).resize(560, 700, { fit: "inside" }).png().toBuffer();
+  const { data, info } = await sharp(pose).ensureAlpha().resize(560, 700, { fit: "inside" }).raw().toBuffer({ resolveWithObject: true });
+  for (let i = 3; i < data.length; i += 4) data[i] = data[i] < 150 ? 0 : 255;
+  const animal = await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
   const m = await sharp(animal).metadata();
   const l = m.width ?? 560;
   const h = m.height ?? 700;
@@ -103,6 +111,7 @@ export async function etatCompagnonEssai(supabase: Supabase, h: string, e: Espec
         nom: b.nom,
         ...(noms.includes("pose.png") ? { pose: await signer(supabase, `${dossierBoucle(e, b.cle)}/pose.png`) } : {}),
         ...(noms.includes("video.mp4") ? { video: await signer(supabase, `${dossierBoucle(e, b.cle)}/video.mp4`) } : {}),
+        ...(noms.includes("son.json") ? await sonDe(supabase, e, b.cle) : {}),
         ...(!noms.includes("video.mp4") && s(commande.id) ? { enCours: { depuis: s(commande.le), ...(typeof commande.progres === "number" ? { progres: commande.progres } : {}) } } : {}),
       };
     }),
@@ -211,4 +220,39 @@ export async function refaireCompagnon(supabase: Supabase, e: Espece, cible: "re
     return;
   }
   await effacer(depotDans(supabase, dossierBoucle(e, cible)), etape === "video" ? ["video.json", "video.mp4"] : ["pose.png", "video.json", "video.mp4"]);
+}
+
+// ─── 🔊 son vrai son (15 novembre 2026 : « sur les genoux, il faudrait qu'on l'entende ronronner ») ──────────────────
+/**
+ * Le cahier (4.4) : « un vrai bruitage enregistré, choisi et validé par le propriétaire — rien n'est fabriqué par une
+ * IA ». L'administrateur dépose l'enregistrement d'une boucle (un ronronnement pour « sur les genoux »), joué doucement,
+ * en boucle, avec elle : `<boucle>/son.<ext>` et `<boucle>/son.json` = { fichier, type, le }.
+ */
+export const SON = { max: 2_500_000, types: ["audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/aac", "audio/wav", "audio/x-wav", "audio/ogg", "audio/webm"] } as const;
+const extensionDe = (type: string) => ({ "audio/mpeg": "mp3", "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/aac": "aac", "audio/wav": "wav", "audio/x-wav": "wav", "audio/ogg": "ogg", "audio/webm": "webm" })[type] ?? "mp3";
+
+async function sonDe(supabase: Supabase, e: Espece, b: Boucle): Promise<{ son?: string }> {
+  const d = depotDans(supabase, dossierBoucle(e, b));
+  const f = json(await d.lire("son.json").catch(() => null));
+  return s(f.fichier) ? { son: await signer(supabase, `${dossierBoucle(e, b)}/${s(f.fichier)}`) } : {};
+}
+
+/** 🔊 Il dépose le son d'une boucle (`donnees` : le fichier en base64), ou l'enlève (`donnees` vide). */
+export async function deposerSonCompagnon(supabase: Supabase, e: Espece, b: Boucle, type: unknown, donnees: unknown): Promise<{ erreur?: string }> {
+  const d = depotDans(supabase, dossierBoucle(e, b));
+  const avant = json(await d.lire("son.json").catch(() => null));
+  if (!s(donnees)) {
+    if (s(avant.fichier)) await d.effacer(s(avant.fichier)).catch(() => undefined);
+    await d.effacer("son.json").catch(() => undefined);
+    return {};
+  }
+  const t = s(type).toLowerCase().split(";")[0];
+  if (!(SON.types as readonly string[]).includes(t)) return { erreur: "Ce fichier n’est pas un son (mp3, m4a, wav, ogg)." };
+  const octets = Buffer.from(s(donnees), "base64");
+  if (!octets.length || octets.length > SON.max) return { erreur: "Le son est trop lourd : 2,5 Mo au plus (quelques secondes suffisent)." };
+  const fichier = `son.${extensionDe(t)}`;
+  if (s(avant.fichier) && s(avant.fichier) !== fichier) await d.effacer(s(avant.fichier)).catch(() => undefined);
+  await d.ecrire(fichier, octets, t);
+  await d.ecrire("son.json", Buffer.from(JSON.stringify({ fichier, type: t, le: new Date().toISOString() })), "application/json");
+  return {};
 }

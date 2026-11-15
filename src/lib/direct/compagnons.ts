@@ -33,7 +33,8 @@ export type Boucle = (typeof BOUCLES)[number]["cle"];
 export const boucleValide = (x: unknown): x is Boucle => BOUCLES.some((b) => b.cle === x);
 
 /** L'état de l'essai, pour la page d'essais. */
-export type BoucleVue = { cle: Boucle; nom: string; pose?: string; video?: string; enCours?: { depuis: string; progres?: number } };
+/** `son` : 🔊 son vrai son, enregistré (le ronronnement), s'il est déposé. */
+export type BoucleVue = { cle: Boucle; nom: string; pose?: string; video?: string; son?: string; enCours?: { depuis: string; progres?: number } };
 export type EtatCompagnonEssai = {
   espece: Espece;
   /** son image de référence (détourée, signée) */

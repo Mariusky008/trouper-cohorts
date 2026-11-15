@@ -201,6 +201,9 @@ Le cahier : `docs/univers/compagnon.md` (lot C). **C0 est construit** (9.0 unsep
 boucles (une pose, puis quatre secondes de vidéo sur fond vert chez Google), le vert retiré dans le téléphone, l'aperçu
 chez lui. **À juger par le propriétaire sur son iPhone** : le style, la constance, s'il vit bien à côté de sa figurine.
 Rien d'autre (C1 à C4) ne commence avant son verdict.
+**Ses premiers retours** (9.0 sexiesseptuagies) : il marche sur place → il traverse la pièce ; « qu'on l'entende
+ronronner » → un vrai son enregistré par boucle (à déposer par lui) ; le liseré kaki → la pose sans ombre, des consignes
+plus strictes, un détourage qui s'adapte (refaire les vidéos touchées).
 
 ## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
 

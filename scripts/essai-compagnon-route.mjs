@@ -11,6 +11,7 @@
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-compagnon-route.mjs
+import fs from "node:fs";
 import sharp from "sharp";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -120,6 +121,9 @@ ok(
   commande.startsWith("OMNI gemini-omni-1.2-flash 9:16 4s 720p fond 720x1280 <FIRST_FRAME>@Image1 <LAST_FRAME>@Image1\n") && commande.includes("perfectly uniform pure green background") && commande.includes("locked-off tripod shot") && commande.includes("its belly rises and falls") && commande.includes("The last moment looks exactly like the first one"),
   `chez Google : la pose sur un fond vert (720 × 1280), la première et la dernière image ; la caméra immobile, il respire en dormant (${commande.slice(0, 60)}…)`,
 );
+// (15 novembre 2026, « le détourage vert kaki ») ni ombre sous la pose, ni sol, ni dégradé dans la vidéo
+ok(commande.includes("no shadow under or around it") && commande.includes("right up to the animal's outline"), "chez Google : le vert uni jusqu'au bord de l'animal, sans ombre ni sol");
+ok((await toutIA()).some((c) => c.startsWith("IMAGE ") && c.includes("curled up in a ball") && c.includes("not even a soft contact shadow")), "sa pose : sans ombre douce sous lui");
 const v2 = await appeler(lea, { action: "fabriquer", espece: "chat", cible: "dort" });
 ok(typeof v2.progres === "number" && !v2.fait, `elle se fait (${v2.progres} %)`);
 const v3 = await appeler(lea, { action: "fabriquer", espece: "chat", cible: "dort" });
@@ -134,6 +138,15 @@ const dort = rv.etat?.boucles?.find((b) => b.cle === "dort");
 ok(rv.statut === 200 && !dort?.video && /^http/.test(dort?.pose ?? "") && (await octets(`${D}/dort/video.mp4`)) === null, "refaire la vidéo : elle seule s'efface (la pose reste)");
 const rr = await appeler(lea, { action: "refaire", espece: "chat", cible: "reference" });
 ok(!rr.etat?.reference && rr.etat?.boucles?.every((b) => !b.pose && !b.video) && (await octets(`${D}/dort/pose.png`)) === null, "refaire la référence : tout s'efface (ses poses en venaient)");
+
+// ─── 🔊 (15 novembre 2026, « il faudrait qu'on l'entende ronronner ») son vrai son : un enregistrement ───
+const mp3 = fs.readFileSync("scripts/fixtures/voix-essai.mp3").toString("base64");
+const s1 = await appeler(lea, { action: "son", espece: "chat", cible: "genoux", type: "audio/mpeg", donnees: mp3 });
+ok(s1.statut === 200 && /^http/.test(s1.etat?.boucles?.find((b) => b.cle === "genoux")?.son ?? "") && ((await octets(`${D}/genoux/son.mp3`))?.length ?? 0) > 1000, "🔊 son vrai son (« sur les genoux ») : déposé, rangé, signé");
+ok((await appeler(lea, { action: "son", espece: "chat", cible: "genoux", type: "image/png", donnees: mp3 })).statut === 400, "un fichier qui n'est pas un son : refusé");
+ok((await appeler(lea, { action: "son", espece: "chat", cible: "reference", type: "audio/mpeg", donnees: mp3 })).statut === 400, "un son va avec une boucle, pas avec la référence");
+const s2 = await appeler(lea, { action: "son", espece: "chat", cible: "genoux", donnees: "" });
+ok(s2.statut === 200 && !s2.etat?.boucles?.find((b) => b.cle === "genoux")?.son && (await octets(`${D}/genoux/son.mp3`)) === null, "enlevé : il n'en reste rien");
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);
