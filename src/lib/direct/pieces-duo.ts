@@ -145,3 +145,39 @@ export type EtatPiecesDuo = { pieces: PieceDuoVue[]; moteurs: { image: boolean; 
 
 /** 💶 Le coût, environ (novembre 2026) : une pièce en haute qualité ; le relevé, quelques millièmes. */
 export const COUT_PIECE_DUO = 0.17;
+
+// ─── 🧩 L'EFFET « COLLAGE » : LE PREMIER ESSAI DE LA MAQUETTE (`piece-du-duo.md`, section 5) ─────────────────────────
+/**
+ * Deux vraies figurines dans une vraie pièce, de deux façons, côte à côte : POSÉES sur l'image de la pièce (chacune
+ * assise sans son fauteuil, faite une fois par personne ; une ombre au sol, la lumière de la pièce, la taille de son
+ * siège), ou GÉNÉRÉES avec la pièce (une image du duo, faite une fois par duo et par pièce). Le propriétaire choisit en
+ * regardant les deux.
+ */
+export type FigurineDuo = { id: string; nom: string; image: string };
+export type ChoixCollage = { piece: PieceDuo; a: string; b: string; avis?: AvisCollage; note?: string };
+export const AVIS_COLLAGE = [
+  { cle: "posees", dit: "👍 Les posées tiennent" },
+  { cle: "generee", dit: "👍 La générée, nettement mieux" },
+  { cle: "aucune", dit: "👎 Aucune ne va" },
+] as const;
+export type AvisCollage = (typeof AVIS_COLLAGE)[number]["cle"];
+export const avisCollageValide = (x: unknown): x is AvisCollage => AVIS_COLLAGE.some((a) => a.cle === x);
+export type EtatCollage = {
+  figurines: FigurineDuo[];
+  choix: ChoixCollage | null;
+  /** (le choix) la pièce, ses deux places (de gauche à droite), et ce qui est fait */
+  decor?: string;
+  places: PlaceDuo[];
+  poses: { a?: string; b?: string };
+  generee?: string;
+  moteur: boolean;
+};
+/** Deux places, si la pièce n'a pas été relevée. */
+export const PLACES_PAR_DEFAUT: PlaceDuo[] = [
+  { x: 0.36, y: 0.72, hauteur: 0.3 },
+  { x: 0.64, y: 0.72, hauteur: 0.3 },
+];
+/** Sur la figurine assise sans fauteuil (détourée au plus près), le point qui touche le siège, de haut en bas. */
+export const ANCRE_ASSISE = 0.66;
+/** 💶 Deux poses sans fauteuil et une image du duo, environ. */
+export const COUT_COLLAGE = 0.55;

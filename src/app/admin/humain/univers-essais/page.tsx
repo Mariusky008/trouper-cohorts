@@ -9,6 +9,7 @@ import { EssaisUnivers } from "./essais";
 import { PablitoAuNouveauStyle } from "./pablito";
 import { UniversDePablito } from "./chez-pablito";
 import { PiecesDuDuo } from "./pieces-duo";
+import { CollageDuo } from "./collage-duo";
 import { MaisonEnPanorama } from "./salon";
 import { PieceVivante } from "./vivante";
 import { AmbiancesDeTonUnivers } from "./ambiances";
@@ -33,6 +34,7 @@ export default async function PageEssaisUnivers() {
         page se met à jour toute seule.
       </p>
       <PiecesDuDuo />
+      <CollageDuo />
       <PablitoAuNouveauStyle />
       <UniversDePablito />
       <CompagnonEssai />
