@@ -763,6 +763,11 @@ pour lui, puis n'en garde que `decor`, `figurine`, `scene.figurine`, la place `h
 `saison` (`vuePublique`, `chez-pablito-serveur.ts`). Si vous changez ces champs (leur nom, leur sens, les adresses), la
 bienvenue suit : dites-le, ou ajustez `vuePublique` (son essai : `scripts/essai-chez-pablito-route.mjs`).
 
+**🐾 Et son chat** (le propriétaire : « les boucles sont déjà validées ») : la bienvenue lit aussi le catalogue des
+compagnons, `compagnons/chat/<boucle>/video.mp4` (`compagnonDePablito`), et joue ses boucles avec `CompagnonVivant`
+(`app/univers/compagnon-vivant.tsx`), sans rien y changer. Si vous déplacez le catalogue, renommez une boucle ou changez
+`CompagnonVivant`, la bienvenue suit : dites-le (son essai : `scripts/navigateur/bienvenue-chez.mjs`).
+
 ### Lot C — Le compagnon (15 novembre 2026, proposé)
 
 Le propriétaire : un animal qui vit dans l'univers, choisi au départ (un chat, une panthère, un perroquet…), qui bouge

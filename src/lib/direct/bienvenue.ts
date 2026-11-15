@@ -19,6 +19,7 @@
  *
  * Ce fichier est partagé (l'écran et les essais).
  */
+import type { Boucle, Espece } from "./compagnons";
 import type { FigurineEnPlace, PlaceMonde } from "./monde";
 import type { CleUnivers } from "./univers-creation";
 
@@ -94,6 +95,8 @@ export type UniversDePablito = {
   /** 🌟 son décor, vivant (une courte vidéo en boucle), s'il a été fait */
   decorVivant?: string;
   version?: number;
+  /** 🐾 son chat : son nom, et ses boucles faites (le catalogue des compagnons, des adresses signées) */
+  compagnon?: { espece: Espece; nom: string; boucles: Partial<Record<Boucle, string>> };
 };
 
 /** Les souvenirs qu'on peut lui laisser (parmi ceux des visites, `visites.ts`). */
