@@ -755,6 +755,13 @@ conversation :
   la session des messages peut le brancher, ou celle de l'univers, en prévenant (une seule session à la fois sur ces
   fichiers).
 
+### Lot C — Le compagnon (15 novembre 2026, proposé)
+
+Le propriétaire : un animal qui vit dans l'univers, choisi au départ (un chat, une panthère, un perroquet…), qui bouge
+et « ronronne sur mes genoux quand rien ne se passe » ; chez soi, c'est le sien qui accueille, l'invité vient avec le
+sien ; offert à tous, avec un nom. La maquette : `maquettes/compagnon.html` ; **le cahier : `compagnon.md`** (les
+règles, la fabrication en catalogue, les lots C0 à C4 — l'essai de fabrication d'abord). Pour la session de l'univers.
+
 ### Plus tard (préparé, pas construit)
 
 - **Réalise mon vœu** : la figurine met en scène un souhait, dans son univers. Une image générée, gardée.

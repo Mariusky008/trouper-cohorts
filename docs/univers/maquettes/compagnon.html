@@ -1,0 +1,744 @@
+<!-- LA MAQUETTE DU COMPAGNON (15 novembre 2026) : un animal qui vit dans l'univers, celui de l'hôte, et celui de
+     l'invité qui vient avec lui. À ouvrir dans un navigateur, à la largeur d'un téléphone. Les pièces et les petits
+     fantômes (qui jouent « toi » et Sam, faute de vraies figurines dans le dépôt) viennent de public/direct/ensemble ;
+     le chat et le chien sont dessinés ici, pour la maquette : les vrais seraient des figurines animées. Rien de l'appli
+     ne lit ce fichier. -->
+<title>Le compagnon ClikMe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;800&family=Caveat:wght@600;700&display=swap">
+<style>
+/* L'appli telle qu'elle est (fond prune, rose, crème) : une colonne de téléphone, la barre des moments en haut, la scène
+   de la conversation au milieu, ce qui se passe dessous. */
+:root{
+  --fond:#12060F; --fond2:#1E0C18; --carte:rgba(255,255,255,.06); --trait:rgba(255,255,255,.09);
+  --creme:#FFF4E6; --doux:#C9B0BD; --pale:#8f7884; --rose:#FF2E9A; --or:#F2C46B; --encre:#2b1a0c;
+  --f:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --main:"Caveat","Segoe Print","Bradley Hand",cursive;
+  color-scheme:dark;
+}
+html{background:var(--fond)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--creme);font-family:var(--f);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+#app{max-width:440px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;gap:10px;background:var(--fond2);
+  padding-block:6px 22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:480px){#app{border-left:1px solid var(--trait);border-right:1px solid var(--trait)}}
+
+/* la barre des moments */
+.moments{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-block:4px;margin-inline:-4px;padding-inline:4px}
+.moments::-webkit-scrollbar{display:none}
+.moments button{flex:none;border:1px solid var(--trait);background:transparent;border-radius:999px;padding:5px 11px;font-size:12.5px;font-weight:600;color:var(--doux);white-space:nowrap}
+.moments button.on{background:var(--creme);color:var(--encre);border-color:var(--creme)}
+
+/* l'en-tête de la conversation */
+.entete{display:flex;align-items:center;gap:10px}
+.entete .retour{width:30px;height:30px;border:0;background:transparent;font-size:22px;line-height:1;color:var(--creme)}
+.entete .avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;background:#3a1730;flex:none}
+.entete .avatar img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+.entete b{display:block;font-size:16px}
+.entete small{color:var(--doux);font-size:12px}
+
+/* la scène : la pièce, les figurines, les compagnons, ce qui est devant (la table) */
+.scene{position:relative;width:100%;max-width:100%;overflow:hidden;border-radius:22px;background:#0d0509;box-shadow:0 14px 34px -16px rgba(0,0,0,.9);
+  -webkit-user-select:none;user-select:none;touch-action:manipulation}
+.scene img.fond,.scene img.devant{position:absolute;max-width:none;pointer-events:none}
+.scene img.fond{z-index:0}
+.scene img.devant{z-index:5}
+.fig{position:absolute;z-index:2;transform:translate(-50%,-100%);max-width:none;pointer-events:none;transition:opacity .5s}
+.fig.absent{opacity:0}
+.fig.arrive{animation:arrive .7s cubic-bezier(.2,1.4,.4,1) both}
+.fig.rit{animation:rit .32s ease-in-out 6 alternate}
+@keyframes arrive{from{opacity:0;transform:translate(-50%,-92%) scale(.85)}}
+@keyframes rit{to{transform:translate(-50%,-104%) rotate(-3deg)}}
+.badge{position:absolute;z-index:8;transform:translate(-50%,-100%);padding:4px 9px;border-radius:12px;background:var(--creme);color:var(--encre);font-size:12px;font-weight:800;white-space:nowrap;animation:pop .35s cubic-bezier(.2,1.6,.4,1) both;pointer-events:none}
+@keyframes pop{from{transform:translate(-50%,-80%) scale(.4);opacity:0}}
+
+.bete{position:absolute;z-index:6;transform:translate(-50%,-100%);cursor:pointer}
+.bete .saut,.bete .sens,.bete svg{display:block;width:100%;height:100%}
+.bete .sens{transform:scaleX(var(--dir,1))}
+.bete svg{overflow:visible}
+.bete .p-assis,.bete .p-marche,.bete .p-couche{display:none}
+.bete[data-pose="assis"] .p-assis,.bete[data-pose="marche"] .p-marche,.bete[data-pose="couche"] .p-couche{display:inline}
+.bete .yeux-dort,.bete .yeux-joie,.bete .langue{display:none}
+.bete.dort .yeux,.bete.joie .yeux{display:none}
+.bete.dort .yeux-dort,.bete.joie .yeux-joie,.bete.joie .langue{display:inline}
+.bete[data-pose="couche"] .yeux{display:none}
+.bete[data-pose="couche"] .yeux-dort{display:inline}
+.bete[data-pose="couche"].joie .yeux-dort{display:none}
+
+/* les gestes : la queue, le clin d'œil, la marche, le souffle, le ronron */
+.bete .queue{transform-box:fill-box;transform-origin:0% 100%;animation:queue 2.6s ease-in-out infinite alternate}
+.bete .p-marche .queue{transform-origin:100% 100%}
+.bete.chien .queue{animation:remue .34s ease-in-out infinite alternate}
+.bete.chien.joie .queue{animation-duration:.16s}
+.bete.dort .queue,.bete[data-pose="couche"] .queue{animation:none}
+@keyframes queue{from{transform:rotate(-7deg)}to{transform:rotate(9deg)}}
+@keyframes remue{from{transform:rotate(-20deg)}to{transform:rotate(18deg)}}
+.bete .yeux{transform-box:fill-box;transform-origin:50% 50%;animation:clin 5.2s infinite}
+@keyframes clin{0%,95%,100%{transform:scaleY(1)}97%{transform:scaleY(.12)}}
+.bete .pa,.bete .pb{transform-box:fill-box;transform-origin:50% 6%}
+.bete[data-pose="marche"] .pa{animation:patte .32s ease-in-out infinite alternate}
+.bete[data-pose="marche"] .pb{animation:patte .32s ease-in-out infinite alternate-reverse}
+.bete[data-pose="marche"] .p-marche{animation:pas .16s ease-in-out infinite alternate}
+@keyframes patte{from{transform:rotate(20deg)}to{transform:rotate(-20deg)}}
+@keyframes pas{to{transform:translateY(-1.6px)}}
+.bete .souffle{transform-box:fill-box;transform-origin:50% 100%;animation:souffle 3s ease-in-out infinite alternate}
+@keyframes souffle{to{transform:scale(1.025,1.06)}}
+.bete.ronron .p-couche{animation:ronron .09s linear infinite alternate}
+@keyframes ronron{from{transform:translateX(-.35px)}to{transform:translateX(.35px)}}
+.bete .tete{transform-box:fill-box;transform-origin:50% 90%;transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+.bete.alerte .tete{transform:rotate(-9deg) translateY(-2px)}
+.bete.alerte .oreille{transform:translateY(-1.5px)}
+.bete .oreille{transform-box:fill-box;transform-origin:50% 100%;transition:transform .3s}
+.bete.renifle .tete{animation:renifle .22s ease-in-out 6 alternate}
+@keyframes renifle{to{transform:translate(3px,1px) rotate(4deg)}}
+
+/* ce qui flotte : un cœur, « rrr », « zZz », « ! », son nom */
+.effet{position:absolute;z-index:9;transform:translate(-50%,-100%);pointer-events:none;white-space:nowrap;font-family:var(--main);font-weight:700;font-size:22px;color:var(--creme);text-shadow:0 2px 6px rgba(0,0,0,.7);animation:flotte 1.8s ease-out forwards}
+.effet.coeur{color:#ff5fae;font-family:var(--f);font-size:17px}
+.effet.alerte{font-family:var(--f);font-weight:800;color:var(--or);font-size:20px;animation-duration:1.3s}
+.effet.nom{font-family:var(--f);font-size:12px;font-weight:800;background:var(--creme);color:var(--encre);padding:3px 9px;border-radius:10px;text-shadow:none;animation:flotte 2.2s ease-out forwards}
+@keyframes flotte{0%{opacity:0;margin-top:6px}15%{opacity:1}75%{opacity:1}100%{opacity:0;margin-top:-26px}}
+
+.message{position:absolute;z-index:10;left:12px;right:12px;top:12px;display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:16px;background:rgba(30,12,24,.92);border:1px solid var(--trait);font-size:13.5px;box-shadow:0 10px 24px -12px rgba(0,0,0,.9);animation:descend .4s cubic-bezier(.2,1.3,.4,1) both}
+.message img{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:50% 18%;background:#3a1730}
+@keyframes descend{from{opacity:0;transform:translateY(-14px)}}
+.pelote{position:absolute;z-index:7;transform:translate(-50%,-100%);pointer-events:none}
+.pelote svg{display:block;width:100%;height:100%}
+.compteur{position:absolute;z-index:10;right:12px;bottom:12px;padding:5px 10px;border-radius:12px;background:rgba(30,12,24,.86);font-size:12px;color:var(--doux);font-variant-numeric:tabular-nums}
+
+/* ce qui se passe, dessous */
+.recit{display:flex;flex-direction:column;gap:8px;padding:14px 15px;border-radius:18px;background:var(--carte);border:1px solid var(--trait)}
+.recit h2{margin:0;font-size:16px;line-height:1.3;text-wrap:balance}
+.recit p{margin:0;color:var(--doux);font-size:14px}
+.recit .astuce{font-size:13px;color:var(--or)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.bouton{border:0;border-radius:999px;padding:10px 16px;font-weight:800;font-size:14px;background:var(--rose);color:#fff}
+.bouton.clair{background:transparent;border:1px solid var(--trait);color:var(--creme);font-weight:600}
+.pablito{align-self:flex-start;max-width:100%;padding:10px 13px;border-radius:16px 16px 16px 4px;background:var(--creme);color:var(--encre);font-size:14px;font-weight:600}
+.recit .pablito{color:var(--encre)}
+.pablito small{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a0566f}
+.especes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.especes button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:14px;border:1px solid var(--trait);background:rgba(255,255,255,.03);font-size:12.5px;font-weight:600;color:var(--doux)}
+.especes button.on{border-color:var(--rose);background:rgba(255,46,154,.12);color:var(--creme)}
+.especes button:disabled{opacity:.45;cursor:default}
+.especes .vignette{width:56px;height:46px;display:grid;place-items:center;font-size:30px}
+.especes .vignette svg{width:100%;height:100%}
+.mini .p-marche,.mini .p-couche,.mini .yeux-dort,.mini .yeux-joie,.mini .langue{display:none}
+.especes small{font-size:10.5px;color:var(--pale)}
+.champ{display:flex;flex-direction:column;gap:4px}
+.champ label{font-size:13px;color:var(--doux)}
+.champ input{height:44px;padding:0 14px;border-radius:22px;border:1.5px solid var(--trait);background:#22101B;outline:none;font-size:15px}
+.champ input:focus{border-color:rgba(255,46,154,.7)}
+.regles{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--doux);font-size:14px}
+.regles b{color:var(--creme)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+
+<div id="app">
+  <nav class="moments" id="moments" aria-label="Les moments de la maquette"></nav>
+  <header class="entete">
+    <button class="retour" type="button" aria-label="Retour">‹</button>
+    <span class="avatar"><img id="avatar" alt=""></span>
+    <span><b id="entete-nom">Sam</b><small id="entete-ou">chez toi</small></span>
+  </header>
+  <div class="scene" id="scene"></div>
+  <section class="recit" id="recit" aria-live="polite"></section>
+</div>
+
+<script>
+// ─── les images (dans le dépôt : public/direct/ensemble ; publiée : à côté de la page) ───
+const IMG = (n) => (location.protocol === "file:" ? "../../../public/direct/ensemble/" : "img/") + n + ".webp";
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ─── les deux univers : le tien (le salon au canapé vert), celui de Sam (le salon-bibliothèque) ───
+// (les places et les hauteurs viennent de src/app/autour-de-moi/alcove.tsx ; `niveaux` : où un compagnon se tient)
+const UNIVERS = {
+  toi: {
+    fond: "scene-canape-vert", devant: "scene-canape-vert-devant", l: 941, devantY: 700,
+    x0: 265, x1: 895, y0: 400, y1: 1250, hauteur: 215, bas: 795, hote: 370, invite: 582,
+    niveaux: { canape: { y: 792, s: 1 }, genoux: { y: 790, s: 1.12 }, table: { y: 938, s: 1.08 }, sol: { y: 1208, s: 1.28 } },
+  },
+  sam: {
+    fond: "scene-bibliotheque", devant: "scene-bibliotheque-devant", l: 853, devantY: 975,
+    x0: 140, x1: 740, y0: 700, y1: 1350, hauteur: 255, bas: 995, hote: 285, invite: 455,
+    niveaux: { canape: { y: 984, s: 1.1 }, genoux: { y: 986, s: 1.12 }, table: { y: 1112, s: 1.1 }, sol: { y: 1340, s: 1.2 } },
+  },
+};
+const FIG = { moi: "cosy-assis", sam: "flaneur-assis" };
+const K = { chat: 0.5, chien: 0.58 };
+let U = UNIVERS.toi;
+const sceneEl = document.getElementById("scene");
+const px = (x) => ((x - U.x0) / (U.x1 - U.x0)) * 100;
+const py = (y) => ((y - U.y0) / (U.y1 - U.y0)) * 100;
+
+// ─── ce que tu as choisi ───
+const choix = { espece: "chat", nom: "Moustache" };
+const autre = () => (choix.espece === "chat" ? { espece: "chien", nom: "Biscuit" } : { espece: "chat", nom: "Caramel" });
+
+// ─── le dessin des compagnons (un jouet en vinyle : grosse tête, yeux brillants, joues roses) ───
+let uid = 0;
+const yeux = (cx, cy, e) => `
+  <g class="yeux"><ellipse cx="${cx - e}" cy="${cy}" rx="5.3" ry="6.5" fill="#231417"/><ellipse cx="${cx + e}" cy="${cy}" rx="5.3" ry="6.5" fill="#231417"/>
+    <circle cx="${cx - e + 1.9}" cy="${cy - 2.4}" r="1.9" fill="#fff"/><circle cx="${cx + e + 1.9}" cy="${cy - 2.4}" r="1.9" fill="#fff"/></g>
+  <g class="yeux-dort" fill="none" stroke="#231417" stroke-width="2.4" stroke-linecap="round"><path d="M${cx - e - 5} ${cy} q5 4 10 0"/><path d="M${cx + e - 5} ${cy} q5 4 10 0"/></g>
+  <g class="yeux-joie" fill="none" stroke="#231417" stroke-width="2.6" stroke-linecap="round"><path d="M${cx - e - 5} ${cy + 1} q5 -6 10 0"/><path d="M${cx + e - 5} ${cy + 1} q5 -6 10 0"/></g>`;
+
+function teteChat(id, t) {
+  return `<g class="tete" transform="${t}">
+    <g class="oreille"><path d="M48 38 L45 11 L67 27 Z" fill="url(#${id}o)" stroke="#E2862F" stroke-width="5" stroke-linejoin="round"/><path d="M51 33 L49.5 18 L61 27 Z" fill="#F7A3B5"/></g>
+    <g class="oreille"><path d="M92 38 L95 11 L73 27 Z" fill="url(#${id}o)" stroke="#E2862F" stroke-width="5" stroke-linejoin="round"/><path d="M89 33 L90.5 18 L79 27 Z" fill="#F7A3B5"/></g>
+    <circle cx="70" cy="48" r="27" fill="url(#${id}o)"/>
+    <g fill="none" stroke="#C9711F" stroke-width="2.6" stroke-linecap="round"><path d="M63 24 q7 6 14 0"/><path d="M65.5 30 q4.5 4 9 0"/><path d="M45 44 q4 1 7 -1"/><path d="M95 44 q-4 1 -7 -1"/></g>
+    <ellipse cx="70" cy="59" rx="13" ry="9" fill="#FFF1DE"/>
+    ${yeux(70, 47, 11)}
+    <ellipse cx="51" cy="57" rx="5" ry="3.2" fill="#F7A3B5" opacity=".65"/><ellipse cx="89" cy="57" rx="5" ry="3.2" fill="#F7A3B5" opacity=".65"/>
+    <path d="M67 54.5 h6 l-3 3.4 z" fill="#F28AA0" stroke="#F28AA0" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M66 59.5 q2 2.6 4 0 q2 2.6 4 0" stroke="#5a2a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path class="langue" d="M68 61.5 q2 4.5 4 0 z" fill="#F28AA0"/>
+    <g stroke="#fff" stroke-width="1.1" opacity=".85" stroke-linecap="round"><path d="M57 58 l-15 -2.5"/><path d="M57 61 l-15 2"/><path d="M83 58 l15 -2.5"/><path d="M83 61 l15 2"/></g>
+  </g>`;
+}
+function svgChat() {
+  const id = `c${++uid}`;
+  return `<svg viewBox="0 0 140 112" aria-hidden="true">
+  <defs><radialGradient id="${id}o" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="#FFC982"/><stop offset=".55" stop-color="#F2A04B"/><stop offset="1" stop-color="#CF7724"/></radialGradient></defs>
+  <g class="p-assis">
+    <path class="queue" d="M90 101 C117 103 123 80 111 61" fill="none" stroke="url(#${id}o)" stroke-width="10" stroke-linecap="round"/>
+    <ellipse cx="70" cy="85" rx="27" ry="23" fill="url(#${id}o)"/>
+    <ellipse cx="70" cy="91" rx="15" ry="15" fill="#FFF1DE"/>
+    <ellipse cx="60" cy="105" rx="8.5" ry="5" fill="#FFF1DE"/><ellipse cx="80" cy="105" rx="8.5" ry="5" fill="#FFF1DE"/>
+    ${teteChat(id, "")}
+  </g>
+  <g class="p-marche">
+    <path class="queue" d="M38 74 C22 72 16 52 25 37" fill="none" stroke="url(#${id}o)" stroke-width="9" stroke-linecap="round"/>
+    <rect class="pb" x="42" y="80" width="10" height="26" rx="5" fill="#D77F2A"/><rect class="pa" x="85" y="80" width="10" height="26" rx="5" fill="#D77F2A"/>
+    <ellipse cx="65" cy="77" rx="35" ry="18" fill="url(#${id}o)"/>
+    <ellipse cx="67" cy="86" rx="22" ry="7" fill="#FFF1DE" opacity=".9"/>
+    <g fill="none" stroke="#C9711F" stroke-width="2.6" stroke-linecap="round"><path d="M50 62 q4 7 0 13"/><path d="M61 60 q4 7 0 14"/><path d="M72 61 q4 7 0 13"/></g>
+    <rect class="pa" x="51" y="82" width="10" height="25" rx="5" fill="url(#${id}o)"/><rect class="pb" x="94" y="82" width="10" height="25" rx="5" fill="url(#${id}o)"/>
+    ${teteChat(id, "translate(62 13) scale(.78)")}
+  </g>
+  <g class="p-couche">
+    <g class="souffle"><ellipse cx="64" cy="92" rx="42" ry="17" fill="url(#${id}o)"/>
+      <g fill="none" stroke="#C9711F" stroke-width="2.6" stroke-linecap="round"><path d="M44 78 q4 6 0 12"/><path d="M55 76 q4 6 0 13"/><path d="M66 76 q4 6 0 13"/></g></g>
+    <path d="M104 98 C110 110 56 113 28 103" fill="none" stroke="url(#${id}o)" stroke-width="9" stroke-linecap="round"/>
+    ${teteChat(id, "translate(58 42) scale(.72)")}
+  </g>
+</svg>`;
+}
+
+function teteChien(id, t) {
+  return `<g class="tete" transform="${t}">
+    <g class="oreille"><ellipse cx="44" cy="55" rx="9.5" ry="20" transform="rotate(14 44 55)" fill="#8A5A33"/></g>
+    <g class="oreille"><ellipse cx="96" cy="55" rx="9.5" ry="20" transform="rotate(-14 96 55)" fill="#8A5A33"/></g>
+    <circle cx="70" cy="47" r="26" fill="url(#${id}t)"/>
+    <path d="M66 22 h8 l3 26 h-14 z" fill="#FBF6EE"/>
+    <ellipse cx="70" cy="60" rx="15" ry="11" fill="#FBF6EE"/>
+    ${yeux(70, 45, 11)}
+    <ellipse cx="51" cy="56" rx="4.6" ry="3" fill="#F7A3B5" opacity=".55"/><ellipse cx="89" cy="56" rx="4.6" ry="3" fill="#F7A3B5" opacity=".55"/>
+    <ellipse cx="70" cy="56" rx="6" ry="4.3" fill="#1E1412"/><circle cx="68.3" cy="54.6" r="1.3" fill="#fff" opacity=".7"/>
+    <path d="M65 62 q2.5 3 5 0 q2.5 3 5 0" stroke="#3a2418" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path class="langue" d="M67 63.5 q3 8 6 0 z" fill="#F07A93"/>
+  </g>`;
+}
+function svgChien() {
+  const id = `d${++uid}`;
+  return `<svg viewBox="0 0 140 112" aria-hidden="true">
+  <defs><radialGradient id="${id}t" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="#E9B27A"/><stop offset=".6" stop-color="#D49A5C"/><stop offset="1" stop-color="#A9713C"/></radialGradient>
+    <radialGradient id="${id}b" cx="35%" cy="25%" r="85%"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4DACB"/></radialGradient></defs>
+  <g class="p-assis">
+    <path class="queue" d="M92 99 C113 95 117 76 109 60" fill="none" stroke="#D49A5C" stroke-width="9" stroke-linecap="round"/>
+    <ellipse cx="70" cy="85" rx="28" ry="23" fill="url(#${id}b)"/>
+    <path d="M44 82 Q47 66 70 64 Q93 66 96 82 Q86 74 70 74 Q54 74 44 82 Z" fill="#3A2A22" opacity=".9"/>
+    <ellipse cx="70" cy="92" rx="14" ry="14" fill="#FFFFFF"/>
+    <ellipse cx="59" cy="105" rx="9" ry="5" fill="#FFFFFF"/><ellipse cx="81" cy="105" rx="9" ry="5" fill="#FFFFFF"/>
+    ${teteChien(id, "")}
+  </g>
+  <g class="p-marche">
+    <path class="queue" d="M36 70 C22 66 18 50 24 38" fill="none" stroke="#D49A5C" stroke-width="8" stroke-linecap="round"/>
+    <rect class="pb" x="42" y="80" width="10" height="26" rx="5" fill="#E4DACB"/><rect class="pa" x="86" y="80" width="10" height="26" rx="5" fill="#E4DACB"/>
+    <ellipse cx="65" cy="76" rx="36" ry="18" fill="url(#${id}b)"/>
+    <path d="M38 72 Q50 58 82 60 Q92 64 94 72 Q76 66 60 68 Q46 70 38 72 Z" fill="#3A2A22" opacity=".9"/>
+    <rect class="pa" x="51" y="82" width="10" height="25" rx="5" fill="#FFFFFF"/><rect class="pb" x="95" y="82" width="10" height="25" rx="5" fill="#FFFFFF"/>
+    ${teteChien(id, "translate(62 12) scale(.8)")}
+  </g>
+  <g class="p-couche">
+    <path class="queue" d="M24 92 C10 90 8 78 14 70" fill="none" stroke="#D49A5C" stroke-width="7" stroke-linecap="round"/>
+    <g class="souffle"><ellipse cx="60" cy="90" rx="40" ry="19" fill="url(#${id}b)"/>
+      <ellipse cx="38" cy="86" rx="17" ry="12" fill="#D49A5C"/>
+      <path d="M30 78 Q44 68 70 70 Q84 72 90 80 Q72 76 56 78 Q40 80 30 78 Z" fill="#3A2A22" opacity=".9"/>
+      <ellipse cx="44" cy="104" rx="13" ry="5" fill="#E4DACB"/></g>
+    <rect x="84" y="99" width="30" height="9" rx="4.5" fill="#FFFFFF"/><rect x="80" y="102" width="28" height="8" rx="4" fill="#F4EEE4"/>
+    ${teteChien(id, "translate(50 44) scale(.72)")}
+  </g>
+</svg>`;
+}
+const DESSIN = { chat: svgChat, chien: svgChien };
+
+// ─── la pelote ───
+const SVG_PELOTE = `<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="#E85D9A"/>
+  <g fill="none" stroke="#FFB3D2" stroke-width="2" stroke-linecap="round"><path d="M6 14 q14 6 28 -2"/><path d="M5 22 q15 6 30 -3"/><path d="M9 30 q12 4 23 -4"/><path d="M14 5 q-4 15 4 31"/></g>
+  <path d="M33 26 q8 4 6 10" fill="none" stroke="#E85D9A" stroke-width="2" stroke-linecap="round"/></svg>`;
+
+// ─── le temps de la maquette : changer de moment arrête tout ───
+let tour = 0;
+class Arret extends Error {}
+const attendre = (ms) => {
+  const t = tour;
+  return new Promise((ok, ko) => setTimeout(() => (t === tour ? ok() : ko(new Arret())), RM ? Math.min(ms, 250) : ms));
+};
+const encore = (t) => {
+  if (t !== tour) throw new Arret();
+};
+
+// ─── la scène ───
+let betes = [];
+let figs = {};
+function monter(univers, presents) {
+  U = UNIVERS[univers];
+  sceneEl.replaceChildren();
+  sceneEl.style.aspectRatio = `${U.x1 - U.x0} / ${U.y1 - U.y0}`;
+  const largeur = (U.l / (U.x1 - U.x0)) * 100;
+  const fond = Object.assign(document.createElement("img"), { className: "fond", src: IMG(U.fond), alt: "" });
+  Object.assign(fond.style, { width: `${largeur}%`, left: `${-(U.x0 / (U.x1 - U.x0)) * 100}%`, top: `${-(U.y0 / (U.y1 - U.y0)) * 100}%` });
+  const devant = Object.assign(document.createElement("img"), { className: "devant", src: IMG(U.devant), alt: "" });
+  Object.assign(devant.style, { width: `${largeur}%`, left: fond.style.left, top: `${py(U.devantY)}%` });
+  sceneEl.append(fond, devant);
+  figs = {};
+  // (chez toi : toi à la place de l'hôte ; chez Sam : Sam)
+  const places = univers === "toi" ? { moi: U.hote, sam: U.invite } : { sam: U.hote, moi: U.invite };
+  for (const qui of ["moi", "sam"]) {
+    const f = Object.assign(document.createElement("img"), { className: `fig${presents.includes(qui) ? "" : " absent"}`, src: IMG(FIG[qui]), alt: qui === "moi" ? "Ta figurine" : "La figurine de Sam" });
+    Object.assign(f.style, { left: `${px(places[qui])}%`, top: `${py(U.bas)}%`, height: `${(U.hauteur / (U.y1 - U.y0)) * 100}%` });
+    f.dataset.x = places[qui];
+    sceneEl.append(f);
+    figs[qui] = f;
+  }
+  betes = [];
+  document.getElementById("entete-ou").textContent = univers === "toi" ? "chez toi" : "chez Sam";
+}
+
+class Bete {
+  constructor(espece, nom) {
+    this.espece = espece;
+    this.nom = nom;
+    this.el = document.createElement("div");
+    this.el.className = `bete ${espece}`;
+    this.el.setAttribute("role", "button");
+    this.el.setAttribute("aria-label", `${nom}, à caresser`);
+    this.el.tabIndex = 0;
+    this.el.innerHTML = `<div class="saut"><div class="sens">${DESSIN[espece]()}</div></div>`;
+    this.el.addEventListener("click", () => this.caresse());
+    this.el.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), this.caresse()));
+    this.pos = { x: 0, niveau: "sol", sc: 1 };
+    sceneEl.append(this.el);
+    betes.push(this);
+  }
+  geo(x, niveau, sc = 1) {
+    const n = U.niveaux[niveau];
+    const h = U.hauteur * K[this.espece] * n.s * sc;
+    return { left: `${px(x)}%`, top: `${py(n.y)}%`, height: `${(h / (U.y1 - U.y0)) * 100}%`, width: `${((h * 140) / 112 / (U.x1 - U.x0)) * 100}%` };
+  }
+  haut() {
+    const n = U.niveaux[this.pos.niveau];
+    return { x: px(this.pos.x), y: py(n.y - U.hauteur * K[this.espece] * n.s * this.pos.sc * 0.82) };
+  }
+  etage(niveau) {
+    this.el.style.zIndex = niveau === "canape" || niveau === "genoux" ? 3 : 6;
+  }
+  pose(p, ...etats) {
+    this.el.dataset.pose = p;
+    this.el.classList.remove("dort", "joie", "alerte", "ronron", "renifle");
+    for (const e of etats) this.el.classList.add(e);
+  }
+  sens(d) {
+    this.el.style.setProperty("--dir", d);
+  }
+  poser(x, niveau, { pose = "assis", etats = [], sc = 1, dir = 1 } = {}) {
+    for (const a of this.el.getAnimations({ subtree: true })) if (a.effect?.target === this.el || a.id === "saut") a.cancel();
+    Object.assign(this.el.style, this.geo(x, niveau, sc));
+    this.pos = { x, niveau, sc };
+    this.etage(niveau);
+    this.pose(pose, ...etats);
+    this.sens(dir);
+    return this;
+  }
+  async aller(x, niveau = this.pos.niveau, { vite = 1, sc = 1, fin = "assis", etatsFin = [], saut = false } = {}) {
+    const t = tour;
+    const de = this.geo(this.pos.x, this.pos.niveau, this.pos.sc);
+    const a = this.geo(x, niveau, sc);
+    const change = niveau !== this.pos.niveau;
+    const duree = saut ? 650 : Math.max(450, (Math.abs(x - this.pos.x) * 7 + (change ? 500 : 0)) / vite);
+    if (x !== this.pos.x) this.sens(x > this.pos.x ? 1 : -1);
+    this.pose(saut ? "assis" : "marche");
+    // (on descend du canapé : devant la table tout de suite ; on y monte : derrière, une fois arrivé)
+    if (this.pos.niveau === "canape" || this.pos.niveau === "genoux") this.etage(niveau);
+    const mouvement = this.el.animate([de, a], { duration: RM ? 0 : duree, easing: saut ? "ease-in-out" : "linear", fill: "forwards" });
+    if (saut && !RM) this.el.querySelector(".saut").animate([{ transform: "translateY(0)" }, { transform: "translateY(-60%)", offset: 0.45 }, { transform: "translateY(0)" }], { duration: duree, easing: "ease-out", id: "saut" });
+    try {
+      await mouvement.finished;
+    } catch {
+      throw new Arret();
+    }
+    encore(t);
+    Object.assign(this.el.style, a);
+    mouvement.cancel();
+    this.pos = { x, niveau, sc };
+    this.etage(niveau);
+    this.pose(fin, ...etatsFin);
+  }
+  async bond(fois = 1) {
+    const t = tour;
+    for (let k = 0; k < fois; k++) {
+      if (RM) break;
+      const b = this.el.querySelector(".saut").animate([{ transform: "translateY(0)" }, { transform: "translateY(-34%)", offset: 0.4 }, { transform: "translateY(0)" }], { duration: 420, easing: "ease-out" });
+      try {
+        await b.finished;
+      } catch {
+        throw new Arret();
+      }
+      encore(t);
+    }
+  }
+  effet(texte, classe = "") {
+    const { x, y } = this.haut();
+    const e = Object.assign(document.createElement("span"), { className: `effet ${classe}`, textContent: texte });
+    Object.assign(e.style, { left: `${x + (Math.random() * 6 - 3)}%`, top: `${y}%` });
+    sceneEl.append(e);
+    setTimeout(() => e.remove(), 2400);
+  }
+  caresse() {
+    this.effet(this.nom, "nom");
+    if (this.el.dataset.pose === "couche" && this.espece === "chat") {
+      this.el.classList.add("ronron");
+      this.effet("rrr… rrr…");
+      setTimeout(() => this.effet("♥", "coeur"), 400);
+      return;
+    }
+    const avant = [...this.el.classList];
+    this.el.classList.add("joie");
+    setTimeout(() => this.effet("♥", "coeur"), 300);
+    setTimeout(() => {
+      if (!avant.includes("joie")) this.el.classList.remove("joie");
+    }, 1600);
+  }
+}
+
+function message(texte) {
+  const m = document.createElement("div");
+  m.className = "message";
+  m.innerHTML = `<img src="${IMG(FIG.sam)}" alt=""><span><b>Sam</b> · ${texte}</span>`;
+  sceneEl.append(m);
+  return m;
+}
+function badge(qui, texte) {
+  const f = figs[qui];
+  const b = Object.assign(document.createElement("span"), { className: "badge", textContent: texte });
+  Object.assign(b.style, { left: `${px(Number(f.dataset.x))}%`, top: `${py(U.bas - U.hauteur * 1.02)}%` });
+  sceneEl.append(b);
+  return b;
+}
+
+// ─── ce qui se passe, dessous ───
+const recit = document.getElementById("recit");
+function raconter(titre, texte, { astuce = "", rejouer = true, plus = "" } = {}) {
+  recit.innerHTML = `<h2>${titre}</h2><p>${texte}</p>${astuce ? `<p class="astuce">${astuce}</p>` : ""}${plus}${rejouer ? `<div class="actions"><button class="bouton clair" type="button" id="rejouer">↻ Rejouer</button></div>` : ""}`;
+  document.getElementById("rejouer")?.addEventListener("click", () => aller(courant));
+}
+
+// ─── les moments ───
+const MOMENTS = [
+  {
+    id: "choisir",
+    nom: "Son compagnon",
+    async jouer() {
+      monter("toi", ["moi"]);
+      const b = new Bete(choix.espece, choix.nom).poser(560, "sol", { pose: "assis", dir: -1 });
+      const vignette = (e) => (e === "chat" || e === "chien" ? DESSIN[e]().replace("<svg", '<svg class="mini"') : "");
+      const carte = (e, nom, emoji) =>
+        `<button type="button" data-espece="${e}" class="${choix.espece === e ? "on" : ""}"${e === "chat" || e === "chien" ? "" : " disabled"}><span class="vignette">${vignette(e) || emoji}</span>${nom}${e === "chat" || e === "chien" ? "" : "<small>plus tard</small>"}</button>`;
+      raconter(
+        "Un compagnon, en créant son univers",
+        "Offert à tous, choisi une fois (et changé quand on veut). Ici, seuls le chat et le chien sont dessinés.",
+        {
+          rejouer: false,
+          plus: `<p class="pablito"><small>Pablito</small>Un compagnon chez toi ? Il t’attendra, et il accueillera tes proches.</p>
+          <div class="especes" role="radiogroup" aria-label="Ton compagnon">${carte("chat", "Un chat")}${carte("chien", "Un chien")}${carte("perroquet", "Un perroquet", "🦜")}${carte("panthere", "Une panthère", "🐆")}${carte("lapin", "Un lapin", "🐇")}<button type="button" data-espece="aucun">${'<span class="vignette">🚫</span>'}Pas d’animal</button></div>
+          <div class="champ"><label for="nom">Comment s’appelle-t-il ?</label><input id="nom" name="nom" maxlength="16" autocomplete="off" value="${choix.nom}"></div>
+          <div class="actions"><button class="bouton" type="button" id="valider">C’est mon compagnon</button></div>`,
+        },
+      );
+      const especes = recit.querySelector(".especes");
+      especes.addEventListener("click", (e) => {
+        const bt = e.target.closest("button[data-espece]");
+        if (!bt || bt.disabled) return;
+        if (bt.dataset.espece === "aucun") {
+          b.el.style.opacity = "0";
+          especes.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === bt));
+          return;
+        }
+        const ancien = choix.espece;
+        choix.espece = bt.dataset.espece;
+        const champ = document.getElementById("nom");
+        if (ancien !== choix.espece && (champ.value === "Moustache" || champ.value === "Pirate")) champ.value = choix.espece === "chat" ? "Moustache" : "Pirate";
+        choix.nom = champ.value.trim() || choix.nom;
+        aller(0);
+      });
+      document.getElementById("nom").addEventListener("input", (e) => {
+        choix.nom = e.target.value.trim() || (choix.espece === "chat" ? "Moustache" : "Pirate");
+        b.nom = choix.nom;
+      });
+      document.getElementById("nom").addEventListener("change", () => b.effet(choix.nom, "nom"));
+      document.getElementById("valider").addEventListener("click", () => aller(1));
+      await attendre(700);
+      b.effet(choix.nom, "nom");
+      await attendre(1600);
+      b.pose("assis", "joie");
+      b.effet("♥", "coeur");
+    },
+  },
+  {
+    id: "arrive",
+    nom: "Sam arrive",
+    async jouer() {
+      monter("toi", ["moi"]);
+      const a = autre();
+      const moi = new Bete(choix.espece, choix.nom).poser(500, "sol", { dir: 1 });
+      const lui = new Bete(a.espece, a.nom).poser(930, "sol", { dir: -1 });
+      raconter(`Sam vient chez toi, avec ${a.nom}`, `Chez toi, c’est ${choix.nom} qui accueille. Sam vient avec son compagnon : ils se reniflent, puis s’installent.`);
+      await attendre(700);
+      figs.sam.classList.remove("absent");
+      figs.sam.classList.add("arrive");
+      moi.pose("assis", "alerte");
+      moi.effet("!", "alerte");
+      await attendre(500);
+      await lui.aller(760, "sol", { fin: "assis" });
+      await moi.aller(650, "sol", { fin: "assis", etatsFin: ["renifle"] });
+      lui.pose("assis", "renifle");
+      await attendre(1300);
+      moi.effet("♥", "coeur");
+      lui.effet("♥", "coeur");
+      moi.pose("assis", "joie");
+      lui.pose("assis", "joie");
+      await attendre(1400);
+      await moi.aller(470, "sol", { fin: "assis" });
+      lui.pose("couche");
+      lui.sens(-1);
+    },
+  },
+  {
+    id: "message",
+    nom: "Un message",
+    async jouer() {
+      monter("toi", ["moi", "sam"]);
+      const a = autre();
+      const moi = new Bete(choix.espece, choix.nom).poser(470, "sol", { dir: 1 });
+      const lui = new Bete(a.espece, a.nom).poser(790, "sol", { pose: "couche", dir: -1 });
+      raconter("Un message arrive", `${choix.nom} dresse les oreilles et regarde qui parle ; ${a.nom} relève la tête.`, { astuce: "Touche un compagnon : il te fait un câlin." });
+      await attendre(1200);
+      const m = message("« Tu viens samedi au ciné ? »");
+      moi.pose("assis", "alerte");
+      moi.effet("!", "alerte");
+      lui.pose("assis", "alerte");
+      await attendre(2400);
+      moi.pose("assis", "joie");
+      lui.pose("assis", "joie");
+      lui.effet("♥", "coeur");
+      await attendre(1800);
+      m.remove();
+      moi.pose("assis");
+      lui.pose("couche");
+    },
+  },
+  {
+    id: "rire",
+    nom: "Un fou rire",
+    async jouer() {
+      monter("toi", ["moi", "sam"]);
+      const a = autre();
+      const moi = new Bete(choix.espece, choix.nom).poser(600, "table", { dir: 1 });
+      const lui = new Bete(a.espece, a.nom).poser(780, "sol", { dir: -1 });
+      raconter("Un fou rire", `Sam éclate de rire : ${choix.nom} sursaute, ${a.nom} saute de joie.`);
+      await attendre(1000);
+      figs.sam.classList.add("rit");
+      const b = badge("sam", "😂 Fou rire");
+      moi.pose("assis", "alerte");
+      moi.effet("!", "alerte");
+      await Promise.all([moi.bond(1), lui.bond(3).then(() => lui.pose("assis", "joie"))]);
+      moi.pose("assis", "joie");
+      lui.effet("♥", "coeur");
+      await attendre(2200);
+      b.remove();
+      figs.sam.classList.remove("rit");
+      moi.pose("assis");
+      lui.pose("assis");
+    },
+  },
+  {
+    id: "calme",
+    nom: "Le calme",
+    async jouer() {
+      monter("toi", ["moi", "sam"]);
+      const a = autre();
+      const t = tour;
+      const moi = new Bete(choix.espece, choix.nom).poser(520, "sol", { dir: 1 });
+      const lui = new Bete(a.espece, a.nom).poser(800, "sol", { dir: -1 });
+      raconter(
+        "Rien ne se passe",
+        `Après un vrai moment calme (une minute sans rien, ici cinq secondes), ${choix.nom} vient sur tes genoux${choix.espece === "chat" ? " et ronronne" : " et s’endort"} ; ${a.nom} s’endort aux pieds de Sam.`,
+        { astuce: `Touche ${choix.nom} : ${choix.espece === "chat" ? "il ronronne plus fort" : "il remue la queue"}.` },
+      );
+      const c = Object.assign(document.createElement("span"), { className: "compteur" });
+      sceneEl.append(c);
+      for (let s = 0; s <= 5; s++) {
+        c.textContent = `Rien depuis ${s} s`;
+        await attendre(1000);
+      }
+      c.remove();
+      // (il traverse, saute sur le canapé, et se roule en boule sur les genoux)
+      await moi.aller(440, "sol", { fin: "assis" });
+      await moi.aller(Number(figs.moi.dataset.x) + 4, "genoux", { saut: true, sc: 1, fin: "couche" });
+      if (moi.espece === "chat") moi.el.classList.add("ronron");
+      else moi.el.classList.add("dort");
+      await lui.aller(790, "sol", { fin: "couche", etatsFin: ["dort"] });
+      lui.sens(-1);
+      for (let k = 0; k < 40; k++) {
+        encore(t);
+        if (moi.espece === "chat") moi.effet(k % 3 === 2 ? "♥" : "rrr…", k % 3 === 2 ? "coeur" : "");
+        else moi.effet("zZz");
+        await attendre(1300);
+        lui.effet("zZz");
+        await attendre(1300);
+      }
+    },
+  },
+  {
+    id: "jeu",
+    nom: "Ils jouent",
+    async jouer() {
+      monter("toi", ["moi", "sam"]);
+      const a = autre();
+      const t = tour;
+      const moi = new Bete(choix.espece, choix.nom).poser(450, "sol", { dir: 1 });
+      const lui = new Bete(a.espece, a.nom).poser(830, "sol", { dir: -1 });
+      raconter("Ils jouent ensemble", `De temps en temps, quand la conversation se repose : une pelote, ${choix.nom} et ${a.nom} se la disputent, puis se posent côte à côte.`);
+      const p = document.createElement("span");
+      p.className = "pelote";
+      p.innerHTML = SVG_PELOTE;
+      const g = (x, y) => ({ left: `${px(x)}%`, top: `${py(y)}%`, width: `${(46 / (U.x1 - U.x0)) * 100}%`, height: `${(46 / (U.y1 - U.y0)) * 100}%` });
+      Object.assign(p.style, g(640, 930));
+      sceneEl.append(p);
+      await attendre(800);
+      // (la pelote tombe de la table et roule)
+      const roule = p.animate([g(640, 930), g(660, 1080), g(620, 1205)], { duration: RM ? 0 : 900, easing: "ease-in", fill: "forwards" });
+      await roule.finished.catch(() => {
+        throw new Arret();
+      });
+      encore(t);
+      Object.assign(p.style, g(620, 1205));
+      moi.effet("!", "alerte");
+      lui.effet("!", "alerte");
+      await Promise.all([moi.aller(575, "sol", { vite: 1.6, fin: "assis", etatsFin: ["joie"] }), lui.aller(690, "sol", { vite: 1.6, fin: "assis", etatsFin: ["joie"] })]);
+      for (let k = 0; k < 3; k++) {
+        const x = k % 2 ? 560 : 700;
+        const r = p.animate([{ left: p.style.left }, { left: `${px(x)}%` }], { duration: RM ? 0 : 700, easing: "ease-out", fill: "forwards" });
+        await Promise.all([k % 2 ? moi.bond(1) : lui.bond(1), r.finished.catch(() => {})]);
+        encore(t);
+        p.style.left = `${px(x)}%`;
+        r.cancel();
+        await attendre(300);
+      }
+      await Promise.all([moi.aller(530, "sol", { fin: "couche" }), lui.aller(775, "sol", { fin: "couche" })]);
+      moi.sens(1);
+      lui.sens(-1);
+      moi.effet("♥", "coeur");
+      lui.effet("♥", "coeur");
+    },
+  },
+  {
+    id: "chez-sam",
+    nom: "Chez Sam",
+    async jouer() {
+      monter("sam", ["sam"]);
+      const a = autre();
+      const lui = new Bete(a.espece, a.nom).poser(612, "canape", { dir: -1 });
+      raconter(`Chez Sam, c’est ${a.nom} qui accueille`, `Et ${choix.nom} vient avec toi. Ils se retrouvent, puis ${choix.nom} se pose sur tes genoux.`);
+      await attendre(800);
+      figs.moi.classList.remove("absent");
+      figs.moi.classList.add("arrive");
+      const moi = new Bete(choix.espece, choix.nom).poser(470, "table", { dir: 1 });
+      moi.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RM ? 0 : 500 });
+      lui.pose("assis", "alerte");
+      lui.effet("!", "alerte");
+      await attendre(700);
+      await moi.aller(570, "table", { fin: "assis", etatsFin: ["renifle"] });
+      moi.sens(1);
+      lui.pose("assis", "renifle");
+      await attendre(1300);
+      moi.effet("♥", "coeur");
+      lui.effet("♥", "coeur");
+      lui.pose("assis", "joie");
+      await attendre(1200);
+      await moi.aller(Number(figs.moi.dataset.x) + 4, "genoux", { saut: true, fin: "couche" });
+      if (moi.espece === "chat") moi.el.classList.add("ronron");
+      await lui.aller(372, "canape", { fin: "couche", etatsFin: ["dort"] });
+      lui.sens(-1);
+    },
+  },
+  {
+    id: "en-vrai",
+    nom: "En vrai",
+    async jouer() {
+      monter("toi", ["moi", "sam"]);
+      const a = autre();
+      new Bete(choix.espece, choix.nom).poser(Number(figs.moi.dataset.x) + 4, "genoux", { pose: "couche", etats: choix.espece === "chat" ? ["ronron"] : ["dort"] });
+      new Bete(a.espece, a.nom).poser(820, "sol", { pose: "couche", etats: ["dort"], dir: -1 });
+      raconter("Ce que ce serait, en vrai", "Ce qui est décidé, et ce que la maquette montre :", {
+        rejouer: false,
+        plus: `<ul class="regles">
+          <li><b>Offert à tous</b>, choisi en créant son univers, avec un nom ; on le change quand on veut, ou on n’en prend pas.</li>
+          <li><b>Chez toi, c’est le tien qui accueille.</b> L’invité vient avec le sien : ils se reniflent, jouent, dorment côte à côte.</li>
+          <li><b>Il vit avec la conversation</b> : un message, il dresse les oreilles ; un fou rire, il saute ; une minute de calme, il vient sur tes genoux.</li>
+          <li><b>Rare plutôt que constant</b> : un geste toutes les 15 à 30 secondes, pas plus.</li>
+          <li><b>Jamais de corvée</b> : ni faim, ni tristesse si tu ne viens pas.</li>
+          <li><b>Le son</b> : un vrai ronronnement enregistré, coupé au départ.</li>
+          <li><b>Pour commencer</b> : trois compagnons (chat, chien, perroquet), en figurines animées comme les vôtres ; ceux de la maquette sont dessinés.</li>
+        </ul>`,
+      });
+    },
+  },
+];
+
+// ─── la barre des moments ───
+const barre = document.getElementById("moments");
+let courant = 0;
+MOMENTS.forEach((m, i) => {
+  const b = Object.assign(document.createElement("button"), { type: "button", textContent: m.nom });
+  b.addEventListener("click", () => aller(i));
+  barre.append(b);
+});
+document.getElementById("avatar").src = IMG(FIG.sam);
+function aller(i) {
+  tour++;
+  courant = i;
+  [...barre.children].forEach((b, k) => b.classList.toggle("on", k === i));
+  barre.children[i].scrollIntoView({ inline: "center", block: "nearest", behavior: RM ? "auto" : "smooth" });
+  try {
+    if (location.hash !== `#${MOMENTS[i].id}`) history.replaceState(null, "", `#${MOMENTS[i].id}`);
+  } catch {}
+  MOMENTS[i].jouer().catch((e) => {
+    if (!(e instanceof Arret)) console.error(e);
+  });
+}
+const depart = MOMENTS.findIndex((m) => `#${m.id}` === location.hash);
+aller(depart >= 0 ? depart : 0);
+addEventListener("hashchange", () => {
+  const k = MOMENTS.findIndex((m) => `#${m.id}` === location.hash);
+  if (k >= 0 && k !== courant) aller(k);
+});
+</script>
