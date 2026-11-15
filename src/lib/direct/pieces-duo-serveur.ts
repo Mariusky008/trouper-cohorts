@@ -17,15 +17,28 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { analyseConfiguree, regarderImage } from "./dressing-serveur";
 import { depotDans, signer } from "./ma-figurine-serveur";
-import { STYLE_FILM_CHALEUREUX } from "./monde-consignes";
 import { demanderUneImage } from "./moteur-images-serveur";
-import { PIECES_DUO, emplacementsValides, pieceDuoDe, type EmplacementsDuo, type EtatPiecesDuo, type PieceDuo, type PieceDuoVue } from "./pieces-duo";
+import {
+  MOMENTS_DUO,
+  PIECES_DUO,
+  alertesEmplacements,
+  emplacementsValides,
+  lumieresAFaire,
+  pieceDuoDe,
+  type EmplacementsDuo,
+  type EtatPiecesDuo,
+  type MomentDuo,
+  type PieceDuo,
+  type PieceDuoVue,
+} from "./pieces-duo";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const cle = () => s(process.env.OPENAI_PERSO_API_KEY) || s(process.env.OPENAI_API_KEY);
 const base = () => s(process.env.OPENAI_PERSO_BASE_URL) || s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
 const dossier = (p: PieceDuo) => `pieces-duo/${p}`;
+/** (une autre lumière de la pièce, à côté de son image première) */
+const nomLumiere = (m: MomentDuo) => `lumiere-${m}.png`;
 const VERROU = "verrou.json";
 const DUREE_VERROU = 3 * 60_000;
 const json = (b: Buffer | null) => {
@@ -36,26 +49,49 @@ const json = (b: Buffer | null) => {
   }
 };
 
+/**
+ * Le style des univers, SANS sa lumière dorée imposée (`STYLE_FILM_CHALEUREUX` dit « golden practical lights » : les
+ * cinq premières pièces étaient toutes au même coucher de soleil doré) — la lumière et les couleurs sont celles de chaque
+ * pièce.
+ */
+export const STYLE_PIECES_DUO =
+  "a set from a high-end 3D animated feature film: a lived-in, cosy place full of charm, a cinematic composition with depth and layers, detailed materials and textures — no magic, just charm.";
+const momentDe = (m: MomentDuo) => MOMENTS_DUO.find((x) => x.cle === m)!;
+
 /** La pièce : le décor de la conversation d'un duo, sans personne, avec les mêmes emplacements que les autres. */
 export function consignePieceDuo(p: PieceDuo): string {
   const x = pieceDuoDe(p);
   return [
     `Create ${x.lieu}, as the place where two small collectible figurines (about 15 cm tall) meet and talk — a vertical portrait image.`,
     "",
-    `STYLE: ${STYLE_FILM_CHALEUREUX}`,
+    `STYLE: ${STYLE_PIECES_DUO}`,
     "",
-    "THE SAME SET OF OBJECTS IS IN EVERY ROOM — each one clearly visible, not hidden, not cut by the edge of the image, easy to recognize on a phone screen:",
-    `1. ${x.tele}: its screen switched off (plain dark glass), facing the viewer as much as possible, about one fifth of the image width.`,
-    "2. A record player (a turntable) with a few vinyl records beside it.",
-    "3. Two or three EMPTY picture frames on a wall: blank light paper inside, no picture, facing the viewer.",
-    "4. A wall shelf with a few small objects and some visible empty space on it.",
+    `THIS ROOM'S OWN IDENTITY (it must not look like a generic golden room): ${x.signature}.`,
+    `THE LIGHT: ${momentDe(x.moment).lumiere}.`,
+    "",
+    "THE SAME OBJECTS ARE IN EVERY ROOM. Spread them around the room, each one on its own, with bare wall or space around it: no object overlaps, touches or hides another one. Each one is clearly visible, facing the viewer, not cut by the edge of the image, big enough to be tapped on a phone:",
+    `1. ${x.tele}: its screen switched off (plain dark glass), about one quarter of the image width, on one side of the room.`,
+    "2. A record player (a turntable) on a low cabinet or a side table, on the OTHER side of the room from the TV, with a few vinyl records beside it, about one fifth of the image width.",
+    "3. Two EMPTY picture frames hung on the wall above or behind the seats: a plain light mat inside, no picture, no drawing, each about one eighth of the image width.",
+    "4. One wall shelf, completely EMPTY (nothing at all on it), about one third of the image width, near the window — the duo's keepsakes will be placed on it later.",
     `5. ${x.vue}.`,
-    `6. In the lower middle, in sharp focus: ${x.places}. Leave the seats empty — two small figurines will sit there later.`,
+    `6. In the lower half of the image, in sharp focus: ${x.places}. The two seats are close to each other (about one third of the image width apart), each about one quarter of the image width, so that two figurines sitting there face each other and can be framed together. Leave the seats empty — two small figurines will sit there later.`,
     `7. ${x.chat}, empty.`,
     "",
-    "COMPOSITION: the camera is at the figurines' eye level, looking into the place; the main light comes from the left; warm, inviting, lived-in.",
+    "COMPOSITION: the camera is at the figurines' eye level, looking into the room; the main light comes from the left.",
     "",
     "NO figurine, no person, no character, no animal, no text, no logo, no brand, nothing alcoholic.",
+  ].join("\n");
+}
+
+/** 🌤️ Une autre lumière : la même pièce (l'image première), à un autre moment de la journée. */
+export function consigneLumiereDuo(p: PieceDuo, m: MomentDuo): string {
+  return [
+    "IMAGE 1 is a room where two small collectible figurines will meet and talk. Make EXACTLY THE SAME ROOM: the same camera, the same composition, every object at exactly the same place and size, the same style, colours and materials, the same weather.",
+    `Change ONLY the time of day and its light: ${momentDe(m).lumiere}. The window shows the same view at that time of day; the lamps are on or off accordingly.`,
+    "Keep the TV screen switched off (plain dark glass), the picture frames empty, the shelf empty, the seats and the cat's place empty.",
+    "NO figurine, no person, no character, no animal, no text, no logo, no brand, nothing alcoholic.",
+    `(The room: ${pieceDuoDe(p).lieu}.)`,
   ].join("\n");
 }
 
@@ -67,7 +103,7 @@ export function questionEmplacements(): string {
     '{"tele": the box of the TV SCREEN only,',
     ' "platine": the box of the record player,',
     ' "cadres": [the box of the blank inside of each empty picture frame],',
-    ' "etagere": the box of the wall shelf,',
+    ' "etagere": the box of the empty wall shelf,',
     ' "fenetre": the box of the window or open view,',
     ' "places": [{"x", "y", "hauteur"}, {"x", "y", "hauteur"}] — the two seats: x and y are the point on each seat where a small seated figurine touches it; "hauteur" is how tall that seated figurine should look there, as a fraction of the image height,',
     ' "chat": {"x", "y"} — the point on the cushion or basket where a cat would lie}',
@@ -82,13 +118,20 @@ export async function etatPiecesDuo(supabase: Supabase): Promise<EtatPiecesDuo> 
       const d = depotDans(supabase, dossier(p.cle));
       const noms = await d.lister().catch(() => [] as string[]);
       const releve = noms.includes("releve.json") ? json(await d.lire("releve.json").catch(() => null)) : null;
+      const emplacements = releve && releve.emplacements ? emplacementsValides(releve.emplacements) : null;
+      const lumieres: Partial<Record<MomentDuo, string>> = {};
+      for (const m of lumieresAFaire(p.cle)) if (noms.includes(nomLumiere(m))) lumieres[m] = await signer(supabase, `${dossier(p.cle)}/${nomLumiere(m)}`);
       return {
         cle: p.cle,
         nom: p.nom,
         pour: p.pour,
         emoji: p.emoji,
+        moment: p.moment,
+        lumieres,
+        alertes: emplacements ? alertesEmplacements(emplacements) : [],
         ...(noms.includes("decor.png") ? { decor: await signer(supabase, `${dossier(p.cle)}/decor.png`) } : {}),
-        ...(releve && releve.emplacements ? { emplacements: emplacementsValides(releve.emplacements) } : {}),
+        ...(emplacements ? { emplacements } : {}),
+        ...(releve && releve.ajuste === true ? { ajuste: true } : {}),
         ...(releve && s(releve.erreur) ? { releveRate: s(releve.erreur) } : {}),
       };
     }),
@@ -112,10 +155,12 @@ export async function rendre(d: ReturnType<typeof depotDans>, qui: string) {
  * 🛠️ Un passage : la pièce si elle n'est pas faite, sinon son relevé. `fait` : ce qui vient d'être fait. Sans modèle qui
  * voit, le relevé est noté comme raté (la pièce reste, on la juge à l'œil).
  */
-export async function fabriquerPieceDuo(supabase: Supabase, p: PieceDuo, avant: number): Promise<{ fait?: "piece" | "releve"; erreur?: string }> {
+export async function fabriquerPieceDuo(supabase: Supabase, p: PieceDuo, avant: number): Promise<{ fait?: "piece" | "releve" | "lumiere"; moment?: MomentDuo; erreur?: string }> {
   const d = depotDans(supabase, dossier(p));
   const noms = await d.lister().catch(() => [] as string[]);
-  if (noms.includes("decor.png") && noms.includes("releve.json")) return {};
+  // (les pièces refaites : après le relevé, ses deux autres lumières, une par passage)
+  const lumiere = lumieresAFaire(p).find((m) => !noms.includes(nomLumiere(m)));
+  if (noms.includes("decor.png") && noms.includes("releve.json") && !lumiere) return {};
   const qui = await prendre(d);
   if (!qui) return { erreur: "Un passage est déjà en train sur cette pièce : patiente une minute." };
   try {
@@ -128,6 +173,13 @@ export async function fabriquerPieceDuo(supabase: Supabase, p: PieceDuo, avant: 
     }
     const png = await d.lire("decor.png");
     if (!png) return { erreur: "La pièce n’a pas pu être relue." };
+    if (noms.includes("releve.json") && lumiere) {
+      if (!cle()) return { erreur: "Le moteur d’image n’est pas branché ici." };
+      const r = await demanderUneImage({ images: [png], consigne: consigneLumiereDuo(p, lumiere), transparent: false, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high", taille: "1024x1536" });
+      if ("erreur" in r) return { erreur: r.erreur };
+      await d.ecrire(nomLumiere(lumiere), await sharp(r.png).png().toBuffer(), "image/png");
+      return { fait: "lumiere", moment: lumiere };
+    }
     const petite = await sharp(png).resize({ width: 768 }).jpeg({ quality: 85 }).toBuffer();
     const vu = await regarderImage({ type: "image/jpeg", donnees: petite.toString("base64") }, questionEmplacements());
     const releve: { le: string; emplacements?: EmplacementsDuo; erreur?: string } =
@@ -139,8 +191,22 @@ export async function fabriquerPieceDuo(supabase: Supabase, p: PieceDuo, avant: 
   }
 }
 
-/** Refaire une pièce (`releve` : son relevé seul ; sinon la pièce et son relevé). */
-export async function refairePieceDuo(supabase: Supabase, p: PieceDuo, quoi: "piece" | "releve" = "piece"): Promise<void> {
+/** Refaire une pièce (`releve` : son relevé seul ; `lumieres` : ses deux autres lumières ; sinon tout). */
+export async function refairePieceDuo(supabase: Supabase, p: PieceDuo, quoi: "piece" | "releve" | "lumieres" = "piece"): Promise<void> {
   const d = depotDans(supabase, dossier(p));
-  for (const n of quoi === "releve" ? ["releve.json"] : ["decor.png", "releve.json"]) await d.effacer(n).catch(() => undefined);
+  const lumieres = lumieresAFaire(p).map(nomLumiere);
+  for (const n of quoi === "releve" ? ["releve.json"] : quoi === "lumieres" ? lumieres : ["decor.png", "releve.json", ...lumieres]) await d.effacer(n).catch(() => undefined);
+}
+
+/**
+ * ✋ LES ZONES POSÉES À LA MAIN (sur la page d'essais) : pour cinq images faites une fois, plus sûr que le modèle qui
+ * voit. Elles remplacent le relevé (`ajuste: true`) ; ce qui ne tient pas debout est écarté.
+ */
+export async function ajusterPieceDuo(supabase: Supabase, p: PieceDuo, x: unknown): Promise<{ erreur?: string }> {
+  const d = depotDans(supabase, dossier(p));
+  if (!(await d.lister().catch(() => [] as string[])).includes("decor.png")) return { erreur: "La pièce n’est pas encore faite." };
+  const emplacements = emplacementsValides(x);
+  if (!emplacements.tele && !emplacements.platine && !emplacements.cadres.length && !emplacements.etagere && !emplacements.places.length) return { erreur: "Aucune zone ne tient debout." };
+  await d.ecrire("releve.json", Buffer.from(JSON.stringify({ le: new Date().toISOString(), emplacements, ajuste: true })), "application/json");
+  return {};
 }

@@ -12,59 +12,78 @@
  * Ce fichier est partagé (l'écran et le serveur).
  */
 
+/**
+ * LES CINQ PIÈCES, REFAITES (15 novembre 2026, l'avis de la session de l'univers sur les premières, accepté par le
+ * propriétaire : « je suis d'accord avec tout ») : elles se ressemblaient trop (le même coucher de soleil doré, le même
+ * bois, le même pan de mur) — chacune a maintenant SA signature (`signature` : ses couleurs, ses matières, son moment) ;
+ * les objets étaient entassés et petits — ils sont répartis, chacun à part, assez grands pour le doigt et pour le zoom ;
+ * l'étagère et les cadres étaient pleins — ils sont vides ; les deux places sont proches, tournées l'une vers l'autre (la
+ * caméra pourra les cadrer ensemble) ; la chambre : deux fauteuils devant la baie, plus le bord du lit ; la terrasse :
+ * une véranda, une carafe de citronnade.
+ */
 export const PIECES_DUO = [
   {
     cle: "salon",
     nom: "Le salon",
     pour: "entre amis",
     emoji: "🛋️",
-    lieu: "a cosy living room",
-    places: "a deep sofa and an armchair, slightly turned toward each other, on a soft rug",
-    vue: "a large window with a view on the roofs of a small city at golden hour",
-    chat: "a round cat basket with a cushion on the floor, near the sofa",
-    tele: "a flat TV on the wall or on a low TV cabinet",
+    moment: "soir",
+    lieu: "a cosy living room in the evening",
+    signature: "deep teal-blue walls, mustard-yellow and cream fabrics, dark wood and brass, a small fireplace with a gentle fire, warm table lamps",
+    places: "a sofa and an armchair, close together and turned three-quarters toward each other, a small round coffee table between them",
+    vue: "a tall window on the roofs of a city, with a few lit windows",
+    chat: "a round cat basket with a cushion on the rug, near the fireplace",
+    tele: "a flat TV on its own piece of wall",
   },
   {
     cle: "cuisine",
     nom: "La cuisine",
     pour: "en famille",
     emoji: "🍳",
-    lieu: "a warm family kitchen",
-    places: "a wooden table with two chairs facing each other",
-    vue: "a window above the sink with a view on a green garden",
-    chat: "a cushion for a cat on a bench or near the radiator",
-    tele: "a small flat TV on the wall above the counter",
+    moment: "matin",
+    lieu: "a bright family kitchen in the morning",
+    signature: "white zellige tiles, sunny yellow and sage-green cupboards, light oak, a bowl of lemons, morning sun streaming in",
+    places: "a small round wooden table with two chairs close together, turned three-quarters toward each other",
+    vue: "a window above the sink on a sunny vegetable garden",
+    chat: "a cushion for a cat on a little wooden bench",
+    tele: "a small flat TV on the wall",
   },
   {
     cle: "terrasse",
     nom: "La terrasse",
-    pour: "pour un verre au soleil (sans alcool)",
+    pour: "pour une citronnade au soleil",
     emoji: "🌇",
-    lieu: "a covered terrace under a wooden pergola with string lights, against the wall of a house",
-    places: "two comfortable outdoor armchairs facing each other, with a small low table holding two glasses of lemonade",
-    vue: "beyond the railing, an open view on hills and a village at sunset",
-    chat: "a cushion for a cat on a wooden bench",
-    tele: "a flat TV mounted on the house wall, sheltered under the pergola",
+    moment: "matin",
+    lieu: "a covered veranda terrace in full daylight: a solid roof and the white back wall of a house, wide open on the view",
+    signature: "whitewashed walls, blue and white, terracotta tiles, an olive tree in a big pot, bougainvillea",
+    places: "two outdoor armchairs close together, turned three-quarters toward each other; between them, a small low table with a glass carafe of lemonade with lemon slices and two glasses of lemonade",
+    vue: "a bright blue sky over the sea and a white village",
+    chat: "a cushion for a cat on a low stone bench",
+    tele: "a flat TV on the back wall, sheltered under the roof",
   },
   {
     cle: "chambre",
     nom: "La chambre vue mer",
     pour: "en amoureux",
     emoji: "🌊",
-    lieu: "a cosy, softly lit bedroom (tender and peaceful, nothing suggestive)",
-    places: "a large bed with soft linen and cushions, where two small characters can sit side by side on its edge, facing us",
+    moment: "soir",
+    lieu: "a peaceful bedroom by the sea (tender and calm, nothing suggestive)",
+    signature: "linen white, soft blue and sand colours, light wood, sheer curtains; the bed neatly made, on one side of the room, only partly visible",
+    places: "two small armchairs in front of the large bay window, close together and turned three-quarters toward each other, a little round side table between them",
     vue: "a large bay window with a wide view on the sea",
-    chat: "a round cat basket at the foot of the bed",
-    tele: "a flat TV on a side wall, turned toward the bed and toward us",
+    chat: "a round cat basket on the rug, at the foot of the bed",
+    tele: "a flat TV on a side wall, its screen visible to us",
   },
   {
     cle: "cafe",
     nom: "Le café",
     pour: "pour un café, entre copains",
     emoji: "☕",
-    lieu: "a charming small café corner",
-    places: "a booth bench and a chair around a small round table holding two cups of coffee",
-    vue: "a big window on a lively street",
+    moment: "matin",
+    lieu: "a small neighbourhood café on a rainy morning, a cosy refuge from the rain",
+    signature: "cream walls, bottle-green tiles and green leather, brass and marble, raindrops running down the big window",
+    places: "the end of a booth bench and a bistro chair, close together around a small round marble table holding two cups of coffee, turned three-quarters toward each other",
+    vue: "a big window on a rainy street, raindrops on the glass, umbrellas passing by",
     chat: "a cushion for a cat on the window seat",
     tele: "a flat TV on the wall",
   },
@@ -72,6 +91,24 @@ export const PIECES_DUO = [
 export type PieceDuo = (typeof PIECES_DUO)[number]["cle"];
 export const pieceDuoValide = (x: unknown): x is PieceDuo => PIECES_DUO.some((p) => p.cle === x);
 export const pieceDuoDe = (x: PieceDuo) => PIECES_DUO.find((p) => p.cle === x)!;
+
+/**
+ * 🌤️ LES TROIS LUMIÈRES : chaque pièce existe au matin, au soir et la nuit (la même pièce, les mêmes emplacements ; la
+ * lumière seule change), faites une fois. Son moment à elle (`moment`) est son image première (`decor.png`) ; les deux
+ * autres en sont des retouches (`lumiere-<moment>.png`). La conversation prendra celle de l'heure (`momentDuoDe`) : la
+ * variation de l'heure, sans rien générer par personne.
+ */
+export const MOMENTS_DUO = [
+  { cle: "matin", nom: "Matin", emoji: "🌤️", lumiere: "daytime: clear natural daylight through the window, a bright sky outside, the lamps switched off" },
+  { cle: "soir", nom: "Soir", emoji: "🌇", lumiere: "early evening, just after sunset: a deep blue and pink sky outside, the warm lamps of the room just switched on" },
+  { cle: "nuit", nom: "Nuit", emoji: "🌙", lumiere: "night: dark outside (a night sky, a few stars or lit windows far away), the room lit only by its own warm lamps, cosy pools of light and soft shadows" },
+] as const;
+export type MomentDuo = (typeof MOMENTS_DUO)[number]["cle"];
+export const momentDuoValide = (x: unknown): x is MomentDuo => MOMENTS_DUO.some((m) => m.cle === x);
+/** Le moment d'une heure (de 0 à 23, à l'heure de Paris) : le matin de 7 h à 17 h, le soir jusqu'à 21 h, puis la nuit. */
+export const momentDuoDe = (heure: number): MomentDuo => (heure >= 7 && heure < 17 ? "matin" : heure >= 17 && heure < 21 ? "soir" : "nuit");
+/** Les deux moments à faire en retouche (ceux qui ne sont pas le sien). */
+export const lumieresAFaire = (p: PieceDuo): MomentDuo[] => MOMENTS_DUO.map((m) => m.cle).filter((m) => m !== pieceDuoDe(p).moment);
 
 /** Une zone sur l'image : x, y, largeur, hauteur, de 0 à 1. */
 export type Zone = [number, number, number, number];
@@ -139,8 +176,57 @@ export function emplacementsValides(o: unknown): EmplacementsDuo {
   };
 }
 
+/** Assez grand pour le doigt et pour le zoom : au moins 9 % de la largeur de l'image, et 5 % de sa hauteur. */
+export const ZONE_MIN = { largeur: 0.09, hauteur: 0.05 } as const;
+/**
+ * ⚠️ CE QUI GÊNERAIT LE DOIGT : deux objets qui se chevauchent (on toucherait le cadre au lieu de la platine), un objet
+ * trop petit (zoomé, un timbre-poste), deux places trop loin l'une de l'autre (la caméra ne les cadrerait pas ensemble).
+ * La fenêtre n'y est pas (l'étagère peut être sous elle).
+ */
+export function alertesEmplacements(e: EmplacementsDuo): string[] {
+  // (son nom, sa zone, féminin ?, sa hauteur compte ? — une étagère est fine : seule sa largeur compte)
+  type Objet = [string, Zone, boolean, boolean];
+  const objets: Objet[] = [
+    ...(e.tele ? [["la télé", e.tele, true, true] as Objet] : []),
+    ...(e.platine ? [["la platine", e.platine, true, true] as Objet] : []),
+    ...e.cadres.map((z, k) => [e.cadres.length > 1 ? `le cadre ${k + 1}` : "le cadre", z, false, true] as Objet),
+    ...(e.etagere ? [["l’étagère", e.etagere, true, false] as Objet] : []),
+  ];
+  const dit: string[] = [];
+  const pct = (x: number) => `${Math.round(x * 100)} %`;
+  for (let i = 0; i < objets.length; i++)
+    for (let j = i + 1; j < objets.length; j++) {
+      const [a, za] = objets[i];
+      const [b, zb] = objets[j];
+      const l = Math.min(za[0] + za[2], zb[0] + zb[2]) - Math.max(za[0], zb[0]);
+      const h = Math.min(za[1] + za[3], zb[1] + zb[3]) - Math.max(za[1], zb[1]);
+      // (un recouvrement de plus d'un dixième de la plus petite des deux)
+      if (l > 0 && h > 0 && l * h > 0.1 * Math.min(za[2] * za[3], zb[2] * zb[3])) dit.push(`${a} et ${b} se chevauchent`);
+    }
+  for (const [n, z, f, hauteur] of objets) {
+    const petit = `${n} est ${f ? "petite" : "petit"}`;
+    if (z[2] < ZONE_MIN.largeur) dit.push(`${petit} (${pct(z[2])} de la largeur)`);
+    else if (hauteur && z[3] < ZONE_MIN.hauteur) dit.push(`${petit} (${pct(z[3])} de la hauteur)`);
+  }
+  if (e.places.length === 2 && Math.abs(e.places[0].x - e.places[1].x) > 0.5) dit.push(`les deux places sont loin l’une de l’autre (${pct(Math.abs(e.places[0].x - e.places[1].x))} de la largeur)`);
+  return dit.map((x) => x.charAt(0).toUpperCase() + x.slice(1));
+}
+
 /** Ce que la page d'essais montre de chaque pièce. */
-export type PieceDuoVue = { cle: PieceDuo; nom: string; pour: string; emoji: string; decor?: string; emplacements?: EmplacementsDuo; releveRate?: string };
+export type PieceDuoVue = {
+  cle: PieceDuo;
+  nom: string;
+  pour: string;
+  emoji: string;
+  decor?: string;
+  emplacements?: EmplacementsDuo;
+  releveRate?: string;
+  /** (les pièces refaites) son moment à elle, ses deux autres lumières faites, ses zones posées à la main, ses alertes */
+  moment: MomentDuo;
+  lumieres: Partial<Record<MomentDuo, string>>;
+  ajuste?: boolean;
+  alertes: string[];
+};
 export type EtatPiecesDuo = { pieces: PieceDuoVue[]; moteurs: { image: boolean; regard: boolean } };
 
 /** 💶 Le coût, environ (novembre 2026) : une pièce en haute qualité ; le relevé, quelques millièmes. */
