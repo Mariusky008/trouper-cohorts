@@ -71,7 +71,12 @@ Une `date` a une sorte, qui décide de la suite :
 |---|---|---|---|
 | `epreuve` | Un examen, un permis, un entretien, un match, un concours | Le matin du jour J | « 🏆 » en haut si c'est réussi ; rien, sans bruit, sinon |
 | `fete` | Un anniversaire, une fête | 3 jours avant, puis le matin du jour J | Revient chaque année |
-| `evenement` | Un concert, un départ en voyage, un déménagement | Le matin du jour J, et le lendemain (« Alors, ce concert ? ») | S'en va de l'étagère |
+| `evenement` | Un concert, un départ en voyage, un déménagement — **ou un rendez-vous qu'ils se donnent pour un jour précis** (« Demain on a foot en salle », « Samedi on se fait un ciné ») | Le matin du jour J, et le lendemain (« Alors, ce concert ? ») | S'en va de l'étagère |
+
+> **Ajouté le 15 novembre 2026**, après ce mot du propriétaire : « j'ai bien dit que demain on avait un rendez-vous
+> (foot) mais ma figurine ne m'a pas demandé de le ranger sur mes étagères ». Un rendez-vous pour un jour précis se
+> note toujours, même ordinaire ; comme tout le reste depuis le lot E5, la figurine demande « Je le range ? » avant.
+> Les messages écrits se lisent comme les vocaux (lot M1).
 
 ### 3.2 Ce qu'elles ne notent jamais
 
