@@ -17,11 +17,12 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { TeleDuo } from "@/app/univers/tele-duo";
-import { MOMENTS_DUO, zoneDesPlaces, type EtatPieceVivante, type MomentDuo, type PieceDuo, type PieceDuoVue, type Zone } from "@/lib/direct/pieces-duo";
+import { COUT_PIECE_DUO, MOMENTS_DUO, zoneDesPlaces, type EtatPieceVivante, type MomentDuo, type PieceDuo, type PieceDuoVue, type Zone } from "@/lib/direct/pieces-duo";
 import { CLIPS_DU_PROPRIETAIRE, programmeDuLien, secoursDuJour, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 
 const ROUTE = "/api/admin/direct/piece-vivante";
 const TELE = "/api/admin/direct/tele";
+const PIECES = "/api/admin/direct/pieces-duo";
 type Objet = "tele" | "platine" | "cadre" | "etagere" | "fenetre" | "chat";
 type Plan = { type: "piece" } | { type: "places" } | { type: "objet"; objet: Objet };
 
@@ -46,6 +47,10 @@ const PAROLES = [
   { qui: "moi", texte: "Invite-moi, j’arrive 😄" },
 ];
 const pc = (x: number) => `${(x * 100).toFixed(3)}%`;
+const DE_LA: Record<MomentDuo, string> = { matin: "du matin", soir: "du soir", nuit: "de la nuit" };
+const euros = (x: number) => `${x.toFixed(2).replace(".", ",")} €`;
+const patienter = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+type Reponse = { etat?: EtatPieceVivante; fait?: string; error?: string };
 
 /** La caméra pour une zone (agrandie de `marge`) : son échelle et son décalage, en fractions de la scène. */
 function camera(z: Zone | null, marge = 1): { s: number; tx: number; ty: number } {
@@ -84,10 +89,17 @@ export function MaquetteDuo() {
   const [invitation, setInvitation] = useState<PieceDuo | null>(null);
   const [envoi, setEnvoi] = useState<{ piece: PieceDuo; accepte: boolean } | null>(null);
   const [aide, setAide] = useState(false);
-  const [installe, setInstalle] = useState("");
+  const [voirObjets, setVoirObjets] = useState(false);
+  // (les images du duo : celle qu'on fabrique, celles qui ont raté — « pièce-lumière » → ce qui a raté)
+  const [fabrique, setFabrique] = useState("");
+  const [rates, setRates] = useState<Record<string, string>>({});
+  const [relance, setRelance] = useState(0);
+  // (une lumière pas encore faite, touchée ; ses lumières en train de se faire ; ce qui a raté)
+  const [manque, setManque] = useState<MomentDuo | null>(null);
+  const [lumieres, setLumieres] = useState<"" | "en-cours" | string>("");
   const vus = useRef<Partial<Record<PieceDuo, { lien: string; photo: string }>>>({});
   const touche = useRef(false);
-  const enCours = useRef<string>("");
+  const occupe = useRef(false);
 
   const recevoir = useCallback((e: EtatPieceVivante) => {
     setEtat(e);
@@ -108,11 +120,24 @@ export function MaquetteDuo() {
 
   const p = etat?.pieces.find((x) => x.cle === piece);
   // (la lumière de l'heure ; celle de la pièce si celle-ci n'est pas faite)
-  const m: MomentDuo = moment && lumiereDe(p, moment) ? moment : (p?.moment ?? "matin");
+  const momentDans = (q: PieceDuoVue): MomentDuo => (moment && lumiereDe(q, moment) ? moment : q.moment);
+  const m: MomentDuo = p ? momentDans(p) : "matin";
   const fond = lumiereDe(p, m);
-  const duo = etat?.duo?.duos[`${piece}-${m}`] ?? "";
+  const ici = `${piece}-${m}`;
+  const duo = etat?.duo?.duos[ici] ?? "";
   const autre = etat?.duo?.b.nom ?? "ton proche";
   const faites = etat?.pieces.filter((x) => x.decor) ?? [];
+  // 🪑 LES IMAGES DU DUO À FAIRE, une à la fois : la pièce où l'on est d'abord, puis les autres pièces (dans la lumière où
+  // on les verrait) — changer de pièce est alors immédiat ; une minute environ par image
+  let prochain = "";
+  if (etat?.duo)
+    for (const q of [...(p ? [p] : []), ...faites.filter((x) => x.cle !== piece)]) {
+      const k = `${q.cle}-${momentDans(q)}`;
+      if (lumiereDe(q, momentDans(q)) && !etat.duo.duos[k] && !rates[k]) {
+        prochain = k;
+        break;
+      }
+    }
   // 📺 ce que passe la télé : le lien collé, sinon le clip de secours du jour (le même pour les deux ce jour-là)
   const programme: ProgrammeTele = useMemo(() => {
     const l = lien ? programmeDuLien(lien) : null;
@@ -121,26 +146,34 @@ export function MaquetteDuo() {
     return c ? { sorte: "secours", id: c.id, ...(c.debut ? { debut: c.debut } : {}), ...(c.titre ? { titre: c.titre } : {}) } : { sorte: "eteinte" };
   }, [lien, secours, etat?.duo?.a.id, etat?.duo?.b.id]);
 
-  // ─── l'image du duo, à la première visite de la pièce dans cette lumière ───
+  // ─── l'image du duo, à la première visite d'une pièce dans une lumière (puis les autres pièces, en avance) ───
   useEffect(() => {
-    const cle = `${piece}-${m}`;
-    if (!etat?.duo || !piece || !fond || duo || enCours.current === cle) return;
-    enCours.current = cle;
+    if (!prochain || occupe.current) return;
+    occupe.current = true;
+    const [q, mq] = prochain.split("-");
     void Promise.resolve().then(async () => {
-      setInstalle("Vos figurines s’installent… (une minute)");
-      for (let k = 0; k < 3; k++) {
-        const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "duo", piece, moment: m }) });
-        const j = (await r.json().catch(() => ({}))) as { etat?: EtatPieceVivante; fait?: string; error?: string };
+      setFabrique(prochain);
+      let erreur = "";
+      let fini = false;
+      for (let essai = 0; essai < 12 && !fini && !erreur; essai++) {
+        const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "duo", piece: q, moment: mq }) }).catch(() => null);
+        const j = (r ? await r.json().catch(() => ({})) : {}) as Reponse;
         if (j.etat) setEtat(j.etat);
-        if (j.error) {
-          setInstalle(j.error);
-          return;
+        // (un autre passage tient le verrou — l'essai du collage, une autre page : on attend son tour)
+        if (j.error && /déjà en train/.test(j.error)) await patienter(15_000);
+        else if (j.error) erreur = j.error;
+        else if (!r?.ok) erreur = "La fabrication n’a pas répondu.";
+        else if (!j.fait || j.fait === "duo") {
+          if (j.etat?.duo?.duos[prochain]) fini = true;
+          else erreur = "L’image est faite, mais ne se lit pas.";
         }
-        if (!j.fait || j.fait === "duo") break;
       }
-      setInstalle("");
+      if (!fini) setRates((x) => ({ ...x, [prochain]: erreur || "Le moteur est occupé : réessaie dans une minute." }));
+      setFabrique("");
+      occupe.current = false;
+      setRelance((n) => n + 1);
     });
-  }, [etat?.duo, piece, m, fond, duo]);
+  }, [prochain, relance]);
 
   // ─── l'arrivée : la pièce entière, ce qui a changé, puis la caméra glisse vers les deux places ───
   useEffect(() => {
@@ -191,6 +224,35 @@ export function MaquetteDuo() {
   function entrer(q: PieceDuo) {
     setPiece(q);
     setArrivee((n) => n + 1);
+    setManque(null);
+    setVoirObjets(false);
+  }
+  /** Une lumière : prise si elle est faite ; sinon, on propose de la faire. */
+  function choisirMoment(x: MomentDuo) {
+    if (lumiereDe(p, x)) {
+      setMoment(x);
+      setManque(null);
+    } else setManque(x);
+  }
+  /** 🌤️ Les lumières qui manquent à la pièce (celles de la page des essais, « Faire ce qui manque ») : une par passage. */
+  async function faireLumieres() {
+    if (!p || !manque) return;
+    const [q, voulu] = [p.cle, manque];
+    setLumieres("en-cours");
+    let erreur = "";
+    for (let k = 0; k < 4 && !erreur; k++) {
+      const r = await fetch(PIECES, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "fabriquer", piece: q }) }).catch(() => null);
+      const j = (r ? await r.json().catch(() => ({})) : {}) as { fait?: string; error?: string };
+      if (j.error) erreur = j.error;
+      else if (!r?.ok) erreur = "La fabrication n’a pas répondu.";
+      else if (!j.fait) break;
+    }
+    await charger();
+    setLumieres(erreur);
+    if (!erreur) {
+      setManque(null);
+      setMoment(voulu);
+    }
   }
   function viser(o: Objet) {
     touche.current = true;
@@ -211,9 +273,12 @@ export function MaquetteDuo() {
       </p>
     );
 
-  const places = p.emplacements?.places ?? [];
-  const cam =
-    plan.type === "places" ? camera(zoneDesPlaces(places), 1.04) : plan.type === "objet" ? camera(zoneDe(p, plan.objet), plan.objet === "chat" ? 1 : 1.9) : camera(null);
+  // (les deux places relevées, sinon celles par défaut — comme pour l'image du duo)
+  const places = p.emplacements?.places.length === 2 ? p.emplacements.places : [];
+  const aFaireIci = !duo && etat.duo && fond;
+  // (tant que les figurines s'installent, la pièce entière, sans bulles ; elles arrivées, la caméra glisse vers elles)
+  const auxPlaces = plan.type === "places" && !aFaireIci;
+  const cam = auxPlaces ? camera(zoneDesPlaces(places), 1.04) : plan.type === "objet" ? camera(zoneDe(p, plan.objet), plan.objet === "chat" ? 1 : 1.9) : camera(null);
   const vise = plan.type === "objet" ? plan.objet : null;
   const zTele = zoneDe(p, "tele");
   const zCadre = zoneDe(p, "cadre");
@@ -221,6 +286,26 @@ export function MaquetteDuo() {
   const zPlatine = zoneDe(p, "platine");
   // (la télé se touche elle-même : `TeleDuo`, de loin, appelle `viser`)
   const touchables = (["platine", "cadre", "etagere", "fenetre", "chat"] as Objet[]).filter((o) => zoneDe(p, o));
+  // (les objets dont la zone n'est pas posée sur cette pièce : rien à toucher, on dit où les poser)
+  const sansZone = (Object.keys(OBJETS) as Objet[]).filter((o) => !zoneDe(p, o));
+  const nLumieres = MOMENTS_DUO.filter((x) => !lumiereDe(p, x.cle)).length;
+  const offreLumiere = manque && (
+    <span className="md-manque" role="status">
+      {lumieres === "en-cours" ? (
+        <>
+          {p.emoji} {p.nom} : ses lumières se font… (une à deux minutes)
+        </>
+      ) : (
+        <>
+          {p.nom} n’a pas encore sa lumière {DE_LA[manque]}.
+          <button type="button" onClick={() => void faireLumieres()}>
+            {nLumieres > 1 ? `Faire ses ${nLumieres} lumières` : "La faire"} (≈ {euros(nLumieres * COUT_PIECE_DUO)})
+          </button>
+          {lumieres && <small>{lumieres}</small>}
+        </>
+      )}
+    </span>
+  );
 
   return (
     <div className="md">
@@ -262,10 +347,10 @@ export function MaquetteDuo() {
             </span>
           )}
 
-          {/* la télé : celle de la session de l'univers, posée sur l'écran relevé */}
+          {/* la télé : celle de la session de l'univers, posée sur l'écran relevé (en perspective, par ses quatre coins s'ils sont posés) */}
           {zTele && (
             <span className="md-tele" data-objet="tele">
-              <TeleDuo programme={programme} secours={secours} zone={zTele} proche={vise === "tele"} onToucher={() => viser("tele")} />
+              <TeleDuo programme={programme} secours={secours} zone={zTele} coins={p.emplacements?.teleCoins} proche={vise === "tele"} onToucher={() => viser("tele")} />
             </span>
           )}
           {zTele && (aide || nouveaute?.objet === "tele") && (
@@ -294,9 +379,38 @@ export function MaquetteDuo() {
             ✨ Depuis ta dernière visite : {nouveaute.dit}
           </p>
         )}
-        {installe && <p className="md-installe">{installe}</p>}
+        {/* 🪑 l'image du duo pas encore faite ici : on le dit, au milieu (ou ce qui a raté, et « Réessayer ») */}
+        {aFaireIci && (
+          <div className="md-installe" role="status" data-installe={rates[ici] ? "rate" : fabrique === ici ? "en-cours" : "attend"}>
+            {rates[ici] ? (
+              <>
+                <p>Vos figurines n’ont pas pu s’installer {DANS[p.cle]} : {rates[ici]}</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRates((x) => {
+                      const y = { ...x };
+                      delete y[ici];
+                      return y;
+                    })
+                  }
+                >
+                  Réessayer
+                </button>
+              </>
+            ) : (
+              <>
+                <i aria-hidden="true" />
+                <p>
+                  Vos figurines s’installent {DANS[p.cle]}…
+                  <small>Une minute environ, la première fois seulement.</small>
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
-        {plan.type === "places" && (
+        {auxPlaces && (
           <div className="md-bulles" aria-live="polite">
             {PAROLES
               // (les trois dernières : la pile ne descend pas sur les visages)
@@ -356,13 +470,14 @@ export function MaquetteDuo() {
           {vise === "chat" && <small>Votre compagnon viendra s’y installer.</small>}
           {vise === "fenetre" && (
             <span className="md-moments">
-              {MOMENTS_DUO.filter((x) => lumiereDe(p, x.cle)).map((x) => (
-                <button key={x.cle} type="button" className={m === x.cle ? "elu" : "clair"} onClick={() => setMoment(x.cle)}>
+              {MOMENTS_DUO.map((x) => (
+                <button key={x.cle} type="button" className={m === x.cle ? "elu" : lumiereDe(p, x.cle) ? "clair" : "clair pas-faite"} onClick={() => choisirMoment(x.cle)}>
                   {x.emoji} {x.nom}
                 </button>
               ))}
             </span>
           )}
+          {vise === "fenetre" && offreLumiere}
           <button type="button" className="clair" onClick={() => setPlan({ type: "places" })}>
             ← Revenir
           </button>
@@ -386,7 +501,8 @@ export function MaquetteDuo() {
             className="clair"
             onClick={() => {
               setAide(true);
-              setTimeout(() => setAide(false), 2500);
+              setVoirObjets(true);
+              setTimeout(() => setAide(false), 4000);
             }}
           >
             👆 Les objets
@@ -395,6 +511,23 @@ export function MaquetteDuo() {
             ⚙️ Pour l’essai
           </button>
         </div>
+      )}
+
+      {voirObjets && !vise && (
+        <p className="md-note" role="status">
+          {sansZone.length ? (
+            <>
+              Pas encore de zone {DANS[p.cle]} pour : {sansZone.map((o) => `${OBJETS[o].emoji} ${OBJETS[o].nom.toLowerCase()}`).join(", ")}. Pose-les à la main dans « 🛋️ La pièce du duo » (la page des essais,
+              « ✋ ») : ils s’allumeront ici.
+            </>
+          ) : (
+            <>Tous les objets sont là : touche-les.</>
+          )}
+          {!places.length && <> Tes deux places 🪑 non plus : en attendant, les figurines prennent celles par défaut.</>}
+          <button type="button" className="clair" onClick={() => setVoirObjets(false)} aria-label="Fermer">
+            ✕
+          </button>
+        </p>
       )}
 
       {choixPiece && (
@@ -454,11 +587,12 @@ export function MaquetteDuo() {
           <span>
             L’heure :{" "}
             {MOMENTS_DUO.map((x) => (
-              <button key={x.cle} type="button" className={m === x.cle ? "elu" : "clair"} disabled={!lumiereDe(p, x.cle)} onClick={() => setMoment(x.cle)}>
+              <button key={x.cle} type="button" className={m === x.cle ? "elu" : lumiereDe(p, x.cle) ? "clair" : "clair pas-faite"} onClick={() => choisirMoment(x.cle)} aria-label={x.nom}>
                 {x.emoji}
               </button>
             ))}
           </span>
+          {offreLumiere}
           <button type="button" className="clair" onClick={() => setArrivee((n) => n + 1)}>
             ↻ Rejouer l’arrivée
           </button>
@@ -489,8 +623,16 @@ export function MaquetteDuo() {
 .md-objet.aide{box-shadow:0 0 0 1.5px rgba(255,255,255,.9),0 0 10px rgba(255,255,255,.6);animation:md-pulse 1.2s ease-in-out infinite}
 .md-objet.neuf{box-shadow:0 0 0 2px #ffd36b,0 0 14px #ffd36b;animation:md-pulse 1s ease-in-out infinite}
 @keyframes md-pulse{50%{opacity:.35}}
-.md-neuf,.md-installe{position:absolute;left:12px;right:12px;top:12px;margin:0;pointer-events:none;padding:9px 12px;border-radius:14px;background:rgba(20,14,8,.78);color:#fff;font-size:14px;line-height:1.35;backdrop-filter:blur(6px)}
-.md-installe{top:auto;bottom:12px;font-size:13px}
+.md-neuf{position:absolute;left:12px;right:12px;top:12px;margin:0;pointer-events:none;padding:9px 12px;border-radius:14px;background:rgba(20,14,8,.78);color:#fff;font-size:14px;line-height:1.35;backdrop-filter:blur(6px)}
+.md-installe{position:absolute;left:24px;right:24px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border-radius:18px;background:rgba(20,14,8,.82);color:#fff;text-align:center;backdrop-filter:blur(6px);animation:md-bulle .35s ease}
+.md-installe p{margin:0;font-size:15px;line-height:1.4}
+.md-installe small{display:block;margin-top:4px;color:#d9c3a8;font-size:13px}
+.md-installe i{width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#ff2e9a;animation:md-tourne 1s linear infinite}
+@keyframes md-tourne{to{transform:rotate(360deg)}}
+.md-installe button{padding:9px 14px;border-radius:999px;border:0;background:#ff2e9a;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.md-manque,.md-note{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;font-size:13px;line-height:1.4;color:#f6efe6}
+.md-note{position:relative;padding:10px 40px 10px 12px;border-radius:14px;background:rgba(255,255,255,.06)}
+.md .md-note button{position:absolute;top:6px;right:6px;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#f6efe6;font-size:13px;cursor:pointer}
 .md-bulles{position:absolute;left:10px;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .md-bulle{margin:0;max-width:78%;padding:8px 11px;border-radius:16px;font-size:14px;line-height:1.35;animation:md-bulle .35s ease}
 .md-bulle b{display:block;font-size:11px;opacity:.75}
@@ -506,6 +648,7 @@ export function MaquetteDuo() {
 .md-carte button.clair{background:#fff;color:#c2186f;border:1px solid #ff2e9a}
 .md :where(.md-gestes,.md-objet-dit,.md-panneau,.md-carte,.md-pieces) button.elu{background:#f6efe6;color:#2a1d12}
 .md :where(.md-gestes,.md-objet-dit,.md-panneau,.md-carte,.md-pieces) button:disabled{opacity:.4;cursor:default}
+.md :where(.md-objet-dit,.md-panneau) button.pas-faite{border-style:dashed;opacity:.7}
 .md-objet-dit{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06)}
 .md-objet-dit small,.md-panneau small{color:#d9c3a8;font-size:13px;line-height:1.35}
 .md-panneau{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.06);font-size:14px}

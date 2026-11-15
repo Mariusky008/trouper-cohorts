@@ -218,6 +218,23 @@ Les quatre points, réglés avant de généraliser (`pieces-duo-collage-serveur.
 Sur la page d'essais, la section « 🧩 L'effet collage » montre maintenant la version générée en premier (la posée
 reste dessous, pour comparer), et on y choisit la lumière (🌤️ 🌇 🌙) parmi celles qui sont faites.
 
+**Les têtes coupées, les pieds dans le sol** (le premier essai de la maquette par le propriétaire, la cuisine) : le
+moteur remplissait toute la zone masquée — les têtes touchaient son bord du haut et le fondu du recollage les coupait,
+les pieds touchaient son bord du bas et se fondaient dans le tapis. Ce qui a changé :
+
+- **La zone peinte est beaucoup plus grande** que les figurines (`zoneDuMasque` : de l'air au-dessus des têtes, presque
+  la moitié de leur hauteur ; le sol sous les pieds) ; la caméra garde une zone serrée (`zoneDesPlaces`).
+- **Leur taille est dite au moteur**, en part de la hauteur de l'image (« about 48% of the image height »), entières,
+  loin des bords de la zone, les pieds posés au sol ou juste au-dessus, jamais enfoncés.
+- **La taille vient de la place tracée à la main** : sur la page d'essais, on trace la figurine du haut de la tête
+  jusqu'au siège ; le siège étant aux deux tiers de la figurine, sa hauteur entière est ce tracé divisé par 0,66, et au
+  moins 38 % de l'image (`hauteurDuo`). Les posées du collage prennent la même.
+- **Les objets loin des figurines restent intacts** même dans la grande zone : la télé, la platine, les cadres,
+  l'étagère, la fenêtre, s'ils ne touchent pas les figurines, ne sont ni peints ni recollés (le masque les laisse
+  opaques, le recollage les garde au pixel près).
+- Les images du duo déjà faites ne servent plus (leur nom finit maintenant par `-2`) : elles se refont à la prochaine
+  visite.
+
 ## 11. La télé, prête à brancher (15 novembre 2026)
 
 Le propriétaire à la session de l'univers : « oui, prépare la télé », en morceau autonome que la maquette n'aura qu'à
@@ -277,18 +294,27 @@ la photo du cadre et les souvenirs de l'étagère sont ceux de l'essai (« ⚙�
    l'objet ; sinon rien.
 2. **La conversation** : au bout de deux secondes (trois et demie s'il y avait du neuf), la caméra glisse vers les deux
    places (`zoneDesPlaces`, la même zone que le masque du duo) ; les bulles arrivent une à une (les trois dernières).
-3. **Le zoom** : chaque emplacement relevé est touchable (« 👆 Les objets » les montre) ; la caméra s'en approche. **La
+3. **Le zoom** : chaque emplacement relevé est touchable (« 👆 Les objets » les montre ; ceux dont la zone n'est pas
+   posée sur cette pièce sont nommés, avec où les poser — la page d'essais, « ✋ ») ; la caméra s'en approche. **La
    télé est celle de la section 11** (`TeleDuo`, branchée comme prévu : de loin elle montre ce qui passe, de près « ▶
-   Allumer la télé ») : le lien collé dans « ⚙️ Pour l'essai », sinon le clip de secours du jour (la liste rangée par le
+   Allumer la télé » ; en perspective quand ses quatre coins sont posés, `coins={emplacements.teleCoins}`) : le lien collé dans « ⚙️ Pour l'essai », sinon le clip de secours du jour (la liste rangée par le
    propriétaire, sinon ses cinq premiers) ; le cadre montre la photo choisie ;
    l'étagère, trois souvenirs ; la platine, des notes qui montent ; la fenêtre, le choix de la lumière ; le coin du
    chat, la place du compagnon.
 4. **Changer de pièce** : « 🚪 Changer de pièce » (on invite : « Invitation envoyée… », puis « … arrive sur la terrasse »,
    et on y est), ou une invitation reçue (« Léa t'invite dans la cuisine » — « Venir » / « Pas maintenant »).
 
-**L'image du duo** se fait toute seule à la première visite d'une pièce dans une lumière (« Vos figurines
-s'installent… »), environ 0,17 € ; les deux poses sans fauteuil, une fois pour toutes (`fabriquerDuoVivant`,
-`app/api/admin/direct/piece-vivante`). Le duo est celui choisi dans l'essai du collage.
+**L'image du duo** se fait toute seule à la première visite d'une pièce dans une lumière, environ 0,17 € ; les deux
+poses sans fauteuil, une fois pour toutes (`fabriquerDuoVivant`, `app/api/admin/direct/piece-vivante`). Le duo est celui
+choisi dans l'essai du collage. Pendant ce temps, la pièce entière et, au milieu, « Vos figurines s'installent dans la
+cuisine… — une minute environ, la première fois seulement » ; ce qui rate s'y dit, avec « Réessayer ». Les images se
+font **une à la fois, la pièce où l'on est d'abord, puis les autres pièces faites** (dans la lumière où on les verrait) :
+changer de pièce est alors immédiat (le premier essai du propriétaire : « quand je change de pièce, il n'y a plus les
+figurines » — elles étaient en train de se faire). Un passage déjà en train (l'essai du collage) : on attend son tour.
+
+**Une lumière pas encore faite** (🌇 ou 🌙 dans « L'heure », ou à la fenêtre) n'est plus un bouton éteint : la toucher le
+dit (« La cuisine n'a pas encore sa lumière du soir ») et propose « Faire ses 2 lumières (≈ 0,34 €) » — le même passage
+que « Faire ce qui manque » sur la page d'essais (`/api/admin/direct/pieces-duo`, une lumière par passage).
 
 **Ce qui n'y est pas encore** : la vraie conversation (les vrais messages, les vrais liens : la télé lira alors
 `/api/direct/tele?avec=…`), les autres objets branchés (la platine, les cadres, l'étagère : la session de l'univers,
@@ -296,4 +322,5 @@ une fois la maquette validée), le chat dans son coin.
 
 **Les essais** : `scripts/essai-piece-vivante-route.mjs` (la route : sans duo, le duo, la première visite, une autre
 lumière, les refus) et `scripts/navigateur/piece-du-duo.mjs` (l'arrivée, le glissé, les bulles, la télé — le clip du jour, un lien collé,
-allumée, avec le faux lecteur de l'essai de la télé —, les deux invitations, ce qui a changé, la fenêtre).
+allumée, avec le faux lecteur de l'essai de la télé —, les deux invitations, la cuisine sans zones ni lumières :
+« 👆 Les objets » dit ce qui manque, une lumière pas faite se fait ; ce qui a changé, la fenêtre).

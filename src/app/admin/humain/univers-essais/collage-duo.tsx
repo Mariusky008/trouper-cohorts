@@ -7,7 +7,7 @@
  * téléphone.
  */
 import { useCallback, useEffect, useState } from "react";
-import { ANCRE_ASSISE, AVIS_COLLAGE, COUT_COLLAGE, MOMENTS_DUO, type AvisCollage, type EtatCollage, type EtatPiecesDuo, type MomentDuo, type PlaceDuo } from "@/lib/direct/pieces-duo";
+import { ANCRE_ASSISE, AVIS_COLLAGE, COUT_COLLAGE, MOMENTS_DUO, hauteurDuo, type AvisCollage, type EtatCollage, type EtatPiecesDuo, type MomentDuo, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
 const ROUTE = "/api/admin/direct/pieces-duo/collage";
 const PIECES = "/api/admin/direct/pieces-duo";
@@ -15,9 +15,8 @@ const euros = (n: number) => n.toFixed(2).replace(".", ",");
 const pc = (x: number) => `${(x * 100).toFixed(2)}%`;
 const ETAPES: Record<string, string> = { "pose-a": "la première figurine, assise sans fauteuil", "pose-b": "la seconde figurine, assise sans fauteuil", duo: "le duo, généré dans la pièce" };
 
-/** Une figurine posée : le point qui touche le siège sur sa place, sa hauteur relevée, une ombre, la lumière de gauche. */
-function Posee({ src, place, cote }: { src: string; place: PlaceDuo; cote: "a" | "b" }) {
-  const h = place.hauteur;
+/** Une figurine posée : le point qui touche le siège sur sa place, la taille des deux (`hauteurDuo`), une ombre, la lumière de gauche. */
+function Posee({ src, place, h, cote }: { src: string; place: PlaceDuo; h: number; cote: "a" | "b" }) {
   return (
     <>
       <span className="cd-ombre" style={{ left: pc(place.x), top: pc(place.y), width: pc(h * 0.62), height: pc(h * 0.07) }} aria-hidden="true" />
@@ -109,7 +108,7 @@ export function CollageDuo() {
       <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🧩 L’effet « collage » : deux figurines dans une pièce</h2>
       <p style={{ margin: "0 0 10px", color: "#555", lineHeight: 1.45 }}>
         Deux vraies figurines dans une vraie pièce. <b>Ton choix : la version générée</b> (« très bien ») — une image du duo par pièce et par lumière,
-        faite une fois. Seule la zone des deux places est peinte, puis recollée sur la pièce : la télé, les cadres et l’étagère restent exactement à leur
+        faite une fois. Seule une grande zone autour des deux places est peinte, puis recollée sur la pièce : la télé, les cadres et l’étagère restent exactement à leur
         place. La version posée reste dessous, pour comparer. Environ {euros(COUT_COLLAGE)} € la première fois (les deux poses et le duo), puis environ
         0,17 € par autre lumière.
       </p>
@@ -195,8 +194,8 @@ export function CollageDuo() {
             <span className="cd-scene" data-version="posees">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="cd-fond" src={etat.decor} alt="La pièce, avec les deux figurines posées" />
-              {etat.poses.a && <Posee src={etat.poses.a} place={etat.places[0]} cote="a" />}
-              {etat.poses.b && <Posee src={etat.poses.b} place={etat.places[1]} cote="b" />}
+              {etat.poses.a && <Posee src={etat.poses.a} place={etat.places[0]} h={hauteurDuo(etat.places)} cote="a" />}
+              {etat.poses.b && <Posee src={etat.poses.b} place={etat.places[1]} h={hauteurDuo(etat.places)} cote="b" />}
               {(!etat.poses.a || !etat.poses.b) && <span className="cd-attente">Les poses ne sont pas encore faites.</span>}
             </span>
           </figure>

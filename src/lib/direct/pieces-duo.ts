@@ -297,22 +297,43 @@ export const ANCRE_ASSISE = 0.66;
 export const COUT_COLLAGE = 0.55;
 
 /**
- * 🎭 LA ZONE DES DEUX PLACES (en fractions de l'image : x, y, largeur, hauteur) : de la tête aux pieds des deux figurines
- * assises, avec de la marge. Elle sert au masque du duo (seule cette zone est peinte, puis recollée), et à la caméra de
- * la pièce vivante (elle glisse vers les deux places pour la conversation). La taille d'une figurine assise compte pour au
+ * 🎭 LA TAILLE D'UNE FIGURINE ASSISE. Une place dit où la figurine touche son siège (`x`, `y`) et `hauteur` : du haut de
+ * sa tête jusqu'au siège (ce qu'on trace à la main sur la page d'essais, « La place de gauche ») ; le siège est aux deux
+ * tiers de la figurine (`ANCRE_ASSISE`), ses jambes en dessous. Sa hauteur entière, de la tête aux pieds, compte pour au
  * moins `HAUTEUR_MIN_DUO` de l'image (les relevés la donnent souvent trop petite : l'essai du collage l'a montré).
- * `ratio` : la hauteur de l'image sur sa largeur (1,5 pour 1024 × 1536).
  */
-export const HAUTEUR_MIN_DUO = 0.34;
-export function zoneDesPlaces(places: PlaceDuo[], ratio = 1.5): Zone {
+export const HAUTEUR_MIN_DUO = 0.38;
+/** (la largeur d'une figurine assise, grosse tête comprise, à peu près, en part de sa hauteur) */
+const LARGEUR_SUR_HAUTEUR = 0.62;
+/** La hauteur entière des deux figurines assises (la même pour les deux), en part de la hauteur de l'image. */
+export const hauteurDuo = (places: PlaceDuo[]): number => Math.max(HAUTEUR_MIN_DUO, ...(places.length ? places : PLACES_PAR_DEFAUT).map((p) => p.hauteur / ANCRE_ASSISE));
+
+/** Autour des deux figurines assises, de la tête aux pieds, avec des marges (en part de leur hauteur). */
+function autourDesFigurines(places: PlaceDuo[], ratio: number, marge: { haut: number; bas: number; cotes: number }): Zone {
   const ps = places.length ? places : PLACES_PAR_DEFAUT;
-  const hz = Math.max(HAUTEUR_MIN_DUO, ...ps.map((p) => p.hauteur));
-  const x1 = Math.max(0, Math.min(...ps.map((p) => p.x)) - 0.55 * hz * ratio);
-  const x2 = Math.min(1, Math.max(...ps.map((p) => p.x)) + 0.55 * hz * ratio);
-  const y1 = Math.max(0, Math.min(...ps.map((p) => p.y)) - ANCRE_ASSISE * hz - 0.06);
-  const y2 = Math.min(1, Math.max(...ps.map((p) => p.y)) + (1 - ANCRE_ASSISE) * hz + 0.04);
+  const hz = hauteurDuo(ps);
+  const demi = (LARGEUR_SUR_HAUTEUR / 2 + marge.cotes) * hz * ratio;
+  const x1 = Math.max(0, Math.min(...ps.map((p) => p.x)) - demi);
+  const x2 = Math.min(1, Math.max(...ps.map((p) => p.x)) + demi);
+  const y1 = Math.max(0, Math.min(...ps.map((p) => p.y)) - (ANCRE_ASSISE + marge.haut) * hz);
+  const y2 = Math.min(1, Math.max(...ps.map((p) => p.y)) + (1 - ANCRE_ASSISE + marge.bas) * hz);
   return [x1, y1, Math.max(0.01, x2 - x1), Math.max(0.01, y2 - y1)];
 }
+
+/**
+ * LA ZONE DES DEUX PLACES (x, y, largeur, hauteur, en fractions de l'image) : les deux figurines de la tête aux pieds,
+ * un peu de marge — la caméra de la pièce vivante y glisse pour la conversation. `ratio` : la hauteur de l'image sur sa
+ * largeur (1,5 pour 1024 × 1536).
+ */
+export const zoneDesPlaces = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.12, bas: 0.1, cotes: 0.08 });
+/** Les deux figurines seules, de la tête aux pieds (ce que les objets protégés ne doivent pas couper). */
+export const zoneDesFigurines = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.25, bas: 0.12, cotes: 0.12 });
+/**
+ * LA ZONE PEINTE pour l'image du duo (le masque, puis le recollage) : beaucoup plus grande que les figurines — de l'air
+ * au-dessus des têtes, le sol sous les pieds. Trop juste, le moteur remplissait la zone : les têtes coupées par son bord
+ * du haut, les pieds fondus dans le sol par son bord du bas (le premier essai du propriétaire, le 15 novembre).
+ */
+export const zoneDuMasque = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.4, bas: 0.28, cotes: 0.3 });
 
 /** 🛋️ La pièce vivante : le duo (ses deux prénoms) et ses images faites, par « pièce-moment ». */
 export type DuoVivant = { a: { id: string; nom: string }; b: { id: string; nom: string }; duos: Partial<Record<string, string>> };
