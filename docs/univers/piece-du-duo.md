@@ -188,3 +188,39 @@ la largeur l'une de l'autre.
 **À faire par le propriétaire** : sur la page d'essais, « Refaire la pièce » pour chacune des cinq (les anciennes images
 ont été faites avec l'ancienne consigne), puis « Faire ce qui manque » ; regarder chaque pièce en trois lumières ;
 corriger les zones à la main si besoin.
+
+## 10. La télé, prête à brancher (15 novembre 2026)
+
+Le propriétaire à la session de l'univers : « oui, prépare la télé », en morceau autonome que la maquette n'aura qu'à
+brancher à la place de son clip fixe ; et ses cinq clips de secours (des liens YouTube).
+
+**Ce qu'elle passe** (`tele.ts`, `tele-serveur.ts`) : le dernier lien YouTube que les deux se sont envoyé (lu dans
+l'écran, au début donné par `?t=`) ; un lien TikTok ou Instagram plus récent : son aperçu et « ▶ Ouvrir sur TikTok »
+(ils se lisent mal hors de leur appli) ; aucun lien : le clip de secours du jour (le même pour les deux ce jour-là) ;
+aucune liste : éteinte. Une chanson Spotify ou Deezer n'y passe pas (c'est pour la platine). Un message signalé par lui
+n'y passe plus, chez lui. **Les clips de secours** : les cinq du propriétaire (`CLIPS_DU_PROPRIETAIRE`) tant qu'il n'a
+pas rangé une autre liste sur la page d'essais (« 📺 La télé du duo », huit au plus ; `tele/secours.json`).
+
+**La brancher** :
+
+```tsx
+// ce qu'elle passe, chez lui, avec ce proche (sa clé de profil) — les règles du talkie (401, 403, 404)
+const { programme, secours } = await (await fetch(`/api/direct/tele?avec=${cle}`)).json();
+// dans le calque de la pièce (position: relative), sur l'écran relevé (`releve.json` → emplacements.tele)
+<TeleDuo programme={programme} secours={secours} zone={emplacements.tele} proche={cameraSurLaTele} onToucher={() => approcherDe("tele")} />
+```
+
+(`@/app/univers/tele-duo`.) **De loin** (`proche` faux) : l'écran montre ce qui passe (l'aperçu du lien, l'image du
+clip), sans bouton ; un toucher appelle `onToucher`. **De près** : « ▶ Allumer la télé » (le geste qui donne le son sur
+iPhone ; si le téléphone refuse encore, le lecteur de YouTube garde son propre bouton), « ⏻ Éteindre » ; une vidéo qui
+refuse d'être lue hors de YouTube : un clip de secours prend le relais, « ▶ La regarder sur YouTube ». La caméra qui
+recule l'éteint. Ses tailles suivent la télé (en part de sa largeur) : la caméra qui s'approche par une mise à l'échelle
+agrandit l'écran et ses boutons ensemble. Le lecteur : celui de YouTube (`youtube-nocookie.com`), chargé au premier
+allumage ; s'il ne se charge pas, un simple cadre de YouTube.
+
+**L'essayer** : la page d'essais, « 📺 La télé du duo : l'essai » — une pièce faite, un lien collé (ou le clip du jour),
+la télé de loin, un toucher, la caméra s'approche, « Allumer la télé ».
+
+**Ses essais** : `scripts/essai-tele-route.mjs` (ce qu'elle passe, les règles, les clips de secours) ;
+`scripts/navigateur/tele-duo.mjs` (de loin, de près, allumée, une vidéo qui refuse, TikTok ; un faux lecteur YouTube,
+jamais YouTube).

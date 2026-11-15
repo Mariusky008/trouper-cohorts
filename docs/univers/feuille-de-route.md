@@ -791,7 +791,9 @@ n'y ajoute plus rien). Fait : l'essai des cinq pièces, en tête de `/admin/huma
 catalogue est rangé dans `pieces-duo/<pièce>/` (`decor.png`, `releve.json`). La suite (la pièce vivante, à l'essai) est
 dans `piece-du-duo.md`, section 6. **Les cinq pièces refaites** par la session de l'univers, à la demande du propriétaire
 (chacune sa signature, les objets répartis et assez grands, l'étagère et les cadres vides, les places proches ; trois
-lumières par pièce ; les zones posées à la main ; ce qui gênerait le doigt, signalé) : `piece-du-duo.md`, section 9.
+lumières par pièce ; les zones posées à la main ; ce qui gênerait le doigt, signalé) : `piece-du-duo.md`, section 9. **La
+télé, prête à brancher** dans la maquette (le dernier lien YouTube, « Allumer », les clips de secours du propriétaire,
+TikTok et Instagram ; `TeleDuo`, `GET /api/direct/tele`) : `piece-du-duo.md`, section 10.
 
 ### Lot C — Le compagnon (15 novembre 2026, proposé)
 
