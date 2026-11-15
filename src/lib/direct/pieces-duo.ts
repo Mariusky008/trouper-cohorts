@@ -117,6 +117,12 @@ export type PlaceDuo = { x: number; y: number; hauteur: number };
 /** Les emplacements, relevés sur la pièce par un modèle qui voit. */
 export type EmplacementsDuo = {
   tele?: Zone;
+  /**
+   * 📐 (15 novembre 2026, le propriétaire : « la télé posée au mur est en perspective, donc plus large à droite qu'à
+   * gauche ») les quatre coins de l'écran, posés à la main — en haut à gauche, en haut à droite, en bas à droite, en bas
+   * à gauche, en fractions de l'image ; `tele` est alors leur boîte. La télé (`TeleDuo`, `coins`) s'y déforme.
+   */
+  teleCoins?: [number, number][];
   platine?: Zone;
   cadres: Zone[];
   etagere?: Zone;
@@ -145,6 +151,23 @@ function zoneValide(x: unknown): Zone | undefined {
   return l > 0.01 && h > 0.01 && a + l <= 1.02 && b + h <= 1.02 ? [a, b, l, h] : undefined;
 }
 
+/** Les quatre coins d'un écran, s'ils tiennent debout (quatre points dans l'image, assez écartés). */
+export function coinsValides(x: unknown): [number, number][] | null {
+  if (!Array.isArray(x) || x.length !== 4) return null;
+  const c = x.map((p) => (Array.isArray(p) && p.length === 2 ? [fraction(p[0]), fraction(p[1])] : [null, null]));
+  if (c.some(([a, b]) => a === null || b === null)) return null;
+  const pts = c as [number, number][];
+  const b = boiteDesCoins(pts);
+  return b[2] > 0.02 && b[3] > 0.015 ? pts.map(([a, z]) => [Math.round(a * 1000) / 1000, Math.round(z * 1000) / 1000] as [number, number]) : null;
+}
+/** La boîte de quatre coins : x, y, largeur, hauteur. */
+export function boiteDesCoins(c: [number, number][]): Zone {
+  const xs = c.map((p) => p[0]);
+  const ys = c.map((p) => p[1]);
+  const [x1, x2, y1, y2] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)].map((v) => Math.round(v * 1000) / 1000);
+  return [x1, y1, Math.round((x2 - x1) * 1000) / 1000, Math.round((y2 - y1) * 1000) / 1000];
+}
+
 /** Les emplacements relevés, vérifiés (des fractions de l'image ; ce qui est faux est laissé de côté). */
 export function emplacementsValides(o: unknown): EmplacementsDuo {
   const r = (o ?? {}) as Record<string, unknown>;
@@ -161,12 +184,14 @@ export function emplacementsValides(o: unknown): EmplacementsDuo {
   const c = (r.chat ?? {}) as Record<string, unknown>;
   const cx = fraction(c.x);
   const cy = fraction(c.y);
-  const tele = zoneValide(r.tele);
+  const coins = coinsValides(r.teleCoins);
+  const tele = coins ? boiteDesCoins(coins) : zoneValide(r.tele);
   const platine = zoneValide(r.platine);
   const etagere = zoneValide(r.etagere);
   const fenetre = zoneValide(r.fenetre);
   return {
     ...(tele ? { tele } : {}),
+    ...(coins ? { teleCoins: coins } : {}),
     ...(platine ? { platine } : {}),
     cadres: (Array.isArray(r.cadres) ? r.cadres : []).map(zoneValide).filter((z): z is Zone => Boolean(z)).slice(0, 4),
     ...(etagere ? { etagere } : {}),
