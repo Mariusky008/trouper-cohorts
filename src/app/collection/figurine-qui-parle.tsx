@@ -432,8 +432,8 @@ export const STYLES_FIGURINE_QUI_PARLE = `
 /* (15 novembre 2026, le propriétaire : « ce ne sont pas leurs expressions qui bougent, c'est l'image entière, ce qui fait
    complètement fake ») : assise dans un décor, sans le visage demandé, elle ne saute plus — elle respire, et la pastille
    dit sa tête ; son visage, quand il est fait, prend la place */
-.fqp.decoupe.bouge .fqp-corps{animation:fqp-respire 3.4s ease-in-out infinite;filter:none}
-@keyframes fqp-respire{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-.6%) scale(1.006)}}
+/* (découpée, dans une scène : l'image entière ne bouge jamais — seuls son visage et sa bouche changent) */
+.fqp.decoupe .fqp-corps,.fqp.decoupe.bouge .fqp-corps{animation:none!important;filter:none}
 .fqp-coeurs i{animation-duration:2.8s}
 /* 🕺 elle danse SUR SON RESSORT (avec n'importe quel visage) : le fond seul derrière ; le socle immobile ; le ressort
    se tasse et s'étire ; le corps s'enfonce, saute et se balance au-dessus (les deux au même rythme) */

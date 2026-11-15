@@ -150,6 +150,43 @@ ok(consignesIA.some((c) => c.includes(" transparent ")) && consignesIA.some((c) 
 const filMarc = await (await fetch(`${BASE}/api/direct/proches?fil=${INES.cle}`, { headers: { cookie: `clikme_habitant=${MARC.jeton}` } })).json();
 ok(Boolean(filMarc?.fil?.moi?.assise?.expressions?.joie?.n), "sa conversation reçoit ses visages du nouveau style");
 
+// ═══ 🪵 (15 novembre 2026) LEUR ÉTAGÈRE, PEINTE DANS SON DÉCOR ═══
+const lireStock = async (chemin) => {
+  const x = await fetch(`${STOCK}/figurines-clients/${chemin}`);
+  return x.status === 200 ? x.json().catch(() => null) : null;
+};
+let peinte = null;
+for (let k = 0; k < 60 && !peinte?.surface; k++) {
+  await marc.waitForTimeout(500);
+  peinte = await lireStock(`${M1}/decor-etagere.json`);
+}
+ok(peinte?.chemin === `${M1}/decor-etagere.png` && Math.abs(peinte.surface?.x1 - 0.26) < 0.001 && Math.abs(peinte.surface?.x2 - 0.74) < 0.001 && peinte.surface?.y > 0.3 && peinte.surface?.y < 0.33, `son décor, une fois : l'étagère peinte, et le dessus de sa planche (${JSON.stringify(peinte?.surface)})`);
+const iaEtagere = (await (await fetch(`${F.replace("/rest/v1", "")}/__ia`)).json()).filter((c) => typeof c === "string");
+ok(iaEtagere.some((c) => c.startsWith("IMAGE ") && c.includes("add ONE empty wooden shelf") && c.includes("completely EMPTY")) && iaEtagere.some((c) => c.startsWith("MASQUE")), "le moteur : une étagère vide, peinte dans la zone du masque seulement");
+await json(`fils/${[MARC.id, INES.id].sort().join("_")}/etagere.json`, {
+  v: 1,
+  objets: [{ id: "resto", genre: "promesse", emoji: "🍝", titre: "Le resto italien", concerne: "deux", citation: "On se fait ce resto italien !", de8: crypto.createHash("sha256").update(`clikme-talkie:qui:${INES.id}`).digest("hex").slice(0, 8), message: "msgresto0000", le: maintenant, etat: "actif" }],
+  lu: Date.now(),
+  verrou: 0,
+  vus: { [crypto.createHash("sha256").update(`clikme-talkie:qui:${MARC.id}`).digest("hex").slice(0, 8)]: ["resto"] },
+});
+await marc.goto(`${BASE}/collection?parler=${INES.cle}&v=${Date.now()}#proches`, { waitUntil: "networkidle" });
+await fermerPablito(marc);
+await marc.waitForSelector(`${scene} .et-mur.et-peinte [data-objet="resto"]`, { timeout: 30000 }).catch(() => null);
+ok(((await marc.locator(`${scene} .pr-decor`).getAttribute("src")) ?? "").includes("decor-etagere.png"), "la scène joue son décor où l'étagère est peinte");
+const etagere = await marc.evaluate((sel) => {
+  const s = document.querySelector(sel)?.getBoundingClientRect();
+  const e = document.querySelector(`${sel} .et-mur.et-peinte`)?.getBoundingClientRect();
+  const o = document.querySelector(`${sel} .et-mur.et-peinte [data-objet="resto"]`)?.getBoundingClientRect();
+  return s && e && o ? { bas: (e.bottom - s.top) / s.height, gauche: (e.left - s.left) / s.width, droite: (e.right - s.left) / s.width, objet: o.height } : null;
+}, scene);
+ok(Boolean(etagere) && etagere.bas > 0.05 && etagere.bas < 0.4 && Math.abs(etagere.gauche - 0.26) < 0.02 && Math.abs(etagere.droite - 0.74) < 0.02 && etagere.objet > 12, `🍝 posé sur sa planche, en haut de la scène (${JSON.stringify(etagere)})`);
+ok((await marc.locator(`${scene} .et-mur small`).count()) === 0 && !(await texte(marc, scene)).includes("Votre étagère"), "plus d'étiquette « Votre étagère » dans la scène");
+await marc.screenshot({ path: `${D}/talkie-chez-moi-etagere-peinte.png` });
+await marc.locator(`${scene} .et-mur.et-peinte`).click();
+ok(await marc.waitForSelector(".et-page .et-meuble", { timeout: 15000 }).then(() => true).catch(() => false), "un toucher sur l'étagère : leur étagère s'ouvre");
+await marc.keyboard.press("Escape");
+
 // ═══ CHEZ INÈS : PAS D'UNIVERS, LA SCÈNE D'AUJOURD'HUI ═══
 const ines = await tel(INES);
 await ines.goto(`${BASE}/collection?parler=${MARC.cle}#proches`, { waitUntil: "networkidle" });

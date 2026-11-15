@@ -49,6 +49,7 @@
 //      (refusée : 422 ; sans service : 503, elle attend), sa vignette ; puis « 🎬 Léa t'a envoyé une vidéo ». Dix par
 //      jour. Le frein : `CLIKME_VIDEOS=0` (404).
 // Un proche se désigne toujours par sa clé de profil, jamais par son identifiant.
+import { etagerePeinteOuverte, peindreEtagere } from "@/lib/direct/etagere-peinte-serveur";
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
@@ -74,12 +75,13 @@ import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
 import { apresEcrit, ecritOuvert, ecrireMessage, effacerMessage } from "@/lib/direct/ecrit-serveur";
 import { apresPhoto, depotPhoto, envoyerPhoto, photosOuvertes } from "@/lib/direct/photo-serveur";
 import { apresVideo, depotVideo, envoyerVideo, videosOuvertes } from "@/lib/direct/video-serveur";
-import { effacerEtagere, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
+import { effacerEtagere, etagereAllumee, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
-export const maxDuration = 60;
+// (🪵 l'étagère peinte dans son décor, après la réponse : une minute environ, une fois par décor)
+export const maxDuration = 300;
 
 const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine." };
@@ -110,6 +112,11 @@ export async function GET(request: Request) {
   if (fil) {
     const r = await filAvec(supabase, moi, fil);
     if (!r.fil) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    // 🪵 leur étagère n'est pas encore peinte dans son décor : elle se peint après la réponse (une fois par décor)
+    if (r.fil.chezMoi && !r.fil.chezMoi.etagere && etagerePeinteOuverte() && etagereAllumee()) {
+      const avant = Date.now() + maxDuration * 1000 - 20_000;
+      after(() => peindreEtagere(supabase, moi.id, avant).catch(() => false));
+    }
     return NextResponse.json({ ok: true, fil: { ...r.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes() } }, { headers: sansCache });
   }
   const [vivants, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);

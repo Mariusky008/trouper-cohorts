@@ -7,12 +7,14 @@
 //                                                            « reference », ou une boucle (sa pose, puis sa vidéo)
 // POST { action: "refaire", espece, cible, etape? }        → { etat } : `reference` efface tout ; une boucle, sa vidéo
 //                                                            (`etape: "video"`) ou sa pose et sa vidéo
+// POST { action: "son", espece, cible, type, donnees }     → { etat } : 🔊 le vrai son d'une boucle (un enregistrement, en
+//                                                            base64 ; vide : l'enlever)
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { boucleValide, especeValide } from "@/lib/direct/compagnons";
-import { etatCompagnonEssai, fabriquerCompagnon, refaireCompagnon } from "@/lib/direct/compagnon-essai-serveur";
+import { deposerSonCompagnon, etatCompagnonEssai, fabriquerCompagnon, refaireCompagnon } from "@/lib/direct/compagnon-essai-serveur";
 
 export const dynamic = "force-dynamic";
 // (une image : une minute environ)
@@ -52,6 +54,12 @@ export async function POST(request: Request) {
   if (p?.action === "refaire") {
     await refaireCompagnon(supabase, espece, cible, p.etape === "video" ? "video" : "pose");
     return NextResponse.json({ ok: true, etat: await etatCompagnonEssai(supabase, moi.id, espece) }, { headers: sansCache });
+  }
+  if (p?.action === "son") {
+    if (cible === "reference") return NextResponse.json({ error: "Un son va avec une boucle." }, { status: 400, headers: sansCache });
+    const r = await deposerSonCompagnon(supabase, espece, cible, p.type, p.donnees);
+    const etat = await etatCompagnonEssai(supabase, moi.id, espece);
+    return NextResponse.json(r.erreur ? { error: r.erreur, etat } : { ok: true, etat }, { status: r.erreur ? 400 : 200, headers: sansCache });
   }
   return NextResponse.json({ error: "Action inconnue." }, { status: 400, headers: sansCache });
 }

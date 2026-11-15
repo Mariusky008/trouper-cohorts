@@ -94,7 +94,11 @@ export type PlaceChezMoi = { x: number; y: number; echelle: number };
  * chacun voit la conversation chez soi, l'autre lui rend visite) : son décor, sa place, celle de l'invité.
  */
 /** `figurine` : sa figurine relevée sur son image vedette (son milieu, le bas de son fauteuil, sa hauteur, lot 4). */
-export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi; figurine?: { x: number; y: number; hauteur: number } };
+/**
+ * `etagere` : 🪵 (15 novembre 2026) l'étagère peinte dans son décor (`etagere-peinte-serveur.ts`) — le dessus de sa planche,
+ * en fractions du décor ; `decor` est alors l'image où elle est peinte. Seulement dans la conversation.
+ */
+export type ChezMoi = { decor: string; hote: PlaceChezMoi; invite: PlaceChezMoi; figurine?: { x: number; y: number; hauteur: number }; etagere?: { x1: number; x2: number; y: number } };
 // (`FigurineVue.chez` : seulement la sienne, pour la vidéo qu'il envoie par WhatsApp — « chez celui qui envoie », lot 5b)
 /** 🎭 Un mème envoyé dans leur conversation (la nouvelle interface, lot 4, `memes-proches-serveur.ts`). */
 export type MemeFil = { id: string; moi: boolean; le: string; image: string; texte?: string; video?: string; lien: string; nouveau?: boolean };

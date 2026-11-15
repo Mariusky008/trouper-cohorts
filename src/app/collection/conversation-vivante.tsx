@@ -275,19 +275,12 @@ export const STYLES_VIVANT = `
 .pr-fil li.pv-aparte-fil .pv-aparte-bas small{font-size:10.5px;color:#8A7A84}
 .pr-fil li.pv-aparte-fil button{all:unset;cursor:pointer;font-size:11.5px;font-weight:800;color:#FFB4B4;text-decoration:underline}
 .pv-boude{position:absolute;left:62%;top:10%;font-size:24px;animation:pv-pop .35s both}
-.pr-scene [data-posture="occupe"]{animation:pv-occupe 4.2s ease-in-out infinite}
-.pr-scene [data-posture="danse"]{animation:pv-danse .62s ease-in-out infinite}
-.pr-scene [data-posture="affale"]{translate:0 5%;rotate:-5deg;filter:saturate(.7) brightness(.92);animation:pv-souffle 5s ease-in-out infinite}
-.pr-scene [data-posture="bras"]{rotate:3deg;animation:pv-boude 2.6s ease-in-out infinite}
-.pr-scene [data-posture="dort"]{translate:0 4%;rotate:7deg;opacity:.8;animation:pv-souffle 4s ease-in-out infinite}
-.pr-scene [data-posture="prepare"]{rotate:7deg;translate:6% -2%;animation:pv-penche 1.4s ease-in-out infinite}
-.pr-scene [data-geste="applaudir"]{animation:pv-saute .3s ease-in-out 5}
-.pr-scene [data-geste="mdr"]{animation:pv-secoue .18s ease-in-out 8}
-.pr-scene [data-geste="coeur"]{animation:pv-battre .5s ease-in-out 3}
-.pr-scene [data-geste="check"]{animation:pv-check .9s cubic-bezier(.2,1.4,.4,1) 1}
-.pr-scene [data-geste="front"]{animation:pv-front 1.4s ease-in-out 1}
-.pr-scene [data-geste="waouh"]{animation:pv-waouh 1s cubic-bezier(.2,1.6,.4,1) 1}
-.pr-scene.pv-sursaut .pr-parleur,.pr-scene.pv-sursaut .pr-ecoute,.pr-scene.pv-sursaut .pr-ecoute-chez{animation:pv-sursaut .6s cubic-bezier(.2,1.6,.4,1) 1}
+/* 🧍 (15 novembre 2026, le propriétaire : « les deux figurines se balancent toujours : l'image en entier se balance, ce
+   n'est pas agréable à regarder ») : plus rien ne fait bouger l'image entière d'une figurine — ni ses postures, ni ses
+   gestes, ni le sursaut d'un nouveau message. Ce qu'elle fait se dit à côté d'elle (les zzz, les points de « il
+   prépare », les éclats d'une réaction) ; une figurine qui dort ou s'affale pâlit un peu, sans pencher. */
+.pr-scene [data-posture="affale"]{filter:saturate(.75) brightness(.94)}
+.pr-scene [data-posture="dort"]{filter:saturate(.7) brightness(.86)}
 .pv-bouton-panneau{flex:none;width:58px;min-height:58px;border:0;border-radius:18px;background:#2A1422;color:#FFF4E6;font-size:26px;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.5)}
 .pv-astuce{flex:none;margin:0;font-size:11.5px;font-weight:700;color:#B49AA8;text-align:center}
 .pr-fil li.pv-panneau-fil{justify-content:flex-start}
@@ -308,17 +301,5 @@ export const STYLES_VIVANT = `
 @keyframes pv-eclat{0%{transform:translateY(10px) scale(.4);opacity:0}25%{opacity:1;transform:translateY(-10px) scale(1.15)}100%{transform:translateY(-70px) scale(.9);opacity:0}}
 @keyframes pv-aparte{0%{opacity:0;transform:translateY(8px) scale(.85)}6%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0}}
 @keyframes pv-zzz{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-8px);opacity:1}}
-@keyframes pv-occupe{0%,70%,100%{rotate:0deg;scale:1}78%{rotate:-4deg;scale:1 1.04}86%{rotate:4deg;scale:1 1.04}}
-@keyframes pv-danse{0%,100%{translate:0 0;rotate:-6deg}50%{translate:0 -7%;rotate:6deg}}
-@keyframes pv-souffle{0%,100%{scale:1}50%{scale:1 .98}}
-@keyframes pv-boude{0%,100%{rotate:3deg}50%{rotate:1deg}}
-@keyframes pv-penche{0%,100%{scale:1}50%{scale:1.03}}
-@keyframes pv-saute{0%,100%{translate:0 0}50%{translate:0 -6%}}
-@keyframes pv-secoue{0%,100%{rotate:0deg}25%{rotate:-6deg}75%{rotate:6deg}}
-@keyframes pv-battre{0%,100%{scale:1}50%{scale:1.08}}
-@keyframes pv-check{0%{translate:0 0}40%{translate:10% -5%}100%{translate:0 0}}
-@keyframes pv-front{0%,100%{rotate:0deg;translate:0 0}30%,70%{rotate:-10deg;translate:0 4%}}
-@keyframes pv-waouh{0%{scale:1}40%{scale:1.12}100%{scale:1}}
-@keyframes pv-sursaut{0%,100%{translate:0 0}35%{translate:0 -10%}}
 @media (prefers-reduced-motion:reduce){.pr-scene [data-posture],.pr-scene [data-geste],.pv-panneau,.pv-eclat i,.pv-prepare i,.pv-zzz{animation:none}}
 `;

@@ -77,7 +77,18 @@ export type ObjetGarde = {
   raison?: "non" | "sans-reponse" | "retire";
   /** (lot E5) l'issue de cette épreuve a reçu un « non » : elle n'est plus jamais demandée. */
   sansIssue?: true;
+  /**
+   * 🖼️ (« Le ranger dans mon univers ? », 15 novembre 2026) l'image d'une chanson, d'une vidéo ou d'une photo qu'il a
+   * envoyée dans une conversation, RECOPIÉE dans son univers (`<habitant>/univers/objets/<id>.webp`) : effacer le
+   * message n'y touche pas. `lien` : l'adresse de la chanson ou de la vidéo.
+   */
+  image?: ImageObjet;
 };
+/** 🖼️ Une pochette (une chanson), une vignette (une vidéo), une photo encadrée. */
+export type SorteImage = "musique" | "video" | "photo";
+export type ImageObjet = { chemin: string; l: number; h: number; sorte: SorteImage; lien?: string };
+/** Ce qu'on en voit : l'adresse signée de l'image (une heure). */
+export type ImageVue = { src: string; l: number; h: number; sorte: SorteImage; lien?: string };
 
 /**
  * 🃏 CE QUI S'INSÈRE DANS LE FIL (lot E2), à son heure, pour les deux : une fierté (« 🏆 RANGÉ EN HAUT DE VOTRE
@@ -120,6 +131,8 @@ export type ObjetVu = {
   /** 👀 (lot E4) montré aux visiteurs de mon univers ; `peutMontrer` : ça ne concerne que moi. */
   montre?: boolean;
   peutMontrer?: boolean;
+  /** 🖼️ rangé depuis une conversation : sa pochette, sa vignette ou sa photo (signée par le serveur). */
+  image?: ImageVue;
 };
 
 /** 🎭 L'étagère dans la scène de la conversation (relue avec la conversation vivante, toutes les 4 s). */
@@ -332,6 +345,8 @@ export function titrePour(o: Pick<ObjetGarde, "titre" | "titreToi" | "concerne">
 
 /** Le détail sous le titre : l'appli le compose, pas le modèle. */
 export function detailPour(o: ObjetGarde, moi8: string, prenomAutre: string, aujourdhui: string): string {
+  // 🖼️ rangé depuis une conversation : ce que c'est, et quand il l'a envoyé (« une chanson · 15 nov. »)
+  if (o.image) return `${o.image.sorte === "photo" ? "une photo" : o.image.sorte === "musique" ? "une chanson" : "une vidéo"} · ${jourCourt(jourDe(o.messageLe || o.le)).replace(/^\S+ /, "")}`;
   if (o.etat === "fierte") return o.quand ? `réussi le ${jourCourt(o.quand)}` : "réussi";
   if (o.genre === "promesse" && o.etat === "sommeil") return `promis le ${jourCourt(jourDe(o.le)).replace(/^\S+ /, "")}`;
   if (o.genre === "date") return o.quand ? (o.annuel ? leJourDuMois(o.quand) : jourCourt(o.quand)) : "";
@@ -1139,7 +1154,7 @@ export function rappelsMiens(objets: readonly ObjetGarde[], aujourdhui: string):
 }
 
 /** 👀 Ce qu'un visiteur voit d'un souvenir montré : l'emoji, le titre (sans « ton »), le détail ; jamais la phrase, ni avec qui. */
-export type VitrineObjet = { id: string; emoji: string; titre: string; detail: string; rayon: RayonCle };
+export type VitrineObjet = { id: string; emoji: string; titre: string; detail: string; rayon: RayonCle; image?: ImageVue };
 export const vitrineDe = (o: ObjetGarde, prenomHote: string, aujourdhui: string): VitrineObjet => ({
   id: o.id,
   emoji: o.emoji,
