@@ -127,13 +127,24 @@ ok(await attendre(sam, () => document.querySelector(".pr-plein .pv-calque.moi .e
 await sam.screenshot({ path: `${D}/etagere-e5-1-question.png` });
 const qr = await texte(sam, ".pr-plein .pr-fil li.et-carte-fil.question");
 ok(qr.includes("📌 TA FIGURINE TE DEMANDE") && qr.includes("Le resto italien") && qr.includes("« Et après, faut qu'on se fasse ce resto italien ! »") && qr.includes("✓ Oui, range-le") && qr.includes("Non") && !qr.includes("Changer la date") && qr.includes("Sans réponse, elle oublie dans 2 jours · Noté par vos figurines · IA"), `la carte de la question : « ${qr} »`);
-ok((await sam.locator(".pr-plein .pr-fil li.et-carte-fil.question").count()) === 1 && !(await sam.evaluate(() => [...document.querySelectorAll(".pr-plein .pr-fil li.et-carte-fil")].some((li) => /permis/i.test(li.textContent)))) && !(await sam.locator(".pr-plein .et-mur").count()), "chez Sam : pas un mot du permis de Léa (c'est à elle de décider), rien sur l'étagère");
+ok((await sam.locator(".pr-plein .pr-fil li.et-carte-fil.question").count()) === 1 && !(await sam.evaluate(() => [...document.querySelectorAll(".pr-plein .pr-fil li.et-carte-fil")].some((li) => /permis/i.test(li.textContent)))) && !(await sam.locator(".pr-plein .et-mur [data-objet]").count()), "chez Sam : pas un mot du permis de Léa (c'est à elle de décider), rien sur l'étagère");
 ok((await debordement(sam)) <= 0, "la question : rien ne déborde");
+// 🎬📚 (15 novembre 2026, points 4 et 7) l'étagère toujours là, même vide ; le moment du duo, à l'arrivée : la question
+ok((await texte(sam, ".pr-plein .pr-haut .et-pastille")) === "📚 ＋" && (await texte(sam, ".pr-plein .et-mur.vide small")) === "📚 Votre étagère · ＋ un souvenir", "📚 l'étagère, même vide : dans l'en-tête (« 📚 ＋ ») et au mur (« ＋ un souvenir »)");
+const moment = await texte(sam, ".pr-plein .md-moment.question");
+ok(moment.includes("Ta figurine") && moment.includes("Le resto italien") && moment.includes("✓ Range-le") && moment.includes("Non") && (await sam.locator(".pr-plein .md-moment .md-fermer").count()) === 0, `🎬 le moment du duo, à l'arrivée : la question, sa réponse à portée de doigt (${moment})`);
 await sam.locator(".pr-plein .pr-fil li.et-carte-fil.question .et-petit.or").click();
 ok(await attendre(sam, () => !document.querySelector(".pr-plein .pr-fil li.et-carte-fil.question"), null, 6000), "« ✓ Oui, range-le » : la question s'en va");
 ok(await attendre(sam, () => document.querySelector(".pr-plein .pv-calque.moi .et-note:not(.question)")?.textContent?.includes("📌 Noté !"), null, 20000), "le resto se range : sa figurine brandit « 📌 Noté ! »");
 ok(await attendre(sam, () => document.querySelector(".pr-plein .et-mur small")?.textContent?.includes("Votre étagère · 1") && document.querySelector(".pr-plein .et-mur [data-objet]")?.textContent === "🍝" && !document.querySelector(".et-vol")), "il s'envole et se pose : « 📚 Votre étagère · 1 »");
 ok(await attendre(sam, () => document.querySelector(".pr-plein .pr-fil li.et-carte-fil:not(.question)")?.textContent?.includes("📌 NOTÉ SUR VOTRE ÉTAGÈRE")), "la carte devient « 📌 NOTÉ SUR VOTRE ÉTAGÈRE »");
+ok(await attendre(sam, () => document.querySelector(".pr-plein .md-moment.souvenir")?.textContent?.includes("Le resto italien") && document.querySelector(".pr-plein .pr-haut .et-pastille")?.textContent === "📚 1", null, 10000), "🎬 le moment devient le souvenir rangé (« Voir votre étagère ») ; « 📚 1 » dans l'en-tête");
+// 📜 (point 6) le fil en grand : la scène se replie en une ligne, et revient
+await sam.locator(".pr-plein .pr-replier").click();
+ok(await attendre(sam, () => document.querySelector(".pr-plein .pr-scene")?.classList.contains("replie") && document.querySelector(".pr-plein .pr-scene").getBoundingClientRect().height < 2 && Boolean(document.querySelector(".pr-plein .pr-scene-repliee")), null, 5000), "📜 « Le fil en grand » : la scène se replie en une ligne");
+await sam.screenshot({ path: `${D}/etagere-fil-en-grand.png` });
+await sam.locator(".pr-plein .pr-scene-repliee").click();
+ok(await attendre(sam, () => !document.querySelector(".pr-plein .pr-scene")?.classList.contains("replie") && document.querySelector(".pr-plein .pr-scene").getBoundingClientRect().height > 200, null, 5000), "« ⌄ La scène » : elle revient");
 await sam.screenshot({ path: `${D}/etagere-e5-2-range.png` });
 // (Sam quitte la conversation : resté dedans, il verrait le permis se poser dès le « oui » de Léa)
 await sam.goto("about:blank");
@@ -222,7 +233,7 @@ await zoe.locator(".pr-plein .pr-fil li.et-carte-fil.question .et-petit.clair").
 ok(await attendre(zoe, () => document.querySelector(".pr-plein .pv-calque.moi .et-bulle")?.textContent === "D’accord, j’oublie." && !document.querySelector(".pr-plein .pr-fil li.et-carte-fil.question"), null, 8000), "« Non » : « D’accord, j’oublie. », la question s'en va");
 await zoe.screenshot({ path: `${D}/etagere-e5-5-non.png` });
 const fzs = await lireStock(`fils/${[ZOE.id, SAM.id].sort().join("_")}/etagere.json`);
-ok(fzs?.objets?.length === 1 && fzs.objets[0].etat === "retire" && fzs.objets[0].raison === "non" && !(await zoe.locator(".pr-plein .et-mur").count()), "rien n'est rangé : une pierre tombale « non »");
+ok(fzs?.objets?.length === 1 && fzs.objets[0].etat === "retire" && fzs.objets[0].raison === "non" && !(await zoe.locator(".pr-plein .et-mur [data-objet]").count()), "rien n'est rangé : une pierre tombale « non »");
 await ouvrirAvec(zoe, SAM);
 ok(!(await attendre(zoe, () => Boolean(document.querySelector(".pr-plein .pr-fil li.et-carte-fil")), null, 5000)), "rouverte : plus rien");
 

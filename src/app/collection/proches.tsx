@@ -32,6 +32,7 @@ import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR, objetDe, type MesVisites, type Objet
 import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { MEMOIRE_PROCHES, ecrireMemoire, lireMemoire } from "./memoire-locale";
+import { BandeauMoment, STYLES_MOMENT, lireFermes, momentDuDuo } from "./moment-du-duo";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { BarreEcrire, BoutonEffacer, BulleEcrite, STYLES_ECRIRE, motsDeLEcrit, type ChoixPlus } from "./ecrire";
 import { BullePhoto, CadrePhoto, FeuillePhoto, PhotoEnGrand, STYLES_PHOTOS } from "./photos";
@@ -978,6 +979,32 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
   const sceneRef = useRef<HTMLElement>(null);
   const et = useEtagere(cle, vivant?.etagere, sceneRef, fil?.lui.prenom ?? "", Boolean(fil));
   const [pageEtagere, setPageEtagere] = useState(false);
+  // 🎬 (15 novembre 2026, point 7) le moment du duo : ceux qu'il a fermés sur ce téléphone
+  const [fermes, setFermes] = useState<string[]>([]);
+  // 📜 (point 6, « l'espace pour les textes est très étroit ») le fil en grand : la scène se replie (retenu ici)
+  const [grandFil, setGrandFil] = useState(false);
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      setFermes(lireFermes(cle));
+      try {
+        setGrandFil(window.localStorage.getItem("clikme-fil-en-grand") === "1");
+      } catch {
+        /* rien */
+      }
+    });
+  }, [cle]);
+  const basculerFil = useCallback(() => {
+    setGrandFil((x) => {
+      try {
+        window.localStorage.setItem("clikme-fil-en-grand", x ? "0" : "1");
+      } catch {
+        /* rien */
+      }
+      return !x;
+    });
+    // (le fil, en bas : le dernier message en vue)
+    window.setTimeout(() => liste.current?.scrollTo({ top: liste.current.scrollHeight }), 60);
+  }, []);
   /** 🗑️ Il efface un aparté (pour les deux). */
   async function effacerAparte(id: string) {
     if (!fil) return;
@@ -1352,6 +1379,9 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         ]
       : []),
   ];
+  // 🎬 le moment du duo (point 7) : ce qui vient de se passer entre eux deux, à l'arrivée
+  const moment = momentDuDuo({ questions: et.questions, objets: et.objets, apartes: vivant?.apartes ?? [], fermes, maintenant, pret: Boolean(vivant) });
+  const imageMoi = (avec?.mienne && fil.moi.expressions[avec.mienne]?.n) || fil.moi.neutre;
   const aparteDe = (qui: "moi" | "lui") => {
     if (!aparteJoue) return null;
     const k = aparteJoue.mots.findIndex((x) => x.moi === (qui === "moi"));
@@ -1427,12 +1457,27 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         )}
       </header>
 
-      <BandeauRituel avec={avec} prenom={fil.lui.prenom} onAvec={setAvec} />
+      {moment ? (
+        <BandeauMoment
+          key={moment.id}
+          cle={cle}
+          m={moment}
+          prenom={fil.lui.prenom}
+          imageMoi={imageMoi}
+          imageLui={avatar}
+          onRepondre={(q, oui) => et.repondre(q, oui)}
+          onEtagere={() => setPageEtagere(true)}
+          onFerme={(id) => setFermes((f) => [...f, id])}
+        />
+      ) : (
+        <BandeauRituel avec={avec} prenom={fil.lui.prenom} onAvec={setAvec} />
+      )}
 
       {/* la scène : leurs deux figurines face à face ; celle qui parle s'avance — chez moi, dans mon univers */}
       <section
         ref={sceneRef}
-        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}${sursaut ? " pv-sursaut" : ""}${et.objets.length ? " avec-etagere" : ""}${endormies ? " et-poussiere" : ""}`}
+        className={`pr-scene${chez ? " chez" : ""}${m?.moi ? " moi" : ""}${joue ? " joue" : ""}${sursaut ? " pv-sursaut" : ""} avec-etagere${endormies ? " et-poussiere" : ""}${grandFil ? " replie" : ""}`}
+        aria-hidden={grandFil || undefined}
         aria-label={chez ? `Chez toi : ${fil.lui.prenom} est venu te voir` : "La scène"}
         data-message={m?.id ?? ""}
         data-replique={m ? ir : ""}
@@ -1534,6 +1579,22 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           </div>
         )}
       </section>
+      {/* 📜 (15 novembre 2026, point 6) le fil en grand : la scène se replie en une ligne, et revient d'un toucher ; les
+          messages se lisent et s'écoutent dans le fil */}
+      {grandFil ? (
+        <button type="button" className="pr-scene-repliee" onClick={basculerFil} aria-label="Revoir la scène">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageMoi} alt="" draggable={false} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={avatar} alt="" draggable={false} />
+          <span>{joue && m ? `${m.moi ? "Toi" : fil.lui.prenom} · ${sansSon(m) ? "il s’affiche" : "il s’écoute"}…` : chez ? `Chez toi, avec ${fil.lui.prenom}` : `Avec ${fil.lui.prenom}`}</span>
+          <b>⌄ La scène</b>
+        </button>
+      ) : (
+        <button type="button" className="pr-replier" onClick={basculerFil}>
+          ⌃ Le fil en grand
+        </button>
+      )}
 
       <ol className="pr-fil" ref={liste} aria-label="Vos messages">
         {elements.map(({ x, i, g, a, e, le, mm, ob, ct, ra, q }) => {
@@ -2753,4 +2814,13 @@ export const STYLES_PROCHES = `
 @keyframes pr-clignote{50%{opacity:.25}}
 @keyframes pr-tourne{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pr *,.pr-plein *{animation:none!important}}
-${STYLES_ECRIRE}${STYLES_PHOTOS}${STYLES_VIDEOS}`;
+${STYLES_ECRIRE}${STYLES_PHOTOS}${STYLES_VIDEOS}${STYLES_MOMENT}
+/* 📜 (point 6) le fil en grand : la scène repliée (toujours là : la voix d'un message s'y joue), et sa ligne */
+.pr-scene.replie,.pr-scene.chez.replie{height:0!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;opacity:0;pointer-events:none;overflow:hidden}
+.pr-replier{align-self:flex-end;position:relative;z-index:5;flex:none;height:30px;margin:-40px 10px 10px 0;padding:0 12px;border:0;border-radius:999px;background:rgba(18,6,15,.62);color:#FFF4E6;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.pr-scene-repliee{flex:none;display:flex;align-items:center;gap:6px;margin:0 0 8px;padding:6px 12px 6px 6px;border:1px solid rgba(255,196,140,.16);border-radius:999px;background:#22101B;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.pr-scene-repliee img{width:32px;height:32px;border-radius:999px;object-fit:cover;object-position:50% 18%;background:#3A1A30}
+.pr-scene-repliee img+img{margin-left:-14px;box-shadow:0 0 0 2px #22101B}
+.pr-scene-repliee span{flex:1;min-width:0;font-size:13px;font-weight:700;color:#E8D6C8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-scene-repliee b{flex:none;font-size:12.5px;color:#F2C46B}
+`;
