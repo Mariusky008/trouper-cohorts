@@ -571,7 +571,8 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
   }
   const o = f.objets.find((x) => x.id === s(p.id) && visible(x));
   if (!o) return { error: "Ce souvenir n’est plus sur votre étagère.", statut: 404 };
-  // (📊 ce qu'on mesure, c'est la justesse des figurines : ce qu'on a déposé à la main n'y compte pas)
+  // (📊 ce qu'on mesure, c'est la justesse des figurines : ce qu'on a déposé à la main n'y compte pas. Les compteurs
+  // s'écrivent AVANT la réponse : laissés en route après elle, la fonction pouvait s'arrêter avant de les écrire)
   if (p.action === "retirer" && !o.depose) await noterStat(supabase, "retires").catch(() => undefined);
   if (p.action === "retirer") return ecrire({ ...f, objets: f.objets.map((x) => (x === o ? pierreTombale(x, moi8, le) : x)), cartes: (f.cartes ?? []).filter((c) => c.objet !== o.id) });
   // 🏆 celui que ça concerne le dit lui-même, son jour arrivé
