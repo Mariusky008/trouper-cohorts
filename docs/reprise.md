@@ -194,7 +194,10 @@ sa décision : chaque conversation se passe dans **une pièce choisie à deux, s
 chambre vue mer, café), faite une fois pour tous, avec **les mêmes emplacements** (télé, platine, cadres, étagère,
 fenêtre, deux places, coin du chat). **Fait** : l'essai des cinq pièces (en tête de `/admin/humain/univers-essais`,
 « 🛋️ La pièce du duo ») : chaque pièce dessinée sans personne, puis ses emplacements relevés par un modèle qui voit et
-dessinés par-dessus. **À faire** : que le propriétaire les fasse et les juge ; puis la pièce vivante à l'essai (deux
+dessinés par-dessus. Le propriétaire les a faites le 15 novembre (le salon : très réussi, 7 emplacements sur 7, la
+télé relevée un peu à côté). **Puis l'essai de l'effet « collage »**, juste en dessous : deux figurines dans une pièce,
+posées par l'écran contre générées avec la pièce, et son avis (`piece-du-duo.md`, section 6). **À faire** : son avis
+sur le collage ; puis la pièce vivante à l'essai (deux
 figurines, le changement de pièce, la télé qui joue un vrai lien, la surprise à l'ouverture) ; **puis seulement**
 refaire la bienvenue (« elle ne va pas du tout » : l'interrupteur `BIENVENUE_CHEZ_PABLITO` reste éteint).
 

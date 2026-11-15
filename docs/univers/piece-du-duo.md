@@ -89,6 +89,22 @@ liens (lots M1 à M3), « Je le range ? » et l'étagère, le compagnon.
 2. **La maquette, à l'essai** : d'abord l'effet « collage » (deux vraies figurines assises dans une vraie pièce :
    composées, contre générées une fois avec la pièce) ; puis l'invitation à changer de pièce, le zoom sur chaque objet,
    la surprise quand quelque chose a changé.
+   - **L'essai du collage est construit** (« 🧩 L'effet « collage » », juste sous les pièces, sur la même page ;
+     `pieces-duo-collage-serveur.ts`, `app/api/admin/direct/pieces-duo/collage`, son essai
+     `scripts/essai-pieces-duo-collage-route.mjs`). On choisit une pièce faite et deux figurines : celle du téléphone,
+     ou celles des essais du lot 0 (pas les refusées). Trois images : chaque figurine assise SANS son fauteuil
+     (détourée au plus près, faite une fois par figurine), puis le duo généré dans la pièce. L'écran montre les deux
+     versions l'une sous l'autre :
+     - **posées** : la pose est placée à la place relevée. Le point qui touche le siège est à `ANCRE_ASSISE` (66 %)
+       de sa hauteur, et sa taille vient de la hauteur relevée. S'y ajoutent une ombre de contact, une ombre portée
+       vers la droite (la lumière vient de la gauche) et un voile de lumière chaude, masqué par la figurine elle-même ;
+     - **générée**.
+
+     Puis l'avis du propriétaire (« les posées tiennent », « la générée, nettement mieux », « aucune ne va », et un
+     mot), rangé dans `pieces-duo/collage/choix.json`.
+   - **Ce qu'il en sortira** : si les posées tiennent, une pose sans fauteuil par personne suffit pour toutes les
+     pièces (et le changement de pièce est instantané) ; sinon, une image du duo par pièce choisie (environ 0,20 $,
+     faite à la première visite de la pièce, puis réutilisée).
 3. **Les objets qui vivent**, une fois la maquette validée : la télé d'abord (elle surprend le plus et se nourrit des
    liens qui existent déjà), puis la platine, les cadres, l'étagère.
 4. Puis la conversation refaite dessus ; puis, en dernier, la bienvenue (on ne peut pas accueillir quelqu'un dans un
