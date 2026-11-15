@@ -183,6 +183,14 @@ visible, ce qui vient de s'y passer joué à l'arrivée (un souvenir posé, « J
 les messages vocaux en bulles du fil. **À décider** : qui construit l'univers commun et le fil plus large — le fil et
 l'étagère sont le chantier de l'autre session.
 
+## 0 octies. Le compagnon : l'essai du chat (lot C0, 15 novembre 2026)
+
+Le cahier : `docs/univers/compagnon.md` (lot C). **C0 est construit** (9.0 unseptuagies 🐾) : dans `/admin/humain/univers-essais`,
+« 🐾 Le compagnon : l'essai du chat » — l'image de référence (dans le style de la figurine du propriétaire), huit
+boucles (une pose, puis quatre secondes de vidéo sur fond vert chez Google), le vert retiré dans le téléphone, l'aperçu
+chez lui. **À juger par le propriétaire sur son iPhone** : le style, la constance, s'il vit bien à côté de sa figurine.
+Rien d'autre (C1 à C4) ne commence avant son verdict.
+
 ## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
 
 Le propriétaire cherchait « l'utilité » de l'appli, ce qui fera revenir. Sa réponse, sur une maquette : **oui, on la

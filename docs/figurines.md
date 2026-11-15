@@ -3509,6 +3509,35 @@ quelque chose (leur étagère, une figurine qui demande « Je le range ? », qui
 - **Reste à faire, après la maquette** : l'univers commun du duo (4, 7) et le fil plus large (6) — avec l'autre session,
   dont c'est le chantier (le fil, l'étagère).
 
+### 9.0 unseptuagies 🐾 Le compagnon, lot C0 : l'essai du chat (15 novembre)
+
+Le cahier : `docs/univers/compagnon.md` (le propriétaire, le même jour : « commence directement par lancer C0 le chat »).
+Rien d'autre ne commence avant son verdict sur son téléphone : le style, la constance, s'il vit bien à côté de sa
+figurine.
+
+- **Le catalogue, le même pour tous** (`lib/direct/compagnon-essai-serveur.ts`), rangé à part de chaque habitant :
+  `compagnons/<espèce>/reference.png`, puis par boucle `<boucle>/pose.png`, `video.json`, `video.mp4`. Fait une fois,
+  rien à payer par personne.
+- **1. L'image de référence** : l'animal en petit jouet de vinyle, d'après la figurine assise de l'administrateur
+  (IMAGE 1, « EXACTLY the same style ») — grosse tête, grands yeux brillants, joues roses —, le fond retiré.
+- **2. Huit boucles** (`lib/direct/compagnons.ts`) : assis (la queue, un clin d'œil), il marche (sur place : c'est
+  l'appli qui le déplace), couché il dort, sur les genoux il ronronne, alerte (les oreilles), un saut de joie, il
+  renifle, il joue (une pelote). Chacune : une POSE (le même animal, fidélité haute, détourée), puis le MOUVEMENT —
+  la pose posée sur un fond vert uni (720 × 1280), commandée chez Google (Gemini Omni, `commanderUneVideoGoogle` : la
+  première et la dernière image sont la pose, une boucle sans couture), suivie, rangée.
+- **Le vert retiré dans le téléphone** (`app/univers/compagnon-vivant.tsx`, `CompagnonVivant`) : chaque image de la
+  vidéo passe par une toile, où ce qui est « plus vert que rouge et bleu » devient transparent (à demi sur les bords,
+  dont le reflet vert s'éteint). Un seul MP4, lu partout — l'iPhone ne lit pas la transparence des WebM, et un HEVC
+  transparent ne se fabrique que sur un Mac — ; ni ffmpeg ni outil de fabrication. Vérifié dans le navigateur avec une
+  vraie vidéo sur fond vert (le fond, même plus sombre, transparent ; l'animal, plein).
+- **La page d'essais** (« 🐾 Le compagnon : l'essai du chat (C0) », route `/api/admin/direct/compagnon`) : « Faire le
+  chat » (la référence), « Faire ses boucles » (toutes, à la suite — garder la page ouverte), chaque boucle à part
+  (faire, refaire la pose ou la vidéo, « La vidéo seule »), « Voir avec le fond vert », et **chez toi** : ton décor,
+  ta figurine assise, le chat à côté d'elle (ou sur ses genoux), la boucle choisie d'un toucher. Le coût : environ
+  0,20 $ la référence, 0,10 $ chaque pose, 0,40 $ chaque boucle — environ 4 $ le chat entier.
+- **L'essai automatique** : `essai-compagnon-route.mjs` (la référence dans le style de SA figurine, détourée ; la pose
+  « dort » ; la vidéo sur fond vert chez Google, la première et la dernière image ; une vraie vidéo rangée ; refaire).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
