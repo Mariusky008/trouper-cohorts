@@ -10,6 +10,11 @@
 // regarder sur YouTube ». Un TikTok : « ▶ Ouvrir sur TikTok » (dans un nouvel onglet). Un lien d'ailleurs : « ne passe
 // pas à la télé ». « ↩ La pièce entière » : la caméra recule, la télé s'éteint. La liste de secours : deux clips et une
 // ligne d'ailleurs, rangée — deux clips, la ligne refusée. Rien ne déborde, jamais le mot interdit, aucune erreur.
+//
+// (15 novembre 2026, le propriétaire : « le clip n'est pas aux bonnes dimensions de la télé » ; « le bouton pause est à
+// l'extérieur de la télé et il est énorme ») Allumée, le lecteur est posé sur l'écran tel qu'on le voit, à sa taille
+// réelle (pas agrandi par la caméra). La cuisine, son écran pas repéré : « ✋ Placer l'écran de la télé », tracé d'un
+// coin à l'autre — rangé (« posé à la main »), la télé s'y pose.
 import { createRequire } from "node:module";
 import { D, F, lancer } from "./commun.mjs";
 
@@ -38,6 +43,9 @@ const piece = await sharp({ create: { width: 1024, height: 1536, channels: 3, ba
   .toBuffer();
 await deposer("pieces-duo/salon/decor.png", piece, "image/png");
 await json("pieces-duo/salon/releve.json", { le: new Date().toISOString(), emplacements: { tele: [0.586, 0.195, 0.264, 0.111], cadres: [], places: [] } });
+// (la cuisine : son écran pas repéré par le modèle qui voit ; ses places, si)
+await deposer("pieces-duo/cuisine/decor.png", piece, "image/png");
+await json("pieces-duo/cuisine/releve.json", { le: new Date().toISOString(), emplacements: { cadres: [], places: [{ x: 0.3, y: 0.8, hauteur: 0.25 }, { x: 0.7, y: 0.8, hauteur: 0.25 }] } });
 const DEFAUT = ["7CGKeID7nRc", "nd8RD3tjNQE", "R2KeQqLzr00", "ko70cExuzZM", "e5s8MdtnbMM"];
 
 // ─── le faux lecteur de YouTube ───
@@ -102,6 +110,14 @@ await p.screenshot({ path: `${D}/tele-duo-de-pres.png` });
 await tv.locator('[data-geste="allumer"]').click();
 await p.waitForSelector(`[data-faux-yt="${clipDuJour}"][data-joue="1"]`, { timeout: 10000 }).catch(() => null);
 ok((await tv.getAttribute("data-tele")) === "allumee" && (await p.locator(`[data-faux-yt="${clipDuJour}"][data-joue="1"]`).count()) === 1, "allumée : le lecteur joue le clip");
+await p.waitForTimeout(400);
+const pose = await p.evaluate(() => {
+  const f = document.querySelector(".tv-flottant");
+  const t = document.querySelector(".tvd-scene .tv")?.getBoundingClientRect();
+  const r = f?.getBoundingClientRect();
+  return f && t && r ? { dansLaPage: f.parentElement === document.body, ecart: Math.max(Math.abs(r.left - t.left), Math.abs(r.top - t.top), Math.abs(r.width - t.width), Math.abs(r.height - t.height)), echelle: r.width / f.offsetWidth } : null;
+});
+ok(Boolean(pose) && pose.dansLaPage && pose.ecart < 2 && Math.abs(pose.echelle - 1) < 0.01, `le lecteur, posé sur l'écran tel qu'on le voit, à sa taille réelle — pas agrandi par la caméra (${JSON.stringify(pose)})`);
 await p.screenshot({ path: `${D}/tele-duo-allumee.png` });
 await tv.locator(".tv-eteindre").click();
 ok((await tv.getAttribute("data-tele")) === "eteinte" && (await p.locator("[data-faux-yt]").count()) === 0, "« ⏻ Éteindre » : la télé s'éteint");
@@ -140,6 +156,29 @@ await champ.fill("");
 await section.locator(".tvd-recul").click();
 await p.waitForTimeout(900);
 ok((await section.locator(".tvd-scene").getAttribute("data-proche")) === "0" && (await section.locator(".tv .tv-bouton").count()) === 0, "« ↩ La pièce entière » : la caméra recule, plus de bouton");
+
+// ─── ✋ la cuisine : son écran pas repéré, placé à la main ───
+await section.locator('[data-piece-tele="cuisine"]').click();
+await p.waitForTimeout(300);
+ok((await section.textContent())?.includes("n’a pas été repéré") && (await section.locator('[data-geste="placer-ecran"]').textContent())?.includes("Placer l’écran de la télé"), "la cuisine : son écran pas repéré — « ✋ Placer l'écran de la télé »");
+await section.locator('[data-geste="placer-ecran"]').click();
+const zoneTrace = await section.locator(".tvd-tracer").boundingBox();
+await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.6, zoneTrace.y + zoneTrace.height * 0.2);
+await p.mouse.down();
+await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.75, zoneTrace.y + zoneTrace.height * 0.25, { steps: 4 });
+await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.3, { steps: 4 });
+await p.mouse.up();
+await p.waitForFunction(() => document.querySelector('section[aria-label="La télé du duo"]')?.textContent?.includes("à sa place"), null, { timeout: 10000 }).catch(() => null);
+await p.waitForTimeout(500);
+const releveCuisine = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/cuisine/releve.json`)).json().catch(() => ({}));
+const t = releveCuisine.emplacements?.tele ?? [];
+ok(releveCuisine.ajuste === true && Math.abs(t[0] - 0.6) < 0.02 && Math.abs(t[1] - 0.2) < 0.02 && Math.abs(t[2] - 0.3) < 0.02 && Math.abs(t[3] - 0.1) < 0.02 && releveCuisine.emplacements?.places?.length === 2, `tracé d'un coin à l'autre : l'écran rangé, posé à la main, les places gardées (${JSON.stringify(t)})`);
+const surLEcran = await p.evaluate(() => {
+  const s = document.querySelector(".tvd-scene")?.getBoundingClientRect();
+  const e = document.querySelector(".tvd-scene .tv")?.getBoundingClientRect();
+  return s && e ? { x: (e.left - s.left) / s.width, l: e.width / s.width } : null;
+});
+ok(Boolean(surLEcran) && Math.abs(surLEcran.x - 0.6) < 0.02 && Math.abs(surLEcran.l - 0.3) < 0.02 && (await section.locator('[data-geste="placer-ecran"]').textContent())?.includes("Replacer"), `la télé s'y pose (${JSON.stringify(surLEcran)})`);
 
 // ─── la liste de secours ───
 const liste = section.locator("textarea");
