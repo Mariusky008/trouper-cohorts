@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { EssaisUnivers } from "./essais";
 import { PablitoAuNouveauStyle } from "./pablito";
+import { UniversDePablito } from "./chez-pablito";
 import { MaisonEnPanorama } from "./salon";
 import { PieceVivante } from "./vivante";
 import { AmbiancesDeTonUnivers } from "./ambiances";
@@ -31,6 +32,7 @@ export default async function PageEssaisUnivers() {
         page se met à jour toute seule.
       </p>
       <PablitoAuNouveauStyle />
+      <UniversDePablito />
       <CompagnonEssai />
       <UniversVivant />
       <PieceVivante />

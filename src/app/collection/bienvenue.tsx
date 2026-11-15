@@ -70,7 +70,7 @@ function Perso({ qui }: { qui: "toi" | "lea" }) {
  * lieu d'un petit carré où je suis assis, et que ma bouche parle en même temps que le texte ») : sa figurine debout,
  * bouche fermée et bouche ouverte, l'une sur l'autre ; tant qu'il parle, la bouche s'ouvre et se ferme.
  */
-function PablitoDebout({ parle }: { parle: boolean }) {
+export function PablitoDebout({ parle }: { parle: boolean }) {
   return (
     <span className={`bv-debout${parle ? " parle" : ""}`}>
       <span className="bv-debout-corps">

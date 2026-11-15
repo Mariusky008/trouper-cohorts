@@ -135,6 +135,11 @@ conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses si
 - **La suite** : un tuto par fonctionnalité (« ensuite, on fera des tutos pour chaque feature ») ; aujourd'hui, le logo
   ouvre encore la visite d'avant (`tuto.tsx` : Créer, Découvrir, Autour, Mes mèmes, Proches, Moi), qui ne suit plus le
   menu à trois.
+- **👋 « Entre chez Pablito »** (15 novembre) : la bienvenue refaite DANS l'univers du propriétaire (son univers devient
+  celui de Pablito, adopté depuis l'admin) ; le nouveau venu est son invité et vit chaque chose d'un toucher (ses clés,
+  « Je le range ? » et le rappel, un souvenir, « Qui peut entrer »). Son adresse directe : `/bienvenue`. Derrière
+  l'interrupteur `BIENVENUE_CHEZ_PABLITO`, **éteint** jusqu'à ce que le propriétaire l'ait regardée. Le détail :
+  `docs/figurines.md`, 9.0 tresseptuagies.
 
 ## 0 sexies. « Ma maison », vivante (14 novembre 2026)
 
@@ -241,7 +246,7 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   construit** (9.0 sexsexagies 🎬 : `video.ts`, `video-serveur.ts`, `video-depot` et `video`) et son écran (9.0
   septsexagies : `app/collection/videos.tsx`). **Le nettoyage du stockage aussi** (9.0 octosexagies 🧹 : chaque nuit,
   les dépôts jamais envoyés et les fichiers qu'aucun message ne cite). « 🎵 Le ranger dans mon univers ? »
-  et « 🖼️ La mettre dans mon univers ? » **sont construits** (`docs/figurines.md`, 9.0 tresseptuagies : la question sous
+  et « 🖼️ La mettre dans mon univers ? » **sont construits** (`docs/figurines.md`, 9.0 quattuorseptuagies : la question sous
   ce qu'il a envoyé, la copie dans son univers, sur son étagère « Ce que j'aime »). **Reste** : la page de
   confidentialité (au propriétaire).
 - **Écart repéré, à décider par le propriétaire** : le cahier (section 7) dit qu'« un proche retiré, un compte effacé :
