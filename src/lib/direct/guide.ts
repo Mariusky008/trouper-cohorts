@@ -42,11 +42,17 @@ const voix = (cle: string, fichier: string) => [cle, `/collection/pablito/${fich
  * bulle de « Créer », réécrite pour l'écran unique (`tuto-creer-4c`). Le 13 novembre 2026, la bienvenue refaite pour
  * l'univers (`app/collection/bienvenue.tsx`) : sa première bulle reste `tuto-bienvenue-1` ; les cinq suivantes,
  * `tuto-univers-2` à `tuto-univers-6`, reçues le jour même (les anciennes bulles 2 et 3 sont parties avec leur texte).
+ * Le 15 novembre 2026, la bienvenue « Entre chez Pablito » (`lib/direct/bienvenue.ts`) : ses trois nouvelles bulles,
+ * `tuto-chez-3` à `tuto-chez-5` (la dernière, avec « Merci, je le garde. », découpée à la pause : `tuto-chez-5-merci`).
  */
 const enSerie = (page: string, n: number) => Array.from({ length: n }, (_, k) => `tuto-${page}-${k + 1}`);
 export const TUTO_ENREGISTRES = [
   "tuto-bienvenue-1",
   ...enSerie("univers", 6).slice(1),
+  "tuto-chez-3",
+  "tuto-chez-4",
+  "tuto-chez-5",
+  "tuto-chez-5-merci",
   "tuto-visite-1",
   ...enSerie("creer", 4),
   "tuto-creer-4c",
