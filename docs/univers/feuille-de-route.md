@@ -768,6 +768,19 @@ compagnons, `compagnons/chat/<boucle>/video.mp4` (`compagnonDePablito`), et joue
 (`app/univers/compagnon-vivant.tsx`), sans rien y changer. Si vous déplacez le catalogue, renommez une boucle ou changez
 `CompagnonVivant`, la bienvenue suit : dites-le (son essai : `scripts/navigateur/bienvenue-chez.mjs`).
 
+#### 📨 Relais pour la session de l'univers : la pièce du duo — la décision du propriétaire (15 novembre 2026)
+
+**À lire avant tout nouveau développement de l'univers : `piece-du-duo.md`.** Après avoir joué la bienvenue, le
+propriétaire a demandé une analyse de fond, puis décidé : chaque conversation se passe dans **une pièce choisie à deux,
+et changée selon l'humeur** (le salon, la cuisine, la terrasse, la chambre vue mer, le café), un **catalogue fait une
+fois pour tous**, avec **les mêmes emplacements partout** (la télé qui joue les liens partagés, la platine, les cadres,
+l'étagère, la fenêtre, deux places, le coin du chat) et un zoom sur l'objet qu'on touche. **Gelé en attendant** : le décor
+généré pour chacun et ses retouches, la vidéo de 8 secondes, la navigation entre plusieurs pièces (rien n'est retiré, on
+n'y ajoute plus rien). Fait : l'essai des cinq pièces, en tête de `/admin/humain/univers-essais` (`pieces-duo.ts`,
+`pieces-duo-serveur.ts`, `app/api/admin/direct/pieces-duo`, son essai `scripts/essai-pieces-duo-route.mjs`) ; le
+catalogue est rangé dans `pieces-duo/<pièce>/` (`decor.png`, `releve.json`). La suite (la pièce vivante, à l'essai) est
+dans `piece-du-duo.md`, section 6.
+
 ### Lot C — Le compagnon (15 novembre 2026, proposé)
 
 Le propriétaire : un animal qui vit dans l'univers, choisi au départ (un chat, une panthère, un perroquet…), qui bouge
