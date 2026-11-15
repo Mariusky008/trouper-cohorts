@@ -121,6 +121,19 @@ const pose = await p.evaluate(() => {
 });
 ok(Boolean(pose) && pose.dansLaPage && pose.ecart < 2 && Math.abs(pose.echelle - 1) < 0.01, `le lecteur, posé sur l'écran tel qu'on le voit, à sa taille réelle — pas agrandi par la caméra (${JSON.stringify(pose)})`);
 await p.screenshot({ path: `${D}/tele-duo-allumee.png` });
+// (« rester allumée même quand je clique sur la pièce entière, pour continuer à profiter de toute la pièce »)
+await section.locator(".tvd-recul").click();
+await p.waitForTimeout(1000);
+const deLoin = await p.evaluate(() => {
+  const f = document.querySelector(".tv-flottant");
+  const t = document.querySelector(".tvd-scene .tv")?.getBoundingClientRect();
+  const r = f?.getBoundingClientRect();
+  return f && t && r ? { proche: f.getAttribute("data-proche"), toucher: getComputedStyle(f).pointerEvents, ecart: Math.max(Math.abs(r.left - t.left), Math.abs(r.top - t.top), Math.abs(r.width - t.width)) } : null;
+});
+ok((await tv.getAttribute("data-tele")) === "allumee" && (await p.locator(`[data-faux-yt="${clipDuJour}"]`).count()) === 1 && deLoin?.proche === "0" && deLoin.toucher === "none" && deLoin.ecart < 2, `« La pièce entière » : la télé reste allumée, le lecteur suit l'écran sans prendre le toucher (${JSON.stringify(deLoin)})`);
+await tv.click();
+await p.waitForTimeout(900);
+ok((await section.locator(".tvd-scene").getAttribute("data-proche")) === "1" && (await p.locator(".tv-flottant").getAttribute("data-proche")) === "1" && (await p.locator(`[data-faux-yt="${clipDuJour}"]`).count()) === 1, "un toucher sur la télé allumée : la caméra revient, elle joue toujours");
 await tv.locator(".tv-eteindre").click();
 ok((await tv.getAttribute("data-tele")) === "eteinte" && (await p.locator("[data-faux-yt]").count()) === 0, "« ⏻ Éteindre » : la télé s'éteint");
 
@@ -171,17 +184,29 @@ const toucherA = async (x, y) => {
   await p.mouse.up();
 };
 // (en perspective : le bord droit plus haut que le gauche ; le 2e coin posé un peu trop haut, puis glissé)
-ok((await section.locator(".tvd-tracer small").textContent())?.includes("en haut à gauche"), "« Touche les quatre coins de l'écran : en haut à gauche (1/4) »");
+ok((await section.locator(".tvd-tracer small").textContent())?.includes("en haut à gauche"), "« Appuie sur le coin en haut à gauche de l'écran (1/4), glisse pour viser avec la loupe, relâche »");
 await toucherA(0.6, 0.2);
 await toucherA(0.9, 0.12);
 await toucherA(0.9, 0.33);
 await toucherA(0.6, 0.3);
-ok((await section.locator(".tvd-tracer i[data-coin]").count()) === 4 && (await section.locator(".tvd-tracer small").textContent())?.includes("Fais glisser les coins"), "quatre coins posés : « Fais glisser les coins pour ajuster »");
+ok((await section.locator(".tvd-tracer i[data-coin]").count()) === 4 && (await section.locator(".tvd-tracer small").textContent())?.includes("Reprends un coin"), "quatre coins posés : « Reprends un coin pour l'ajuster (la loupe t'aide) »");
 await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.12);
 await p.mouse.down();
 await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.15, { steps: 4 });
 await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.17, { steps: 4 });
+const laLoupe = await p.evaluate(() => {
+  const l = document.querySelector(".tvd-loupe");
+  const t = document.querySelector(".tvd-tracer")?.getBoundingClientRect();
+  const r = l?.getBoundingClientRect();
+  if (!l || !t || !r) return null;
+  const [px, py] = getComputedStyle(l).backgroundPosition.split(" ").map(parseFloat);
+  // (le point au milieu de la loupe, ramené à la scène : là où vise le doigt)
+  const vise = [(r.width / 2 - px) / 3 / t.width, (r.height / 2 - py) / 3 / t.height];
+  return l && t && r ? { image: getComputedStyle(l).backgroundImage.includes("cuisine/decor.png"), vise, entiere: r.left >= t.left && r.right <= t.right, dessus: r.bottom <= t.top + t.height * 0.17 || r.top >= t.top + t.height * 0.17 } : null;
+});
+await p.screenshot({ path: `${D}/tele-duo-loupe.png` });
 await p.mouse.up();
+ok(Boolean(laLoupe) && laLoupe.image && Math.abs(laLoupe.vise[0] - 0.9) < 0.02 && Math.abs(laLoupe.vise[1] - 0.17) < 0.02 && laLoupe.entiere && laLoupe.dessus && (await p.locator(".tvd-loupe").count()) === 0, `🔍 en reprenant un coin : la loupe montre la pièce sous le doigt (son viseur sur le point visé), entière dans la scène, sans cacher le doigt ; relâché, elle s'en va (${JSON.stringify(laLoupe)})`);
 await section.locator('[data-geste="enregistrer-ecran"]').click();
 await p.waitForFunction(() => document.querySelector('section[aria-label="La télé du duo"]')?.textContent?.includes("à sa place"), null, { timeout: 10000 }).catch(() => null);
 await p.waitForTimeout(600);

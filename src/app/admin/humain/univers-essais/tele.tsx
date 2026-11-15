@@ -8,8 +8,10 @@
  *
  * ✋ L'ÉCRAN À SA PLACE (15 novembre 2026, le propriétaire : « le clip n'est pas aux bonnes dimensions de la télé, il se
  * trouve en dehors ») : l'écran d'une pièce que le modèle qui voit n'a pas trouvé (ou mal) se place ici, par ses QUATRE
- * COINS (« la télé posée au mur est en perspective, donc plus large à droite qu'à gauche ») : on les touche un à un, on
- * les fait glisser pour ajuster, puis « Enregistrer l'écran » ; ils remplacent l'écran du relevé (les autres zones
+ * COINS (« la télé posée au mur est en perspective, donc plus large à droite qu'à gauche ») : on appuie, une LOUPE
+ * montre le coin sous le doigt (« quand je choisis les quatre coins sur une petite surface sans zoomer, ça reste
+ * imprécis »), on glisse pour viser, on relâche : le coin est posé ; un coin posé se reprend de même ; puis
+ * « Enregistrer l'écran » ; ils remplacent l'écran du relevé (les autres zones
  * restent), et la télé s'y déforme.
  *
  * Et ses clips de secours : la courte liste que la télé passe quand le duo ne s'est encore envoyé aucun lien (une
@@ -23,6 +25,8 @@ import { TeleDuo } from "@/app/univers/tele-duo";
 const ROUTE = "/api/admin/direct/tele";
 /** (une pièce dont la télé n'a pas été relevée : une zone au mur, pour l'essai) */
 const ZONE_PAR_DEFAUT: ZoneTele = [0.56, 0.18, 0.3, 0.13];
+/** 🔍 La loupe : son diamètre (en pixels), et combien elle agrandit. */
+const LOUPE = { taille: 120, zoom: 3 } as const;
 
 /** La caméra près de la télé : l'écran au milieu, sur 90 % de la largeur (ou 60 % de la hauteur). */
 function pres(z: ZoneTele) {
@@ -45,6 +49,9 @@ export function TeleDuDuoEssai() {
   /** 📐 les coins posés (en haut à gauche, en haut à droite, en bas à droite, en bas à gauche) ; celui qu'on fait glisser */
   const [coins, setCoins] = useState<[number, number][]>([]);
   const [tire, setTire] = useState<number | null>(null);
+  const [nouveau, setNouveau] = useState(false);
+  /** 🔍 la loupe : où est le doigt (en fractions de la scène), et la taille de la scène (en pixels) */
+  const [loupe, setLoupe] = useState<{ x: number; y: number; l: number; h: number } | null>(null);
   const charger = useCallback(async () => {
     const [t, p] = await Promise.all([
       fetch(ROUTE, { cache: "no-store" }).then((r) => r.json()).catch(() => ({})),
@@ -93,6 +100,9 @@ export function TeleDuDuoEssai() {
   const zone: ZoneTele = (p?.emplacements?.tele as ZoneTele | undefined) ?? ZONE_PAR_DEFAUT;
   const coinsPieces = p?.emplacements?.teleCoins;
   const NOMS_COINS = ["en haut à gauche", "en haut à droite", "en bas à droite", "en bas à gauche"];
+  // (un coin se pose quand on le relâche : celui qu'on est en train de poser ne compte pas encore)
+  const coinsFinis = coins.length === 4 && tire === null;
+  const aPoser = tire !== null && tire === coins.length - 1 && nouveau ? coins.length - 1 : coins.length;
   const colle = lien.trim() ? programmeDuLien(lien) : null;
   const clip = secoursDuJour(secours, `essai:${new Date().toISOString().slice(0, 10)}`);
   const programme: ProgrammeTele = colle
@@ -135,26 +145,41 @@ export function TeleDuDuoEssai() {
               onPointerDown={(e) => {
                 e.currentTarget.setPointerCapture(e.pointerId);
                 const [x, y] = ou(e);
-                // (près d'un coin posé : on le fait glisser ; sinon, le coin suivant)
+                // (près d'un coin posé : on le reprend ; sinon, le coin suivant — posé où on relâche)
                 const r = e.currentTarget.getBoundingClientRect();
                 const pres = coins.findIndex(([cx, cy]) => Math.hypot((cx - x) * r.width, (cy - y) * r.height) < 22);
-                if (pres >= 0) setTire(pres);
-                else if (coins.length < 4) setCoins([...coins, [x, y]]);
+                if (pres >= 0) {
+                  setTire(pres);
+                  setNouveau(false);
+                } else if (coins.length < 4) {
+                  setCoins([...coins, [x, y]]);
+                  setTire(coins.length);
+                  setNouveau(true);
+                } else return;
+                setLoupe({ x, y, l: r.width, h: r.height });
               }}
               onPointerMove={(e) => {
                 if (tire === null) return;
                 const [x, y] = ou(e);
                 setCoins(coins.map((c, k) => (k === tire ? [x, y] : c)));
+                setLoupe((l) => (l ? { ...l, x, y } : l));
               }}
-              onPointerUp={() => setTire(null)}
+              onPointerUp={() => {
+                setTire(null);
+                setLoupe(null);
+              }}
+              onPointerCancel={() => {
+                setTire(null);
+                setLoupe(null);
+              }}
             >
               <small>
-                {coins.length < 4 ? (
+                {aPoser < 4 ? (
                   <>
-                    Touche les quatre coins de l’écran : <b>{NOMS_COINS[coins.length]}</b> ({coins.length + 1}/4)
+                    Appuie sur le coin <b>{NOMS_COINS[aPoser]}</b> de l’écran ({aPoser + 1}/4), glisse pour viser avec la loupe, relâche
                   </>
                 ) : (
-                  "Fais glisser les coins pour ajuster, puis « Enregistrer l’écran »"
+                  "Reprends un coin pour l’ajuster (la loupe t’aide), puis « Enregistrer l’écran »"
                 )}
               </small>
               <svg viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
@@ -165,6 +190,23 @@ export function TeleDuDuoEssai() {
                   {k + 1}
                 </i>
               ))}
+              {/* 🔍 la loupe : le coin sous le doigt, trois fois plus grand, au-dessus du doigt (en dessous, tout en haut) */}
+              {loupe && p?.decor && (
+                <b
+                  className="tvd-loupe"
+                  aria-hidden="true"
+                  style={{
+                    // (toujours entière dans la scène : son viseur, au milieu, montre le point visé)
+                    left: Math.min(loupe.l - LOUPE.taille - 4, Math.max(4, loupe.x * loupe.l - LOUPE.taille / 2)),
+                    top: loupe.y * loupe.h - (loupe.y * loupe.h > LOUPE.taille + 40 ? LOUPE.taille + 34 : -34),
+                    width: LOUPE.taille,
+                    height: LOUPE.taille,
+                    backgroundImage: `url(${p.decor})`,
+                    backgroundSize: `${loupe.l * LOUPE.zoom}px ${loupe.h * LOUPE.zoom}px`,
+                    backgroundPosition: `${LOUPE.taille / 2 - loupe.x * loupe.l * LOUPE.zoom}px ${LOUPE.taille / 2 - loupe.y * loupe.h * LOUPE.zoom}px`,
+                  }}
+                />
+              )}
             </span>
           )}
         </div>
@@ -197,7 +239,7 @@ export function TeleDuDuoEssai() {
           )}
           {tracer && (
             <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" className="tvd-ranger" data-geste="enregistrer-ecran" disabled={coins.length !== 4} onClick={() => void poserEcran(coins)}>
+              <button type="button" className="tvd-ranger" data-geste="enregistrer-ecran" disabled={!coinsFinis} onClick={() => void poserEcran(coins)}>
                 Enregistrer l’écran
               </button>
               {coins.length > 0 && (
@@ -252,6 +294,10 @@ export function TeleDuDuoEssai() {
 .tvd-tracer polygon{fill:rgba(255,212,0,.22);stroke:#ffd400;stroke-width:2px;vector-effect:non-scaling-stroke}
 .tvd-tracer i{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;display:grid;place-items:center;border-radius:50%;background:#ffd400;color:#2b1a0c;font-style:normal;font-weight:800;font-size:11px;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.4);pointer-events:none}
 .tvd-ranger:disabled{opacity:.5;cursor:default}
+.tvd-loupe{position:absolute;z-index:3;border-radius:50%;background-repeat:no-repeat;box-shadow:0 0 0 3px #fff,0 0 0 5px #ffd400,0 6px 18px rgba(0,0,0,.45);pointer-events:none}
+.tvd-loupe::before,.tvd-loupe::after{content:"";position:absolute;background:#ff2e9a}
+.tvd-loupe::before{left:50%;top:22%;bottom:22%;width:2px;margin-left:-1px}
+.tvd-loupe::after{top:50%;left:22%;right:22%;height:2px;margin-top:-1px}
 .tvd-placer{align-self:flex-start;padding:7px 12px;border-radius:999px;border:1px solid #ff2e9a;background:#fff;color:#c2186f;font-weight:800;font-size:13px;cursor:pointer}
 .tvd-recul{position:absolute;left:10px;bottom:10px;padding:8px 12px;border:0;border-radius:999px;background:rgba(20,20,24,.82);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
 .tvd-outils{flex:1 1 240px;display:flex;flex-direction:column;gap:10px;line-height:1.4}

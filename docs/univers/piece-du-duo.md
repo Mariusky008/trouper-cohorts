@@ -259,8 +259,10 @@ const { programme, secours } = await (await fetch(`/api/direct/tele?avec=${cle}`
 (`@/app/univers/tele-duo`.) **De loin** (`proche` faux) : l'écran montre ce qui passe (l'aperçu du lien, l'image du
 clip), sans bouton ; un toucher appelle `onToucher`. **De près** : « ▶ Allumer la télé » (le geste qui donne le son sur
 iPhone ; si le téléphone refuse encore, le lecteur de YouTube garde son propre bouton), « ⏻ Éteindre » ; une vidéo qui
-refuse d'être lue hors de YouTube : un clip de secours prend le relais, « ▶ La regarder sur YouTube ». La caméra qui
-recule l'éteint. Ses tailles suivent la télé (en part de sa largeur) : la caméra qui s'approche par une mise à l'échelle
+refuse d'être lue hors de YouTube : un clip de secours prend le relais, « ▶ La regarder sur YouTube ». **La caméra qui
+recule ne l'éteint pas** (le propriétaire : « rester allumée même quand je clique sur la pièce entière, pour continuer à
+profiter de toute la pièce ») : le lecteur suit l'écran, sans prendre le toucher (un toucher sur la télé ramène la
+caméra), et ne déborde jamais de la scène. Ses tailles suivent la télé (en part de sa largeur) : la caméra qui s'approche par une mise à l'échelle
 agrandit l'écran et ses boutons ensemble. Le lecteur : celui de YouTube (`youtube-nocookie.com`), chargé au premier
 allumage ; s'il ne se charge pas, un simple cadre de YouTube.
 
@@ -271,7 +273,10 @@ l'essai de la télé ; « la télé posée au mur est en perspective, donc plus 
 quatre coins** (`emplacements.teleCoins`, en haut à gauche, en haut à droite, en bas à droite, en bas à gauche ; `tele`
 est alors leur boîte) : l'image comme le lecteur s'y déforment (`versQuad`, une transformation de perspective) ; « ça
 ne fait pas télé, mais iPad » — la vidéo couvre tout l'écran (recadrée, jamais de bandes noires), sans annotations ni
-sous-titres d'office. **La maquette doit passer `coins={emplacements.teleCoins}`** (sinon, l'écran reste un rectangle).
+sous-titres d'office. **La maquette doit passer `coins={emplacements.teleCoins}`** (sinon, l'écran reste un rectangle). **La
+loupe** (« sur une petite surface sans zoomer, ça reste imprécis ») : on appuie, une loupe trois fois plus grande montre
+le coin sous le doigt, avec un viseur ; on glisse pour viser, on relâche : le coin est posé (un coin posé se reprend de
+même).
 
 **L'essayer** : la page d'essais, « 📺 La télé du duo : l'essai » — une pièce faite, un lien collé (ou le clip du jour),
 la télé de loin, un toucher, la caméra s'approche, « Allumer la télé ».

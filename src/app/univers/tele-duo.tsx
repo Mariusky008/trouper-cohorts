@@ -5,7 +5,8 @@
  * maquette de la pièce vivante (puis la conversation) la pose sur l'écran de la télé de sa pièce (`zone`, relevée sur
  * l'image : `pieces-duo.ts`), et lui dit si la caméra est près d'elle (`proche`).
  *
- * DE LOIN : l'écran montre ce qui passe (l'aperçu du dernier lien, l'image du clip), sans bouton ; un toucher appelle
+ * DE LOIN : allumée, elle continue de jouer (le lecteur suit l'écran, sans prendre le toucher) ; éteinte, l'écran
+ * montre ce qui passe (l'aperçu du dernier lien, l'image du clip), sans bouton ; un toucher appelle
  * `onToucher` (la maquette s'approche). DE PRÈS : « ▶ Allumer la télé » (YouTube, lu dans l'écran : sur iPhone, ce
  * bouton est le geste qui donne le son ; si le téléphone refuse encore, le lecteur de YouTube garde son propre bouton) ;
  * « ▶ Ouvrir sur TikTok / Instagram » (ils se lisent mal hors de leur appli) ; « Éteindre ». Une vidéo qui refuse d'être
@@ -66,10 +67,25 @@ function chargerYouTube(): Promise<EspaceYT> {
 }
 
 /** L'écran tel qu'on le voit (après la caméra), en pixels de la fenêtre. */
-type Cadre = { l: number; t: number; w: number; h: number };
-function mesurer(el: HTMLElement | null): Cadre | null {
+type Cadre = { l: number; t: number; w: number; h: number; coupe?: string };
+/**
+ * L'écran tel qu'on le voit ; et, si la scène qui le contient coupe ce qui la dépasse (son `overflow`), ce que le
+ * lecteur posé par-dessus doit couper aussi (`coupe`, un `inset()` : il ne déborde jamais de la scène).
+ */
+function mesurer(el: HTMLElement | null, scene?: HTMLElement | null): Cadre | null {
   const r = el?.getBoundingClientRect();
-  return r && r.width > 0 && r.height > 0 ? { l: r.left, t: r.top, w: r.width, h: r.height } : null;
+  if (!r || r.width <= 0 || r.height <= 0) return null;
+  const s = scene?.getBoundingClientRect();
+  const coupe = s ? [s.top - r.top, r.right - s.right, r.bottom - s.bottom, s.left - r.left].map((v) => `${Math.max(0, Math.round(v))}px`).join(" ") : undefined;
+  return { l: r.left, t: r.top, w: r.width, h: r.height, ...(coupe && coupe !== "0px 0px 0px 0px" ? { coupe } : {}) };
+}
+/** La scène qui contient la télé et coupe ce qui la dépasse (le premier parent en `overflow: hidden`). */
+function sceneDe(el: HTMLElement | null): HTMLElement | null {
+  for (let x = el?.parentElement ?? null; x; x = x.parentElement) {
+    const o = getComputedStyle(x).overflow;
+    if (o.includes("hidden") || o.includes("clip")) return x;
+  }
+  return null;
 }
 
 /**
@@ -152,19 +168,18 @@ export function TeleDuo({
   useEffect(() => {
     if (!allumee) return;
     let id = 0;
+    const scene = sceneDe(ecran.current);
     const suivre = () => {
-      const c = mesurer(ecran.current);
-      if (c) setCadre((x) => (x && Math.abs(x.l - c.l) < 0.5 && Math.abs(x.t - c.t) < 0.5 && Math.abs(x.w - c.w) < 0.5 && Math.abs(x.h - c.h) < 0.5 ? x : c));
+      const c = mesurer(ecran.current, scene);
+      if (c) setCadre((x) => (x && Math.abs(x.l - c.l) < 0.5 && Math.abs(x.t - c.t) < 0.5 && Math.abs(x.w - c.w) < 0.5 && Math.abs(x.h - c.h) < 0.5 && x.coupe === c.coupe ? x : c));
       id = requestAnimationFrame(suivre);
     };
     id = requestAnimationFrame(suivre);
     return () => cancelAnimationFrame(id);
   }, [allumee]);
 
-  // (de loin, la télé s'éteint : on n'entend pas une télé qu'on ne regarde plus)
-  useEffect(() => {
-    if (!proche) void Promise.resolve().then(() => setVideo(null));
-  }, [proche]);
+  // (DE LOIN, ELLE RESTE ALLUMÉE — le propriétaire : « rester allumée même quand je clique sur la pièce entière, pour
+  // continuer à profiter de toute la pièce » ; le lecteur suit l'écran, et un toucher ramène la caméra sur elle)
 
   useEffect(() => {
     if (!video || simple) return;
@@ -221,7 +236,7 @@ export function TeleDuo({
   function allumer() {
     setNote(null);
     // (le lecteur se pose tout de suite sur l'écran : sa place, mesurée avant de l'allumer)
-    setCadre(mesurer(ecran.current));
+    setCadre(mesurer(ecran.current, sceneDe(ecran.current)));
     if (programme.sorte === "youtube" || programme.sorte === "secours") setVideo({ id: programme.id, ...(programme.debut ? { debut: programme.debut } : {}) });
   }
 
@@ -305,7 +320,13 @@ export function TeleDuo({
         cadre &&
         typeof document !== "undefined" &&
         createPortal(
-          <div className="tv-flottant" style={{ left: cadre.l, top: cadre.t, width: cadre.w, height: cadre.h }} data-lecteur={video.id}>
+          <div
+            className="tv-flottant"
+            // (de loin, le lecteur ne prend pas le toucher : il passe à la télé, qui ramène la caméra)
+            style={{ left: cadre.l, top: cadre.t, width: cadre.w, height: cadre.h, pointerEvents: proche ? "auto" : "none", ...(cadre.coupe ? { clipPath: `inset(${cadre.coupe})` } : {}) }}
+            data-lecteur={video.id}
+            data-proche={proche ? "1" : "0"}
+          >
             <div className="tv-deforme" style={deformeLecteur}>
               <div className="tv-video" style={video169 ?? undefined}>
                 {simple ? (
