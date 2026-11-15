@@ -54,6 +54,8 @@ import { STYLES_VIVANT } from "./conversation-vivante";
 import { RangeSansDemander, STYLES_ETAGERE } from "./etagere";
 import { PageEnVisite, STYLES_TUTO, VisiteTuto, ecrireTuto, lireTuto, pageTuto, type PageTuto } from "./tuto";
 import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
+import { BienvenueSelonPablito, STYLES_BIENVENUE_CHEZ } from "./bienvenue-chez";
+import { BIENVENUE_CHEZ_PABLITO } from "@/lib/direct/bienvenue";
 import { MaMaison, STYLES_MA_MAISON } from "./ma-maison";
 import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
@@ -431,16 +433,16 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
       />
       {/* 👋 LA BIENVENUE (`bienvenue.tsx`, refaite pour l'univers le 13 novembre 2026) ; « Je crée ma figurine » : l'atelier
           du nouveau style, tout droit (l'interrupteur « Univers pour tous » allumé), sinon la page de sa figurine */}
-      {bienvenue && (
-        <BienvenueTuto
-          onFini={finirBienvenue}
-          onCreer={() => {
+      {/* (🏡 l'interrupteur `BIENVENUE_CHEZ_PABLITO` allumé : chez Pablito, dans l'univers adopté — sinon l'ancienne) */}
+      {bienvenue &&
+        (() => {
+          const creer = () => {
             finirBienvenue();
             if (univers) window.location.assign("/univers/figurine");
             else allerA("creer");
-          }}
-        />
-      )}
+          };
+          return BIENVENUE_CHEZ_PABLITO ? <BienvenueSelonPablito onFini={finirBienvenue} onCreer={creer} /> : <BienvenueTuto onFini={finirBienvenue} onCreer={creer} />;
+        })()}
 
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;
           au milieu, en gros bouton rond avec SA figurine dedans : « Créer » (7 novembre 2026), puis « Chez moi » (le menu à
@@ -467,7 +469,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_MA_MAISON}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
     </main>
   );
 }

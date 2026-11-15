@@ -135,6 +135,11 @@ conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses si
 - **La suite** : un tuto par fonctionnalité (« ensuite, on fera des tutos pour chaque feature ») ; aujourd'hui, le logo
   ouvre encore la visite d'avant (`tuto.tsx` : Créer, Découvrir, Autour, Mes mèmes, Proches, Moi), qui ne suit plus le
   menu à trois.
+- **👋 « Entre chez Pablito »** (15 novembre) : la bienvenue refaite DANS l'univers du propriétaire (son univers devient
+  celui de Pablito, adopté depuis l'admin) ; le nouveau venu est son invité et vit chaque chose d'un toucher (ses clés,
+  « Je le range ? » et le rappel, un souvenir, « Qui peut entrer »). Son adresse directe : `/bienvenue`. Derrière
+  l'interrupteur `BIENVENUE_CHEZ_PABLITO`, **éteint** jusqu'à ce que le propriétaire l'ait regardée. Le détail :
+  `docs/figurines.md`, 9.0 septuagies.
 
 ## 0 sexies. « Ma maison », vivante (14 novembre 2026)
 

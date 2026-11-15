@@ -755,6 +755,14 @@ conversation :
   la session des messages peut le brancher, ou celle de l'univers, en prévenant (une seule session à la fois sur ces
   fichiers).
 
+#### 📨 Relais pour la session de l'univers : la bienvenue se joue dans l'univers du propriétaire (15 novembre 2026)
+
+La bienvenue « Entre chez Pablito » (`docs/figurines.md`, 9.0 septuagies) montre à tous les nouveaux venus l'univers que
+le propriétaire a adopté comme celui de Pablito. Elle ne copie rien : elle lit `etatUnivers` (`univers-creation-serveur.ts`)
+pour lui, puis n'en garde que `decor`, `figurine`, `scene.figurine`, la place `hote`, les `cles` posées (`zone`) et la
+`saison` (`vuePublique`, `chez-pablito-serveur.ts`). Si vous changez ces champs (leur nom, leur sens, les adresses), la
+bienvenue suit : dites-le, ou ajustez `vuePublique` (son essai : `scripts/essai-chez-pablito-route.mjs`).
+
 ### Lot C — Le compagnon (15 novembre 2026, proposé)
 
 Le propriétaire : un animal qui vit dans l'univers, choisi au départ (un chat, une panthère, un perroquet…), qui bouge

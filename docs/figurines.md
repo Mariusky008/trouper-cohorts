@@ -3480,6 +3480,61 @@ m'a pas demandé de le rajouter à mes étagères » — il avait écrit « dema
   que si la consigne dit qu'un rendez-vous se note. **Le vrai modèle, lui, n'a pas pu être essayé ici** (pas de clé
   dans les essais) : à vérifier en vrai, après le déploiement.
 
+### 9.0 septuagies 👋 La bienvenue « Entre chez Pablito » (15 novembre)
+
+Le propriétaire : « il va falloir largement améliorer cette démo de départ pour vraiment donner les plus-values de ce
+qu'on fait sur cette app ». Puis, sur une capture de son univers (son atelier d'automne, lui dans son fauteuil) : « c'est
+pas du tout pareil que les salons des commerçants ». La proposition (« Entre chez Pablito ») est validée le même jour :
+« OUI » à son univers montré à tous les nouveaux venus comme celui de Pablito, « OUI » aux trois nouvelles phrases,
+qu'il enregistre dans la foulée.
+
+- **Ce qui n'allait pas dans la bienvenue d'avant** (9.0 duoquinquagies) : elle expliquait au lieu de montrer (six
+  phrases abstraites) ; ses images n'étaient pas celles de l'appli (une île d'emojis, des bonshommes dessinés) ; on ne
+  faisait rien (une question écrite d'avance, six fois) ; les vraies forces n'y étaient pas (« Je le range ? », le
+  rappel, les clés de l'univers, les souvenirs des visiteurs, la saison).
+- **L'idée** : le nouveau venu est **l'invité de Pablito**, dans le VRAI univers du propriétaire. La conversation avec
+  Pablito devient la démo ; au-dessus, son univers, où chaque chose se vit d'un toucher. Rien n'est enregistré pendant
+  la bienvenue (le rangement et le souvenir sont joués pour elle).
+- **Les neuf bulles, et ce qu'on fait** (`lib/direct/bienvenue.ts`, `BULLES_CHEZ`) :
+  1. Pablito debout, en grand, devant son univers flou : « Salut ! Moi, c'est Pablito… » → « C'est quoi, ClikMe ? »
+  2. « ClikMe, c'est un peu comme WhatsApp… Mais ici… » : une conversation grise, ordinaire ; à « Mais ici », la brume
+     se lève sur son univers (sa figurine dans son fauteuil, la saison, « Chez Pablito ») → « On est où, là ? »
+  3. 🎙️ « Là, tu es chez moi. Rien n'est là par hasard : chaque objet vient de ce que j'aime. Touche-en un. » : ses
+     clés pulsent sur le décor (la caméra les cadre ; celles hors du cadre ne s'offrent pas) ; on en touche une : ce qui
+     est là, et pourquoi (ses mots entre guillemets, « — Pablito ») → « Trop beau ! Et après ? »
+  4. 🎙️ « Quand on se parle, ma figurine écoute. Tiens : tu fais quoi ce week-end ? » : « 🎬 Ciné samedi », « ⚽ Foot
+     dimanche » ou « 🍕 Pizza avec des potes » ; sa figurine demande « Je le range ? 📅 Samedi : ciné » ; « Oui,
+     range-le » : la carte s'envole sur « Notre étagère », « Noté ! », puis le rappel du jour venu (« 🔔 Samedi, 9:00 ·
+     Pablito : Ce soir, ciné ! 🎬 ») ; « Non merci » : « D'accord, je n'y touche pas. » → « Et mes proches ? »
+  5. « Petit à petit, il te définit… Tes proches peuvent le visiter… » (« 🚪 Tu es chez Pablito, en visite »), puis
+     d'elle-même 🎙️ « Tu es mon invité : laisse-moi un souvenir ! » : 💐 ☕ 🍪 🪴 (les objets des visites) ; il se pose à
+     ses pieds, « de ta part » ; 🎙️ « Merci, je le garde. » → « Et le mien, il sera comment ? »
+  6. « Ton univers s'agrandit à chaque conversation… » : « ✨ Une nouvelle pièce », « 🔒 Un endroit secret », « Qui peut
+     entrer » qui passe par ses trois réglages (ceux des visites) → « Ça commence comment ? »
+  7. « Par toi ! Un selfie pour ta figurine… » : son décor passe en esquisse, sa figurine devient une silhouette
+     blanche, « Ta place » ; à « je dessine », les couleurs reviennent → « 📸 Je crée ma figurine », « Plus tard ».
+- **Sa voix** : les bulles 1, 2, 5, 8 et 9 gardent les enregistrements du 13 novembre ; les nouvelles, reçues le 15 :
+  `tuto-chez-3`, `tuto-chez-4`, `tuto-chez-5` (son fichier disait aussi « Merci, je le garde. », découpé à la pause :
+  `tuto-chez-5-merci`), dans `public/collection/pablito/` et `TUTO_ENREGISTRES` (`guide.ts`).
+- **🏡 L'univers de Pablito** (`lib/direct/chez-pablito-serveur.ts`) : le propriétaire l'adopte d'un toucher, à
+  `/admin/humain/univers-essais` (« 🏡 L'univers de Pablito » : « Adopter mon univers comme celui de Pablito ») ; on
+  retient de qui il est (`demo-proprio/univers/chez/adopte.json`), rien n'est copié : la bienvenue suit son univers tel
+  qu'il est (son décor du mois, sa tenue du mois, ses retouches). Servi à tous par `GET /api/direct/chez-pablito` :
+  son décor, sa figurine assise (bouche fermée, ouverte) à sa place relevée, ses clés posées sur le décor (six au plus),
+  la saison — jamais sa proposition, ses retouches, sa porte, ses visites ni ses souvenirs. Gardé dix minutes (les
+  adresses signées valent une heure). « Retirer » l'oublie.
+- **Son adresse directe** : `clikme.fr/bienvenue` (jamais dans les moteurs de recherche) — elle se joue comme à la
+  première arrivée ; à la fin, ce que le bouton fait dans l'appli, et « ↺ Rejouer ». Sans l'univers adopté : où
+  l'adopter.
+- **🔀 L'interrupteur** `BIENVENUE_CHEZ_PABLITO` (`lib/direct/bienvenue.ts`), **éteint** : la toute première arrivée
+  ouvre encore la bienvenue d'avant. Allumé (quand le propriétaire l'aura regardée à son adresse directe) : chez Pablito
+  si son univers est adopté, sinon l'ancienne (`BienvenueSelonPablito`, `app/collection/bienvenue-chez.tsx`).
+- **Les essais** : `scripts/essai-chez-pablito-route.mjs` (l'adoption réservée à l'administrateur, sans figurine ou sans
+  univers refusée, ce que tout le monde voit et ne voit pas, « Retirer ») ; `scripts/navigateur/bienvenue-chez.mjs`
+  (les neuf bulles et leurs neuf voix, la clé, « Je le range ? » et le rappel, le souvenir, « Qui peut entrer »,
+  l'esquisse, « Rejouer », « Passer » ; rien ne déborde). Les images des essais sont des images d'essai : un salon de
+  `public/direct/ensemble`, et une figurine détourée de la référence de style (`scripts/fixtures/figurine-assise-essai.webp`).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque
