@@ -35,15 +35,26 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 type Ligne = Record<string, unknown>;
 const s = (v: unknown) => (v == null ? "" : String(v));
 
+/**
+ * ⚡ (15 novembre 2026, « quand j'ouvre l'app c'est très très long à charger ») les commerces ClikMe changent rarement :
+ * gardés dix minutes par le serveur, au lieu d'être redemandés à chaque ouverture avant d'envoyer la page.
+ */
+const DIX_MINUTES = 10 * 60_000;
+let commercesGardes: { le: number; lignes: Ligne[] } | null = null;
+async function commercesClikMe(supabase: ReturnType<typeof createAdminClient>): Promise<Ligne[]> {
+  if (commercesGardes && Date.now() - commercesGardes.le < DIX_MINUTES) return commercesGardes.lignes;
+  const { data } = await supabase.from("human_vitrine_sites").select("slug, business_name, city").eq("est_client", true).limit(300);
+  const lignes = (Array.isArray(data) ? data : []) as Ligne[];
+  if (lignes.length) commercesGardes = { le: Date.now(), lignes };
+  return lignes;
+}
+
 /** Les villes des commerces ClikMe (la sienne d'abord, puis les plus fournies). */
 async function villesClikMe(): Promise<{ slug: string; nom: string }[]> {
   try {
     const supabase = createAdminClient();
-    const [{ data }, moi] = await Promise.all([
-      supabase.from("human_vitrine_sites").select("slug, business_name, city").eq("est_client", true).limit(300),
-      habitantCourant(supabase).catch(() => null),
-    ]);
-    const lignes = ((Array.isArray(data) ? data : []) as Ligne[]).filter((x) => /^[a-z0-9-]{2,120}$/i.test(s(x.slug)) && s(x.business_name).trim());
+    const [data, moi] = await Promise.all([commercesClikMe(supabase), habitantCourant(supabase).catch(() => null)]);
+    const lignes = data.filter((x) => /^[a-z0-9-]{2,120}$/i.test(s(x.slug)) && s(x.business_name).trim());
     const ville = (x: Ligne) => s(x.city).replace(/\b\d{5}\b/g, " ").replace(/\s+/g, " ").trim();
     const parVille = new Map<string, number>();
     for (const x of lignes) parVille.set(villeSlug(ville(x)), (parVille.get(villeSlug(ville(x))) ?? 0) + 1);

@@ -241,14 +241,16 @@ ok((await lea.locator(".pr-plein .pr-fil li.lui button.nouveau").count()) === 1 
 await lea.locator(".pr-plein .pr-scene .pr-lire").click();
 const tetesZoe = await tetesJouees(lea, ".pr-plein .pr-scene");
 ok(tetesZoe[0] === "tete" && tetesZoe.includes("euphorie"), `chez Léa, la figurine de Zoé fait la tête de chaque réplique au bon moment (${tetesZoe.join(" → ")})`);
-await lea.locator(".pr-plein .pr-commandes button[aria-pressed]").click();
+// (« Juste le son » est dans le menu ⋯, depuis le 15 novembre 2026)
+await lea.locator(".pr-plein .pr-menu-bouton").click();
+await lea.locator(".pr-plein .pr-menu-son").click();
 ok((await lea.locator(".pr-plein .pr-son").count()) === 1 && (await texte(lea, ".pr-plein .pr-son")).includes("Juste le son"), "« Juste le son » : la voix, sans les images");
 await capture(lea, "4-lea");
 ok((await debordement(lea)) <= 0 && (await sansMotInterdit(lea)), "la conversation ne déborde pas, sans le mot interdit");
 
 // 🚩 Léa signale le message : il disparaît pour elle, l'équipe le regarde
 await lea.locator(".pr-plein .pr-menu-bouton").click();
-await lea.locator(".pr-plein .pr-menu button").first().click();
+await lea.locator(".pr-plein .pr-menu button", { hasText: "Signaler" }).click();
 const dit = await repondreFenetre(lea, true);
 await lea.waitForFunction(() => document.querySelectorAll(".pr-plein .pr-fil li.lui").length === 0, null, { timeout: 15000 }).catch(() => null);
 ok(dit.includes("Signaler le dernier message de Zoé") && (await lea.locator(".pr-plein .pr-fil li.lui").count()) === 0 && (await liste("moderation/paroles")).length === 1, "Léa signale le message : il disparaît pour elle, l'équipe le regarde");

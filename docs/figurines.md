@@ -3459,6 +3459,35 @@ Le propriétaire : « oui, lance le nettoyage du stockage ». Le fichier : `lib/
 - **⚠️ Pour l'univers** : une photo ou une image d'aperçu rangée dans l'univers doit y être **recopiée**, jamais citée
   depuis `fils/` (effacer le message l'efface, et le nettoyage efface ce qu'aucun message ne cite).
 
+### 9.0 novosexagies 🎭 La conversation, d'abord : plus grandes, moins de boutons, plus rien qui saute en entier, l'ouverture (15 novembre)
+
+Le propriétaire, sur la conversation avec un proche (sept points, « qui ne fonctionnent pas suffisamment bien pour être
+utilisables ») : les figurines toutes petites dans le décor ; « Juste le son » et « Tout rejouer », trop gros, et on ne
+comprend pas ce que « rejouer » rejoue ; les figurines dont l'image ENTIÈRE bouge (« complètement fake ») ; pas d'accès
+aux étagères du duo, ni à l'univers de l'autre ; l'appli « très très longue » à s'ouvrir ; le fil du bas trop étroit ;
+et surtout le rôle des figurines — pas rejouer ce qu'on a dit, mais l'univers COMMUN du duo, où il se passe toujours
+quelque chose (leur étagère, une figurine qui demande « Je le range ? », qui commente, un objet que l'autre a déposé).
+
+- **La maquette** (« L'univers commun du duo », un artefact Design, quatre écrans : à l'arrivée un souvenir vient d'être
+  posé ; ta figurine demande « Je le range ? » ; sa figurine commente la conversation ; l'étagère du duo ouverte) — à
+  juger par le propriétaire avant de toucher à l'écran (le fil et l'étagère sont aussi le chantier d'une autre session).
+- **1. Plus grandes** (`styleDePlace`, `proches.tsx`) : la moitié de la hauteur du décor au lieu d'un tiers
+  (`TAILLE_FIGURINE`), AU PREMIER PLAN — plus bas que leur place dans le décor (`PREMIER_PLAN`), comme plus près de
+  nous — et un peu plus écartées (0,32 → 0,275 ; 0,7 → 0,75). Aussi sur le lien d'un message reçu (`/t/<id>`). La
+  visite (`/univers/chez/<clé>`), qui montre le décor entier vu de loin, garde sa taille.
+- **2. Les deux gros boutons, au menu ⋯** : « ⟲ Rejouer vos derniers messages » et « 🔈 Juste le son, sans la scène »
+  (« 🎭 Revoir la scène » pour revenir) — des mots qui disent ce qu'ils font ; la scène et le fil gagnent leur place.
+- **3. Plus rien qui saute en entier** (`figurine-qui-parle.tsx`) : assise dans un décor, une figurine dont le visage
+  demandé n'est pas encore fait ne saute plus (toute l'image qui tremblait, riait, bondissait) : elle respire, et la
+  pastille dit sa tête ; son visage, quand il est fait, prend la place.
+- **5. L'ouverture** (mesurée sur un téléphone ralenti, contre le faux serveur : la page arrive vite, mais la liste des
+  conversations attendait le JavaScript, puis « ma figurine », puis seulement la liste) : ⚡ ce que l'écran montrait la
+  dernière fois se montre aussitôt (`memoire-locale.ts` : gardé sur ce téléphone 45 minutes — ses images signées valent
+  une heure ; l'état de sa figurine et ses conversations), pendant que le serveur répond, qui le remplace dès qu'il a
+  répondu ; et la page ne redemande plus la liste des commerces à chaque ouverture (gardée dix minutes par le serveur).
+- **Reste à faire, après la maquette** : l'univers commun du duo (4, 7) et le fil plus large (6) — avec l'autre session,
+  dont c'est le chantier (le fil, l'étagère).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

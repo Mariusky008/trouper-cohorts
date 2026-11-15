@@ -172,6 +172,17 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
   (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à
   elle ; l'en-tête de la conversation, le menu et « Ma maison » sont à celle-ci.
 
+## 0 septies. La conversation à revoir : l'univers commun du duo (15 novembre 2026)
+
+Le propriétaire, sur la conversation avec un proche : « pas mal de choses qui ne fonctionnent pas suffisamment bien pour
+être utilisables » — sept points (9.0 novosexagies). Fait : les figurines plus grandes, au premier plan ; « Tout
+rejouer » et « Juste le son » dans le menu ⋯ ; plus rien qui saute en entier (une figurine sans son visage respire) ;
+l'ouverture (ce que l'écran montrait la dernière fois, tout de suite). **À juger** : la maquette « L'univers commun du
+duo » (artefact Design, quatre écrans) — la scène devient l'univers commun du duo, leur étagère au centre toujours
+visible, ce qui vient de s'y passer joué à l'arrivée (un souvenir posé, « Je le range ? », un commentaire de figurine),
+les messages vocaux en bulles du fil. **À décider** : qui construit l'univers commun et le fil plus large — le fil et
+l'étagère sont le chantier de l'autre session.
+
 ## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
 
 Le propriétaire cherchait « l'utilité » de l'appli, ce qui fera revenir. Sa réponse, sur une maquette : **oui, on la
