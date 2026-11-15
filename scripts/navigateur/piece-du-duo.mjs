@@ -6,7 +6,8 @@
 // emplacements) et la cuisine. L'arrivée : la pièce entière, l'image du duo faite toute seule (première visite), puis la
 // caméra glisse vers les deux places et les bulles arrivent ; « 🏠 La pièce » ; la télé (celle de la session de l'univers)
 // touchée : le zoom, sans lien le clip du jour ; un lien collé : il passe, « ▶ Allumer la télé » : elle le joue ; une
-// invitation reçue (« … t'invite dans la cuisine ») : « Venir » ; changer de pièce (on invite) : envoyée, acceptée, et on y est ; de retour au salon : « Depuis
+// invitation reçue (« … t'invite dans la cuisine ») : « Venir » ; la cuisine, sans zones ni lumières : « 👆 Les objets » dit
+// ce qui manque, une lumière pas faite se fait ; changer de pièce (on invite) : envoyée, acceptée, et on y est ; de retour au salon : « Depuis
 // ta dernière visite : … a mis un lien sur la télé », l'anneau sur la télé ; la fenêtre : la lumière change. Ni
 // débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
@@ -66,6 +67,8 @@ await json("pieces-duo/salon/releve.json", {
   },
 });
 await deposer("pieces-duo/cuisine/decor.png", await uni(220, 190, 90), "image/png");
+// (la cuisine : sa seule lumière à elle, le matin ; aucune zone posée)
+await json("pieces-duo/cuisine/releve.json", { le: maintenant, ajuste: true, emplacements: { cadres: [], places: [] } });
 await json("pieces-duo/collage/choix.json", { piece: "salon", a: "moi", b: "aimeeaimee04" });
 
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -142,6 +145,19 @@ ok(/Volontaire 4 t’invite dans la cuisine/.test(await p.locator(".md-carte").i
 await capture("3-invitation");
 await p.getByRole("button", { name: "Venir" }).click();
 ok(await attendre(async () => (await attr("data-piece")) === "cuisine"), "« Venir » : on y est");
+
+// ─── la cuisine : aucune zone posée, une seule lumière ───
+await p.getByRole("button", { name: "🏠 La pièce" }).click().catch(() => undefined);
+await p.getByRole("button", { name: "👆 Les objets" }).click();
+const note = await p.locator(".md-note").innerText().catch(() => "");
+ok(/Pas encore de zone dans la cuisine pour : 📺 la télé, 🎵 la platine/.test(note) && /La pièce du duo/.test(note) && /Tes deux places/.test(note), "« 👆 Les objets », sans zones : ce qui manque, et où le poser");
+await ouvrirReglages();
+const reglages = p.locator('.md-panneau[aria-label="Pour l’essai"]');
+await reglages.getByRole("button", { name: "Nuit", exact: true }).click();
+ok(/La cuisine n’a pas encore sa lumière de la nuit/.test(await reglages.innerText()), "une lumière pas faite : on le dit");
+await reglages.getByRole("button", { name: "Faire ses 2 lumières (≈ 0,34 €)" }).click();
+ok(await attendre(async () => (await attr("data-moment")) === "nuit", 20000), "« Faire ses 2 lumières » : faites, la cuisine passe à la nuit");
+await capture("3b-cuisine");
 
 // ─── changer de pièce (on invite) ; de retour au salon, ce qui a changé ───
 await p.getByRole("button", { name: "🏠 La pièce" }).click().catch(() => undefined);
