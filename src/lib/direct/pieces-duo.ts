@@ -286,10 +286,10 @@ export type EtatCollage = {
   generee?: string;
   moteur: boolean;
 };
-/** Deux places, si la pièce n'a pas été relevée. */
+/** Deux places, si la pièce n'a pas été relevée (pour la caméra et les posées seulement : l'image du duo attend les vraies). */
 export const PLACES_PAR_DEFAUT: PlaceDuo[] = [
-  { x: 0.36, y: 0.72, hauteur: 0.3 },
-  { x: 0.64, y: 0.72, hauteur: 0.3 },
+  { x: 0.36, y: 0.72, hauteur: 0.17 },
+  { x: 0.64, y: 0.72, hauteur: 0.17 },
 ];
 /** Sur la figurine assise sans fauteuil (détourée au plus près), le point qui touche le siège, de haut en bas. */
 export const ANCRE_ASSISE = 0.66;
@@ -300,9 +300,11 @@ export const COUT_COLLAGE = 0.55;
  * 🎭 LA TAILLE D'UNE FIGURINE ASSISE. Une place dit où la figurine touche son siège (`x`, `y`) et `hauteur` : du haut de
  * sa tête jusqu'au siège (ce qu'on trace à la main sur la page d'essais, « La place de gauche ») ; le siège est aux deux
  * tiers de la figurine (`ANCRE_ASSISE`), ses jambes en dessous. Sa hauteur entière, de la tête aux pieds, compte pour au
- * moins `HAUTEUR_MIN_DUO` de l'image (les relevés la donnent souvent trop petite : l'essai du collage l'a montré).
+ * moins `HAUTEUR_MIN_DUO` de l'image. LA TAILLE DES SIÈGES DE LA PIÈCE, PAS PLUS : les pièces sont faites pour de petites
+ * figurines (des sièges d'un quart de la largeur) ; plus grandes (48 % de la hauteur, le 15 novembre), le moteur refaisait
+ * la pièce en gros plan sur les deux fauteuils — plus d'étagère, plus de cadres, plus de chat.
  */
-export const HAUTEUR_MIN_DUO = 0.38;
+export const HAUTEUR_MIN_DUO = 0.2;
 /** (la largeur d'une figurine assise, grosse tête comprise, à peu près, en part de sa hauteur) */
 const LARGEUR_SUR_HAUTEUR = 0.62;
 /** La hauteur entière des deux figurines assises (la même pour les deux), en part de la hauteur de l'image. */
@@ -327,13 +329,13 @@ function autourDesFigurines(places: PlaceDuo[], ratio: number, marge: { haut: nu
  */
 export const zoneDesPlaces = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.12, bas: 0.1, cotes: 0.08 });
 /** Les deux figurines seules, de la tête aux pieds (ce que les objets protégés ne doivent pas couper). */
-export const zoneDesFigurines = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.25, bas: 0.12, cotes: 0.12 });
+export const zoneDesFigurines = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.08, bas: 0.05, cotes: 0.05 });
 /**
- * LA ZONE PEINTE pour l'image du duo (le masque, puis le recollage) : beaucoup plus grande que les figurines — de l'air
- * au-dessus des têtes, le sol sous les pieds. Trop juste, le moteur remplissait la zone : les têtes coupées par son bord
- * du haut, les pieds fondus dans le sol par son bord du bas (le premier essai du propriétaire, le 15 novembre).
+ * LA ZONE PEINTE pour l'image du duo (le masque, puis le recollage) : les figurines déjà posées à leur taille, avec de
+ * l'air au-dessus des têtes et le sol sous les pieds — le reste de la pièce n'est pas touché. (Trop juste, le premier
+ * essai : les têtes coupées ; trop grande, le second : la pièce refaite en gros plan.)
  */
-export const zoneDuMasque = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.4, bas: 0.28, cotes: 0.3 });
+export const zoneDuMasque = (places: PlaceDuo[], ratio = 1.5): Zone => autourDesFigurines(places, ratio, { haut: 0.25, bas: 0.18, cotes: 0.18 });
 
 /** 🛋️ La pièce vivante : le duo (ses deux prénoms) et ses images faites, par « pièce-moment ». */
 export type DuoVivant = { a: { id: string; nom: string }; b: { id: string; nom: string }; duos: Partial<Record<string, string>> };

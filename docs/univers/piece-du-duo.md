@@ -220,19 +220,27 @@ reste dessous, pour comparer), et on y choisit la lumière (🌤️ 🌇 🌙) p
 
 **Les têtes coupées, les pieds dans le sol** (le premier essai de la maquette par le propriétaire, la cuisine) : le
 moteur remplissait toute la zone masquée — les têtes touchaient son bord du haut et le fondu du recollage les coupait,
-les pieds touchaient son bord du bas et se fondaient dans le tapis. Ce qui a changé :
+les pieds touchaient son bord du bas et se fondaient dans le tapis. **Puis la pièce en gros plan** (le second essai :
+« les pièces sont complètement cropées par rapport aux pièces originales où on voit les étagères, les cadres, le chat ; ici
+on ne voit plus que les deux figurines ») : pour corriger le premier, la zone peinte avait été très agrandie et la taille
+dite au moteur (48 % de la hauteur de l'image) ; or les pièces sont faites pour de petites figurines (des sièges d'un
+quart de la largeur) : pour les faire si grandes, le moteur refaisait la pièce en gros plan sur deux grands fauteuils.
 
-- **La zone peinte est beaucoup plus grande** que les figurines (`zoneDuMasque` : de l'air au-dessus des têtes, presque
-  la moitié de leur hauteur ; le sol sous les pieds) ; la caméra garde une zone serrée (`zoneDesPlaces`).
-- **Leur taille est dite au moteur**, en part de la hauteur de l'image (« about 48% of the image height »), entières,
-  loin des bords de la zone, les pieds posés au sol ou juste au-dessus, jamais enfoncés.
-- **La taille vient de la place tracée à la main** : sur la page d'essais, on trace la figurine du haut de la tête
-  jusqu'au siège ; le siège étant aux deux tiers de la figurine, sa hauteur entière est ce tracé divisé par 0,66, et au
-  moins 38 % de l'image (`hauteurDuo`). Les posées du collage prennent la même.
-- **Les objets loin des figurines restent intacts** même dans la grande zone : la télé, la platine, les cadres,
-  l'étagère, la fenêtre, s'ils ne touchent pas les figurines, ne sont ni peints ni recollés (le masque les laisse
-  opaques, le recollage les garde au pixel près).
-- Les images du duo déjà faites ne servent plus (leur nom finit maintenant par `-2`) : elles se refont à la prochaine
+**Ce qui tient maintenant : d'après un collage, à la taille des sièges.**
+
+- **Les figurines sont d'abord posées sur la pièce** (`poserLesFigurines`) : chaque pose sans fauteuil, le point qui
+  touche le siège sur sa place, à la taille donnée par la place. Le moteur reçoit ce collage (et les deux figurines à part,
+  pour leur ressemblance) et ne fait que **les asseoir pour de vrai** : le contact avec le siège, la lumière, les ombres —
+  « à la même place et à la même taille », « la pièce telle quelle : ni zoom, ni recadrage, les sièges pas agrandis ».
+- **La taille vient de la place tracée à la main** sur la page d'essais (« ✋ La place de gauche », « de droite ») : du
+  haut de la tête jusqu'au siège ; le siège étant aux deux tiers de la figurine, sa hauteur entière est ce tracé divisé
+  par 0,66, et au moins 20 % de l'image (`hauteurDuo`). Les posées du collage prennent la même.
+- **Sans ses deux places, pas d'image du duo** : les figurines tomberaient à côté des sièges. La maquette le dit (« Pour
+  que vos figurines s'installent dans la cuisine, trace d'abord ses deux places »), la fabrication le refuse.
+- **La zone peinte** (`zoneDuMasque`) : les figurines posées, avec de l'air au-dessus des têtes et le sol sous les pieds,
+  pas plus — le reste de la pièce n'est pas touché. Les objets dans cette zone qui ne touchent pas les figurines (la télé,
+  la platine, les cadres, l'étagère, la fenêtre) restent au pixel près.
+- Les images du duo déjà faites ne servent plus (leur nom finit maintenant par `-3`) : elles se refont à la prochaine
   visite.
 
 ## 11. La télé, prête à brancher (15 novembre 2026)
@@ -293,7 +301,7 @@ la photo du cadre et les souvenirs de l'étagère sont ceux de l'essai (« ⚙�
    photo dans le cadre), un mot (« ✨ Depuis ta dernière visite : Léa a mis un lien sur la télé ») et un anneau sur
    l'objet ; sinon rien.
 2. **La conversation** : au bout de deux secondes (trois et demie s'il y avait du neuf), la caméra glisse vers les deux
-   places (`zoneDesPlaces`, la même zone que le masque du duo) ; les bulles arrivent une à une (les trois dernières).
+   places (`zoneDesPlaces`, assez large pour garder la pièce autour d'elles) ; les bulles arrivent une à une (les trois dernières).
 3. **Le zoom** : chaque emplacement relevé est touchable (« 👆 Les objets » les montre ; ceux dont la zone n'est pas
    posée sur cette pièce sont nommés, avec où les poser — la page d'essais, « ✋ ») ; la caméra s'en approche. **La
    télé est celle de la section 11** (`TeleDuo`, branchée comme prévu : de loin elle montre ce qui passe, de près « ▶
@@ -311,6 +319,7 @@ cuisine… — une minute environ, la première fois seulement » ; ce qui rate 
 font **une à la fois, la pièce où l'on est d'abord, puis les autres pièces faites** (dans la lumière où on les verrait) :
 changer de pièce est alors immédiat (le premier essai du propriétaire : « quand je change de pièce, il n'y a plus les
 figurines » — elles étaient en train de se faire). Un passage déjà en train (l'essai du collage) : on attend son tour.
+Seulement dans les pièces dont les deux places sont tracées (sinon : « trace d'abord ses deux places »).
 
 **Une lumière pas encore faite** (🌇 ou 🌙 dans « L'heure », ou à la fenêtre) n'est plus un bouton éteint : la toucher le
 dit (« La cuisine n'a pas encore sa lumière du soir ») et propose « Faire ses 2 lumières (≈ 0,34 €) » — le même passage

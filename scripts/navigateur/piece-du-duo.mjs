@@ -150,6 +150,7 @@ await p.getByRole("button", { name: "Venir" }).click();
 ok(await attendre(async () => (await attr("data-piece")) === "cuisine"), "« Venir » : on y est");
 
 // ─── la cuisine : aucune zone posée, une seule lumière ───
+ok(/trace d’abord ses deux places/.test(await p.locator('.md-installe[data-installe="sans-places"]').innerText().catch(() => "")), "sans ses deux places : les figurines ne s'installent pas, on dit de les tracer");
 await p.getByRole("button", { name: "🏠 La pièce" }).click().catch(() => undefined);
 await p.getByRole("button", { name: "👆 Les objets" }).click();
 const note = await p.locator(".md-note").innerText().catch(() => "");

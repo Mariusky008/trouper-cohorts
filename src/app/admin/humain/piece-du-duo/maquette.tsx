@@ -71,6 +71,8 @@ function zoneDe(p: PieceDuoVue | undefined, o: Objet): Zone | null {
 
 /** La pièce dans une lumière : son image première dans son moment à elle, une retouche pour les deux autres. */
 const lumiereDe = (p: PieceDuoVue | undefined, m: MomentDuo) => (p ? (m === p.moment ? p.decor : p.lumieres?.[m]) : undefined) || "";
+/** Ses deux places tracées (ou relevées) : sans elles, les figurines ne savent pas où s'asseoir. */
+const deuxPlaces = (p: PieceDuoVue | undefined) => p?.emplacements?.places.length === 2;
 
 export function MaquetteDuo() {
   const [etat, setEtat] = useState<EtatPieceVivante | null>(null);
@@ -128,12 +130,13 @@ export function MaquetteDuo() {
   const autre = etat?.duo?.b.nom ?? "ton proche";
   const faites = etat?.pieces.filter((x) => x.decor) ?? [];
   // 🪑 LES IMAGES DU DUO À FAIRE, une à la fois : la pièce où l'on est d'abord, puis les autres pièces (dans la lumière où
-  // on les verrait) — changer de pièce est alors immédiat ; une minute environ par image
+  // on les verrait) — changer de pièce est alors immédiat ; une minute environ par image ; seulement là où les deux places
+  // sont tracées
   let prochain = "";
   if (etat?.duo)
     for (const q of [...(p ? [p] : []), ...faites.filter((x) => x.cle !== piece)]) {
       const k = `${q.cle}-${momentDans(q)}`;
-      if (lumiereDe(q, momentDans(q)) && !etat.duo.duos[k] && !rates[k]) {
+      if (deuxPlaces(q) && lumiereDe(q, momentDans(q)) && !etat.duo.duos[k] && !rates[k]) {
         prochain = k;
         break;
       }
@@ -275,10 +278,12 @@ export function MaquetteDuo() {
 
   // (les deux places relevées, sinon celles par défaut — comme pour l'image du duo)
   const places = p.emplacements?.places.length === 2 ? p.emplacements.places : [];
-  const aFaireIci = !duo && etat.duo && fond;
-  // (tant que les figurines s'installent, la pièce entière, sans bulles ; elles arrivées, la caméra glisse vers elles)
-  const auxPlaces = plan.type === "places" && !aFaireIci;
-  const cam = auxPlaces ? camera(zoneDesPlaces(places), 1.04) : plan.type === "objet" ? camera(zoneDe(p, plan.objet), plan.objet === "chat" ? 1 : 1.9) : camera(null);
+  const sansDuoIci = Boolean(!duo && etat.duo && fond);
+  const aFaireIci = sansDuoIci && deuxPlaces(p);
+  // (tant que les figurines ne sont pas là, la pièce entière, sans bulles ; elles arrivées, la caméra glisse vers elles —
+  // assez large pour garder la pièce autour d'elles)
+  const auxPlaces = plan.type === "places" && !sansDuoIci;
+  const cam = auxPlaces ? camera(zoneDesPlaces(places), 1.4) : plan.type === "objet" ? camera(zoneDe(p, plan.objet), plan.objet === "chat" ? 1 : 1.9) : camera(null);
   const vise = plan.type === "objet" ? plan.objet : null;
   const zTele = zoneDe(p, "tele");
   const zCadre = zoneDe(p, "cadre");
@@ -380,6 +385,17 @@ export function MaquetteDuo() {
           </p>
         )}
         {/* 🪑 l'image du duo pas encore faite ici : on le dit, au milieu (ou ce qui a raté, et « Réessayer ») */}
+        {sansDuoIci && !aFaireIci && (
+          <div className="md-installe" role="status" data-installe="sans-places">
+            <p>
+              🪑 Pour que vos figurines s’installent {DANS[p.cle]}, trace d’abord ses deux places
+              <small>
+                Dans « 🛋️ La pièce du duo » (la page des essais), « ✋ La place de gauche » et « ✋ La place de droite » : sur chaque siège, du haut de la tête
+                de la figurine jusqu’au siège. C’est ce qui donne leur taille.
+              </small>
+            </p>
+          </div>
+        )}
         {aFaireIci && (
           <div className="md-installe" role="status" data-installe={rates[ici] ? "rate" : fabrique === ici ? "en-cours" : "attend"}>
             {rates[ici] ? (
@@ -523,7 +539,7 @@ export function MaquetteDuo() {
           ) : (
             <>Tous les objets sont là : touche-les.</>
           )}
-          {!places.length && <> Tes deux places 🪑 non plus : en attendant, les figurines prennent celles par défaut.</>}
+          {!places.length && <> Tes deux places 🪑 non plus : tes figurines s’y installeront une fois tracées.</>}
           <button type="button" className="clair" onClick={() => setVoirObjets(false)} aria-label="Fermer">
             ✕
           </button>
