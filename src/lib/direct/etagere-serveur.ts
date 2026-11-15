@@ -39,14 +39,16 @@
  * FICHIER SERVEUR.
  */
 import { randomUUID } from "node:crypto";
+import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { jourParis } from "@/lib/jour-paris";
 import type { Habitant } from "./habitant";
 import { lireFicheMonde } from "./fiches-serveur";
-import { ecrireJson, lireJson, lireLigne, prochesDe } from "./ma-figurine-serveur";
+import { SEAU_FIGURINES, deposer, ecrireJson, lireJson, lireLigne, prochesDe, signer, telecharger } from "./ma-figurine-serveur";
+import { EMOJI_IMAGE, PHRASES_RANGER, RANGER_UNIVERS, titreRange } from "./ranger-univers";
 import { iaBranchee, motPasse, parlePourLui } from "./rituel-serveur";
 import { texteLuDuMessage } from "./talkie";
-import { cheminReglages, figurineVue, hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
+import { cheminReglages, dossierMessages, figurineVue, hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import {
   CATALOGUE,
   ETAGERE,
@@ -109,6 +111,8 @@ import {
   type EtagereScene,
   type EtagereVue,
   type GenreObjet,
+  type ImageObjet,
+  type ImageVue,
   type Issue,
   type LigneEtagere,
   type ObjetGarde,
@@ -840,7 +844,12 @@ export async function monEtagere(supabase: Supabase, moi: Habitant): Promise<Res
       return miens.map((o): ObjetVu => ({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: prenom, aujourdhui: jour }), avec: { prenom, cle }, peutMontrer: o.concerne === moi8, montre: o.concerne === moi8 && montres.has(o.id) }));
     }),
   );
-  const deposes = perso.objets.filter(visible).map((o): ObjetVu => ({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), peutMontrer: true, montre: montres.has(o.id) }));
+  const deposes = await Promise.all(
+    perso.objets.filter(visible).map(async (o): Promise<ObjetVu> => {
+      const image = await imageVue(supabase, o.image);
+      return { ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), peutMontrer: true, montre: montres.has(o.id), ...(image ? { image } : {}) };
+    }),
+  );
   const objets = [...deposes, ...deLeurs.flat()].sort((a, b) => a.le.localeCompare(b.le)).slice(-160);
   // 📌 (lot E5) « ✨ À ranger » : ses questions en attente, de toutes ses conversations (d'où elles viennent)
   const aRanger = (
@@ -948,7 +957,12 @@ export async function agirSurMonEtagere(supabase: Supabase, moi: Habitant, p: Re
   if (!o) return PARTI;
   const le = new Date().toISOString();
   const changer = (x: Partial<ObjetGarde>) => ecrire({ ...perso, objets: perso.objets.map((y) => (y === o ? { ...y, ...x, change: { le, par8: moi8 } } : y)) });
-  if (p.action === "retirer") return ecrire({ ...perso, objets: perso.objets.filter((y) => y !== o), montres: perso.montres.filter((x) => x !== id) });
+  if (p.action === "retirer") {
+    const r = await ecrire({ ...perso, objets: perso.objets.filter((y) => y !== o), montres: perso.montres.filter((x) => x !== id) });
+    // 🖼️ (rangé depuis une conversation) sa copie s'en va avec lui
+    if (r.ok && o.image?.chemin.startsWith(`${moi.id}/`)) await supabase.storage.from(SEAU_FIGURINES).remove([o.image.chemin]).catch(() => undefined);
+    return r;
+  }
   if (p.action === "date") {
     const quand = jourValide(p.quand);
     const e = quand ? ecartJours(jourParis(), quand) : -1;
@@ -989,8 +1003,109 @@ export async function etagereVitrine(supabase: Supabase, h: string): Promise<Vit
   const objets = vieillir(choisis, jour).objets.filter(visible);
   if (!objets.length) return [];
   const prenom = await prenomDe(supabase, h, "Quelqu’un");
-  return objets
-    .sort((a, b) => b.le.localeCompare(a.le))
-    .slice(0, DEPOT.montres)
-    .map((o) => vitrineDe(o, prenom, jour));
+  return Promise.all(
+    objets
+      .sort((a, b) => b.le.localeCompare(a.le))
+      .slice(0, DEPOT.montres)
+      .map(async (o) => {
+        const image = await imageVue(supabase, o.image);
+        return { ...vitrineDe(o, prenom, jour), ...(image ? { image } : {}) };
+      }),
+  );
+}
+
+// ─── 🎵 « Le ranger dans mon univers ? » · 🖼️ « La mettre dans mon univers ? » ─────────────────────
+/** L'image rangée, telle qu'on la voit : son adresse signée (une heure). */
+async function imageVue(supabase: Supabase, i: ImageObjet | undefined): Promise<ImageVue | null> {
+  if (!i?.chemin) return null;
+  const src = await signer(supabase, i.chemin, 3600).catch(() => "");
+  return src ? { src, l: i.l, h: i.h, sorte: i.sorte, ...(i.lien ? { lien: i.lien } : {}) } : null;
+}
+const MESSAGE_RANGE = (id: string) => `univers-${id}`;
+type MessageARanger = { id?: string; de?: string; le?: string; genre?: string; lien?: { url?: string; titre?: string; image?: string; sorte?: "musique" | "video" }; media?: { chemin?: string }; legende?: string };
+
+/**
+ * 🎵 CE QU'IL A DÉJÀ RANGÉ DANS SON UNIVERS depuis cette conversation (les identifiants des messages) : la question ne
+ * se repose pas sous ceux-là.
+ */
+export async function rangesDansMonUnivers(supabase: Supabase, moi: Habitant): Promise<string[]> {
+  if (!etagereAllumee()) return [];
+  const perso = await lirePerso(supabase, moi.id);
+  return perso.objets.filter((o) => o.image && o.message.startsWith("univers-")).map((o) => o.message.slice("univers-".length));
+}
+
+/**
+ * 🎵 IL RANGE DANS SON UNIVERS une chanson, une vidéo ou une photo qu'IL a envoyée à ce proche (`avec` : sa clé ;
+ * `message` : l'identifiant du message) — son « oui » : ce geste même. L'image (la pochette ou la vignette de l'aperçu,
+ * la photo) est recopiée (900 pixels, sans ses métadonnées) dans `<habitant>/univers/objets/<id>.webp` ; un souvenir
+ * « Ce que j'aime » se pose sur son étagère (`depose`, pas montré : il choisit ensuite). Les règles des dépôts :
+ * douze par jour, quatre-vingts sur la sienne.
+ */
+export async function rangerDansMonUnivers(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ok?: true; id?: string; titre?: string }>> {
+  if (!etagereAllumee()) return { error: "L’étagère n’est pas ouverte.", statut: 404 };
+  const q = await avecQui(supabase, moi, p.avec);
+  if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
+  const idMessage = s(p.message);
+  if (!/^[a-z0-9]{6,40}$/.test(idMessage)) return { error: PHRASES_RANGER.parti, statut: 404 };
+  const nom = (await nomsDuFil(supabase, q.pair)).find((n) => n.id === idMessage);
+  if (!nom) return { error: PHRASES_RANGER.parti, statut: 404 };
+  if (nom.de8 !== qui8(moi.id)) return { error: PHRASES_RANGER.pasLeTien, statut: 403 };
+  const f = await lireJson<MessageARanger>(supabase, `${dossierMessages(q.pair)}/${nom.nom}`);
+  if (s(f.id) !== idMessage) return { error: PHRASES_RANGER.parti, statut: 404 };
+  if (f.de !== moi.id) return { error: PHRASES_RANGER.pasLeTien, statut: 403 };
+  // (ce qu'il devient : une photo ; une chanson ou une vidéo, d'après son aperçu)
+  const photo = f.genre === "photo" && s(f.media?.chemin) ? s(f.media?.chemin) : "";
+  const sorte = photo ? "photo" : (f.genre ?? "ecrit") === "ecrit" && f.lien?.sorte && s(f.lien.url) ? f.lien.sorte : null;
+  if (!sorte) return { error: PHRASES_RANGER.rien, statut: 400 };
+  const source = photo || s(f.lien?.image);
+  const jour = jourParis();
+  const moi8 = qui8(moi.id);
+  const perso = await lirePerso(supabase, moi.id);
+  if (perso.objets.some((o) => o.message === MESSAGE_RANGE(idMessage) && visible(o))) return { error: PHRASES_RANGER.deja, statut: 409 };
+  const depots = perso.depots?.jour === jour ? perso.depots.n : 0;
+  if (depots >= DEPOT.parJour) return { error: "Tu as déjà beaucoup déposé aujourd’hui : la suite demain 🙂", statut: 429 };
+  if (perso.objets.filter(visible).length >= DEPOT.perso) return { error: "Ton étagère est pleine : retires-en un souvenir d’abord.", statut: 409 };
+  const id = nouvelId();
+  // 🖼️ RECOPIER, jamais citer : effacer le message (ou le nettoyage de la nuit) ne touche pas à sa copie
+  let image: ImageObjet | undefined;
+  if (source) {
+    const brut = await telecharger(supabase, source);
+    const sortie = brut
+      ? await sharp(brut, { limitInputPixels: 40_000_000, animated: false })
+          .rotate()
+          .resize({ width: RANGER_UNIVERS.largeur, height: RANGER_UNIVERS.largeur, fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toBuffer({ resolveWithObject: true })
+          .catch(() => null)
+      : null;
+    const chemin = `${moi.id}/univers/objets/${id}.webp`;
+    if (sortie && (await deposer(supabase, chemin, sortie.data, "image/webp"))) {
+      // (l'adresse de la chanson : celle, vérifiée, de son message — http ou https seulement)
+      const lien = sorte !== "photo" && /^https?:\/\/[^\s]+$/i.test(s(f.lien?.url)) ? s(f.lien?.url).slice(0, 600) : "";
+      image = { chemin, l: sortie.info.width, h: sortie.info.height, sorte, ...(lien ? { lien } : {}) };
+    }
+  }
+  // (une photo dont la copie n'a pas pu se faire : rien ; une chanson sans image d'aperçu : sa note seule)
+  if (!image && sorte === "photo") return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  const le = new Date().toISOString();
+  const titre = titreRange(sorte, sorte === "photo" ? f.legende : f.lien?.titre);
+  const o: ObjetGarde = {
+    id,
+    genre: "gout",
+    nuance: "aime",
+    emoji: EMOJI_IMAGE[sorte],
+    titre,
+    concerne: moi8,
+    citation: "",
+    de8: moi8,
+    message: MESSAGE_RANGE(idMessage),
+    ...(f.le ? { messageLe: s(f.le) } : {}),
+    le,
+    etat: "actif",
+    depose: true,
+    ...(image ? { image } : {}),
+  };
+  if (!(await ecrirePerso(supabase, moi.id, { ...perso, objets: [...perso.objets, o].slice(-200), depots: { jour, n: depots + 1 } }))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  await noterStat(supabase, "deposes");
+  return { ok: true, id, titre };
 }

@@ -33,6 +33,8 @@ import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { MEMOIRE_PROCHES, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import { BandeauMoment, STYLES_MOMENT, lireFermes, momentDuDuo } from "./moment-du-duo";
+import { QuestionRanger, STYLES_RANGER, useRangesDansMonUnivers } from "./ranger-univers";
+import { sorteARanger } from "@/lib/direct/ranger-univers";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { BarreEcrire, BoutonEffacer, BulleEcrite, STYLES_ECRIRE, motsDeLEcrit, type ChoixPlus } from "./ecrire";
 import { BullePhoto, CadrePhoto, FeuillePhoto, PhotoEnGrand, STYLES_PHOTOS } from "./photos";
@@ -1005,6 +1007,9 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     // (le fil, en bas : le dernier message en vue)
     window.setTimeout(() => liste.current?.scrollTo({ top: liste.current.scrollHeight }), 60);
   }, []);
+  // 🎵 (15 novembre 2026) « Le ranger dans mon univers ? » : ce qu'il a déjà rangé (lu s'il y a de quoi ranger)
+  const aRangerIci = Boolean(fil?.messages.some((x) => sorteARanger(x, maintenant)));
+  const rangement = useRangesDansMonUnivers(aRangerIci);
   /** 🗑️ Il efface un aparté (pour les deux). */
   async function effacerAparte(id: string) {
     if (!fil) return;
@@ -1699,6 +1704,12 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           const emojis = [...new Set(x.repliques.map((r) => r.tete).filter((t): t is Sentiment => Boolean(t)))].map((t) => sentimentDe(t)?.emoji ?? "").join(" ");
           // 🗑️ (lot M1) son propre message, choisi, dans les 24 heures : « Effacer »
           const effacable = x.moi && i === iVue && maintenant - (Date.parse(x.le) || 0) < ECRIT.effacer;
+          // 🎵 🖼️ sa chanson, sa vidéo, sa photo : « Le ranger dans mon univers ? » (sauf s'il a dit non)
+          const sorteR = sorteARanger(x, maintenant);
+          const dessous =
+            sorteR && !rangement.non.has(x.id) ? (
+              <QuestionRanger cle={cle} id={x.id} sorte={sorteR} fait={rangement.ranges.has(x.id)} onFait={rangement.range} onNon={rangement.refuse} />
+            ) : undefined;
           // 🎬 (lot M3) une vidéo : sa vignette, ▶, sa durée ; un toucher la lit en grand (avec le son), puis la figurine la montre
           if (x.genre === "video")
             return (
@@ -1733,6 +1744,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
                   setEnGrand(x);
                 }}
                 onEffacer={effacable ? () => void effacer(x) : undefined}
+                dessous={dessous}
               />
             );
           if (x.genre === "ecrit")
@@ -1748,6 +1760,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
                   if (!appui.etaitLong()) jouerMessage(i, false);
                 }}
                 onEffacer={effacable ? () => void effacer(x) : undefined}
+                dessous={dessous}
               />
             );
           const texte = texteDuMessage(x.repliques);
@@ -2814,7 +2827,7 @@ export const STYLES_PROCHES = `
 @keyframes pr-clignote{50%{opacity:.25}}
 @keyframes pr-tourne{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pr *,.pr-plein *{animation:none!important}}
-${STYLES_ECRIRE}${STYLES_PHOTOS}${STYLES_VIDEOS}${STYLES_MOMENT}
+${STYLES_ECRIRE}${STYLES_PHOTOS}${STYLES_VIDEOS}${STYLES_MOMENT}${STYLES_RANGER}
 /* 📜 (point 6) le fil en grand : la scène repliée (toujours là : la voix d'un message s'y joue), et sa ligne */
 .pr-scene.replie,.pr-scene.chez.replie{height:0!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;opacity:0;pointer-events:none;overflow:hidden}
 .pr-replier{align-self:flex-end;position:relative;z-index:5;flex:none;height:30px;margin:-40px 10px 10px 0;padding:0 12px;border:0;border-radius:999px;background:rgba(18,6,15,.62);color:#FFF4E6;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}

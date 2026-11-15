@@ -3558,6 +3558,34 @@ Le propriétaire, sur les points 4, 6 et 7 de la conversation (9.0 septuagies) :
 - **L'essai** : `etagere.mjs` (l'étagère vide, dans l'en-tête et au mur ; la question dans le moment du duo ; puis le
   souvenir rangé ; le fil en grand, et la scène qui revient).
 
+### 9.0 tresseptuagies 🎵 « Le ranger dans mon univers ? » · 🖼️ « La mettre dans mon univers ? » (15 novembre)
+
+Le relais de la session des messages (`docs/univers/feuille-de-route.md`, lot M ; le cahier des messages, 4.2 et 5.3) ;
+le propriétaire : « oui », puis « fais le n° 1 ».
+
+- **La question** (`app/collection/ranger-univers.tsx`, les règles dans `lib/direct/ranger-univers.ts`) : sous une
+  chanson ou une vidéo qu'il a envoyée (un lien YouTube, Spotify, Deezer, Apple Music, une fois son aperçu prêt) —
+  « 🎵 Le ranger dans mon univers ? » — et sous une photo qu'il a envoyée — « 🖼️ La mettre dans mon univers ? » —,
+  « Oui » / « Non ». Chez lui seulement, sous ses messages de moins d'une semaine. « Non » : elle ne revient plus sur ce
+  téléphone. « Oui » : « ✓ Dans ton univers, sur ton étagère » reste dessous. Une photo reçue ne sort jamais de la
+  conversation : pas de question sous elle. Les bulles (`BulleEcrite`, `BullePhoto`) reçoivent ce qui se pose dessous
+  (`dessous`).
+- **Le serveur** (`rangerDansMonUnivers`, `etagere-serveur.ts` ; `POST /api/direct/etagere { action: "ranger-univers",
+  avec, message }`, `GET ?ranges=1`) : seul celui qui l'a envoyé (403 sinon) ; l'image — la pochette ou la vignette
+  de l'aperçu, la photo — est **recopiée** (900 pixels au plus, WebP, sans métadonnées) dans `<habitant>/univers/objets/
+  <id>.webp` : effacer le message, ou le nettoyage de la nuit, n'y touche pas. Un souvenir se pose sur son étagère, au
+  rayon « Ce que j'aime » (`genre: "gout"`, `depose`, `image: { chemin, l, h, sorte, lien? }`, 📺 🎵 🖼️, le titre de la
+  page ou la légende, 28 signes). Pas montré d'office : il choisit, comme pour tout souvenir, « 👀 Montrer à mes
+  visiteurs ». Les règles des dépôts : douze par jour, quatre-vingts sur la sienne ; deux fois le même : 409.
+- **Ce qu'on en voit** : dans « Ma maison », sur sa planche, la vignette ou la photo encadrée à la place de l'emoji ;
+  dans sa page, la même chose au rayon « Ce que j'aime » ; la fiche, l'image en grand, « ▶ L'écouter » / « ▶ La
+  regarder », « 📨 Envoyé par toi dans une conversation » ; le détail : « une chanson · 15 nov. ». Ses visiteurs voient
+  l'image de ce qu'il montre (`etagereVitrine`). Les images sont signées une heure. « Retirer de mon étagère » : la
+  copie s'en va avec.
+- **L'essai** : `scripts/navigateur/ranger-univers.mjs` (la question sous ce qu'il a envoyé seulement ; oui, non ;
+  les copies ; les règles du serveur ; effacer le message garde la copie ; « Ma maison », la fiche, la visite ;
+  retirer efface la copie).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

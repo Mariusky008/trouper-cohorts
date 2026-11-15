@@ -73,6 +73,7 @@ import {
   type CarteVue,
   type EtagereScene,
   type EtagereVue,
+  type ImageVue,
   type ObjetVu,
   type RappelVu,
 } from "@/lib/direct/etagere";
@@ -413,6 +414,16 @@ export function CarteRallume({ prenom }: { prenom: string }) {
 }
 
 /**
+ * 🖼️ (« Le ranger dans mon univers ? ») une pochette, une vignette de vidéo, une photo encadrée — à la place de l'emoji.
+ */
+export function ImageRangee({ i, grande = false }: { i: ImageVue; grande?: boolean }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className={`et-img ${i.sorte}${grande ? " grande" : ""}`} src={i.src} alt="" draggable={false} loading="lazy" style={{ aspectRatio: i.sorte === "musique" ? "1" : String(Math.min(1.8, Math.max(0.6, i.l / Math.max(1, i.h)))) }} />
+  );
+}
+
+/**
  * « 📚 6 », dans l'en-tête de la conversation — toujours là, même vide (15 novembre 2026, le propriétaire, point 4 : « il
  * manque un accès aux étagères de ce duo ») : vide, elle ouvre l'étagère, où l'on pose le premier souvenir.
  */
@@ -727,11 +738,19 @@ export function FicheObjet({
       {o && (
         <div className="et-fiche">
           <span className="et-e" aria-hidden="true">
-            {o.emoji}
+            {o.image ? <ImageRangee i={o.image} grande /> : o.emoji}
           </span>
           <b className="et-fiche-titre">{o.titre}</b>
           <small className="et-fiche-detail">{o.detail}</small>
-          {o.depose ? (
+          {/* 🎵 (rangé depuis une conversation) la chanson, la vidéo : l'écouter, la regarder */}
+          {o.image?.lien && (
+            <a className="et-bouton or et-ecouter" href={o.image.lien} target="_blank" rel="noopener noreferrer">
+              {o.image.sorte === "musique" ? "▶ L’écouter" : "▶ La regarder"}
+            </a>
+          )}
+          {o.image ? (
+            <p className="et-depose">📨 Envoyé par toi dans une conversation · {momentCourt(o.ditLe)}</p>
+          ) : o.depose ? (
             <p className="et-depose">
               ✋ Déposé par {o.de === "moi" ? "toi" : o.ditPar} · {momentCourt(o.ditLe)}
             </p>
@@ -770,7 +789,7 @@ export function FicheObjet({
               Annuler (elle n’est pas tenue)
             </button>
           )}
-          {o.genre === "gout" && <p className="et-note-douce">🎁 Une idée de cadeau, quand le moment viendra.</p>}
+          {o.genre === "gout" && !o.image && <p className="et-note-douce">🎁 Une idée de cadeau, quand le moment viendra.</p>}
           {o.etat === "fierte" && <p className="et-note-douce">🏆 Rangé tout en haut, avec vos fiertés.</p>}
           {o.genre === "blague" && onMeme && (
             <button type="button" className="et-bouton" onClick={() => onMeme(memeDeLaBlague(o))}>
@@ -927,7 +946,7 @@ export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; 
                     l.map((o) => (
                       <button key={o.id} type="button" className={`et-objet-rayon${o.etat === "fierte" ? " haut" : ""}`} data-objet={o.id} onClick={() => setFiche(o)} aria-label={`${o.titre}, ${o.detail}`}>
                         <span className="et-e" aria-hidden="true">
-                          {o.emoji}
+                          {o.image ? <ImageRangee i={o.image} /> : o.emoji}
                         </span>
                         <span className="et-etiquette">{o.titre}</span>
                         {o.etat === "tenue" && <i className="et-tenue">✓</i>}
@@ -1197,7 +1216,7 @@ export function EtagereChezMoi({ actif }: { actif: boolean }) {
           {n ? (
             objets.slice(-6).map((o) => (
               <span key={o.id} data-objet={o.id}>
-                {o.emoji}
+                {o.image ? <ImageRangee i={o.image} /> : o.emoji}
               </span>
             ))
           ) : (
@@ -1380,7 +1399,7 @@ export function PageMonEtagere({ onFermer }: { onFermer: () => void }) {
                         aria-label={`${o.titre}, ${o.detail}${o.avec ? `, noté avec ${o.avec.prenom}` : ""}`}
                       >
                         <span className="et-e" aria-hidden="true">
-                          {o.emoji}
+                          {o.image ? <ImageRangee i={o.image} /> : o.emoji}
                         </span>
                         <span className="et-etiquette">{o.titre}</span>
                         {o.etat === "tenue" && <i className="et-tenue">✓</i>}
@@ -1471,6 +1490,15 @@ export function RangeSansDemander() {
 }
 
 export const STYLES_ETAGERE = `
+/* 🖼️ (« Le ranger dans mon univers ? ») une pochette, une vignette, une photo encadrée */
+.et-img{display:block;width:auto;height:44px;max-width:72px;object-fit:cover;border-radius:4px;box-shadow:0 5px 8px -3px rgba(0,0,0,.7);background:#2a170b}
+.et-img.musique{border-radius:3px}
+.et-img.video{border-radius:6px}
+.et-img.photo{padding:3px 3px 7px;background:#FFF8EE;border-radius:2px;transform:rotate(-2deg)}
+.et-img.grande{height:auto;width:min(72vw,280px);max-width:none;max-height:42vh}
+.et-chez-planche .et-rang .et-img{height:26px;max-width:42px}
+.et-chez-planche .et-rang .et-img.photo{padding:2px 2px 4px}
+.et-ecouter{display:flex;align-items:center;justify-content:center;box-sizing:border-box;text-decoration:none}
 .et-mur{position:absolute;top:10px;left:50%;z-index:4;translate:-50% 0;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;padding:0;cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent}
 .et-rang{display:flex;align-items:flex-end;justify-content:center;gap:5px;min-width:132px;height:32px;padding:0 10px}
 .et-rang span{font-size:24px;line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.5))}

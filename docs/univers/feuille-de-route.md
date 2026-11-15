@@ -735,7 +735,7 @@ qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/un
 
 #### 📨 Relais pour la session de l'univers : « 🎵 Le ranger dans mon univers ? » et « 🖼️ La mettre dans mon univers ? »
 
-Le propriétaire a dit « oui » le 15 novembre 2026 pour les faire. Ils relèvent de la session de l'univers (le cahier,
+**Construit le 15 novembre 2026** (`docs/figurines.md`, 9.0 tresseptuagies ; `app/collection/ranger-univers.tsx`, `rangerDansMonUnivers`). Le propriétaire a dit « oui » le 15 novembre 2026 pour les faire. Ils relèvent de la session de l'univers (le cahier,
 sections 4.2 et 5.3) ; la session des messages n'a pas pu la joindre, d'où ce relais. Ce qui est déjà là, côté
 conversation :
 

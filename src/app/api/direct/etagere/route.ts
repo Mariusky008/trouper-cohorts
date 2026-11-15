@@ -31,12 +31,16 @@
 // POST { action: "deposer", avec, pour: "lui", … }  → { ok, id, demande: true } : une question à l'autre
 // GET ?reglage=1                               → { rangeSeul } : « Ma figurine range sans me demander »
 // POST { action: "range-seul", oui }           → { ok, rangeSeul }
+// 🎵 « LE RANGER DANS MON UNIVERS ? » (15 novembre 2026, le relais du lot M) :
+// GET ?ranges=1                                → { ranges } : les messages qu'il a déjà rangés dans son univers
+// POST { action: "ranger-univers", avec, message }  → { ok, id, titre } : une chanson, une vidéo ou une photo qu'IL a
+//                                                envoyée, recopiée dans son univers (son étagère, « Ce que j'aime »)
 // Les règles du talkie : la session vérifiée, deux proches qui se sont ajoutés, sinon 403 ; jamais l'identifiant d'un
 // habitant, seulement sa clé. Le frein : `CLIKME_ETAGERE=0` (rien de noté, rien d'affiché : 404).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { agirSurEtagere, agirSurMonEtagere, choisirRangeSeul, deposerSurEtagere, etagereAllumee, etagereAvec, goutsDe, mesRappels, monEtagere, rangeSeul } from "@/lib/direct/etagere-serveur";
+import { agirSurEtagere, agirSurMonEtagere, choisirRangeSeul, deposerSurEtagere, etagereAllumee, etagereAvec, goutsDe, mesRappels, monEtagere, rangeSeul, rangerDansMonUnivers, rangesDansMonUnivers } from "@/lib/direct/etagere-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +59,7 @@ export async function GET(request: Request) {
     if (!etagereAllumee()) return NextResponse.json({ error: "L’étagère n’est pas ouverte." }, { status: 404, headers: sansCache });
     return NextResponse.json({ ok: true, rangeSeul: await rangeSeul(supabase, moi.id) }, { headers: sansCache });
   }
+  if (q.get("ranges")) return NextResponse.json({ ok: true, ranges: await rangesDansMonUnivers(supabase, moi).catch(() => []) }, { headers: sansCache });
   if (q.get("moi")) {
     const m = await monEtagere(supabase, moi);
     if (!m.etagere) return NextResponse.json({ error: m.error }, { status: m.statut ?? 400, headers: sansCache });
@@ -70,11 +75,16 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
-  if (!p || !["retirer", "date", "vu", "pause", "reussi", "tenue", "annuler-tenue", "deposer", "montrer", "cacher", "oui", "non", "question-jouee", "range-seul"].includes(String(p.action))) return NextResponse.json({ error: "Demande incomplète." }, { status: 400, headers: sansCache });
+  if (!p || !["retirer", "date", "vu", "pause", "reussi", "tenue", "annuler-tenue", "deposer", "montrer", "cacher", "oui", "non", "question-jouee", "range-seul", "ranger-univers"].includes(String(p.action))) return NextResponse.json({ error: "Demande incomplète." }, { status: 400, headers: sansCache });
   // 📌 (lot E5) le réglage « Ma figurine range sans me demander »
   if (p.action === "range-seul") {
     if (!etagereAllumee()) return NextResponse.json({ error: "L’étagère n’est pas ouverte." }, { status: 404, headers: sansCache });
     return NextResponse.json({ ok: true, ...(await choisirRangeSeul(supabase, moi, p.oui)) }, { headers: sansCache });
+  }
+  // 🎵 une chanson, une vidéo, une photo qu'il a envoyée : dans son univers
+  if (p.action === "ranger-univers") {
+    const r = await rangerDansMonUnivers(supabase, moi, p);
+    return NextResponse.json(r.ok ? { ok: true, id: r.id, titre: r.titre } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   // 🏡 (lot E4) déposer ; mon étagère
   if (p.action === "deposer") {
