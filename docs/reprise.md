@@ -215,6 +215,9 @@ Le cahier : `docs/univers/compagnon.md` (lot C). **C0 est construit** (9.0 unsep
 boucles (une pose, puis quatre secondes de vidéo sur fond vert chez Google), le vert retiré dans le téléphone, l'aperçu
 chez lui. **À juger par le propriétaire sur son iPhone** : le style, la constance, s'il vit bien à côté de sa figurine.
 Rien d'autre (C1 à C4) ne commence avant son verdict.
+**Ses premiers retours** (9.0 septiesseptuagies) : il marche sur place → il traverse la pièce ; « qu'on l'entende
+ronronner » → un vrai son enregistré par boucle (à déposer par lui) ; le liseré kaki → la pose sans ombre, des consignes
+plus strictes, un détourage qui s'adapte (refaire les vidéos touchées).
 
 ## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
 
@@ -259,9 +262,10 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   et `photo`, la modération) et son écran (9.0 quinquesexagies : `app/collection/photos.tsx`). **M3, le serveur, est
   construit** (9.0 sexsexagies 🎬 : `video.ts`, `video-serveur.ts`, `video-depot` et `video`) et son écran (9.0
   septsexagies : `app/collection/videos.tsx`). **Le nettoyage du stockage aussi** (9.0 octosexagies 🧹 : chaque nuit,
-  les dépôts jamais envoyés et les fichiers qu'aucun message ne cite). **Reste** : « 🎵 Le ranger dans mon univers ? »
-  et « 🖼️ La mettre dans mon univers ? » — **le propriétaire a dit oui** ; ils sont à la session de l'univers, le relais
-  est dans `docs/univers/feuille-de-route.md` (lot M, « 📨 Relais ») ; la page de confidentialité (au propriétaire).
+  les dépôts jamais envoyés et les fichiers qu'aucun message ne cite). « 🎵 Le ranger dans mon univers ? »
+  et « 🖼️ La mettre dans mon univers ? » **sont construits** (`docs/figurines.md`, 9.0 quinquiesseptuagies : la question sous
+  ce qu'il a envoyé, la copie dans son univers, sur son étagère « Ce que j'aime »). **Reste** : la page de
+  confidentialité (au propriétaire).
 - **Écart repéré, à décider par le propriétaire** : le cahier (section 7) dit qu'« un proche retiré, un compte effacé :
   la conversation, ses photos et ses vidéos sont effacées ». Ce n'est pas fait : retirer un proche (`retirerProche`)
   ne touche pas à leur conversation.

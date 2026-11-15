@@ -3640,6 +3640,88 @@ scène et vient ronronner sur les genoux quand rien ne se passe » ; puis : « o
   vidéo de chat est une vidéo d'essai sur fond vert (`scripts/fixtures/chat-fond-vert-essai.mp4`, en VP9 : le Chromium
   des essais ne lit pas le H.264 des vraies boucles ; les téléphones, si).
 
+### 9.0 quinquiesseptuagies 🎵 « Le ranger dans mon univers ? » · 🖼️ « La mettre dans mon univers ? » (15 novembre)
+
+Le relais de la session des messages (`docs/univers/feuille-de-route.md`, lot M ; le cahier des messages, 4.2 et 5.3) ;
+le propriétaire : « oui », puis « fais le n° 1 ».
+
+- **La question** (`app/collection/ranger-univers.tsx`, les règles dans `lib/direct/ranger-univers.ts`) : sous une
+  chanson ou une vidéo qu'il a envoyée (un lien YouTube, Spotify, Deezer, Apple Music, une fois son aperçu prêt) —
+  « 🎵 Le ranger dans mon univers ? » — et sous une photo qu'il a envoyée — « 🖼️ La mettre dans mon univers ? » —,
+  « Oui » / « Non ». Chez lui seulement, sous ses messages de moins d'une semaine. « Non » : elle ne revient plus sur ce
+  téléphone. « Oui » : « ✓ Dans ton univers, sur ton étagère » reste dessous. Une photo reçue ne sort jamais de la
+  conversation : pas de question sous elle. Les bulles (`BulleEcrite`, `BullePhoto`) reçoivent ce qui se pose dessous
+  (`dessous`).
+- **Le serveur** (`rangerDansMonUnivers`, `etagere-serveur.ts` ; `POST /api/direct/etagere { action: "ranger-univers",
+  avec, message }`, `GET ?ranges=1`) : seul celui qui l'a envoyé (403 sinon) ; l'image — la pochette ou la vignette
+  de l'aperçu, la photo — est **recopiée** (900 pixels au plus, WebP, sans métadonnées) dans `<habitant>/univers/objets/
+  <id>.webp` : effacer le message, ou le nettoyage de la nuit, n'y touche pas. Un souvenir se pose sur son étagère, au
+  rayon « Ce que j'aime » (`genre: "gout"`, `depose`, `image: { chemin, l, h, sorte, lien? }`, 📺 🎵 🖼️, le titre de la
+  page ou la légende, 28 signes). Pas montré d'office : il choisit, comme pour tout souvenir, « 👀 Montrer à mes
+  visiteurs ». Les règles des dépôts : douze par jour, quatre-vingts sur la sienne ; deux fois le même : 409.
+- **Ce qu'on en voit** : dans « Ma maison », sur sa planche, la vignette ou la photo encadrée à la place de l'emoji ;
+  dans sa page, la même chose au rayon « Ce que j'aime » ; la fiche, l'image en grand, « ▶ L'écouter » / « ▶ La
+  regarder », « 📨 Envoyé par toi dans une conversation » ; le détail : « une chanson · 15 nov. ». Ses visiteurs voient
+  l'image de ce qu'il montre (`etagereVitrine`). Les images sont signées une heure. « Retirer de mon étagère » : la
+  copie s'en va avec.
+- **L'essai** : `scripts/navigateur/ranger-univers.mjs` (la question sous ce qu'il a envoyé seulement ; oui, non ;
+  les copies ; les règles du serveur ; effacer le message garde la copie ; « Ma maison », la fiche, la visite ;
+  retirer efface la copie).
+
+### 9.0 sexiesseptuagies 🪵 La scène, encore : plus rien ne se balance, le décor entier, l'étagère peinte (15 novembre)
+
+Le propriétaire, captures à l'appui (ordinateur et iPhone) : « on ne voit pas la scène en entier, le haut est caché » ;
+« "Votre étagère" n'est pas du tout intégrée à l'univers — je voulais quelque chose de plus intégré et plus visuellement
+beau » ; « les deux figurines se balancent toujours : l'image en entier se balance, ce n'est pas agréable à regarder ».
+Son choix pour l'étagère : « peinte dans l'univers ».
+
+- **Plus rien ne fait bouger l'image entière d'une figurine** (`conversation-vivante.tsx`, `figurine-qui-parle.tsx`,
+  `proches.tsx`) : ni les postures (occupé, affalé, boude, il dort, il prépare), ni les gestes d'une réaction, ni le
+  sursaut d'un nouveau message, ni la « respiration » d'une figurine découpée, ni le pas en avant de celle qui parle (elle
+  s'éclaire un peu). Ce qu'elle fait se dit à côté d'elle (les zzz, les points de « il prépare », l'éclat d'une
+  réaction) ; endormie ou affalée, elle pâlit un peu, sans pencher.
+- **Le décor presque entier** : la scène « chez moi » est plus haute (460 px au plus, 54 % de l'écran) et jamais plus
+  large que ce que sa hauteur laisse voir (le décor est en 2:3) — sur un ordinateur, une carte au milieu au lieu d'une
+  bande où le haut du décor (et la tête des figurines) était coupé. « ⌃ Le fil en grand » passe sous la scène, au
+  milieu.
+- **🪵 L'étagère peinte dans l'univers** (`lib/direct/etagere-peinte-serveur.ts`) : à la première ouverture d'une
+  conversation, son décor du moment est retouché une fois par le moteur d'image (après la réponse, `maxDuration` 300 s) :
+  une étagère en bois, vide, dans le même style et la même lumière, dans une zone fixe du mur au-dessus des fauteuils
+  (`ZONE_ETAGERE` : 20–80 % de large, 24–36 % de haut — un masque ; le reste est gardé). Un modèle qui voit relève le
+  dessus de la planche (sans réponse qui tienne : la surface se déduit de la zone). Rangé à côté du décor :
+  `<décor>-etagere.png` et `<décor>-etagere.json` = { chemin, surface, le } ; un décor de saison neuf : une de plus.
+  Environ 0,20 $ par décor. La conversation reçoit `chezMoi.etagere` (la surface) et le décor où elle est peinte ;
+  leurs souvenirs s'y posent (`MurEtagere`, `surface`) — debout sur la planche, à sa taille, avec leur ombre ; ni planche
+  dessinée, ni étiquette. Pas encore peinte : rien dans la scène (« 📚 » en haut ouvre leur étagère). Sans univers : la
+  planche d'avant, au mur. Le frein : `CLIKME_ETAGERE_PEINTE=0`.
+- **Les compteurs du jour de l'étagère** (retirés, tenues, dates, oui / refusés) sont écrits avant la réponse : l'essai
+  de la poussière les relisait trop tôt, et la CI échouait de temps en temps.
+- **L'essai** : `talkie-chez-moi.mjs` (l'étagère peinte une fois, le masque, la surface ; leur 🍝 posé sur la planche ;
+  plus d'étiquette ; un toucher l'ouvre).
+
+### 9.0 septiesseptuagies 🐱 Le chat, après le premier essai (15 novembre)
+
+Le propriétaire, sur son iPhone : « quand le chat marche, il marche sur place » ; « sur les genoux ça marche bien, mais
+il faudrait qu'on l'entende ronronner » ; « parfois il y a le détourage vert kaki autour du chat ».
+
+- **Il traverse la pièce** (l'aperçu « Chez toi ») : la boucle « Il marche » reste une marche sur place (c'est ce qui la
+  rend sans couture) ; c'est le téléphone qui le déplace — de droite à gauche (il regarde à gauche), puis il se retourne
+  et revient (`ce-promene`, `ce-sens`, douze secondes).
+- **🔊 Son vrai son** : le cahier (4.4) dit « un vrai bruitage enregistré, choisi et validé par le propriétaire — rien
+  n'est fabriqué par une IA ». Sous chaque boucle, « 🔊 Un son ? » : l'administrateur y dépose un enregistrement (mp3,
+  m4a, wav ; 2,5 Mo au plus) — `compagnons/<espèce>/<boucle>/son.<ext>` et `son.json` ; route `action: "son"`. Dans
+  l'aperçu, « 🔈 Avec son son » (coupé au départ) le joue doucement, en boucle.
+- **Plus de liseré kaki** : (1) la pose, avant d'être posée sur le vert (`surFondVert`), perd tout ce qui est à demi
+  transparent — l'ombre douce sous l'animal (devenue un ovale kaki sous le chat qui dort), le flou des bords ; (2) les
+  consignes : pas même une ombre douce sous la pose ; dans la vidéo, le vert uni jusqu'au bord de l'animal, ni sol, ni
+  dégradé ; (3) dans le téléphone (`compagnon-vivant.tsx`), la couleur du fond se mesure sur le bord de chaque image ;
+  un point à demi transparent est « démêlé » (on lui retire la part du fond : il retrouve la couleur du chat, sans
+  liseré) ; plus sombre que le fond, c'est une ombre — elle devient grise et douce, plus kaki ; le bord se resserre d'un
+  point. Essayé sur une image faite exprès (un chat orange, une ombre kaki, des bords mêlés au vert) : bord orange net,
+  ombre grise.
+  Les boucles déjà faites gardent leur vidéo : « Refaire la vidéo » pour celles qui ont l'ovale ou le liseré.
+- **L'essai** : `essai-compagnon-route.mjs` (les consignes sans ombre ; le son déposé, refusé, enlevé).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

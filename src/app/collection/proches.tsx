@@ -33,6 +33,8 @@ import { jouerDoux } from "@/lib/direct/sons";
 import { retenirMemePour } from "./meme-pour";
 import { MEMOIRE_PROCHES, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import { BandeauMoment, STYLES_MOMENT, lireFermes, momentDuDuo } from "./moment-du-duo";
+import { QuestionRanger, STYLES_RANGER, useRangesDansMonUnivers } from "./ranger-univers";
+import { sorteARanger } from "@/lib/direct/ranger-univers";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { BarreEcrire, BoutonEffacer, BulleEcrite, STYLES_ECRIRE, motsDeLEcrit, type ChoixPlus } from "./ecrire";
 import { BullePhoto, CadrePhoto, FeuillePhoto, PhotoEnGrand, STYLES_PHOTOS } from "./photos";
@@ -1005,6 +1007,9 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
     // (le fil, en bas : le dernier message en vue)
     window.setTimeout(() => liste.current?.scrollTo({ top: liste.current.scrollHeight }), 60);
   }, []);
+  // 🎵 (15 novembre 2026) « Le ranger dans mon univers ? » : ce qu'il a déjà rangé (lu s'il y a de quoi ranger)
+  const aRangerIci = Boolean(fil?.messages.some((x) => sorteARanger(x, maintenant)));
+  const rangement = useRangesDansMonUnivers(aRangerIci);
   /** 🗑️ Il efface un aparté (pour les deux). */
   async function effacerAparte(id: string) {
     if (!fil) return;
@@ -1534,8 +1539,13 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
         {/* 🎭 par-dessus chaque figurine : « … », le panneau, l'éclat d'une réaction, les zZz */}
         <Calque qui="lui" style={chez ? styleDePlace(chez.invite, true) : undefined} prepare={luiPrepare} anim={anim} posture={postureLui} aparte={aparteDe("lui")} note={jeuDe("lui").note} bulle={jeuDe("lui").bulle} />
         <Calque qui="moi" style={chez ? styleDePlace(chez.hote, false) : undefined} prepare={false} anim={anim} posture={postureMoi} aparte={aparteDe("moi")} note={jeuDe("moi").note} bulle={jeuDe("moi").bulle} />
-        {/* 📚 leur étagère, au mur : les cinq derniers souvenirs posés */}
-        <MurEtagere objets={et.objets} attente={et.attente} vol={et.vol} arrive={et.arrive} onOuvrir={() => setPageEtagere(true)} poussiere={endormies} />
+        {/* 📚 leur étagère : chez moi, 🪵 peinte dans mon décor (ses souvenirs posés sur sa planche) — pas encore peinte :
+            rien dans la scène (elle se peint après la réponse ; « 📚 » en haut l'ouvre) ; sans univers, au mur */}
+        {chez ? (
+          chez.etagere && <MurEtagere objets={et.objets} attente={et.attente} vol={et.vol} arrive={et.arrive} onOuvrir={() => setPageEtagere(true)} poussiere={endormies} surface={chez.etagere} />
+        ) : (
+          <MurEtagere objets={et.objets} attente={et.attente} vol={et.vol} arrive={et.arrive} onOuvrir={() => setPageEtagere(true)} poussiere={endormies} />
+        )}
         {s && (
           <span className="pr-badge" aria-label={`Sa tête : ${s.court}`}>
             <span aria-hidden="true">{s.emoji}</span>
@@ -1699,6 +1709,12 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
           const emojis = [...new Set(x.repliques.map((r) => r.tete).filter((t): t is Sentiment => Boolean(t)))].map((t) => sentimentDe(t)?.emoji ?? "").join(" ");
           // 🗑️ (lot M1) son propre message, choisi, dans les 24 heures : « Effacer »
           const effacable = x.moi && i === iVue && maintenant - (Date.parse(x.le) || 0) < ECRIT.effacer;
+          // 🎵 🖼️ sa chanson, sa vidéo, sa photo : « Le ranger dans mon univers ? » (sauf s'il a dit non)
+          const sorteR = sorteARanger(x, maintenant);
+          const dessous =
+            sorteR && !rangement.non.has(x.id) ? (
+              <QuestionRanger cle={cle} id={x.id} sorte={sorteR} fait={rangement.ranges.has(x.id)} onFait={rangement.range} onNon={rangement.refuse} />
+            ) : undefined;
           // 🎬 (lot M3) une vidéo : sa vignette, ▶, sa durée ; un toucher la lit en grand (avec le son), puis la figurine la montre
           if (x.genre === "video")
             return (
@@ -1733,6 +1749,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
                   setEnGrand(x);
                 }}
                 onEffacer={effacable ? () => void effacer(x) : undefined}
+                dessous={dessous}
               />
             );
           if (x.genre === "ecrit")
@@ -1748,6 +1765,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
                   if (!appui.etaitLong()) jouerMessage(i, false);
                 }}
                 onEffacer={effacable ? () => void effacer(x) : undefined}
+                dessous={dessous}
               />
             );
           const texte = texteDuMessage(x.repliques);
@@ -2692,15 +2710,18 @@ export const STYLES_PROCHES = `
 .pr-scene.joue .pr-parleur{transform:translateY(-2%) scale(1.02)}
 .pr-fqp{height:100%}
 .pr-fqp .fqp-fig{width:auto;height:100%;max-width:62vw;border-radius:22px}
-.pr-ecoute{order:2;height:52%;aspect-ratio:3/4;object-fit:cover;object-position:50% 20%;border-radius:18px;opacity:.55;filter:saturate(.75);transform:scaleX(-1);animation:pr-respire 3.2s ease-in-out infinite}
+.pr-ecoute{order:2;height:52%;aspect-ratio:3/4;object-fit:cover;object-position:50% 20%;border-radius:18px;opacity:.55;filter:saturate(.75);transform:scaleX(-1)}
 .pr-scene.moi .pr-ecoute{order:1;transform:none}
 .pr-scene.moi .pr-lire{right:auto;left:16px}
 .pr-scene.seule .pr-parleur{height:92%}
-.pr-scene.chez{container-type:inline-size;display:block;height:min(400px,50dvh);padding:0;background:#2b1a0c}
+/* (15 novembre 2026, « on ne voit pas la scène en entier ») : son décor (2:3) se montre presque entier — la scène est
+   plus haute, et jamais plus large que ce que sa hauteur laisse voir (sur un ordinateur : une carte au milieu) */
+.pr-scene.chez{container-type:inline-size;display:block;height:min(460px,54dvh);width:min(100%,calc(min(460px,54dvh) / 1.17));align-self:center;padding:0;background:#2b1a0c}
 .pr-scene.chez::after{height:22%;background:linear-gradient(180deg,transparent,rgba(20,10,4,.7))}
 .pr-decor{position:absolute;left:0;bottom:0;width:100%;aspect-ratio:2/3;object-fit:cover;pointer-events:none}
 .pr-scene.chez .pr-parleur,.pr-ecoute-chez{position:absolute;z-index:1;transform:translateX(-50%);aspect-ratio:2/3;display:flex;align-items:flex-end;justify-content:center;transition:left .5s cubic-bezier(.2,.9,.3,1),bottom .5s,height .5s}
-.pr-scene.chez.joue .pr-parleur{transform:translateX(-50%) translateY(-2%) scale(1.03)}
+/* (celle qui parle ne bouge plus : elle s'éclaire un peu) */
+.pr-scene.chez.joue .pr-parleur{filter:brightness(1.06)}
 .pr-scene.chez .pr-parleur.invite,.pr-ecoute-chez.invite{animation:pr-entre .9s cubic-bezier(.2,.9,.3,1) both}
 .pr-scene.chez .pr-fqp,.pr-scene.chez .pr-fqp .fqp-fig{height:100%;width:auto;max-width:none;aspect-ratio:2/3}
 .pr-scene.chez .pr-fqp .fqp-fig{background:none;box-shadow:none;border-radius:0;overflow:visible}
@@ -2814,10 +2835,10 @@ export const STYLES_PROCHES = `
 @keyframes pr-clignote{50%{opacity:.25}}
 @keyframes pr-tourne{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pr *,.pr-plein *{animation:none!important}}
-${STYLES_ECRIRE}${STYLES_PHOTOS}${STYLES_VIDEOS}${STYLES_MOMENT}
+${STYLES_ECRIRE}${STYLES_PHOTOS}${STYLES_VIDEOS}${STYLES_MOMENT}${STYLES_RANGER}
 /* 📜 (point 6) le fil en grand : la scène repliée (toujours là : la voix d'un message s'y joue), et sa ligne */
 .pr-scene.replie,.pr-scene.chez.replie{height:0!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;opacity:0;pointer-events:none;overflow:hidden}
-.pr-replier{align-self:flex-end;position:relative;z-index:5;flex:none;height:30px;margin:-40px 10px 10px 0;padding:0 12px;border:0;border-radius:999px;background:rgba(18,6,15,.62);color:#FFF4E6;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.pr-replier{align-self:center;position:relative;z-index:5;flex:none;height:28px;margin:-4px 0 -2px;padding:0 14px;border:0;border-radius:999px;background:rgba(255,244,230,.08);color:#E8D6C8;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 .pr-scene-repliee{flex:none;display:flex;align-items:center;gap:6px;margin:0 0 8px;padding:6px 12px 6px 6px;border:1px solid rgba(255,196,140,.16);border-radius:999px;background:#22101B;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
 .pr-scene-repliee img{width:32px;height:32px;border-radius:999px;object-fit:cover;object-position:50% 18%;background:#3A1A30}
 .pr-scene-repliee img+img{margin-left:-14px;box-shadow:0 0 0 2px #22101B}

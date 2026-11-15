@@ -20,7 +20,7 @@
  *
  * FICHIER NAVIGATEUR.
  */
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { Feuille } from "./ma-figurine";
 import { demanderOui } from "./fenetre";
 import { sentimentDe, type Expressions, type Sentiment } from "@/lib/direct/ma-figurine";
@@ -232,7 +232,8 @@ type GestesBouton = {
 };
 
 /** ✍️ Un message écrit, dans le fil : le texte en entier (ses liens soulignés), la carte de son lien, « Effacer ». */
-export function BulleEcrite({ m, img, vu, bas, gestes, onJouer, onEffacer }: { m: MessageFil; img: string; vu: boolean; bas: string; gestes: GestesBouton; onJouer: () => void; onEffacer?: () => void }) {
+/** (`dessous` : ce qui se pose sous la bulle — 🎵 « Le ranger dans mon univers ? », `ranger-univers.tsx`) */
+export function BulleEcrite({ m, img, vu, bas, gestes, onJouer, onEffacer, dessous }: { m: MessageFil; img: string; vu: boolean; bas: string; gestes: GestesBouton; onJouer: () => void; onEffacer?: () => void; dessous?: ReactNode }) {
   return (
     <li className={`${m.moi ? "moi" : "lui"} pr-ecrit-li`}>
       <div className="pr-ecrit-bloc">
@@ -255,6 +256,7 @@ export function BulleEcrite({ m, img, vu, bas, gestes, onJouer, onEffacer }: { m
           </span>
         </button>
         {m.lien && <CarteLien lien={m.lien} />}
+        {dessous}
         {onEffacer && <BoutonEffacer onEffacer={onEffacer} />}
       </div>
     </li>

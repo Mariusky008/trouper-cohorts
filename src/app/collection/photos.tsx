@@ -17,7 +17,7 @@
  *
  * FICHIER NAVIGATEUR.
  */
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Feuille } from "./ma-figurine";
 import { BoutonEffacer } from "./ecrire";
@@ -233,7 +233,8 @@ type GestesBouton = {
 };
 
 /** 📷 Une photo, dans le fil : la vignette, sa légende ; un toucher l'ouvre en grand (et la figurine la montre). */
-export function BullePhoto({ m, vu, bas, gestes, onOuvrir, onEffacer }: { m: MessageFil; vu: boolean; bas: string; gestes: GestesBouton; onOuvrir: () => void; onEffacer?: () => void }) {
+/** (`dessous` : ce qui se pose sous la photo — 🖼️ « La mettre dans mon univers ? », `ranger-univers.tsx`) */
+export function BullePhoto({ m, vu, bas, gestes, onOuvrir, onEffacer, dessous }: { m: MessageFil; vu: boolean; bas: string; gestes: GestesBouton; onOuvrir: () => void; onEffacer?: () => void; dessous?: ReactNode }) {
   const p = m.photo;
   const ratio = p && p.l && p.h ? p.l / p.h : 4 / 3;
   return (
@@ -251,6 +252,7 @@ export function BullePhoto({ m, vu, bas, gestes, onOuvrir, onEffacer }: { m: Mes
             <small>{bas}</small>
           </span>
         </button>
+        {dessous}
         {onEffacer && <BoutonEffacer onEffacer={onEffacer} />}
       </div>
     </li>

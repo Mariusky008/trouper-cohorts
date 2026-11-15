@@ -271,7 +271,20 @@ function Ouverte({ vue, cle, recharger }: { vue: Ouvert; cle: string; recharger:
           <ul className="uv-etagere-rang">
             {vue.etagere.map((o) => (
               <li key={o.id} data-objet={o.id}>
-                <span aria-hidden="true">{o.emoji}</span>
+                {/* 🖼️ (rangé depuis une conversation) sa pochette, sa vignette, sa photo ; un toucher : la chanson, la vidéo */}
+                {o.image ? (
+                  o.image.lien ? (
+                    <a className="uv-image-lien" href={o.image.lien} target="_blank" rel="noopener noreferrer" aria-label={`${o.titre} : l’ouvrir`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img className={`uv-img ${o.image.sorte}`} src={o.image.src} alt="" draggable={false} loading="lazy" />
+                    </a>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className={`uv-img ${o.image.sorte}`} src={o.image.src} alt="" draggable={false} loading="lazy" />
+                  )
+                ) : (
+                  <span aria-hidden="true">{o.emoji}</span>
+                )}
                 <b>{o.titre}</b>
                 {o.detail && <small>{o.detail}</small>}
               </li>
@@ -449,6 +462,10 @@ const STYLES = `
 .uv-etagere-rang::after{content:"";position:absolute;left:-12px;right:-12px;bottom:4px;height:10px;background:linear-gradient(180deg,#a5683a,#6b3f1f);box-shadow:0 6px 8px -3px rgba(0,0,0,.7)}
 .uv-etagere-rang li{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:3px;width:31%;max-width:120px;text-align:center}
 .uv-etagere-rang span{font-size:36px;line-height:1;filter:drop-shadow(0 5px 3px rgba(0,0,0,.55))}
+.uv-img{display:block;height:64px;width:auto;max-width:100%;object-fit:cover;border-radius:4px;box-shadow:0 6px 9px -3px rgba(0,0,0,.7)}
+.uv-img.musique{aspect-ratio:1}
+.uv-img.photo{padding:3px 3px 8px;background:#FFF8EE;border-radius:2px;transform:rotate(-2deg)}
+.uv-image-lien{display:block}
 .uv-etagere-rang b{padding:1px 7px 2px;border-radius:3px;background:#fbf0d9;color:#2b1a0c;font-size:13.5px;font-weight:800;line-height:1.15;rotate:-2deg;overflow-wrap:anywhere}
 .uv-etagere-rang li:nth-child(2n) b{rotate:2deg}
 .uv-etagere-rang small{font-size:11.5px;color:#E9D5DD}
