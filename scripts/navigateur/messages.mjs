@@ -98,7 +98,7 @@ ok(
 await lea.locator(".pr-plein .pr-ecrire-plus").click();
 await lea.waitForSelector(".pr-feuille-plus.ouverte .pr-plus-choix", { timeout: 10000 }).catch(() => null);
 const choix = await lea.locator(".pr-feuille-plus .pr-plus-choix").evaluateAll((l) => l.map((x) => x.dataset.plus));
-ok(choix.join("|") === "photo|panneau" && (await lea.locator(".pr-feuille-plus .pr-plus-choix", { hasText: "Un panneau" }).count()) === 1, `« ＋ » : 📷 une photo (lot M2), 🪧 un panneau (l'appli d'avant : ni mème ni cadeau) (${choix.join(" · ")})`);
+ok(choix.join("|") === "photo|video|panneau" && (await lea.locator(".pr-feuille-plus .pr-plus-choix", { hasText: "Un panneau" }).count()) === 1, `« ＋ » : 📷 une photo (lot M2), 🎬 une vidéo (lot M3), 🪧 un panneau (l'appli d'avant : ni mème ni cadeau) (${choix.join(" · ")})`);
 await lea.locator(".pr-feuille-plus .tf-feuille-fermer").click();
 
 // ═══ ✍️ LÉA TAPE : LA FLÈCHE, TROIS TÊTES ; CHEZ ZOÉ, SA FIGURINE SE PENCHE ═══

@@ -3390,6 +3390,41 @@ fichiers : `lib/direct/video.ts` (les règles, partagé) et `video-serveur.ts`.
   lecture en grand) ; réencoder les vidéos trop lourdes (plus tard, dit le cahier) ; les dépôts jamais envoyés
   (`…-brut`) restent dans le seau, comme ceux des photos.
 
+### 9.0 septsexagies 🎬 Écrire, partager — lot M3, l'écran : 🎬 Une vidéo, la vignette, la lecture en grand (14 novembre)
+
+Le propriétaire : « oui, fusionne quand la CI est verte, puis lance l'écran de M3 ». Le cahier :
+`docs/univers/messages-ecrits.md`, section 6. Le serveur : 9.0 sexsexagies. Le fichier : `app/collection/videos.tsx`.
+
+- **« ＋ » → 🎬 Une vidéo**, juste après 📷 (pas de vidéo quand le frein `CLIKME_VIDEOS=0` est tiré) : la pellicule du
+  téléphone, ou la caméra.
+- **La feuille** : le téléphone **lit la vidéo avant de l'envoyer** (`videoPourEnvoi`) :
+  - son format (MP4, MOV, WebM ; sinon « Ce format de vidéo n'est pas pris. »), son poids (25 Mo au plus) ;
+  - **sa durée : 30 secondes au plus, dite AVANT l'envoi** (« 45 s : 30 secondes au plus ») — rien n'est déposé. Un
+    WebM du navigateur ne dit pas sa durée : on va tout au bout, elle se révèle ;
+  - **ses trois images** (au début, au milieu, à la fin ; 640 pixels au plus, en JPEG) : la modération les contrôle,
+    celle du milieu devient l'affiche de l'aperçu et la vignette ;
+  - **l'endroit où elle a été tournée est effacé dans le téléphone** (`sansPosition`, `lib/direct/video.ts`) : la boîte
+    `©xyz` (Android), `loci`, les clés `com.apple.quicktime.location.…` (iPhone) sont recouvertes de zéros, octet pour
+    octet, sans rien déplacer — la vidéo se lit pareil. Essayé sur de vraies vidéos MOV (Android et iPhone) ;
+  - une vidéo que le téléphone ne sait pas lire : « Ce téléphone n'arrive pas à lire cette vidéo. » (une phrase
+    nouvelle, à valider) ;
+  - une légende (200 signes), trois petites têtes, « Envoyer à Léa » → **« Envoi… 42 % »** (ce qui est parti : le dépôt
+    à l'adresse signée, le même formulaire que Supabase, en disant où il en est), puis « Vérification… » ;
+  - refusée : « Cette vidéo ne peut pas partir. » (sa vidéo reste sous ses yeux), « Choisir une autre vidéo » ; la
+    modération en panne : « Réessayer » (la même vidéo, sans la redéposer).
+- **Dans le fil** : la vignette, ▶, sa durée (« 0:12 »), sa légende, 🎬, l'heure, les réactions, « 🗑️ Effacer » sous la
+  sienne. Un toucher la **lit en grand, avec le son** (rien pour l'enregistrer : `controlsList="nodownload"`, pas
+  d'image dans l'image) ; glisser vers le bas (hors de la vidéo), Échap ou un toucher sur le fond la ferme, puis la
+  figurine la montre.
+- **Dans la scène** : la figurine la montre **dans un petit cadre** (sa vignette, ▶), sans son ; la légende dans sa
+  bulle. Envoyée, elle la montre aussitôt.
+- **La ligne de « Messages »** : « T'a envoyé : 🎬 La légende », « Toi : 🎬 Une vidéo ».
+- **L'essai** : `scripts/navigateur/videos.mjs` — les vidéos d'essai sont **enregistrées par le navigateur lui-même**
+  (une toile animée), des WebM qui ne disent pas leur durée ; à deux, on l'ajoute dans l'en-tête (31 s : trop longue).
+  `messages` et `bascule-univers` comptent le nouveau choix du « ＋ ».
+- **Pas dans ce lot** : réencoder les vidéos trop lourdes (plus tard) ; « 🖼️ La mettre dans mon univers ? » (la session
+  de l'univers).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

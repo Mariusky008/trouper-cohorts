@@ -213,9 +213,9 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   duosexagies : `app/collection/ecrire.tsx` — la barre « Écrire… », la bulle sans son, l'aperçu dans le fil,
   « Effacer »). **M2, le serveur, est construit** (9.0 quattuorsexagies 📷 : `photo.ts`, `photo-serveur.ts`, `photo-depot`
   et `photo`, la modération) et son écran (9.0 quinquesexagies : `app/collection/photos.tsx`). **M3, le serveur, est
-  construit** (9.0 sexsexagies 🎬 : `video.ts`, `video-serveur.ts`, `video-depot` et `video`). **Reste** : l'écran de
-  M3 (les vidéos) ; « 🎵 Le ranger dans mon univers ? » et « 🖼️ La mettre dans mon univers ? » ; la page de
-  confidentialité (au propriétaire).
+  construit** (9.0 sexsexagies 🎬 : `video.ts`, `video-serveur.ts`, `video-depot` et `video`) et son écran (9.0
+  septsexagies : `app/collection/videos.tsx`). **Reste** : « 🎵 Le ranger dans mon univers ? » et « 🖼️ La mettre dans
+  mon univers ? » ; la page de confidentialité (au propriétaire).
 - **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
   panorama — une seule session à la fois sur ces fichiers.
 

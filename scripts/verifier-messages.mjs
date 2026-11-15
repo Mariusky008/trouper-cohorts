@@ -15,7 +15,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { mp4Essai, webmEssai } from "./fixtures/videos-essai.mjs";
+import { POSITION_ESSAI, mp4Essai, webmEssai } from "./fixtures/videos-essai.mjs";
 
 const exige = createRequire(import.meta.url);
 const ts = exige("typescript");
@@ -138,6 +138,15 @@ ok(V.dureeDuMp4(Buffer.from("ceci n'est pas une vidéo, juste du texte")) === nu
 ok(proche(V.dureeDuWebm(webmEssai(18)), 18) && V.dureeDuWebm(webmEssai(null)) === null && V.dureeDuWebm(mp4Essai(10)) === null, "la durée d'un WebM : Segment/Info/Duration ; un WebM qui ne la dit pas (le navigateur) : rien");
 ok(V.extVideo("video/mp4") === "mp4" && V.extVideo("video/quicktime") === "mov" && V.extVideo("video/webm;codecs=vp9") === "webm" && V.extVideo("video/avi") === null && V.extVideo(undefined) === null, "les formats : MP4, MOV, WebM — pas les autres");
 ok(V.phraseTropLongue(45.2) === "45 s : 30 secondes au plus" && V.tropLongue(30.4) === false && V.tropLongue(30.6) === true, "trop longue : « 45 s : 30 secondes au plus » (une demi-seconde de tolérance)");
+// 📍 (lot M3, l'écran) la position effacée dans le téléphone, octet pour octet
+const avecPos = mp4Essai(8, { position: true });
+const sansPos = V.sansPosition(avecPos);
+const contient = (o, t) => o && Buffer.from(o).includes(Buffer.from(t));
+ok(
+  contient(avecPos, POSITION_ESSAI) && sansPos && !contient(sansPos, POSITION_ESSAI) && sansPos.length === avecPos.length && proche(V.dureeDuMp4(sansPos), 8) && contient(sansPos, "Apple") && contient(avecPos, POSITION_ESSAI),
+  "la position effacée (Android : ©xyz ; iPhone : la clé « location ») : même taille, la durée se lit encore, le reste gardé, l'original intact",
+);
+ok(V.sansPosition(mp4Essai(8)) === null && V.sansPosition(webmEssai(8)) === null && V.sansPosition(Buffer.from("du texte, pas une vidéo")) === null, "rien à effacer (sans position, un WebM, pas une vidéo) : rien");
 const nv = V.notifVideo("Léa", "");
 ok(nv.titre === "🎬 Léa t’a envoyé une vidéo" && nv.corps === "Viens voir 👀" && V.ligneVideo("") === "🎬 Une vidéo" && V.ligneVideo(" Le concert ") === "🎬 Le concert", "la notification « 🎬 Léa t'a envoyé une vidéo », la ligne « 🎬 La légende »");
 ok(T.texteLuDuMessage({ genre: "video", legende: "Le concert" }) === "Le concert" && V.VIDEO.max === 25 * 1024 * 1024 && V.VIDEO.parJour === 10 && V.VIDEO.duree === 30, "les figurines lisent la légende d'une vidéo ; les limites : 25 Mo, 10 par jour, 30 secondes");
