@@ -566,13 +566,13 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
     if ("erreur" in r) return { error: r.erreur, statut: r.statut };
     const fait = await ecrire({ ...f, objets: r.objets, cartes: [...(f.cartes ?? []), ...r.cartes].slice(-ETAGERE_E2.cartes) });
     // 📊 (la mesure) la justesse des figurines ; un dépôt de l'autre ne compte pas
-    if (fait.ok && !question?.depose) void noterStats(supabase, oui ? { oui: 1, ...(quand ? { corriges: 1 } : {}) } : { refuses: 1 }).catch(() => undefined);
+    if (fait.ok && !question?.depose) await noterStats(supabase, oui ? { oui: 1, ...(quand ? { corriges: 1 } : {}) } : { refuses: 1 }).catch(() => undefined);
     return fait;
   }
   const o = f.objets.find((x) => x.id === s(p.id) && visible(x));
   if (!o) return { error: "Ce souvenir n’est plus sur votre étagère.", statut: 404 };
   // (📊 ce qu'on mesure, c'est la justesse des figurines : ce qu'on a déposé à la main n'y compte pas)
-  if (p.action === "retirer" && !o.depose) void noterStat(supabase, "retires").catch(() => undefined);
+  if (p.action === "retirer" && !o.depose) await noterStat(supabase, "retires").catch(() => undefined);
   if (p.action === "retirer") return ecrire({ ...f, objets: f.objets.map((x) => (x === o ? pierreTombale(x, moi8, le) : x)), cartes: (f.cartes ?? []).filter((c) => c.objet !== o.id) });
   // 🏆 celui que ça concerne le dit lui-même, son jour arrivé
   if (p.action === "reussi") {
@@ -585,7 +585,7 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
   if (p.action === "tenue") {
     if (o.genre !== "promesse" || (o.etat !== "actif" && o.etat !== "sommeil")) return { error: "Cette promesse est déjà tenue.", statut: 400 };
     const tenues = (f.tenues ?? 0) + 1;
-    void noterStat(supabase, "tenues").catch(() => undefined);
+    await noterStat(supabase, "tenues").catch(() => undefined);
     return ecrire({ ...f, tenues, objets: f.objets.map((x) => (x === o ? { ...x, etat: "tenue" as const, change: { le, par8: moi8 } } : x)), cartes: [...(f.cartes ?? []), { id: `t-${o.id}-${Date.now().toString(36)}`, genre: "tenue" as const, objet: o.id, le, n: tenues }].slice(-ETAGERE_E2.cartes) });
   }
   if (p.action === "annuler-tenue") {
@@ -597,7 +597,7 @@ export async function agirSurEtagere(supabase: Supabase, moi: Habitant, p: Recor
     const e = quand ? ecartJours(jourParis(), quand) : -1;
     if (!quand || e < 0 || e > ETAGERE.joursMax) return { error: "Choisis un jour à venir (dans l’année).", statut: 400 };
     if (!(o.genre === "date" || o.genre === "promesse") || o.etat !== "actif") return { error: "Ce souvenir n’a pas de date.", statut: 400 };
-    if (!o.depose) void noterStat(supabase, "dates").catch(() => undefined);
+    if (!o.depose) await noterStat(supabase, "dates").catch(() => undefined);
     return ecrire({ ...f, objets: f.objets.map((x) => (x === o ? { ...x, quand, ditQuand: undefined, change: { le, par8: moi8 } } : x)) });
   }
   return { error: "Demande incomplète.", statut: 400 };
