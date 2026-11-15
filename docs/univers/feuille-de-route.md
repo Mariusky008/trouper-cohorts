@@ -735,7 +735,7 @@ qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/un
 
 #### 📨 Relais pour la session de l'univers : « 🎵 Le ranger dans mon univers ? » et « 🖼️ La mettre dans mon univers ? »
 
-**Construit le 15 novembre 2026** (`docs/figurines.md`, 9.0 quattuorseptuagies ; `app/collection/ranger-univers.tsx`, `rangerDansMonUnivers`). Le propriétaire a dit « oui » le 15 novembre 2026 pour les faire. Ils relèvent de la session de l'univers (le cahier,
+**Construit le 15 novembre 2026** (`docs/figurines.md`, 9.0 quinquiesseptuagies ; `app/collection/ranger-univers.tsx`, `rangerDansMonUnivers`). Le propriétaire a dit « oui » le 15 novembre 2026 pour les faire. Ils relèvent de la session de l'univers (le cahier,
 sections 4.2 et 5.3) ; la session des messages n'a pas pu la joindre, d'où ce relais. Ce qui est déjà là, côté
 conversation :
 
@@ -762,6 +762,11 @@ le propriétaire a adopté comme celui de Pablito. Elle ne copie rien : elle lit
 pour lui, puis n'en garde que `decor`, `figurine`, `scene.figurine`, la place `hote`, les `cles` posées (`zone`) et la
 `saison` (`vuePublique`, `chez-pablito-serveur.ts`). Si vous changez ces champs (leur nom, leur sens, les adresses), la
 bienvenue suit : dites-le, ou ajustez `vuePublique` (son essai : `scripts/essai-chez-pablito-route.mjs`).
+
+**🐾 Et son chat** (le propriétaire : « les boucles sont déjà validées ») : la bienvenue lit aussi le catalogue des
+compagnons, `compagnons/chat/<boucle>/video.mp4` (`compagnonDePablito`), et joue ses boucles avec `CompagnonVivant`
+(`app/univers/compagnon-vivant.tsx`), sans rien y changer. Si vous déplacez le catalogue, renommez une boucle ou changez
+`CompagnonVivant`, la bienvenue suit : dites-le (son essai : `scripts/navigateur/bienvenue-chez.mjs`).
 
 ### Lot C — Le compagnon (15 novembre 2026, proposé)
 

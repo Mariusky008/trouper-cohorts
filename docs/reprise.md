@@ -139,7 +139,9 @@ conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses si
   celui de Pablito, adopté depuis l'admin) ; le nouveau venu est son invité et vit chaque chose d'un toucher (ses clés,
   « Je le range ? » et le rappel, un souvenir, « Qui peut entrer »). Son adresse directe : `/bienvenue`. Derrière
   l'interrupteur `BIENVENUE_CHEZ_PABLITO`, **éteint** jusqu'à ce que le propriétaire l'ait regardée. Le détail :
-  `docs/figurines.md`, 9.0 tresseptuagies.
+  `docs/figurines.md`, 9.0 tresseptuagies. **Son chat, Moustache** (les boucles validées de l'essai C0) y vit : il dort,
+  se réveille, dresse l'oreille, saute de joie, renifle le souvenir, et vient ronronner sur les genoux de Pablito quand
+  rien ne se passe (9.0 quattuorseptuagies).
 
 ## 0 sexies. « Ma maison », vivante (14 novembre 2026)
 
@@ -201,7 +203,7 @@ Le cahier : `docs/univers/compagnon.md` (lot C). **C0 est construit** (9.0 unsep
 boucles (une pose, puis quatre secondes de vidéo sur fond vert chez Google), le vert retiré dans le téléphone, l'aperçu
 chez lui. **À juger par le propriétaire sur son iPhone** : le style, la constance, s'il vit bien à côté de sa figurine.
 Rien d'autre (C1 à C4) ne commence avant son verdict.
-**Ses premiers retours** (9.0 sexiesseptuagies) : il marche sur place → il traverse la pièce ; « qu'on l'entende
+**Ses premiers retours** (9.0 septiesseptuagies) : il marche sur place → il traverse la pièce ; « qu'on l'entende
 ronronner » → un vrai son enregistré par boucle (à déposer par lui) ; le liseré kaki → la pose sans ombre, des consignes
 plus strictes, un détourage qui s'adapte (refaire les vidéos touchées).
 
@@ -249,7 +251,7 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   construit** (9.0 sexsexagies 🎬 : `video.ts`, `video-serveur.ts`, `video-depot` et `video`) et son écran (9.0
   septsexagies : `app/collection/videos.tsx`). **Le nettoyage du stockage aussi** (9.0 octosexagies 🧹 : chaque nuit,
   les dépôts jamais envoyés et les fichiers qu'aucun message ne cite). « 🎵 Le ranger dans mon univers ? »
-  et « 🖼️ La mettre dans mon univers ? » **sont construits** (`docs/figurines.md`, 9.0 quattuorseptuagies : la question sous
+  et « 🖼️ La mettre dans mon univers ? » **sont construits** (`docs/figurines.md`, 9.0 quinquiesseptuagies : la question sous
   ce qu'il a envoyé, la copie dans son univers, sur son étagère « Ce que j'aime »). **Reste** : la page de
   confidentialité (au propriétaire).
 - **Écart repéré, à décider par le propriétaire** : le cahier (section 7) dit qu'« un proche retiré, un compte effacé :
