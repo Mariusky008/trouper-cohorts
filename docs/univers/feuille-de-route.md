@@ -793,7 +793,7 @@ dans `piece-du-duo.md`, section 6. **Les cinq pièces refaites** par la session 
 (chacune sa signature, les objets répartis et assez grands, l'étagère et les cadres vides, les places proches ; trois
 lumières par pièce ; les zones posées à la main ; ce qui gênerait le doigt, signalé) : `piece-du-duo.md`, section 9. **La
 télé, prête à brancher** dans la maquette (le dernier lien YouTube, « Allumer », les clips de secours du propriétaire,
-TikTok et Instagram ; `TeleDuo`, `GET /api/direct/tele`) : `piece-du-duo.md`, section 10.
+TikTok et Instagram ; `TeleDuo`, `GET /api/direct/tele`) : `piece-du-duo.md`, section 11.
 
 ### Lot C — Le compagnon (15 novembre 2026, proposé)
 

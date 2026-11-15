@@ -240,7 +240,7 @@ export const COUT_PIECE_DUO = 0.17;
  * regardant les deux.
  */
 export type FigurineDuo = { id: string; nom: string; image: string };
-export type ChoixCollage = { piece: PieceDuo; a: string; b: string; avis?: AvisCollage; note?: string };
+export type ChoixCollage = { piece: PieceDuo; a: string; b: string; moment?: MomentDuo; avis?: AvisCollage; note?: string };
 export const AVIS_COLLAGE = [
   { cle: "posees", dit: "👍 Les posées tiennent" },
   { cle: "generee", dit: "👍 La générée, nettement mieux" },
@@ -251,8 +251,11 @@ export const avisCollageValide = (x: unknown): x is AvisCollage => AVIS_COLLAGE.
 export type EtatCollage = {
   figurines: FigurineDuo[];
   choix: ChoixCollage | null;
-  /** (le choix) la pièce, ses deux places (de gauche à droite), et ce qui est fait */
+  /** (le choix) la pièce dans la lumière choisie, les lumières faites de cette pièce, ses deux places (de gauche à
+   * droite), et ce qui est fait */
   decor?: string;
+  moment?: MomentDuo;
+  moments: MomentDuo[];
   places: PlaceDuo[];
   poses: { a?: string; b?: string };
   generee?: string;

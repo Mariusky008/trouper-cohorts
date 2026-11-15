@@ -196,8 +196,9 @@ fenêtre, deux places, coin du chat). **Fait** : l'essai des cinq pièces (en t�
 « 🛋️ La pièce du duo ») : chaque pièce dessinée sans personne, puis ses emplacements relevés par un modèle qui voit et
 dessinés par-dessus. Le propriétaire les a faites le 15 novembre (le salon : très réussi, 7 emplacements sur 7, la
 télé relevée un peu à côté). **Puis l'essai de l'effet « collage »**, juste en dessous : deux figurines dans une pièce,
-posées par l'écran contre générées avec la pièce, et son avis (`piece-du-duo.md`, section 6). **À faire** : son avis
-sur le collage ; puis la pièce vivante à l'essai (deux
+posées par l'écran contre générées avec la pièce. **Son verdict : la générée** (« très bien ») — une image du duo par
+pièce et par lumière, peinte avec un masque et recollée sur la pièce (`piece-du-duo.md`, section 10). **À faire** : la
+pièce vivante à l'essai (deux
 figurines, le changement de pièce, la télé qui joue un vrai lien, la surprise à l'ouverture) ; **puis seulement**
 refaire la bienvenue (« elle ne va pas du tout » : l'interrupteur `BIENVENUE_CHEZ_PABLITO` reste éteint).
 

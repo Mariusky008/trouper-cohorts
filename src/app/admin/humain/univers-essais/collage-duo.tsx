@@ -7,7 +7,7 @@
  * téléphone.
  */
 import { useCallback, useEffect, useState } from "react";
-import { ANCRE_ASSISE, AVIS_COLLAGE, COUT_COLLAGE, type AvisCollage, type EtatCollage, type EtatPiecesDuo, type PlaceDuo } from "@/lib/direct/pieces-duo";
+import { ANCRE_ASSISE, AVIS_COLLAGE, COUT_COLLAGE, MOMENTS_DUO, type AvisCollage, type EtatCollage, type EtatPiecesDuo, type MomentDuo, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
 const ROUTE = "/api/admin/direct/pieces-duo/collage";
 const PIECES = "/api/admin/direct/pieces-duo";
@@ -34,6 +34,7 @@ export function CollageDuo() {
   const [etat, setEtat] = useState<EtatCollage | null>(null);
   const [pieces, setPieces] = useState<EtatPiecesDuo | null>(null);
   const [piece, setPiece] = useState<string>("");
+  const [moment, setMoment] = useState<MomentDuo | "">("");
   const [elues, setElues] = useState<string[]>([]);
   const [occupe, setOccupe] = useState(false);
   const [dit, setDit] = useState("");
@@ -42,6 +43,7 @@ export function CollageDuo() {
     setEtat(e);
     if (e.choix) {
       setPiece((p) => p || e.choix!.piece);
+      setMoment((m) => m || e.moment || "");
       setElues((l) => (l.length ? l : [e.choix!.a, e.choix!.b]));
       setNote((n) => n || e.choix!.note || "");
     }
@@ -72,7 +74,7 @@ export function CollageDuo() {
     setDit("");
     setOccupe(true);
     try {
-      const c = await envoyer({ action: "choisir", piece, a: elues[0], b: elues[1] });
+      const c = await envoyer({ action: "choisir", piece, a: elues[0], b: elues[1], ...(momentChoisi ? { moment: momentChoisi } : {}) });
       if (c.error) return setDit(c.error);
       for (let k = 0; k < 3; k++) {
         setDit(`… ${k + 1}/3 (une minute chacune, garde la page ouverte)`);
@@ -96,15 +98,20 @@ export function CollageDuo() {
     setDit(j.error || "Merci, c’est noté.");
   }
   const faites = pieces?.pieces.filter((p) => p.decor) ?? [];
-  const memeChoix = etat?.choix && etat.choix.piece === piece && etat.choix.a === elues[0] && etat.choix.b === elues[1];
+  const laPiece = faites.find((p) => p.cle === piece);
+  // (les lumières faites de la pièce choisie ; la sienne d'abord, par défaut)
+  const lumieresFaites = laPiece ? MOMENTS_DUO.filter((m) => m.cle === laPiece.moment || laPiece.lumieres?.[m.cle]) : [];
+  const momentChoisi: MomentDuo | "" = lumieresFaites.some((m) => m.cle === moment) ? moment : (laPiece?.moment ?? "");
+  const memeChoix = etat?.choix && etat.choix.piece === piece && etat.choix.a === elues[0] && etat.choix.b === elues[1] && etat.moment === momentChoisi;
   const nomDe = (id: string) => etat?.figurines.find((f) => f.id === id)?.nom ?? "";
   return (
     <section aria-label="L’effet collage" style={{ margin: "18px 0", padding: 16, border: "1px solid #e3d7c8", borderRadius: 16, background: "#fffaf3" }}>
       <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🧩 L’effet « collage » : deux figurines dans une pièce</h2>
       <p style={{ margin: "0 0 10px", color: "#555", lineHeight: 1.45 }}>
-        Le premier essai de la maquette. Deux vraies figurines dans une vraie pièce, de deux façons : <b>posées</b> sur l’image (chacune assise sans son
-        fauteuil, faite une fois par personne) ou <b>générées</b> avec la pièce (une image faite une fois par duo et par pièce). Est-ce qu’elles ont l’air
-        d’y être vraiment ? Environ {euros(COUT_COLLAGE)} € pour les trois images.
+        Deux vraies figurines dans une vraie pièce. <b>Ton choix : la version générée</b> (« très bien ») — une image du duo par pièce et par lumière,
+        faite une fois. Seule la zone des deux places est peinte, puis recollée sur la pièce : la télé, les cadres et l’étagère restent exactement à leur
+        place. La version posée reste dessous, pour comparer. Environ {euros(COUT_COLLAGE)} € la première fois (les deux poses et le duo), puis environ
+        0,17 € par autre lumière.
       </p>
       {etat && !etat.moteur && <p style={{ color: "#b3261e" }}>Le moteur d’image n’est pas branché ici.</p>}
 
@@ -119,6 +126,15 @@ export function CollageDuo() {
         </div>
       ) : (
         <p style={{ margin: 0, color: "#666" }}>Fais d’abord les pièces, juste au-dessus.</p>
+      )}
+      {lumieresFaites.length > 1 && (
+        <div className="cd-chips" style={{ marginTop: 8 }} role="group" aria-label="La lumière">
+          {lumieresFaites.map((m) => (
+            <button key={m.cle} type="button" className={momentChoisi === m.cle ? "elue" : ""} onClick={() => setMoment(m.cle)} aria-pressed={momentChoisi === m.cle}>
+              {m.emoji} {m.nom}
+            </button>
+          ))}
+        </div>
       )}
 
       <h3 className="cd-titre">2. Les deux figurines {elues.length ? `(${elues.length}/2)` : ""}</h3>
@@ -155,19 +171,7 @@ export function CollageDuo() {
         <div className="cd-versions">
           <figure>
             <figcaption>
-              <b>Posées sur la pièce</b> <small>(l’écran les assemble)</small>
-            </figcaption>
-            <span className="cd-scene" data-version="posees">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="cd-fond" src={etat.decor} alt="La pièce, avec les deux figurines posées" />
-              {etat.poses.a && <Posee src={etat.poses.a} place={etat.places[0]} cote="a" />}
-              {etat.poses.b && <Posee src={etat.poses.b} place={etat.places[1]} cote="b" />}
-              {(!etat.poses.a || !etat.poses.b) && <span className="cd-attente">Les poses ne sont pas encore faites.</span>}
-            </span>
-          </figure>
-          <figure>
-            <figcaption>
-              <b>Générées avec la pièce</b> <small>(une image, faite une fois)</small>
+              <b>Générées avec la pièce</b> <small>(ton choix : une image par lumière, faite une fois)</small>
             </figcaption>
             <span className="cd-scene" data-version="generee">
               {etat.generee ? (
@@ -176,6 +180,18 @@ export function CollageDuo() {
               ) : (
                 <span className="cd-attente">Pas encore faite.</span>
               )}
+            </span>
+          </figure>
+          <figure>
+            <figcaption>
+              <b>Posées sur la pièce</b> <small>(pour comparer)</small>
+            </figcaption>
+            <span className="cd-scene" data-version="posees">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="cd-fond" src={etat.decor} alt="La pièce, avec les deux figurines posées" />
+              {etat.poses.a && <Posee src={etat.poses.a} place={etat.places[0]} cote="a" />}
+              {etat.poses.b && <Posee src={etat.poses.b} place={etat.places[1]} cote="b" />}
+              {(!etat.poses.a || !etat.poses.b) && <span className="cd-attente">Les poses ne sont pas encore faites.</span>}
             </span>
           </figure>
         </div>

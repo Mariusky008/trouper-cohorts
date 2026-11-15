@@ -189,7 +189,36 @@ la largeur l'une de l'autre.
 ont été faites avec l'ancienne consigne), puis « Faire ce qui manque » ; regarder chaque pièce en trois lumières ;
 corriger les zones à la main si besoin.
 
-## 10. La télé, prête à brancher (15 novembre 2026)
+## 10. L'image du duo : la version générée (15 novembre 2026)
+
+**Le verdict du collage** (le propriétaire, sur le salon) : posées, « les figurines ne sont pas aux dimensions de la
+pièce » ; générées, « très bien ». La session de l'univers : « nettement meilleure — la bonne taille, vraiment assises,
+la lumière et les ombres de la pièce ; posées, deux fois trop petites, des autocollants ; même à la bonne taille, il
+leur manquerait le contact et la lumière ». **On part sur une image du duo par pièce, générée une fois, puis réutilisée.**
+
+Les quatre points, réglés avant de généraliser (`pieces-duo-collage-serveur.ts`) :
+
+1. **La pièce identique hors des sièges.** Le duo est peint avec un masque qui ne laisse au moteur que la zone des deux
+   places (`zoneDesPlaces` : de la tête aux pieds des deux figurines assises, avec de la marge ; leur taille compte pour
+   au moins 34 % de la hauteur de l'image, car les relevés la donnent souvent trop petite). Puis, en plus, seule cette
+   zone est **recollée sur la pièce d'origine**, ses bords fondus (`recoller`, pixel par pixel). La télé, les cadres et
+   l'étagère restent donc à leur place relevée, au pixel près : le lien sur la télé et la photo dans le cadre tomberont
+   juste. Le coût est le même.
+2. **Les trois lumières.** L'image du duo se fait d'après la pièce dans la lumière du moment (`decor.png` pour son moment
+   à elle, `lumiere-<moment>.png` pour les deux autres), à la première visite du duo à ce moment-là : environ 0,17 €
+   chacune, trois au plus par pièce (0,51 € pour un duo qui reste dans une seule pièce). Rangées à part :
+   `pieces-duo/collage/duos/<pièce>-<moment>-<figurine a>-<figurine b>.png`.
+3. **Les figurines sont fixes dans l'image** : plus de bouche qui parle, plus d'expression par message. La vie vient de
+   la pièce (la télé, le chat, la lumière) et des bulles. Quand quelqu'un change de figurine (sa tenue du mois), ses
+   images de duo se refont d'elles-mêmes : leur nom contient l'empreinte de l'image de la figurine (une nouvelle
+   figurine, un nouveau nom).
+4. **Les pièces d'abord** : les images du duo se font sur les pièces refaites (section 9), une fois regénérées par le
+   propriétaire.
+
+Sur la page d'essais, la section « 🧩 L'effet collage » montre maintenant la version générée en premier (la posée
+reste dessous, pour comparer), et on y choisit la lumière (🌤️ 🌇 🌙) parmi celles qui sont faites.
+
+## 11. La télé, prête à brancher (15 novembre 2026)
 
 Le propriétaire à la session de l'univers : « oui, prépare la télé », en morceau autonome que la maquette n'aura qu'à
 brancher à la place de son clip fixe ; et ses cinq clips de secours (des liens YouTube).
