@@ -1,4 +1,4 @@
-// 🛋️ LA PIÈCE DU DUO — LA MAQUETTE (`docs/univers/piece-du-duo.md`, section 11) : la conversation dans la pièce du duo,
+// 🛋️ LA PIÈCE DU DUO — LA MAQUETTE (`docs/univers/piece-du-duo.md`, section 12) : la conversation dans la pièce du duo,
 // pour la juger sur le téléphone avant de la construire pour de vrai — l'arrivée (la pièce entière, ce qui a changé), la
 // caméra qui glisse vers les deux places, le zoom sur un objet (la télé, un cadre, l'étagère, la platine, la fenêtre, le
 // coin du chat), l'invitation à changer de pièce. Les pièces et l'image du duo sont les vraies ; les messages, le lien et

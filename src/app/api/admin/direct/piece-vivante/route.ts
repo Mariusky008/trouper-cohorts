@@ -1,4 +1,4 @@
-// 🛋️ LA PIÈCE VIVANTE — la maquette de la conversation dans la pièce du duo (`docs/univers/piece-du-duo.md`, section 11).
+// 🛋️ LA PIÈCE VIVANTE — la maquette de la conversation dans la pièce du duo (`docs/univers/piece-du-duo.md`, section 12).
 // Réservé à l'administrateur. Les pièces (leurs trois lumières, leurs emplacements), le duo choisi dans l'essai du
 // collage et ses images faites, le moment de l'heure à Paris ; l'image du duo se fait à la première visite d'une pièce dans
 // une lumière (`lib/direct/pieces-duo-collage-serveur.ts`).

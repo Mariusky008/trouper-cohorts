@@ -198,7 +198,7 @@ dessinés par-dessus. Le propriétaire les a faites le 15 novembre (le salon : t
 télé relevée un peu à côté). **Puis l'essai de l'effet « collage »**, juste en dessous : deux figurines dans une pièce,
 posées par l'écran contre générées avec la pièce. **Son verdict : la générée** (« très bien ») — une image du duo par
 pièce et par lumière, peinte avec un masque et recollée sur la pièce (`piece-du-duo.md`, section 10). **Puis la
-maquette** : `/admin/humain/piece-du-duo` (section 11) — l'arrivée, le glissé vers les places, le zoom sur les objets,
+maquette** : `/admin/humain/piece-du-duo` (section 12) — l'arrivée, le glissé vers les places, le zoom sur les objets,
 l'invitation à changer de pièce. **À faire** : l'avis du propriétaire sur la maquette ; puis les objets branchés (la
 session de l'univers) et la vraie conversation dessus ; **puis seulement** refaire la bienvenue (« elle ne va pas du tout » : l'interrupteur `BIENVENUE_CHEZ_PABLITO` reste éteint).
 

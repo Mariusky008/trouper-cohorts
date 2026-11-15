@@ -1,12 +1,12 @@
 // 🛋️ LA PIÈCE DU DUO — LA MAQUETTE, DANS UN NAVIGATEUR DE TÉLÉPHONE (`app/admin/humain/piece-du-duo`,
-// `docs/univers/piece-du-duo.md`, section 11) — contre le faux Supabase et son faux moteur d'image ; aucune vidéo YouTube
-// n'est chargée (ses adresses sont coupées).
+// `docs/univers/piece-du-duo.md`, section 12) — contre le faux Supabase et son faux moteur d'image ; un faux lecteur
+// YouTube (celui de l'essai de la télé), jamais YouTube.
 //
 // Léa (ce téléphone) et une volontaire du lot 0, choisies dans l'essai du collage ; le salon (ses trois lumières, ses
 // emplacements) et la cuisine. L'arrivée : la pièce entière, l'image du duo faite toute seule (première visite), puis la
-// caméra glisse vers les deux places et les bulles arrivent ; « 🏠 La pièce » ; la télé touchée : le zoom, sans lien le mot
-// pour en coller un ; un lien collé, « ▶ Allumer » : la télé le joue ; une invitation reçue (« … t'invite dans la
-// cuisine ») : « Venir » ; changer de pièce (on invite) : envoyée, acceptée, et on y est ; de retour au salon : « Depuis
+// caméra glisse vers les deux places et les bulles arrivent ; « 🏠 La pièce » ; la télé (celle de la session de l'univers)
+// touchée : le zoom, sans lien le clip du jour ; un lien collé : il passe, « ▶ Allumer la télé » : elle le joue ; une
+// invitation reçue (« … t'invite dans la cuisine ») : « Venir » ; changer de pièce (on invite) : envoyée, acceptée, et on y est ; de retour au salon : « Depuis
 // ta dernière visite : … a mis un lien sur la télé », l'anneau sur la télé ; la fenêtre : la lumière change. Ni
 // débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
@@ -76,7 +76,23 @@ await ctx.addCookies([
   { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE },
   { name: "clikme_habitant", value: LEA.jeton, url: BASE },
 ]);
-await ctx.route(/youtube/, (r) => r.abort());
+// (le faux lecteur de YouTube : celui de `tele-duo.mjs`)
+const FAUX_YT = `
+window.YT = { Player: function (el, o) {
+  var d = document.createElement("div");
+  d.setAttribute("data-faux-yt", o.videoId);
+  d.style.cssText = "width:100%;height:100%;background:#123";
+  el.replaceWith(d);
+  var self = { destroy: function () { d.remove(); }, playVideo: function () { d.setAttribute("data-joue", "1"); } };
+  setTimeout(function () { o.events.onReady({ target: self }); }, 60);
+  return self;
+} };
+setTimeout(function () { window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady(); }, 10);
+`;
+const vignette = await sharp({ create: { width: 480, height: 360, channels: 3, background: "#c84" } }).jpeg().toBuffer();
+await ctx.route("https://www.youtube.com/iframe_api", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: FAUX_YT }));
+await ctx.route("https://i.ytimg.com/**", (r) => r.fulfill({ status: 200, contentType: "image/jpeg", body: vignette }));
+await ctx.route(/youtube(-nocookie)?\.com\/(embed|s\/)/, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<html></html>" }));
 const p = await ctx.newPage();
 p.on("pageerror", (e) => erreurs.push(String(e)));
 const scene = p.locator(".md-scene");
@@ -104,15 +120,18 @@ await capture("1-places");
 // ─── la pièce, la télé ───
 await p.getByRole("button", { name: "🏠 La pièce" }).click();
 ok(await attendre(async () => (await attr("data-plan")) === "piece"), "« 🏠 La pièce » : la pièce entière");
-await p.locator('[data-objet="tele"]').click();
+const tv = p.locator(".md-tele .tv");
+ok((await tv.getAttribute("data-programme")) === "secours", "la télé de la session de l'univers, posée sur l'écran : sans lien, le clip du jour");
+await tv.click();
 ok(await attendre(async () => (await attr("data-plan")) === "objet"), "la télé touchée : la caméra s'en approche");
-ok(/Colle un lien YouTube/.test(await p.locator(".md-objet-dit").innerText()), "sans lien : le mot pour en coller un");
+ok(/En attendant votre premier lien/.test(await tv.innerText()) && /clip du jour/.test(await p.locator(".md-objet-dit").innerText()), "de près : « En attendant votre premier lien »");
 await p.getByRole("button", { name: "← Revenir" }).click();
 await ouvrirReglages();
 await p.locator('.md-panneau input[type="url"]').fill("https://youtu.be/dQw4w9WgXcQ");
-await p.locator('[data-objet="tele"]').click({ force: true });
-await p.getByRole("button", { name: "▶ Allumer" }).click();
-ok(((await p.locator("iframe.md-ecran").getAttribute("src").catch(() => "")) ?? "").includes("youtube-nocookie.com/embed/dQw4w9WgXcQ"), "un lien collé, « ▶ Allumer » : la télé le joue");
+ok(await attendre(async () => (await tv.getAttribute("data-programme")) === "youtube"), "un lien collé : il passe à la télé");
+await tv.click();
+await p.locator('.md-tele [data-geste="allumer"]').click();
+ok(await attendre(async () => (await p.locator('[data-faux-yt="dQw4w9WgXcQ"]').count()) === 1), "« ▶ Allumer la télé » : elle le joue");
 await capture("2-tele");
 await p.getByRole("button", { name: "← Revenir" }).click();
 
@@ -131,7 +150,7 @@ await p.locator(".md-pieces button", { hasText: "Le salon" }).click();
 ok(/Invitation envoyée à Volontaire 4/.test(await p.locator(".md-neuf").innerText().catch(() => "")), "on invite : « Invitation envoyée à Volontaire 4… »");
 ok(await attendre(async () => (await attr("data-piece")) === "salon"), "acceptée : on est au salon");
 ok(await attendre(async () => /Depuis ta dernière visite : Volontaire 4 a mis un lien sur la télé/.test(await p.locator(".md-neuf").innerText().catch(() => ""))), "de retour au salon : « Depuis ta dernière visite : … a mis un lien sur la télé »");
-ok((await p.locator('[data-objet="tele"].neuf').count()) === 1, "l'anneau sur la télé");
+ok((await p.locator(".md-anneau.neuf").count()) === 1, "l'anneau sur la télé");
 await capture("4-neuf");
 
 // ─── la fenêtre : la lumière ───

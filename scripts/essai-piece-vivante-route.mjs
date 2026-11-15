@@ -1,5 +1,5 @@
 // 🛋️ LA PIÈCE DU DUO — LA MAQUETTE, PAR SA ROUTE (`app/api/admin/direct/piece-vivante`, `lib/direct/pieces-duo-collage-serveur.ts`,
-// `docs/univers/piece-du-duo.md`, section 11) — contre le faux Supabase et son faux moteur d'image, jamais la vraie base,
+// `docs/univers/piece-du-duo.md`, section 12) — contre le faux Supabase et son faux moteur d'image, jamais la vraie base,
 // jamais OpenAI.
 //
 // Réservé à l'administrateur. Sans duo choisi dans l'essai du collage : les pièces, pas de duo, et rien à fabriquer. Le duo

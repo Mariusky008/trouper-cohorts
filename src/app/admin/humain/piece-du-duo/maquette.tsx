@@ -1,24 +1,27 @@
 "use client";
 
 /**
- * 🛋️ LA PIÈCE DU DUO — LA MAQUETTE (`docs/univers/piece-du-duo.md`, section 11). Ce que vivra celui qui ouvre une
+ * 🛋️ LA PIÈCE DU DUO — LA MAQUETTE (`docs/univers/piece-du-duo.md`, section 12). Ce que vivra celui qui ouvre une
  * conversation avec un proche :
  *
  * 1. L'ARRIVÉE : la pièce entière, dans la lumière de l'heure (le matin, le soir, la nuit) ; ce qui a changé depuis sa
  *    dernière visite se signale (un anneau sur l'objet, un mot), sinon rien — la surprise seulement quand il y a du neuf.
  * 2. LA CONVERSATION : la caméra glisse vers les deux places ; les bulles par-dessus.
- * 3. LE ZOOM : on touche un objet, la caméra s'en approche — la télé (un vrai lien YouTube, « ▶ Allumer » : le son demande
- *    un geste sur iPhone), un cadre (la photo), l'étagère (les souvenirs), la platine, la fenêtre (la lumière), le coin du
- *    chat.
+ * 3. LE ZOOM : on touche un objet, la caméra s'en approche — la télé (celle de la session de l'univers, `TeleDuo` : le
+ *    dernier lien, sinon le clip de secours du jour ; « ▶ Allumer la télé » donne le son sur iPhone), un cadre (la photo),
+ *    l'étagère (les souvenirs), la platine, la fenêtre (la lumière), le coin du chat.
  * 4. CHANGER DE PIÈCE : une invitation (« Léa t'invite sur la terrasse »), acceptée d'un geste ; ou on invite l'autre.
  *
  * Les pièces, leurs lumières et l'image du duo sont les vraies (faite à la première visite d'une pièce dans une lumière) ;
  * les bulles, le lien, la photo et les souvenirs sont ceux de l'essai (« ⚙️ Pour l'essai »).
  */
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { TeleDuo } from "@/app/univers/tele-duo";
 import { MOMENTS_DUO, zoneDesPlaces, type EtatPieceVivante, type MomentDuo, type PieceDuo, type PieceDuoVue, type Zone } from "@/lib/direct/pieces-duo";
+import { CLIPS_DU_PROPRIETAIRE, programmeDuLien, secoursDuJour, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 
 const ROUTE = "/api/admin/direct/piece-vivante";
+const TELE = "/api/admin/direct/tele";
 type Objet = "tele" | "platine" | "cadre" | "etagere" | "fenetre" | "chat";
 type Plan = { type: "piece" } | { type: "places" } | { type: "objet"; objet: Objet };
 
@@ -43,19 +46,6 @@ const PAROLES = [
   { qui: "moi", texte: "Invite-moi, j’arrive 😄" },
 ];
 const pc = (x: number) => `${(x * 100).toFixed(3)}%`;
-
-/** L'identifiant d'une vidéo YouTube dans un lien (youtu.be, watch?v=, shorts, embed) ; « » sinon. */
-function idYoutube(lien: string): string {
-  try {
-    const u = new URL(lien.trim());
-    if (/(^|\.)youtu\.be$/.test(u.hostname)) return u.pathname.slice(1, 12);
-    if (!/(^|\.)youtube(-nocookie)?\.com$/.test(u.hostname)) return "";
-    const m = /^\/(?:shorts|embed|live)\/([\w-]{11})/.exec(u.pathname);
-    return m ? m[1] : (u.searchParams.get("v") ?? "").slice(0, 11);
-  } catch {
-    return "";
-  }
-}
 
 /** La caméra pour une zone (agrandie de `marge`) : son échelle et son décalage, en fractions de la scène. */
 function camera(z: Zone | null, marge = 1): { s: number; tx: number; ty: number } {
@@ -88,7 +78,7 @@ export function MaquetteDuo() {
   const [bulles, setBulles] = useState(0);
   const [lien, setLien] = useState("");
   const [photo, setPhoto] = useState("");
-  const [tele, setTele] = useState(false);
+  const [secours, setSecours] = useState<ClipSecours[]>(CLIPS_DU_PROPRIETAIRE);
   const [reglages, setReglages] = useState(false);
   const [choixPiece, setChoixPiece] = useState(false);
   const [invitation, setInvitation] = useState<PieceDuo | null>(null);
@@ -108,6 +98,9 @@ export function MaquetteDuo() {
     const j = (await (await fetch(ROUTE, { cache: "no-store" })).json().catch(() => ({}))) as { etat?: EtatPieceVivante; error?: string };
     if (j.etat) recevoir(j.etat);
     else setErreur(j.error || "La maquette ne s’est pas chargée.");
+    // (les clips de secours rangés par le propriétaire, sinon ses cinq premiers)
+    const t = (await (await fetch(TELE, { cache: "no-store" })).json().catch(() => ({}))) as { secours?: ClipSecours[] };
+    if (t.secours?.length) setSecours(t.secours);
   }, [recevoir]);
   useEffect(() => {
     void Promise.resolve().then(charger);
@@ -120,6 +113,13 @@ export function MaquetteDuo() {
   const duo = etat?.duo?.duos[`${piece}-${m}`] ?? "";
   const autre = etat?.duo?.b.nom ?? "ton proche";
   const faites = etat?.pieces.filter((x) => x.decor) ?? [];
+  // 📺 ce que passe la télé : le lien collé, sinon le clip de secours du jour (le même pour les deux ce jour-là)
+  const programme: ProgrammeTele = useMemo(() => {
+    const l = lien ? programmeDuLien(lien) : null;
+    if (l) return l;
+    const c = secoursDuJour(secours, `${etat?.duo?.a.id ?? ""}-${etat?.duo?.b.id ?? ""}-${new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" })}`);
+    return c ? { sorte: "secours", id: c.id, ...(c.debut ? { debut: c.debut } : {}), ...(c.titre ? { titre: c.titre } : {}) } : { sorte: "eteinte" };
+  }, [lien, secours, etat?.duo?.a.id, etat?.duo?.b.id]);
 
   // ─── l'image du duo, à la première visite de la pièce dans cette lumière ───
   useEffect(() => {
@@ -190,7 +190,6 @@ export function MaquetteDuo() {
 
   function entrer(q: PieceDuo) {
     setPiece(q);
-    setTele(false);
     setArrivee((n) => n + 1);
   }
   function viser(o: Objet) {
@@ -220,8 +219,8 @@ export function MaquetteDuo() {
   const zCadre = zoneDe(p, "cadre");
   const zEtagere = zoneDe(p, "etagere");
   const zPlatine = zoneDe(p, "platine");
-  const id = idYoutube(lien);
-  const touchables = (["tele", "platine", "cadre", "etagere", "fenetre", "chat"] as Objet[]).filter((o) => zoneDe(p, o));
+  // (la télé se touche elle-même : `TeleDuo`, de loin, appelle `viser`)
+  const touchables = (["platine", "cadre", "etagere", "fenetre", "chat"] as Objet[]).filter((o) => zoneDe(p, o));
 
   return (
     <div className="md">
@@ -263,15 +262,14 @@ export function MaquetteDuo() {
             </span>
           )}
 
-          {/* la télé : le vrai lien, allumé d'un geste */}
-          {zTele && tele && id && (
-            <iframe
-              className="md-ecran"
-              style={{ left: pc(zTele[0]), top: pc(zTele[1]), width: pc(zTele[2]), height: pc(zTele[3]) }}
-              src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`}
-              title="La télé"
-              allow="autoplay; encrypted-media; picture-in-picture"
-            />
+          {/* la télé : celle de la session de l'univers, posée sur l'écran relevé */}
+          {zTele && (
+            <span className="md-tele" data-objet="tele">
+              <TeleDuo programme={programme} secours={secours} zone={zTele} proche={vise === "tele"} onToucher={() => viser("tele")} />
+            </span>
+          )}
+          {zTele && (aide || nouveaute?.objet === "tele") && (
+            <span className={`md-anneau${nouveaute?.objet === "tele" ? " neuf" : ""}`} style={{ left: pc(zTele[0]), top: pc(zTele[1]), width: pc(zTele[2]), height: pc(zTele[3]) }} aria-hidden="true" />
           )}
 
           {/* les objets qu'on peut toucher */}
@@ -349,14 +347,9 @@ export function MaquetteDuo() {
           <b>
             {OBJETS[vise].emoji} {OBJETS[vise].nom}
           </b>
-          {vise === "tele" &&
-            (id ? (
-              <button type="button" onClick={() => setTele((x) => !x)}>
-                {tele ? "■ Éteindre" : "▶ Allumer"}
-              </button>
-            ) : (
-              <small>Colle un lien YouTube dans « ⚙️ Pour l’essai » : la télé le jouera.</small>
-            ))}
+          {vise === "tele" && (
+            <small>{lien ? "Le dernier lien partagé." : "Pas encore de lien : le clip du jour. Colle un lien YouTube dans « ⚙️ Pour l’essai » : il passera à la place."}</small>
+          )}
           {vise === "cadre" && !photo && <small>Choisis une photo dans « ⚙️ Pour l’essai » : elle se pose dans le cadre.</small>}
           {vise === "etagere" && <small>Vos souvenirs et vos rendez-vous, posés sur la planche.</small>}
           {vise === "platine" && <small>Ici jouera votre chanson.</small>}
@@ -490,7 +483,8 @@ export function MaquetteDuo() {
 .md-notes i:nth-child(2){animation-delay:.8s;left:5px}
 .md-notes i:nth-child(3){animation-delay:1.6s;left:-5px}
 @keyframes md-note{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-26px)}}
-.md-ecran{position:absolute;border:0;background:#000}
+.md-anneau{position:absolute;border-radius:4px;pointer-events:none;box-shadow:0 0 0 1.5px rgba(255,255,255,.9),0 0 10px rgba(255,255,255,.6);animation:md-pulse 1.2s ease-in-out infinite}
+.md-anneau.neuf{box-shadow:0 0 0 2px #ffd36b,0 0 14px #ffd36b;animation-duration:1s}
 .md-objet{position:absolute;padding:0;border:0;background:transparent;cursor:pointer;border-radius:4px}
 .md-objet.aide{box-shadow:0 0 0 1.5px rgba(255,255,255,.9),0 0 10px rgba(255,255,255,.6);animation:md-pulse 1.2s ease-in-out infinite}
 .md-objet.neuf{box-shadow:0 0 0 2px #ffd36b,0 0 14px #ffd36b;animation:md-pulse 1s ease-in-out infinite}
@@ -507,11 +501,11 @@ export function MaquetteDuo() {
 .md-carte img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:12px}
 .md-carte p{margin:0;font-size:16px}
 .md-carte span,.md-gestes,.md-objet-dit,.md-moments,.md-panneau span{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.md button{padding:9px 14px;border-radius:999px;border:0;background:#ff2e9a;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
-.md button.clair{background:rgba(255,255,255,.1);color:#f6efe6;border:1px solid rgba(255,255,255,.25)}
+.md :where(.md-gestes,.md-objet-dit,.md-panneau,.md-carte,.md-pieces) button{padding:9px 14px;border-radius:999px;border:0;background:#ff2e9a;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.md :where(.md-gestes,.md-objet-dit,.md-panneau,.md-carte,.md-pieces) button.clair{background:rgba(255,255,255,.1);color:#f6efe6;border:1px solid rgba(255,255,255,.25)}
 .md-carte button.clair{background:#fff;color:#c2186f;border:1px solid #ff2e9a}
-.md button.elu{background:#f6efe6;color:#2a1d12}
-.md button:disabled{opacity:.4;cursor:default}
+.md :where(.md-gestes,.md-objet-dit,.md-panneau,.md-carte,.md-pieces) button.elu{background:#f6efe6;color:#2a1d12}
+.md :where(.md-gestes,.md-objet-dit,.md-panneau,.md-carte,.md-pieces) button:disabled{opacity:.4;cursor:default}
 .md-objet-dit{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06)}
 .md-objet-dit small,.md-panneau small{color:#d9c3a8;font-size:13px;line-height:1.35}
 .md-panneau{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.06);font-size:14px}
@@ -521,8 +515,8 @@ export function MaquetteDuo() {
 .md-pieces button{display:flex;flex-direction:column;gap:4px;padding:5px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);font-weight:600}
 .md-pieces img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px}
 .md-pieces small{font-size:12px;color:#f6efe6}
-/* (les objets qu'on touche : invisibles — le style des boutons de la maquette ne doit pas les peindre) */
-.md .md-objet{padding:0;border:0;background:transparent;border-radius:6px;font-size:0}
+/* (les objets qu'on touche : invisibles ; « 👆 Les objets » les montre) */
+.md .md-objet{font-size:0}
 .md .md-objet.aide{background:rgba(255,255,255,.08)}
 `}</style>
     </div>

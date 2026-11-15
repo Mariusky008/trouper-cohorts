@@ -268,7 +268,7 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
   }
 }
 
-// ─── 🛋️ LA PIÈCE VIVANTE (la maquette, `docs/univers/piece-du-duo.md`, section 11) ──────────────────────────────────
+// ─── 🛋️ LA PIÈCE VIVANTE (la maquette, `docs/univers/piece-du-duo.md`, section 12) ──────────────────────────────────
 /** Le duo de la maquette : les deux figurines choisies dans l'essai du collage, et ses images faites (pièce, lumière). */
 export async function duoVivant(supabase: Supabase, moi: string | null): Promise<DuoVivant | null> {
   const [choix, srcs] = await Promise.all([lireChoix(supabase), sources(supabase, moi)]);

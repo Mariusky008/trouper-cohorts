@@ -218,7 +218,43 @@ Les quatre points, réglés avant de généraliser (`pieces-duo-collage-serveur.
 Sur la page d'essais, la section « 🧩 L'effet collage » montre maintenant la version générée en premier (la posée
 reste dessous, pour comparer), et on y choisit la lumière (🌤️ 🌇 🌙) parmi celles qui sont faites.
 
-## 11. La maquette de la pièce du duo (15 novembre 2026)
+## 11. La télé, prête à brancher (15 novembre 2026)
+
+Le propriétaire à la session de l'univers : « oui, prépare la télé », en morceau autonome que la maquette n'aura qu'à
+brancher à la place de son clip fixe ; et ses cinq clips de secours (des liens YouTube).
+
+**Ce qu'elle passe** (`tele.ts`, `tele-serveur.ts`) : le dernier lien YouTube que les deux se sont envoyé (lu dans
+l'écran, au début donné par `?t=`) ; un lien TikTok ou Instagram plus récent : son aperçu et « ▶ Ouvrir sur TikTok »
+(ils se lisent mal hors de leur appli) ; aucun lien : le clip de secours du jour (le même pour les deux ce jour-là) ;
+aucune liste : éteinte. Une chanson Spotify ou Deezer n'y passe pas (c'est pour la platine). Un message signalé par lui
+n'y passe plus, chez lui. **Les clips de secours** : les cinq du propriétaire (`CLIPS_DU_PROPRIETAIRE`) tant qu'il n'a
+pas rangé une autre liste sur la page d'essais (« 📺 La télé du duo », huit au plus ; `tele/secours.json`).
+
+**La brancher** :
+
+```tsx
+// ce qu'elle passe, chez lui, avec ce proche (sa clé de profil) — les règles du talkie (401, 403, 404)
+const { programme, secours } = await (await fetch(`/api/direct/tele?avec=${cle}`)).json();
+// dans le calque de la pièce (position: relative), sur l'écran relevé (`releve.json` → emplacements.tele)
+<TeleDuo programme={programme} secours={secours} zone={emplacements.tele} proche={cameraSurLaTele} onToucher={() => approcherDe("tele")} />
+```
+
+(`@/app/univers/tele-duo`.) **De loin** (`proche` faux) : l'écran montre ce qui passe (l'aperçu du lien, l'image du
+clip), sans bouton ; un toucher appelle `onToucher`. **De près** : « ▶ Allumer la télé » (le geste qui donne le son sur
+iPhone ; si le téléphone refuse encore, le lecteur de YouTube garde son propre bouton), « ⏻ Éteindre » ; une vidéo qui
+refuse d'être lue hors de YouTube : un clip de secours prend le relais, « ▶ La regarder sur YouTube ». La caméra qui
+recule l'éteint. Ses tailles suivent la télé (en part de sa largeur) : la caméra qui s'approche par une mise à l'échelle
+agrandit l'écran et ses boutons ensemble. Le lecteur : celui de YouTube (`youtube-nocookie.com`), chargé au premier
+allumage ; s'il ne se charge pas, un simple cadre de YouTube.
+
+**L'essayer** : la page d'essais, « 📺 La télé du duo : l'essai » — une pièce faite, un lien collé (ou le clip du jour),
+la télé de loin, un toucher, la caméra s'approche, « Allumer la télé ».
+
+**Ses essais** : `scripts/essai-tele-route.mjs` (ce qu'elle passe, les règles, les clips de secours) ;
+`scripts/navigateur/tele-duo.mjs` (de loin, de près, allumée, une vidéo qui refuse, TikTok ; un faux lecteur YouTube,
+jamais YouTube).
+
+## 12. La maquette de la pièce du duo (15 novembre 2026)
 
 **Où** : `/admin/humain/piece-du-duo` (le bouton « ▶ Ouvrir la maquette » dans « 🧩 L'effet collage »), en plein écran au
 format téléphone. Les pièces refaites, leurs lumières et l'image du duo sont les vraies ; les bulles, le lien de la télé,
@@ -232,8 +268,10 @@ la photo du cadre et les souvenirs de l'étagère sont ceux de l'essai (« ⚙�
    l'objet ; sinon rien.
 2. **La conversation** : au bout de deux secondes (trois et demie s'il y avait du neuf), la caméra glisse vers les deux
    places (`zoneDesPlaces`, la même zone que le masque du duo) ; les bulles arrivent une à une (les trois dernières).
-3. **Le zoom** : chaque emplacement relevé est touchable (« 👆 Les objets » les montre) ; la caméra s'en approche. La télé
-   joue le lien collé (« ▶ Allumer » : sur iPhone, le son demande un geste) ; le cadre montre la photo choisie ;
+3. **Le zoom** : chaque emplacement relevé est touchable (« 👆 Les objets » les montre) ; la caméra s'en approche. **La
+   télé est celle de la section 11** (`TeleDuo`, branchée comme prévu : de loin elle montre ce qui passe, de près « ▶
+   Allumer la télé ») : le lien collé dans « ⚙️ Pour l'essai », sinon le clip de secours du jour (la liste rangée par le
+   propriétaire, sinon ses cinq premiers) ; le cadre montre la photo choisie ;
    l'étagère, trois souvenirs ; la platine, des notes qui montent ; la fenêtre, le choix de la lumière ; le coin du
    chat, la place du compagnon.
 4. **Changer de pièce** : « 🚪 Changer de pièce » (on invite : « Invitation envoyée… », puis « … arrive sur la terrasse »,
@@ -243,10 +281,10 @@ la photo du cadre et les souvenirs de l'étagère sont ceux de l'essai (« ⚙�
 s'installent… »), environ 0,17 € ; les deux poses sans fauteuil, une fois pour toutes (`fabriquerDuoVivant`,
 `app/api/admin/direct/piece-vivante`). Le duo est celui choisi dans l'essai du collage.
 
-**Ce qui n'y est pas encore** : la vraie conversation (les vrais messages, les vrais liens), les objets branchés (la
-télé, la platine, les cadres, l'étagère : la session de l'univers, une fois la maquette validée), le chat dans son
-coin.
+**Ce qui n'y est pas encore** : la vraie conversation (les vrais messages, les vrais liens : la télé lira alors
+`/api/direct/tele?avec=…`), les autres objets branchés (la platine, les cadres, l'étagère : la session de l'univers,
+une fois la maquette validée), le chat dans son coin.
 
 **Les essais** : `scripts/essai-piece-vivante-route.mjs` (la route : sans duo, le duo, la première visite, une autre
-lumière, les refus) et `scripts/navigateur/piece-du-duo.mjs` (l'arrivée, le glissé, les bulles, la télé, les deux
-invitations, ce qui a changé, la fenêtre).
+lumière, les refus) et `scripts/navigateur/piece-du-duo.mjs` (l'arrivée, le glissé, les bulles, la télé — le clip du jour, un lien collé,
+allumée, avec le faux lecteur de l'essai de la télé —, les deux invitations, ce qui a changé, la fenêtre).
