@@ -122,3 +122,52 @@ Tout est en fractions de l'image (0 = à gauche / en haut). Une zone, c'est `[x,
 l'écran seul, `cadres` l'intérieur de chaque cadre vide ; une place, c'est le point où la figurine assise touche son
 siège, et sa hauteur assise. Ce qui n'a pas été vu manque (vérifié par `emplacementsValides`, `pieces-duo.ts`). Un relevé
 raté : `{ "le", "erreur" }`. Si ce format change, les deux sessions se le disent.
+
+## 9. Les cinq pièces refaites (15 novembre 2026)
+
+Le propriétaire a montré les cinq premières pièces à la session de l'univers : « qu'en penses-tu ? ». Son avis, en six
+points ; le propriétaire : « je suis d'accord avec tout ce que tu as dit », et « peux-tu t'en charger ? ».
+
+1. **Elles se ressemblaient trop** (le même coucher de soleil doré, le même bois, les mêmes rouges, le même pan de mur
+   à droite) : changer de pièce ne serait pas un événement. Chacune a maintenant **sa signature** (`signature`, dans
+   `PIECES_DUO`) et **son moment** (`moment`) : le salon le soir (bleu canard, moutarde, une cheminée) ; la cuisine le
+   matin (zellige blanc, jaune et vert sauge) ; la terrasse en plein jour (murs blanchis, bleu et blanc, terre cuite) ;
+   la chambre au soir (lin, bleu doux, sable, la mer en grand) ; le café un matin de pluie (crème, vert bouteille,
+   laiton, la pluie sur la vitre). Le style ne reprend plus la lumière dorée des univers (`STYLE_PIECES_DUO`, sans les
+   « golden practical lights » de `STYLE_FILM_CHALEUREUX`).
+2. **Les objets étaient entassés et petits** (leurs zones se chevauchaient : le doigt touchera le cadre au lieu de la
+   platine ; un cadre de 3 % de la largeur, zoomé, montre un timbre-poste). La consigne les répartit : chacun à part,
+   avec du mur autour ; la télé (un quart de la largeur) d'un côté, la platine (un cinquième) de l'autre, deux cadres
+   (un huitième chacun) au-dessus des places, l'étagère (un tiers) près de la fenêtre.
+3. **Les figurines seraient petites** dans une pièce entière : deux plans, à construire avec la maquette — la pièce
+   entière à l'arrivée (on voit ce qui a changé), puis la caméra glisse vers les deux places pour la conversation (le
+   même mouvement que le zoom sur un objet). La consigne rapproche les deux places (environ un tiers de la largeur
+   entre elles), tournées l'une vers l'autre, chacune d'un quart de la largeur.
+4. **La chambre** : deux petits fauteuils devant la baie, tournés l'un vers l'autre, la mer derrière eux (plus le bord
+   du lit : c'était la seule pièce où les deux ne se faisaient pas face) ; le lit, fait, sur le côté.
+5. **L'étagère et les cadres étaient pleins** : l'étagère est vide (les souvenirs du duo s'y poseront), les cadres vides
+   (un passe-partout clair).
+6. **La terrasse** : une véranda (un vrai toit, le mur de la maison) — une télé et des cadres dehors y sont naturels ; une
+   carafe de citronnade avec des tranches de citron (deux verres jaunes à paille pouvaient passer pour des cocktails) ;
+   « pour une citronnade au soleil » (plus de « (sans alcool) »).
+
+**Les trois lumières** : chaque pièce existe le matin, le soir et la nuit (`MOMENTS_DUO`). Son moment à elle est son image
+première (`decor.png`) ; les deux autres sont des retouches de cette image (`consigneLumiereDuo` : la même pièce, chaque
+objet à la même place, seule l'heure change), rangées à côté : `lumiere-<moment>.png`. Les emplacements sont relevés sur
+l'image première et valent pour les trois. La conversation prendra celle de l'heure (`momentDuoDe` : le matin de 7 h à
+17 h, le soir jusqu'à 21 h, puis la nuit). Coût : trois images par pièce, environ 0,51 € ; les quinze, environ 2,55 €.
+« Faire ce qui manque » fait, pour chaque pièce, l'image, son relevé, puis ses deux autres lumières (un passage chacun).
+
+**✋ Ajuster à la main** (la page d'essais) : on trace soi-même chaque zone sur l'image (la télé, la platine, deux cadres,
+l'étagère, la fenêtre ; une place : la figurine assise, du haut de sa tête jusqu'au siège ; le coin du chat : un
+toucher). Pour cinq images faites une fois, c'est plus sûr que le modèle qui voit. Elles remplacent le relevé :
+`releve.json` = `{ le, emplacements, ajuste: true }` (le même format, section 8 ; `POST { action: "ajuster", piece,
+emplacements }`).
+
+**⚠️ Ce qui gênerait le doigt** est signalé sous chaque pièce (`alertesEmplacements`, `pieces-duo.ts`) : deux objets
+qui se chevauchent, un objet de moins de 9 % de la largeur (ou de 5 % de la hauteur), deux places à plus de la moitié de
+la largeur l'une de l'autre.
+
+**À faire par le propriétaire** : sur la page d'essais, « Refaire la pièce » pour chacune des cinq (les anciennes images
+ont été faites avec l'ancienne consigne), puis « Faire ce qui manque » ; regarder chaque pièce en trois lumières ;
+corriger les zones à la main si besoin.

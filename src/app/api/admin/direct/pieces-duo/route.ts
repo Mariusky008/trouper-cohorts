@@ -3,12 +3,14 @@
 //
 // GET                                         → { etat } : chaque pièce, son image, ses emplacements
 // POST { action: "fabriquer", piece }         → { fait?, etat } : un passage — la pièce, puis son relevé
-// POST { action: "refaire", piece, quoi? }    → { etat } : la pièce et son relevé, ou son relevé seul (`quoi: "releve"`)
+// POST { action: "refaire", piece, quoi? }    → { etat } : tout, ou son relevé seul (`quoi: "releve"`), ou ses deux
+//                                               autres lumières (`quoi: "lumieres"`)
+// POST { action: "ajuster", piece, emplacements } → { etat } : ✋ ses zones posées à la main (elles remplacent le relevé)
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { pieceDuoValide } from "@/lib/direct/pieces-duo";
-import { etatPiecesDuo, fabriquerPieceDuo, refairePieceDuo } from "@/lib/direct/pieces-duo-serveur";
+import { ajusterPieceDuo, etatPiecesDuo, fabriquerPieceDuo, refairePieceDuo } from "@/lib/direct/pieces-duo-serveur";
 
 export const dynamic = "force-dynamic";
 // (une image : une minute environ)
@@ -33,11 +35,16 @@ export async function POST(request: Request) {
     const r = await fabriquerPieceDuo(supabase, piece, avant);
     const etat = await etatPiecesDuo(supabase);
     if (r.erreur) return NextResponse.json({ error: r.erreur, etat }, { status: 502, headers: sansCache });
-    return NextResponse.json({ ok: true, ...(r.fait ? { fait: r.fait } : {}), etat }, { headers: sansCache });
+    return NextResponse.json({ ok: true, ...(r.fait ? { fait: r.fait } : {}), ...(r.moment ? { moment: r.moment } : {}), etat }, { headers: sansCache });
   }
   if (p?.action === "refaire") {
-    await refairePieceDuo(supabase, piece, p.quoi === "releve" ? "releve" : "piece");
+    await refairePieceDuo(supabase, piece, p.quoi === "releve" || p.quoi === "lumieres" ? p.quoi : "piece");
     return NextResponse.json({ ok: true, etat: await etatPiecesDuo(supabase) }, { headers: sansCache });
+  }
+  if (p?.action === "ajuster") {
+    const r = await ajusterPieceDuo(supabase, piece, p.emplacements);
+    const etat = await etatPiecesDuo(supabase);
+    return NextResponse.json(r.erreur ? { error: r.erreur, etat } : { ok: true, etat }, { status: r.erreur ? 400 : 200, headers: sansCache });
   }
   return NextResponse.json({ error: "Action inconnue." }, { status: 400, headers: sansCache });
 }
