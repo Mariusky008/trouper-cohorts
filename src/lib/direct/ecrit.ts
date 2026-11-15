@@ -313,6 +313,9 @@ export type StatsJourMessages = {
   videosRefusees: number;
   videosNonVerifiees: number;
   videosKo: number;
+  /** 🧹 (le nettoyage de la nuit, `nettoyage-serveur.ts`) les fichiers effacés, et la place rendue */
+  nettoyes: number;
+  nettoyesKo: number;
 };
 export const STATS_MESSAGES_VIDES: StatsJourMessages = {
   ecrits: 0,
@@ -330,4 +333,6 @@ export const STATS_MESSAGES_VIDES: StatsJourMessages = {
   videosRefusees: 0,
   videosNonVerifiees: 0,
   videosKo: 0,
+  nettoyes: 0,
+  nettoyesKo: 0,
 };

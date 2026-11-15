@@ -3425,6 +3425,30 @@ Le propriétaire : « oui, fusionne quand la CI est verte, puis lance l'écran d
 - **Pas dans ce lot** : réencoder les vidéos trop lourdes (plus tard) ; « 🖼️ La mettre dans mon univers ? » (la session
   de l'univers).
 
+### 9.0 octosexagies 🧹 Le nettoyage du stockage, chaque nuit (15 novembre)
+
+Le propriétaire : « oui, lance le nettoyage du stockage ». Le fichier : `lib/direct/nettoyage-serveur.ts` ; la tâche :
+`GET /api/cron/direct-nettoyage`, à 3 h 40 UTC (`vercel.json`), 50 secondes au plus — la suite, la nuit d'après.
+
+- **Ce qui part**, dans les dossiers des photos (`fils/<paire>/p`), des vidéos (`v`) et des aperçus de liens (`a`),
+  **après 24 heures** :
+  - **les dépôts jamais envoyés** (`<qui>-<id>-brut…`) : la feuille fermée, la modération en panne sans « Réessayer »,
+    un téléphone qui a perdu le réseau (une adresse signée de dépôt vaut deux heures ; « Réessayer » se fait dans la
+    minute) ;
+  - **les fichiers qu'aucun message ne cite plus** (`<id>.webp`, `<id>.mp4`…) : un envoi qui a échoué à mi-chemin, un
+    message effacé pendant qu'on préparait l'aperçu de son lien. Le nom d'un message (`m/<instant>-<qui>-<id>.json`)
+    porte l'identifiant de ses fichiers ; un message signalé reste dans le fil (caché chez celui qui l'a signalé), il
+    garde les siens.
+- **Rien d'autre n'est touché** : les messages, les voix (`s/`), l'étagère, un nom inattendu, un fichier de moins de 24
+  heures ; et si les messages d'une conversation n'ont pas pu être lus en entier, aucun de ses fichiers.
+- **La mesure** : avec celle des messages (page admin des mèmes, « ✍️ Les messages ») — les fichiers effacés, la place
+  rendue.
+- **Le frein** : `CLIKME_NETTOYAGE=0`.
+- **L'essai** : `scripts/essai-nettoyage-route.mjs` (`?dans=25` : comme si 25 heures étaient passées — seulement pour
+  les essais, ou avec le secret des tâches).
+- **⚠️ Pour l'univers** : une photo ou une image d'aperçu rangée dans l'univers doit y être **recopiée**, jamais citée
+  depuis `fils/` (effacer le message l'efface, et le nettoyage efface ce qu'aucun message ne cite).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

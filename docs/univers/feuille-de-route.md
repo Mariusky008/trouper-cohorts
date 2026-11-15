@@ -730,6 +730,30 @@ qu'on partage peut nourrir son univers, avec son « oui ». Le cahier : `docs/un
   contrôlées avant de livrer, la vignette, effacer, signaler, la mesure de ce qu'elles pèsent). **M3, l'écran :
   construit** (9.0 septsexagies : « ＋ » → 🎬 Vidéo, la durée dite avant l'envoi, les trois images et l'effacement de
   la position dans le téléphone, l'envoi en pourcentage, la lecture en grand avec le son, la figurine qui la montre).
+- **Le nettoyage du stockage : construit** (9.0 octosexagies 🧹 — chaque nuit, les dépôts jamais envoyés et les
+  fichiers qu'aucun message ne cite, de plus de 24 heures).
+
+#### 📨 Relais pour la session de l'univers : « 🎵 Le ranger dans mon univers ? » et « 🖼️ La mettre dans mon univers ? »
+
+Le propriétaire a dit « oui » le 15 novembre 2026 pour les faire. Ils relèvent de la session de l'univers (le cahier,
+sections 4.2 et 5.3) ; la session des messages n'a pas pu la joindre, d'où ce relais. Ce qui est déjà là, côté
+conversation :
+
+- **Un lien** (`genre: "ecrit"`) : `lien: { url, site, titre?, image? }` dans le message
+  (`fils/<paire>/m/<instant>-<qui>-<id>.json`) ; l'image d'aperçu, 600 pixels, `fils/<paire>/a/<id>.webp`.
+  `sorteDuSite(site)` (`ecrit.ts`) dit si c'est une chanson ou un film (YouTube, Spotify, Deezer, Apple Music) — de quoi
+  faire une pochette ou une affiche.
+- **Une photo** (`genre: "photo"`) : `media: { chemin: "fils/<paire>/p/<id>.webp", l, h }`, `legende?`.
+- **Qui peut** : **celui qui l'a envoyé, chez lui seulement** (le cahier : une photo reçue ne sort pas de la
+  conversation) ; son « oui » d'abord, toujours (la règle de `docs/univers/etagere-accord.md`).
+- **⚠️ Recopier, jamais citer** : le fichier rangé doit être copié dans les dossiers de l'univers. Effacer le message
+  efface sa photo et son aperçu (`effacerMessage`), et le nettoyage de la nuit efface tout fichier de `p/`, `v/` ou `a/`
+  qu'aucun message ne cite.
+- **Où va la question** : sous l'aperçu du lien (`BulleEcrite`, `app/collection/ecrire.tsx`) et sous la photo
+  (`BullePhoto`, `app/collection/photos.tsx`), chez l'envoyeur. Une proposition de partage : l'univers fournit l'action
+  serveur (ranger le fichier de ce message : `cle` du proche, `id` du message) ; le bouton dans la bulle l'appelle —
+  la session des messages peut le brancher, ou celle de l'univers, en prévenant (une seule session à la fois sur ces
+  fichiers).
 
 ### Plus tard (préparé, pas construit)
 
