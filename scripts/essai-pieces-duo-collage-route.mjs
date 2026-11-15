@@ -74,7 +74,7 @@ for (const id of ["aimeeaimee01", "refuseerefu1", "deboutdebou1", "photophotop1"
 // ─── le salon : fait, ses places relevées (dans le désordre) ───
 await deposer("pieces-duo/salon/decor.png", PNG, "image/png");
 // (la télé : dans la zone peinte, au-dessus des têtes, sans toucher les figurines — elle doit rester telle quelle)
-await json("pieces-duo/salon/releve.json", { le: maintenant, emplacements: { tele: [0.05, 0.11, 0.3, 0.06], cadres: [], places: [{ x: 0.7, y: 0.66, hauteur: 0.28 }, { x: 0.3, y: 0.62, hauteur: 0.32 }] } });
+await json("pieces-duo/salon/releve.json", { le: maintenant, emplacements: { tele: [0.05, 0.19, 0.3, 0.05], cadres: [], places: [{ x: 0.7, y: 0.66, hauteur: 0.28 }, { x: 0.3, y: 0.62, hauteur: 0.32 }] } });
 
 const ROUTE = `${BASE}/api/admin/direct/pieces-duo/collage`;
 const appeler = async (cookie, corps) => {
@@ -120,17 +120,16 @@ ok(
   ia.length === 2 && ia.some((c) => c.startsWith("MASQUE ")) && /^IMAGE \S+  high /.test(image) && image.includes("IMAGE 1 is a room") && image.includes("in the transparent (masked) area only") && image.includes("about 30% from the left and 62% from the top") && image.includes("about 70% from the left") && image.includes("Keep everything outside the masked area EXACTLY as it is"),
   "un masque : seule la zone des places est peinte, les deux assises à leurs places relevées (gauche, puis droite)",
 );
-// (la place tracée à la main va du haut de la tête au siège — 0,32 — : la figurine entière, 0,32 / 0,66, soit 48 %)
-ok(image.includes("is about 48% of the image height") && image.includes("ENTIRELY inside the transparent area") && image.includes("never sunk into the floor"), "leur taille dite (48 % de la hauteur), entières dans la zone, les pieds jamais dans le sol");
+ok(image.includes("a rough cut-out collage") && image.includes("Do not zoom in, do not crop") && image.includes("at EXACTLY the same place and the same size as in IMAGE 1") && image.includes("never sunk into the floor"), "d'après un collage : la pièce telle quelle (ni zoom ni recadrage), les figurines à leur place et à leur taille, les pieds jamais dans le sol");
 const empreinte = (c) => createHash("sha1").update(c).digest("hex").slice(0, 12);
-const nomDuo = (moment) => `${D}/duos/salon-${moment}-${empreinte(`${P1}/assise.png`)}-${empreinte(`${L0}/resultats/aimeeaimee01.png`)}-2.png`;
+const nomDuo = (moment) => `${D}/duos/salon-${moment}-${empreinte(`${P1}/assise.png`)}-${empreinte(`${L0}/resultats/aimeeaimee01.png`)}-3.png`;
 const duo = await octets(nomDuo("soir"));
 const px = duo ? await sharp(duo).raw().toBuffer({ resolveWithObject: true }) : null;
 ok(px?.info.width === 64 && px.info.height === 96 && px.data[0] === 200 && px.data[1] === 140 && px.data[2] === 90, "recollée sur la pièce : la même taille, et hors de la zone des places, la pièce au pixel près");
 // (le faux moteur rend un rectangle orangé de x 16 à 47, y 16 à 79, sur du vide)
 const pixel = (x, y) => [...px.data.subarray((y * 64 + x) * 3, (y * 64 + x) * 3 + 3)].join();
 ok(px && pixel(30, 50) === "200,90,60", `au milieu des figurines : l'image rendue (${px && pixel(30, 50)})`);
-ok(px && pixel(12, 14) === "200,140,90" && pixel(50, 20) !== "200,140,90", `la télé, dans la zone peinte mais loin des figurines : restée telle quelle (${px && pixel(12, 14)}), à côté, peint`);
+ok(px && pixel(12, 20) === "200,140,90" && pixel(50, 20) !== "200,140,90", `la télé, dans la zone peinte mais loin des figurines : restée telle quelle (${px && pixel(12, 20)}), à côté, peint`);
 ok((await appeler(lea, { action: "fabriquer" })).fait === undefined && (await toutIA()).length === avant + 4, "tout est fait : plus rien");
 ok((await octets(`${D}/verrou.json`)) === null, "aucun verrou ne reste");
 

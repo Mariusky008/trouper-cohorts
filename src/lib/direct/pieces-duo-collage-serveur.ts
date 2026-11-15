@@ -7,8 +7,9 @@
  * 1. POSÉES : chaque figurine, assise SANS son fauteuil (une image faite une fois par figurine, détourée au plus près),
  *    posée par l'écran sur l'image de la pièce, à sa place relevée, avec une ombre et la lumière de la pièce ;
  * 2. GÉNÉRÉE : une image du duo dans la pièce (faite une fois par duo, par pièce et par lumière), d'après la pièce et
- *    les deux poses — LA VERSION CHOISIE par le propriétaire (« très bien »). Seule une grande zone autour des places
- *    est peinte (un masque), puis recollée sur la pièce : la télé, les cadres, l'étagère restent à leur place relevée.
+ *    les deux poses — LA VERSION CHOISIE par le propriétaire (« très bien »). Les poses sont d'abord posées sur leurs
+ *    places, à la taille des sièges (un collage) ; le moteur les assoit pour de vrai dans une zone autour d'elles (un
+ *    masque), recollée sur la pièce : la télé, les cadres, l'étagère restent à leur place relevée.
  *
  * Les figurines : celle de ce téléphone (sa figurine assise, si elle est du nouveau style) et celles des essais du lot 0
  * (des volontaires d'accord : détourées, ou leur constance assise ; pas celles qu'il a refusées). Rangé à part :
@@ -26,7 +27,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFichePerso } from "./fiches-serveur";
 import { SEAU_FIGURINES, depotDans, lireJson, signer, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
-import { MOMENTS_DUO, PIECES_DUO, PLACES_PAR_DEFAUT, hauteurDuo, zoneDesFigurines, zoneDuMasque, avisCollageValide, momentDuoValide, pieceDuoDe, pieceDuoValide, type ChoixCollage, type DuoVivant, type EtatCollage, type FigurineDuo, type MomentDuo, type PieceDuo, type PlaceDuo, type Zone } from "./pieces-duo";
+import { ANCRE_ASSISE, MOMENTS_DUO, PIECES_DUO, PLACES_PAR_DEFAUT, hauteurDuo, zoneDesFigurines, zoneDuMasque, avisCollageValide, momentDuoValide, pieceDuoDe, pieceDuoValide, type ChoixCollage, type DuoVivant, type EtatCollage, type FigurineDuo, type MomentDuo, type PieceDuo, type PlaceDuo, type Zone } from "./pieces-duo";
 import { etatPiecesDuo, prendre, rendre } from "./pieces-duo-serveur";
 import { estDetouree, type ResultatEssai } from "./univers-essais";
 
@@ -52,23 +53,53 @@ export function consignePoseSansFauteuil(): string {
 }
 
 /**
- * Le duo dans la pièce : seule une grande zone autour des deux places est peinte (un masque), les deux figurines assises
- * à leurs places, À LA TAILLE DITE, entières (de l'air au-dessus des têtes, les pieds en vue) ; tout le reste est gardé.
+ * Le duo dans la pièce, D'APRÈS UN COLLAGE : les deux figurines sont d'abord posées sur la pièce, à leurs places et à la
+ * taille des sièges (`poserLesFigurines`) ; le moteur ne fait que les asseoir pour de vrai (le contact, la lumière, les
+ * ombres), dans la zone masquée, sans rien déplacer ni agrandir. (Laissé libre de leur taille, il refaisait la pièce en
+ * gros plan : le second essai du propriétaire, « on ne voit plus que les deux figurines ».)
  */
 export function consigneDuoDansLaPiece(places: PlaceDuo[]): string {
   const ou = (p: PlaceDuo) => `about ${Math.round(p.x * 100)}% from the left and ${Math.round(p.y * 100)}% from the top`;
-  const taille = Math.round(hauteurDuo(places) * 100);
   return [
-    "IMAGE 1 is a room. IMAGE 2 and IMAGE 3 are two collectible figurines (big heads, small bodies), each seated on nothing.",
-    "Edit IMAGE 1 in the transparent (masked) area only: that is where the two empty seats are.",
-    `Seat the figurine of IMAGE 2 on the left empty seat of the room (${ou(places[0])}) and the figurine of IMAGE 3 on the right empty seat (${ou(places[1])}), turned slightly toward each other, relaxed, like two close friends chatting.`,
-    `THEIR SIZE: each seated figurine, from the top of its head to the soles of its feet, is about ${taille}% of the image height, the same size for both. Both figurines are ENTIRELY inside the transparent area, well away from its edges: clear empty space above their heads (no head is cut), their feet in full view.`,
-    "Each one truly sits on its seat: its bottom on the seat, its back against the backrest if there is one, its knees bent, its feet resting on the floor or hanging just above it, in front of the seat — never sunk into the floor or the rug.",
-    "Keep each figurine EXACTLY as it is: same face, same hair, same clothes, same colors, same style.",
+    "IMAGE 1 is a room in which two collectible figurines (big heads, small bodies) have just been placed on the two seats — a rough cut-out collage. IMAGE 2 and IMAGE 3 are those two figurines as they really are.",
+    `Edit IMAGE 1 in the transparent (masked) area only, so that the two figurines truly sit on their seats in this room: the figurine of IMAGE 2 on the left seat (${ou(places[0])}), the figurine of IMAGE 3 on the right seat (${ou(places[1])}), turned slightly toward each other, relaxed, like two close friends chatting.`,
+    "Keep the room EXACTLY as it is: the same framing, the same camera, every object and every piece of furniture at the same place and the same size. Do not zoom in, do not crop, do not enlarge the seats.",
+    "Keep each figurine at EXACTLY the same place and the same size as in IMAGE 1: they are small in the room, at the scale of their seats. Each figurine is entirely visible, from the top of its head to its feet.",
+    "Each one truly sits on its seat: its bottom on the seat, its back against the backrest if there is one, its knees bent, its feet resting on the floor or hanging just above it — never sunk into the floor or the rug.",
+    "Keep each figurine EXACTLY as in IMAGE 2 and IMAGE 3: same face, same hair, same clothes, same colors, same style.",
+    "The figurines truly belong to the scene: the room's light falls on them, soft contact shadows where they touch the seats and the floor, no cut-out edges.",
     "Keep everything outside the masked area EXACTLY as it is.",
-    "The figurines truly belong to the scene: the room's light falls on them, soft contact shadows where they touch the seats and the floor.",
     "Add nothing else: no text, no other character, no animal.",
   ].join("\n");
+}
+
+/**
+ * 🧩 LE COLLAGE de départ : les deux poses sans fauteuil, posées sur la pièce — le point qui touche le siège sur sa place,
+ * la hauteur des deux (`hauteurDuo`). Fondu à la main, pixel par pixel (comme le recollage).
+ */
+async function poserLesFigurines(piece: Buffer, poses: [Buffer, Buffer], places: PlaceDuo[], l: number, h: number): Promise<Buffer> {
+  const fond = Buffer.from(await sharp(piece).resize(l, h, { fit: "fill" }).removeAlpha().toColourspace("srgb").raw().toBuffer());
+  const haut = Math.max(8, Math.round(hauteurDuo(places) * h));
+  for (const [k, pose] of poses.entries()) {
+    const { data, info } = await sharp(pose).resize({ height: haut }).ensureAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
+    const n = info.channels;
+    const gauche = Math.round(places[k].x * l - info.width / 2);
+    const dessus = Math.round(places[k].y * h - ANCRE_ASSISE * info.height);
+    for (let y = 0; y < info.height; y++) {
+      const Y = dessus + y;
+      if (Y < 0 || Y >= h) continue;
+      for (let x = 0; x < info.width; x++) {
+        const X = gauche + x;
+        if (X < 0 || X >= l) continue;
+        const i = (y * info.width + x) * n;
+        const t = n >= 4 ? data[i + 3] / 255 : 1;
+        if (t <= 0) continue;
+        const o = (Y * l + X) * 3;
+        for (let c = 0; c < 3; c++) fond[o + c] = Math.round(fond[o + c] * (1 - t) + data[i + c] * t);
+      }
+    }
+  }
+  return sharp(fond, { raw: { width: l, height: h, channels: 3 } }).png().toBuffer();
 }
 
 type ZonePx = { left: number; top: number; width: number; height: number };
@@ -154,9 +185,10 @@ async function sources(supabase: Supabase, moi: string | null): Promise<Source[]
 const cheminPose = (src: Source) => `${DOSSIER}/poses/${empreinte(src.chemin)}.png`;
 /**
  * Une image du duo par pièce ET par lumière (le matin, le soir, la nuit), faite à sa première visite, puis gardée.
- * `-2` : la zone peinte agrandie et la taille dite (le 15 novembre) — les premières, aux têtes coupées, ne servent plus.
+ * `-3` : d'après un collage, à la taille des sièges (le 15 novembre) — les premières (têtes coupées), puis les `-2` (la
+ * pièce refaite en gros plan), ne servent plus.
  */
-const nomDuo = (piece: PieceDuo, moment: MomentDuo, a: Source, b: Source) => `${piece}-${moment}-${empreinte(a.chemin)}-${empreinte(b.chemin)}-2.png`;
+const nomDuo = (piece: PieceDuo, moment: MomentDuo, a: Source, b: Source) => `${piece}-${moment}-${empreinte(a.chemin)}-${empreinte(b.chemin)}-3.png`;
 /** La pièce dans une lumière : son image première dans son moment à elle, une retouche pour les deux autres. */
 const cheminDecor = (piece: PieceDuo, moment: MomentDuo) => `pieces-duo/${piece}/${moment === pieceDuoDe(piece).moment ? "decor.png" : `lumiere-${moment}.png`}`;
 const momentDuChoix = (c: ChoixCollage) => c.moment ?? pieceDuoDe(c.piece).moment;
@@ -173,16 +205,17 @@ const ecrireChoix = (supabase: Supabase, c: ChoixCollage) => depotDans(supabase,
  * La pièce dans une lumière (signée ; rien si cette lumière n'est pas faite), les lumières faites de la pièce, et ses
  * deux places, de gauche à droite (celles par défaut si elle n'a pas été relevée).
  */
-async function placesDe(supabase: Supabase, piece: PieceDuo, moment?: MomentDuo): Promise<{ decor?: string; moments: MomentDuo[]; places: PlaceDuo[]; objets: Zone[] }> {
+async function placesDe(supabase: Supabase, piece: PieceDuo, moment?: MomentDuo): Promise<{ decor?: string; moments: MomentDuo[]; places: PlaceDuo[]; posees: boolean; objets: Zone[] }> {
   const v = (await etatPiecesDuo(supabase)).pieces.find((p) => p.cle === piece);
-  const places = v?.emplacements?.places.length === 2 ? [...v.emplacements.places].sort((a, b) => a.x - b.x) : PLACES_PAR_DEFAUT;
+  const posees = v?.emplacements?.places.length === 2;
+  const places = posees && v?.emplacements ? [...v.emplacements.places].sort((a, b) => a.x - b.x) : PLACES_PAR_DEFAUT;
   const e = v?.emplacements;
   const objets = e ? [e.tele, e.platine, ...e.cadres, e.etagere, e.fenetre].filter((z): z is Zone => Boolean(z)) : [];
   const sien = pieceDuoDe(piece).moment;
   const lumiere = (m: MomentDuo) => (m === sien ? v?.decor : v?.lumieres?.[m]) || "";
   const moments = v?.decor ? (["matin", "soir", "nuit"] as const).filter((m) => lumiere(m)) : [];
   const decor = lumiere(moment ?? sien);
-  return { ...(decor ? { decor } : {}), moments, places, objets };
+  return { ...(decor ? { decor } : {}), moments, places, posees, objets };
 }
 
 /** 🧩 Ce que la page montre : les figurines, le choix, la pièce et ses places, les poses et le duo faits. */
@@ -280,16 +313,19 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
       ).includes(duo)
     )
       return {};
+    const { places, posees, objets } = await placesDe(supabase, pieceDuo, moment);
+    // (les figurines se posent sur les sièges : sans leurs deux places, elles tomberaient à côté)
+    if (!posees) return { erreur: "Les deux places de cette pièce ne sont pas encore tracées (« 🛋️ La pièce du duo », ✋)." };
     const piece = await telecharger(supabase, cheminDecor(pieceDuo, moment));
     const [pa, pb] = await Promise.all([telecharger(supabase, cheminPose(a)), telecharger(supabase, cheminPose(b))]);
     if (!piece || !pa || !pb) return { erreur: "La pièce ou une pose est introuvable." };
-    const { places, objets } = await placesDe(supabase, pieceDuo, moment);
     const meta = await sharp(piece).metadata();
     const [l, h] = [meta.width ?? 0, meta.height ?? 0];
     if (!l || !h) return { erreur: "La pièce n’a pas pu être lue." };
     const zone = zonePeinte(places, objets, l, h);
     const masque = await masqueDe(l, h, zone);
-    const r = await demanderUneImage({ images: [piece, pa, pb], masque, consigne: consigneDuoDansLaPiece(places), transparent: false, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high", taille: "1024x1536" });
+    const collage = await poserLesFigurines(piece, [pa, pb], places, l, h);
+    const r = await demanderUneImage({ images: [collage, pa, pb], masque, consigne: consigneDuoDansLaPiece(places), transparent: false, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high", taille: "1024x1536" });
     if ("erreur" in r) return { erreur: r.erreur };
     await depotDans(supabase, `${DOSSIER}/duos`).ecrire(duo, await recoller(piece, r.png, l, h, zone), "image/png");
     return { fait: "duo" };

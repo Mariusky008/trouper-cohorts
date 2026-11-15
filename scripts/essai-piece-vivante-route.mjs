@@ -59,6 +59,9 @@ await deposer(`${L0}/resultats/aimeeaimee03.png`, PNG, "image/png");
 await deposer("pieces-duo/salon/decor.png", PNG, "image/png");
 await deposer("pieces-duo/salon/lumiere-matin.png", PNG, "image/png");
 await json("pieces-duo/salon/releve.json", { le: maintenant, emplacements: { cadres: [], places: [{ x: 0.36, y: 0.7, hauteur: 0.3 }, { x: 0.64, y: 0.7, hauteur: 0.3 }] } });
+// (la cuisine : faite, mais ses deux places pas encore tracées)
+await deposer("pieces-duo/cuisine/decor.png", PNG, "image/png");
+await json("pieces-duo/cuisine/releve.json", { le: maintenant, ajuste: true, emplacements: { cadres: [], places: [] } });
 
 const ROUTE = `${BASE}/api/admin/direct/piece-vivante`;
 const appeler = async (cookie, corps) => {
@@ -97,6 +100,7 @@ const fm = await appeler(lea, { action: "duo", piece: "salon", moment: "matin" }
 ok(fm.fait === "duo" && /^http/.test(fm.etat?.duo?.duos?.["salon-matin"] ?? "") && (await toutIA()).slice(avantM).filter((c) => c.startsWith("IMAGE ")).length === 1, "le salon au matin : le duo seul (les poses servent à toutes les pièces)");
 
 // ─── les refus ───
+ok((await appeler(lea, { action: "duo", piece: "cuisine", moment: "matin" })).error?.includes("pas encore tracées"), "une pièce sans ses deux places tracées : rien (les figurines tomberaient à côté des sièges)");
 ok((await appeler(lea, { action: "duo", piece: "salon", moment: "nuit" })).error?.includes("pas encore faite"), "une lumière pas faite : refusée");
 ok((await appeler(lea, { action: "duo", piece: "grenier", moment: "soir" })).statut === 502 && (await appeler(lea, { action: "duo", piece: "salon", moment: "midi" })).statut === 502, "une pièce ou une lumière inconnue : refusée");
 
