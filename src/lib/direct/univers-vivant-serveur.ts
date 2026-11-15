@@ -18,7 +18,7 @@ import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFicheMonde } from "./fiches-serveur";
 import { depotDans, signer, telecharger } from "./ma-figurine-serveur";
-import { commanderUneVideoGoogle, moteurVideo, suivreChezGoogle, TAILLE_VIDEO, VUE } from "./pieces-vivantes-serveur";
+import { commanderUneVideoGoogle, moteurVideo, suivreChezGoogle, TAILLE_VIDEO, verifierLaVideo, VUE } from "./pieces-vivantes-serveur";
 import { decorDuMoment } from "./saison-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -38,7 +38,8 @@ const json = (b: Buffer | null) => {
 export const CONSIGNE_UNIVERS_VIVANT = [
   "A living photo: this exact image, gently brought to life.",
   "The camera does not move at all: a locked-off tripod shot, no zoom, no pan, no tilt. The place, every object, the light and the framing stay exactly as they are.",
-  "Only the natural, ambient things of this place move, softly and continuously, in a calm loop: flames and lamp lights flicker gently, plants and leaves sway in a light breeze, water shimmers, clouds drift slowly, steam or smoke rises softly — whatever of these the image contains.",
+  "Only the natural, ambient things of this place move, continuously, in a loop: flames and lamp lights flicker, plants, leaves and hanging vines sway in a breeze, water ripples and shimmers, clouds drift across the sky, sunlight shimmers and dust motes float in the light beams, steam or smoke rises — whatever of these the image contains.",
+  "The movement must be clearly visible at a glance on a phone screen, from the very first second: this must never look like a still image.",
   "Nothing appears and nothing disappears. No people, no characters, no text. The open space at the bottom in the middle stays empty and perfectly still. The last moment looks like the first one.",
   "Sound: only the soft ambience of the place — no voice, no dialogue, no music.",
 ].join("\n");
@@ -62,14 +63,17 @@ export async function milieuDuDecor(decor: Buffer): Promise<Buffer> {
     .toBuffer();
 }
 
-export type EtatUniversVivant = { univers: boolean; decor?: string; video?: string; enCours?: { depuis: string; progres?: number }; perimee?: boolean; moteur: boolean };
+export type EtatUniversVivant = { univers: boolean; decor?: string; video?: string; enCours?: { depuis: string; progres?: number }; perimee?: boolean; moteur: boolean; alerte?: string };
 
 export async function etatUniversVivant(supabase: Supabase, h: string): Promise<EtatUniversVivant> {
   const chemin = await decorActuel(supabase, h);
   const moteur = moteurVideo() === "google";
   if (!chemin) return { univers: false, moteur };
   const d = depotDans(supabase, dossier(h));
-  const noms = await d.lister().catch(() => [] as string[]);
+  let noms = await d.lister().catch(() => [] as string[]);
+  // (🩺 la vidéo rangée est-elle une vidéo ? sinon : réparée, ou effacée)
+  const verifiee = noms.includes("video.mp4") ? await verifierLaVideo(d) : null;
+  if (verifiee?.etat === "effacee") noms = noms.filter((n) => n !== "video.mp4");
   const [decor, commande, source] = await Promise.all([
     signer(supabase, chemin),
     noms.includes("video.json") ? d.lire("video.json").then(json).catch(() => ({}) as Record<string, unknown>) : Promise.resolve({} as Record<string, unknown>),
@@ -81,6 +85,7 @@ export async function etatUniversVivant(supabase: Supabase, h: string): Promise<
     univers: true,
     decor,
     moteur,
+    ...(verifiee?.alerte ? { alerte: verifiee.alerte } : {}),
     ...(aJour ? { video: await signer(supabase, `${dossier(h)}/video.mp4`) } : {}),
     ...(faite && !aJour ? { perimee: true } : {}),
     ...(s(commande.id) ? { enCours: { depuis: s(commande.le), ...(typeof commande.progres === "number" ? { progres: commande.progres } : {}) } } : {}),
@@ -102,8 +107,10 @@ export async function fabriquerUniversVivant(supabase: Supabase, h: string): Pro
   const chemin = await decorActuel(supabase, h);
   if (!chemin) return { erreur: "Crée d’abord ton univers (/univers/monde)." };
   const d = depotDans(supabase, dossier(h));
-  const noms = await d.lister().catch(() => [] as string[]);
+  let noms = await d.lister().catch(() => [] as string[]);
   const source = noms.includes("decor.json") ? json(await d.lire("decor.json").catch(() => null)) : {};
+  // (🩺 une vidéo rangée qui n'en est pas une : réparée sans rien repayer — ou effacée, et refaite)
+  if (noms.includes("video.mp4") && (await verifierLaVideo(d)).etat === "effacee") noms = noms.filter((n) => n !== "video.mp4");
   if (noms.includes("video.mp4") && s(source.chemin) === chemin) return {};
   if (noms.includes(VERROU) && Date.now() - (Number(json(await d.lire(VERROU).catch(() => null)).le) || 0) < DUREE_VERROU) return { erreur: "Un passage est déjà en train : patiente une minute." };
   const qui = randomUUID();

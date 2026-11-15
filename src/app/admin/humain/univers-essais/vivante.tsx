@@ -23,6 +23,7 @@ type Etat = {
   objets?: { objets: (Cadre & { cle: string })[]; place: Cadre | null; ecran: Cadre | null; etageres?: Cadre[] };
   vedettes: { cle: string; nom: string; dit: string }[];
   videoEnCours?: { depuis: string; progres?: number };
+  alerte?: string;
   figurine?: string;
   enCours: boolean;
   pieces: Record<Piece, number>;
@@ -163,6 +164,15 @@ export function PieceVivante() {
                   {faite ? "✓ " : train ? "… " : ""}
                   {e.nom}
                   {e.cle === "video" && !faite && ici.videoEnCours && ` — commandée, ${ici.videoEnCours.progres ?? 0} %`}
+                  {e.cle === "video" && ici.alerte && <span style={{ display: "block", color: "#8a5a00" }}>🩺 {ici.alerte}</span>}
+                  {e.cle === "video" && faite && ici.video && (
+                    <>
+                      {" — "}
+                      <a href={ici.video} target="_blank" rel="noreferrer">
+                        Ouvrir la vidéo seule
+                      </a>
+                    </>
+                  )}
                   {e.cle === "objets" &&
                     faite &&
                     ici.objets &&

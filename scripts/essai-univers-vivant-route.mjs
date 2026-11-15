@@ -131,7 +131,7 @@ const c2 = await appeler(lea, { action: "fabriquer" });
 ok(typeof c2.progres === "number" && c2.progres < 95 && !c2.fait && c2.etat?.enCours, `elle se fait (${c2.progres} %, estimé)`);
 const c3 = await appeler(lea, { action: "fabriquer" });
 const mp4 = await octets(`${D}/video.mp4`);
-ok(c3.fait === true && mp4?.toString() === "faux mp4 de son univers vivant" && /^http/.test(c3.etat?.video ?? "") && !c3.etat.enCours && !c3.etat.perimee, "faite (la vidéo rendue en ligne) : rangée, signée");
+ok(c3.fait === true && mp4?.subarray(4, 8).toString() === "ftyp" && mp4.toString().includes("faux mp4 de son univers vivant") && /^http/.test(c3.etat?.video ?? "") && !c3.etat.enCours && !c3.etat.perimee, "faite (la vidéo rendue en ligne) : rangée, signée");
 const resteCommande = await octets(`${D}/video.json`);
 const resteVerrou = await octets(`${D}/verrou.json`);
 ok(resteCommande === null && resteVerrou === null, `ni commande ni verrou ne restent (${resteCommande?.toString() ?? "-"} ${resteVerrou?.toString() ?? "-"})`);
@@ -145,6 +145,14 @@ const m1 = await maMaison();
 const v1 = await visite();
 ok(/^http/.test(m1.decorVivant ?? "") && m1.decorVivant.includes("univers-vivant/video.mp4"), "🏠 « Ma maison » : son décor, et sa vidéo par-dessus");
 ok(v1.vue?.etat === "ouvert" && /^http/.test(v1.vue.decorVivant ?? "") && v1.vue.decorVivant.includes("univers-vivant/video.mp4"), "🚪 Sam, en visite : il le voit vivre aussi");
+
+// ─── 🩺 une vidéo rangée qui n'en est pas une (la fiche du fichier chez Google) : réparée, sans rien recommander ───
+await deposer(`${D}/video.mp4`, JSON.stringify({ name: "files/video1", mimeType: "video/mp4", uri: "http://127.0.0.1:54321/gemini/v1beta/files/video1" }), "video/mp4");
+const avantRep = (await toutIA()).length;
+const rep1 = await appeler(lea);
+const reparee = await octets(`${D}/video.mp4`);
+ok(rep1.etat?.alerte?.includes("réparée") && /^http/.test(rep1.etat.video ?? "") && reparee?.subarray(4, 8).toString() === "ftyp" && (await toutIA()).length === avantRep, `🩺 la fiche du fichier rangée à la place de la vidéo : réparée, sans rien recommander (${rep1.etat?.alerte})`);
+ok(!(await appeler(lea)).etat?.alerte, "réparée, elle est bonne : plus d'alerte");
 
 // ─── son décor change (une retouche) : elle ne se montre plus ───
 await deposer(`${LEA.id}/monde/v2/decor.png`, DECOR, "image/png");
@@ -161,6 +169,12 @@ ok(r1.statut === 200 && !r1.etat?.perimee && !r1.etat.video && (await octets(`${
 const avantBis = (await toutIA()).length;
 const n1 = await appeler(lea, { action: "fabriquer" });
 ok(n1.progres === 0 && (await toutIA()).slice(avantBis).some((c) => c.startsWith("OMNI gemini-omni-1.2-flash 9:16 4s 720p fond 720x1280 ")), "et une nouvelle se commande, d'après son nouveau décor");
+
+// ─── 🩺 autre chose qu'une vidéo, sans adresse : effacée (à refaire) ───
+await deposer(`${D}/decor.json`, JSON.stringify({ chemin: "ancien" }), "application/json");
+await deposer(`${D}/video.mp4`, "<html><body>Not Found</body></html>", "video/mp4");
+const eff = await appeler(lea);
+ok(eff.etat?.alerte?.includes("effacée") && eff.etat.alerte.includes("Not Found") && !eff.etat.video && (await octets(`${D}/video.mp4`)) === null, `🩺 autre chose qu'une vidéo : effacée, ce qui était rangé est dit (${eff.etat?.alerte})`);
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);

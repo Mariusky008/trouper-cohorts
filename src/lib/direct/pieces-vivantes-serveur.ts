@@ -119,7 +119,8 @@ export const consigneVivante = (p: Piece) =>
   [
     "A living photo: this exact image, gently brought to life.",
     "The camera does not move at all: a locked-off tripod shot, no zoom, no pan, no tilt. The room, every object, the light and the framing stay exactly as they are.",
-    `Only these things move, softly and continuously, in a calm loop: ${PLANS_ENTIERS[p].vit}.`,
+    `Only these things move, continuously, in a loop: ${PLANS_ENTIERS[p].vit}.`,
+    "The movement must be clearly visible at a glance on a phone screen, from the very first second: this must never look like a still image. The light lives too: lamps glow and flicker, sunlight shimmers, dust motes float in the light beams.",
     "Nothing appears and nothing disappears. No people, no characters, no text. The empty space in the middle of the floor stays empty. The last moment looks like the first one.",
     "Sound: only the soft ambience of the room — no voice, no dialogue, no music.",
   ].join("\n");
@@ -230,6 +231,8 @@ export function repartirSouvenirs(pieces: { etageres: number }[], souvenirs: Sou
 // ─── où il en est ──────────────────────────────────────────────────────────────────────────────────
 export type EtatPieceVivante = {
   piece: Piece;
+  /** 🩺 La vidéo rangée n'en était pas une : réparée (sans rien recommander), ou effacée (à refaire). */
+  alerte?: string;
   decor: boolean;
   faites: EtapeVivante[];
   aFaire: EtapeVivante[];
@@ -247,8 +250,11 @@ export type EtatPieceVivante = {
 
 export async function etatDeLaPieceVivante(supabase: Supabase, h: string, p: Piece): Promise<EtatPieceVivante> {
   const listes = await Promise.all(PIECES.map((x) => depotDans(supabase, dossier(h, x)).lister().catch(() => [] as string[])));
-  const noms = listes[PIECES.indexOf(p)];
   const d = depotDans(supabase, dossier(h, p));
+  // (🩺 la vidéo rangée est-elle une vidéo ? sinon : réparée, ou effacée)
+  const verifiee = listes[PIECES.indexOf(p)].includes("video.mp4") ? await verifierLaVideo(d) : null;
+  if (verifiee?.etat === "effacee") listes[PIECES.indexOf(p)] = listes[PIECES.indexOf(p)].filter((n) => n !== "video.mp4");
+  const noms = listes[PIECES.indexOf(p)];
   const [monde, perso] = await Promise.all([lireFicheMonde(supabase, h).catch(() => null), lireFichePerso(supabase, h).catch(() => ({ fiche: null }))]);
   const faites = ETAPES_VIVANTES.filter((e) => noms.includes(FICHIERS[e]));
   const assise = perso.fiche?.style === "collection-1" ? s(perso.fiche.references.assise?.chemin) : "";
@@ -256,6 +262,7 @@ export async function etatDeLaPieceVivante(supabase: Supabase, h: string, p: Pie
   const enCours = noms.includes(VERROU) && Date.now() - (Number(json(await d.lire(VERROU).catch(() => null)).le) || 0) < DUREE_VERROU;
   return {
     piece: p,
+    ...(verifiee?.alerte ? { alerte: verifiee.alerte } : {}),
     decor: Boolean(monde?.references.decor),
     faites,
     aFaire: ETAPES_VIVANTES.filter((e) => !faites.includes(e)),
@@ -495,16 +502,85 @@ export async function suivreChezGoogle(d: ReturnType<typeof depotDans>, id: stri
   if (statut && statut !== "completed") return rater(`${statut}${pourquoi ? ` (${pourquoi})` : ""}`);
   const v = videoRendue(j);
   if (!v) return rater(pourquoi || "aucune vidéo rendue");
-  if (v.data) {
-    await d.ecrire("video.mp4", Buffer.from(v.data, "base64"), "video/mp4");
-    return { fait: true };
-  }
-  // (une adresse : complète, ou un fichier de l'API — `files/<id>`)
-  const adresse = /^https?:\/\//.test(v.uri!) ? v.uri! : `${baseGoogle()}/v1beta/${v.uri!.replace(/^\/+/, "").replace(/^v1beta\//, "")}${v.uri!.includes(":download") ? "" : ":download?alt=media"}`;
-  const c = await fetch(adresse, { headers: { "x-goog-api-key": cleGoogle() }, signal: AbortSignal.timeout(90_000) }).catch(() => null);
-  if (!c?.ok) return { erreur: `La vidéo est faite, mais ne se télécharge pas (${c?.status ?? "réseau"}) : réessaie.` };
-  await d.ecrire("video.mp4", Buffer.from(await c.arrayBuffer()), "video/mp4");
+  const recue = v.data ? { video: Buffer.from(v.data, "base64") } : await telechargerChezGoogle(v.uri!);
+  if ("erreur" in recue) return { erreur: recue.erreur };
+  if (!estUneVideo(recue.video)) return { erreur: `La vidéo est faite, mais ce qui est rendu n’est pas une vidéo (${apercu(recue.video)}) : réessaie.` };
+  await d.ecrire("video.mp4", recue.video, "video/mp4");
   return { fait: true };
+}
+
+/**
+ * 🩺 EST-CE UNE VIDÉO ? (le 15 novembre, l'essai du propriétaire : « faite », et rien ne bouge — ce qui avait été rangé
+ * n'était sans doute pas une vidéo : la fiche du fichier chez Google, pas ses octets). Une MP4 (ou MOV) a « ftyp » à son
+ * cinquième octet ; une WebM commence par 1A 45 DF A3.
+ */
+export const estUneVideo = (b: Buffer | null): b is Buffer => Boolean(b && b.length > 1000 && (b.subarray(4, 8).toString("latin1") === "ftyp" || b.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))));
+const apercu = (b: Buffer) => `${b.length} octets : « ${b.subarray(0, 90).toString("utf8").replace(/[^\x20-\x7e]/g, "·")} »`;
+/** L'adresse qui donne les octets d'un fichier de l'API Gemini (`…/files/<id>` → `…/files/<id>:download?alt=media`). */
+const pourTelecharger = (u: string) => {
+  const m = /^(https?:\/\/[^?#]+\/files\/[\w-]+)(?:\?[^#]*)?$/.exec(u);
+  return m ? `${m[1]}:download?alt=media` : u;
+};
+/** (la clé ne part que chez Google) */
+const enteteGoogle = (u: string): Record<string, string> => {
+  try {
+    const hote = new URL(u).host;
+    return hote.endsWith("googleapis.com") || u.startsWith(baseGoogle()) ? { "x-goog-api-key": cleGoogle() } : {};
+  } catch {
+    return {};
+  }
+};
+/** 📥 La vidéo rendue par une adresse : ses octets — et si c'est la fiche du fichier (du JSON), l'adresse qu'elle donne. */
+async function telechargerChezGoogle(uri: string): Promise<{ video: Buffer } | { erreur: string }> {
+  const absolue = /^https?:\/\//.test(uri) ? uri : `${baseGoogle()}/v1beta/${uri.replace(/^\/+/, "").replace(/^v1beta\//, "")}`;
+  const essais: string[] = [];
+  const ajouter = (u: string) => {
+    if (u && !essais.includes(u)) essais.push(u);
+  };
+  ajouter(pourTelecharger(absolue));
+  ajouter(absolue);
+  const vus: string[] = [];
+  for (let i = 0; i < essais.length && i < 6; i++) {
+    const c = await fetch(essais[i], { headers: enteteGoogle(essais[i]), signal: AbortSignal.timeout(90_000) }).catch(() => null);
+    if (!c?.ok) {
+      vus.push(`${c?.status ?? "réseau"}`);
+      continue;
+    }
+    const b = Buffer.from(await c.arrayBuffer());
+    if (estUneVideo(b)) return { video: b };
+    vus.push(`${c.headers.get("content-type") ?? "?"}, ${apercu(b)}`);
+    const fiche = json(b);
+    const f = (fiche.file && typeof fiche.file === "object" ? fiche.file : fiche) as Record<string, unknown>;
+    for (const k of ["downloadUri", "download_uri", "uri"]) {
+      const x = s(f[k]);
+      if (/^https?:\/\//.test(x)) {
+        ajouter(pourTelecharger(x));
+        ajouter(x);
+      }
+    }
+  }
+  return { erreur: `La vidéo est faite, mais ne se télécharge pas comme une vidéo (${vus.join(" ; ").slice(0, 300)}) : réessaie.` };
+}
+/**
+ * 🩺 La vidéo rangée (`video.mp4`) : une vidéo — bonne ; la fiche d'un fichier Google — réparée (ses octets téléchargés,
+ * rien n'est recommandé ni repayé) ; autre chose — effacée (à refaire).
+ */
+export async function verifierLaVideo(d: ReturnType<typeof depotDans>): Promise<{ etat: "absente" | "bonne" | "reparee" | "effacee"; alerte?: string }> {
+  const b = await d.lire("video.mp4").catch(() => null);
+  if (!b) return { etat: "absente" };
+  if (estUneVideo(b)) return { etat: "bonne" };
+  const fiche = json(b);
+  const f = (fiche.file && typeof fiche.file === "object" ? fiche.file : fiche) as Record<string, unknown>;
+  const adresse = s(f.downloadUri) || s(f.download_uri) || s(f.uri) || s(f.name);
+  if (adresse && cleGoogle()) {
+    const r = await telechargerChezGoogle(adresse);
+    if ("video" in r) {
+      await d.ecrire("video.mp4", r.video, "video/mp4");
+      return { etat: "reparee", alerte: "La vidéo rangée n’était pas une vidéo (la fiche du fichier chez Google) : elle est réparée, sans rien repayer." };
+    }
+  }
+  await d.effacer("video.mp4").catch(() => undefined);
+  return { etat: "effacee", alerte: `La vidéo rangée n’était pas une vidéo (${apercu(b).slice(0, 140)}) : elle est effacée — refais-la.` };
 }
 
 const branchementDe = (nom: unknown) => branchementsVideo().find((b) => b.nom === nom) ?? branchementsVideo()[0] ?? { nom: "images" as const, base: base(), cle: cle() };
