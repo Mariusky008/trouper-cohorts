@@ -6,12 +6,16 @@
 // celles des essais du lot 0 (une détourée aimée ; pas une refusée, pas une debout, pas une en situation). Une pièce pas
 // faite, deux fois la même figurine : refusées. Le choix (le salon, Léa à gauche) ; trois passages : la pose de Léa
 // sans fauteuil (détourée, fidélité haute), celle de la volontaire, puis le duo généré dans la pièce (la pièce et les
-// deux poses, leurs places relevées, de gauche à droite) ; puis plus rien. L'avis ; refaire le duo : lui seul ; refaire
+// deux poses, leurs places relevées, de gauche à droite ; un masque : seule la zone des places est peinte, puis
+// recollée sur la pièce — hors de cette zone, la pièce reste la même au pixel près) ; puis plus rien. La lumière : celle
+// de la pièce par défaut (le salon : le soir) ; une lumière pas encore faite, refusée ; le matin une fois fait, un duo à
+// part, d'après la pièce au matin (une image par pièce ET par lumière). L'avis ; refaire le duo : lui seul ; refaire
 // les poses : tout ; un nouveau choix efface l'avis.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-pieces-duo-collage-route.mjs
+import { createHash } from "node:crypto";
 import sharp from "sharp";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -95,7 +99,7 @@ ok((await appeler(lea, { action: "fabriquer" })).statut === 502, "rien de choisi
 ok((await appeler(lea, { action: "choisir", piece: "cuisine", a: "moi", b: "aimeeaimee01" })).error?.includes("pas encore faite"), "une pièce pas faite : refusée");
 ok((await appeler(lea, { action: "choisir", piece: "salon", a: "moi", b: "moi" })).statut === 400 && (await appeler(lea, { action: "choisir", piece: "salon", a: "moi", b: "refuseerefu1" })).statut === 400, "deux fois la même, ou une refusée : refusées");
 const c1 = await appeler(lea, { action: "choisir", piece: "salon", a: "moi", b: "aimeeaimee01" });
-ok(c1.statut === 200 && c1.etat?.choix?.piece === "salon" && c1.etat.choix.a === "moi" && /^http/.test(c1.etat.decor ?? "") && c1.etat.places?.[0]?.x === 0.3 && c1.etat.places[1].x === 0.7 && !c1.etat.poses?.a, "le salon, Léa à gauche : la pièce et ses places relevées, de gauche à droite");
+ok(c1.statut === 200 && c1.etat?.choix?.piece === "salon" && c1.etat.choix.a === "moi" && c1.etat.moment === "soir" && c1.etat.moments?.join() === "soir" && /^http/.test(c1.etat.decor ?? "") && c1.etat.places?.[0]?.x === 0.3 && c1.etat.places[1].x === 0.7 && !c1.etat.poses?.a, "le salon, Léa à gauche : la pièce et ses places relevées, de gauche à droite");
 
 // ─── 1. la pose de Léa, 2. celle de la volontaire ───
 const avant = (await toutIA()).length;
@@ -110,11 +114,17 @@ ok(f2.fait === "pose-b" && /^http/.test(f2.etat?.poses?.b ?? "") && !f2.etat.gen
 const f3 = await appeler(lea, { action: "fabriquer" });
 ia = (await toutIA()).slice(avant + 2);
 ok(f3.fait === "duo" && /^http/.test(f3.etat?.generee ?? ""), "3. le duo, généré dans la pièce : fait, signé");
+const image = ia.find((c) => c.startsWith("IMAGE ")) ?? "";
 ok(
-  ia.length === 1 && ia[0].startsWith("IMAGE ") && !ia[0].includes(" transparent ") && ia[0].includes("IMAGE 1 is a room") && ia[0].includes("about 30% from the left and 62% from the top") && ia[0].includes("about 70% from the left") && ia[0].includes("Keep the room EXACTLY as it is"),
-  "la pièce telle quelle, les deux assises à leurs places relevées (gauche, puis droite), sans fond retiré",
+  ia.length === 2 && ia.some((c) => c.startsWith("MASQUE ")) && /^IMAGE \S+  high /.test(image) && image.includes("IMAGE 1 is a room") && image.includes("in the transparent (masked) area only") && image.includes("about 30% from the left and 62% from the top") && image.includes("about 70% from the left") && image.includes("Keep everything outside the masked area EXACTLY as it is"),
+  "un masque : seule la zone des places est peinte, les deux assises à leurs places relevées (gauche, puis droite)",
 );
-ok((await appeler(lea, { action: "fabriquer" })).fait === undefined && (await toutIA()).length === avant + 3, "tout est fait : plus rien");
+const empreinte = (c) => createHash("sha1").update(c).digest("hex").slice(0, 12);
+const nomDuo = (moment) => `${D}/duos/salon-${moment}-${empreinte(`${P1}/assise.png`)}-${empreinte(`${L0}/resultats/aimeeaimee01.png`)}.png`;
+const duo = await octets(nomDuo("soir"));
+const px = duo ? await sharp(duo).raw().toBuffer({ resolveWithObject: true }) : null;
+ok(px?.info.width === 64 && px.info.height === 96 && px.data[0] === 200 && px.data[1] === 140 && px.data[2] === 90, "recollée sur la pièce : la même taille, et hors de la zone des places, la pièce au pixel près");
+ok((await appeler(lea, { action: "fabriquer" })).fait === undefined && (await toutIA()).length === avant + 4, "tout est fait : plus rien");
 ok((await octets(`${D}/verrou.json`)) === null, "aucun verrou ne reste");
 
 // ─── l'avis ───
@@ -129,6 +139,18 @@ const r2 = await appeler(lea, { action: "refaire", quoi: "poses" });
 ok(!r2.etat?.poses?.a && !r2.etat?.poses?.b && !r2.etat?.generee, "refaire les poses : tout s'efface");
 const c2 = await appeler(lea, { action: "choisir", piece: "salon", a: "aimeeaimee01", b: "moi" });
 ok(c2.etat?.choix?.a === "aimeeaimee01" && !c2.etat.choix.avis, "un nouveau choix (l'inverse) : l'avis s'efface");
+
+// ─── la lumière : une image du duo par pièce et par lumière ───
+ok((await appeler(lea, { action: "choisir", piece: "salon", a: "moi", b: "aimeeaimee01", moment: "matin" })).error?.includes("pas encore faite"), "une lumière pas encore faite : refusée");
+const MATIN = await sharp({ create: { width: 64, height: 96, channels: 4, background: { r: 100, g: 150, b: 200, alpha: 1 } } }).png().toBuffer();
+await deposer("pieces-duo/salon/lumiere-matin.png", MATIN, "image/png");
+const m1 = await appeler(lea, { action: "choisir", piece: "salon", a: "moi", b: "aimeeaimee01", moment: "matin" });
+ok(m1.statut === 200 && m1.etat?.moment === "matin" && m1.etat.moments?.join() === "matin,soir" && !m1.etat.generee, "le matin, une fois fait : choisi (les lumières faites : le matin, le soir) ; son duo pas encore fait");
+const avantM = (await toutIA()).length;
+let fm = {};
+for (let k = 0; k < 3 && !fm.etat?.generee; k++) fm = await appeler(lea, { action: "fabriquer" });
+const pxm = await sharp((await octets(nomDuo("matin"))) ?? MATIN).raw().toBuffer({ resolveWithObject: true });
+ok(/^http/.test(fm.etat?.generee ?? "") && (await toutIA()).slice(avantM).filter((c) => c.startsWith("IMAGE ")).length >= 1 && pxm.data[0] === 100 && pxm.data[1] === 150 && pxm.data[2] === 200, "son duo, à part : fait d'après la pièce au matin (hors des places, la pièce du matin au pixel près)");
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);

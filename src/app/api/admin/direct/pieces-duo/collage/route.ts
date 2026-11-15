@@ -3,7 +3,7 @@
 // générées avec la pièce. Réservé à l'administrateur.
 //
 // GET                                         → { etat } : les figurines, le choix, la pièce et ses places, ce qui est fait
-// POST { action: "choisir", piece, a, b }     → { etat }
+// POST { action: "choisir", piece, a, b, moment? } → { etat } (la lumière : celle de la pièce par défaut)
 // POST { action: "fabriquer" }                → { fait?, etat } : un passage — la pose de la première, de la seconde, le duo
 // POST { action: "refaire", quoi }            → { etat } : les poses (et le duo), ou le duo seul (`quoi: "duo"`)
 // POST { action: "avis", avis, note? }        → { etat }
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     if (r.erreur) return NextResponse.json({ error: r.erreur, etat }, { status: statut, headers: sansCache });
     return NextResponse.json({ ok: true, ...(r.fait ? { fait: r.fait } : {}), etat }, { headers: sansCache });
   };
-  if (p?.action === "choisir") return repondre(await choisirCollage(supabase, moi, p.piece, p.a, p.b));
+  if (p?.action === "choisir") return repondre(await choisirCollage(supabase, moi, p.piece, p.a, p.b, p.moment));
   if (p?.action === "fabriquer") return repondre(await fabriquerCollage(supabase, moi, avant), 502);
   if (p?.action === "refaire") {
     await refaireCollage(supabase, moi, p.quoi === "duo" ? "duo" : "poses");
