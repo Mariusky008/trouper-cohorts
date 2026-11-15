@@ -123,6 +123,12 @@ function poser(e: EmplacementsDuo, c: Cible, x1: number, y1: number, x2: number,
     cadres[Math.min(Number(c.slice(-1)), cadres.length)] = z;
     return { ...e, cadres };
   }
+  // (l'écran retracé en rectangle : ses quatre coins posés à la main ne valent plus)
+  if (c === "tele") {
+    const { teleCoins: _, ...reste } = e;
+    void _;
+    return { ...reste, tele: z };
+  }
   return { ...e, [c]: z };
 }
 
@@ -131,6 +137,7 @@ function effacer(e: EmplacementsDuo, c: Cible): EmplacementsDuo {
   if (c === "place0" || c === "place1") return { ...e, places: e.places.filter((_, k) => k !== Number(c.slice(-1))) };
   const f = { ...e };
   delete f[c];
+  if (c === "tele") delete f.teleCoins;
   return f;
 }
 

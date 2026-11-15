@@ -253,7 +253,7 @@ pas rangé une autre liste sur la page d'essais (« 📺 La télé du duo », hu
 // ce qu'elle passe, chez lui, avec ce proche (sa clé de profil) — les règles du talkie (401, 403, 404)
 const { programme, secours } = await (await fetch(`/api/direct/tele?avec=${cle}`)).json();
 // dans le calque de la pièce (position: relative), sur l'écran relevé (`releve.json` → emplacements.tele)
-<TeleDuo programme={programme} secours={secours} zone={emplacements.tele} proche={cameraSurLaTele} onToucher={() => approcherDe("tele")} />
+<TeleDuo programme={programme} secours={secours} zone={emplacements.tele} coins={emplacements.teleCoins} proche={cameraSurLaTele} onToucher={() => approcherDe("tele")} />
 ```
 
 (`@/app/univers/tele-duo`.) **De loin** (`proche` faux) : l'écran montre ce qui passe (l'aperçu du lien, l'image du
@@ -263,6 +263,15 @@ refuse d'être lue hors de YouTube : un clip de secours prend le relais, « ▶ 
 recule l'éteint. Ses tailles suivent la télé (en part de sa largeur) : la caméra qui s'approche par une mise à l'échelle
 agrandit l'écran et ses boutons ensemble. Le lecteur : celui de YouTube (`youtube-nocookie.com`), chargé au premier
 allumage ; s'il ne se charge pas, un simple cadre de YouTube.
+
+**Après le premier essai du propriétaire** (15 novembre 2026) : « le bouton pause est à l'extérieur de la télé et il est
+énorme » — allumée, la télé pose le lecteur par-dessus la page, sur son écran tel qu'on le voit, à sa taille réelle (la
+caméra ne l'agrandit plus) ; « le clip n'est pas aux bonnes dimensions de la télé » — l'écran se place à la main, sur
+l'essai de la télé ; « la télé posée au mur est en perspective, donc plus large à droite qu'à gauche » — **par ses
+quatre coins** (`emplacements.teleCoins`, en haut à gauche, en haut à droite, en bas à droite, en bas à gauche ; `tele`
+est alors leur boîte) : l'image comme le lecteur s'y déforment (`versQuad`, une transformation de perspective) ; « ça
+ne fait pas télé, mais iPad » — la vidéo couvre tout l'écran (recadrée, jamais de bandes noires), sans annotations ni
+sous-titres d'office. **La maquette doit passer `coins={emplacements.teleCoins}`** (sinon, l'écran reste un rectangle).
 
 **L'essayer** : la page d'essais, « 📺 La télé du duo : l'essai » — une pièce faite, un lien collé (ou le clip du jour),
 la télé de loin, un toucher, la caméra s'approche, « Allumer la télé ».

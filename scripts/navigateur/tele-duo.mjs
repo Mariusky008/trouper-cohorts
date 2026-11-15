@@ -13,8 +13,10 @@
 //
 // (15 novembre 2026, le propriétaire : « le clip n'est pas aux bonnes dimensions de la télé » ; « le bouton pause est à
 // l'extérieur de la télé et il est énorme ») Allumée, le lecteur est posé sur l'écran tel qu'on le voit, à sa taille
-// réelle (pas agrandi par la caméra). La cuisine, son écran pas repéré : « ✋ Placer l'écran de la télé », tracé d'un
-// coin à l'autre — rangé (« posé à la main »), la télé s'y pose.
+// réelle (pas agrandi par la caméra). La cuisine, son écran pas repéré : « ✋ Placer l'écran de la télé », ses quatre
+// coins touchés un à un (une télé en perspective, le bord droit plus haut), l'un glissé pour ajuster, « Enregistrer
+// l'écran » — rangés (« posés à la main ») ; l'écran, puis le lecteur allumé, épousent la perspective ; la vidéo couvre
+// tout l'écran (« ça ne fait pas télé, mais iPad »).
 import { createRequire } from "node:module";
 import { D, F, lancer } from "./commun.mjs";
 
@@ -157,28 +159,98 @@ await section.locator(".tvd-recul").click();
 await p.waitForTimeout(900);
 ok((await section.locator(".tvd-scene").getAttribute("data-proche")) === "0" && (await section.locator(".tv .tv-bouton").count()) === 0, "« ↩ La pièce entière » : la caméra recule, plus de bouton");
 
-// ─── ✋ la cuisine : son écran pas repéré, placé à la main ───
+// ─── ✋ la cuisine : son écran pas repéré, placé à la main par ses quatre coins (une télé en perspective) ───
 await section.locator('[data-piece-tele="cuisine"]').click();
 await p.waitForTimeout(300);
 ok((await section.textContent())?.includes("n’a pas été repéré") && (await section.locator('[data-geste="placer-ecran"]').textContent())?.includes("Placer l’écran de la télé"), "la cuisine : son écran pas repéré — « ✋ Placer l'écran de la télé »");
 await section.locator('[data-geste="placer-ecran"]').click();
 const zoneTrace = await section.locator(".tvd-tracer").boundingBox();
-await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.6, zoneTrace.y + zoneTrace.height * 0.2);
+const toucherA = async (x, y) => {
+  await p.mouse.move(zoneTrace.x + zoneTrace.width * x, zoneTrace.y + zoneTrace.height * y);
+  await p.mouse.down();
+  await p.mouse.up();
+};
+// (en perspective : le bord droit plus haut que le gauche ; le 2e coin posé un peu trop haut, puis glissé)
+ok((await section.locator(".tvd-tracer small").textContent())?.includes("en haut à gauche"), "« Touche les quatre coins de l'écran : en haut à gauche (1/4) »");
+await toucherA(0.6, 0.2);
+await toucherA(0.9, 0.12);
+await toucherA(0.9, 0.33);
+await toucherA(0.6, 0.3);
+ok((await section.locator(".tvd-tracer i[data-coin]").count()) === 4 && (await section.locator(".tvd-tracer small").textContent())?.includes("Fais glisser les coins"), "quatre coins posés : « Fais glisser les coins pour ajuster »");
+await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.12);
 await p.mouse.down();
-await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.75, zoneTrace.y + zoneTrace.height * 0.25, { steps: 4 });
-await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.3, { steps: 4 });
+await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.15, { steps: 4 });
+await p.mouse.move(zoneTrace.x + zoneTrace.width * 0.9, zoneTrace.y + zoneTrace.height * 0.17, { steps: 4 });
 await p.mouse.up();
+await section.locator('[data-geste="enregistrer-ecran"]').click();
 await p.waitForFunction(() => document.querySelector('section[aria-label="La télé du duo"]')?.textContent?.includes("à sa place"), null, { timeout: 10000 }).catch(() => null);
-await p.waitForTimeout(500);
+await p.waitForTimeout(600);
 const releveCuisine = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/cuisine/releve.json`)).json().catch(() => ({}));
+const c = releveCuisine.emplacements?.teleCoins ?? [];
+const attendus = [[0.6, 0.2], [0.9, 0.17], [0.9, 0.33], [0.6, 0.3]];
 const t = releveCuisine.emplacements?.tele ?? [];
-ok(releveCuisine.ajuste === true && Math.abs(t[0] - 0.6) < 0.02 && Math.abs(t[1] - 0.2) < 0.02 && Math.abs(t[2] - 0.3) < 0.02 && Math.abs(t[3] - 0.1) < 0.02 && releveCuisine.emplacements?.places?.length === 2, `tracé d'un coin à l'autre : l'écran rangé, posé à la main, les places gardées (${JSON.stringify(t)})`);
-const surLEcran = await p.evaluate(() => {
-  const s = document.querySelector(".tvd-scene")?.getBoundingClientRect();
-  const e = document.querySelector(".tvd-scene .tv")?.getBoundingClientRect();
-  return s && e ? { x: (e.left - s.left) / s.width, l: e.width / s.width } : null;
+ok(
+  releveCuisine.ajuste === true && c.length === 4 && attendus.every(([x, y], k) => Math.abs(c[k][0] - x) < 0.015 && Math.abs(c[k][1] - y) < 0.015) && Math.abs(t[0] - 0.6) < 0.015 && Math.abs(t[1] - 0.17) < 0.015 && Math.abs(t[2] - 0.3) < 0.015 && Math.abs(t[3] - 0.16) < 0.015 && releveCuisine.emplacements?.places?.length === 2,
+  `les quatre coins rangés (le 2e glissé), l'écran = leur boîte, posés à la main, les places gardées (${JSON.stringify(c)})`,
+);
+// (l'écran déformé : ses quatre coins, à l'écran, tombent sur ceux posés)
+const coinsVus = async (sel) =>
+  p.evaluate((s) => {
+    const sc = document.querySelector(".tvd-scene")?.getBoundingClientRect();
+    const el = document.querySelector(s);
+    if (!sc || !el) return null;
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    const parent = el.parentElement.getBoundingClientRect();
+    const [L, H] = [el.offsetWidth, el.offsetHeight];
+    return [
+      [0, 0],
+      [L, 0],
+      [L, H],
+      [0, H],
+    ].map(([x, y]) => {
+      const q = m.transformPoint(new DOMPoint(x, y, 0, 1));
+      return [(parent.left + q.x / q.w - sc.left) / sc.width, (parent.top + q.y / q.w - sc.top) / sc.height];
+    });
+  }, sel);
+const vus = await coinsVus(".tvd-scene .tv .tv-ecran");
+ok(Boolean(vus) && attendus.every(([x, y], k) => Math.abs(vus[k][0] - x) < 0.02 && Math.abs(vus[k][1] - y) < 0.02) && (await section.locator('[data-geste="placer-ecran"]').textContent())?.includes("Replacer"), `l'écran épouse la perspective : ses coins sur ceux posés (${JSON.stringify(vus?.map((q) => q.map((v) => Math.round(v * 1000) / 1000)))})`);
+await p.screenshot({ path: `${D}/tele-duo-perspective.png` });
+
+// ─── allumée, en perspective : le lecteur aussi épouse les coins ───
+await section.locator(".tv").click();
+await p.waitForTimeout(900);
+await section.locator('.tv [data-geste="allumer"]').click();
+await p.waitForSelector("[data-faux-yt]", { timeout: 10000 }).catch(() => null);
+await p.waitForTimeout(400);
+const lecteurVu = await p.evaluate(() => {
+  const t = document.querySelector(".tvd-scene .tv")?.getBoundingClientRect();
+  const el = document.querySelector(".tv-flottant .tv-deforme");
+  if (!t || !el) return null;
+  const m = new DOMMatrix(getComputedStyle(el).transform);
+  const f = el.parentElement.getBoundingClientRect();
+  const [L, H] = [el.offsetWidth, el.offsetHeight];
+  return [
+    [0, 0],
+    [L, 0],
+    [L, H],
+    [0, H],
+  ].map(([x, y]) => {
+    const q = m.transformPoint(new DOMPoint(x, y, 0, 1));
+    return [(f.left + q.x / q.w - t.left) / t.width, (f.top + q.y / q.w - t.top) / t.height];
+  });
 });
-ok(Boolean(surLEcran) && Math.abs(surLEcran.x - 0.6) < 0.02 && Math.abs(surLEcran.l - 0.3) < 0.02 && (await section.locator('[data-geste="placer-ecran"]').textContent())?.includes("Replacer"), `la télé s'y pose (${JSON.stringify(surLEcran)})`);
+// (dans la boîte de l'écran : les coins posés, ramenés à elle)
+const dansLaBoite = attendus.map(([x, y]) => [(x - 0.6) / 0.3, (y - 0.17) / 0.16]);
+ok(Boolean(lecteurVu) && dansLaBoite.every(([x, y], k) => Math.abs(lecteurVu[k][0] - x) < 0.05 && Math.abs(lecteurVu[k][1] - y) < 0.05), `allumée : le lecteur épouse aussi la perspective (${JSON.stringify(lecteurVu?.map((q) => q.map((v) => Math.round(v * 100) / 100)))})`);
+const couvre = await p.evaluate(() => {
+  const d = document.querySelector(".tv-flottant .tv-deforme");
+  const v = document.querySelector(".tv-flottant .tv-video");
+  return d && v ? { l: v.offsetWidth / d.offsetWidth, h: v.offsetHeight / d.offsetHeight } : null;
+});
+ok(Boolean(couvre) && couvre.l >= 0.999 && couvre.h >= 0.999, `la vidéo couvre tout l'écran, sans bandes noires (${JSON.stringify(couvre)})`);
+await p.screenshot({ path: `${D}/tele-duo-perspective-allumee.png` });
+await section.locator(".tvd-recul").click();
+await p.waitForTimeout(800);
 
 // ─── la liste de secours ───
 const liste = section.locator("textarea");
