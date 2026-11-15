@@ -768,6 +768,16 @@ compagnons, `compagnons/chat/<boucle>/video.mp4` (`compagnonDePablito`), et joue
 (`app/univers/compagnon-vivant.tsx`), sans rien y changer. Si vous déplacez le catalogue, renommez une boucle ou changez
 `CompagnonVivant`, la bienvenue suit : dites-le (son essai : `scripts/navigateur/bienvenue-chez.mjs`).
 
+#### 📨 Relais pour la session de l'univers : la CI en quatre groupes (15 novembre 2026, demandé par le propriétaire)
+
+« Route et navigateur » joue maintenant ses essais **en quatre groupes, sur quatre machines en même temps** : une
+douzaine de minutes au lieu d'environ 34. Sur une PR, vous verrez « Route et navigateur 1/4 » à « 4/4 », puis
+« Route et navigateur » (le bilan : vert seulement si les quatre le sont ; un passage annulé reste annulé, pas rouge).
+**Pour ajouter un essai** : l'ajouter à la liste `ESSAIS=(…)` de `scripts/navigateur/lancer-essais.sh`, rien d'autre.
+**Pour rejouer un groupe en local** : `ESSAIS_GROUPES=4 ESSAIS_GROUPE=2 bash scripts/navigateur/lancer-essais.sh`.
+Chaque essai part toujours d'un faux Supabase neuf ; seule l'app (un `next start` par groupe) est partagée par les essais
+d'un même groupe. Le détail : `docs/reprise.md`, section 2.
+
 #### 📨 Relais pour la session de l'univers : la pièce du duo — la décision du propriétaire (15 novembre 2026)
 
 **À lire avant tout nouveau développement de l'univers : `piece-du-duo.md`.** Après avoir joué la bienvenue, le
