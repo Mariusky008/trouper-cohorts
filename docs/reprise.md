@@ -186,6 +186,18 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
 `MurEtagere`, `PastilleEtagere`), et le moment du duo (`moment-du-duo.tsx`). **L'autre session n'y touche pas sans le
 dire au propriétaire d'abord** : une seule session à la fois sur ces fichiers.
 
+## 0 nonies. La pièce du duo : la décision, et l'essai des cinq pièces (15 novembre 2026)
+
+**À lire d'abord : `docs/univers/piece-du-duo.md`.** Le propriétaire, après la bienvenue « Entre chez Pablito » : « on
+termine la bienvenue et on n'a pas compris grand-chose, c'est très brouillon » ; une analyse de fond, sans coder, puis
+sa décision : chaque conversation se passe dans **une pièce choisie à deux, selon l'humeur** (salon, cuisine, terrasse,
+chambre vue mer, café), faite une fois pour tous, avec **les mêmes emplacements** (télé, platine, cadres, étagère,
+fenêtre, deux places, coin du chat). **Fait** : l'essai des cinq pièces (en tête de `/admin/humain/univers-essais`,
+« 🛋️ La pièce du duo ») : chaque pièce dessinée sans personne, puis ses emplacements relevés par un modèle qui voit et
+dessinés par-dessus. **À faire** : que le propriétaire les fasse et les juge ; puis la pièce vivante à l'essai (deux
+figurines, le changement de pièce, la télé qui joue un vrai lien, la surprise à l'ouverture) ; **puis seulement**
+refaire la bienvenue (« elle ne va pas du tout » : l'interrupteur `BIENVENUE_CHEZ_PABLITO` reste éteint).
+
 ## 0 septies. La conversation à revoir : l'univers commun du duo (15 novembre 2026)
 
 Le propriétaire, sur la conversation avec un proche : « pas mal de choses qui ne fonctionnent pas suffisamment bien pour

@@ -8,6 +8,7 @@ import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { EssaisUnivers } from "./essais";
 import { PablitoAuNouveauStyle } from "./pablito";
 import { UniversDePablito } from "./chez-pablito";
+import { PiecesDuDuo } from "./pieces-duo";
 import { MaisonEnPanorama } from "./salon";
 import { PieceVivante } from "./vivante";
 import { AmbiancesDeTonUnivers } from "./ambiances";
@@ -31,6 +32,7 @@ export default async function PageEssaisUnivers() {
         visages, debout. Plus bas, les univers : leurs décors, la scène où la figurine s’assoit, son mouvement. Les images se font en une à deux minutes : la
         page se met à jour toute seule.
       </p>
+      <PiecesDuDuo />
       <PablitoAuNouveauStyle />
       <UniversDePablito />
       <CompagnonEssai />
