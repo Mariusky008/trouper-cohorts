@@ -16,7 +16,8 @@
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { UniversDePablito } from "./bienvenue";
-import { ecrireJson, lireJson } from "./ma-figurine-serveur";
+import { BOUCLES, ESPECES, type Boucle } from "./compagnons";
+import { depotDans, ecrireJson, lireJson, signer } from "./ma-figurine-serveur";
 import { etatUnivers } from "./univers-creation-serveur";
 
 export type { UniversDePablito };
@@ -47,6 +48,27 @@ export function vuePublique(e: Awaited<ReturnType<typeof etatUnivers>>): Univers
   };
 }
 
+/**
+ * 🐾 SON CHAT (le 15 novembre 2026, « oui, les boucles sont déjà validées ») : les boucles faites du chat, dans le
+ * catalogue des compagnons (`compagnon-essai-serveur.ts` : `compagnons/chat/<boucle>/video.mp4`), signées ; son nom, celui
+ * du chat par défaut. `null` si aucune boucle n'est faite. `CLIKME_CHAT_BIENVENUE=0` : le frein (la bienvenue sans lui).
+ */
+export async function compagnonDePablito(supabase: Supabase): Promise<NonNullable<UniversDePablito["compagnon"]> | null> {
+  if (s(process.env.CLIKME_CHAT_BIENVENUE) === "0") return null;
+  const espece = "chat" as const;
+  const faites = await Promise.all(
+    BOUCLES.map(async (b) => {
+      const noms = await depotDans(supabase, `compagnons/${espece}/${b.cle}`).lister().catch(() => [] as string[]);
+      if (!noms.includes("video.mp4")) return null;
+      const url = await signer(supabase, `compagnons/${espece}/${b.cle}/video.mp4`).catch(() => "");
+      return url ? ([b.cle, url] as [Boucle, string]) : null;
+    }),
+  );
+  const boucles = Object.fromEntries(faites.filter((x): x is [Boucle, string] => Boolean(x))) as Partial<Record<Boucle, string>>;
+  if (!Object.keys(boucles).length) return null;
+  return { espece, nom: ESPECES.find((e) => e.cle === espece)?.nomParDefaut ?? "Moustache", boucles };
+}
+
 /** De qui est l'univers de Pablito (adopté depuis l'admin) ; « » s'il n'y en a pas. */
 export async function habitantDePablito(supabase: Supabase): Promise<string> {
   const a = await lireJson<Adoption>(supabase, CHEMIN).catch(() => ({}) as Partial<Adoption>);
@@ -62,7 +84,9 @@ export async function universDePablito(supabase: Supabase): Promise<UniversDePab
   const h = await habitantDePablito(supabase);
   if (!h) return null;
   if (memo && memo.h === h && Date.now() - memo.le < DUREE_MEMO) return memo.vue;
-  const vue = vuePublique(await etatUnivers(supabase, h));
+  const [etat, compagnon] = await Promise.all([etatUnivers(supabase, h), compagnonDePablito(supabase).catch(() => null)]);
+  const brute = vuePublique(etat);
+  const vue = brute && compagnon ? { ...brute, compagnon } : brute;
   memo = { le: Date.now(), h, vue };
   return vue;
 }

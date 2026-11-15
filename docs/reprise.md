@@ -139,7 +139,9 @@ conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses si
   celui de Pablito, adopté depuis l'admin) ; le nouveau venu est son invité et vit chaque chose d'un toucher (ses clés,
   « Je le range ? » et le rappel, un souvenir, « Qui peut entrer »). Son adresse directe : `/bienvenue`. Derrière
   l'interrupteur `BIENVENUE_CHEZ_PABLITO`, **éteint** jusqu'à ce que le propriétaire l'ait regardée. Le détail :
-  `docs/figurines.md`, 9.0 tresseptuagies.
+  `docs/figurines.md`, 9.0 tresseptuagies. **Son chat, Moustache** (les boucles validées de l'essai C0) y vit : il dort,
+  se réveille, dresse l'oreille, saute de joie, renifle le souvenir, et vient ronronner sur les genoux de Pablito quand
+  rien ne se passe (9.0 quattuorseptuagies).
 
 ## 0 sexies. « Ma maison », vivante (14 novembre 2026)
 

@@ -8,7 +8,9 @@
 // le rappel du jour venu ; la visite, « laisse-moi un souvenir » — un bouquet se pose, « Merci, je le garde. » ; son
 // univers s'agrandit (une nouvelle pièce, un endroit secret, « Qui peut entrer ») ; « Par toi ! » — l'esquisse, « Ta
 // place », « 📸 Je crée ma figurine ». Ses neuf voix partent, rien ne déborde, jamais le mot interdit, aucune erreur.
-// « Passer » la ferme ; « Rejouer » la reprend. Les images sont des images d'essai (le décor : un salon de
+// « Passer » la ferme ; « Rejouer » la reprend. 🐾 Son chat, Moustache (les boucles de l'essai C0) : il dort quand la
+// brume se lève, l'invité le réveille, il dresse l'oreille au week-end, saute de joie au rangement, renifle le souvenir,
+// vient sur les genoux de Pablito quand il raconte son univers — et quand rien ne se passe ; un toucher : son nom. Les images sont des images d'essai (le décor : un salon de
 // `public/direct/ensemble` ; la figurine : `scripts/fixtures/figurine-assise-essai.webp`).
 import fs from "node:fs";
 import { BASE, D, F, lancer } from "./commun.mjs";
@@ -77,6 +79,11 @@ const monde = {
 };
 await json(`${M1}/fiche.json`, monde);
 await json(`${PROPRIO.id}/monde/fiche.json`, monde);
+// 🐾 les boucles du chat (une vidéo d'essai, sur fond vert)
+const MP4 = fs.readFileSync("scripts/fixtures/chat-fond-vert-essai.mp4");
+for (const bc of ["assis", "dort", "genoux", "alerte", "saut", "renifle", "marche"]) await deposer(`compagnons/chat/${bc}/video.mp4`, MP4, "video/mp4");
+/** Le chat joue-t-il cette boucle (dans les `ms` qui viennent) ? */
+const chat = (p, boucle, ms = 4000) => p.locator(`.bc-chat[data-boucle="${boucle}"]`).waitFor({ timeout: ms }).then(() => true).catch(() => false);
 
 const b = await lancer({ args: ["--autoplay-policy=no-user-gesture-required"] });
 const erreurs = [];
@@ -121,16 +128,22 @@ await p.locator(".bc-gris:not(.parti)").waitFor({ timeout: 8000 }).catch(() => n
 ok((await p.locator(".bc-gris").count()) === 1, "2 · « comme WhatsApp » : une conversation grise, ordinaire");
 await p.locator(".bc-gris.parti").waitFor({ timeout: 15000 }).catch(() => null);
 ok((await p.locator(".bc-gris.parti").count()) === 1 && (await p.locator(".bc-saison").count()) === 1, "« Mais ici » : la brume se lève sur son univers, avec la saison");
+ok(/Moustache/.test(await texte(p, ".bc-chat-nom")), "🐾 son chat, et son nom la première fois : Moustache");
 ok(await dite(p, 2), "sa deuxième bulle est dite");
 await p.waitForTimeout(2900);
 await p.screenshot({ path: `${D}/bienvenue-chez-2-son-univers.png` });
 ok((await p.locator(".bc-place .bc-fig").count()) >= 1 && (await p.locator(".bc-monde.flou").count()) === 0, "sa figurine assise, chez elle, à sa place");
+ok((await chat(p, "dort")) && (await p.locator(".bc-chat canvas").count()) === 1, "🐾 son chat dort à côté de lui (le vert retiré dans une toile)");
 
 await repondre(p, "On est où, là ?");
 ok(await dite(p, 3), "3 · « Là, tu es chez moi… Touche-en un »");
 ok((await p.locator(".bc-point").count()) === 2 && /Touche un objet/.test(await texte(p, ".bv-reponses")), "ses deux clés posées sur le décor ; « Touche un objet »");
+ok(await chat(p, "assis"), "🐾 l'invité l'a réveillé : il est assis");
+ok(await chat(p, "genoux", 12000), "🐾 rien ne se passe (sept secondes) : il vient ronronner sur les genoux de Pablito");
+await p.screenshot({ path: `${D}/bienvenue-chez-3b-le-chat-sur-ses-genoux.png` });
 await p.waitForTimeout(1200);
 await p.locator(".bc-point").first().click();
+ok(await chat(p, "assis", 6000), "🐾 on touche une clé : il retourne s'asseoir");
 ok(/Les montagnes/.test(await texte(p, ".bc-cle")) && /« je marche là-haut tous les dimanches »/.test(await texte(p, ".bc-cle")), "une clé : ce qui est là, et pourquoi (ses mots)");
 await p.screenshot({ path: `${D}/bienvenue-chez-3-une-cle.png` });
 
@@ -138,9 +151,11 @@ await repondre(p, "Trop beau ! Et après ?");
 ok(await dite(p, 4), "4 · « Quand on se parle, ma figurine écoute. Tiens : tu fais quoi ce week-end ? »");
 ok((await p.locator(".bv-reponses .bc-option").count()) === 3, "trois réponses au choix");
 await repondre(p, "Ciné samedi");
+ok(await chat(p, "alerte", 2000), "🐾 le week-end : il dresse l'oreille");
 ok(/Je le range \?/i.test(await texte(p, ".bc-range")) && /Samedi : ciné/.test(await texte(p, ".bc-range")), "sa figurine demande : « Je le range ? 📅 Samedi : ciné »");
 await p.screenshot({ path: `${D}/bienvenue-chez-4-je-le-range.png` });
 await repondre(p, "Oui, range-le");
+ok(await chat(p, "saut", 2000), "🐾 rangé : un saut de joie");
 await p.locator(".bc-rappel").waitFor({ timeout: 6000 }).catch(() => null);
 ok((await p.locator(".bc-etagere.pleine").count()) === 1 && /Ce soir, ciné/.test(await texte(p, ".bc-rappel")), "rangé sur l'étagère, puis le rappel du jour venu");
 await p.waitForTimeout(700);
@@ -152,6 +167,7 @@ ok((await p.locator(".bc-visite").count()) === 1, "« Tu es chez Pablito, en vis
 ok(await dite(p, 6), "puis, d'elle-même : « Tu es mon invité : laisse-moi un souvenir ! »");
 ok((await p.locator(".bv-reponses .bc-option").count()) === 4, "quatre souvenirs au choix");
 await repondre(p, "Un bouquet");
+ok(await chat(p, "renifle", 4000), "🐾 il va renifler le bouquet");
 ok((await p.locator(".bc-souvenir").count()) === 1, "le bouquet se pose chez lui, « de ta part »");
 ok(await dite(p, 7), "« Merci, je le garde. »");
 await p.screenshot({ path: `${D}/bienvenue-chez-6-souvenir.png` });
@@ -159,10 +175,14 @@ await p.screenshot({ path: `${D}/bienvenue-chez-6-souvenir.png` });
 await repondre(p, "Et le mien, il sera comment ?");
 ok(await dite(p, 8), "6 · « Ton univers s'agrandit à chaque conversation… »");
 ok((await p.locator(".bc-etiquette-flotte").count()) === 2 && (await p.locator(".bc-acces").count()) === 1, "une nouvelle pièce, un endroit secret, « Qui peut entrer »");
+ok(await chat(p, "genoux", 5000), "🐾 pendant qu'il raconte : sur ses genoux");
+await p.locator(".bc-chat").click();
+ok(/Moustache/.test(await texte(p, ".bc-chat-nom")) && (await chat(p, "genoux", 500)), "🐾 un toucher sur le chat, sur ses genoux : son nom (il continue de ronronner)");
 await p.screenshot({ path: `${D}/bienvenue-chez-7-il-grandit.png` });
 
 await repondre(p, "Ça commence comment ?");
 ok(await dite(p, 9), "7 · « Par toi ! Un selfie pour ta figurine… »");
+ok((await p.locator(".bc-chat.cache").count()) === 1, "🐾 à la fin (l'esquisse), il s'efface");
 ok((await p.locator(".bc-place.vide .bc-ta-place").count()) === 1 && (await p.locator(".bv-reponses .tu-creer").count()) === 1, "« Ta place », vide ; « 📸 Je crée ma figurine »");
 await p.waitForTimeout(2800);
 await p.screenshot({ path: `${D}/bienvenue-chez-8-par-toi.png` });

@@ -11,6 +11,11 @@
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-chez-pablito-route.mjs
+//
+// 🐾 Son chat (le compagnon de Pablito, les boucles validées de l'essai C0) : sans boucle faite, la bienvenue est sans
+// lui ; ses boucles faites, signées, arrivent avec l'univers de Pablito, avec son nom.
+import fs from "node:fs";
+
 const F = "http://127.0.0.1:54321/rest/v1";
 const BASE = process.env.ESSAI_BASE || "http://localhost:3821";
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -118,6 +123,17 @@ const brut = JSON.stringify(u ?? {});
 ok(!/atelier ouvert|un mot secret|retouches|souvenirs|visibilite|proposition/.test(brut), "jamais sa proposition, ses retouches, sa porte ni ses souvenirs");
 const e = await (await fetch(`${ADMIN_ROUTE}?chez=1`, { headers: { cookie: COOKIE_ADMIN } })).json();
 ok(e.chez?.adopte === true && typeof e.chez.le === "string" && e.chez.univers?.cles?.length === 2, "dans l'admin : adopté, quand, et ce que la bienvenue montrera");
+
+// ═══ 🐾 SON CHAT ═══
+ok(!u?.compagnon, "pas encore de boucle du chat dans le catalogue : la bienvenue sans lui");
+const MP4 = fs.readFileSync("scripts/fixtures/chat-fond-vert-essai.mp4");
+for (const b of ["assis", "genoux", "alerte"]) await deposer(`compagnons/chat/${b}/video.mp4`, MP4, "video/mp4");
+await fetch(`${ADMIN_ROUTE}?chez=1`, { headers: { cookie: COOKIE_ADMIN } });
+const u2 = await voir();
+ok(
+  u2?.compagnon?.nom === "Moustache" && u2.compagnon.espece === "chat" && /^http/.test(u2.compagnon.boucles?.assis ?? "") && /^http/.test(u2.compagnon.boucles?.genoux ?? "") && !u2.compagnon.boucles?.saut,
+  "ses boucles faites arrivent avec l'univers de Pablito (signées), avec son nom ; celles qui manquent n'y sont pas",
+);
 
 // ═══ LA PAGE DIRECTE ═══
 const page = await fetch(`${BASE}/bienvenue`);

@@ -3613,6 +3613,33 @@ qu'il enregistre dans la foulée.
   l'esquisse, « Rejouer », « Passer » ; rien ne déborde). Les images des essais sont des images d'essai : un salon de
   `public/direct/ensemble`, et une figurine détourée de la référence de style (`scripts/fixtures/figurine-assise-essai.webp`).
 
+### 9.0 quattuorseptuagies 🐾 Moustache, le chat de Pablito, dans la bienvenue (15 novembre)
+
+Le propriétaire, sur la bienvenue « Entre chez Pablito » (9.0 tresseptuagies) : « et pour le chat qui bouge dans la
+scène et vient ronronner sur les genoux quand rien ne se passe » ; puis : « oui, les boucles sont déjà validées »
+(l'essai C0, 9.0 unseptuagies).
+
+- **Ses boucles** : celles du catalogue des compagnons, faites une fois pour tous (`compagnons/chat/<boucle>/video.mp4`).
+  Elles arrivent avec l'univers de Pablito (`compagnonDePablito`, `chez-pablito-serveur.ts`), signées, avec son nom,
+  celui du chat par défaut : **Moustache**. Aucune boucle faite : la bienvenue est sans lui. Le frein :
+  `CLIKME_CHAT_BIENVENUE=0`.
+- **Ce qu'il fait** (`app/collection/chat-bienvenue.tsx`, joué par `CompagnonVivant` : le vert retiré dans le téléphone) :
+  - il **dort** à côté de Pablito quand la brume se lève ; son nom, une fois ;
+  - l'invité le réveille : il est **assis** ;
+  - « Tu fais quoi ce week-end ? » : il **dresse l'oreille** ; « Oui, range-le » : un **saut de joie** ;
+  - le souvenir posé : il va le **renifler** ;
+  - pendant que Pablito raconte son univers qui s'agrandit : **sur ses genoux, il ronronne** ;
+  - **quand rien ne se passe** (la bulle dite, sept secondes sans un toucher) : il vient ronronner sur ses genoux ;
+    un toucher sur la scène, et il retourne s'asseoir ;
+  - quand il change de place, il **marche**, tourné du bon côté ;
+  - un toucher sur lui : un saut (sur les genoux, il continue de ronronner, on voit son nom) ;
+  - à la fin (l'esquisse), il s'efface.
+  Une boucle qui manque : la plus proche qui existe (assis, sinon la première).
+- **Les essais** : `essai-chez-pablito-route.mjs` (sans boucle, sans lui ; ses boucles faites, signées, avec son nom) et
+  `navigateur/bienvenue-chez.mjs` (chaque geste à son moment, les genoux après sept secondes de calme, le nom). Leur
+  vidéo de chat est une vidéo d'essai sur fond vert (`scripts/fixtures/chat-fond-vert-essai.mp4`, en VP9 : le Chromium
+  des essais ne lit pas le H.264 des vraies boucles ; les téléphones, si).
+
 ### 9.1 L'idée en une phrase
 
 **C'est la carte de fidélité à 10 cases que tous les commerçants comprennent — mais qu'on a envie de montrer.** Chaque

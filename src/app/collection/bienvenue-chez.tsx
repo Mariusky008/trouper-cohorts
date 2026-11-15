@@ -19,6 +19,8 @@ import { VISIBILITES_DITES, objetDe } from "@/lib/direct/visites";
 import { Guide, debloquerLaVoix, useVoixBulle } from "./guide";
 import { BienvenueTuto, PablitoDebout } from "./bienvenue";
 import { TAILLE_FIGURINE, useCadreVisible } from "../univers/monde/monde";
+import type { Boucle } from "@/lib/direct/compagnons";
+import { ChatDePablito, STYLES_CHAT_BIENVENUE } from "./chat-bienvenue";
 
 const mouvementReduit = () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
 const heureDuTelephone = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -54,6 +56,11 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
   const [esquisse, setEsquisse] = useState(false);
   const [recolore, setRecolore] = useState(false);
   const [saute, setSaute] = useState(0);
+  // 🐾 son chat : un geste demandé (un temps), le calme (rien ne se passe : il vient sur ses genoux), son nom
+  const [geste, setGeste] = useState<Boucle | null>(null);
+  const [calme, setCalme] = useState(false);
+  const [nomChat, setNomChat] = useState(false);
+  const finGeste = useRef(0);
 
   const fil = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLDivElement>(null);
@@ -123,6 +130,23 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
     return () => window.clearTimeout(t);
   }, [dit, b.moment, reduit]);
 
+  // 🐾 rien ne se passe (la bulle dite, sept secondes sans un toucher) : le chat vient ronronner sur ses genoux
+  useEffect(() => {
+    if (!dit || calme) return;
+    const t = window.setTimeout(() => setCalme(true), reduit ? 0 : 7000);
+    return () => window.clearTimeout(t);
+  }, [dit, calme, i, moi.length, range, souvenir, cle, reduit]);
+  // (son nom, la première fois qu'on le voit)
+  useEffect(() => {
+    if (!revele || !univers.compagnon) return;
+    const a = window.setTimeout(() => setNomChat(true), 1600);
+    const z = window.setTimeout(() => setNomChat(false), 4600);
+    return () => {
+      window.clearTimeout(a);
+      window.clearTimeout(z);
+    };
+  }, [revele, univers.compagnon]);
+
   // la conversation reste en bas
   useEffect(() => {
     const f = fil.current;
@@ -180,8 +204,16 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
   const souvenirX = borne(place.x + (place.x > 0.6 ? -0.17 : 0.17), 0.12, 0.88);
   const souvenirY = Math.min(0.97, basPlace + 0.01);
 
+  // 🐾 un geste du chat, un temps (puis il reprend ce que le moment lui demande)
+  const jouerChat = (boucle: Boucle, ms: number) => {
+    setCalme(false);
+    setGeste(boucle);
+    window.clearTimeout(finGeste.current);
+    finGeste.current = window.setTimeout(() => setGeste(null), ms);
+  };
   const avancer = (texte?: string) => {
     debloquerLaVoix();
+    setCalme(false);
     if (texte) setMoi((m) => [...m, { apres: i, t: texte }]);
     setCle(null);
     setBadge("");
@@ -201,11 +233,14 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
     debloquerLaVoix();
     setMoi((m) => [...m, { apres: i, t: WEEKEND[k].dit }]);
     setRange({ choix: k });
+    jouerChat("alerte", 2600);
   };
   const repondreRange = (oui: boolean) => {
     if (!range) return;
     setMoi((m) => [...m, { apres: i, t: oui ? "Oui, range-le" : "Non merci" }]);
     setRange({ ...range, reponse: oui ? "oui" : "non" });
+    if (oui) jouerChat("saut", 1800);
+    else setCalme(false);
     setBadge(oui ? "Noté !" : "D’accord, je n’y touche pas.");
     window.setTimeout(() => setBadge(""), 2200);
     if (oui) window.setTimeout(() => setRange((r) => (r ? { ...r, rappel: true } : r)), reduit ? 0 : 1300);
@@ -216,8 +251,15 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
     const o = objetDe(objet);
     setMoi((m) => [...m, { apres: i, t: `${o?.emoji ?? ""} ${o?.nom ?? ""}`.trim() }]);
     setSouvenir(objet);
+    jouerChat("renifle", 3600);
     window.setTimeout(() => avancer(), reduit ? 0 : 1100);
   };
+
+  // 🐾 ce que le moment demande au chat : il dort quand la brume se lève, l'invité le réveille ; il ronronne sur les
+  // genoux de Pablito pendant qu'il raconte son univers qui s'agrandit, ou quand rien ne se passe
+  const chatDuMoment: Boucle = b.moment === "gris" ? "dort" : b.moment === "grandit" ? "genoux" : "assis";
+  const chatVoulu: Boucle = geste ?? (calme ? "genoux" : chatDuMoment);
+  const chatVisible = revele && i >= 1 && !esquisse;
 
   // (ses clés que l'on voit dans la scène : celles qui tombent hors du cadre ne s'offrent pas)
   const cles = centres
@@ -352,6 +394,23 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
                 {esquisse && <span className="bc-ta-place">Ta place</span>}
               </button>
             )}
+            {univers.compagnon && (
+              <ChatDePablito
+                boucles={univers.compagnon.boucles}
+                nom={univers.compagnon.nom}
+                voulue={chatVoulu}
+                place={{ x: place.x, bas: basPlace, hauteur: place.hauteur }}
+                ailleurs={geste === "renifle" && souvenir ? { x: borne(souvenirX + (souvenirX > place.x ? 0.1 : -0.1), 0.08, 0.92), bas: souvenirY } : undefined}
+                visible={chatVisible}
+                montrerNom={nomChat}
+                onToucher={() => {
+                  // (sur les genoux, il continue de ronronner : on voit son nom ; ailleurs, un saut de joie)
+                  if (chatVoulu !== "genoux") jouerChat("saut", 1600);
+                  setNomChat(true);
+                  window.setTimeout(() => setNomChat(false), 2200);
+                }}
+              />
+            )}
             {points &&
               b.moment === "chez" &&
               cles.map((c) => (
@@ -361,7 +420,10 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
                   className={`bc-point${cle?.id === c.id ? " pris" : ""}`}
                   aria-label={majuscule(c.quoi)}
                   style={{ left: `${(c.zone![0] + c.zone![2] / 2) * 100}%`, top: `${(c.zone![1] + c.zone![3] / 2) * 100}%` }}
-                  onClick={() => setCle(c)}
+                  onClick={() => {
+                    setCle(c);
+                    setCalme(false);
+                  }}
                 />
               ))}
             {objet && (
@@ -535,7 +597,7 @@ export function BienvenueSelonPablito({ onFini, onCreer }: { onFini: () => void;
   return <BienvenueChezPablito univers={univers} onFini={onFini} onCreer={onCreer} />;
 }
 
-export const STYLES_BIENVENUE_CHEZ = `
+export const STYLES_BIENVENUE_CHEZ = STYLES_CHAT_BIENVENUE + `
 .bc{font-family:var(--font-clikme),Poppins,system-ui,-apple-system,"Segoe UI",sans-serif}
 /* 🏡 son univers : le décor couvre la boîte, cadré sur sa figurine ; la caméra glisse d'un moment à l'autre */
 .bc-scene{position:relative;flex:0 0 54%;min-height:260px;overflow:hidden;background:#12040E;transition:flex-basis .7s cubic-bezier(.3,.9,.3,1);-webkit-user-select:none;user-select:none}
