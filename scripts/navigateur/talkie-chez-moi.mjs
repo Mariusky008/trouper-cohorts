@@ -155,14 +155,13 @@ const lireStock = async (chemin) => {
   const x = await fetch(`${STOCK}/figurines-clients/${chemin}`);
   return x.status === 200 ? x.json().catch(() => null) : null;
 };
-let peinte = null;
-for (let k = 0; k < 60 && !peinte?.surface; k++) {
-  await marc.waitForTimeout(500);
-  peinte = await lireStock(`${M1}/decor-etagere.json`);
-}
-ok(peinte?.chemin === `${M1}/decor-etagere.png` && Math.abs(peinte.surface?.x1 - 0.26) < 0.001 && Math.abs(peinte.surface?.x2 - 0.74) < 0.001 && peinte.surface?.y > 0.3 && peinte.surface?.y < 0.33, `son décor, une fois : l'étagère peinte, et le dessus de sa planche (${JSON.stringify(peinte?.surface)})`);
+// (🛑 coupée par défaut depuis le 15 novembre 2026 : plus aucune n'est peinte ; celles déjà faites restent montrées)
+await marc.waitForTimeout(3000);
 const iaEtagere = (await (await fetch(`${F.replace("/rest/v1", "")}/__ia`)).json()).filter((c) => typeof c === "string");
-ok(iaEtagere.some((c) => c.startsWith("IMAGE ") && c.includes("add ONE empty wooden shelf") && c.includes("completely EMPTY")) && iaEtagere.some((c) => c.startsWith("MASQUE")), "le moteur : une étagère vide, peinte dans la zone du masque seulement");
+ok((await lireStock(`${M1}/decor-etagere.json`)) === null && !iaEtagere.some((c) => c.includes("add ONE empty wooden shelf")), "coupée par défaut : son décor n'est plus retouché (aucune étagère peinte, rien chez le moteur d'image)");
+// (une étagère peinte avant la coupure : son image et le dessus de sa planche, comme les laissait le pinceau)
+await deposer(`${M1}/decor-etagere.png`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
+await json(`${M1}/decor-etagere.json`, { chemin: `${M1}/decor-etagere.png`, surface: { x1: 0.26, x2: 0.74, y: 0.3144 }, le: new Date().toISOString() });
 await json(`fils/${[MARC.id, INES.id].sort().join("_")}/etagere.json`, {
   v: 1,
   objets: [{ id: "resto", genre: "promesse", emoji: "🍝", titre: "Le resto italien", concerne: "deux", citation: "On se fait ce resto italien !", de8: crypto.createHash("sha256").update(`clikme-talkie:qui:${INES.id}`).digest("hex").slice(0, 8), message: "msgresto0000", le: maintenant, etat: "actif" }],
@@ -173,7 +172,7 @@ await json(`fils/${[MARC.id, INES.id].sort().join("_")}/etagere.json`, {
 await marc.goto(`${BASE}/collection?parler=${INES.cle}&v=${Date.now()}#proches`, { waitUntil: "networkidle" });
 await fermerPablito(marc);
 await marc.waitForSelector(`${scene} .et-mur.et-peinte [data-objet="resto"]`, { timeout: 30000 }).catch(() => null);
-ok(((await marc.locator(`${scene} .pr-decor`).getAttribute("src")) ?? "").includes("decor-etagere.png"), "la scène joue son décor où l'étagère est peinte");
+ok(((await marc.locator(`${scene} .pr-decor`).getAttribute("src")) ?? "").includes("decor-etagere.png"), "une étagère peinte avant la coupure : toujours montrée (la scène joue son décor où elle est peinte)");
 const etagere = await marc.evaluate((sel) => {
   const s = document.querySelector(sel)?.getBoundingClientRect();
   const e = document.querySelector(`${sel} .et-mur.et-peinte`)?.getBoundingClientRect();

@@ -3694,6 +3694,11 @@ Son choix pour l'étagère : « peinte dans l'univers ».
   leurs souvenirs s'y posent (`MurEtagere`, `surface`) — debout sur la planche, à sa taille, avec leur ombre ; ni planche
   dessinée, ni étiquette. Pas encore peinte : rien dans la scène (« 📚 » en haut ouvre leur étagère). Sans univers : la
   planche d'avant, au mur. Le frein : `CLIKME_ETAGERE_PEINTE=0`.
+  **🛑 Coupée par défaut, le soir même** (15 novembre 2026, le propriétaire, sur l'avis de la session de l'univers) :
+  elle retouche le décor de chacun, ce que la décision de la pièce du duo a gelé (`univers/piece-du-duo.md`), et les
+  conversations iront dans la pièce du duo, qui a son étagère dessinée une fois pour tous. Plus aucune n'est peinte ;
+  celles déjà faites restent montrées. `CLIKME_ETAGERE_PEINTE=1` : en peindre de nouveau ; `=0` : ne plus montrer non
+  plus celles qui sont faites.
 - **Les compteurs du jour de l'étagère** (retirés, tenues, dates, oui / refusés) sont écrits avant la réponse : l'essai
   de la poussière les relisait trop tôt, et la CI échouait de temps en temps.
 - **L'essai** : `talkie-chez-moi.mjs` (l'étagère peinte une fois, le masque, la surface ; leur 🍝 posé sur la planche ;

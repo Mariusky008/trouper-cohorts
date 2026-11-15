@@ -13,8 +13,14 @@
  * `<habitant>/monde/etagere-peinte-verrou.json` = { le } (un seul pinceau à la fois, cinq minutes). Un décor de saison
  * neuf : une étagère peinte de plus, au premier passage.
  *
- * LE COÛT : une image « high » du moteur d'image par décor (environ 0,20 $), une fois. LE FREIN : `CLIKME_ETAGERE_PEINTE=0`
- * (la conversation garde son décor tel quel, sans étagère dans la scène).
+ * LE COÛT : une image « high » du moteur d'image par décor (environ 0,20 $), une fois.
+ *
+ * 🛑 COUPÉE PAR DÉFAUT (15 novembre 2026, le propriétaire, sur l'avis de la session de l'univers) : elle retouche le décor
+ * de chacun, ce que la décision de la pièce du duo a gelé (`docs/univers/piece-du-duo.md`, section 3) ; elle coûterait à
+ * chaque décor de saison ; et les conversations iront dans la pièce du duo, qui a son étagère dessinée une fois pour tous.
+ * Plus aucune n'est peinte ; celles déjà faites restent montrées (elles sont payées). L'étagère reste à portée dans chaque
+ * conversation (la pastille 📚). `CLIKME_ETAGERE_PEINTE=1` : en peindre de nouveau ; `=0` : ne plus montrer non plus
+ * celles qui sont faites (la conversation garde son décor tel quel).
  *
  * FICHIER SERVEUR.
  */
@@ -40,8 +46,8 @@ export type SurfaceEtagere = { x1: number; x2: number; y: number };
  */
 export const ZONE_ETAGERE = { x1: 0.2, x2: 0.8, y1: 0.24, y2: 0.36 } as const;
 
-/** 🛑 Le frein, et le moteur branché. */
-export const etagerePeinteOuverte = () => s(process.env.CLIKME_ETAGERE_PEINTE) !== "0" && Boolean(cle());
+/** 🛑 En peindre de nouvelles : seulement si on la rallume (`CLIKME_ETAGERE_PEINTE=1`), et le moteur branché. */
+export const etagerePeinteOuverte = () => s(process.env.CLIKME_ETAGERE_PEINTE) === "1" && Boolean(cle());
 
 const sansExtension = (chemin: string) => chemin.replace(/\.(png|webp|jpe?g)$/i, "");
 export const cheminEtagerePeinte = (decor: string) => `${sansExtension(decor)}-etagere.png`;
@@ -64,7 +70,7 @@ export function surfaceValide(x: unknown): SurfaceEtagere | null {
   return { x1, x2, y };
 }
 
-/** 🪵 L'étagère peinte de ce décor, si elle est faite : son image et sa surface. */
+/** 🪵 L'étagère peinte de ce décor, si elle est faite : son image et sa surface (montrée, sauf `CLIKME_ETAGERE_PEINTE=0`). */
 export async function etagerePeinteDe(supabase: Supabase, decor: string): Promise<{ chemin: string; surface: SurfaceEtagere } | null> {
   if (!decor || s(process.env.CLIKME_ETAGERE_PEINTE) === "0") return null;
   const f = await lireJson<{ chemin?: string; surface?: unknown }>(supabase, cheminFicheEtagere(decor));

@@ -118,8 +118,9 @@ liens (lots M1 à M3), « Je le range ? » et l'étagère, le compagnon.
   puis la platine, les cadres, l'étagère). Elle réutilise ce qui existe : « Le ranger dans mon univers » connaît déjà la
   nature de chaque envoi (musique, vidéo, photo) — de quoi savoir quoi mettre sur la télé, la platine ou dans le
   cadre ; le détourage du chat, pour les petites animations de la pièce (vagues, vapeur du café, feu) ; la façon dont les
-  souvenirs se posent sur une planche, pour l'étagère dessinée de chaque pièce. Elle propose de couper par défaut
-  l'étagère peinte (une retouche du décor de chacun, environ 0,20 $), contraire à la nouvelle règle.
+  souvenirs se posent sur une planche, pour l'étagère dessinée de chaque pièce. L'étagère peinte (une retouche du décor
+  de chacun, environ 0,20 $), contraire à la nouvelle règle, est coupée par défaut (accord du propriétaire, 15 novembre
+  2026 : plus aucune n'est peinte, celles déjà faites restent montrées).
 
 ## 8. Ce que les objets lisent : le relevé de chaque pièce
 
