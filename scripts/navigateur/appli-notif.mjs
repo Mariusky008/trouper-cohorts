@@ -122,12 +122,24 @@ async function tel(qui, { ua, installee = false, faux = null } = {}) {
   p.on("pageerror", (e) => erreurs.push(String(e)));
   return p;
 }
-/** Toucher un bouton : d'abord au milieu de l'écran, d'un coup (le site défile en douceur, et le menu du bas est fixe). */
+/**
+ * Toucher un bouton : d'abord au milieu de l'écran, d'un coup (le site défile en douceur, et le menu du bas est fixe).
+ * La page bouge encore parfois juste après (une image qui arrive) : le menu du bas passe alors par-dessus le bouton —
+ * on le recentre, et on retouche (cinq fois au plus). (15 novembre 2026 : un échec de la CI, le menu « mc-nav » sur le
+ * bouton « Installer ».)
+ */
 const toucher = async (p, sel) => {
   const l = typeof sel === "string" ? p.locator(sel).first() : sel;
-  await l.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
-  await p.waitForTimeout(200);
-  await l.click();
+  for (let k = 0; ; k++) {
+    await l.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+    await p.waitForTimeout(250);
+    try {
+      await l.click({ timeout: 5000 });
+      return;
+    } catch (e) {
+      if (k >= 4) throw e;
+    }
+  }
 };
 const texte = async (p, sel) => (await p.locator(sel).first().innerText({ timeout: 15000 }).catch(() => "")).replace(/\s+/g, " ").trim();
 const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
