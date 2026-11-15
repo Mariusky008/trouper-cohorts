@@ -757,7 +757,7 @@ conversation :
 
 #### 📨 Relais pour la session de l'univers : la bienvenue se joue dans l'univers du propriétaire (15 novembre 2026)
 
-La bienvenue « Entre chez Pablito » (`docs/figurines.md`, 9.0 septuagies) montre à tous les nouveaux venus l'univers que
+La bienvenue « Entre chez Pablito » (`docs/figurines.md`, 9.0 tresseptuagies) montre à tous les nouveaux venus l'univers que
 le propriétaire a adopté comme celui de Pablito. Elle ne copie rien : elle lit `etatUnivers` (`univers-creation-serveur.ts`)
 pour lui, puis n'en garde que `decor`, `figurine`, `scene.figurine`, la place `hote`, les `cles` posées (`zone`) et la
 `saison` (`vuePublique`, `chez-pablito-serveur.ts`). Si vous changez ces champs (leur nom, leur sens, les adresses), la

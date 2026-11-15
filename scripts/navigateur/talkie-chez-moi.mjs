@@ -126,7 +126,8 @@ const places = await marc.evaluate((sel) => {
   const moi = document.querySelector(`${sel} .pr-ecoute-chez`)?.getBoundingClientRect();
   return s && lui && moi ? { moi: (moi.left + moi.width / 2 - s.left) / s.width, lui: (lui.left + lui.width / 2 - s.left) / s.width, dedans: moi.top >= s.top - 1 && lui.top >= s.top - 1 && moi.bottom <= s.bottom + 1 } : null;
 }, scene);
-ok(Boolean(places) && Math.abs(places.moi - 0.32) < 0.03 && Math.abs(places.lui - 0.7) < 0.03 && places.dedans, `chacun à sa place, dans la scène (${JSON.stringify(places)})`);
+// (15 novembre 2026 : plus grandes, au premier plan, un peu plus écartées — 0,32 → 0,275 ; 0,7 → 0,75)
+ok(Boolean(places) && Math.abs(places.moi - 0.275) < 0.03 && Math.abs(places.lui - 0.75) < 0.03 && places.dedans, `chacun à sa place, dans la scène (${JSON.stringify(places)})`);
 await marc.waitForTimeout(1000);
 await marc.screenshot({ path: `${D}/talkie-chez-moi-1-scene.png` });
 await marc.locator(`${scene} .pr-lire`).click();

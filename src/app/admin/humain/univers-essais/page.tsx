@@ -12,6 +12,7 @@ import { MaisonEnPanorama } from "./salon";
 import { PieceVivante } from "./vivante";
 import { AmbiancesDeTonUnivers } from "./ambiances";
 import { UniversVivant } from "./univers-vivant";
+import { CompagnonEssai } from "./compagnon";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,6 +33,7 @@ export default async function PageEssaisUnivers() {
       </p>
       <PablitoAuNouveauStyle />
       <UniversDePablito />
+      <CompagnonEssai />
       <UniversVivant />
       <PieceVivante />
       <AmbiancesDeTonUnivers />

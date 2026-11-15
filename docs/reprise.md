@@ -139,7 +139,7 @@ conversation avec Pablito, et un univers dessiné qui grandit au-dessus ; ses si
   celui de Pablito, adopté depuis l'admin) ; le nouveau venu est son invité et vit chaque chose d'un toucher (ses clés,
   « Je le range ? » et le rappel, un souvenir, « Qui peut entrer »). Son adresse directe : `/bienvenue`. Derrière
   l'interrupteur `BIENVENUE_CHEZ_PABLITO`, **éteint** jusqu'à ce que le propriétaire l'ait regardée. Le détail :
-  `docs/figurines.md`, 9.0 septuagies.
+  `docs/figurines.md`, 9.0 tresseptuagies.
 
 ## 0 sexies. « Ma maison », vivante (14 novembre 2026)
 
@@ -176,6 +176,31 @@ d'accès ; les ados voudront des univers funky (New York, néons), pas la mer ou
 - **Une autre session** construit l'étagère E5 (`docs/univers/etagere-accord.md`) puis les messages écrits
   (`docs/univers/messages-ecrits.md`) : la barre du bas et le fil de `proches.tsx`, les fichiers de l'étagère sont à
   elle ; l'en-tête de la conversation, le menu et « Ma maison » sont à celle-ci.
+
+## ⚠️ Qui touche à quoi (15 novembre 2026)
+
+**Le propriétaire a confié à la session de l'univers les points 4, 6 et 7 de la conversation** (« fais les chantiers
+4, 6 et 7 ») : la scène de la conversation, le fil (`proches.tsx`) et l'étagère dans la scène (`etagere.tsx` :
+`MurEtagere`, `PastilleEtagere`), et le moment du duo (`moment-du-duo.tsx`). **L'autre session n'y touche pas sans le
+dire au propriétaire d'abord** : une seule session à la fois sur ces fichiers.
+
+## 0 septies. La conversation à revoir : l'univers commun du duo (15 novembre 2026)
+
+Le propriétaire, sur la conversation avec un proche : « pas mal de choses qui ne fonctionnent pas suffisamment bien pour
+être utilisables » — sept points (9.0 septuagies). Fait : les figurines plus grandes, au premier plan ; « Tout
+rejouer » et « Juste le son » dans le menu ⋯ ; plus rien qui saute en entier (une figurine sans son visage respire) ;
+l'ouverture (ce que l'écran montrait la dernière fois, tout de suite). **À juger** : la maquette « L'univers commun du
+duo » (artefact Design, quatre écrans) — la scène devient l'univers commun du duo, leur étagère au centre toujours
+visible, ce qui vient de s'y passer joué à l'arrivée (un souvenir posé, « Je le range ? », un commentaire de figurine),
+les messages vocaux en bulles du fil. **Fait ensuite** (9.0 duoseptuagies 🎬) : l'étagère toujours là, le fil en grand, le moment du duo à l'arrivée.
+
+## 0 octies. Le compagnon : l'essai du chat (lot C0, 15 novembre 2026)
+
+Le cahier : `docs/univers/compagnon.md` (lot C). **C0 est construit** (9.0 unseptuagies 🐾) : dans `/admin/humain/univers-essais`,
+« 🐾 Le compagnon : l'essai du chat » — l'image de référence (dans le style de la figurine du propriétaire), huit
+boucles (une pose, puis quatre secondes de vidéo sur fond vert chez Google), le vert retiré dans le téléphone, l'aperçu
+chez lui. **À juger par le propriétaire sur son iPhone** : le style, la constance, s'il vit bien à côté de sa figurine.
+Rien d'autre (C1 à C4) ne commence avant son verdict.
 
 ## 0 quater. L'étagère : les figurines se souviennent (13 novembre 2026)
 

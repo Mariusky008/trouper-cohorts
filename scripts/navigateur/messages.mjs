@@ -137,9 +137,12 @@ ok(
   "la bulle dit tout ; le champ est vide, le micro revient",
 );
 ok((await compte(lea, ".pr-plein .pr-fil li.moi .pr-effacer")) === 1, "« 🗑️ Effacer » sous son message");
-await lea.locator(".pr-plein .pr-commandes button", { hasText: "Juste le son" }).click();
+// (« Juste le son » est dans le menu ⋯, depuis le 15 novembre 2026)
+await lea.locator(".pr-plein .pr-menu-bouton").click();
+await lea.locator(".pr-plein .pr-menu-son").click();
 ok((await compte(lea, ".pr-plein .pr-scene .pr-son")) === 0, "« Juste le son » : rien, pour un écrit");
-await lea.locator(".pr-plein .pr-commandes button", { hasText: "Juste le son" }).click();
+await lea.locator(".pr-plein .pr-menu-bouton").click();
+await lea.locator(".pr-plein .pr-menu-son").click();
 ok(await attendre(zoe, () => !document.querySelector(".pr-plein .pv-calque.lui .pv-prepare"), null, 20000), "chez Zoé, elle ne se penche plus : c'est envoyé");
 
 // ═══ CHEZ ZOÉ : IL ARRIVE TOUT SEUL ; ELLE LE REVOIT ═══

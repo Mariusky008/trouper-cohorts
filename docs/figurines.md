@@ -3480,7 +3480,85 @@ m'a pas demandé de le rajouter à mes étagères » — il avait écrit « dema
   que si la consigne dit qu'un rendez-vous se note. **Le vrai modèle, lui, n'a pas pu être essayé ici** (pas de clé
   dans les essais) : à vérifier en vrai, après le déploiement.
 
-### 9.0 septuagies 👋 La bienvenue « Entre chez Pablito » (15 novembre)
+### 9.0 septuagies 🎭 La conversation, d'abord : plus grandes, moins de boutons, plus rien qui saute en entier, l'ouverture (15 novembre)
+
+Le propriétaire, sur la conversation avec un proche (sept points, « qui ne fonctionnent pas suffisamment bien pour être
+utilisables ») : les figurines toutes petites dans le décor ; « Juste le son » et « Tout rejouer », trop gros, et on ne
+comprend pas ce que « rejouer » rejoue ; les figurines dont l'image ENTIÈRE bouge (« complètement fake ») ; pas d'accès
+aux étagères du duo, ni à l'univers de l'autre ; l'appli « très très longue » à s'ouvrir ; le fil du bas trop étroit ;
+et surtout le rôle des figurines — pas rejouer ce qu'on a dit, mais l'univers COMMUN du duo, où il se passe toujours
+quelque chose (leur étagère, une figurine qui demande « Je le range ? », qui commente, un objet que l'autre a déposé).
+
+- **La maquette** (« L'univers commun du duo », un artefact Design, quatre écrans : à l'arrivée un souvenir vient d'être
+  posé ; ta figurine demande « Je le range ? » ; sa figurine commente la conversation ; l'étagère du duo ouverte) — à
+  juger par le propriétaire avant de toucher à l'écran (le fil et l'étagère sont aussi le chantier d'une autre session).
+- **1. Plus grandes** (`styleDePlace`, `proches.tsx`) : la moitié de la hauteur du décor au lieu d'un tiers
+  (`TAILLE_FIGURINE`), AU PREMIER PLAN — plus bas que leur place dans le décor (`PREMIER_PLAN`), comme plus près de
+  nous — et un peu plus écartées (0,32 → 0,275 ; 0,7 → 0,75). Aussi sur le lien d'un message reçu (`/t/<id>`). La
+  visite (`/univers/chez/<clé>`), qui montre le décor entier vu de loin, garde sa taille.
+- **2. Les deux gros boutons, au menu ⋯** : « ⟲ Rejouer vos derniers messages » et « 🔈 Juste le son, sans la scène »
+  (« 🎭 Revoir la scène » pour revenir) — des mots qui disent ce qu'ils font ; la scène et le fil gagnent leur place.
+- **3. Plus rien qui saute en entier** (`figurine-qui-parle.tsx`) : assise dans un décor, une figurine dont le visage
+  demandé n'est pas encore fait ne saute plus (toute l'image qui tremblait, riait, bondissait) : elle respire, et la
+  pastille dit sa tête ; son visage, quand il est fait, prend la place.
+- **5. L'ouverture** (mesurée sur un téléphone ralenti, contre le faux serveur : la page arrive vite, mais la liste des
+  conversations attendait le JavaScript, puis « ma figurine », puis seulement la liste) : ⚡ ce que l'écran montrait la
+  dernière fois se montre aussitôt (`memoire-locale.ts` : gardé sur ce téléphone 45 minutes — ses images signées valent
+  une heure ; l'état de sa figurine et ses conversations), pendant que le serveur répond, qui le remplace dès qu'il a
+  répondu ; et la page ne redemande plus la liste des commerces à chaque ouverture (gardée dix minutes par le serveur).
+- **Reste à faire, après la maquette** : l'univers commun du duo (4, 7) et le fil plus large (6) — avec l'autre session,
+  dont c'est le chantier (le fil, l'étagère).
+
+### 9.0 unseptuagies 🐾 Le compagnon, lot C0 : l'essai du chat (15 novembre)
+
+Le cahier : `docs/univers/compagnon.md` (le propriétaire, le même jour : « commence directement par lancer C0 le chat »).
+Rien d'autre ne commence avant son verdict sur son téléphone : le style, la constance, s'il vit bien à côté de sa
+figurine.
+
+- **Le catalogue, le même pour tous** (`lib/direct/compagnon-essai-serveur.ts`), rangé à part de chaque habitant :
+  `compagnons/<espèce>/reference.png`, puis par boucle `<boucle>/pose.png`, `video.json`, `video.mp4`. Fait une fois,
+  rien à payer par personne.
+- **1. L'image de référence** : l'animal en petit jouet de vinyle, d'après la figurine assise de l'administrateur
+  (IMAGE 1, « EXACTLY the same style ») — grosse tête, grands yeux brillants, joues roses —, le fond retiré.
+- **2. Huit boucles** (`lib/direct/compagnons.ts`) : assis (la queue, un clin d'œil), il marche (sur place : c'est
+  l'appli qui le déplace), couché il dort, sur les genoux il ronronne, alerte (les oreilles), un saut de joie, il
+  renifle, il joue (une pelote). Chacune : une POSE (le même animal, fidélité haute, détourée), puis le MOUVEMENT —
+  la pose posée sur un fond vert uni (720 × 1280), commandée chez Google (Gemini Omni, `commanderUneVideoGoogle` : la
+  première et la dernière image sont la pose, une boucle sans couture), suivie, rangée.
+- **Le vert retiré dans le téléphone** (`app/univers/compagnon-vivant.tsx`, `CompagnonVivant`) : chaque image de la
+  vidéo passe par une toile, où ce qui est « plus vert que rouge et bleu » devient transparent (à demi sur les bords,
+  dont le reflet vert s'éteint). Un seul MP4, lu partout — l'iPhone ne lit pas la transparence des WebM, et un HEVC
+  transparent ne se fabrique que sur un Mac — ; ni ffmpeg ni outil de fabrication. Vérifié dans le navigateur avec une
+  vraie vidéo sur fond vert (le fond, même plus sombre, transparent ; l'animal, plein).
+- **La page d'essais** (« 🐾 Le compagnon : l'essai du chat (C0) », route `/api/admin/direct/compagnon`) : « Faire le
+  chat » (la référence), « Faire ses boucles » (toutes, à la suite — garder la page ouverte), chaque boucle à part
+  (faire, refaire la pose ou la vidéo, « La vidéo seule »), « Voir avec le fond vert », et **chez toi** : ton décor,
+  ta figurine assise, le chat à côté d'elle (ou sur ses genoux), la boucle choisie d'un toucher. Le coût : environ
+  0,20 $ la référence, 0,10 $ chaque pose, 0,40 $ chaque boucle — environ 4 $ le chat entier.
+- **L'essai automatique** : `essai-compagnon-route.mjs` (la référence dans le style de SA figurine, détourée ; la pose
+  « dort » ; la vidéo sur fond vert chez Google, la première et la dernière image ; une vraie vidéo rangée ; refaire).
+
+### 9.0 duoseptuagies 🎬 L'univers commun du duo : l'étagère toujours là, le fil en grand, le moment du duo (15 novembre)
+
+Le propriétaire, sur les points 4, 6 et 7 de la conversation (9.0 septuagies) : « fais les chantiers 4, 6 et 7 » — ils
+étaient dans le chantier de l'autre session (le fil, l'étagère) ; il les a confiés à celle-ci (`docs/reprise.md`).
+
+- **4. L'étagère du duo, toujours là** (`etagere.tsx`) : la pastille de l'en-tête (`PastilleEtagere`) ne disparaît plus
+  quand l'étagère est vide (« 📚 ＋ ») ; le mur de la scène (`MurEtagere`) non plus : sa planche, et « 📚 Votre étagère ·
+  ＋ un souvenir », qui ouvre l'étagère (où l'on dépose le premier). « 🏠 Chez <prénom> » reste dans l'en-tête quand il
+  a son univers.
+- **6. Le fil en grand** (`proches.tsx`) : « ⌃ Le fil en grand », en bas de la scène, la replie en une ligne (leurs deux
+  visages, « Chez toi, avec Marius », ce qui se lit ou s'écoute, « ⌄ La scène ») ; le fil prend la place. La scène reste
+  là, cachée : un message vocal s'y écoute, sa bulle s'allume dans le fil. Le choix est retenu sur ce téléphone.
+- **7. Le moment du duo, à l'arrivée** (`moment-du-duo.tsx`) : juste sous l'en-tête, ce qui vient de se passer entre
+  eux deux, dit par la figurine qui le porte — d'abord une demande « Je le range ? » qui attend (« ✓ Range-le » /
+  « Non », là) ; sinon un souvenir posé sur leur étagère ces trois derniers jours (« Voir votre étagère ») ; sinon le
+  dernier aparté de leurs figurines sur la conversation, ces deux derniers jours. Sinon, le mot du jour de leurs
+  figurines garde sa place. Un moment vu se ferme (×) et ne revient plus sur ce téléphone. Rien de neuf côté serveur.
+- **L'essai** : `etagere.mjs` (l'étagère vide, dans l'en-tête et au mur ; la question dans le moment du duo ; puis le
+  souvenir rangé ; le fil en grand, et la scène qui revient).
+
+### 9.0 tresseptuagies 👋 La bienvenue « Entre chez Pablito » (15 novembre)
 
 Le propriétaire : « il va falloir largement améliorer cette démo de départ pour vraiment donner les plus-values de ce
 qu'on fait sur cette app ». Puis, sur une capture de son univers (son atelier d'automne, lui dans son fauteuil) : « c'est

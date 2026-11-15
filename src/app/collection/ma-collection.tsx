@@ -48,6 +48,7 @@ import { Autour, STYLES_AUTOUR } from "./autour";
 import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
 import { RaccourcisMoi, STYLES_CHEZ_MOI } from "./chez-moi";
 import { STYLES_MEME_POUR } from "./meme-pour";
+import { MEMOIRE_ETAT, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } from "./rituel";
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
@@ -161,12 +162,24 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
     // iPhone : l'appli posée s'ouvre pour la première fois avec son jeton, qui lui rend SA figurine.)
     capterLaProposition();
     void lierSiBesoin();
+    // ⚡ (15 novembre 2026, « très très long à charger ») ce qu'il voyait la dernière fois, tout de suite — la réponse
+    // du serveur le remplace dès qu'elle arrive (`memoire-locale.ts`)
+    let recu = false;
+    const deja = lireMemoire<EtatMaFigurine>(MEMOIRE_ETAT);
+    if (deja)
+      void Promise.resolve().then(() => {
+        if (fini || recu) return;
+        setEtat(deja);
+        setCharge(true);
+      });
     fetch("/api/direct/ma-figurine", { cache: "no-store" })
       .then((r) => r.json())
       .then((j: { etat?: EtatMaFigurine }) => {
+        recu = true;
         if (fini) return;
         setEtat(j.etat ?? null);
         setCharge(true);
+        ecrireMemoire(MEMOIRE_ETAT, j.etat ?? null);
       })
       .catch(() => {
         if (fini) return;
