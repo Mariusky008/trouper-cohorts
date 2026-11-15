@@ -224,6 +224,14 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
 - **Avant de coder** : les deux touchent `proches.tsx` et `conversation-vivante.tsx`, comme l'étagère et la maison en
   panorama — une seule session à la fois sur ces fichiers.
 
+## 0 septies. Le compagnon : un animal dans l'univers (15 novembre 2026)
+
+- **Proposé, pas encore validé** : chacun peut avoir un compagnon (chat, chien, perroquet…), choisi et nommé en créant
+  son univers ; chez soi, c'est le sien qui accueille, l'invité vient avec le sien ; ils vivent avec la conversation
+  (les messages, les fous rires, le calme : sur les genoux). Offert à tous. La maquette :
+  `docs/univers/maquettes/compagnon.html` ; le cahier : `docs/univers/compagnon.md`. **Pour la session de l'univers** ;
+  le premier lot (C0) est un essai de fabrication des animations, avant tout le reste.
+
 ## 0 bis. « Mon vœu » (11 novembre 2026)
 
 « Réalise mon vœu » remplacera la question du jour : je dépose un vœu avec ma figurine, les autres l'encouragent avec
