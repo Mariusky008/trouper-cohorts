@@ -496,5 +496,5 @@ ce qu'il peut essayer.
 4. **Les pièces** : « oui, il faut pouvoir changer de pièce, ou choisir la pièce que l'on veut au départ de la
    conversation » (4.13).
 5. **Le temps réel** : la question lui a été réexpliquée (un geste de l'un vu chez l'autre en 1 à 2 s avec le pouls,
-   ou en moins d'une demi-seconde avec le temps réel). En attendant sa réponse : le pouls (S2) d'abord ; le temps réel
-   (S9) seulement s'il trouve le délai gênant en jouant le salon sur son téléphone.
+   ou en moins d'une demi-seconde avec le temps réel) ; « oui, ok, je suis d'accord » : le pouls (S2) d'abord ; le temps
+   réel (S9) seulement s'il trouve le délai gênant en jouant le salon à deux, sur deux téléphones.
