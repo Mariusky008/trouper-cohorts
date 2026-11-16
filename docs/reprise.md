@@ -3,6 +3,27 @@
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
 
+## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
+
+**À lire : `docs/univers/ma-maison.md`, puis la section 12 de `docs/univers/salon-du-duo.md`.** Après les maquettes
+« Ma maison » (la chambre de Camille, 15 ans ; la maison d'un adulte avec sa vraie figurine), le propriétaire a
+simplifié les univers :
+
+- **un catalogue de neuf pièces, le même pour tous** (les huit du salon du duo, et la chambre musicale de Camille) :
+  on choisit la sienne à l'inscription, l'âge donne l'ordre ; **plus de conversation avec Pablito pour fabriquer un
+  univers**, plus de décor généré pour chacun (le code reste, éteint) ;
+- **une seule pièce par personne**, en largeur, qu'on parcourt au doigt, la figurine au centre ; **la même pièce, en
+  hauteur, sert au salon du duo**, dont **les images sont refaites** aux proportions et avec les éléments de la maquette
+  du salon ;
+- **les figurines sont posées** (plus de découpe de l'image du duo ; le contrat `salon.ts` ne change pas) ;
+- **la maison se remplit toute seule** avec ce qu'on garde dans ses conversations (📌 Garder…), et à la main
+  (« ＋ Ajouter chez moi ») ;
+- **rien ne part dans « Découvrir » sans un geste.**
+
+**Qui fait quoi** : la session des messages et de la bienvenue — **S1 change** (les calques de chaque figurine, et leur
+pose), et l'inscription « Choisis ta pièce » (**M3**) ; la session de l'univers — les images du catalogue (**M0**), puis
+« Ma maison » (**M1, M2, M4, M5**).
+
 ## 0. Le chantier qui s'ouvre : « Univers » (11 novembre 2026)
 
 Le propriétaire a donné une nouvelle ambition à ClikMe : **chacun a sa figurine et son univers personnel, et les
