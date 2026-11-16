@@ -209,6 +209,17 @@ n'allumait que la télé (la cuisine n'a pas d'autres zones posées : la maquett
 la maquette prend ses quatre coins (`coins={emplacements.teleCoins}`, la #194). **À faire** : l'avis du propriétaire sur la maquette ; puis les objets branchés (la
 session de l'univers) et la vraie conversation dessus ; **puis seulement** refaire la bienvenue (« elle ne va pas du tout » : l'interrupteur `BIENVENUE_CHEZ_PABLITO` reste éteint).
 
+## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
+
+**À lire : `docs/univers/poses-figurine.md`.** Après la maquette de la messagerie visuelle (une page privée : la scène
+du duo vivante), le propriétaire : « attaque aussi les figurines ». Une figurine n'existe que dans une image, assise dans
+son fauteuil : elle ne peut pas se lever. **Construit** (la session de l'univers) : dans `/admin/humain/univers-essais`,
+« 🧍 Les poses de ta figurine (P0) » — neuf poses de la figurine du téléphone (debout d'abord, puis les autres d'après
+elle), puis la scène dans une pièce du duo vide (se lever, aller à la télé, danser, l'étagère, rejoindre l'autre,
+coucou, une tasse, s'asseoir), et son avis. **À juger par le propriétaire** : est-ce bien sa figurine d'une pose à
+l'autre ? Rien d'autre ne commence avant. À trancher ensuite avec la session des messages : l'image du duo (peinte une
+fois, fixe) et une figurine qui se lève.
+
 ## 0 septies. La conversation à revoir : l'univers commun du duo (15 novembre 2026)
 
 Le propriétaire, sur la conversation avec un proche : « pas mal de choses qui ne fonctionnent pas suffisamment bien pour
