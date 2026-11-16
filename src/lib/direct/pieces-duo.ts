@@ -223,6 +223,14 @@ export type EmplacementsDuo = {
   /** (le lot M0) la table basse (le talkie, les objets posés, les surprises), et les lampes (elles éclairent la nuit) */
   table?: Zone;
   lampes?: Zone[];
+  /**
+   * 🛋️ (le salon du duo, lot S1 ; `docs/univers/salon-du-duo.md`, section 4.11) posés à la main sur la page d'essai du
+   * salon (« ✋ Les emplacements du salon ») : les carreaux de la fenêtre en polygone (de 3 à 12 points : la météo ne tombe
+   * que dedans) et les fentes de l'étagère (où se posent les souvenirs). (La table et les lampes, des boîtes, se tracent
+   * sur la page des pièces.)
+   */
+  fenetreCoins?: [number, number][];
+  fentes?: { x: number; y: number }[];
 };
 
 /** Les emplacements, tels qu'on les montre (l'emoji, le nom). */
@@ -287,6 +295,9 @@ export function emplacementsValides(o: unknown): EmplacementsDuo {
   const fenetre = zoneValide(r.fenetre);
   const table = zoneValide(r.table);
   const lampes = (Array.isArray(r.lampes) ? r.lampes : []).map(zoneValide).filter((z): z is Zone => Boolean(z)).slice(0, 4);
+  // (🛋️ le salon du duo, lot S1 : la fenêtre en polygone, les fentes de l'étagère)
+  const fenetreCoins = polygoneValide(r.fenetreCoins);
+  const fentes = pointsValides(r.fentes, 8);
   return {
     ...(tele ? { tele } : {}),
     ...(coins ? { teleCoins: coins } : {}),
@@ -298,7 +309,31 @@ export function emplacementsValides(o: unknown): EmplacementsDuo {
     ...(cx !== null && cy !== null ? { chat: { x: cx, y: cy } } : {}),
     ...(table ? { table } : {}),
     ...(lampes.length ? { lampes } : {}),
+    ...(fenetreCoins ? { fenetreCoins } : {}),
+    ...(fentes.length ? { fentes } : {}),
   };
+}
+
+const mille = (v: number) => Math.round(v * 1000) / 1000;
+/** Des points dans l'image (`max` au plus), arrondis au millième ; les faux sont laissés de côté. */
+function pointsValides(x: unknown, max: number): { x: number; y: number }[] {
+  return (Array.isArray(x) ? x : [])
+    .map((p) => {
+      const q = (p ?? {}) as Record<string, unknown>;
+      const [a, b] = [fraction(q.x), fraction(q.y)];
+      return a !== null && b !== null ? { x: mille(a), y: mille(b) } : null;
+    })
+    .filter((p): p is { x: number; y: number } => Boolean(p))
+    .slice(0, max);
+}
+/** Un polygone (de 3 à 12 points dans l'image, assez grand pour qu'il y pleuve), ou rien. */
+function polygoneValide(x: unknown): [number, number][] | undefined {
+  if (!Array.isArray(x) || x.length < 3 || x.length > 12) return undefined;
+  const pts = x.map((p) => (Array.isArray(p) && p.length === 2 ? [fraction(p[0]), fraction(p[1])] : [null, null]));
+  if (pts.some(([a, b]) => a === null || b === null)) return undefined;
+  const c = (pts as [number, number][]).map(([a, b]) => [mille(a), mille(b)] as [number, number]);
+  const b = boiteDesCoins(c);
+  return b[2] > 0.02 && b[3] > 0.02 ? c : undefined;
 }
 
 /** Assez grand pour le doigt et pour le zoom : au moins 9 % de la largeur de l'image, et 5 % de sa hauteur. */

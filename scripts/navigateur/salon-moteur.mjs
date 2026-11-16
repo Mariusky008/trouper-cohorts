@@ -255,6 +255,34 @@ await p.waitForTimeout(900);
 ok((await angle("moi")) !== v0, "les têtes des vrais calques vivent seules");
 await p.screenshot({ path: `${D}/salon-moteur-3-vrais-calques.png` });
 
+// ═══ ✋ LES EMPLACEMENTS DU SALON (lot S1) : les carreaux de la fenêtre, les fentes de l'étagère ═══
+const releveAvant = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/salon/releve.json`)).json();
+await p.getByRole("button", { name: "Poser les carreaux de la fenêtre, les fentes de l’étagère" }).click();
+const image = p.locator(".es-image img");
+ok(await attendre(async () => (await image.count()) === 1 && (await image.evaluate((i) => i.complete && i.naturalWidth > 0))), "« ✋ Les emplacements du salon » : la pièce, prête à poser");
+// (la place de l'image, relue avant chaque série de touchers : toucher un bouton fait défiler le tableau)
+let boite = null;
+const viser = async () => {
+  await p.locator(".es-image").scrollIntoViewIfNeeded();
+  boite = await p.locator(".es-image").boundingBox();
+};
+const vers = (x, y) => [boite.x + x * boite.width, boite.y + y * boite.height];
+await p.locator('[data-cible="fenetreCoins"]').click();
+await viser();
+for (const [x, y] of [[0.64, 0.08], [0.9, 0.08], [0.9, 0.36], [0.64, 0.36]]) await p.mouse.click(...vers(x, y));
+ok((await p.locator(".es-fenetre").count()) === 1 && (await p.locator(".es-point.fenetre").count()) === 4, "les carreaux de la fenêtre, point par point");
+await p.locator('[data-cible="fentes"]').click();
+await viser();
+for (const [x, y] of [[0.3, 0.3], [0.4, 0.3], [0.5, 0.3]]) await p.mouse.click(...vers(x, y));
+ok((await p.locator('[data-zone="fente"]').count()) === 3, "trois fentes, d'un toucher chacune");
+await p.locator(".es").screenshot({ path: `${D}/salon-moteur-4-emplacements.png` });
+await p.locator(".es").getByRole("button", { name: "Enregistrer" }).click();
+ok(await attendre(async () => /Enregistrés/.test(await p.locator(".es-dit").innerText().catch(() => ""))), "« Enregistrer » : enregistrés");
+const releveApres = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/salon/releve.json`)).json();
+const ez = releveApres.emplacements;
+ok(ez.fenetreCoins?.length === 4 && ez.fentes?.length === 3 && Math.abs(ez.fentes[0].x - 0.3) < 0.02, `dans le relevé de la pièce : la fenêtre, les fentes (${JSON.stringify(ez.fentes)})`);
+ok(releveApres.ajuste === releveAvant.ajuste && JSON.stringify(ez.places) === JSON.stringify(releveAvant.emplacements.places), "le reste du relevé n'a pas bougé (les places, leur lecture)");
+
 // ═══ RÉDUIRE LES ANIMATIONS ═══
 const r = await ouvrir({ reducedMotion: "reduce" });
 ok((await r.locator(".sc[data-reduit]").count()) === 1, "« réduire les animations » : la scène le sait");

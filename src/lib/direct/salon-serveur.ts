@@ -8,7 +8,7 @@
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
-import { assisesDe, emplacementsValides, momentDuoDe, pieceDuoDe, PLACES_PAR_DEFAUT, type MomentDuo, type PieceDuo } from "./pieces-duo";
+import { assisesDe, emplacementsValides, momentDuoDe, pieceDuoDe, pieceDuoValide, PLACES_PAR_DEFAUT, type EmplacementsDuo, type MomentDuo, type PieceDuo } from "./pieces-duo";
 import { depotDans } from "./ma-figurine-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
 import type { OuvertureSalon, SceneSalon } from "./salon";
@@ -137,4 +137,37 @@ export async function statsVitesse(supabase: Supabase, jours = 7, maintenant = n
     if (l.length) parAppareil[a] = { n: l.length, mediane: rang(l.map((m) => m.pret), 0.5) };
   }
   return { ouvertures: toutes.length, deja: resume(toutes.filter((m) => m.deja)), premiere: resume(toutes.filter((m) => !m.deja)), parAppareil };
+}
+
+// ─── ✋ LES EMPLACEMENTS DU SALON (lot S1 ; sections 4.9 et 4.11) ────────────────────────────────────────────────────────
+const CLES_SALON = ["fenetreCoins", "fentes"] as const;
+/**
+ * ✋ Poser les emplacements du salon d'une pièce (les carreaux de la fenêtre en polygone, les fentes de l'étagère), posés à
+ * la main sur l'adresse d'essai : SEULEMENT ces deux-là sont remplacés dans son relevé — ses autres zones (la table et les
+ * lampes comprises, tracées sur la page des pièces), ses places et la façon de les lire (`ajuste`) restent telles quelles
+ * (l'action « ajuster » de la page des pièces, elle, refait tout le relevé « à la main »).
+ */
+export async function poserEmplacementsSalon(supabase: Supabase, piece: unknown, x: unknown): Promise<{ emplacements?: EmplacementsDuo; erreur?: string }> {
+  if (!pieceDuoValide(piece)) return { erreur: "Quelle pièce ?" };
+  const d = depotDans(supabase, dossierPiece(piece));
+  const noms = await d.lister().catch(() => [] as string[]);
+  if (!noms.includes("decor.png")) return { erreur: "La pièce n’est pas encore faite." };
+  let releve: Record<string, unknown> = {};
+  if (noms.includes("releve.json")) {
+    try {
+      const b = await d.lire("releve.json");
+      releve = b ? (JSON.parse(b.toString("utf8")) as Record<string, unknown>) : {};
+    } catch {
+      return { erreur: "Le relevé de la pièce ne se lit pas." };
+    }
+  }
+  const r = (x ?? {}) as Record<string, unknown>;
+  const neufs = emplacementsValides({ cadres: [], places: [], fenetreCoins: r.fenetreCoins, fentes: r.fentes });
+  const garde: Record<string, unknown> = { ...((releve.emplacements ?? {}) as Record<string, unknown>) };
+  for (const k of CLES_SALON) {
+    delete garde[k];
+    if (neufs[k]) garde[k] = neufs[k];
+  }
+  const ok = await d.ecrire("releve.json", Buffer.from(JSON.stringify({ ...releve, emplacements: garde, salonLe: new Date().toISOString() })), "application/json");
+  return ok ? { emplacements: emplacementsValides(garde) } : { erreur: "Pas enregistré : réessaie." };
 }

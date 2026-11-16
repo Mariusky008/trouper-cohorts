@@ -663,10 +663,33 @@ tête au-dessus du corps, le cou dans les deux, le pivot au cou ; posés sur la 
 découpés une fois) et `scripts/navigateur/salon-moteur.mjs` (l'image du duo faite par le faux moteur : la page passe
 aux vrais calques, chargés à adresse stable, les têtes vivent).
 
-**Ce qui reste du lot S1** : les emplacements ajoutés (`fenetreCoins`, `lampes`, `table`, `fentes`) et leur tracé à la
-main ; et, pour les vraies conversations, l'image du duo de chaque paire (ses deux poses et son duo par pièce et par
-lumière, environ 0,55 € la première fois) — à décider avec le propriétaire : quand la faire (à la première ouverture ?)
-et pour qui.
+**Dépassé le soir même** (section 12, décision 7) : les figurines sont posées, on ne fait plus l'image du duo de chaque
+paire. Cette découpe reste pour l'adresse d'essai et pour mesurer.
+
+### 11.6 Les carreaux de la fenêtre et les fentes de l'étagère (lot S1)
+
+- **Le relevé de la pièce** (`EmplacementsDuo`, `src/lib/direct/pieces-duo.ts`) gagne deux emplacements, facultatifs :
+  `fenetreCoins` (les carreaux de la fenêtre, un polygone de 3 à 12 points : la météo ne tombe que dedans, lot S7) et
+  `fentes` (8 points au plus : les souvenirs s'y posent sur l'étagère, lot S6). `emplacementsValides` les vérifie (ce qui
+  est faux est laissé de côté) ; `?ouvrir=` les donne dans la scène. **La table basse et les lampes** (`table`, `lampes` :
+  des boîtes) viennent du lot M0 de la session de l'univers, et se tracent sur la page des pièces.
+- **Leur tracé à la main** : sur l'adresse d'essai, « ✋ Les emplacements du salon » (`src/app/salon/emplacements-salon.tsx`)
+  — la pièce choisie, les carreaux touchés point par point, chaque fente d'un toucher (la table et les lampes montrées en
+  pointillés, pour repère) ; « Effacer cette zone », « Enregistrer ».
+- **`POST /api/direct/salon { action: "emplacements", piece, fenetreCoins?, fentes? }`** (administrateur ;
+  `poserEmplacementsSalon`, `src/lib/direct/salon-serveur.ts`) : **seulement ces deux-là** changent dans le relevé — les
+  autres zones (la table et les lampes comprises), les places et leur lecture (`ajuste`) restent. (L'action « ajuster »
+  de la page des pièces refait tout le relevé « à la main ».) La page des pièces, elle, garde ces deux emplacements quand
+  on y retouche les autres.
+
+**Les essais** : `scripts/essai-salon-route.mjs` (pour l'administrateur seulement ; posés ; une fente hors de l'image et
+une fenêtre de deux points laissées de côté ; le reste du relevé intact, la table et les lampes de la page des pièces
+comprises ; une pièce aux places relevées garde leur lecture ; la scène les donne) et
+`scripts/navigateur/salon-moteur.mjs` (les carreaux point par point, trois fentes, « Enregistrer », dans le relevé, le
+reste intact).
+
+**La suite du lot S1** (section 12) : les calques de chaque figurine, faits une fois (`ma-maison.md`, section 4), et
+leur pose aux deux places de la pièce, `CalquesDuo` composé à l'ouverture.
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
