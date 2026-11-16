@@ -221,6 +221,14 @@ S0 à S9 avec la session de chacun — **validés par le propriétaire le 16 nov
 les panneaux deviennent des petites attentions, le chat est celui de l'essai C0, on choisit sa pièce au départ et on en
 change, le temps réel seulement si le pouls lui paraît lent).
 
+**Fait, lot S0a (la session des messages)** : le contrat commun `src/lib/direct/salon.ts` (les types, l'API du moteur,
+les 12 gestes et les 20 puces, le registre des mises en scène), le moteur `src/app/salon/moteur.ts` (repris de la
+maquette : les ressorts, les effets, les sons, la caméra, une seule boucle), et l'adresse d'essai `/univers/salon`
+(administrateur) avec son essai navigateur `scripts/navigateur/salon-moteur.mjs` — section 11 du cahier. **La session de
+l'univers peut écrire ses gestes (S3)** : un fichier `src/app/salon/gestes.ts`, et une ligne dans
+`src/app/salon/mises-en-scene.ts` ; elle les essaie sur `/univers/salon`. **Ensuite (S0b)** : les URL stables et le
+cache, `?ouvrir=`, le préchargement, les mesures de vitesse.
+
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 
 **À lire : `docs/univers/poses-figurine.md`.** Après la maquette de la messagerie visuelle (une page privée : la scène

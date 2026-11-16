@@ -498,3 +498,87 @@ ce qu'il peut essayer.
 5. **Le temps réel** : la question lui a été réexpliquée (un geste de l'un vu chez l'autre en 1 à 2 s avec le pouls,
    ou en moins d'une demi-seconde avec le temps réel) ; « oui, ok, je suis d'accord » : le pouls (S2) d'abord ; le temps
    réel (S9) seulement s'il trouve le délai gênant en jouant le salon à deux, sur deux téléphones.
+
+---
+
+## 11. Le socle : le contrat, le moteur, l'adresse d'essai (lot S0a, 16 novembre 2026)
+
+### 11.1 Le contrat commun : `src/lib/direct/salon.ts`
+
+Ce que les deux sessions partagent, et qui ne change que par une PR qui le dit dans son titre :
+
+- **Les mots de la scène** : `Qui` (`"moi"` / `"autre"`), `Point` et `Zone` (en fractions de l'image de la pièce, comme
+  le relevé), `Sens` (1 : tournée vers la droite ; −1 : vers la gauche).
+- **Les calques** (section 5) : `CalqueImage` (`fichier`, `boite`, et `decoupe` : la partie de l'image à montrer, toute
+  l'image sinon), `CalqueFigurine` (`corps`, `tete` avec son `pivot`, `bouche?`, `joues?`), `CalquesDuo`.
+- **Les gestes** (4.4) : `GESTES` (les 12 de la maquette, `cat` attentions / ensemble) et `PUCES_GESTES` (les 20 puces
+  du plateau : les 5 attentions, les 8 panneaux de `vivant.ts` en `panneau-<cle>`, les 7 à faire ensemble).
+- **L'API du moteur** : `Scene` (`viser`, `figurine(q)`, `parle`, `fx`, `sons`, `repere`, `milieu`, `geste`, `attendre`,
+  `surImage`, `occupee`, `reduit`, `leger`, `detruire`), `CommandesFigurine` (les ressorts : `pencher`, `gonfler`,
+  `sursaut`, `secouer`, `parler`, `rire` pour la tête ; `pencherCorps`, `rapprocher`, `bondir`, `danser`, `endormir`,
+  `reveiller` pour le corps), `EffetsScene` (`part`, `acteur`, `eclatCoeurs`, `etincelles`, `anneau`, `jaillir`,
+  `traitsDeRire`, `zZz`, `texteQuiMonte`, `lettrage`, `secousse`, `flash`, `rougir`, `marqueBisou`), `SonsScene`
+  (`bruit`, `note`, `kssht`, `bipFin`, `clac`, `jingle`), `Particule`, `Acteur`, `Repere` (`tete`, `haut`, `bouche`,
+  `joue`, `cote`, `main`), `Vue` (`"piece"`, `"duo"`, une zone, ou un point et une échelle), `OptionsScene`.
+- **Le registre des mises en scène** : `enregistrerMiseEnScene(cle, jouer)` et `miseEnSceneDe(cle)`. Une mise en scène
+  est une fonction `async (scene, de) => …` qui ne touche qu'à l'API ci-dessus ; `scene.geste(cle, de)` les joue l'une
+  après l'autre et rend la main à la fin.
+
+**Écrire un geste (lot S3), en trois lignes** : dans son fichier (`src/app/salon/gestes.ts`),
+
+```ts
+enregistrerMiseEnScene("coucou", async (s, de) => {
+  s.figurine(de).sursaut(0.6);
+  s.fx.jaillir("👋", s.repere(de, "cote"));
+  await s.attendre(900);
+});
+```
+
+puis une ligne dans `src/app/salon/mises-en-scene.ts` (`import "./gestes";`) : le salon et l'adresse d'essai importent
+ce fichier, et ont ainsi toutes les mises en scène. Le talkie (S4), les mèmes (S5), les objets sur la table (S3, S6)
+font de même ; ce qui doit vivre à chaque image (une aiguille, un niveau de voix) s'accroche à `scene.surImage`. S'il
+manque au moteur une commande, elle s'ajoute au contrat par une PR qui le dit.
+
+### 11.2 Le moteur : `src/app/salon/moteur.ts`
+
+`creerScene(conteneur, options)` rend une `Scene`. Il est repris de la maquette validée, sa physique et ses effets tels
+quels (ils sont réglés) :
+
+- **Le DOM** : la scène, un « secoueur » (la secousse), la caméra, la pièce ; dans la pièce, la plaque, une figurine par
+  côté (son corps, et dedans sa tête, qui tourne autour de son pivot), la toile des effets (au plus deux fois la densité
+  de l'écran) et une couche pour le lettrage. La pièce couvre la scène (« cover »), un peu plus de place laissée en bas
+  qu'en haut (`cadrageVertical`, 0,3) ; elle se remet en place à chaque changement de taille.
+- **Les repères** (où tombent les effets) se lisent dans les calques : le haut de la tête (l'ancre des bulles), la
+  bouche et les joues (celles des calques, ou devinées dans la boîte de la tête, du côté de l'autre), le côté, la main.
+- **La caméra** : une transition CSS de 1,5 s, toujours dans la pièce (jamais de bord vide). À chaque changement de vue
+  ou de taille, `surAncres` donne la place, à l'écran, du haut de chaque tête : les bulles (S2) sont du HTML hors de la
+  caméra, posées là.
+- **Une seule boucle** : les têtes, puis les corps, puis la toile (rien à effacer quand elle est vide), puis ce qui est
+  accroché par `surImage`. La page cachée : la boucle et les sons s'arrêtent, et repartent à son retour.
+- **Le mode léger** : si les images durent en moyenne plus de 20 ms pendant 2 s, une particule sur deux, et `surLeger`
+  prévient l'écran. **`prefers-reduced-motion`** : plus de balancement ni de particules, des mises en scène réduites à
+  leur fin (`scene.reduit`).
+- **Les sons** : un seul `AudioContext`, créé au premier toucher ; des bruits et de courtes musiques, jamais une voix.
+- **`detruire()`** : la boucle, les minuteries, les écouteurs, le son, le DOM ; une mise en scène en cours s'arrête là.
+
+### 11.3 L'adresse d'essai : `/univers/salon` (administrateur)
+
+`src/app/univers/salon/page.tsx` et `src/app/salon/essai-moteur.tsx`. La pièce et les deux figurines choisies dans
+l'essai du collage (`/admin/humain/univers-essais`, « L'effet collage ») : la pièce vide en plaque ; chaque posée
+découpée au cou (à 42 % de sa hauteur) en deux calques, posée comme le collage la pose — en attendant les vrais calques
+du lot S1. Moi à gauche (tournée vers la droite), l'autre à droite. Dessous, un tableau qui fait jouer chaque ressort
+de la tête et du corps, chaque effet (et un bisou qui vole d'une figurine à l'autre, pour les acteurs), chaque son, la
+caméra (la pièce, le duo, une tête), et les 20 gestes : un geste sans mise en scène le dit. Deux points (bleu, rose)
+montrent les ancres des bulles ; la cadence s'affiche (images par seconde). La vraie conversation (`?avec=<cle>`)
+arrivera avec S2.
+
+**L'essai** (`scripts/navigateur/salon-moteur.mjs`, un iPhone, le faux Supabase) : un visiteur renvoyé ; deux figurines
+en deux calques chacune, dans l'écran ; les têtes qui vivent seules ; « Rire » (les allers-retours, mesurés image par
+image) ; « Bondir » ; les cœurs sur la toile puis la toile effacée ; le lettrage qui arrive et repart ; le bisou qui
+vole, sa marque et le rouge aux joues ; la caméra sur le duo, les ancres qui suivent, le retour sur la pièce ; un geste
+sans mise en scène ; « Recommencer la scène » (une seule scène) ; la page cachée (tout s'arrête, puis repart) ; la plus
+longue image pendant un moment chargé (une mesure : les seuils viennent avec S0b) ; « réduire les animations » ; ni
+débordement, ni erreur, ni le mot interdit.
+
+**La suite (S0b)** : les URL stables et le cache (7.2), `?ouvrir=` (7.4), le préchargement, les mesures et les essais de
+vitesse (7.6).
