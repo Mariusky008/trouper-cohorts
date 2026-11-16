@@ -16,6 +16,7 @@ import { PieceVivante } from "./vivante";
 import { AmbiancesDeTonUnivers } from "./ambiances";
 import { UniversVivant } from "./univers-vivant";
 import { CompagnonEssai } from "./compagnon";
+import { PosesDeLaFigurine } from "./poses-figurine";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,6 +41,7 @@ export default async function PageEssaisUnivers() {
       <PablitoAuNouveauStyle />
       <UniversDePablito />
       <CompagnonEssai />
+      <PosesDeLaFigurine />
       <UniversVivant />
       <PieceVivante />
       <AmbiancesDeTonUnivers />
