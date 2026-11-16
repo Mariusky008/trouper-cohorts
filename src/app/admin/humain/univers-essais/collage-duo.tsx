@@ -6,8 +6,8 @@
  * ombre et la lumière de la pièce) ou GÉNÉRÉES avec la pièce. Le propriétaire choisit en regardant les deux, sur son
  * téléphone.
  */
-import { useCallback, useEffect, useState } from "react";
-import { ANCRE_ASSISE, AVIS_COLLAGE, COUT_COLLAGE, MOMENTS_DUO, hauteurDuo, type AvisCollage, type EtatCollage, type EtatPiecesDuo, type MomentDuo, type PlaceDuo } from "@/lib/direct/pieces-duo";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ANCRE_ASSISE, AVIS_COLLAGE, COUT_COLLAGE, HAUTEUR_MAX_DUO, HAUTEUR_MIN_DUO, MOMENTS_DUO, hauteurDuo, type AvisCollage, type EtatCollage, type EtatPiecesDuo, type MomentDuo, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
 const ROUTE = "/api/admin/direct/pieces-duo/collage";
 const PIECES = "/api/admin/direct/pieces-duo";
@@ -15,14 +15,34 @@ const euros = (n: number) => n.toFixed(2).replace(".", ",");
 const pc = (x: number) => `${(x * 100).toFixed(2)}%`;
 const ETAPES: Record<string, string> = { "pose-a": "la première figurine, assise sans fauteuil", "pose-b": "la seconde figurine, assise sans fauteuil", duo: "le duo, généré dans la pièce" };
 
-/** Une figurine posée : le point qui touche le siège sur sa place, la taille des deux (`hauteurDuo`), une ombre, la lumière de gauche. */
-function Posee({ src, place, h, cote }: { src: string; place: PlaceDuo; h: number; cote: "a" | "b" }) {
+/**
+ * Une figurine posée : le point qui touche le siège sur sa place, la taille des deux (`hauteurDuo`), une ombre, la lumière
+ * de gauche — exactement là où l'image du duo l'assiéra. `onGlisser` : on la fait glisser du doigt (✋ Ajuster leurs places).
+ */
+function Posee({ src, place, h, cote, onGlisser }: { src: string; place: PlaceDuo; h: number; cote: "a" | "b"; onGlisser?: (dx: number, dy: number) => void }) {
+  const dernier = useRef<{ x: number; y: number } | null>(null);
+  const glisse = onGlisser
+    ? {
+        onPointerDown: (e: React.PointerEvent<HTMLSpanElement>) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          dernier.current = { x: e.clientX, y: e.clientY };
+        },
+        onPointerMove: (e: React.PointerEvent<HTMLSpanElement>) => {
+          const scene = e.currentTarget.parentElement?.getBoundingClientRect();
+          if (!dernier.current || !scene?.width || !scene.height) return;
+          onGlisser((e.clientX - dernier.current.x) / scene.width, (e.clientY - dernier.current.y) / scene.height);
+          dernier.current = { x: e.clientX, y: e.clientY };
+        },
+        onPointerUp: () => (dernier.current = null),
+        onPointerCancel: () => (dernier.current = null),
+      }
+    : {};
   return (
     <>
       <span className="cd-ombre" style={{ left: pc(place.x), top: pc(place.y), width: pc(h * 0.62), height: pc(h * 0.07) }} aria-hidden="true" />
-      <span className="cd-fig" data-figurine={cote} style={{ left: pc(place.x), top: pc(place.y - ANCRE_ASSISE * h), height: pc(h) }}>
+      <span className={`cd-fig${onGlisser ? " cd-glisse" : ""}`} data-figurine={cote} style={{ left: pc(place.x), top: pc(place.y - ANCRE_ASSISE * h), height: pc(h) }} {...glisse}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" />
+        <img src={src} alt="" draggable={false} />
         <i className="cd-lumiere" style={{ WebkitMaskImage: `url("${src}")`, maskImage: `url("${src}")` }} aria-hidden="true" />
       </span>
     </>
@@ -38,6 +58,8 @@ export function CollageDuo() {
   const [occupe, setOccupe] = useState(false);
   const [dit, setDit] = useState("");
   const [note, setNote] = useState("");
+  // ✋ les places en train d'être ajustées (en points d'assise) et leur taille, avant d'être enregistrées
+  const [reglage, setReglage] = useState<{ places: PlaceDuo[]; h: number } | null>(null);
   const recevoir = useCallback((e: EtatCollage) => {
     setEtat(e);
     if (e.choix) {
@@ -92,6 +114,37 @@ export function CollageDuo() {
     await envoyer({ action: "refaire", quoi });
     await installer();
   }
+  /** ✋ Une figurine glissée du doigt (en fractions de la pièce). */
+  function glisser(k: number, dx: number, dy: number) {
+    setReglage((r) => r && { ...r, places: r.places.map((p, i) => (i === k ? { ...p, x: Math.min(0.98, Math.max(0.02, p.x + dx)), y: Math.min(0.98, Math.max(0.05, p.y + dy)) } : p)) });
+  }
+  function grandir(d: number) {
+    setReglage((r) => r && { ...r, h: Math.min(HAUTEUR_MAX_DUO, Math.max(HAUTEUR_MIN_DUO, Math.round((r.h + d) * 100) / 100)) });
+  }
+  /**
+   * ✋ Enregistrer leurs places : dans les zones de la pièce (comme « ✋ Ajuster à la main », plus haut) — une place tracée à
+   * la main est la boîte de la figurine entière, son bas aux pieds. L'image du duo se refait alors à ces places.
+   */
+  async function enregistrerPlaces() {
+    if (!reglage || !laPiece) return;
+    const r3 = (x: number) => Math.round(x * 1000) / 1000;
+    const places = reglage.places.map((p) => ({ x: r3(p.x), y: r3(Math.min(1, p.y + (1 - ANCRE_ASSISE) * reglage.h)), hauteur: r3(reglage.h) }));
+    setOccupe(true);
+    try {
+      const r = await fetch(PIECES, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "ajuster", piece: laPiece.cle, emplacements: { ...(laPiece.emplacements ?? { cadres: [] }), places } }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      if (j.error || !r.ok) return setDit(j.error || "Leurs places n’ont pas pu être enregistrées.");
+      setReglage(null);
+      await charger();
+      setDit(`Leurs places sont enregistrées. « Faire ce qui manque » refait la générée à ces places (environ 0,17 €) ; la maquette aussi, à la prochaine visite.`);
+    } finally {
+      setOccupe(false);
+    }
+  }
   async function donnerAvis(avis: AvisCollage) {
     const j = await envoyer({ action: "avis", avis, note });
     setDit(j.error || "Merci, c’est noté.");
@@ -108,8 +161,8 @@ export function CollageDuo() {
       <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🧩 L’effet « collage » : deux figurines dans une pièce</h2>
       <p style={{ margin: "0 0 10px", color: "#555", lineHeight: 1.45 }}>
         Deux vraies figurines dans une vraie pièce. <b>Ton choix : la version générée</b> (« très bien ») — une image du duo par pièce et par lumière,
-        faite une fois. Seule une grande zone autour des deux places est peinte, puis recollée sur la pièce : la télé, les cadres et l’étagère restent exactement à leur
-        place. La version posée reste dessous, pour comparer. Environ {euros(COUT_COLLAGE)} € la première fois (les deux poses et le duo), puis environ
+        faite une fois. Les figurines sont d’abord posées à leurs places (comme dans « Posées », qui montre exactement où et à quelle taille), puis le moteur les assoit
+        pour de vrai, dans leur silhouette seulement : les meubles, la télé, les cadres et l’étagère restent tels quels. Environ {euros(COUT_COLLAGE)} € la première fois (les deux poses et le duo), puis environ
         0,17 € par autre lumière.
       </p>
       {etat && !etat.moteur && <p style={{ color: "#b3261e" }}>Le moteur d’image n’est pas branché ici.</p>}
@@ -189,15 +242,49 @@ export function CollageDuo() {
           </figure>
           <figure>
             <figcaption>
-              <b>Posées sur la pièce</b> <small>(pour comparer)</small>
+              <b>Posées sur la pièce</b> <small>(là où la générée les assied, à leur taille)</small>
             </figcaption>
             <span className="cd-scene" data-version="posees">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="cd-fond" src={etat.decor} alt="La pièce, avec les deux figurines posées" />
-              {etat.poses.a && <Posee src={etat.poses.a} place={etat.places[0]} h={hauteurDuo(etat.places)} cote="a" />}
-              {etat.poses.b && <Posee src={etat.poses.b} place={etat.places[1]} h={hauteurDuo(etat.places)} cote="b" />}
+              {(["a", "b"] as const).map((c, k) => {
+                const src = etat.poses[c];
+                const places = reglage?.places ?? etat.places;
+                return src ? <Posee key={c} src={src} place={places[k]} h={reglage?.h ?? hauteurDuo(etat.places)} cote={c} onGlisser={reglage ? (dx, dy) => glisser(k, dx, dy) : undefined} /> : null;
+              })}
               {(!etat.poses.a || !etat.poses.b) && <span className="cd-attente">Les poses ne sont pas encore faites.</span>}
             </span>
+            {etat.poses.a && etat.poses.b && laPiece && (
+              <span className="cd-reglage">
+                {reglage ? (
+                  <>
+                    <small>Fais glisser chaque figurine sur son siège (ses cuisses sur l’assise, ses pieds devant), puis ajuste leur taille à celle des sièges.</small>
+                    <span className="cd-chips">
+                      <button type="button" onClick={() => grandir(-0.01)} disabled={occupe}>
+                        ➖ Plus petites
+                      </button>
+                      <button type="button" onClick={() => grandir(0.01)} disabled={occupe}>
+                        ➕ Plus grandes
+                      </button>
+                    </span>
+                    <span className="cd-chips">
+                      <button type="button" className="elue" onClick={() => void enregistrerPlaces()} disabled={occupe}>
+                        Enregistrer leurs places
+                      </button>
+                      <button type="button" onClick={() => setReglage(null)} disabled={occupe}>
+                        Annuler
+                      </button>
+                    </span>
+                  </>
+                ) : (
+                  <span className="cd-chips">
+                    <button type="button" onClick={() => setReglage({ places: etat.places.map((p) => ({ ...p })), h: hauteurDuo(etat.places) })} disabled={occupe}>
+                      ✋ Ajuster leurs places
+                    </button>
+                  </span>
+                )}
+              </span>
+            )}
           </figure>
         </div>
       )}
@@ -243,6 +330,9 @@ export function CollageDuo() {
 .cd-scene{position:relative;display:block;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:#2b1a0c}
 .cd-scene .cd-fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cd-fig{position:absolute;transform:translateX(-50%)}
+.cd-glisse{touch-action:none;cursor:grab;outline:2px dashed #ff2e9a;outline-offset:2px;border-radius:6px}
+.cd-reglage{display:flex;flex-direction:column;gap:8px}
+.cd-reglage small{color:#555;line-height:1.4}
 .cd-fig img{display:block;height:100%;width:auto;filter:drop-shadow(5px 4px 5px rgba(30,15,5,.4)) saturate(.94) sepia(.07)}
 .cd-lumiere{position:absolute;inset:0;-webkit-mask-size:100% 100%;mask-size:100% 100%;background:linear-gradient(90deg,rgba(255,196,120,.42),rgba(255,214,160,.08) 55%,rgba(30,15,5,.3));mix-blend-mode:soft-light}
 .cd-ombre{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(25,12,0,.5),rgba(25,12,0,0))}

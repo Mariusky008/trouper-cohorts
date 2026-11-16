@@ -247,8 +247,15 @@ lues ici « de la tête au siège » — des figurines une fois et demie trop gr
   platine, la table, les cadres, l'étagère, le chat : la pièce reste au pixel près.
 - **Sans ses deux places, pas d'image du duo** : les figurines tomberaient à côté des sièges. La maquette le dit (« Pour
   que vos figurines s'installent dans la cuisine, trace d'abord ses deux places »), la fabrication le refuse.
-- Les images du duo déjà faites ne servent plus (leur nom finit maintenant par `-4`) : elles se refont à la prochaine
-  visite.
+- **Les places s'ajustent du doigt, sur les posées** (le quatrième essai : « on voit bien tout le décor en entier, mais
+  les sièges et les figurines ne sont pas au bon niveau, et le siège se déforme ») : sur la page d'essais, « 🧩 L'effet
+  collage », « ✋ Ajuster leurs places » — on fait glisser chaque figurine posée sur son siège, « ➖ Plus petites » /
+  « ➕ Plus grandes », puis « Enregistrer leurs places » (dans les zones de la pièce, comme « ✋ Ajuster à la main »). Les
+  posées étant exactement la place et la taille de l'image du duo, ce qu'on y voit est ce qu'on aura.
+- **Le nom de l'image du duo porte l'empreinte des deux places** : ajuster les places la refait à la prochaine visite
+  (environ 0,17 €), sans rien effacer à la main.
+- **Les sièges ne se déforment plus** : la marge autour des figurines est fine (3 % de leur hauteur), prolongée seulement
+  vers le bas, là où tombent les ombres ; la consigne dit de ne redessiner, déplacer ni plier aucun siège.
 
 ## 11. La télé, prête à brancher (15 novembre 2026)
 

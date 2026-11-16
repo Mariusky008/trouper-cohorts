@@ -185,6 +185,30 @@ ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWi
 ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs[0]})` : ""}`);
 
+// ─── la page d'essais : « ✋ Ajuster leurs places » (une posée glissée du doigt, plus grandes, enregistrées) ───
+await p.goto(`${BASE}/admin/humain/univers-essais`, { waitUntil: "domcontentloaded" });
+const posee = p.locator('.cd-scene[data-version="posees"] .cd-fig[data-figurine="a"]');
+await posee.waitFor({ timeout: 30000 });
+await posee.scrollIntoViewIfNeeded();
+await p.getByRole("button", { name: "✋ Ajuster leurs places" }).click();
+const b0 = await posee.boundingBox();
+await p.mouse.move(b0.x + b0.width / 2, b0.y + b0.height / 2);
+await p.mouse.down();
+await p.mouse.move(b0.x + b0.width / 2 + 24, b0.y + b0.height / 2 + 30, { steps: 6 });
+await p.mouse.up();
+const b1 = await posee.boundingBox();
+ok(b1.x - b0.x > 12 && b1.y - b0.y > 15, "« ✋ Ajuster leurs places » : la figurine posée glisse du doigt");
+await p.getByRole("button", { name: "➕ Plus grandes" }).click();
+const collage = p.locator('section[aria-label="L’effet collage"]');
+await collage.locator(".cd-versions").screenshot({ path: `${D}/piece-du-duo-5-ajuster.png` });
+await p.getByRole("button", { name: "Enregistrer leurs places" }).click();
+ok(await attendre(async () => /Leurs places sont enregistrées/.test(await collage.innerText())), "« Enregistrer leurs places »");
+const rel = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/salon/releve.json`)).json();
+const pl = rel.emplacements?.places ?? [];
+ok(rel.ajuste === true && pl[0]?.hauteur === 0.31 && pl[1]?.hauteur === 0.31 && pl[0].x > 0.4 && pl[1].x === 0.62 && rel.emplacements.tele?.length === 4, `rangées dans les zones de la pièce : la boîte de la figurine entière, plus grande, la gauche déplacée, le reste gardé (${JSON.stringify(pl)})`);
+ok(/Pas encore faite/.test(await collage.locator('.cd-scene[data-version="generee"]').innerText()), "leurs places changées : la générée est à refaire");
+ok(erreurs.length === 0, `aucune erreur sur la page d'essais${erreurs.length ? ` (${erreurs[0]})` : ""}`);
+
 await b.close();
 console.log(echecs ? `\n${echecs} échec(s)` : "\nla maquette de la pièce du duo tient ✓");
 process.exit(echecs ? 1 : 0);
