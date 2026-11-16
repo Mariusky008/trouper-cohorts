@@ -235,6 +235,25 @@ console.log(`  (la plus longue image pendant cœurs, confettis, étincelles et d
 
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "rien ne déborde");
 ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "jamais le mot interdit");
+ok((await p.locator('[data-calques="provisoires"]').count()) === 1, "sans image du duo : la découpe provisoire des posées, et la page le dit");
+
+// ═══ 🎭 LES VRAIS CALQUES (lot S1) : l'image du duo faite (le faux moteur), la scène les prend ═══
+const cookie = `sb-127-auth-token=base64-${b64(session)}; clikme_habitant=${LEA.jeton}`;
+for (let k = 0; k < 4; k++) {
+  const r = await fetch(`${BASE}/api/admin/direct/pieces-duo/collage`, { method: "POST", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ action: "fabriquer" }) });
+  const j = await r.json().catch(() => ({}));
+  if (j.etat?.generee) break;
+}
+await p.reload({ waitUntil: "networkidle" });
+ok(await attendre(async () => (await p.locator('[data-calques="vrais"]').count()) === 1, 20000), "l'image du duo faite : « Les vrais calques », découpés dedans");
+ok(
+  await attendre(() => p.evaluate(() => [...document.querySelectorAll(".sc-fig")].length === 2 && [...document.querySelectorAll(".sc img")].every((i) => i.complete && i.naturalWidth > 0 && /\/api\/direct\/salon\/fichier\/[0-9a-f]{32}-\d+\.webp$/.test(i.src)))),
+  "la plaque et les quatre calques, chargés, à adresse stable",
+);
+const v0 = await angle("moi");
+await p.waitForTimeout(900);
+ok((await angle("moi")) !== v0, "les têtes des vrais calques vivent seules");
+await p.screenshot({ path: `${D}/salon-moteur-3-vrais-calques.png` });
 
 // ═══ RÉDUIRE LES ANIMATIONS ═══
 const r = await ouvrir({ reducedMotion: "reduce" });

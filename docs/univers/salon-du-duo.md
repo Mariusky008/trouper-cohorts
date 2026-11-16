@@ -620,3 +620,36 @@ partie une fois ; « déjà vue » ; un nouvel onglet : la pièce vient du cache
 ×4 : une conversation déjà vue prête en moins de 800 ms, la requête comprise** — 115 ms ici). La plus longue image
 pendant des effets, ralenti ×4, est mesurée (33 à 50 ms ici) : le seuil « aucune image de plus de 50 ms pendant un geste »
 s'essaiera sur les gestes eux-mêmes (lot S3).
+
+### 11.5 Les calques, découpés dans l'image du duo (lot S1, première partie)
+
+- **La découpe** (`decouperCalques`, `src/lib/direct/pieces-duo-collage-serveur.ts`), sans moteur d'image (quelques
+  calculs de `sharp`) : la plaque est la pièce elle-même, dans la même lumière ; chaque figurine est ce que l'image du duo
+  a peint dans SA silhouette — les poses replacées comme le collage les place, la zone peinte du duo (la même que pour le
+  recollage) et, pour savoir à qui est un pixel, la zone de chacune. Les couleurs sont celles de l'image rendue,
+  retrouvées sous le fondu du recollage (`duo = pièce × (1 − p) + rendu × p`) : posés sur la pièce, les calques redonnent
+  l'image du duo (l'essai : 9 pixels sur 6 144 s'en écartent, à cause du WebP).
+- **Le cou** (`couDeLaPose`) : la ligne la plus étroite de la silhouette de la pose, entre le quart et 55 % de sa hauteur,
+  si elle est nettement plus étroite que la tête (sinon — des cheveux longs sur les épaules — à 42 %). La tête : tout ce
+  qui est au-dessus, le cou compris (3 % de la hauteur sous la ligne, fondu sur deux points) ; le corps : tout ce qui est
+  dessous, en gardant 2 % au-dessus de la ligne (une tête qui penche ne laisse pas voir la pièce). Le pivot : le milieu du
+  cou. La bouche et les joues ne sont pas encore lues : le moteur les devine dans la boîte de la tête.
+- **Une fois** (`calquesDuCollage`) : à la première demande après l'image du duo, rangés à côté d'elle
+  (`<duo>-corps-a.png`, `-tete-a`, `-corps-b`, `-tete-b`, `<duo>-calques.json`), puis relus. Une nouvelle image du duo (de
+  nouvelles places, une autre lumière) a un autre nom : ses calques se refont.
+- **`GET /api/admin/direct/pieces-duo/collage?calques=1`** (administrateur) : `{ calques: CalquesSalon }` — la plaque et
+  les quatre calques à adresse stable (11.4), leurs boîtes et les pivots en fractions ; `null` tant que l'image du duo
+  n'est pas faite. Le type `CalquesSalon` s'ajoute au contrat.
+- **L'adresse d'essai** prend les vrais calques dès que l'image du duo du collage est faite (« 🎭 Les vrais calques »),
+  sinon la découpe provisoire des posées (« ✂️ Découpe provisoire »).
+
+**Les essais** : `scripts/essai-pieces-duo-collage-route.mjs` (la plaque et les quatre calques à adresse stable ; la
+tête au-dessus du corps, le cou dans les deux, le pivot au cou ; posés sur la pièce, ils redonnent l'image du duo ;
+découpés une fois) et `scripts/navigateur/salon-moteur.mjs` (l'image du duo faite par le faux moteur : la page passe
+aux vrais calques, chargés à adresse stable, les têtes vivent).
+
+**Ce qui reste du lot S1** : les emplacements ajoutés (`fenetreCoins`, `lampes`, `table`, `fentes`) et leur tracé à la
+main ; et, pour les vraies conversations, l'image du duo de chaque paire (ses deux poses et son duo par pièce et par
+lumière, environ 0,55 € la première fois) — à décider avec le propriétaire : quand la faire (à la première ouverture ?)
+et pour qui.
+

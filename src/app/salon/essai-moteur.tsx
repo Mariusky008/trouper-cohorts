@@ -17,14 +17,14 @@ import "./mises-en-scene";
 import { useEffect, useRef, useState } from "react";
 import { bez, creerScene, ease } from "./moteur";
 import { envoyerMesures, marquer, mesures, ouvrir, precharger, prechargerImage, prechargerQuandLibre } from "./ouvrir";
-import { PUCES_GESTES, autreQue, miseEnSceneDe, type CalqueFigurine, type OptionsScene, type Qui, type Scene } from "@/lib/direct/salon";
+import { PUCES_GESTES, autreQue, miseEnSceneDe, type CalqueFigurine, type CalquesSalon, type OptionsScene, type Qui, type Scene } from "@/lib/direct/salon";
 import { ANCRE_ASSISE, hauteurDuo, type EtatCollage, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
 /** Sur une posée (assise sans fauteuil, détourée au plus près), le cou, de haut en bas : la tête au-dessus, le corps dessous. */
 const COU = 0.42;
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
 type Avec = { cle: string; prenom: string; deja: boolean };
-type Chargement = { etat: "charge"; flou?: string } | { etat: "manque"; message: string } | { etat: "pret"; pret: Pret; flou?: string; avec?: Avec };
+type Chargement = { etat: "charge"; flou?: string } | { etat: "manque"; message: string } | { etat: "pret"; pret: Pret; flou?: string; avec?: Avec; calques?: boolean };
 type ProcheListe = { cle: string; prenom: string; lien?: string };
 type Vitesse = { ouvertures: number; deja: { n: number; mediane: number; p90: number }; premiere: { n: number; mediane: number; p90: number } };
 
@@ -76,6 +76,19 @@ function calquesDe(src: string, ratio: number, place: PlaceDuo, haut: number, IW
 }
 
 async function charger(): Promise<Chargement> {
+  // (🎭 lot S1 : les vrais calques, découpés dans l'image du duo, quand elle est faite)
+  // (l'une après l'autre : une réponse jamais lue laisserait sa requête ouverte)
+  const rc = await fetch("/api/admin/direct/pieces-duo/collage?calques=1", { cache: "no-store" }).catch(() => null);
+  const c = rc?.ok ? ((await rc.json().catch(() => null)) as { calques?: CalquesSalon | null } | null)?.calques : null;
+  if (c) {
+    await prechargerImage(c.plaque);
+    return {
+      etat: "pret",
+      flou: c.plaque.flou,
+      calques: true,
+      pret: { plaque: c.plaque.src, largeur: c.plaque.largeur, hauteur: c.plaque.hauteur, figurines: { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } },
+    };
+  }
   const r = await fetch("/api/admin/direct/pieces-duo/collage", { cache: "no-store" });
   const j = (await r.json().catch(() => null)) as { etat?: EtatCollage } | null;
   const e = j?.etat;
@@ -350,6 +363,13 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
             )}
             <p className="em-petit">Les figurines viendront ici avec leurs calques (lot S1).</p>
           </section>
+        )}
+        {!avec && pret && (
+          <p className="em-petit" data-calques={chargement.etat === "pret" && chargement.calques ? "vrais" : "provisoires"}>
+            {chargement.etat === "pret" && chargement.calques
+              ? "🎭 Les vrais calques : découpés dans l’image du duo (la tête au cou, le corps dessous)."
+              : "✂️ Découpe provisoire des posées : l’image du duo n’est pas encore faite (l’essai du collage, « Les installer dans la pièce »)."}
+          </p>
         )}
         {!avec && proches && (
           <section className="em-rangee" aria-label="Tes conversations">
