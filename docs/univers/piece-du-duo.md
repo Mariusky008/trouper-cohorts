@@ -256,6 +256,14 @@ lues ici « de la tête au siège » — des figurines une fois et demie trop gr
   (environ 0,17 €), sans rien effacer à la main.
 - **Les sièges ne se déforment plus** : la marge autour des figurines est fine (3 % de leur hauteur), prolongée seulement
   vers le bas, là où tombent les ombres ; la consigne dit de ne redessiner, déplacer ni plier aucun siège.
+- **Tournées l'une vers l'autre** (le cinquième essai : « ils ne sont pas assis correctement en fonction du sofa qui est
+  légèrement incliné, donc ils devraient eux aussi être légèrement inclinés l'un vers l'autre ») : le moteur ne peignant
+  que leur silhouette, il ne peut plus les tourner ; ce sont donc les poses qui le sont — celle de gauche tournée de trois
+  quarts vers la droite de l'image, celle de droite vers la gauche, comme les sièges (une pose par figurine et par côté,
+  `<empreinte>-vers-la-droite.png` / `-vers-la-gauche.png` ; les images du duo d'avant, de face, ne servent plus : `3q`
+  dans leur nom).
+- **Une pièce sans ses deux places** : « Les installer » ne cherche plus ailleurs — il dit « Pose d'abord leurs deux
+  places dans cette pièce » et ouvre de lui-même « ✋ Ajuster leurs places » sur les posées.
 
 ## 11. La télé, prête à brancher (15 novembre 2026)
 

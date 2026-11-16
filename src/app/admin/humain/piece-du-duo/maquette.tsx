@@ -400,8 +400,8 @@ export function MaquetteDuo() {
             <p>
               🪑 Pour que vos figurines s’installent {DANS[p.cle]}, trace d’abord ses deux places
               <small>
-                Dans « 🛋️ La pièce du duo » (la page des essais), « ✋ La place de gauche » et « ✋ La place de droite » : sur chaque siège, la figurine assise
-                entière, du haut de sa tête jusqu’à ses pieds. C’est ce qui donne leur place et leur taille.
+                Dans « 🧩 L’effet collage » (la page des essais) : choisis cette pièce, puis « ✋ Ajuster leurs places » sous les posées — fais glisser chaque figurine
+                sur son siège, à sa taille, et « Enregistrer leurs places ».
               </small>
             </p>
           </div>

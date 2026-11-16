@@ -207,6 +207,11 @@ const rel = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/salon/rele
 const pl = rel.emplacements?.places ?? [];
 ok(rel.ajuste === true && pl[0]?.hauteur === 0.31 && pl[1]?.hauteur === 0.31 && pl[0].x > 0.4 && pl[1].x === 0.62 && rel.emplacements.tele?.length === 4, `rangées dans les zones de la pièce : la boîte de la figurine entière, plus grande, la gauche déplacée, le reste gardé (${JSON.stringify(pl)})`);
 ok(/Pas encore faite/.test(await collage.locator('.cd-scene[data-version="generee"]').innerText()), "leurs places changées : la générée est à refaire");
+// (la cuisine, sans ses deux places : « Les installer » ouvre l'ajustement de lui-même, et dit quoi faire)
+await collage.getByRole("button", { name: "🍳 La cuisine" }).click();
+await collage.getByRole("button", { name: "Les installer dans la pièce" }).click();
+ok(await attendre(async () => /Pose d’abord leurs deux places/.test(await collage.innerText()), 20000), "une pièce sans ses deux places : on dit de les poser…");
+ok(await collage.getByRole("button", { name: "Enregistrer leurs places" }).isVisible(), "… et l'ajustement s'ouvre de lui-même, sur les posées");
 ok(erreurs.length === 0, `aucune erreur sur la page d'essais${erreurs.length ? ` (${erreurs[0]})` : ""}`);
 
 await b.close();
