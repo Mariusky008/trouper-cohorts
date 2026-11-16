@@ -498,6 +498,14 @@ ce qu'il peut essayer.
 5. **Le temps réel** : la question lui a été réexpliquée (un geste de l'un vu chez l'autre en 1 à 2 s avec le pouls,
    ou en moins d'une demi-seconde avec le temps réel) ; « oui, ok, je suis d'accord » : le pouls (S2) d'abord ; le temps
    réel (S9) seulement s'il trouve le délai gênant en jouant le salon à deux, sur deux téléphones.
+6. **L'image du duo des vraies paires** (le 16 novembre, « oui ok ») : tant que le salon est éteint, seule la paire
+   d'essai du propriétaire en a une (il valide d'abord le rendu sur son téléphone : la découpe au cou, la qualité de
+   l'image). **À l'allumage (S8), elle se fait toute seule à la première ouverture**, avec ces garde-fous : une seule
+   image à la fois (la pièce choisie, dans la lumière du moment ; les autres seulement si le duo y va) ; pendant la
+   fabrication (une minute environ), la pièce avec les figurines posées, puis la vraie image à la place, sans attendre ;
+   un plafond de dépense par jour ; seulement si les deux ont une figurine du nouveau style. Le coût : environ 0,55 € la
+   toute première fois, puis environ 0,20 € par nouvelle paire ou nouvelle pièce (la pose d'une figurine sert à tous ses
+   proches).
 
 ---
 
@@ -648,8 +656,29 @@ tête au-dessus du corps, le cou dans les deux, le pivot au cou ; posés sur la 
 découpés une fois) et `scripts/navigateur/salon-moteur.mjs` (l'image du duo faite par le faux moteur : la page passe
 aux vrais calques, chargés à adresse stable, les têtes vivent).
 
-**Ce qui reste du lot S1** : les emplacements ajoutés (`fenetreCoins`, `lampes`, `table`, `fentes`) et leur tracé à la
-main ; et, pour les vraies conversations, l'image du duo de chaque paire (ses deux poses et son duo par pièce et par
-lumière, environ 0,55 € la première fois) — à décider avec le propriétaire : quand la faire (à la première ouverture ?)
-et pour qui.
+L'image du duo des vraies paires : décidée (section 10, point 6) — elle se fera à l'allumage du salon (S8).
+
+### 11.6 Les emplacements du salon (lot S1, seconde partie)
+
+- **Le relevé de la pièce** (`EmplacementsDuo`, `src/lib/direct/pieces-duo.ts`) gagne quatre emplacements, facultatifs :
+  `fenetreCoins` (les carreaux de la fenêtre, un polygone de 3 à 12 points : la météo ne tombe que dedans), `lampes` (6
+  points au plus : elles éclairent la nuit, lot S7), `table` (une zone : on y pose ce qu'on s'offre et le talkie d'un
+  vocal, lots S3 et S4) et `fentes` (8 points au plus : les souvenirs s'y posent sur l'étagère, lot S6).
+  `emplacementsValides` les vérifie (ce qui est faux est laissé de côté) ; `?ouvrir=` les donne dans la scène.
+- **Leur tracé à la main** : sur l'adresse d'essai, « ✋ Les emplacements du salon » (`src/app/salon/emplacements-salon.tsx`)
+  — la pièce choisie, les carreaux touchés point par point, chaque lampe et chaque fente d'un toucher, la table d'un
+  glissé ; « Effacer cette zone », « Enregistrer ».
+- **`POST /api/direct/salon { action: "emplacements", piece, fenetreCoins?, lampes?, table?, fentes? }`**
+  (administrateur ; `poserEmplacementsSalon`, `src/lib/direct/salon-serveur.ts`) : **seulement ces quatre-là** changent
+  dans le relevé — les autres zones, les places et leur lecture (`ajuste`) restent. (L'action « ajuster » de la page des
+  pièces refait tout le relevé « à la main » : elle changerait le sens de places relevées par le modèle qui voit, et
+  referait l'image du duo.) La page des pièces, elle, garde ces quatre emplacements quand on y retouche les autres.
+
+**Les essais** : `scripts/essai-salon-route.mjs` (pour l'administrateur seulement ; posés ; une lampe hors de l'image et
+une fenêtre de deux points laissées de côté ; le reste du relevé intact ; une pièce aux places relevées garde leur
+lecture ; la scène les donne) et `scripts/navigateur/salon-moteur.mjs` (la table d'un glissé, deux lampes, les carreaux
+point par point, « Enregistrer », dans le relevé, le reste intact).
+
+**Le lot S1 est fait.** Ensuite : **S2, la conversation** (les bulles, 💬 Messagerie, écrire, les réactions, la présence
+et le pouls, l'arrivée, choisir la pièce et en changer).
 

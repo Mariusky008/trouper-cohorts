@@ -140,5 +140,41 @@ const notees = await (await fetch(`${STOCK}/figurines-clients/salon/vitesse/${jo
 ok(Array.isArray(notees) && notees.length === 2 && notees[0].appareil === "iPhone" && notees[1].appareil === "Android" && notees[0].deja === true && notees[0].pret === 260, `les deux, notées du jour, l'appareil reconnu (${JSON.stringify(notees)})`);
 ok((await get("/api/direct/salon?vitesse=1", LEA)).statut === 403, "les chiffres : pour l'administrateur seulement");
 
-console.log(echecs ? `\n${echecs} échec(s)` : "\nle salon, lot S0b : tout est bon");
+// ═══ ✋ LES EMPLACEMENTS DU SALON (lot S1) : seulement ces quatre-là changent dans le relevé ═══
+const ADMIN = "00000000-0000-4000-8000-0000000ad001";
+await semer("admins", [{ user_id: ADMIN }]);
+const b64 = (x) => Buffer.from(JSON.stringify(x)).toString("base64url");
+const session = { access_token: "faux-admin", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: "faux", user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {} } };
+const COOKIE_ADMIN = `sb-127-auth-token=base64-${b64(session)}`;
+const poserZones = (cookie, corps) => fetch(`${BASE}/api/direct/salon`, { method: "POST", headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}) }, body: JSON.stringify({ action: "emplacements", ...corps }) });
+const releve = async (piece) => (await fetch(`${STOCK}/figurines-clients/pieces-duo/${piece}/releve.json`)).json().catch(() => null);
+ok((await poserZones(`clikme_habitant=${LEA.jeton}`, { piece: "salon", table: [0.3, 0.7, 0.3, 0.1] })).status === 403, "les emplacements : pour l'administrateur seulement");
+ok((await poserZones(COOKIE_ADMIN, { piece: "grenier", table: [0.3, 0.7, 0.3, 0.1] })).status === 400, "une pièce inconnue : refusée");
+const avantZones = await releve("salon");
+const z1 = await poserZones(COOKIE_ADMIN, {
+  piece: "salon",
+  fenetreCoins: [[0.64, 0.08], [0.9, 0.06], [0.9, 0.36], [0.64, 0.37]],
+  lampes: [{ x: 0.12, y: 0.4 }, { x: 0.86, y: 0.42 }, { x: 1.4, y: 0.2 }],
+  table: [0.38, 0.72, 0.24, 0.08],
+  fentes: [{ x: 0.66, y: 0.33 }, { x: 0.72, y: 0.33 }, { x: 0.78, y: 0.33 }],
+});
+const em = (await z1.json().catch(() => ({}))).emplacements;
+ok(z1.status === 200 && em?.fenetreCoins?.length === 4 && em.table?.join() === "0.38,0.72,0.24,0.08" && em.fentes?.length === 3, "la fenêtre (ses carreaux), la table, les fentes : posées");
+ok(em?.lampes?.length === 2 && em.lampes.every((p) => p.x <= 1), "les lampes : une lampe hors de l'image est laissée de côté");
+const apresZones = await releve("salon");
+ok(
+  apresZones?.ajuste === avantZones?.ajuste && JSON.stringify(apresZones?.emplacements?.places) === JSON.stringify(avantZones?.emplacements?.places) && JSON.stringify(apresZones?.emplacements?.tele) === JSON.stringify(avantZones?.emplacements?.tele),
+  "le reste du relevé ne bouge pas : la télé, les places, la façon de les lire",
+);
+const sc2 = (await ouvrir(LEA, SAM.cle)).corps?.ouverture?.scene;
+ok(sc2?.emplacements?.table?.length === 4 && sc2.emplacements.lampes?.length === 2 && sc2.emplacements.fenetreCoins?.length === 4 && sc2.places.every((p) => Math.abs(p.y - 0.498) < 0.002), "la scène les donne (`?ouvrir=`), ses places inchangées");
+ok((await (await poserZones(COOKIE_ADMIN, { piece: "salon", fenetreCoins: [[0.1, 0.1], [0.2, 0.2]] })).json()).emplacements?.fenetreCoins === undefined, "une fenêtre de deux points ne tient pas : laissée de côté (les trois autres effacées avec)");
+// (une pièce dont les places viennent du modèle qui voit, sans « à la main » : elle le reste)
+await deposer("pieces-duo/cuisine/decor.png", await piece(220, 190, 90), "image/png");
+await json("pieces-duo/cuisine/releve.json", { le: maintenant, emplacements: { cadres: [], places: [{ x: 0.35, y: 0.7, hauteur: 0.3 }, { x: 0.65, y: 0.7, hauteur: 0.3 }] } });
+ok((await poserZones(COOKIE_ADMIN, { piece: "cuisine", table: [0.4, 0.75, 0.2, 0.1] })).status === 200, "la cuisine : sa table posée");
+const cuisine = await releve("cuisine");
+ok(cuisine?.ajuste === undefined && cuisine.emplacements.places[0].y === 0.7 && cuisine.emplacements.table?.length === 4, "… ses places relevées restent des points d'assise (le relevé n'est pas marqué « à la main »)");
+
+console.log(echecs ? `\n${echecs} échec(s)` : "\nle salon (lots S0b et S1) : tout est bon");
 process.exit(echecs ? 1 : 0);

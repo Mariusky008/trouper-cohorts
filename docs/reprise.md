@@ -230,8 +230,10 @@ l'univers peut écrire ses gestes (S3)** : un fichier `src/app/salon/gestes.ts`,
 à adresse stable (gardées un an par le téléphone), `GET /api/direct/proches?ouvrir=<clé>` (le fil, la vie et la scène
 en une requête), le préchargement, les mesures de vitesse (« ⚡ La vitesse du salon ») — section 11.4 du cahier. **Fait, lot S1
 (première partie)** : les calques des figurines découpés dans l'image du duo du collage (la tête au cou, le corps
-dessous, le pivot), à adresse stable, pris par l'adresse d'essai — section 11.5. **Reste** : les emplacements ajoutés et
-leur tracé ; l'image du duo des vraies paires (à décider avec le propriétaire).
+dessous, le pivot), à adresse stable, pris par l'adresse d'essai — section 11.5. **Fait, lot S1 (seconde
+partie)** : la fenêtre en polygone, les lampes, la table et les fentes, tracées à la main sur l'adresse d'essai — section
+11.6. L'image du duo des vraies paires : décidée (section 10, point 6 : à l'allumage, à la première ouverture, avec des
+garde-fous). **Ensuite : S2, la conversation.**
 
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 

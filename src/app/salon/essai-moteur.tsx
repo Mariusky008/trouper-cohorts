@@ -17,6 +17,7 @@ import "./mises-en-scene";
 import { useEffect, useRef, useState } from "react";
 import { bez, creerScene, ease } from "./moteur";
 import { envoyerMesures, marquer, mesures, ouvrir, precharger, prechargerImage, prechargerQuandLibre } from "./ouvrir";
+import { EmplacementsSalon } from "./emplacements-salon";
 import { PUCES_GESTES, autreQue, miseEnSceneDe, type CalqueFigurine, type CalquesSalon, type OptionsScene, type Qui, type Scene } from "@/lib/direct/salon";
 import { ANCRE_ASSISE, hauteurDuo, type EtatCollage, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
@@ -192,6 +193,7 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
   const [temps, setTemps] = useState<{ plaque?: number; pret?: number } | null>(null);
   const [proches, setProches] = useState<ProcheListe[] | null>(null);
   const [vitesse, setVitesse] = useState<Vitesse | null>(null);
+  const [emplacements, setEmplacements] = useState(false);
   const ici = useRef<HTMLDivElement>(null);
   const ancreMoi = useRef<HTMLSpanElement>(null);
   const ancreAutre = useRef<HTMLSpanElement>(null);
@@ -417,6 +419,20 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
         <button type="button" className="em-recommencer" onClick={() => setTour((t) => t + 1)}>
           ↻ Recommencer la scène
         </button>
+        {!avec && (
+          <section className="em-rangee" aria-label="Les emplacements du salon">
+            <h2>✋ Les emplacements du salon</h2>
+            {emplacements ? (
+              <EmplacementsSalon />
+            ) : (
+              <div>
+                <button type="button" onClick={() => setEmplacements(true)}>
+                  Poser la fenêtre, les lampes, la table, les fentes
+                </button>
+              </div>
+            )}
+          </section>
+        )}
         {!avec && vitesse && (
           <section className="em-rangee em-vitesse" aria-label="La vitesse du salon">
             <h2>⚡ La vitesse du salon (7 jours)</h2>
