@@ -273,7 +273,7 @@ une animation.
 |---|---|---|---|
 | **M0 — Les images du catalogue** ✅ | la page de l'admin : les huit refaites en hauteur (2.2) ; la largeur faite d'après la hauteur ; la chambre musicale (2.3) ; les relevés (le centre, son échelle) — le code est fait (2.4) ; les images, le propriétaire les lance | univers | — |
 | **S1 — Les calques** (salon-du-duo.md, section 9, modifié) | les calques de chaque figurine (section 4) ; leur pose aux places et au centre ; `CalquesDuo` composé à l'ouverture | messages et bienvenue | S0 |
-| **M1 — La maison** | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce | univers | M0, S1 |
+| **M1 — La maison** ✅ | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce — fait (section 13), derrière l'interrupteur | univers | M0, S1 |
 | **M2 — La maison qui se remplit** | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
 | **M3 — L'inscription** | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers | messages et bienvenue | M0 |
 | **M4 — Découvrir** | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
@@ -306,3 +306,35 @@ chez moi », et ⚙️ (qui peut entrer ; « Voir comme un inconnu » : ce qui v
 Une seule pièce y a déjà son image en largeur avec tous ses emplacements (la pièce cosy du propriétaire, en attendant
 les vraies du lot M0) ; les autres vignettes sont dessinées. La platine y est remplacée par une pochette posée contre
 le meuble (la pièce n'a pas de platine) : les images refaites en auront une.
+
+## 13. Le lot M1 : ce qui est fait (16 novembre 2026)
+
+**À l'adresse d'essai `/univers/maison`** (l'administrateur, sur son téléphone d'habitant : sa figurine), en plein écran.
+Dans l'onglet « Ma maison » quand l'interrupteur `MA_MAISON_CATALOGUE` (`src/lib/direct/ma-maison.ts`) sera allumé ;
+d'ici là, l'onglet garde l'univers d'aujourd'hui.
+
+- **Sans pièce** : « Choisis ta pièce » — les pièces prêtes (leur panorama fait, lot M0), dans l'ordre de l'âge (« 18 ans
+  ou plus ? » : non → le hangar, New York, la rue, la chambre musicale d'abord ; sinon le salon, la terrasse, la
+  cuisine, la chambre d'abord). Un toucher : la pièce en grand, qu'on fait glisser ; « Je m'installe ici ».
+- **Chez soi** : le panorama dans la lumière de l'heure de Paris (la sienne si cette lumière n'est pas faite), à
+  adresse stable (WebP, 1792 et 3584 points, la vignette floue d'abord ; servi par la route des fichiers du salon) ; on
+  arrive la figurine au milieu de l'écran ; « Ta maison se remplit toute seule… » et « ← Glisse pour faire le tour → »,
+  partis au premier glissement.
+- **La figurine** : sa figurine assise dans son fauteuil, **détourée au plus près une fois** (`<habitant>/ma-piece/
+  figurine.png`, refaite quand sa figurine change), posée au centre du relevé en largeur (sa boîte, de la tête au sol ;
+  sinon un centre par défaut), une ombre au sol, la teinte du moment (plus chaude le soir, plus sombre la nuit), une
+  respiration ; un toucher : elle sautille. **En attendant les calques du lot S1** (la tête qui bouge), elle est posée
+  entière.
+- **Les emplacements** (relevés à la main sur la page de l'admin) se touchent : une bulle dit ce que chacun accueillera
+  (la télé, la platine, un cadre, l'étagère, la table basse, le coin du chat) ; la fenêtre dit l'heure qu'il est ; une
+  lampe s'allume et s'éteint.
+- **⚙️ « Changer de pièce »** : la même liste, sa pièce marquée « ✓ Ta pièce ».
+- **Le serveur** : `src/lib/direct/ma-maison-serveur.ts` ; **la route** `GET/POST /api/direct/ma-piece` (la sienne
+  seulement : le cookie d'habitant ; l'administrateur seul tant que l'interrupteur est éteint) ; sa pièce dans
+  `<habitant>/ma-piece/piece.json`. Rien n'est généré (aucun moteur d'image).
+- **Les essais** : `scripts/essai-ma-maison-route.mjs`, `scripts/navigateur/ma-maison-catalogue.mjs` (iPhone).
+
+**À savoir** : le panorama fait 1024 pixels de haut ; en plein écran sur un iPhone (844 points de haut, 3 pixels par
+point), il est agrandi environ 2,5 fois. S'il paraît flou sur les vraies images, on pourra faire chaque partie en plus
+grand (lot M0) ou réduire un peu la hauteur de la scène.
+
