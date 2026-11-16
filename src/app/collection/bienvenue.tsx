@@ -23,7 +23,8 @@
  * « Passer » (en haut) et « Plus tard » (à la fin) la ferment ; ensuite, le logo ouvre la visite (`tuto.tsx`).
  * Toi et Léa sont de petits personnages dessinés : le nouveau venu n'a pas encore sa figurine.
  */
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { CHEMIN_INSCRIPTION } from "@/lib/direct/choisis-ta-piece";
 import { SONS_PABLITO, imagePablitoDebout } from "@/lib/direct/guide";
 import { Guide, debloquerLaVoix, useVoixBulle, type Visage } from "./guide";
 
@@ -127,14 +128,17 @@ function Scene({ i, parle, acces }: { i: number; parle: boolean; acces: number }
       </span>
       <span className="bv-toc">🚪 Léa frappe à ta porte</span>
 
+      {/* (🏠 lot M3 : « Ta pièce » au lieu de « 5 minutes avec Pablito », une fois l'interrupteur allumé) */}
       <span className="bv-chemin">
-        <span className="bv-etape toi"><b>📸</b><small>Ton selfie</small></span>
-        <span className="bv-fleche">›</span>
-        <span className="bv-etape"><b>🧸</b><small>Ta figurine</small></span>
-        <span className="bv-fleche">›</span>
-        <span className="bv-etape"><b>💬</b><small>5 minutes avec Pablito</small></span>
-        <span className="bv-fleche">›</span>
-        <span className="bv-etape"><b>🌍</b><small>Ton univers</small></span>
+        {CHEMIN_INSCRIPTION.map((x, k) => (
+          <Fragment key={x.t}>
+            {k > 0 && <span className="bv-fleche">›</span>}
+            <span className={`bv-etape${k === 0 ? " toi" : ""}`}>
+              <b>{x.e}</b>
+              <small>{x.t}</small>
+            </span>
+          </Fragment>
+        ))}
       </span>
     </div>
   );

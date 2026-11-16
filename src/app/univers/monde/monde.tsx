@@ -19,7 +19,9 @@
  *     une retouche (le son ne démarre que dans un toucher), et le bouton 🎵 pour la mettre ou la couper ;
  *   · « MON UNIVERS », L'ACCUEIL (`accueil`, à `/univers`, lot 4b) : son univers en grand, et le menu de demain
  *     (Découvrir · Autour · Créer · Proches · Mon univers) ; tant qu'il n'est pas créé, l'étape où il en est (sa
- *     figurine, la conversation avec Pablito, la création).
+ *     figurine, la conversation avec Pablito, la création) ;
+ *   · 🏠 « CHOISIS TA PIÈCE » (`piece`, le lot M3, `docs/univers/ma-maison.md`, section 3) : sa figurine faite, plus de
+ *     conversation ni de création — on choisit sa pièce du catalogue.
  *
  * FICHIER NAVIGATEUR.
  */
@@ -30,6 +32,7 @@ import { IDEES_RETOUCHE_UNIVERS, RETOUCHE_UNIVERS_MAX, type CleUnivers, type Eta
 import { VISIBILITES_DITES, objetDe, type MesVisites } from "@/lib/direct/visites";
 import type { Visibilite } from "@/lib/direct/monde";
 import { ChoixAmbiance } from "../choix-ambiance";
+import { ADRESSE_CHOISIR_PIECE, TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
 
 const ROUTE = "/api/direct/univers";
 
@@ -66,7 +69,7 @@ const MENU_DE_DEMAIN = [
   { ico: "📍", nom: "Autour", href: "/collection#autour" },
 ] as const;
 
-export function Monde({ accueil = false }: { accueil?: boolean }) {
+export function Monde({ accueil = false, piece = false }: { accueil?: boolean; piece?: boolean }) {
   const [etat, setEtat] = useState<EtatUnivers | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -154,9 +157,20 @@ export function Monde({ accueil = false }: { accueil?: boolean }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="um-pablito" src={imageVisage("joie", "n")} alt="" />
           <p className="um-titre">Ton univers commence par toi</p>
-          <p className="um-doux">D’abord ta figurine, assise dans son fauteuil. Ensuite, on imagine ton univers ensemble.</p>
+          <p className="um-doux">{piece ? TEXTES_PIECE.sansFigurine : "D’abord ta figurine, assise dans son fauteuil. Ensuite, on imagine ton univers ensemble."}</p>
           <a className="um-bouton" href="/univers/figurine">
             Créer ma figurine
+          </a>
+        </section>
+      ) : piece && (etat.etape === "sans-fiche" || etat.etape === "a-creer") ? (
+        // (🏠 lot M3 : Pablito ne fabrique plus — sa figurine faite, on choisit sa pièce)
+        <section className="um-carte" data-suite="piece">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="um-pablito" src={imageVisage("joie", "n")} alt="" />
+          <p className="um-titre">{TEXTES_PIECE.accueilTitre}</p>
+          <p className="um-doux">{TEXTES_PIECE.accueilTexte}</p>
+          <a className="um-bouton" href={ADRESSE_CHOISIR_PIECE}>
+            {TEXTES_PIECE.bouton}
           </a>
         </section>
       ) : etat.etape === "sans-fiche" ? (
