@@ -17,7 +17,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { TeleDuo } from "@/app/univers/tele-duo";
-import { COUT_PIECE_DUO, MOMENTS_DUO, zoneDesPlaces, type EtatPieceVivante, type MomentDuo, type PieceDuo, type PieceDuoVue, type Zone } from "@/lib/direct/pieces-duo";
+import { COUT_PIECE_DUO, MOMENTS_DUO, assisesDe, zoneDesPlaces, type EtatPieceVivante, type MomentDuo, type PieceDuo, type PieceDuoVue, type Zone } from "@/lib/direct/pieces-duo";
 import { CLIPS_DU_PROPRIETAIRE, programmeDuLien, secoursDuJour, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 
 const ROUTE = "/api/admin/direct/piece-vivante";
@@ -52,11 +52,11 @@ const euros = (x: number) => `${x.toFixed(2).replace(".", ",")} €`;
 const patienter = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 type Reponse = { etat?: EtatPieceVivante; fait?: string; error?: string };
 
-/** La caméra pour une zone (agrandie de `marge`) : son échelle et son décalage, en fractions de la scène. */
-function camera(z: Zone | null, marge = 1): { s: number; tx: number; ty: number } {
+/** La caméra pour une zone (agrandie de `marge`, sans dépasser `max`) : son échelle et son décalage, en fractions de la scène. */
+function camera(z: Zone | null, marge = 1, max = 3): { s: number; tx: number; ty: number } {
   if (!z) return { s: 1, tx: 0, ty: 0 };
   const [x, y, w, h] = z;
-  const s = Math.min(3, Math.max(1, Math.min(1 / (w * marge), 1 / (h * marge))));
+  const s = Math.min(max, Math.max(1, Math.min(1 / (w * marge), 1 / (h * marge))));
   return { s, tx: Math.min(0, Math.max(1 - s, 0.5 - (x + w / 2) * s)), ty: Math.min(0, Math.max(1 - s, 0.5 - (y + h / 2) * s)) };
 }
 
@@ -276,14 +276,14 @@ export function MaquetteDuo() {
       </p>
     );
 
-  // (les deux places relevées, sinon celles par défaut — comme pour l'image du duo)
-  const places = p.emplacements?.places.length === 2 ? p.emplacements.places : [];
+  // (les deux places, en points d'assise — tracées à la main, la boîte de la figurine entière —, sinon celles par défaut)
+  const places = p.emplacements?.places.length === 2 ? assisesDe(p.emplacements.places, Boolean(p.ajuste)) : [];
   const sansDuoIci = Boolean(!duo && etat.duo && fond);
   const aFaireIci = sansDuoIci && deuxPlaces(p);
   // (tant que les figurines ne sont pas là, la pièce entière, sans bulles ; elles arrivées, la caméra glisse vers elles —
-  // assez large pour garder la pièce autour d'elles)
+  // à peine : la pièce, ses meubles et ses objets restent autour d'elles)
   const auxPlaces = plan.type === "places" && !sansDuoIci;
-  const cam = auxPlaces ? camera(zoneDesPlaces(places), 1.4) : plan.type === "objet" ? camera(zoneDe(p, plan.objet), plan.objet === "chat" ? 1 : 1.9) : camera(null);
+  const cam = auxPlaces ? camera(zoneDesPlaces(places), 1.4, 1.2) : plan.type === "objet" ? camera(zoneDe(p, plan.objet), plan.objet === "chat" ? 1 : 1.9) : camera(null);
   const vise = plan.type === "objet" ? plan.objet : null;
   const zTele = zoneDe(p, "tele");
   const zCadre = zoneDe(p, "cadre");
@@ -390,8 +390,8 @@ export function MaquetteDuo() {
             <p>
               🪑 Pour que vos figurines s’installent {DANS[p.cle]}, trace d’abord ses deux places
               <small>
-                Dans « 🛋️ La pièce du duo » (la page des essais), « ✋ La place de gauche » et « ✋ La place de droite » : sur chaque siège, du haut de la tête
-                de la figurine jusqu’au siège. C’est ce qui donne leur taille.
+                Dans « 🛋️ La pièce du duo » (la page des essais), « ✋ La place de gauche » et « ✋ La place de droite » : sur chaque siège, la figurine assise
+                entière, du haut de sa tête jusqu’à ses pieds. C’est ce qui donne leur place et leur taille.
               </small>
             </p>
           </div>
