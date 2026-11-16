@@ -6,17 +6,55 @@
  * collage ») : la pièce vide en plaque, chaque posée découpée en deux calques (le corps, la tête) en attendant les vrais
  * calques du lot S1 ; et un tableau qui fait jouer au moteur chacun de ses ressorts, de ses effets, de ses sons, la caméra
  * et les gestes déjà enregistrés (`./mises-en-scene`) — c'est ici que l'autre session essaie les siens.
+ *
+ * (Lot S0b) `?avec=<clé>` : UNE VRAIE CONVERSATION de l'administrateur, ouverte comme le salon l'ouvrira — une requête
+ * (`?ouvrir=`), la vignette floue tout de suite, la pièce à adresse stable décodée hors de l'affichage, puis la scène ; les
+ * temps mesurés (`salon:toucher` → `salon:plaque` → `salon:pret`) s'affichent et partent à « ⚡ La vitesse du salon ». Les
+ * figurines y viendront avec leurs calques (lot S1). Sans `avec` : ses conversations, préchargées dans un temps mort (les
+ * deux premières) et au premier contact du doigt.
  */
 import "./mises-en-scene";
 import { useEffect, useRef, useState } from "react";
 import { bez, creerScene, ease } from "./moteur";
+import { envoyerMesures, marquer, mesures, ouvrir, precharger, prechargerImage, prechargerQuandLibre } from "./ouvrir";
 import { PUCES_GESTES, autreQue, miseEnSceneDe, type CalqueFigurine, type OptionsScene, type Qui, type Scene } from "@/lib/direct/salon";
 import { ANCRE_ASSISE, hauteurDuo, type EtatCollage, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
 /** Sur une posée (assise sans fauteuil, détourée au plus près), le cou, de haut en bas : la tête au-dessus, le corps dessous. */
 const COU = 0.42;
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
-type Chargement = { etat: "charge" } | { etat: "manque"; message: string } | { etat: "pret"; pret: Pret };
+type Avec = { cle: string; prenom: string; deja: boolean };
+type Chargement = { etat: "charge"; flou?: string } | { etat: "manque"; message: string } | { etat: "pret"; pret: Pret; flou?: string; avec?: Avec };
+type ProcheListe = { cle: string; prenom: string; lien?: string };
+type Vitesse = { ouvertures: number; deja: { n: number; mediane: number; p90: number }; premiere: { n: number; mediane: number; p90: number } };
+
+/** Cette conversation a-t-elle déjà été ouverte sur ce téléphone ? (et la noter) */
+function dejaVue(cle: string): boolean {
+  try {
+    const k = `salon:vu:${cle}`;
+    const vu = localStorage.getItem(k) === "1";
+    localStorage.setItem(k, "1");
+    return vu;
+  } catch {
+    return false;
+  }
+}
+
+/** 🚪 Une vraie conversation : la requête, la vignette floue dès qu'elle arrive, puis la pièce décodée. */
+async function chargerConversation(cle: string, surFlou: (flou: string) => void): Promise<Chargement> {
+  const o = await ouvrir(cle);
+  const sc = o.scene;
+  if (!sc) return { etat: "manque", message: `La pièce de votre conversation avec ${o.fil.lui.prenom} n’est pas encore faite.` };
+  surFlou(sc.plaque.flou);
+  await prechargerImage(sc.plaque);
+  marquer("salon:plaque");
+  return {
+    etat: "pret",
+    flou: sc.plaque.flou,
+    avec: { cle, prenom: o.fil.lui.prenom, deja: dejaVue(cle) },
+    pret: { plaque: sc.plaque.src, largeur: sc.plaque.largeur, hauteur: sc.plaque.hauteur, figurines: {} },
+  };
+}
 
 const image = (src: string) =>
   new Promise<HTMLImageElement>((ok, ko) => {
@@ -132,28 +170,73 @@ const CAMERA: Bouton[] = [
   },
 ];
 
-export function EssaiMoteur() {
+export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | null }) {
+  const [avec, setAvec] = useState<string | null>(avecDeDepart);
   const [chargement, setChargement] = useState<Chargement>({ etat: "charge" });
   const [qui, setQui] = useState<Qui>("moi");
   const [tour, setTour] = useState(0);
   const [note, setNote] = useState("");
+  const [temps, setTemps] = useState<{ plaque?: number; pret?: number } | null>(null);
+  const [proches, setProches] = useState<ProcheListe[] | null>(null);
+  const [vitesse, setVitesse] = useState<Vitesse | null>(null);
   const ici = useRef<HTMLDivElement>(null);
   const ancreMoi = useRef<HTMLSpanElement>(null);
   const ancreAutre = useRef<HTMLSpanElement>(null);
   const cadence = useRef<HTMLSpanElement>(null);
   const scene = useRef<Scene | null>(null);
+  const mesuree = useRef<Avec | null>(null);
 
   useEffect(() => {
     let vivant = true;
-    charger()
-      .catch((): Chargement => ({ etat: "manque", message: "La pièce ou les figurines ne se chargent pas." }))
-      .then((c) => vivant && setChargement(c));
+    // (une conversation ouverte directement par son adresse : le « toucher » est l'arrivée sur la page)
+    if (avec && !performance.getEntriesByName("salon:toucher", "mark").length) marquer("salon:toucher");
+    const c = avec
+      ? chargerConversation(avec, (flou) => vivant && setChargement({ etat: "charge", flou })).catch((e: unknown): Chargement => ({ etat: "manque", message: e instanceof Error ? e.message : "La conversation ne s’ouvre pas." }))
+      : charger().catch((): Chargement => ({ etat: "manque", message: "La pièce ou les figurines ne se chargent pas." }));
+    void c.then((x) => vivant && setChargement(x));
     return () => {
       vivant = false;
     };
-  }, []);
+  }, [avec]);
+
+  // (sans conversation ouverte : les siennes, préchargées dans un temps mort — les deux premières —, et la vitesse)
+  useEffect(() => {
+    if (avec) return;
+    let vivant = true;
+    let annuler = () => undefined as void;
+    void fetch("/api/direct/proches", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { proches?: ProcheListe[] } | null) => {
+        if (!vivant) return;
+        const l = (j?.proches ?? []).filter((p) => p.lien === "proches");
+        setProches(l);
+        annuler = prechargerQuandLibre(l.slice(0, 2).map((p) => p.cle));
+      })
+      .catch(() => vivant && setProches([]));
+    void fetch("/api/direct/salon?vitesse=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { vitesse?: Vitesse } | null) => vivant && setVitesse(j?.vitesse ?? null))
+      .catch(() => undefined);
+    return () => {
+      vivant = false;
+      annuler();
+    };
+  }, [avec]);
+
+  const allerA = (cle: string | null) => {
+    if (cle) marquer("salon:toucher");
+    setTemps(null);
+    setChargement({ etat: "charge" });
+    setAvec(cle);
+    try {
+      window.history.pushState(null, "", cle ? `?avec=${cle}` : window.location.pathname);
+    } catch {
+      /* l'adresse ne suit pas : tant pis */
+    }
+  };
 
   const pret = chargement.etat === "pret" ? chargement.pret : null;
+  const conversation = chargement.etat === "pret" ? chargement.avec : undefined;
   useEffect(() => {
     const el = ici.current;
     if (!pret || !el) return;
@@ -170,6 +253,16 @@ export function EssaiMoteur() {
       surLeger: () => void Promise.resolve().then(() => setNote("Le mode léger s’est mis en route (moins de particules).")),
     });
     scene.current = s;
+    // (🚪 une vraie conversation : la scène est prête à l'image suivante ; ses temps s'affichent et partent, une fois)
+    let raf = 0;
+    if (conversation && mesuree.current !== conversation) {
+      mesuree.current = conversation;
+      raf = requestAnimationFrame(() => {
+        marquer("salon:pret");
+        setTemps(mesures());
+        envoyerMesures(conversation.deja);
+      });
+    }
     // (la cadence, écrite deux fois par seconde : jamais un rendu de React par image)
     let n = 0;
     let depuis = performance.now();
@@ -183,11 +276,12 @@ export function EssaiMoteur() {
       }
     });
     return () => {
+      cancelAnimationFrame(raf);
       fin();
       s.detruire();
       scene.current = null;
     };
-  }, [pret, tour]);
+  }, [pret, tour, conversation]);
 
   const jouer = (b: Bouton) => {
     if (scene.current) b.faire(scene.current, qui);
@@ -218,7 +312,12 @@ export function EssaiMoteur() {
   return (
     <main className="em">
       <style>{STYLES}</style>
-      <div className="em-scene" data-pret={pret ? "1" : undefined}>
+      <div
+        className="em-scene"
+        data-pret={pret ? "1" : undefined}
+        data-flou={chargement.etat !== "manque" && chargement.flou ? "1" : undefined}
+        style={chargement.etat !== "manque" && chargement.flou ? { backgroundImage: `url("${chargement.flou}")` } : undefined}
+      >
         <div ref={ici} className="em-ici" />
         {pret && (
           <>
@@ -226,18 +325,48 @@ export function EssaiMoteur() {
             <span ref={ancreAutre} className="em-ancre autre" data-ancre="autre" aria-hidden />
           </>
         )}
-        {chargement.etat === "charge" && <p className="em-attente">La pièce arrive…</p>}
+        {chargement.etat === "charge" && !chargement.flou && <p className="em-attente">La pièce arrive…</p>}
         {chargement.etat === "manque" && (
           <p className="em-attente">
-            {chargement.message} <a href="/admin/humain/univers-essais">L’essai du collage</a>
+            {chargement.message} {!avec && <a href="/admin/humain/univers-essais">L’essai du collage</a>}
           </p>
         )}
       </div>
       <div className="em-tableau">
         <header>
-          <b>🛋️ Le moteur du salon</b>
+          <b>{avec ? `🚪 Avec ${conversation?.prenom ?? "…"}` : "🛋️ Le moteur du salon"}</b>
           <span ref={cadence} className="em-cadence" />
         </header>
+        {avec && (
+          <section className="em-conversation" aria-label="La conversation">
+            <button type="button" onClick={() => allerA(null)}>
+              ← Le moteur
+            </button>
+            {temps && (
+              <p className="em-temps" role="status">
+                La pièce à l’écran : <b>{temps.plaque ?? "—"} ms</b> · prête : <b>{temps.pret ?? "—"} ms</b>
+                {conversation?.deja ? " (déjà vue sur ce téléphone)" : " (première fois sur ce téléphone)"}
+              </p>
+            )}
+            <p className="em-petit">Les figurines viendront ici avec leurs calques (lot S1).</p>
+          </section>
+        )}
+        {!avec && proches && (
+          <section className="em-rangee" aria-label="Tes conversations">
+            <h2>Tes conversations</h2>
+            {proches.length ? (
+              <div>
+                {proches.map((p) => (
+                  <button key={p.cle} type="button" data-proche={p.cle} onPointerDown={() => precharger(p.cle)} onClick={() => allerA(p.cle)}>
+                    🚪 {p.prenom}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="em-petit">Aucune conversation pour l’instant (vous devez vous être ajoutés tous les deux).</p>
+            )}
+          </section>
+        )}
         <div className="em-qui" role="radiogroup" aria-label="Qui joue">
           {(["moi", "autre"] as const).map((q) => (
             <button key={q} type="button" role="radio" aria-checked={qui === q} onClick={() => setQui(q)}>
@@ -268,6 +397,19 @@ export function EssaiMoteur() {
         <button type="button" className="em-recommencer" onClick={() => setTour((t) => t + 1)}>
           ↻ Recommencer la scène
         </button>
+        {!avec && vitesse && (
+          <section className="em-rangee em-vitesse" aria-label="La vitesse du salon">
+            <h2>⚡ La vitesse du salon (7 jours)</h2>
+            {vitesse.ouvertures ? (
+              <p>
+                Déjà vue : médiane <b>{vitesse.deja.mediane} ms</b>, 90 % sous <b>{vitesse.deja.p90} ms</b> ({vitesse.deja.n}) · la première fois : médiane{" "}
+                <b>{vitesse.premiere.mediane} ms</b>, 90 % sous <b>{vitesse.premiere.p90} ms</b> ({vitesse.premiere.n})
+              </p>
+            ) : (
+              <p className="em-petit">Aucune ouverture mesurée pour l’instant.</p>
+            )}
+          </section>
+        )}
       </div>
     </main>
   );
@@ -275,7 +417,11 @@ export function EssaiMoteur() {
 
 const STYLES = `
 .em{height:100dvh;background:#1d1626;color:#f6eefc;font:15px/1.35 system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;overflow:hidden}
-.em-scene{position:relative;flex:0 0 52dvh;min-height:260px;background:#120d18;overflow:hidden}
+.em-scene{position:relative;flex:0 0 52dvh;min-height:260px;background:#120d18 center 30%/cover no-repeat;overflow:hidden}
+.em-conversation{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.em-temps{margin:0;font-variant-numeric:tabular-nums}
+.em-petit{margin:0;font-size:13px;opacity:.75}
+.em-vitesse p{margin:0;font-size:14px;font-variant-numeric:tabular-nums}
 .em-ici{position:absolute;inset:0}
 .em-ancre{position:absolute;left:0;top:0;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#7fe3ff;box-shadow:0 0 0 2px #120d18;pointer-events:none;z-index:2}
 .em-ancre.autre{background:#ff6fb1}

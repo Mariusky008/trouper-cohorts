@@ -595,8 +595,46 @@ sans mise en scène ; « Recommencer la scène » (une seule scène) ; la page c
 longue image pendant un moment chargé (une mesure : les seuils viennent avec S0b) ; « réduire les animations » ; ni
 débordement, ni erreur, ni le mot interdit.
 
-**La suite (S0b)** : les URL stables et le cache (7.2), `?ouvrir=` (7.4), le préchargement, les mesures et les essais de
-vitesse (7.6).
+### 11.4 La vitesse : les images à adresse stable, `?ouvrir=`, le préchargement, les mesures (lot S0b)
+
+- **Les images à adresse stable** (`src/lib/direct/salon-fichiers-serveur.ts`, `imageSalon(supabase, chemin)`) : une image
+  du stockage (la plaque ; les calques du lot S1) devient, une fois, des fichiers nommés par l'empreinte de son contenu
+  (`salon/fichiers/<empreinte>-<largeur>.webp` : 128 bits, impossible à deviner), en WebP qualité 80, en deux largeurs
+  au plus (720 et 1080 points, jamais plus que la source ; la transparence gardée), avec une vignette floue
+  (`data:`, une centaine d'octets). Un index par source (`salon/index/…json`) retient sa version (date et taille, lues
+  dans la liste du dossier) : rien n'est refait tant qu'elle ne change pas ; une nouvelle image donne une nouvelle
+  adresse, l'ancienne reste lisible. Le type, `ImageSalon` (le contrat) : `src` (la plus grande), `srcset`, `largeur`,
+  `hauteur` (l'image d'origine), `flou`.
+- **La route** `GET /api/direct/salon/fichier/<empreinte>-<largeur>.webp` : `Cache-Control: private, max-age=31536000,
+  immutable`, un `ETag` (304 quand le téléphone l'a déjà) ; une session d'habitant ou d'administrateur suffit — le nom,
+  que seuls les deux du duo reçoivent, en est la clé, comme pour une adresse signée. (Le service worker ne touche pas
+  aux requêtes : le cache du navigateur suffit ; la règle « cache first » du 7.2 pourra s'ajouter à `public/sw.js`.)
+- **`GET /api/direct/proches?ouvrir=<clé>`** (`src/lib/direct/salon-serveur.ts`, `ouvrirSalon`) : `{ ouverture }` —
+  le fil (`?fil=`), la vie (`?vivant=`, ce qu'elle fait après la réponse compris) et la scène (`SceneSalon` : la pièce,
+  la lumière de l'heure de Paris — celle de la pièce si cette lumière n'est pas faite —, la plaque à adresse stable, les
+  places en points d'assise, les emplacements ; `calques` avec le lot S1 ; `null` tant que la pièce n'est pas faite), en
+  une requête. La pièce : le salon, tant que le duo n'en a pas choisi une (S2, 4.13). Le type : `OuvertureSalon`.
+- **Côté téléphone** (`src/app/salon/ouvrir.ts`) : `ouvrir(cle)` (une requête, partagée avec un préchargement, gardée
+  20 s) ; `prechargerImage(img)` (téléchargée et décodée hors de l'affichage, la même adresse que la scène : jamais
+  deux téléchargements) ; `precharger(cle)`, `prechargerQuandLibre(cles)` (`requestIdleCallback`) ; les marques
+  `salon:toucher`, `salon:plaque`, `salon:pret`, `mesures()` et `envoyerMesures(deja)` (une fois par ouverture, 2 s
+  après, par `sendBeacon`).
+- **⚡ La vitesse du salon** (`POST /api/direct/salon { action: "vitesse", plaque, pret, deja, ecran }` ; l'appareil lu
+  dans le navigateur : iPhone, Android, autre) : notée par jour (`salon/vitesse/<jour>.json`, 500 au plus ; deux en même
+  temps, l'une peut se perdre — c'est une mesure). `GET /api/direct/salon?vitesse=1` (administrateur) : les sept derniers
+  jours, la médiane et les 90 % (déjà vue, la première fois), par appareil — affichés au bas de l'adresse d'essai.
+- **L'adresse d'essai** : « Tes conversations » (préchargées : les deux premières dans un temps mort, chacune au premier
+  contact du doigt) ; `?avec=<clé>` ouvre la vraie conversation comme le salon l'ouvrira — la vignette floue, la pièce,
+  puis la scène — et affiche ses temps (« première fois » ou « déjà vue sur ce téléphone »).
+
+**Les essais** : `scripts/essai-salon-route.mjs` (qui peut ouvrir ; la scène `null` puis faite ; la plaque, ses deux
+largeurs, sa vignette ; le fichier en WebP, gardé un an, 304, les noms refusés ; rouvrir : la même adresse, rien de
+refait ; une nouvelle image : une nouvelle adresse ; la mesure) et `scripts/navigateur/salon-ouvrir.mjs` (le
+préchargement avant le toucher ; la pièce préchargée servie telle quelle ; la vignette floue ; les temps ; la mesure
+partie une fois ; « déjà vue » ; un nouvel onglet : la pièce vient du cache, rien de téléchargé ; **le processeur ralenti
+×4 : une conversation déjà vue prête en moins de 800 ms, la requête comprise** — 115 ms ici). La plus longue image
+pendant des effets, ralenti ×4, est mesurée (33 à 50 ms ici) : le seuil « aucune image de plus de 50 ms pendant un geste »
+s'essaiera sur les gestes eux-mêmes (lot S3).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

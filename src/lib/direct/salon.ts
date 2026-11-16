@@ -13,8 +13,9 @@
  *
  * Partagé (l'écran et le serveur) : rien ici ne touche au navigateur.
  */
-import { PANNEAUX } from "./vivant";
-import type { Zone } from "./pieces-duo";
+import { PANNEAUX, type Vivant } from "./vivant";
+import type { EmplacementsDuo, MomentDuo, PieceDuo, PlaceDuo, Zone } from "./pieces-duo";
+import type { Fil } from "./talkie";
 
 // ─── QUI EST QUI ─────────────────────────────────────────────────────────────────────────────────────────────────────
 /** Dans la scène : « moi » (celui qui regarde) et « autre » (son proche). */
@@ -47,6 +48,32 @@ export type CalqueFigurine = {
  * est une adresse ; côté serveur, un chemin du seau.
  */
 export type CalquesDuo = { plaque: string; a: CalqueFigurine; b: CalqueFigurine };
+
+// ─── L'OUVERTURE D'UNE CONVERSATION (sections 7.2 et 7.4 ; lot S0b) ─────────────────────────────────────────────────
+/**
+ * 🗂️ Une image de la scène À ADRESSE STABLE (`/api/direct/salon/fichier/<empreinte>-<largeur>.webp`, gardée un an par
+ * le téléphone) : la plus grande en `src`, ses largeurs en `srcset` (720 et 1080 points au plus), la taille de l'image
+ * d'origine en pixels, et sa vignette floue (`data:`, quelques centaines d'octets) à montrer tout de suite.
+ */
+export type ImageSalon = { src: string; srcset: string; largeur: number; hauteur: number; flou: string };
+/**
+ * 🛋️ La scène d'une conversation : la pièce et sa lumière du moment, la plaque (la pièce vide, à adresse stable), les deux
+ * places (en points d'assise, de gauche à droite), les emplacements relevés — et, quand le lot S1 les fait, les calques
+ * des deux figurines (`a` : celle de gauche).
+ */
+export type SceneSalon = {
+  piece: PieceDuo;
+  moment: MomentDuo;
+  plaque: ImageSalon;
+  places: PlaceDuo[];
+  emplacements: EmplacementsDuo | null;
+  calques?: { a: CalqueFigurine; b: CalqueFigurine };
+};
+/**
+ * 🚪 TOUT CE QU'IL FAUT POUR OUVRIR UNE CONVERSATION, EN UNE REQUÊTE (`GET /api/direct/proches?ouvrir=<clé>`) : le fil
+ * (les derniers messages), la vie (gestes, apartés, étagère) et la scène — `null` tant que la pièce n'est pas faite.
+ */
+export type OuvertureSalon = { cle: string; fil: Fil; vivant: Vivant | null; scene: SceneSalon | null };
 
 // ─── LES GESTES (section 4.4 ; leurs mises en scène : lot S3) ───────────────────────────────────────────────────────
 export type CategorieGeste = "attentions" | "ensemble";
