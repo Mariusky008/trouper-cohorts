@@ -399,7 +399,7 @@ export function PiecesDuDuo() {
           if (!(await mener(p.cle)) && !v?.decor) return;
         }
       }
-      setDit("Les cinq pièces sont faites, en trois lumières : regarde-les sur ton téléphone.");
+      setDit("Toutes les pièces sont faites, en trois lumières : regarde-les sur ton téléphone.");
     } finally {
       setOccupe(null);
     }
@@ -415,7 +415,7 @@ export function PiecesDuDuo() {
   const faites = etat?.pieces.filter((p) => p.decor).length ?? 0;
   return (
     <section aria-label="La pièce du duo" style={{ margin: "18px 0", padding: 16, border: "1px solid #e3d7c8", borderRadius: 16, background: "#fffaf3" }}>
-      <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🛋️ La pièce du duo : l’essai des cinq pièces</h2>
+      <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🛋️ La pièce du duo : l’essai des pièces</h2>
       <p style={{ margin: "0 0 10px", color: "#555", lineHeight: 1.45 }}>
         Chaque conversation se passe dans une pièce choisie à deux, et changée selon l’humeur. Toutes ont les mêmes emplacements : la télé (vos liens), la
         platine (votre chanson), les cadres (vos photos), l’étagère, la fenêtre, vos deux places, le coin du chat. Chacune a sa signature, et existe le matin,
@@ -426,7 +426,7 @@ export function PiecesDuDuo() {
       {etat && !etat.moteurs.regard && <p style={{ color: "#8a5a00" }}>Le modèle qui voit n’est pas branché ici : les emplacements ne seront pas relevés (les pièces, si).</p>}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", margin: "0 0 12px" }}>
         <button type="button" className="pd-principal" disabled={Boolean(occupe)} onClick={() => void toutFaire()}>
-          {occupe ? "… (garde la page ouverte)" : faites ? "Faire ce qui manque" : "Faire les cinq pièces"}
+          {occupe ? "… (garde la page ouverte)" : faites ? "Faire ce qui manque" : "Faire toutes les pièces"}
         </button>
         <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <input type="checkbox" checked={voir} onChange={(e) => setVoir(e.target.checked)} /> Voir les emplacements
