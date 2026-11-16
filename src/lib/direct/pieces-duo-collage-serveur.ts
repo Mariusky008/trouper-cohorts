@@ -30,6 +30,7 @@ import { demanderUneImage } from "./moteur-images-serveur";
 import { ANCRE_ASSISE, MOMENTS_DUO, PIECES_DUO, PLACES_PAR_DEFAUT, assisesDe, hauteurDuo, avisCollageValide, momentDuoValide, pieceDuoDe, pieceDuoValide, type ChoixCollage, type DuoVivant, type EtatCollage, type FigurineDuo, type MomentDuo, type PieceDuo, type PlaceDuo } from "./pieces-duo";
 import { etatPiecesDuo, prendre, rendre } from "./pieces-duo-serveur";
 import { estDetouree, type ResultatEssai } from "./univers-essais";
+import type { CalqueFigurine, CalquesDuo } from "./salon";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -219,6 +220,143 @@ async function recoller(piece: Buffer, rendue: Buffer, l: number, h: number, p: 
       for (let c = 0; c < 3; c++) sortie[k + c] = Math.round(a[k + c] * (1 - t) + b[k + c] * t);
     }
   return sharp(sortie, { raw: { width: l, height: h, channels: 3 } }).png().toBuffer();
+}
+
+// ─── 🎭 LES CALQUES DE L'IMAGE DU DUO (le salon du duo, lot S1 ; `docs/univers/salon-du-duo.md`, section 5) ──────────
+/** Un calque découpé : son image (avec transparence, recadrée au plus près) et sa boîte sur la pièce, en fractions. */
+export type CalqueDecoupe = { png: Buffer; boite: [number, number, number, number] };
+export type FigurineDecoupee = { corps: CalqueDecoupe; tete: CalqueDecoupe & { pivot: [number, number] } };
+
+/**
+ * LE COU d'une pose (sa transparence, `w` × `hh`) : la ligne la plus étroite entre le quart et un peu plus de la moitié de
+ * sa hauteur (sous la grosse tête, au-dessus des épaules), et son milieu. Une silhouette sans cou net (des cheveux longs
+ * sur les épaules) : à 42 % de sa hauteur.
+ */
+export function couDeLaPose(alpha: Uint8Array, w: number, hh: number): { y: number; x: number } {
+  const larg = new Float32Array(hh);
+  const centre = new Float32Array(hh).fill(w / 2);
+  for (let y = 0; y < hh; y++) {
+    let g = -1;
+    let d = -1;
+    for (let x = 0; x < w; x++)
+      if (alpha[y * w + x] > 128) {
+        if (g < 0) g = x;
+        d = x;
+      }
+    if (g >= 0) {
+      larg[y] = d - g + 1;
+      centre[y] = (g + d) / 2;
+    }
+  }
+  const lisse = (y: number) => {
+    let t = 0;
+    let n = 0;
+    for (let k = Math.max(0, y - 2); k <= Math.min(hh - 1, y + 2); k++) {
+      t += larg[k];
+      n++;
+    }
+    return t / n;
+  };
+  const y0 = Math.round(hh * 0.25);
+  const y1 = Math.round(hh * 0.55);
+  let cou = y0;
+  for (let y = y0; y <= y1; y++) if (lisse(y) < lisse(cou)) cou = y;
+  let tete = 0;
+  for (let y = Math.round(hh * 0.05); y < cou; y++) tete = Math.max(tete, lisse(y));
+  if (!(larg[cou] > 0 && lisse(cou) < 0.8 * tete)) cou = Math.round(hh * 0.42);
+  return { y: cou, x: centre[cou] };
+}
+
+/**
+ * 🎭 LA DÉCOUPE DE L'IMAGE DU DUO EN CALQUES (section 5) : la plaque est la pièce elle-même ; chaque figurine est ce que
+ * l'image du duo a peint dans SA silhouette (celle du collage, la zone peinte), séparée en deux au cou — la tête au-dessus
+ * (le cou compris, quelques points sous la ligne), le corps dessous (qui garde le cou : une tête qui penche ne laisse pas
+ * voir la pièce). Les couleurs sont celles de l'image rendue, retrouvées sous le fondu du recollage
+ * (`duo = pièce × (1 − p) + rendu × p`) : posé sur la pièce, un calque redonne l'image du duo au pixel près. Le pivot de
+ * la tête : le milieu du cou.
+ */
+export async function decouperCalques(piece: Buffer, duo: Buffer, poses: [Buffer, Buffer], places: PlaceDuo[]): Promise<{ a: FigurineDecoupee; b: FigurineDecoupee } | null> {
+  const meta = await sharp(piece).metadata();
+  const [l, h] = [meta.width ?? 0, meta.height ?? 0];
+  if (!l || !h || places.length !== 2) return null;
+  const brut = (b: Buffer) => sharp(b).resize(l, h, { fit: "fill" }).removeAlpha().toColourspace("srgb").raw().toBuffer();
+  const [P, D] = await Promise.all([brut(piece), brut(duo)]);
+  const haut = Math.max(8, Math.round(hauteurDuo(places) * h));
+  // (chaque pose, posée comme le collage la pose : `poserLesFigurines`)
+  const tout = new Uint8Array(l * h);
+  const posees = await Promise.all(
+    poses.map(async (pose, k) => {
+      const { data, info } = await sharp(pose).resize({ height: haut }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const alpha = new Uint8Array(info.width * info.height);
+      for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * info.channels + 3];
+      const gauche = Math.round(places[k].x * l - info.width / 2);
+      const dessus = Math.round(places[k].y * h - ANCRE_ASSISE * info.height);
+      const presence = new Uint8Array(l * h);
+      for (let y = 0; y < info.height; y++)
+        for (let x = 0; x < info.width; x++) {
+          const [X, Y] = [gauche + x, dessus + y];
+          if (X < 0 || X >= l || Y < 0 || Y >= h) continue;
+          const a = alpha[y * info.width + x];
+          presence[Y * l + X] = a;
+          if (a > tout[Y * l + X]) tout[Y * l + X] = a;
+        }
+      const cou = couDeLaPose(alpha, info.width, info.height);
+      return { presence, cou: { x: gauche + cou.x, y: dessus + cou.y } };
+    }),
+  );
+  // (la zone peinte du duo, la même que pour le recollage : les couleurs se retrouvent exactement ; celle de chacune dit
+  // à qui est un pixel)
+  const z = zonePeinte(tout, l, h, haut);
+  const zs = posees.map((p) => zonePeinte(p.presence, l, h, haut));
+  const poidsDe = (pz: Peinte, X: number, Y: number) => {
+    const [x, y] = [X - pz.zone.left, Y - pz.zone.top];
+    return x < 0 || y < 0 || x >= pz.zone.width || y >= pz.zone.height ? 0 : pz.poids[y * pz.zone.width + x];
+  };
+  const decouper = async (k: 0 | 1, part: "tete" | "corps"): Promise<CalqueDecoupe | null> => {
+    const yCou = posees[k].cou.y;
+    const dessousTete = yCou + Math.round(haut * 0.03);
+    const dessusCorps = yCou - Math.round(haut * 0.02);
+    const w = z.zone.width;
+    const rgba = Buffer.alloc(w * z.zone.height * 4);
+    let [bx0, by0, bx1, by1] = [w, z.zone.height, -1, -1];
+    for (let y = 0; y < z.zone.height; y++) {
+      const Y = z.zone.top + y;
+      // (la tête : au-dessus de la ligne du cou, fondue sur deux points en bas ; le corps : dessous, le cou compris)
+      const f = part === "tete" ? Math.max(0, Math.min(1, (dessousTete - Y) / 2)) : Y >= dessusCorps ? 1 : 0;
+      if (f <= 0) continue;
+      for (let x = 0; x < w; x++) {
+        const X = z.zone.left + x;
+        const p = z.poids[y * w + x];
+        if (p < 0.15) continue;
+        const [pa, pb] = [poidsDe(zs[0], X, Y), poidsDe(zs[1], X, Y)];
+        const sienne = pa === pb ? (Math.abs(X - posees[0].cou.x) <= Math.abs(X - posees[1].cou.x) ? 0 : 1) : pa > pb ? 0 : 1;
+        if (sienne !== k) continue;
+        const i = (Y * l + X) * 3;
+        const o = (y * w + x) * 4;
+        for (let c = 0; c < 3; c++) rgba[o + c] = Math.max(0, Math.min(255, Math.round((D[i + c] - P[i + c] * (1 - p)) / p)));
+        rgba[o + 3] = Math.round(255 * p * f);
+        if (rgba[o + 3] > 0) {
+          if (x < bx0) bx0 = x;
+          if (x > bx1) bx1 = x;
+          if (y < by0) by0 = y;
+          if (y > by1) by1 = y;
+        }
+      }
+    }
+    if (bx1 < 0) return null;
+    const [cw, ch] = [bx1 - bx0 + 1, by1 - by0 + 1];
+    const png = await sharp(rgba, { raw: { width: w, height: z.zone.height, channels: 4 } })
+      .extract({ left: bx0, top: by0, width: cw, height: ch })
+      .png()
+      .toBuffer();
+    return { png, boite: [(z.zone.left + bx0) / l, (z.zone.top + by0) / h, cw / l, ch / h] };
+  };
+  const figurine = async (k: 0 | 1): Promise<FigurineDecoupee | null> => {
+    const [corps, tete] = await Promise.all([decouper(k, "corps"), decouper(k, "tete")]);
+    return corps && tete ? { corps, tete: { ...tete, pivot: [posees[k].cou.x / l, posees[k].cou.y / h] } } : null;
+  };
+  const [a, b] = await Promise.all([figurine(0), figurine(1)]);
+  return a && b ? { a, b } : null;
 }
 
 /** Les figurines qu'on peut poser : celle de ce téléphone, puis celles des essais (les aimées d'abord). */
@@ -435,6 +573,43 @@ export async function fabriquerDuoVivant(supabase: Supabase, moi: string | null,
   if (!a || !b) return { erreur: "Choisis d’abord vos deux figurines dans l’essai du collage." };
   if (!(await placesDe(supabase, piece, moment)).decor) return { erreur: "Cette pièce n’est pas encore faite dans cette lumière." };
   return fabriquerDuo(supabase, a, b, piece, moment, avant);
+}
+
+/**
+ * 🎭 LES CALQUES DU DUO CHOISI (le salon, lot S1) : découpés une fois dans son image du duo (`decouperCalques`), rangés
+ * à côté d'elle (`<duo>-corps-a.png`, `-tete-a`, `-corps-b`, `-tete-b`, et `<duo>-calques.json`), puis relus. Les fichiers
+ * sont des chemins du seau (la route les publie à adresse stable). `null` tant que l'image du duo n'est pas faite.
+ */
+export async function calquesDuCollage(supabase: Supabase, moi: string | null): Promise<CalquesDuo | null> {
+  const [choix, srcs] = await Promise.all([lireChoix(supabase), sources(supabase, moi)]);
+  const a = srcs.find((x) => x.id === choix?.a);
+  const b = srcs.find((x) => x.id === choix?.b);
+  if (!choix || !a || !b) return null;
+  const moment = momentDuChoix(choix);
+  const { places, posees } = await placesDe(supabase, choix.piece, moment);
+  if (!posees) return null;
+  const duo = nomDuo(choix.piece, moment, a, b, places);
+  const racine = duo.replace(/\.png$/, "");
+  const d = depotDans(supabase, `${DOSSIER}/duos`);
+  const faits = await d.lister().catch(() => [] as string[]);
+  if (!faits.includes(duo)) return null;
+  const plaque = cheminDecor(choix.piece, moment);
+  if (faits.includes(`${racine}-calques.json`)) {
+    const c = await lireJson<CalquesDuo>(supabase, `${DOSSIER}/duos/${racine}-calques.json`);
+    if (c.plaque && c.a?.corps?.fichier && c.a.tete?.fichier && c.b?.corps?.fichier && c.b.tete?.fichier) return c as CalquesDuo;
+  }
+  const [piece, image, pa, pb] = await Promise.all([telecharger(supabase, plaque), d.lire(duo), telecharger(supabase, cheminPose(a, "a")), telecharger(supabase, cheminPose(b, "b"))]);
+  if (!piece || !image || !pa || !pb) return null;
+  const c = await decouperCalques(piece, image, [pa, pb], places).catch(() => null);
+  if (!c) return null;
+  const ranger = async (f: FigurineDecoupee, cote: Cote): Promise<CalqueFigurine> => {
+    const [corps, tete] = [`${racine}-corps-${cote}.png`, `${racine}-tete-${cote}.png`];
+    await Promise.all([d.ecrire(corps, f.corps.png, "image/png"), d.ecrire(tete, f.tete.png, "image/png")]);
+    return { corps: { fichier: `${DOSSIER}/duos/${corps}`, boite: f.corps.boite }, tete: { fichier: `${DOSSIER}/duos/${tete}`, boite: f.tete.boite, pivot: f.tete.pivot } };
+  };
+  const calques: CalquesDuo = { plaque, a: await ranger(c.a, "a"), b: await ranger(c.b, "b") };
+  await d.ecrire(`${racine}-calques.json`, Buffer.from(JSON.stringify(calques)), "application/json");
+  return calques;
 }
 
 /** Refaire les deux poses (et donc le duo), ou le duo seul. */

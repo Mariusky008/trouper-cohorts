@@ -70,6 +70,11 @@ export type SceneSalon = {
   calques?: { a: CalqueFigurine; b: CalqueFigurine };
 };
 /**
+ * 🎭 Les calques d'une image du duo, publiés (lot S1) : la plaque et les quatre calques à adresse stable (`fichier` : leur
+ * adresse) ; leurs boîtes et les pivots en fractions de la plaque.
+ */
+export type CalquesSalon = { plaque: ImageSalon; a: CalqueFigurine; b: CalqueFigurine };
+/**
  * 🚪 TOUT CE QU'IL FAUT POUR OUVRIR UNE CONVERSATION, EN UNE REQUÊTE (`GET /api/direct/proches?ouvrir=<clé>`) : le fil
  * (les derniers messages), la vie (gestes, apartés, étagère) et la scène — `null` tant que la pièce n'est pas faite.
  */

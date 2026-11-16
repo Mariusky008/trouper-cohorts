@@ -29,6 +29,10 @@ const octets = async (chemin) => {
   return r.status === 200 ? Buffer.from(await r.arrayBuffer()) : null;
 };
 const toutIA = async () => (await (await fetch(`${FAUX}/__ia`)).json()).filter((c) => typeof c === "string");
+const lister = async (dossier) => {
+  const r = await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: dossier, limit: 1000 }) });
+  return r.status === 200 ? ((await r.json().catch(() => [])) ?? []).map((x) => x.name) : [];
+};
 
 let echecs = 0;
 const ok = (c, m) => {
@@ -134,6 +138,38 @@ ok(px && pixel(20, 50) === "200,90,60" && pixel(45, 60) === "200,90,60", `sur le
 ok(px && pixel(31, 55) === "200,140,90" && pixel(60, 50) === "200,140,90" && pixel(12, 20) === "200,140,90", `entre elles, à côté, au-dessus (la télé) : la pièce telle quelle, rien que leur silhouette est peinte (${px && pixel(31, 55)})`);
 ok((await appeler(lea, { action: "fabriquer" })).fait === undefined && (await toutIA()).length === avant + 4, "tout est fait : plus rien");
 ok((await octets(`${D}/verrou.json`)) === null, "aucun verrou ne reste");
+
+// ─── 🎭 les calques (le salon du duo, lot S1) : découpés dans l'image du duo ───
+const k1 = await (await fetch(`${ROUTE}?calques=1`, { headers: { cookie: lea } })).json().catch(() => ({}));
+const CQ = k1.calques;
+const STABLE = /^\/api\/direct\/salon\/fichier\/[0-9a-f]{32}-\d+\.webp$/;
+ok(CQ && STABLE.test(CQ.plaque?.src ?? "") && CQ.plaque.largeur === 64 && CQ.plaque.hauteur === 96, `les calques : la plaque (la pièce elle-même) à adresse stable (${CQ?.plaque?.src})`);
+const quatre = CQ ? [CQ.a.corps, CQ.a.tete, CQ.b.corps, CQ.b.tete] : [];
+ok(quatre.length === 4 && quatre.every((c) => STABLE.test(c.fichier) && c.boite.length === 4 && c.boite.every((v) => v >= 0 && v <= 1)), "quatre calques — le corps et la tête de chacune —, à adresse stable, leurs boîtes en fractions");
+ok(
+  CQ && [CQ.a, CQ.b].every((f) => f.tete.boite[1] < f.corps.boite[1] && f.tete.boite[1] + f.tete.boite[3] > f.corps.boite[1] && f.tete.pivot[1] > f.corps.boite[1] && f.tete.pivot[1] < f.tete.boite[1] + f.tete.boite[3]),
+  "la tête au-dessus du corps ; le cou dans les deux (une tête qui penche ne laisse pas voir la pièce) ; le pivot au cou",
+);
+ok(CQ && CQ.a.corps.boite[0] + CQ.a.corps.boite[2] <= CQ.b.corps.boite[0] + 0.02, "Léa à gauche, la volontaire à droite");
+// (posés sur la pièce, les calques redonnent l'image du duo)
+const calque = async (c) => sharp(Buffer.from(await (await fetch(`${BASE}${c.fichier}`, { headers: { cookie: lea } })).arrayBuffer())).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+const recompose = Buffer.from((await sharp(PNG).removeAlpha().raw().toBuffer({ resolveWithObject: true })).data);
+for (const c of quatre) {
+  const { data, info } = await calque(c);
+  const [x0, y0] = [Math.round(c.boite[0] * 64), Math.round(c.boite[1] * 96)];
+  for (let y = 0; y < info.height; y++)
+    for (let x = 0; x < info.width; x++) {
+      const [X, Y] = [x0 + x, y0 + y];
+      if (X < 0 || X >= 64 || Y < 0 || Y >= 96) continue;
+      const t = data[(y * info.width + x) * 4 + 3] / 255;
+      for (let v = 0; v < 3; v++) recompose[(Y * 64 + X) * 3 + v] = Math.round(recompose[(Y * 64 + X) * 3 + v] * (1 - t) + data[(y * info.width + x) * 4 + v] * t);
+    }
+}
+let ecarts = 0;
+for (let i = 0; i < 64 * 96; i++) if ([0, 1, 2].some((v) => Math.abs(recompose[i * 3 + v] - px.data[i * 3 + v]) > 24)) ecarts++;
+ok(ecarts <= 64 * 96 * 0.02, `posés sur la pièce, les calques redonnent l'image du duo (${ecarts} pixels sur ${64 * 96} s'en écartent)`);
+const k2 = await (await fetch(`${ROUTE}?calques=1`, { headers: { cookie: lea } })).json().catch(() => ({}));
+ok(k2.calques?.a?.tete?.fichier === CQ?.a?.tete?.fichier && (await lister(`${D}/duos`)).some((n) => n.endsWith("-calques.json")), "découpés une fois : relus ensuite (les mêmes adresses)");
 
 // ─── l'avis ───
 ok((await appeler(lea, { action: "avis", avis: "bof" })).statut === 400, "un avis inconnu : refusé");
