@@ -15,7 +15,6 @@
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-pieces-duo-collage-route.mjs
-import { createHash } from "node:crypto";
 import sharp from "sharp";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -121,9 +120,9 @@ ok(
   "un masque : seule la zone des places est peinte, les deux assises à leurs places relevées (gauche, puis droite)",
 );
 ok(image.includes("it follows the outline of the two figurines") && image.includes("a rough cut-out collage") && image.includes("Do not zoom in, do not crop") && image.includes("at EXACTLY the same place and the same size as in IMAGE 1") && image.includes("never sunk into the floor"), "d'après un collage : la pièce telle quelle (ni zoom ni recadrage), les figurines à leur place et à leur taille, les pieds jamais dans le sol");
-const empreinte = (c) => createHash("sha1").update(c).digest("hex").slice(0, 12);
-const nomDuo = (moment) => `${D}/duos/salon-${moment}-${empreinte(`${P1}/assise.png`)}-${empreinte(`${L0}/resultats/aimeeaimee01.png`)}-4.png`;
-const duo = await octets(nomDuo("soir"));
+// (l'image du duo, lue par son adresse signée — son nom porte l'empreinte des places)
+const lue = async (url) => (url ? Buffer.from(await (await fetch(url)).arrayBuffer()) : null);
+const duo = await lue(f3.etat?.generee);
 const px = duo ? await sharp(duo).raw().toBuffer({ resolveWithObject: true }) : null;
 ok(px?.info.width === 64 && px.info.height === 96 && px.data[0] === 200 && px.data[1] === 140 && px.data[2] === 90, "recollée sur la pièce : la même taille, et hors de la zone des places, la pièce au pixel près");
 // (le faux moteur rend un rectangle orangé de x 16 à 47, y 16 à 79, sur du vide ; les figurines posées — 31 pixels de haut,
@@ -156,7 +155,7 @@ ok(m1.statut === 200 && m1.etat?.moment === "matin" && m1.etat.moments?.join() =
 const avantM = (await toutIA()).length;
 let fm = {};
 for (let k = 0; k < 3 && !fm.etat?.generee; k++) fm = await appeler(lea, { action: "fabriquer" });
-const pxm = await sharp((await octets(nomDuo("matin"))) ?? MATIN).raw().toBuffer({ resolveWithObject: true });
+const pxm = await sharp((await lue(fm.etat?.generee)) ?? MATIN).raw().toBuffer({ resolveWithObject: true });
 ok(/^http/.test(fm.etat?.generee ?? "") && (await toutIA()).slice(avantM).filter((c) => c.startsWith("IMAGE ")).length >= 1 && pxm.data[0] === 100 && pxm.data[1] === 150 && pxm.data[2] === 200, "son duo, à part : fait d'après la pièce au matin (hors des places, la pièce du matin au pixel près)");
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nTout est bon.");

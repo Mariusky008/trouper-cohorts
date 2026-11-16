@@ -65,6 +65,7 @@ export function consigneDuoDansLaPiece(places: PlaceDuo[]): string {
     `Edit IMAGE 1 in the transparent (masked) area only — it follows the outline of the two figurines — so that they truly sit on their seats in this room: the figurine of IMAGE 2 on the left seat (${ou(places[0])}), the figurine of IMAGE 3 on the right seat (${ou(places[1])}), turned slightly toward each other, relaxed, like two close friends chatting.`,
     "Keep the room EXACTLY as it is: the same framing, the same camera, every object and every piece of furniture at the same place and the same size. Do not zoom in, do not crop, do not enlarge the seats.",
     "Keep each figurine at EXACTLY the same place and the same size as in IMAGE 1: they are small in the room, at the scale of their seats. Each figurine is entirely visible, from the top of its head to its feet.",
+    "Do not redraw, move, bend or reshape the seats or any furniture: they stay exactly as they are; only the figurines and their soft shadows are painted.",
     "Each one truly sits on its seat: its bottom on the seat, its back against the backrest if there is one, its knees bent, its feet resting on the floor or hanging just above it — never sunk into the floor or the rug.",
     "Keep each figurine EXACTLY as in IMAGE 2 and IMAGE 3: same face, same hair, same clothes, same colors, same style.",
     "The figurines truly belong to the scene: the room's light falls on them, soft contact shadows where they touch the seats and the floor, no cut-out edges.",
@@ -111,15 +112,22 @@ type ZonePx = { left: number; top: number; width: number; height: number };
 type Peinte = { zone: ZonePx; poids: Float32Array };
 
 /**
- * 🎭 CE QUI EST PEINT : la silhouette des deux figurines posées, élargie d'une marge (le contact avec le siège, les ombres
- * au sol), puis fondue — rien d'autre de la pièce, ni ses meubles, ni ses objets. (Une grande zone rectangulaire laissait
+ * 🎭 CE QUI EST PEINT : la silhouette des deux figurines posées, prolongée un peu vers le bas (leurs ombres sur le siège et
+ * le sol), élargie d'une marge fine, puis fondue — rien d'autre de la pièce, ni ses meubles, ni ses objets. (Une marge
+ * large laissait le moteur déformer les sièges autour d'elles : le quatrième essai.) (Une grande zone rectangulaire laissait
  * le moteur changer les fauteuils et retirer la platine, la table, l'évier : le troisième essai du propriétaire.)
  */
 function zonePeinte(presence: Uint8Array, l: number, h: number, haut: number): Peinte {
-  const marge = Math.max(2, Math.round(haut * 0.05));
-  const plume = Math.max(2, Math.round(haut * 0.04));
+  const marge = Math.max(2, Math.round(haut * 0.03));
+  const plume = Math.max(2, Math.round(haut * 0.03));
   const R = marge + plume;
   const SEUIL = 24;
+  // (les ombres tombent sous la figurine : sa silhouette prolongée vers le bas, sur le siège et le sol)
+  const ombre = Math.max(1, Math.round(haut * 0.05));
+  const dedans = (x: number, y: number) => {
+    for (let k = 0; k <= ombre; k += Math.max(1, Math.floor(ombre / 4))) if (y - k >= 0 && presence[(y - k) * l + x] > SEUIL) return true;
+    return false;
+  };
   let [x0, y0, x1, y1] = [l, h, -1, -1];
   for (let y = 0; y < h; y++)
     for (let x = 0; x < l; x++)
@@ -133,10 +141,10 @@ function zonePeinte(presence: Uint8Array, l: number, h: number, haut: number): P
   const left = Math.max(0, x0 - R);
   const top = Math.max(0, y0 - R);
   const width = Math.min(l, x1 + R + 1) - left;
-  const height = Math.min(h, y1 + R + 1) - top;
+  const height = Math.min(h, y1 + ombre + R + 1) - top;
   // (la distance de chaque pixel à la figurine la plus proche : deux passages, en avant puis en arrière)
   const d = new Float32Array(width * height).fill(1e9);
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (presence[(top + y) * l + left + x] > SEUIL) d[y * width + x] = 0;
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (dedans(left + x, top + y)) d[y * width + x] = 0;
   const D = Math.SQRT2;
   for (let y = 0; y < height; y++)
     for (let x = 0; x < width; x++) {
@@ -224,10 +232,12 @@ async function sources(supabase: Supabase, moi: string | null): Promise<Source[]
 const cheminPose = (src: Source) => `${DOSSIER}/poses/${empreinte(src.chemin)}.png`;
 /**
  * Une image du duo par pièce ET par lumière (le matin, le soir, la nuit), faite à sa première visite, puis gardée.
- * `-4` : d'après un collage, peintes dans la silhouette des figurines seulement (le 15 novembre) — les précédentes (têtes
- * coupées, la pièce en gros plan, les meubles changés) ne servent plus.
+ * Son nom finit par l'empreinte des deux places : les ajuster (la page d'essais, « ✋ Ajuster leurs places ») refait
+ * l'image à la prochaine visite. (Les images d'avant le 16 novembre — têtes coupées, la pièce en gros plan, les meubles
+ * changés — ne servent plus.)
  */
-const nomDuo = (piece: PieceDuo, moment: MomentDuo, a: Source, b: Source) => `${piece}-${moment}-${empreinte(a.chemin)}-${empreinte(b.chemin)}-4.png`;
+const nomDuo = (piece: PieceDuo, moment: MomentDuo, a: Source, b: Source, places: PlaceDuo[]) =>
+  `${piece}-${moment}-${empreinte(a.chemin)}-${empreinte(b.chemin)}-${empreinte(JSON.stringify(places.map((p) => [p.x, p.y, p.hauteur].map((v) => Math.round(v * 1000)))))}.png`;
 /** La pièce dans une lumière : son image première dans son moment à elle, une retouche pour les deux autres. */
 const cheminDecor = (piece: PieceDuo, moment: MomentDuo) => `pieces-duo/${piece}/${moment === pieceDuoDe(piece).moment ? "decor.png" : `lumiere-${moment}.png`}`;
 const momentDuChoix = (c: ChoixCollage) => c.moment ?? pieceDuoDe(c.piece).moment;
@@ -246,14 +256,18 @@ const ecrireChoix = (supabase: Supabase, c: ChoixCollage) => depotDans(supabase,
  */
 async function placesDe(supabase: Supabase, piece: PieceDuo, moment?: MomentDuo): Promise<{ decor?: string; moments: MomentDuo[]; places: PlaceDuo[]; posees: boolean }> {
   const v = (await etatPiecesDuo(supabase)).pieces.find((p) => p.cle === piece);
-  const posees = v?.emplacements?.places.length === 2;
-  // (en points d'assise : une place tracée à la main est la boîte de la figurine entière, `assisesDe`)
-  const places = posees && v?.emplacements ? assisesDe([...v.emplacements.places].sort((a, b) => a.x - b.x), Boolean(v.ajuste)) : PLACES_PAR_DEFAUT;
+  const { places, posees } = placesDeLaVue(v);
   const sien = pieceDuoDe(piece).moment;
   const lumiere = (m: MomentDuo) => (m === sien ? v?.decor : v?.lumieres?.[m]) || "";
   const moments = v?.decor ? (["matin", "soir", "nuit"] as const).filter((m) => lumiere(m)) : [];
   const decor = lumiere(moment ?? sien);
   return { ...(decor ? { decor } : {}), moments, places, posees };
+}
+
+/** Les deux places d'une pièce, en points d'assise (une place tracée à la main est la boîte de la figurine entière, `assisesDe`), de gauche à droite ; celles par défaut s'il n'y en a pas deux. */
+function placesDeLaVue(v: { emplacements?: { places: PlaceDuo[] }; ajuste?: boolean } | undefined): { places: PlaceDuo[]; posees: boolean } {
+  const posees = v?.emplacements?.places.length === 2;
+  return { places: posees && v?.emplacements ? assisesDe([...v.emplacements.places].sort((a, b) => a.x - b.x), Boolean(v.ajuste)) : PLACES_PAR_DEFAUT, posees };
 }
 
 /** 🧩 Ce que la page montre : les figurines, le choix, la pièce et ses places, les poses et le duo faits. */
@@ -275,7 +289,7 @@ export async function etatCollage(supabase: Supabase, moi: string | null): Promi
   ]);
   const signee = async (src: Source) => (poses.includes(`${empreinte(src.chemin)}.png`) ? await signer(supabase, cheminPose(src)) : "");
   const [pa, pb] = await Promise.all([signee(a), signee(b)]);
-  const duo = nomDuo(choix.piece, momentDuChoix(choix), a, b);
+  const duo = nomDuo(choix.piece, momentDuChoix(choix), a, b, places);
   return {
     ...etat,
     ...(decor ? { decor } : {}),
@@ -342,7 +356,8 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
       await depotDans(supabase, `${DOSSIER}/poses`).ecrire(`${empreinte(src.chemin)}.png`, png, "image/png");
       return { fait: k === "a" ? "pose-a" : "pose-b" };
     }
-    const duo = nomDuo(pieceDuo, moment, a, b);
+    const { places, posees } = await placesDe(supabase, pieceDuo, moment);
+    const duo = nomDuo(pieceDuo, moment, a, b, places);
     if (
       (
         await depotDans(supabase, `${DOSSIER}/duos`)
@@ -351,7 +366,6 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
       ).includes(duo)
     )
       return {};
-    const { places, posees } = await placesDe(supabase, pieceDuo, moment);
     // (les figurines se posent sur les sièges : sans leurs deux places, elles tomberaient à côté)
     if (!posees) return { erreur: "Les deux places de cette pièce ne sont pas encore tracées (« 🛋️ La pièce du duo », ✋)." };
     const piece = await telecharger(supabase, cheminDecor(pieceDuo, moment));
@@ -379,13 +393,16 @@ export async function duoVivant(supabase: Supabase, moi: string | null): Promise
   const a = srcs.find((x) => x.id === choix?.a);
   const b = srcs.find((x) => x.id === choix?.b);
   if (!a || !b) return null;
-  const faits = await depotDans(supabase, `${DOSSIER}/duos`)
-    .lister()
-    .catch(() => [] as string[]);
+  const [faits, vues] = await Promise.all([
+    depotDans(supabase, `${DOSSIER}/duos`)
+      .lister()
+      .catch(() => [] as string[]),
+    etatPiecesDuo(supabase).then((e) => e.pieces),
+  ]);
   const duos: DuoVivant["duos"] = {};
   for (const p of PIECES_DUO)
     for (const m of MOMENTS_DUO) {
-      const n = nomDuo(p.cle, m.cle, a, b);
+      const n = nomDuo(p.cle, m.cle, a, b, placesDeLaVue(vues.find((v) => v.cle === p.cle)).places);
       if (faits.includes(n)) duos[`${p.cle}-${m.cle}`] = await signer(supabase, `${DOSSIER}/duos/${n}`);
     }
   const prenom = (x: Source) => (x.id === "moi" ? "Toi" : x.nom.replace(/ 👍$/, ""));
@@ -410,7 +427,8 @@ export async function refaireCollage(supabase: Supabase, moi: string | null, quo
   const a = srcs.find((x) => x.id === choix?.a);
   const b = srcs.find((x) => x.id === choix?.b);
   if (!choix || !a || !b) return;
-  const chemins = [`${DOSSIER}/duos/${nomDuo(choix.piece, momentDuChoix(choix), a, b)}`, ...(quoi === "poses" ? [cheminPose(a), cheminPose(b)] : [])];
+  const { places } = await placesDe(supabase, choix.piece, momentDuChoix(choix));
+  const chemins = [`${DOSSIER}/duos/${nomDuo(choix.piece, momentDuChoix(choix), a, b, places)}`, ...(quoi === "poses" ? [cheminPose(a), cheminPose(b)] : [])];
   await supabase.storage
     .from(SEAU_FIGURINES)
     .remove(chemins)
