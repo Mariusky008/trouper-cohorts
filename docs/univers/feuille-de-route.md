@@ -5,6 +5,11 @@ réponses du même jour. État : **proposée, en attente de son accord**. Aucun 
 
 *Pour une session qui reprend : lire `vision.md`, puis ce fichier en entier, puis `docs/reprise.md`.*
 
+> **⚠️ 16 novembre 2026, au soir : l'univers n'est plus fabriqué pour chacun.** Un catalogue de neuf pièces, le même
+> pour tous, choisi à l'inscription ; une seule pièce par personne ; les figurines posées ; la maison qui se remplit avec
+> ce qu'on garde dans ses conversations. Les lots 3 et 4 (la conversation qui décrit l'univers, sa création) sortent
+> du parcours. Le cahier : `docs/univers/ma-maison.md`.
+
 ## 1. En bref
 
 **Ce qu'on construit.** Chaque personne a deux choses qui la représentent partout dans ClikMe :

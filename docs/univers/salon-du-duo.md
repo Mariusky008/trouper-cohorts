@@ -4,6 +4,12 @@
 même jour : le découpage du travail est validé.** Les deux sessions le lisent avant de toucher à la conversation entre deux proches. On le change
 par une PR qui le dit dans son titre, et l'autre session en est prévenue (par le propriétaire, ou dans `docs/reprise.md`).
 
+> **⚠️ Mis à jour le 16 novembre 2026 au soir : lire d'abord la section 12.** Les pièces deviennent **un catalogue de
+> neuf** (les huit, plus la chambre musicale), le même pour le salon du duo et pour la maison de chacun ; **leurs images
+> sont refaites** aux proportions et avec les éléments de la maquette ; **les figurines sont posées** sur la pièce (plus
+> de découpe de l'image du duo : la section 5 change, **le contrat `salon.ts` ne change pas**). La maison de chacun a
+> son cahier : `docs/univers/ma-maison.md`.
+
 Le propriétaire, après avoir joué la maquette : « c'est super tout ça, maintenant il va falloir le faire exactement
 pareil sur l'appli… un cahier des charges extrêmement bien conçu pour bien intégrer toutes ces fonctionnalités, et que
 ça soit vraiment rapide quand on l'utilise, sans avoir de lags ».
@@ -281,22 +287,31 @@ Le propriétaire, le 16 novembre 2026 : « il faut pouvoir changer de pièce, ou
 de la conversation ».
 
 - **Au départ d'une conversation** (la toute première fois avec ce proche, ou en démarrant une conversation depuis
-  « Chez moi » / « ＋ Nouveau ») : « Où vous installez-vous ? » — les vignettes des pièces faites (`PIECES_DUO` : salon,
-  cuisine, terrasse, chambre vue mer, café, hangar, appart à New York, rue), la préférée de celui qui invite en premier
-  (`piece-du-duo.md`, section 5), un toucher et on y est. Les autres fois, on rouvre dans la dernière pièce du duo.
+  « Chez moi » / « ＋ Nouveau ») : « Où vous installez-vous ? » — les vignettes du catalogue (`ma-maison.md`, section 2 :
+  salon, cuisine, terrasse, chambre vue mer, café, hangar, appart à New York, rue, et la chambre musicale), **la pièce
+  de celui qui invite en premier** (celle qu'il a choisie pour sa maison), un toucher et on y est. Les autres fois, on
+  rouvre dans la dernière pièce du duo.
 - **🚪 Changer de pièce, à tout moment** (en haut de la scène) : la même liste. Si l'autre est là, c'est une invitation
   (« Camille t'invite sur la terrasse » — « Venir » / « Pas maintenant », comme dans la maquette de la pièce,
   `piece-du-duo.md` section 12) ; s'il n'est pas là, la pièce change, et il arrivera dans la nouvelle (« ✨ Léa vous a
   installés sur la terrasse »).
 - **Ce qui suit la pièce** : les objets posés sur la table, les photos des cadres et ce qui passe à la télé restent ceux
   du duo (ils changent de pièce avec lui) ; l'étagère est la même partout.
-- **La vitesse** : les images de chaque pièce faite (plaque, calques, dans la lumière de l'heure) se préchargent une à
-  une après l'ouverture : changer de pièce est immédiat (< 300 ms) ; une pièce jamais visitée par ce duo se fait à sa
-  première visite (environ une minute, une seule fois : « Vos figurines s'installent… », comme aujourd'hui).
+- **La vitesse** : les images de chaque pièce (dans la lumière de l'heure) se préchargent une à une après l'ouverture ;
+  les figurines étant posées (section 5), **toute pièce s'ouvre tout de suite**, même jamais visitée (< 300 ms) : plus
+  d'attente « Vos figurines s'installent… ».
 
 ---
 
 ## 5. Les calques de la scène : comment les figurines peuvent vivre dans l'image du duo
+
+> **⚠️ Remplacé le 16 novembre 2026 au soir (section 12, décision 7) : les figurines sont posées.** On ne découpe plus
+> l'image du duo : **la plaque** est l'image de la pièce du catalogue (en hauteur, dans la lumière du moment) ; **les
+> calques de chaque figurine** (son corps avec son fauteuil, sa tête et son pivot, la bouche, les joues) sont faits
+> **une fois par figurine** (`ma-maison.md`, section 4) et posés aux deux places du relevé, tournés l'un vers l'autre.
+> Le format des calques (`CalquesDuo`, ci-dessous, et le contrat `salon.ts`) **ne change pas** ; seules leurs boîtes
+> sont calculées d'après les places et l'échelle de la pièce au lieu d'être découpées. Le texte qui suit garde
+> l'ancienne méthode pour mémoire.
 
 **Le problème.** L'image du duo (`piece-du-duo.md`, section 10) est une seule image : la pièce et les deux figurines
 assises, peintes ensemble. Elle est belle (le contact, la lumière, les ombres), mais **figée** : sa section 10.3 le dit
@@ -456,7 +471,7 @@ scene.detruire();
 | L'étagère (`/api/direct/etagere`) | noter, ranger, retirer, déposer, rappels | `action: "garder"` (📌), le genre `mot`, le rayon `rires`, les mèmes rangés (`memes`) |
 | La télé (`/api/direct/tele`) | le dernier lien YouTube, les clips de secours | ce que l'un y met (un lien, une vidéo, une affiche de film, une pochette), vu des deux |
 | Les cadres | « La mettre dans mon univers » (`ranger-univers.ts`) | les photos accrochées dans la pièce du duo (par cadre), changer celle d'un cadre |
-| La pièce (`pieces-duo`) | décor, trois lumières, relevé, image du duo | `fenetreCoins`, `lampes`, `table`, `fentes` ; les calques (section 5) |
+| La pièce (`pieces-duo`) | décor, trois lumières, relevé, image du duo | le catalogue de neuf, en hauteur et en largeur (`ma-maison.md`, M0) ; `fenetreCoins`, `lampes`, `table`, `fentes`, `centre`, `echelle` ; les calques de chaque figurine, posés (section 5) |
 | La météo | — | `/api/direct/salon?meteo=<ville>` (Open-Meteo, une heure de cache) |
 
 ---
@@ -474,7 +489,7 @@ seule session à la fois par fichier.
 | Lot | Contenu | Session | Dépend de |
 |---|---|---|---|
 | **S0 — Le socle et la vitesse** | le contrat `salon.ts` ; le moteur (6) repris de la maquette ; les URL stables et le cache (7.2) ; `?ouvrir=` ; le préchargement ; les mesures (7.6) ; l'adresse d'essai | messages et bienvenue | — |
-| **S1 — Les calques** | la découpe de l'image du duo (5) ; les emplacements ajoutés (`fenetreCoins`, `lampes`, `table`, `fentes`) et leur tracé à la main | messages et bienvenue (elle fait l'image du duo) | S0 |
+| **S1 — Les calques** | ~~la découpe de l'image du duo~~ **les calques de chaque figurine, faits une fois, et leur pose aux places** (5, et `ma-maison.md` section 4) ; les emplacements ajoutés (`fenetreCoins`, `lampes`, `table`, `fentes`) et leur tracé à la main | messages et bienvenue | S0 ; les images refaites : M0 (`ma-maison.md`, univers) |
 | **S2 — La conversation** | les bulles, 💬 Messagerie, écrire, les réactions au texte, la présence et le pouls (7.4, étape 1), l'arrivée (4.1), choisir la pièce et en changer (4.13) | messages et bienvenue | S0, S1 |
 | **S3 — Les gestes et la vie** | les 12 gestes et les 8 panneaux, les objets sur la table, la vie propre, le chat (le compagnon de l'essai C0) | univers | S0, S1 |
 | **S4 — Le talkie-walkie** | 4.6 entier, le talkie sur la table, les niveaux | univers | S2 |
@@ -582,3 +597,25 @@ débordement, ni erreur, ni le mot interdit.
 
 **La suite (S0b)** : les URL stables et le cache (7.2), `?ouvrir=` (7.4), le préchargement, les mesures et les essais de
 vitesse (7.6).
+
+## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
+
+Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :
+`docs/univers/ma-maison.md`, section 1. **Ce qui change ici :**
+
+6. **Un catalogue de neuf pièces, le même pour tous** : les huit de `PIECES_DUO` et la chambre musicale (la maison de
+   Camille). La même pièce sert au salon du duo (son image en hauteur) et à la maison de chacun (son image en largeur).
+   Plus d'univers fabriqué pour chacun, plus de conversation avec Pablito pour le fabriquer.
+7. **Les figurines sont posées** (« OK ») : plus de découpe de l'image du duo, plus d'attente à la première visite
+   d'une pièce. Section 5 (remplacée) ; **le contrat `salon.ts` ne change pas** (`CalquesDuo` garde sa forme).
+8. **Le salon du duo reste en hauteur**, « comme sur la maquette », mais **ses images sont refaites** « pour qu'elles
+   aient les mêmes proportions et dimensions, et intègrent les mêmes éléments que la maquette » : la télé, l'étagère et
+   les trois cadres au mur, la fenêtre, les lampes, la table basse, le coin du chat, deux places libres en bas au milieu
+   (`ma-maison.md`, 2.1 et 2.2 ; lot M0, session de l'univers).
+9. **La pièce du duo, au départ** : celle de celui qui invite (sa maison) ; on en change comme avant (4.13).
+
+**Pour la session des messages et de la bienvenue** : le lot **S1** devient « les calques de chaque figurine, et leur
+pose » (section 9) — plus simple, et sans moteur d'image ; l'adresse d'essai `/univers/salon` peut déjà poser les
+figurines ainsi (c'est ce qu'elle fait en attendant). **L'inscription change** (« Choisis ta pièce » au lieu de la
+conversation qui fabrique l'univers) : lot **M3** de `ma-maison.md`, dans cette session. **Pour la session de
+l'univers** : les images du catalogue (**M0**), puis « Ma maison » (**M1, M2, M4, M5**).
