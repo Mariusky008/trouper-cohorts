@@ -109,7 +109,7 @@ function poser(e: EmplacementsDuo, c: Cible, x1: number, y1: number, x2: number,
   const [a, b, l, h] = [Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1)].map(arrondi);
   if (c === "chat") return { ...e, chat: { x: arrondi(x2), y: arrondi(y2) } };
   if (c === "place0" || c === "place1") {
-    if (h < 0.08) return "Trace la figurine assise plus grande : du haut de sa tête jusqu’au siège.";
+    if (h < 0.08) return "Trace la figurine assise plus grande : du haut de sa tête jusqu’à ses pieds.";
     const k = Number(c.slice(-1));
     const places = [...e.places];
     places[k] = { x: arrondi(a + l / 2), y: arrondi(b + h), hauteur: Math.min(0.6, h) };
@@ -157,7 +157,7 @@ function Ajusteur({ p, src, enregistrer, fermer }: { p: PieceDuoVue; src: string
     cible === "chat"
       ? "Touche l’endroit où le chat se couche."
       : cible.startsWith("place")
-        ? "Trace la figurine assise : du haut de sa tête jusqu’au siège (sa largeur ne compte pas)."
+        ? "Trace la figurine assise entière : du haut de sa tête jusqu’à ses pieds (sa largeur ne compte pas)."
         : "Glisse le doigt sur l’image pour tracer la zone.";
   return (
     <div className="pd-ajuste">

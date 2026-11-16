@@ -8,8 +8,8 @@
  *    posée par l'écran sur l'image de la pièce, à sa place relevée, avec une ombre et la lumière de la pièce ;
  * 2. GÉNÉRÉE : une image du duo dans la pièce (faite une fois par duo, par pièce et par lumière), d'après la pièce et
  *    les deux poses — LA VERSION CHOISIE par le propriétaire (« très bien »). Les poses sont d'abord posées sur leurs
- *    places, à la taille des sièges (un collage) ; le moteur les assoit pour de vrai dans une zone autour d'elles (un
- *    masque), recollée sur la pièce : la télé, les cadres, l'étagère restent à leur place relevée.
+ *    places, à leur taille (un collage) ; le moteur les assoit pour de vrai dans leur silhouette seulement (un masque),
+ *    recollée sur la pièce : les meubles, la télé, les cadres, l'étagère restent tels quels.
  *
  * Les figurines : celle de ce téléphone (sa figurine assise, si elle est du nouveau style) et celles des essais du lot 0
  * (des volontaires d'accord : détourées, ou leur constance assise ; pas celles qu'il a refusées). Rangé à part :
@@ -27,7 +27,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFichePerso } from "./fiches-serveur";
 import { SEAU_FIGURINES, depotDans, lireJson, signer, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
-import { ANCRE_ASSISE, MOMENTS_DUO, PIECES_DUO, PLACES_PAR_DEFAUT, hauteurDuo, zoneDesFigurines, zoneDuMasque, avisCollageValide, momentDuoValide, pieceDuoDe, pieceDuoValide, type ChoixCollage, type DuoVivant, type EtatCollage, type FigurineDuo, type MomentDuo, type PieceDuo, type PlaceDuo, type Zone } from "./pieces-duo";
+import { ANCRE_ASSISE, MOMENTS_DUO, PIECES_DUO, PLACES_PAR_DEFAUT, assisesDe, hauteurDuo, avisCollageValide, momentDuoValide, pieceDuoDe, pieceDuoValide, type ChoixCollage, type DuoVivant, type EtatCollage, type FigurineDuo, type MomentDuo, type PieceDuo, type PlaceDuo } from "./pieces-duo";
 import { etatPiecesDuo, prendre, rendre } from "./pieces-duo-serveur";
 import { estDetouree, type ResultatEssai } from "./univers-essais";
 
@@ -53,16 +53,16 @@ export function consignePoseSansFauteuil(): string {
 }
 
 /**
- * Le duo dans la pièce, D'APRÈS UN COLLAGE : les deux figurines sont d'abord posées sur la pièce, à leurs places et à la
- * taille des sièges (`poserLesFigurines`) ; le moteur ne fait que les asseoir pour de vrai (le contact, la lumière, les
- * ombres), dans la zone masquée, sans rien déplacer ni agrandir. (Laissé libre de leur taille, il refaisait la pièce en
- * gros plan : le second essai du propriétaire, « on ne voit plus que les deux figurines ».)
+ * Le duo dans la pièce, D'APRÈS UN COLLAGE : les deux figurines sont d'abord posées sur la pièce, à leurs places et à leur
+ * taille (`poserLesFigurines`) ; le moteur ne fait que les asseoir pour de vrai (le contact, la lumière, les ombres), dans
+ * leur silhouette seulement (`zonePeinte`), sans rien déplacer ni agrandir. (Laissé libre, il refaisait la pièce en gros
+ * plan, ou changeait ses fauteuils et retirait la platine, la table : les essais du propriétaire, le 15 novembre.)
  */
 export function consigneDuoDansLaPiece(places: PlaceDuo[]): string {
   const ou = (p: PlaceDuo) => `about ${Math.round(p.x * 100)}% from the left and ${Math.round(p.y * 100)}% from the top`;
   return [
     "IMAGE 1 is a room in which two collectible figurines (big heads, small bodies) have just been placed on the two seats — a rough cut-out collage. IMAGE 2 and IMAGE 3 are those two figurines as they really are.",
-    `Edit IMAGE 1 in the transparent (masked) area only, so that the two figurines truly sit on their seats in this room: the figurine of IMAGE 2 on the left seat (${ou(places[0])}), the figurine of IMAGE 3 on the right seat (${ou(places[1])}), turned slightly toward each other, relaxed, like two close friends chatting.`,
+    `Edit IMAGE 1 in the transparent (masked) area only — it follows the outline of the two figurines — so that they truly sit on their seats in this room: the figurine of IMAGE 2 on the left seat (${ou(places[0])}), the figurine of IMAGE 3 on the right seat (${ou(places[1])}), turned slightly toward each other, relaxed, like two close friends chatting.`,
     "Keep the room EXACTLY as it is: the same framing, the same camera, every object and every piece of furniture at the same place and the same size. Do not zoom in, do not crop, do not enlarge the seats.",
     "Keep each figurine at EXACTLY the same place and the same size as in IMAGE 1: they are small in the room, at the scale of their seats. Each figurine is entirely visible, from the top of its head to its feet.",
     "Each one truly sits on its seat: its bottom on the seat, its back against the backrest if there is one, its knees bent, its feet resting on the floor or hanging just above it — never sunk into the floor or the rug.",
@@ -74,11 +74,13 @@ export function consigneDuoDansLaPiece(places: PlaceDuo[]): string {
 }
 
 /**
- * 🧩 LE COLLAGE de départ : les deux poses sans fauteuil, posées sur la pièce — le point qui touche le siège sur sa place,
- * la hauteur des deux (`hauteurDuo`). Fondu à la main, pixel par pixel (comme le recollage).
+ * 🧩 LE COLLAGE de départ : les deux poses sans fauteuil, posées sur la pièce — le point qui touche le siège sur sa place
+ * (en points d'assise), la hauteur des deux (`hauteurDuo`). Fondu à la main, pixel par pixel (comme le recollage).
+ * `presence` : où sont les figurines (leur opacité, de 0 à 255), pour la zone peinte.
  */
-async function poserLesFigurines(piece: Buffer, poses: [Buffer, Buffer], places: PlaceDuo[], l: number, h: number): Promise<Buffer> {
+async function poserLesFigurines(piece: Buffer, poses: [Buffer, Buffer], places: PlaceDuo[], l: number, h: number): Promise<{ collage: Buffer; presence: Uint8Array; haut: number }> {
   const fond = Buffer.from(await sharp(piece).resize(l, h, { fit: "fill" }).removeAlpha().toColourspace("srgb").raw().toBuffer());
+  const presence = new Uint8Array(l * h);
   const haut = Math.max(8, Math.round(hauteurDuo(places) * h));
   for (const [k, pose] of poses.entries()) {
     const { data, info } = await sharp(pose).resize({ height: haut }).ensureAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
@@ -92,68 +94,105 @@ async function poserLesFigurines(piece: Buffer, poses: [Buffer, Buffer], places:
         const X = gauche + x;
         if (X < 0 || X >= l) continue;
         const i = (y * info.width + x) * n;
-        const t = n >= 4 ? data[i + 3] / 255 : 1;
-        if (t <= 0) continue;
+        const a = n >= 4 ? data[i + 3] : 255;
+        if (a <= 0) continue;
+        const t = a / 255;
         const o = (Y * l + X) * 3;
         for (let c = 0; c < 3; c++) fond[o + c] = Math.round(fond[o + c] * (1 - t) + data[i + c] * t);
+        presence[Y * l + X] = Math.max(presence[Y * l + X], a);
       }
     }
   }
-  return sharp(fond, { raw: { width: l, height: h, channels: 3 } }).png().toBuffer();
+  return { collage: await sharp(fond, { raw: { width: l, height: h, channels: 3 } }).png().toBuffer(), presence, haut };
 }
 
 type ZonePx = { left: number; top: number; width: number; height: number };
-const enPixels = ([x, y, w, ht]: Zone, l: number, h: number): ZonePx => ({ left: Math.round(x * l), top: Math.round(y * h), width: Math.max(1, Math.round(w * l)), height: Math.max(1, Math.round(ht * h)) });
+/** Ce qui est peint : une boîte, et dedans, pixel par pixel, de 0 (la pièce telle quelle) à 1 (l'image rendue). */
+type Peinte = { zone: ZonePx; poids: Float32Array };
 
 /**
- * 🎭 CE QUI EST PEINT, pixel par pixel (de 0, la pièce telle quelle, à 1, l'image rendue) : la zone du masque
- * (`zoneDuMasque`, `pieces-duo.ts`), ses bords fondus — sans les objets de la pièce (la télé, la platine, les cadres,
- * l'étagère, la fenêtre) qui ne touchent pas les figurines : ceux-là restent exactement à leur place relevée.
+ * 🎭 CE QUI EST PEINT : la silhouette des deux figurines posées, élargie d'une marge (le contact avec le siège, les ombres
+ * au sol), puis fondue — rien d'autre de la pièce, ni ses meubles, ni ses objets. (Une grande zone rectangulaire laissait
+ * le moteur changer les fauteuils et retirer la platine, la table, l'évier : le troisième essai du propriétaire.)
  */
-function zonePeinte(places: PlaceDuo[], objets: Zone[], l: number, h: number): { zone: ZonePx; poids: (x: number, y: number) => number } {
-  const zone = enPixels(zoneDuMasque(places, h / l), l, h);
-  const [fx, fy, fw, fh] = zoneDesFigurines(places, h / l);
-  const proteges = objets.filter(([x, y, w, ht]) => !(x < fx + fw && x + w > fx && y < fy + fh && y + ht > fy)).map((o) => enPixels(o, l, h));
-  const plume = Math.max(2, Math.round(Math.min(zone.width, zone.height) * 0.05));
-  const poids = (x: number, y: number) => {
-    let t = Math.min(1, Math.min(x - zone.left + 0.5, zone.left + zone.width - x - 0.5, y - zone.top + 0.5, zone.top + zone.height - y - 0.5) / plume);
-    for (const o of proteges) {
-      if (t <= 0) break;
-      // (la distance au rectangle de l'objet : 0 dedans, puis un fondu)
-      const dx = Math.max(o.left - x - 0.5, 0, x + 0.5 - o.left - o.width);
-      const dy = Math.max(o.top - y - 0.5, 0, y + 0.5 - o.top - o.height);
-      t = Math.min(t, Math.hypot(dx, dy) / plume);
+function zonePeinte(presence: Uint8Array, l: number, h: number, haut: number): Peinte {
+  const marge = Math.max(2, Math.round(haut * 0.05));
+  const plume = Math.max(2, Math.round(haut * 0.04));
+  const R = marge + plume;
+  const SEUIL = 24;
+  let [x0, y0, x1, y1] = [l, h, -1, -1];
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < l; x++)
+      if (presence[y * l + x] > SEUIL) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+  if (x1 < 0) return { zone: { left: 0, top: 0, width: 0, height: 0 }, poids: new Float32Array(0) };
+  const left = Math.max(0, x0 - R);
+  const top = Math.max(0, y0 - R);
+  const width = Math.min(l, x1 + R + 1) - left;
+  const height = Math.min(h, y1 + R + 1) - top;
+  // (la distance de chaque pixel à la figurine la plus proche : deux passages, en avant puis en arrière)
+  const d = new Float32Array(width * height).fill(1e9);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (presence[(top + y) * l + left + x] > SEUIL) d[y * width + x] = 0;
+  const D = Math.SQRT2;
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      let v = d[i];
+      if (x > 0) v = Math.min(v, d[i - 1] + 1);
+      if (y > 0) {
+        v = Math.min(v, d[i - width] + 1);
+        if (x > 0) v = Math.min(v, d[i - width - 1] + D);
+        if (x < width - 1) v = Math.min(v, d[i - width + 1] + D);
+      }
+      d[i] = v;
     }
-    return Math.max(0, t);
-  };
-  return { zone, poids };
+  for (let y = height - 1; y >= 0; y--)
+    for (let x = width - 1; x >= 0; x--) {
+      const i = y * width + x;
+      let v = d[i];
+      if (x < width - 1) v = Math.min(v, d[i + 1] + 1);
+      if (y < height - 1) {
+        v = Math.min(v, d[i + width] + 1);
+        if (x < width - 1) v = Math.min(v, d[i + width + 1] + D);
+        if (x > 0) v = Math.min(v, d[i + width - 1] + D);
+      }
+      d[i] = v;
+    }
+  // (1 sur la figurine et dans la marge, puis un fondu sur `plume` pixels)
+  const poids = new Float32Array(width * height);
+  for (let i = 0; i < poids.length; i++) poids[i] = Math.max(0, Math.min(1, (R - d[i]) / plume));
+  return { zone: { left, top, width, height }, poids };
 }
 
 /** Le masque : opaque partout, transparent là où l'on peint (là seulement, le moteur peint). */
-async function masqueDe(l: number, h: number, p: ReturnType<typeof zonePeinte>): Promise<Buffer> {
+async function masqueDe(l: number, h: number, p: Peinte): Promise<Buffer> {
   const brut = Buffer.alloc(l * h * 4, 255);
   const z = p.zone;
-  for (let y = z.top; y < z.top + z.height; y++) for (let x = z.left; x < z.left + z.width; x++) if (p.poids(x, y) > 0) brut[(y * l + x) * 4 + 3] = 0;
+  for (let y = 0; y < z.height; y++) for (let x = 0; x < z.width; x++) if (p.poids[y * z.width + x] > 0) brut[((z.top + y) * l + z.left + x) * 4 + 3] = 0;
   return sharp(brut, { raw: { width: l, height: h, channels: 4 } }).png().toBuffer();
 }
 
 /**
  * LE RECOLLAGE : de l'image rendue, on ne garde que ce qui est peint (ses bords fondus), recollé sur la pièce d'origine.
- * La télé, les cadres, l'étagère restent alors exactement à leur place relevée, au pixel près (le moteur, même masqué,
- * retouche parfois un peu le reste).
+ * Tout le reste — les meubles, la télé, les cadres, l'étagère — reste exactement tel quel, au pixel près (le moteur, même
+ * masqué, retouche le reste).
  */
-async function recoller(piece: Buffer, rendue: Buffer, l: number, h: number, p: ReturnType<typeof zonePeinte>): Promise<Buffer> {
+async function recoller(piece: Buffer, rendue: Buffer, l: number, h: number, p: Peinte): Promise<Buffer> {
   // (le fondu fait à la main, pixel par pixel : les canaux et l'ordre des opérations de sharp ne sont pas les mêmes
   // partout — dans l'app, un calque avec sa transparence ajoutée passait entier par-dessus la pièce)
   const brut = (b: Buffer) => sharp(b).resize(l, h, { fit: "fill" }).removeAlpha().toColourspace("srgb").raw().toBuffer();
   const [a, b] = await Promise.all([brut(piece), brut(rendue)]);
   const sortie = Buffer.from(a);
   const z = p.zone;
-  for (let y = z.top; y < z.top + z.height; y++)
-    for (let x = z.left; x < z.left + z.width; x++) {
-      const t = p.poids(x, y);
+  for (let y = 0; y < z.height; y++)
+    for (let x = 0; x < z.width; x++) {
+      const t = p.poids[y * z.width + x];
       if (t <= 0) continue;
-      const k = (y * l + x) * 3;
+      const k = ((z.top + y) * l + z.left + x) * 3;
       for (let c = 0; c < 3; c++) sortie[k + c] = Math.round(a[k + c] * (1 - t) + b[k + c] * t);
     }
   return sharp(sortie, { raw: { width: l, height: h, channels: 3 } }).png().toBuffer();
@@ -185,10 +224,10 @@ async function sources(supabase: Supabase, moi: string | null): Promise<Source[]
 const cheminPose = (src: Source) => `${DOSSIER}/poses/${empreinte(src.chemin)}.png`;
 /**
  * Une image du duo par pièce ET par lumière (le matin, le soir, la nuit), faite à sa première visite, puis gardée.
- * `-3` : d'après un collage, à la taille des sièges (le 15 novembre) — les premières (têtes coupées), puis les `-2` (la
- * pièce refaite en gros plan), ne servent plus.
+ * `-4` : d'après un collage, peintes dans la silhouette des figurines seulement (le 15 novembre) — les précédentes (têtes
+ * coupées, la pièce en gros plan, les meubles changés) ne servent plus.
  */
-const nomDuo = (piece: PieceDuo, moment: MomentDuo, a: Source, b: Source) => `${piece}-${moment}-${empreinte(a.chemin)}-${empreinte(b.chemin)}-3.png`;
+const nomDuo = (piece: PieceDuo, moment: MomentDuo, a: Source, b: Source) => `${piece}-${moment}-${empreinte(a.chemin)}-${empreinte(b.chemin)}-4.png`;
 /** La pièce dans une lumière : son image première dans son moment à elle, une retouche pour les deux autres. */
 const cheminDecor = (piece: PieceDuo, moment: MomentDuo) => `pieces-duo/${piece}/${moment === pieceDuoDe(piece).moment ? "decor.png" : `lumiere-${moment}.png`}`;
 const momentDuChoix = (c: ChoixCollage) => c.moment ?? pieceDuoDe(c.piece).moment;
@@ -205,17 +244,16 @@ const ecrireChoix = (supabase: Supabase, c: ChoixCollage) => depotDans(supabase,
  * La pièce dans une lumière (signée ; rien si cette lumière n'est pas faite), les lumières faites de la pièce, et ses
  * deux places, de gauche à droite (celles par défaut si elle n'a pas été relevée).
  */
-async function placesDe(supabase: Supabase, piece: PieceDuo, moment?: MomentDuo): Promise<{ decor?: string; moments: MomentDuo[]; places: PlaceDuo[]; posees: boolean; objets: Zone[] }> {
+async function placesDe(supabase: Supabase, piece: PieceDuo, moment?: MomentDuo): Promise<{ decor?: string; moments: MomentDuo[]; places: PlaceDuo[]; posees: boolean }> {
   const v = (await etatPiecesDuo(supabase)).pieces.find((p) => p.cle === piece);
   const posees = v?.emplacements?.places.length === 2;
-  const places = posees && v?.emplacements ? [...v.emplacements.places].sort((a, b) => a.x - b.x) : PLACES_PAR_DEFAUT;
-  const e = v?.emplacements;
-  const objets = e ? [e.tele, e.platine, ...e.cadres, e.etagere, e.fenetre].filter((z): z is Zone => Boolean(z)) : [];
+  // (en points d'assise : une place tracée à la main est la boîte de la figurine entière, `assisesDe`)
+  const places = posees && v?.emplacements ? assisesDe([...v.emplacements.places].sort((a, b) => a.x - b.x), Boolean(v.ajuste)) : PLACES_PAR_DEFAUT;
   const sien = pieceDuoDe(piece).moment;
   const lumiere = (m: MomentDuo) => (m === sien ? v?.decor : v?.lumieres?.[m]) || "";
   const moments = v?.decor ? (["matin", "soir", "nuit"] as const).filter((m) => lumiere(m)) : [];
   const decor = lumiere(moment ?? sien);
-  return { ...(decor ? { decor } : {}), moments, places, posees, objets };
+  return { ...(decor ? { decor } : {}), moments, places, posees };
 }
 
 /** 🧩 Ce que la page montre : les figurines, le choix, la pièce et ses places, les poses et le duo faits. */
@@ -313,7 +351,7 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
       ).includes(duo)
     )
       return {};
-    const { places, posees, objets } = await placesDe(supabase, pieceDuo, moment);
+    const { places, posees } = await placesDe(supabase, pieceDuo, moment);
     // (les figurines se posent sur les sièges : sans leurs deux places, elles tomberaient à côté)
     if (!posees) return { erreur: "Les deux places de cette pièce ne sont pas encore tracées (« 🛋️ La pièce du duo », ✋)." };
     const piece = await telecharger(supabase, cheminDecor(pieceDuo, moment));
@@ -322,9 +360,9 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
     const meta = await sharp(piece).metadata();
     const [l, h] = [meta.width ?? 0, meta.height ?? 0];
     if (!l || !h) return { erreur: "La pièce n’a pas pu être lue." };
-    const zone = zonePeinte(places, objets, l, h);
+    const { collage, presence, haut } = await poserLesFigurines(piece, [pa, pb], places, l, h);
+    const zone = zonePeinte(presence, l, h, haut);
     const masque = await masqueDe(l, h, zone);
-    const collage = await poserLesFigurines(piece, [pa, pb], places, l, h);
     const r = await demanderUneImage({ images: [collage, pa, pb], masque, consigne: consigneDuoDansLaPiece(places), transparent: false, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high", taille: "1024x1536" });
     if ("erreur" in r) return { erreur: r.erreur };
     await depotDans(supabase, `${DOSSIER}/duos`).ecrire(duo, await recoller(piece, r.png, l, h, zone), "image/png");

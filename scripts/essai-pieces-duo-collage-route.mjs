@@ -120,16 +120,17 @@ ok(
   ia.length === 2 && ia.some((c) => c.startsWith("MASQUE ")) && /^IMAGE \S+  high /.test(image) && image.includes("IMAGE 1 is a room") && image.includes("in the transparent (masked) area only") && image.includes("about 30% from the left and 62% from the top") && image.includes("about 70% from the left") && image.includes("Keep everything outside the masked area EXACTLY as it is"),
   "un masque : seule la zone des places est peinte, les deux assises à leurs places relevées (gauche, puis droite)",
 );
-ok(image.includes("a rough cut-out collage") && image.includes("Do not zoom in, do not crop") && image.includes("at EXACTLY the same place and the same size as in IMAGE 1") && image.includes("never sunk into the floor"), "d'après un collage : la pièce telle quelle (ni zoom ni recadrage), les figurines à leur place et à leur taille, les pieds jamais dans le sol");
+ok(image.includes("it follows the outline of the two figurines") && image.includes("a rough cut-out collage") && image.includes("Do not zoom in, do not crop") && image.includes("at EXACTLY the same place and the same size as in IMAGE 1") && image.includes("never sunk into the floor"), "d'après un collage : la pièce telle quelle (ni zoom ni recadrage), les figurines à leur place et à leur taille, les pieds jamais dans le sol");
 const empreinte = (c) => createHash("sha1").update(c).digest("hex").slice(0, 12);
-const nomDuo = (moment) => `${D}/duos/salon-${moment}-${empreinte(`${P1}/assise.png`)}-${empreinte(`${L0}/resultats/aimeeaimee01.png`)}-3.png`;
+const nomDuo = (moment) => `${D}/duos/salon-${moment}-${empreinte(`${P1}/assise.png`)}-${empreinte(`${L0}/resultats/aimeeaimee01.png`)}-4.png`;
 const duo = await octets(nomDuo("soir"));
 const px = duo ? await sharp(duo).raw().toBuffer({ resolveWithObject: true }) : null;
 ok(px?.info.width === 64 && px.info.height === 96 && px.data[0] === 200 && px.data[1] === 140 && px.data[2] === 90, "recollée sur la pièce : la même taille, et hors de la zone des places, la pièce au pixel près");
-// (le faux moteur rend un rectangle orangé de x 16 à 47, y 16 à 79, sur du vide)
+// (le faux moteur rend un rectangle orangé de x 16 à 47, y 16 à 79, sur du vide ; les figurines posées — 31 pixels de haut,
+// 0,32 de l'image — : Léa de x 11 à 26, y 39 à 69 ; la volontaire de x 37 à 52, y 43 à 73 ; la marge, 4 pixels)
 const pixel = (x, y) => [...px.data.subarray((y * 64 + x) * 3, (y * 64 + x) * 3 + 3)].join();
-ok(px && pixel(30, 50) === "200,90,60", `au milieu des figurines : l'image rendue (${px && pixel(30, 50)})`);
-ok(px && pixel(12, 20) === "200,140,90" && pixel(50, 20) !== "200,140,90", `la télé, dans la zone peinte mais loin des figurines : restée telle quelle (${px && pixel(12, 20)}), à côté, peint`);
+ok(px && pixel(20, 50) === "200,90,60" && pixel(45, 60) === "200,90,60", `sur les deux figurines : l'image rendue (${px && pixel(20, 50)}, ${px && pixel(45, 60)})`);
+ok(px && pixel(31, 55) === "200,140,90" && pixel(60, 50) === "200,140,90" && pixel(12, 20) === "200,140,90", `entre elles, à côté, au-dessus (la télé) : la pièce telle quelle, rien que leur silhouette est peinte (${px && pixel(31, 55)})`);
 ok((await appeler(lea, { action: "fabriquer" })).fait === undefined && (await toutIA()).length === avant + 4, "tout est fait : plus rien");
 ok((await octets(`${D}/verrou.json`)) === null, "aucun verrou ne reste");
 
