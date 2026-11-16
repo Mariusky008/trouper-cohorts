@@ -28,8 +28,12 @@ pose), et l'inscription « Choisis ta pièce » (**M3**) ; la session de l'unive
 (les éléments de la maquette, `fabrique.json` version 3 ; les anciennes sont signalées) et en largeur (un panorama de
 3584 × 1024 dans `pieces-duo/<pièce>/large/`), en trois lumières ; la chambre musicale d'après l'image que le
 propriétaire y dépose. **Reste au propriétaire** : lancer la fabrication (environ 2 € la pièce), juger, tracer les zones
-à la main. **Ensuite (session de l'univers)** : M1, l'écran « Ma maison » (qui lit `large/panorama*.webp` et
-`large/releve.json`).
+à la main.
+
+**M1 est codé** (`ma-maison.md`, section 13) : l'écran « Ma maison » (`app/collection/maison-catalogue.tsx`), à
+l'adresse d'essai `/univers/maison` ; la route `/api/direct/ma-piece` (⚠️ `/api/direct/ma-maison` est une autre route,
+plus ancienne : la mémoire de la maison et le dressing) ; derrière `MA_MAISON_CATALOGUE` (éteint). **Ensuite** : M2, la
+maison qui se remplit (📌 Garder → chez moi ; ＋ Ajouter chez moi).
 
 ## 0. Le chantier qui s'ouvre : « Univers » (11 novembre 2026)
 

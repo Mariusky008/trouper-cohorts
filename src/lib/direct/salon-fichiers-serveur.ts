@@ -75,11 +75,15 @@ function imageDe(empreinte: string, largeurs: number[], largeur: number, hauteur
 /**
  * 🗂️ L'image du stockage `chemin`, à adresse stable : faite une fois (WebP, deux largeurs, la vignette floue), puis
  * retrouvée dans son index tant que la source ne change pas. `null` si la source n'existe pas, ou ne se lit pas.
+ * `largeurs` : celles du salon par défaut ; 🏠 « Ma maison » demande les siennes pour ses panoramas (3584 × 1024 : 720
+ * points de large n'en feraient que 206 de haut, `ma-maison-serveur.ts`) ; chaque jeu de largeurs a son index.
  */
-export async function imageSalon(supabase: Supabase, chemin: string): Promise<ImageSalon | null> {
+export async function imageSalon(supabase: Supabase, chemin: string, largeursVoulues: readonly number[] = LARGEURS_SALON): Promise<ImageSalon | null> {
   const version = await versionDe(supabase, chemin).catch(() => null);
   if (!version) return null;
-  const index = await lireIndex(supabase, chemin);
+  // (d'autres largeurs : un autre index — la même image peut servir en vignette et en grand)
+  const cle = largeursVoulues.join(",") === LARGEURS_SALON.join(",") ? chemin : `${chemin}#${largeursVoulues.join(",")}`;
+  const index = await lireIndex(supabase, cle);
   if (index && index.version === version) return index.image;
   const source = await telecharger(supabase, chemin).catch(() => null);
   if (!source) return null;
@@ -89,7 +93,7 @@ export async function imageSalon(supabase: Supabase, chemin: string): Promise<Im
     const W = meta.width ?? 0;
     const H = meta.height ?? 0;
     if (!W || !H) return null;
-    const largeurs = [...new Set(LARGEURS_SALON.map((w) => Math.min(w, W)))];
+    const largeurs = [...new Set(largeursVoulues.map((w) => Math.min(w, W)))];
     await Promise.all(
       largeurs.map(async (w) => {
         const octets = await sharp(source).resize({ width: w, withoutEnlargement: true }).webp({ quality: 80, alphaQuality: 90 }).toBuffer();
@@ -98,7 +102,7 @@ export async function imageSalon(supabase: Supabase, chemin: string): Promise<Im
     );
     const petit = await sharp(source).resize({ width: 24 }).webp({ quality: 40 }).toBuffer();
     const image = imageDe(empreinte, largeurs, W, H, `data:image/webp;base64,${petit.toString("base64")}`);
-    await deposer(supabase, cheminIndex(chemin), Buffer.from(JSON.stringify({ version, image } satisfies Index)), "application/json");
+    await deposer(supabase, cheminIndex(cle), Buffer.from(JSON.stringify({ version, image } satisfies Index)), "application/json");
     return image;
   } catch {
     return null;
