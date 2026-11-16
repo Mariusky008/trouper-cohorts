@@ -107,8 +107,10 @@ const f1 = await appeler(lea, { action: "fabriquer" });
 let ia = (await toutIA()).slice(avant);
 ok(f1.statut === 200 && f1.fait === "pose-a" && /^http/.test(f1.etat?.poses?.a ?? "") && !f1.etat.poses.b, "1. la pose de Léa : faite, signée");
 ok(ia.length === 1 && ia[0].includes(" transparent high ") && ia[0].includes("WITHOUT the armchair") && ia[0].includes("Transparent background"), `sans son fauteuil, détourée, fidèle (${(ia[0] ?? "").slice(0, 70)}…)`);
+ok(ia[0].includes("turned three-quarters toward the RIGHT side of the image"), "Léa, à gauche : tournée de trois quarts vers la droite (vers l'autre)");
 const f2 = await appeler(lea, { action: "fabriquer" });
 ok(f2.fait === "pose-b" && /^http/.test(f2.etat?.poses?.b ?? "") && !f2.etat.generee, "2. la pose de la volontaire");
+ok(((await toutIA())[avant + 1] ?? "").includes("turned three-quarters toward the LEFT side of the image"), "la volontaire, à droite : tournée de trois quarts vers la gauche");
 
 // ─── 3. le duo, généré dans la pièce ───
 const f3 = await appeler(lea, { action: "fabriquer" });

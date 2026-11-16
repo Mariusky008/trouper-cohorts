@@ -84,6 +84,9 @@ export function CollageDuo() {
   async function envoyer(corps: Record<string, unknown>) {
     const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
     const j = (await r.json().catch(() => ({}))) as { etat?: EtatCollage; error?: string; fait?: string };
+    // (les deux places pas encore posées dans cette pièce : l'ajustement s'ouvre de lui-même, sur les posées)
+    const e = j.etat;
+    if (j.error?.startsWith("Pose d’abord leurs deux places") && e?.poses.a && e.poses.b) setReglage((x) => x ?? { places: e.places.map((p) => ({ ...p })), h: hauteurDuo(e.places) });
     if (j.etat) recevoir(j.etat);
     return j;
   }
@@ -258,7 +261,10 @@ export function CollageDuo() {
               <span className="cd-reglage">
                 {reglage ? (
                   <>
-                    <small>Fais glisser chaque figurine sur son siège (ses cuisses sur l’assise, ses pieds devant), puis ajuste leur taille à celle des sièges.</small>
+                    <small>
+                      Fais glisser chaque figurine sur son siège (ses cuisses sur l’assise, ses pieds devant), puis ajuste leur taille à celle des sièges. Elles sont déjà
+                      tournées l’une vers l’autre, de trois quarts, comme les sièges.
+                    </small>
                     <span className="cd-chips">
                       <button type="button" onClick={() => grandir(-0.01)} disabled={occupe}>
                         ➖ Plus petites

@@ -43,11 +43,22 @@ const MAX_FIGURINES = 24;
 /** Une figurine qu'on peut poser : son repère, son nom à l'écran, son image d'origine (dans le seau). */
 type Source = { id: string; nom: string; chemin: string };
 
-/** La pose sans fauteuil, d'après la figurine assise dans le sien. */
-export function consignePoseSansFauteuil(): string {
+/**
+ * Le côté de la pose : la figurine de gauche se tourne vers la droite de l'image, celle de droite vers la gauche — l'une
+ * vers l'autre, comme les sièges des pièces, de trois quarts. (De face, elles juraient avec les sièges tournés : le
+ * cinquième essai du propriétaire, « ils devraient eux aussi être légèrement inclinés l'un vers l'autre ».)
+ */
+type Cote = "a" | "b";
+const VERS: Record<Cote, { nom: string; dit: string }> = {
+  a: { nom: "vers-la-droite", dit: "RIGHT side of the image (toward a friend seated on its right)" },
+  b: { nom: "vers-la-gauche", dit: "LEFT side of the image (toward a friend seated on its left)" },
+};
+
+/** La pose sans fauteuil, d'après la figurine assise dans le sien, tournée de trois quarts vers l'autre. */
+export function consignePoseSansFauteuil(cote: Cote): string {
   return [
     "IMAGE 1 is a collectible figurine (big head, small body) seated in its own armchair.",
-    "Show EXACTLY the same figurine — same face, same hair, same clothes, same colors, same materials, same style, same proportions — in the same seated pose, but WITHOUT the armchair: it sits on an invisible seat, thighs horizontal, knees bent, lower legs hanging down naturally, hands resting on its knees or its lap, facing the viewer, turned slightly three-quarters.",
+    `Show EXACTLY the same figurine — same face, same hair, same clothes, same colors, same materials, same style, same proportions — in the same seated pose, but WITHOUT the armchair: it sits on an invisible seat, thighs horizontal, knees bent, lower legs hanging down naturally, hands resting on its knees or its lap. Its whole body and its face are turned three-quarters toward the ${VERS[cote].dit}, relaxed, as if chatting with that friend; we still see its face well.`,
     "Nothing else: no chair, no furniture, no base, no floor, no shadow, no text. Transparent background. The whole figurine visible, from the top of the head to the feet.",
   ].join("\n");
 }
@@ -106,6 +117,9 @@ async function poserLesFigurines(piece: Buffer, poses: [Buffer, Buffer], places:
   }
   return { collage: await sharp(fond, { raw: { width: l, height: h, channels: 3 } }).png().toBuffer(), presence, haut };
 }
+
+/** Sans ses deux places, les figurines tomberaient à côté des sièges : on dit où les poser. */
+export const SANS_PLACES = "Pose d’abord leurs deux places dans cette pièce : « ✋ Ajuster leurs places », sous les posées, puis « Enregistrer leurs places ».";
 
 type ZonePx = { left: number; top: number; width: number; height: number };
 /** Ce qui est peint : une boîte, et dedans, pixel par pixel, de 0 (la pièce telle quelle) à 1 (l'image rendue). */
@@ -229,15 +243,17 @@ async function sources(supabase: Supabase, moi: string | null): Promise<Source[]
   return l;
 }
 
-const cheminPose = (src: Source) => `${DOSSIER}/poses/${empreinte(src.chemin)}.png`;
+/** La pose d'une figurine, d'un côté (tournée vers l'autre) : faite une fois par figurine et par côté. */
+const nomPose = (src: Source, cote: Cote) => `${empreinte(src.chemin)}-${VERS[cote].nom}.png`;
+const cheminPose = (src: Source, cote: Cote) => `${DOSSIER}/poses/${nomPose(src, cote)}`;
 /**
  * Une image du duo par pièce ET par lumière (le matin, le soir, la nuit), faite à sa première visite, puis gardée.
  * Son nom finit par l'empreinte des deux places : les ajuster (la page d'essais, « ✋ Ajuster leurs places ») refait
- * l'image à la prochaine visite. (Les images d'avant le 16 novembre — têtes coupées, la pièce en gros plan, les meubles
+ * l'image à la prochaine visite. (`3q` : les poses tournées de trois quarts l'une vers l'autre.) (Les images d'avant le 16 novembre — têtes coupées, la pièce en gros plan, les meubles
  * changés — ne servent plus.)
  */
 const nomDuo = (piece: PieceDuo, moment: MomentDuo, a: Source, b: Source, places: PlaceDuo[]) =>
-  `${piece}-${moment}-${empreinte(a.chemin)}-${empreinte(b.chemin)}-${empreinte(JSON.stringify(places.map((p) => [p.x, p.y, p.hauteur].map((v) => Math.round(v * 1000)))))}.png`;
+  `${piece}-${moment}-3q-${empreinte(a.chemin)}-${empreinte(b.chemin)}-${empreinte(JSON.stringify(places.map((p) => [p.x, p.y, p.hauteur].map((v) => Math.round(v * 1000)))))}.png`;
 /** La pièce dans une lumière : son image première dans son moment à elle, une retouche pour les deux autres. */
 const cheminDecor = (piece: PieceDuo, moment: MomentDuo) => `pieces-duo/${piece}/${moment === pieceDuoDe(piece).moment ? "decor.png" : `lumiere-${moment}.png`}`;
 const momentDuChoix = (c: ChoixCollage) => c.moment ?? pieceDuoDe(c.piece).moment;
@@ -287,8 +303,8 @@ export async function etatCollage(supabase: Supabase, moi: string | null): Promi
       .lister()
       .catch(() => [] as string[]),
   ]);
-  const signee = async (src: Source) => (poses.includes(`${empreinte(src.chemin)}.png`) ? await signer(supabase, cheminPose(src)) : "");
-  const [pa, pb] = await Promise.all([signee(a), signee(b)]);
+  const signee = async (src: Source, cote: Cote) => (poses.includes(nomPose(src, cote)) ? await signer(supabase, cheminPose(src, cote)) : "");
+  const [pa, pb] = await Promise.all([signee(a, "a"), signee(b, "b")]);
   const duo = nomDuo(choix.piece, momentDuChoix(choix), a, b, places);
   return {
     ...etat,
@@ -342,10 +358,10 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
       ["a", a],
       ["b", b],
     ] as const) {
-      if (poses.includes(`${empreinte(src.chemin)}.png`)) continue;
+      if (poses.includes(nomPose(src, k))) continue;
       const figurine = await telecharger(supabase, src.chemin);
       if (!figurine) return { erreur: `La figurine « ${src.nom} » est introuvable.` };
-      const r = await demanderUneImage({ images: [figurine], consigne: consignePoseSansFauteuil(), transparent: true, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high", taille: "1024x1536" });
+      const r = await demanderUneImage({ images: [figurine], consigne: consignePoseSansFauteuil(k), transparent: true, fidelite: "high", avant, cle: cle(), base: base(), qualite: "high", taille: "1024x1536" });
       if ("erreur" in r) return { erreur: r.erreur };
       // (détourée au plus près : le point qui touche le siège se place alors d'après sa hauteur, `ANCRE_ASSISE`)
       const png = await sharp(r.png)
@@ -353,7 +369,7 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
         .png()
         .toBuffer()
         .catch(() => sharp(r.png).png().toBuffer());
-      await depotDans(supabase, `${DOSSIER}/poses`).ecrire(`${empreinte(src.chemin)}.png`, png, "image/png");
+      await depotDans(supabase, `${DOSSIER}/poses`).ecrire(nomPose(src, k), png, "image/png");
       return { fait: k === "a" ? "pose-a" : "pose-b" };
     }
     const { places, posees } = await placesDe(supabase, pieceDuo, moment);
@@ -367,9 +383,9 @@ async function fabriquerDuo(supabase: Supabase, a: Source, b: Source, pieceDuo: 
     )
       return {};
     // (les figurines se posent sur les sièges : sans leurs deux places, elles tomberaient à côté)
-    if (!posees) return { erreur: "Les deux places de cette pièce ne sont pas encore tracées (« 🛋️ La pièce du duo », ✋)." };
+    if (!posees) return { erreur: SANS_PLACES };
     const piece = await telecharger(supabase, cheminDecor(pieceDuo, moment));
-    const [pa, pb] = await Promise.all([telecharger(supabase, cheminPose(a)), telecharger(supabase, cheminPose(b))]);
+    const [pa, pb] = await Promise.all([telecharger(supabase, cheminPose(a, "a")), telecharger(supabase, cheminPose(b, "b"))]);
     if (!piece || !pa || !pb) return { erreur: "La pièce ou une pose est introuvable." };
     const meta = await sharp(piece).metadata();
     const [l, h] = [meta.width ?? 0, meta.height ?? 0];
@@ -428,7 +444,7 @@ export async function refaireCollage(supabase: Supabase, moi: string | null, quo
   const b = srcs.find((x) => x.id === choix?.b);
   if (!choix || !a || !b) return;
   const { places } = await placesDe(supabase, choix.piece, momentDuChoix(choix));
-  const chemins = [`${DOSSIER}/duos/${nomDuo(choix.piece, momentDuChoix(choix), a, b, places)}`, ...(quoi === "poses" ? [cheminPose(a), cheminPose(b)] : [])];
+  const chemins = [`${DOSSIER}/duos/${nomDuo(choix.piece, momentDuChoix(choix), a, b, places)}`, ...(quoi === "poses" ? [cheminPose(a, "a"), cheminPose(b, "b")] : [])];
   await supabase.storage
     .from(SEAU_FIGURINES)
     .remove(chemins)
