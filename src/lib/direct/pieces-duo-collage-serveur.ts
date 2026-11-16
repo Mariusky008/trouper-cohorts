@@ -77,6 +77,7 @@ export function consigneDuoDansLaPiece(places: PlaceDuo[]): string {
     "Keep the room EXACTLY as it is: the same framing, the same camera, every object and every piece of furniture at the same place and the same size. Do not zoom in, do not crop, do not enlarge the seats.",
     "Keep each figurine at EXACTLY the same place and the same size as in IMAGE 1: they are small in the room, at the scale of their seats. Each figurine is entirely visible, from the top of its head to its feet.",
     "Do not redraw, move, bend or reshape the seats or any furniture: they stay exactly as they are; only the figurines and their soft shadows are painted.",
+    "Furniture that stands in front of a figurine (a coffee table, an armrest, a cushion) stays in front of it and hides the part of the figurine behind it: a foot or a leg never overlaps the furniture in front of it.",
     "Each one truly sits on its seat: its bottom on the seat, its back against the backrest if there is one, its knees bent, its feet resting on the floor or hanging just above it — never sunk into the floor or the rug.",
     "Keep each figurine EXACTLY as in IMAGE 2 and IMAGE 3: same face, same hair, same clothes, same colors, same style.",
     "The figurines truly belong to the scene: the room's light falls on them, soft contact shadows where they touch the seats and the floor, no cut-out edges.",
