@@ -15,6 +15,10 @@ le chantier « Autour de moi »), lisez d'abord `docs/reprise.md` : où on en es
 de chacun, les visites), lisez d'abord `docs/univers/vision.md` (les textes du propriétaire), puis
 `docs/univers/feuille-de-route.md` (les décisions, l'architecture, les lots).
 
+**Si vous travaillez sur la conversation entre deux proches** (le salon du duo, la messagerie visuelle : les bulles,
+les gestes, le talkie-walkie, les mèmes dans la pièce, la télé, les cadres, l'étagère, la vitesse), lisez d'abord
+`docs/univers/salon-du-duo.md` : le cahier des charges commun aux deux sessions.
+
 Règles communes :
 
 - On travaille en français.
