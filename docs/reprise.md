@@ -217,7 +217,9 @@ sur l'appli », rapide et sans à-coups. Le cahier dit ce qu'on voit (l'écran, 
 talkie-walkie, les mèmes joués dans la pièce, la télé, les cadres, l'étagère et son 📌 Garder, la nuit, la météo), comment
 les figurines vivent dans l'image du duo (ses calques, section 5), le moteur de la scène, le budget de vitesse et ses
 règles (des URL stables en cache, rien sur le réseau pendant une animation, un « pouls » rapide), les routes, et les lots
-S0 à S9 avec la session de chacun — **proposé, à valider par le propriétaire** (section 10).
+S0 à S9 avec la session de chacun — **validés par le propriétaire le 16 novembre 2026**, avec ses réponses (section 10 :
+les panneaux deviennent des petites attentions, le chat est celui de l'essai C0, on choisit sa pièce au départ et on en
+change, le temps réel seulement si le pouls lui paraît lent).
 
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 

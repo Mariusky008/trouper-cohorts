@@ -1,7 +1,7 @@
 # Le salon du duo — la messagerie visuelle : le cahier des charges commun aux deux sessions
 
-**Statut : écrit le 16 novembre 2026, à la demande du propriétaire ; le découpage du travail (section 9) est proposé,
-à valider par lui.** Les deux sessions le lisent avant de toucher à la conversation entre deux proches. On le change
+**Statut : écrit le 16 novembre 2026, à la demande du propriétaire ; ses réponses aux cinq questions (section 10) le
+même jour : le découpage du travail est validé.** Les deux sessions le lisent avant de toucher à la conversation entre deux proches. On le change
 par une PR qui le dit dans son titre, et l'autre session en est prévenue (par le propriétaire, ou dans `docs/reprise.md`).
 
 Le propriétaire, après avoir joué la maquette : « c'est super tout ça, maintenant il va falloir le faire exactement
@@ -102,7 +102,10 @@ Pour chacune : ce qu'on voit, les données, le serveur, et quand c'est réussi (
 
 Deux onglets (la maquette les montre tous) :
 
-- **💌 Petites attentions** : 👋 Coucou · 😘 Bisou · 🤜 Check · 🪶 Chatouilles · 🌷 Une fleur.
+- **💌 Petites attentions** : 👋 Coucou · 😘 Bisou · 🤜 Check · 🪶 Chatouilles · 🌷 Une fleur, puis **les huit panneaux
+  d'aujourd'hui** (`PANNEAUX`, `vivant.ts`) : 😂 MDR · 🏃 J'arrive ! · 📞 Rappelle-moi · 👏 Bravo ! · 😴 Pas dispo · 💭 Je
+  pense à toi · 🙏 Merci ! · 🌙 Ce soir ? — la figurine brandit sa pancarte, vue des deux, comme aujourd'hui (décidé par
+  le propriétaire le 16 novembre 2026).
 - **🛋️ Ensemble** : 🤗 Câlin · ☕ Un café · 🎶 Danser · 📺 Un clip (la feuille de la télé) · 📸 Photo à deux · 🖼️ Accrocher
   (la feuille des cadres) · 🎁 Surprise.
 
@@ -113,9 +116,7 @@ flash et accroche la photo au mur… L'autre répond souvent par un geste (un bi
 **Les objets posés restent sur la table** (une tulipe, une tasse) et se touchent (« Camille a laissé une tulipe ·
 8 h 12 »).
 
-- L'appui long sur une bulle garde **les six réactions avec le corps** d'aujourd'hui (👏 😂 ❤️ ✋ 🤦 😮, `vivant.ts`) ; les
-  **panneaux** (« MDR », « J'arrive ! »…) deviennent des gestes de l'onglet 💌 (à valider par le propriétaire,
-  section 10).
+- L'appui long sur une bulle garde **les six réactions avec le corps** d'aujourd'hui (👏 😂 ❤️ ✋ 🤦 😮, `vivant.ts`).
 - ✅ Le geste part au toucher (sans attendre le serveur) ; s'il est refusé, il se défait et on le dit.
 
 ### 4.5 La vie propre des figurines, et le chat
@@ -124,9 +125,12 @@ flash et accroche la photo au mur… L'autre répond souvent par un geste (un bi
   penche un peu ; de temps en temps elles se regardent, s'étirent.
 - **Si personne ne fait rien** pendant une vingtaine de secondes alors que l'autre n'est pas là, la scène peut jouer son
   arrivée spontanée (section 4.1) — seulement dans la maquette ; dans l'appli, c'est sa vraie arrivée.
-- **Le chat** (le compagnon, `compagnon.md`) : dans son panier, il dort, s'éveille, dresse les oreilles à chaque
-  message ; on le touche, il ronronne ; il vient sur mes genoux quand l'autre arrive ou quand tout est calme. Dans la
-  maquette il est dessiné ; dans l'appli, ce sont ses boucles (lot C0), si le propriétaire les valide.
+- **Le chat** : **celui de l'essai C0** (`compagnon.md`, ses huit boucles vidéo sur fond vert, le vert retiré dans le
+  téléphone) — le propriétaire, le 16 novembre 2026 : « celui qu'on a conçu déjà sur l'admin est mieux que celui de la
+  maquette ». Il se place au coin du chat de la pièce (`emplacements.chat`, un point : aussi simple que le dessiné) et
+  sur mes genoux (au-dessus de ma place) ; ses boucles : il dort, il s'assoit, il marche (il traverse la pièce), il
+  dresse les oreilles à chaque message, il saute de joie à un fou rire, il ronronne sur mes genoux (son vrai son
+  enregistré). On le touche, il ronronne. Le vert retiré par la carte graphique (7.3).
 - ✅ Rien ne bouge plus d'une chose à la fois au repos ; tout s'arrête quand la page est cachée.
 
 ### 4.6 Le talkie-walkie (le vocal)
@@ -271,6 +275,25 @@ Ce que la maquette ajoute ou fixe :
 - **📅** : le prochain rendez-vous (de l'étagère, « À venir ») en puce ; un compte à rebours le jour venu.
 - **La présence** : « Là, maintenant » ; « … » quand l'autre écrit, 🎙️ quand il enregistre.
 
+### 4.13 La pièce : la choisir au départ, en changer
+
+Le propriétaire, le 16 novembre 2026 : « il faut pouvoir changer de pièce, ou choisir la pièce que l'on veut au départ
+de la conversation ».
+
+- **Au départ d'une conversation** (la toute première fois avec ce proche, ou en démarrant une conversation depuis
+  « Chez moi » / « ＋ Nouveau ») : « Où vous installez-vous ? » — les vignettes des pièces faites (`PIECES_DUO` : salon,
+  cuisine, terrasse, chambre vue mer, café, hangar, appart à New York, rue), la préférée de celui qui invite en premier
+  (`piece-du-duo.md`, section 5), un toucher et on y est. Les autres fois, on rouvre dans la dernière pièce du duo.
+- **🚪 Changer de pièce, à tout moment** (en haut de la scène) : la même liste. Si l'autre est là, c'est une invitation
+  (« Camille t'invite sur la terrasse » — « Venir » / « Pas maintenant », comme dans la maquette de la pièce,
+  `piece-du-duo.md` section 12) ; s'il n'est pas là, la pièce change, et il arrivera dans la nouvelle (« ✨ Léa vous a
+  installés sur la terrasse »).
+- **Ce qui suit la pièce** : les objets posés sur la table, les photos des cadres et ce qui passe à la télé restent ceux
+  du duo (ils changent de pièce avec lui) ; l'étagère est la même partout.
+- **La vitesse** : les images de chaque pièce faite (plaque, calques, dans la lumière de l'heure) se préchargent une à
+  une après l'ouverture : changer de pièce est immédiat (< 300 ms) ; une pièce jamais visitée par ce duo se fait à sa
+  première visite (environ une minute, une seule fois : « Vos figurines s'installent… », comme aujourd'hui).
+
 ---
 
 ## 5. Les calques de la scène : comment les figurines peuvent vivre dans l'image du duo
@@ -352,7 +375,7 @@ scene.detruire();
 | Un geste, un mème, une bulle, après le toucher | **< 100 ms** pour que ça commence | tous |
 | Images par seconde pendant un geste | **≥ 55**, aucune image de plus de 50 ms | iPhone 11, un Android moyen (Galaxy A14) |
 | Réactivité à un toucher (INP) | **< 200 ms** | tous |
-| Un geste de l'un, vu chez l'autre | **< 1 s** (puis < 500 ms avec le temps réel, 7.4) | deux téléphones |
+| Un geste de l'un, vu chez l'autre | **< 2 s** avec le pouls (7.4, étape 1) ; < 500 ms avec le temps réel (étape 2) | deux téléphones |
 | Poids de la première vue (plaque + 4 calques + code de la scène) | **< 900 Ko** | — |
 
 ### 7.2 Les images : petites, stables, en cache
@@ -438,7 +461,7 @@ scene.detruire();
 
 ---
 
-## 9. Les lots, leur ordre, et qui fait quoi (proposé)
+## 9. Les lots, leur ordre, et qui fait quoi (validé par le propriétaire le 16 novembre 2026)
 
 Tout se construit **derrière un interrupteur** (`SALON_DU_DUO`, éteint) : d'abord à une adresse d'essai pour
 l'administrateur (`/univers/salon?avec=<cle>`), sur ses vraies conversations ; on l'allume quand le propriétaire l'a
@@ -452,25 +475,26 @@ seule session à la fois par fichier.
 |---|---|---|---|
 | **S0 — Le socle et la vitesse** | le contrat `salon.ts` ; le moteur (6) repris de la maquette ; les URL stables et le cache (7.2) ; `?ouvrir=` ; le préchargement ; les mesures (7.6) ; l'adresse d'essai | messages et bienvenue | — |
 | **S1 — Les calques** | la découpe de l'image du duo (5) ; les emplacements ajoutés (`fenetreCoins`, `lampes`, `table`, `fentes`) et leur tracé à la main | messages et bienvenue (elle fait l'image du duo) | S0 |
-| **S2 — La conversation** | les bulles, 💬 Messagerie, écrire, les réactions au texte, la présence et le pouls (7.4, étape 1), l'arrivée (4.1) | messages et bienvenue | S0, S1 |
-| **S3 — Les gestes et la vie** | les 12 gestes, les objets sur la table, la vie propre, le chat (dessiné, puis le compagnon) | univers | S0, S1 |
+| **S2 — La conversation** | les bulles, 💬 Messagerie, écrire, les réactions au texte, la présence et le pouls (7.4, étape 1), l'arrivée (4.1), choisir la pièce et en changer (4.13) | messages et bienvenue | S0, S1 |
+| **S3 — Les gestes et la vie** | les 12 gestes et les 8 panneaux, les objets sur la table, la vie propre, le chat (le compagnon de l'essai C0) | univers | S0, S1 |
 | **S4 — Le talkie-walkie** | 4.6 entier, le talkie sur la table, les niveaux | univers | S2 |
 | **S5 — Les mèmes** | 4.7 entier, la vidéo au partage | univers | S2 |
 | **S6 — Les objets et l'étagère** | la télé et « Mettre à la télé », les cadres et « Accrocher », l'étagère (📌 Garder, Nos fous rires, les mèmes rangés), ＋ Envoyer et les films | univers | S2 |
 | **S7 — La lumière et la météo** | la nuit éclairée, la météo à la fenêtre, l'heure | univers | S1 |
 | **S8 — La bascule** | les essais de vitesse sur vrais téléphones, l'avis du propriétaire, l'interrupteur allumé, l'ancien écran retiré | les deux | tout |
-| **S9 — Le temps réel** | 7.4, étape 2 | messages et bienvenue | S2 |
+| **S9 — Le temps réel** | 7.4, étape 2 — seulement si le propriétaire trouve le délai du pouls gênant (section 10) | messages et bienvenue | S2 |
 
 **Chaque lot** : ses essais (une route contre le faux Supabase, un essai navigateur au format téléphone, ajoutés à
 `lancer-essais.sh`), sa doc (une section ici), une PR vers `main`, la CI au vert, puis le message au propriétaire avec
 ce qu'il peut essayer.
 
-## 10. Ce qui reste à décider par le propriétaire
+## 10. Les décisions du propriétaire (16 novembre 2026)
 
-1. **Le découpage du travail** de la section 9.
-2. **Les panneaux** (« MDR », « J'arrive ! »…) : deviennent-ils des gestes de l'onglet 💌, ou disparaissent-ils ?
-3. **Le chat** : le dessiné de la maquette pour commencer, ou attendre le verdict sur le compagnon (C0) ?
-4. **Les pièces** : la maquette n'a qu'un salon ; l'appli en a huit (`PIECES_DUO`). Tout ce cahier marche dans
-   chacune (par leurs emplacements) ; à confirmer que l'invitation à changer de pièce (`piece-du-duo.md`, section 12)
-   reste.
-5. **Le temps réel** (7.4, étape 2) : à faire tout de suite après S2, ou plus tard.
+1. **Le découpage du travail** (section 9) : « oui ».
+2. **Les panneaux** : ils deviennent des gestes de 💌 Petites attentions (4.4).
+3. **Le chat** : celui de l'essai C0, « mieux que celui de la maquette » (4.5) — il se place aussi simplement (un point).
+4. **Les pièces** : « oui, il faut pouvoir changer de pièce, ou choisir la pièce que l'on veut au départ de la
+   conversation » (4.13).
+5. **Le temps réel** : la question lui a été réexpliquée (un geste de l'un vu chez l'autre en 1 à 2 s avec le pouls,
+   ou en moins d'une demi-seconde avec le temps réel). En attendant sa réponse : le pouls (S2) d'abord ; le temps réel
+   (S9) seulement s'il trouve le délai gênant en jouant le salon sur son téléphone.
