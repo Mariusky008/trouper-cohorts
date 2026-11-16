@@ -187,6 +187,11 @@ serveur, avec `sharp` (quelques secondes, aucun appel au moteur d'image) :
 C'est exactement la forme `CalqueFigurine` du contrat commun (`src/lib/direct/salon.ts`) : **le contrat ne change
 pas**. Ce qui change, c'est d'où viennent les calques : de la figurine, et non plus de la découpe d'une image du duo.
 
+**Fait (lot S1, `salon-du-duo.md`, section 11.7)** : `calquesDeFigurine(supabase, h)`
+(`src/lib/direct/calques-figurine-serveur.ts`) rend les calques de sa figurine, à adresse stable, dans le cadre de la
+figurine ; `poserFigurine(f, centre, piece, { tracee: true })` (`src/lib/direct/figurine-calques.ts`) les pose au
+centre de sa maison, dans la forme `CalqueFigurine`.
+
 **La pose** :
 
 - **chez soi** : au `centre` du relevé en largeur, à l'`echelle` de la pièce, de face ;

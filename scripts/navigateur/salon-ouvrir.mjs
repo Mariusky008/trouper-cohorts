@@ -6,8 +6,10 @@
 // vignette floue, puis la pièce (son adresse stable), les temps mesurés (« première fois sur ce téléphone »), et la
 // mesure part à « ⚡ La vitesse du salon » ; « ← Le moteur », puis Sam encore : « déjà vue ». Un nouvel onglet : la pièce
 // vient du cache du téléphone (rien de téléchargé). LA VITESSE, LE PROCESSEUR RALENTI ×4 : une conversation déjà vue
-// s'ouvre en moins de 800 ms (du toucher à la scène prête) ; pendant des effets, la plus longue image est mesurée. Ni
-// débordement, ni erreur, ni le mot « exemple ».
+// s'ouvre en moins de 800 ms (du toucher à la scène prête) ; pendant des effets, la plus longue image est mesurée.
+// (Lot S1) Leurs figurines du nouveau style : la première ouverture les découpe après la réponse ; la suivante les pose
+// aux deux places (la mienne à gauche), et leurs têtes vivent. « 🎭 Les calques de ta figurine » : le corps, la tête et
+// ses repères. Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
@@ -162,6 +164,72 @@ const pire = await p3.evaluate(
 console.log(`  (ralenti ×4 : la plus longue image pendant cœurs, étincelles et lettrage : ${pire} ms)`);
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
 await p3.close();
+
+// ═══ 🎭 LES DEUX FIGURINES (lot S1) : leurs calques, faits une fois chacune, posés aux deux places ═══
+// (leur figurine assise dans son fauteuil, le nouveau style : une grosse tête, un cou, le corps et le fauteuil)
+const assise = (couleur) =>
+  sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><ellipse cx="400" cy="330" rx="200" ry="190" fill="${couleur}"/><rect x="355" y="500" width="90" height="70" fill="${couleur}"/><rect x="160" y="550" width="480" height="560" rx="50" fill="#5a3a2a"/><circle cx="330" cy="320" r="18" fill="#222"/><circle cx="470" cy="320" r="18" fill="#222"/></svg>`,
+    ),
+  )
+    .png()
+    .toBuffer();
+const fiche = (h) => ({ version: 1, style: "collection-1", creee_le: maintenant, validee_le: maintenant, references: { assise: { chemin: `${h}/perso/v1/assise.png` } }, historique: [{ version: 1, le: maintenant, raison: "« C’est moi ! »", style: "collection-1" }] });
+for (const x of [LEA, SAM]) {
+  await deposer(`${x.id}/perso/v1/assise.png`, await assise(x === LEA ? "#e0a070" : "#7090e0"), "image/png");
+  await json(`${x.id}/perso/v1/fiche.json`, fiche(x.id));
+  await json(`${x.id}/perso/fiche.json`, fiche(x.id));
+}
+const lister = async (dossier) => {
+  const r = await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: dossier, limit: 100 }) });
+  return r.status === 200 ? ((await r.json().catch(() => [])) ?? []).length : 0;
+};
+const p4 = await ctx.newPage();
+surveiller(p4);
+await p4.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "networkidle" });
+ok(await attendre(async () => (await p4.locator('[data-calques="aucun"]').count()) === 1, 8000, p4), "leurs figurines du nouveau style, pas encore découpées : la pièce seule, et elles le seront juste après");
+ok(await attendre(async () => (await lister(`${LEA.id}/calques`)) === 3 && (await lister(`${SAM.id}/calques`)) === 3, 15000, p4), "… découpées après la réponse : le corps, la tête, leurs repères, pour chacun");
+await p4.close();
+const p5 = await ctx.newPage();
+surveiller(p5);
+await p5.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "networkidle" });
+ok(await attendre(async () => (await p5.locator('[data-calques="poses"]').count()) === 1 && (await p5.locator(".em-scene[data-pret] .sc-fig").count()) === 2, 8000, p5), "rouverte : les deux figurines, posées à leurs places");
+const figs = await p5.evaluate(() =>
+  ["moi", "autre"].map((q) => {
+    const f = document.querySelector(`.sc-fig[data-figurine="${q}"]`);
+    const t = document.querySelector(`.sc-tete[data-tete="${q}"]`);
+    const r = f?.getBoundingClientRect();
+    const rt = t?.getBoundingClientRect();
+    const imgs = [...(f?.querySelectorAll("img") ?? [])];
+    return { x: r ? r.left + r.width / 2 : 0, haut: r?.top ?? 0, tete: rt ? { haut: rt.top, bas: rt.bottom } : null, bas: r?.bottom ?? 0, chargees: imgs.length >= 2 && imgs.every((i) => i.complete && i.naturalWidth > 0), adresses: imgs.map((i) => i.getAttribute("src")) };
+  }),
+);
+ok(figs[0].x < figs[1].x && figs.every((f) => f.chargees), `la mienne à gauche, la sienne à droite, leurs images chargées (${figs.map((f) => Math.round(f.x)).join(" / ")})`);
+ok(figs.every((f) => f.adresses.every((a) => /^\/api\/direct\/salon\/fichier\/[0-9a-f]{32}-\d+\.webp$/.test(a ?? ""))), "leurs calques à adresse stable");
+ok(figs.every((f) => f.tete && f.tete.haut <= f.haut + 2 && f.tete.bas < f.bas), "la tête en haut de chacune, au-dessus du corps");
+await p5.locator(`.sc-fig[data-figurine="moi"]`).first().scrollIntoViewIfNeeded().catch(() => undefined);
+await p5.screenshot({ path: `${D}/salon-ouvrir-2-figurines.png` });
+// (la tête bouge seule autour de son pivot : la scène vit)
+const angle = () => p5.evaluate(() => getComputedStyle(document.querySelector('.sc-tete[data-tete="moi"]')).transform);
+const a0 = await angle();
+await p5.waitForTimeout(1500);
+ok((await angle()) !== a0, "la tête de ma figurine bouge seule (sa respiration)");
+await p5.close();
+
+// ═══ 🎭 « LES CALQUES DE TA FIGURINE » ═══
+await p.getByRole("button", { name: "← Le moteur" }).click();
+await p.getByRole("button", { name: "Voir les calques de ta figurine" }).click();
+ok(await attendre(async () => (await p.locator('[data-calques-figurine="estime"] img').count()) === 1, 8000), "« 🎭 Les calques de ta figurine » : le corps, estimé par la silhouette");
+const apercu = await p.evaluate(() => {
+  const f = document.querySelector("[data-calques-figurine]");
+  const imgs = [...document.querySelectorAll(".ac img")];
+  return { points: f?.querySelectorAll(".ac-point").length ?? 0, boite: f?.querySelectorAll(".ac-boite").length ?? 0, chargees: imgs.length === 2 && imgs.every((i) => i.complete && i.naturalWidth > 0) };
+});
+ok(apercu.boite === 1 && apercu.points === 4 && apercu.chargees, `la boîte de la tête, le pivot, la bouche, les deux joues ; la tête découpée à côté (${JSON.stringify(apercu)})`);
+ok(/estimés par la silhouette/.test(await texte(".ac")), "d'où viennent les repères : dit");
+await p.locator(".ac").scrollIntoViewIfNeeded();
+await p.screenshot({ path: `${D}/salon-ouvrir-3-calques.png` });
 
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "rien ne déborde");
 ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "jamais le mot interdit");

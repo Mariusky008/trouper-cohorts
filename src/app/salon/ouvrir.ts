@@ -38,7 +38,7 @@ const decodees = new Map<string, Promise<HTMLImageElement>>();
  * grande largeur, `src` : celle que la scène montre — sur un téléphone, la pièce qui couvre l'écran dépasse 1 080 pixels
  * réels ; le préchargement et la scène prennent ainsi la même adresse, jamais deux téléchargements.)
  */
-export function prechargerImage(img: ImageSalon): Promise<HTMLImageElement> {
+export function prechargerImage(img: Pick<ImageSalon, "src">): Promise<HTMLImageElement> {
   const deja = decodees.get(img.src);
   if (deja) return deja;
   const i = new Image();
@@ -52,9 +52,12 @@ export function prechargerImage(img: ImageSalon): Promise<HTMLImageElement> {
   return p;
 }
 
-/** Les images d'une ouverture : la plaque, puis les calques (lot S1). */
-export function imagesDe(o: OuvertureSalon): ImageSalon[] {
-  return o.scene ? [o.scene.plaque] : [];
+/** Les images d'une ouverture : la plaque, puis les calques des deux figurines (lot S1 : le corps, la tête). */
+export function imagesDe(o: OuvertureSalon): Pick<ImageSalon, "src">[] {
+  const sc = o.scene;
+  if (!sc) return [];
+  const c = sc.calques;
+  return [sc.plaque, ...(c ? [c.a.corps, c.a.tete, c.b.corps, c.b.tete].map((x) => ({ src: x.fichier })) : [])];
 }
 
 /** Précharger une conversation (sa requête, ses images) ; jamais d'erreur. */

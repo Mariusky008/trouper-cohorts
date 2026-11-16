@@ -9,7 +9,8 @@
 // POST { action: "retoucher", de, demande }   → { id } : une retouche avec ses mots, sur une proposition
 // POST { action: "refaire" }                  → { id } : « Elle ne me ressemble pas » (une nouvelle, d'après le selfie)
 // POST { action: "valider", id }              → { version } : « C'est moi ! » — sa fiche est enregistrée ; ses autres
-//                                               images (bouche ouverte, debout) se font après la réponse
+//                                               images (bouche ouverte, debout) et ses calques (le salon du duo, lot
+//                                               S1) se font après la réponse
 // Les images se font après la réponse : l'écran relit toutes les trois secondes.
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -19,6 +20,7 @@ import { poserLePont } from "@/lib/direct/pont-univers-serveur";
 import { villeEcrite } from "@/lib/direct/nouvelle-figurine";
 import { motInterdit } from "@/lib/direct/mots-interdits";
 import { villeSlug } from "@/lib/direct/ville";
+import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
 import { envoyerSelfie, etatNouvelleFigurine, fabriquerProposition, fabriquerSesReferences, refaire, retoucher, valider } from "@/lib/direct/nouvelle-figurine-serveur";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +70,8 @@ export async function POST(request: Request) {
     const version = r.version;
     // (puis, l'interrupteur « Univers pour tous » allumé : elle devient sa figurine dans l'appli — `pont-univers-serveur.ts`)
     if (version) after(() => fabriquerSesReferences(supabase, moi.id, version, avant).then(() => poserLePont(supabase, moi)).catch(() => undefined));
+    // (🎭 et ses calques — le corps, la tête, ses repères —, faits une fois pour le salon du duo et sa maison : `calques-figurine-serveur.ts`)
+    if (version) after(() => calquesDeFigurine(supabase, moi.id).catch(() => null));
     return repondre(r, { version });
   }
   return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });

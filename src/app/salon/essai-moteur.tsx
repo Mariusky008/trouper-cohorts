@@ -10,14 +10,16 @@
  * (Lot S0b) `?avec=<clé>` : UNE VRAIE CONVERSATION de l'administrateur, ouverte comme le salon l'ouvrira — une requête
  * (`?ouvrir=`), la vignette floue tout de suite, la pièce à adresse stable décodée hors de l'affichage, puis la scène ; les
  * temps mesurés (`salon:toucher` → `salon:plaque` → `salon:pret`) s'affichent et partent à « ⚡ La vitesse du salon ». Les
- * figurines y viendront avec leurs calques (lot S1). Sans `avec` : ses conversations, préchargées dans un temps mort (les
- * deux premières) et au premier contact du doigt.
+ * deux figurines y sont posées à leurs places (lot S1 : les calques de chacune, faits une fois). Sans `avec` : ses
+ * conversations, préchargées dans un temps mort (les deux premières) et au premier contact du doigt ; et « 🎭 Les calques
+ * de ta figurine » (`./apercu-calques`).
  */
 import "./mises-en-scene";
 import { useEffect, useRef, useState } from "react";
 import { bez, creerScene, ease } from "./moteur";
-import { envoyerMesures, marquer, mesures, ouvrir, precharger, prechargerImage, prechargerQuandLibre } from "./ouvrir";
+import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, precharger, prechargerImage, prechargerQuandLibre } from "./ouvrir";
 import { EmplacementsSalon } from "./emplacements-salon";
+import { ApercuCalques } from "./apercu-calques";
 import { PUCES_GESTES, autreQue, miseEnSceneDe, type CalqueFigurine, type CalquesSalon, type OptionsScene, type Qui, type Scene } from "@/lib/direct/salon";
 import { ANCRE_ASSISE, hauteurDuo, type EtatCollage, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
@@ -47,13 +49,25 @@ async function chargerConversation(cle: string, surFlou: (flou: string) => void)
   const sc = o.scene;
   if (!sc) return { etat: "manque", message: `La pièce de votre conversation avec ${o.fil.lui.prenom} n’est pas encore faite.` };
   surFlou(sc.plaque.flou);
-  await prechargerImage(sc.plaque);
+  // (la plaque d'abord — elle s'affiche —, les calques des figurines pendant ce temps)
+  const [plaque, ...calques] = imagesDe(o);
+  const enRoute = Promise.all(calques.map((i) => prechargerImage(i)));
+  await prechargerImage(plaque);
   marquer("salon:plaque");
+  await enRoute;
+  const c = sc.calques;
   return {
     etat: "pret",
     flou: sc.plaque.flou,
+    calques: !!c,
     avec: { cle, prenom: o.fil.lui.prenom, deja: dejaVue(cle) },
-    pret: { plaque: sc.plaque.src, largeur: sc.plaque.largeur, hauteur: sc.plaque.hauteur, figurines: {} },
+    pret: {
+      plaque: sc.plaque.src,
+      largeur: sc.plaque.largeur,
+      hauteur: sc.plaque.hauteur,
+      // (🎭 lot S1 : ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche)
+      figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {},
+    },
   };
 }
 
@@ -363,7 +377,13 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
                 {conversation?.deja ? " (déjà vue sur ce téléphone)" : " (première fois sur ce téléphone)"}
               </p>
             )}
-            <p className="em-petit">Les figurines viendront ici avec leurs calques (lot S1).</p>
+            {pret && (
+              <p className="em-petit" data-calques={chargement.etat === "pret" && chargement.calques ? "poses" : "aucun"}>
+                {chargement.etat === "pret" && chargement.calques
+                  ? "🎭 Vos deux figurines, posées à leurs places (leurs calques, faits une fois chacune)."
+                  : "Vos figurines du nouveau style ne sont pas encore découpées toutes les deux : elles le seront juste après cette ouverture."}
+              </p>
+            )}
           </section>
         )}
         {!avec && pret && (
@@ -419,6 +439,12 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
         <button type="button" className="em-recommencer" onClick={() => setTour((t) => t + 1)}>
           ↻ Recommencer la scène
         </button>
+        {!avec && (
+          <section className="em-rangee" aria-label="Les calques de ta figurine">
+            <h2>🎭 Les calques de ta figurine</h2>
+            <ApercuCalques />
+          </section>
+        )}
         {!avec && (
           <section className="em-rangee" aria-label="Les emplacements du salon">
             <h2>✋ Les emplacements du salon</h2>
