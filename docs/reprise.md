@@ -249,8 +249,10 @@ maquette : les ressorts, les effets, les sons, la caméra, une seule boucle), et
 l'univers peut écrire ses gestes (S3)** : un fichier `src/app/salon/gestes.ts`, et une ligne dans
 `src/app/salon/mises-en-scene.ts` ; elle les essaie sur `/univers/salon`. **Fait, lot S0b** : les images de la scène
 à adresse stable (gardées un an par le téléphone), `GET /api/direct/proches?ouvrir=<clé>` (le fil, la vie et la scène
-en une requête), le préchargement, les mesures de vitesse (« ⚡ La vitesse du salon ») — section 11.4 du cahier. **Ensuite
-(S1)** : les calques des figurines, découpés dans l'image du duo.
+en une requête), le préchargement, les mesures de vitesse (« ⚡ La vitesse du salon ») — section 11.4 du cahier. **Fait, lot S1
+(première partie)** : les calques des figurines découpés dans l'image du duo du collage (la tête au cou, le corps
+dessous, le pivot), à adresse stable, pris par l'adresse d'essai — section 11.5. **Reste** : les emplacements ajoutés et
+leur tracé ; l'image du duo des vraies paires (à décider avec le propriétaire).
 
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 
