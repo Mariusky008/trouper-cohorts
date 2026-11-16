@@ -256,9 +256,16 @@ Des pages privées du propriétaire (elles contiennent sa figurine ; elles ne so
   les clips et les films) ;
 - **La maison d'un adulte, avec sa vraie figurine** : `https://claude.ai/artifact/GMFdPBEP19QcbYrN2nFctk` (trois pièces :
   la décision 3 n'en garde qu'une ; la figurine posée, la télé, la vidéothèque, « ＋ Ajouter chez moi ») ;
-- **Choisir sa pièce, et la maison qui se remplit** : la maquette de ces décisions (section 12).
+- **Choisir sa pièce, et la maison qui se remplit** : `https://claude.ai/artifact/Dp1ZFerbsyK7ntkALZv5Pp` (section 12).
 
 ## 12. La maquette de ces décisions
 
-À venir : choisir sa pièce à l'inscription, arriver chez soi, voir la maison se remplir avec ce qu'on garde dans le
-salon.
+`https://claude.ai/artifact/Dp1ZFerbsyK7ntkALZv5Pp` : « Choisis ta pièce » (les neuf, l'ordre selon l'âge, l'aperçu en
+largeur), l'arrivée chez soi (la figurine posée au centre, la pièce vide), le salon avec Léa réduit à six messages
+(📌 Garder sous une photo, une chanson, un clip, un rendez-vous, un mot, un mème), « 🏠 Rentrer chez moi » (chaque
+chose vient se ranger à sa place, la caméra passe sur chacune, « Gardé avec Léa »), toucher ce qui est posé, « ＋ Ajouter
+chez moi », et ⚙️ (qui peut entrer ; « Voir comme un inconnu » : ce qui vient des conversations disparaît).
+
+Une seule pièce y a déjà son image en largeur avec tous ses emplacements (la pièce cosy du propriétaire, en attendant
+les vraies du lot M0) ; les autres vignettes sont dessinées. La platine y est remplacée par une pochette posée contre
+le meuble (la pièce n'a pas de platine) : les images refaites en auront une.
