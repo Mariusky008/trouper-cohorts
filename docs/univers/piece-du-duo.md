@@ -262,6 +262,10 @@ lues ici « de la tête au siège » — des figurines une fois et demie trop gr
   quarts vers la droite de l'image, celle de droite vers la gauche, comme les sièges (une pose par figurine et par côté,
   `<empreinte>-vers-la-droite.png` / `-vers-la-gauche.png` ; les images du duo d'avant, de face, ne servent plus : `3q`
   dans leur nom).
+- **Un meuble devant une figurine reste devant** (le sixième essai : « le pied de la dame est superposé avec la table ») :
+  les posées, collées par-dessus la pièce, passent devant tout ; la consigne dit que la table basse, l'accoudoir ou le
+  coussin devant une figurine restent devant et cachent ce qui est derrière (le moteur peut repeindre leur bord dans la
+  silhouette). Le plus sûr reste de placer la figurine pour que ses pieds ne touchent pas la table.
 - **Une pièce sans ses deux places** : « Les installer » ne cherche plus ailleurs — il dit « Pose d'abord leurs deux
   places dans cette pièce » et ouvre de lui-même « ✋ Ajuster leurs places » sur les posées.
 

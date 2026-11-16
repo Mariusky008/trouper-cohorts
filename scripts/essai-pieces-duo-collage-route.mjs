@@ -121,7 +121,7 @@ ok(
   ia.length === 2 && ia.some((c) => c.startsWith("MASQUE ")) && /^IMAGE \S+  high /.test(image) && image.includes("IMAGE 1 is a room") && image.includes("in the transparent (masked) area only") && image.includes("about 30% from the left and 62% from the top") && image.includes("about 70% from the left") && image.includes("Keep everything outside the masked area EXACTLY as it is"),
   "un masque : seule la zone des places est peinte, les deux assises à leurs places relevées (gauche, puis droite)",
 );
-ok(image.includes("it follows the outline of the two figurines") && image.includes("a rough cut-out collage") && image.includes("Do not zoom in, do not crop") && image.includes("at EXACTLY the same place and the same size as in IMAGE 1") && image.includes("never sunk into the floor"), "d'après un collage : la pièce telle quelle (ni zoom ni recadrage), les figurines à leur place et à leur taille, les pieds jamais dans le sol");
+ok(image.includes("it follows the outline of the two figurines") && image.includes("a rough cut-out collage") && image.includes("Do not zoom in, do not crop") && image.includes("at EXACTLY the same place and the same size as in IMAGE 1") && image.includes("never sunk into the floor") && image.includes("never overlaps the furniture in front of it"), "d'après un collage : la pièce telle quelle (ni zoom ni recadrage), les figurines à leur place et à leur taille, les pieds jamais dans le sol");
 // (l'image du duo, lue par son adresse signée — son nom porte l'empreinte des places)
 const lue = async (url) => (url ? Buffer.from(await (await fetch(url)).arrayBuffer()) : null);
 const duo = await lue(f3.etat?.generee);
