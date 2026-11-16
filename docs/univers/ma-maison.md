@@ -70,6 +70,9 @@ non, rien n'y part sans un geste (section 8) ; c'est déjà la règle de l'appli
 Les huit premières existent déjà en hauteur (`src/lib/direct/pieces-duo.ts`, la page `/admin/humain/piece-du-duo`) ;
 elles sont à refaire (2.2). La neuvième vient de l'image donnée par le propriétaire (2.3).
 
+**Fait (lot M0, 16 novembre 2026)** : la page de l'admin `/admin/humain/univers-essais`, section « Les neuf pièces »,
+fabrique tout (2.4).
+
 ### 2.1 Les emplacements : les mêmes partout
 
 Chaque pièce, dans ses deux images, a **les mêmes emplacements**, ceux de la maquette du salon du duo. C'est ce qui
@@ -83,8 +86,13 @@ permet de ranger n'importe quoi dans n'importe quelle pièce, et de changer de p
 - **deux lampes au moins** (elles éclairent la nuit) ;
 - **la table basse** (le talkie, les objets posés, les surprises) ;
 - **le coin du chat** ;
-- **les places** : en hauteur, deux places proches, tournées l'une vers l'autre, en bas au milieu ; en largeur, **le
-  centre**. Les places sont **un sol libre** (un tapis) : le fauteuil vient avec la figurine (section 4).
+- **les places** : en hauteur, deux places proches, tournées l'une vers l'autre, en bas au milieu, de part et d'autre
+  de la table basse ; en largeur, **le centre**. Les places sont **un sol libre** (un tapis) : le fauteuil vient avec la
+  figurine (section 4) — c'est « le siège au centre » de la pièce solo.
+
+Dans le relevé (`EmplacementsDuo`, `pieces-duo.ts`), la table basse est `table` et les lampes `lampes` (des boîtes) ;
+les cadres sont trois. Une place tracée à la main est la boîte de la figurine assise **dans son fauteuil**, de la tête
+au sol.
 
 Les objets sont grands (la décision du 16 novembre pour les pièces des plus jeunes : « ça fait petit, la télé ou le
 cadre »), chacun à part, et la pièce ne contient personne.
@@ -94,21 +102,50 @@ cadre »), chacun à part, et la pièce ne contient personne.
 - **En hauteur (le salon du duo)** : 1024 × 1536 (2 : 3), **les proportions et le cadrage de la maquette du salon** : la
   pièce entière, les deux places en bas au milieu, la télé, l'étagère et les cadres au mur, la fenêtre sur le côté, la
   table basse entre les places. On refait les huit, avec ces éléments.
-- **En largeur (la maison)** : la plus large que le moteur d'image sait faire (21 : 9, environ 2,3 pour 1), **faite à
-  partir de l'image en hauteur** (la même pièce, vue plus large : le modèle reçoit l'image en hauteur comme référence),
-  pour que les deux se ressemblent. Le centre est libre ; les emplacements sont répartis à gauche et à droite, pour
-  qu'en faisant glisser on découvre la pièce « tout autour ».
-- **Chacune dans les trois lumières** (matin, soir, nuit), comme aujourd'hui (`lumiere-<moment>.png`), et avec son
-  **relevé** (`releve.json`, tracé à la main sur la page de l'admin) : les emplacements de 2.1, et pour la largeur le
-  `centre` et l'`echelle` (la hauteur d'une figurine assise, en fraction de l'image).
-- **Rangement** : `pieces-duo/<piece>/` (en hauteur, comme aujourd'hui) et `pieces-duo/<piece>/large/` (en largeur).
-- **Coût** : neuf pièces × deux images × quatre fichiers (le décor et ses trois lumières), une seule fois pour tous.
+- **En largeur (la maison)** : **un panorama de 3584 × 1024** (3,5 pour 1 — plus large que le 21 : 9 prévu : le moteur
+  ne fait pas plus de 1536 × 1024 d'un coup, on reprend donc la machinerie de la maison en panorama,
+  `pieces-serveur.ts`). Trois images du moteur : **le centre** (1536 × 1024), **fait à partir de l'image en hauteur**
+  (la même pièce, vue plus large), une place libre au milieu, la télé au mur du fond, les trois cadres, la table basse ;
+  puis **la gauche** (la fenêtre, l'étagère, une lampe) et **la droite** (la platine, le coin du chat, l'autre lampe),
+  la toile prolongée avec un masque ; puis **le panorama**, assemblé en fondu, sans moteur. En faisant glisser, on
+  découvre la pièce « tout autour ».
+- **Chacune dans les trois lumières** (matin, soir, nuit) : en hauteur comme aujourd'hui (`lumiere-<moment>.png`) ; en
+  largeur, chaque partie retouchée (les côtés d'après le centre déjà retouché, pour qu'il n'y ait pas de raccord), puis
+  assemblée (`panorama-<moment>.webp`).
+- **Le relevé** (`releve.json`, tracé à la main sur la page de l'admin) : les emplacements de 2.1, en fractions de
+  l'image ; en largeur, en fractions du panorama, et **une seule place : le centre** (sa boîte donne l'échelle de la
+  figurine). Les alertes « objet petit » se mesurent en pixels, comme en hauteur.
+- **Rangement** : `pieces-duo/<piece>/` (en hauteur, comme aujourd'hui, et `fabrique.json` : la version de la consigne,
+  3 — une pièce sans est « ancienne consigne ») et `pieces-duo/<piece>/large/` (`centre.png`, `gauche.png`,
+  `droite.png`, `panorama.webp`, les mêmes suffixés `-<moment>`, `releve.json`).
+- **Coût** : environ 2 € la pièce (trois images en hauteur, neuf en largeur), soit une vingtaine d'euros pour les neuf,
+  une seule fois pour tous.
 
 ### 2.3 La neuvième : la chambre musicale
 
 L'image du propriétaire (la chambre de Camille) contient le personnage, et pas de télé. On en fait, sur la même page de
 l'admin et à partir de cette image : **la pièce vide** (sans personne, le centre libre), **une télé ajoutée** au mur, la
 version en hauteur, et les trois lumières. Le propriétaire dépose l'image sur la page : elle n'est pas dans le dépôt.
+
+**Fait** : « 🖼️ Déposer l'image » sur sa carte (réduite dans le téléphone, rangée en `source.png`) ; la pièce en
+hauteur est une retouche de cette image (la personne et ce qui est dessiné par-dessus retirés, la télé et les éléments
+qui manquent ajoutés) ; sa largeur se fait d'après la pièce en hauteur, avec l'image déposée en seconde référence (pour
+en voir plus). Déposer une autre image efface ce qui en était fait.
+
+### 2.4 Sur la page de l'admin
+
+`/admin/humain/univers-essais`, section « 🛋️ Les neuf pièces » :
+
+1. **« Refaire les anciennes »** : les pièces faites avec la consigne d'avant (sans `fabrique.json`) sont effacées, puis
+   tout se refait. Le salon du duo (`/univers/salon`) montre la pièce par défaut tant qu'elle n'est pas refaite.
+2. **La chambre musicale** : « 🖼️ Déposer l'image ».
+3. **« Faire ce qui manque »** : pour chaque pièce, en hauteur (la pièce, son relevé, ses deux autres lumières), puis en
+   largeur (douze étapes, une par passage). Une image prend une à deux minutes : garder la page ouverte.
+4. **Juger**, puis **« ✋ Ajuster à la main »** : en hauteur (les deux places, la table basse, les lampes, les trois
+   cadres…) et en largeur (« 🌅 Les pièces en largeur » : le panorama défile au doigt, et un curseur le fait défiler
+   pendant qu'on trace). « Refaire la gauche » (ou la droite) refait ce côté et ce qui en dépend.
+
+Les essais : `scripts/essai-pieces-duo-route.mjs`.
 
 ---
 
@@ -234,7 +271,7 @@ une animation.
 
 | Lot | Contenu | Session | Dépend de |
 |---|---|---|---|
-| **M0 — Les images du catalogue** | la page de l'admin : les huit refaites en hauteur (2.2) ; la largeur faite d'après la hauteur ; la chambre musicale (2.3) ; les relevés (`centre`, `echelle`) | univers | — |
+| **M0 — Les images du catalogue** ✅ | la page de l'admin : les huit refaites en hauteur (2.2) ; la largeur faite d'après la hauteur ; la chambre musicale (2.3) ; les relevés (le centre, son échelle) — le code est fait (2.4) ; les images, le propriétaire les lance | univers | — |
 | **S1 — Les calques** (salon-du-duo.md, section 9, modifié) | les calques de chaque figurine (section 4) ; leur pose aux places et au centre ; `CalquesDuo` composé à l'ouverture | messages et bienvenue | S0 |
 | **M1 — La maison** | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce | univers | M0, S1 |
 | **M2 — La maison qui se remplit** | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |

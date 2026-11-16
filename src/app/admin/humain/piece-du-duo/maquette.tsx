@@ -36,6 +36,8 @@ const DANS: Record<PieceDuo, string> = {
   hangar: "au hangar",
   newyork: "dans l’appart à New York",
   rue: "dans la rue",
+  // (16 novembre 2026 au soir, le lot M0 : la neuvième, la maison de Camille)
+  "chambre-musicale": "dans la chambre musicale",
 };
 const OBJETS: Record<Objet, { emoji: string; nom: string }> = {
   tele: { emoji: "📺", nom: "La télé" },
