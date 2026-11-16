@@ -23,6 +23,8 @@
 // POST { action: "aparte-effacer", cle, id } → { ok } : 🎭 il efface un aparté de leurs figurines (pour les deux)
 // POST { action: "meme", cle, id }      → { ok } : 🎭 il envoie son mème (fait dans le studio) dans leur conversation
 //                                          (la nouvelle interface, lot 4, `memes-proches-serveur.ts`) ; l'autre est prévenu
+// GET ?ouvrir=<clé>                     → { ouverture } : 🚪 le salon du duo (lot S0b, `lib/direct/salon-serveur.ts`) — le
+//                                          fil, la vie et la scène (la pièce, ses images à adresse stable) en une requête
 // (GET ?vivant= écrit aussi, après la réponse, l'aparté d'un échange qui vient de finir — lot R4b ; et 📚 leurs figurines
 //  notent ce qui compte sur leur étagère — lot E1, `etagere-serveur.ts` ; GET (la liste) le fait pour six conversations)
 // 📲 L'ÉTAPE 5, PAR WHATSAPP :
@@ -77,6 +79,7 @@ import { apresPhoto, depotPhoto, envoyerPhoto, photosOuvertes } from "@/lib/dire
 import { apresVideo, depotVideo, envoyerVideo, videosOuvertes } from "@/lib/direct/video-serveur";
 import { effacerEtagere, etagereAllumee, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
+import { ouvrirSalon } from "@/lib/direct/salon-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
@@ -95,6 +98,18 @@ export async function GET(request: Request) {
   if (q.get("moi")) {
     const f = await maFigurineVue(supabase, moi);
     return f ? NextResponse.json({ ok: true, moi: f }, { headers: sansCache }) : NextResponse.json({ error: "Ta figurine n’est pas encore prête." }, { status: 400 });
+  }
+  // 🚪 le salon du duo (lot S0b) : le fil, la vie et la scène en une requête
+  const ouvrir = q.get("ouvrir");
+  if (ouvrir) {
+    const r = await ouvrirSalon(supabase, moi, ouvrir);
+    if (!r.ouverture) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    const a = r.aPreparer;
+    if (a) after(() => preparerAparte(supabase, a, moi).catch(() => undefined));
+    const h = r.aNoter;
+    if (h) after(() => preparerNotes(supabase, moi.id, h).catch(() => 0));
+    const o = r.ouverture;
+    return NextResponse.json({ ok: true, ouverture: { ...o, fil: { ...o.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes() } } }, { headers: sansCache });
   }
   const vivant = q.get("vivant");
   if (vivant) {
