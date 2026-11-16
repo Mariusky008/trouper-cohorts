@@ -5,8 +5,8 @@
  *      à l'écran et la scène prête, en ms depuis le toucher ; `deja` : conversation déjà vue sur ce téléphone). Envoyée
  *      une fois par ouverture, après l'animation d'arrivée. Une session d'habitant (ou d'administrateur).
  * GET ?vitesse=1 (administrateur) → { vitesse } : les sept derniers jours (médiane, 90 %, par appareil).
- * POST { action: "emplacements", piece, fenetreCoins?, lampes?, table?, fentes? } (administrateur, lot S1) →
- *      { emplacements } : ✋ les emplacements du salon d'une pièce, posés à la main — seulement ces quatre-là changent
+ * POST { action: "emplacements", piece, fenetreCoins?, fentes? } (administrateur, lot S1) → { emplacements } : ✋ les
+ *      carreaux de la fenêtre et les fentes de l'étagère d'une pièce, posés à la main — seulement ces deux-là changent
  *      dans son relevé.
  */
 import { NextResponse } from "next/server";

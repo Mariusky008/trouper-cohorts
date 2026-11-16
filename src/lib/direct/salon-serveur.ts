@@ -140,12 +140,12 @@ export async function statsVitesse(supabase: Supabase, jours = 7, maintenant = n
 }
 
 // ─── ✋ LES EMPLACEMENTS DU SALON (lot S1 ; sections 4.9 et 4.11) ────────────────────────────────────────────────────────
-const CLES_SALON = ["fenetreCoins", "lampes", "table", "fentes"] as const;
+const CLES_SALON = ["fenetreCoins", "fentes"] as const;
 /**
- * ✋ Poser les emplacements du salon d'une pièce (la fenêtre en polygone, les lampes, la table, les fentes), posés à la
- * main sur l'adresse d'essai : SEULEMENT ces quatre-là sont remplacés dans son relevé — ses autres zones, ses places et la
- * façon de les lire (`ajuste`) restent telles quelles (l'action « ajuster » de la page des pièces, elle, refait tout le
- * relevé « à la main », ce qui changerait le sens de places relevées par le modèle qui voit).
+ * ✋ Poser les emplacements du salon d'une pièce (les carreaux de la fenêtre en polygone, les fentes de l'étagère), posés à
+ * la main sur l'adresse d'essai : SEULEMENT ces deux-là sont remplacés dans son relevé — ses autres zones (la table et les
+ * lampes comprises, tracées sur la page des pièces), ses places et la façon de les lire (`ajuste`) restent telles quelles
+ * (l'action « ajuster » de la page des pièces, elle, refait tout le relevé « à la main »).
  */
 export async function poserEmplacementsSalon(supabase: Supabase, piece: unknown, x: unknown): Promise<{ emplacements?: EmplacementsDuo; erreur?: string }> {
   if (!pieceDuoValide(piece)) return { erreur: "Quelle pièce ?" };
@@ -162,7 +162,7 @@ export async function poserEmplacementsSalon(supabase: Supabase, piece: unknown,
     }
   }
   const r = (x ?? {}) as Record<string, unknown>;
-  const neufs = emplacementsValides({ cadres: [], places: [], fenetreCoins: r.fenetreCoins, lampes: r.lampes, table: r.table, fentes: r.fentes });
+  const neufs = emplacementsValides({ cadres: [], places: [], fenetreCoins: r.fenetreCoins, fentes: r.fentes });
   const garde: Record<string, unknown> = { ...((releve.emplacements ?? {}) as Record<string, unknown>) };
   for (const k of CLES_SALON) {
     delete garde[k];

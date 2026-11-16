@@ -427,7 +427,7 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
             ) : (
               <div>
                 <button type="button" onClick={() => setEmplacements(true)}>
-                  Poser la fenêtre, les lampes, la table, les fentes
+                  Poser les carreaux de la fenêtre, les fentes de l’étagère
                 </button>
               </div>
             )}

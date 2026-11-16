@@ -13,9 +13,15 @@
  * a (aujourd'hui, celles de l'essai « Une pièce entière, vivante », `lib/direct/pieces-vivantes-serveur.ts`), son univers
  * puis ses pièces défilent — on glisse de l'une à l'autre, la vidéo de celle qu'on regarde joue en boucle ; un toucher,
  * on entre en plein écran (`app/univers/piece-vivante.tsx` : ses vedettes, la caméra qui s'approche).
+ *
+ * 🏠 LA PIÈCE DE CHACUN (16 novembre 2026 au soir, `docs/univers/ma-maison.md` ; le lot M1) : quand l'interrupteur
+ * `MA_MAISON_CATALOGUE` sera allumé, l'onglet montre sa pièce du catalogue (`maison-catalogue.tsx`) au lieu de l'univers
+ * d'aujourd'hui.
  */
 import { useEffect, useRef, useState } from "react";
+import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
 import { DansLesPieces, useBoucle, type PieceVue } from "@/app/univers/piece-vivante";
+import { MaisonDuCatalogue } from "./maison-catalogue";
 import { EtagereChezMoi } from "./etagere";
 import { FenetreSurMonUnivers, useMonUnivers } from "./chez-moi";
 import { useMesVisites } from "./visites-recues";
@@ -53,6 +59,18 @@ function ApercuPiece({ p, joue, onEntrer }: { p: PieceVue; joue: boolean; onEntr
 }
 
 export function MaMaison({ actif }: { actif: boolean }) {
+  return MA_MAISON_CATALOGUE ? (
+    <div className="mm">
+      <MaisonDuCatalogue actif={actif} />
+      <EtagereChezMoi actif={actif} />
+    </div>
+  ) : (
+    <MonUnivers actif={actif} />
+  );
+}
+
+/** (l'univers d'aujourd'hui, tant que l'interrupteur `MA_MAISON_CATALOGUE` est éteint) */
+function MonUnivers({ actif }: { actif: boolean }) {
   const etat = useMonUnivers(actif);
   const { visites } = useMesVisites(actif);
   const pieces = useMesPieces(actif);

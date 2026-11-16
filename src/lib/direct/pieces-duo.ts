@@ -27,6 +27,17 @@
  * l'on voit plus de choses, et les figurines seront donc plus petites ») : le hangar, l'appart à New York, la rue ; et
  * pour toutes, la consigne (`consignePieceDuo`) cadre plus large et fait les objets bien plus grands. Un lieu sans mur
  * de salon (la rue) dit où vont la platine, les cadres et l'étagère (`platine`, `cadres`, `etagere`).
+ *
+ * 🏠 NEUF PIÈCES, LES ÉLÉMENTS DE LA MAQUETTE, ET LA LARGEUR (16 novembre 2026 au soir, `docs/univers/ma-maison.md` ; le
+ * lot M0). Le propriétaire : « refaire les images pour qu'elles aient les mêmes proportions et dimensions et intègrent
+ * les mêmes éléments que [la maquette du] salon du duo », et une pièce « solo […] avec un siège au centre », « tout
+ * autour de nous ». Le catalogue est le même pour tous : il sert au salon du duo (l'image en hauteur) et à la maison de
+ * chacun (l'image en largeur, `ETAPES_LARGE`). Chaque pièce a maintenant les emplacements de la maquette : la télé, la
+ * platine, TROIS cadres vides, l'étagère vide, la fenêtre et son ciel, deux lampes au moins (`lampes`), la table basse
+ * (`table`), le coin du chat, et des places LIBRES (un sol libre : la figurine vient avec son fauteuil, `ma-maison.md`,
+ * 2.1 et 4) — deux en hauteur, autour de la table basse ; une au centre, en largeur. La neuvième, la chambre musicale
+ * (la maison de Camille), est faite d'après l'image déposée par le propriétaire sur la page de l'admin
+ * (`depuisImage`) : la personne retirée, une télé ajoutée.
  */
 export const PIECES_DUO = [
   {
@@ -37,10 +48,11 @@ export const PIECES_DUO = [
     moment: "soir",
     lieu: "a cosy living room in the evening",
     signature: "deep teal-blue walls, mustard-yellow and cream fabrics, dark wood and brass, a small fireplace with a gentle fire, warm table lamps",
-    places: "a sofa and an armchair, close together and turned three-quarters toward each other, a small round coffee table between them",
+    table: "a small round wooden coffee table with a candle and a little vase of flowers",
+    lampes: "a tall floor lamp with a fabric shade, and a brass table lamp on the TV cabinet",
     vue: "a tall window on the roofs of a city, with a few lit windows",
     chat: "a round cat basket with a cushion on the rug, near the fireplace",
-    tele: "a flat TV on its own piece of wall",
+    tele: "a flat TV on the back wall, above a low wooden cabinet",
   },
   {
     cle: "cuisine",
@@ -50,7 +62,8 @@ export const PIECES_DUO = [
     moment: "matin",
     lieu: "a bright family kitchen in the morning",
     signature: "white zellige tiles, sunny yellow and sage-green cupboards, light oak, a bowl of lemons, morning sun streaming in",
-    places: "a small round wooden table with two chairs close together, turned three-quarters toward each other",
+    table: "a small round wooden table with a bowl of lemons",
+    lampes: "a pendant lamp above the table, and a small lamp on the counter",
     vue: "a window above the sink on a sunny vegetable garden",
     chat: "a cushion for a cat on a little wooden bench",
     tele: "a small flat TV on the wall",
@@ -63,7 +76,8 @@ export const PIECES_DUO = [
     moment: "matin",
     lieu: "a covered veranda terrace in full daylight: a solid roof and the white back wall of a house, wide open on the view",
     signature: "whitewashed walls, blue and white, terracotta tiles, an olive tree in a big pot, bougainvillea",
-    places: "two outdoor armchairs close together, turned three-quarters toward each other; between them, a small low table with a glass carafe of lemonade with lemon slices and two glasses of lemonade",
+    table: "a small low table with a glass carafe of lemonade with lemon slices and two glasses of lemonade",
+    lampes: "a tall outdoor floor lantern, and a wall lamp by the door",
     vue: "a bright blue sky over the sea and a white village",
     chat: "a cushion for a cat on a low stone bench",
     tele: "a flat TV on the back wall, sheltered under the roof",
@@ -76,7 +90,8 @@ export const PIECES_DUO = [
     moment: "soir",
     lieu: "a peaceful bedroom by the sea (tender and calm, nothing suggestive)",
     signature: "linen white, soft blue and sand colours, light wood, sheer curtains; the bed neatly made, on one side of the room, only partly visible",
-    places: "two small armchairs in front of the large bay window, close together and turned three-quarters toward each other, a little round side table between them",
+    table: "a little round side table with a candle",
+    lampes: "a bedside lamp, and a floor lamp with a linen shade",
     vue: "a large bay window with a wide view on the sea",
     chat: "a round cat basket on the rug, at the foot of the bed",
     tele: "a flat TV on a side wall, its screen visible to us",
@@ -89,7 +104,8 @@ export const PIECES_DUO = [
     moment: "matin",
     lieu: "a small neighbourhood café on a rainy morning, a cosy refuge from the rain",
     signature: "cream walls, bottle-green tiles and green leather, brass and marble, raindrops running down the big window",
-    places: "the end of a booth bench and a bistro chair, close together around a small round marble table holding two cups of coffee, turned three-quarters toward each other",
+    table: "a small round marble table holding two cups of coffee",
+    lampes: "brass pendant lamps above the tables, and a little lamp on the counter",
     vue: "a big window on a rainy street, raindrops on the glass, umbrellas passing by",
     chat: "a cushion for a cat on the window seat",
     tele: "a flat TV on the wall",
@@ -102,7 +118,8 @@ export const PIECES_DUO = [
     moment: "soir",
     lieu: "a huge converted warehouse, the coolest hangout for teenagers and young adults: raw brick walls, a very high ceiling with exposed black metal beams, giant industrial windows",
     signature: "pink and electric-blue neon strip lights, colorful abstract street-art murals (no letters at all), a skateboard and a basketball hoop on the brick wall, string lights, big plants, a polished concrete floor; urban, funky and cool",
-    places: "a big worn leather sofa and a giant bean bag, close together and turned three-quarters toward each other, a low table made of wooden crates between them",
+    table: "a low table made of wooden crates",
+    lampes: "a big industrial floor lamp, and a clamp desk lamp",
     vue: "a giant industrial window on the city at dusk",
     chat: "an old cushion for a cat on a wooden pallet",
     tele: "a huge flat TV on the brick wall",
@@ -115,7 +132,8 @@ export const PIECES_DUO = [
     moment: "nuit",
     lieu: "a cool apartment high up in New York City, with a huge window on the Manhattan skyline",
     signature: "exposed brick and black metal, a fire escape just outside the window, warm Edison bulbs and a purple-blue neon glow, a rack of sneakers, a guitar on the wall, big plants; urban, funky and cool",
-    places: "a low modern sofa and a big round armchair, close together and turned three-quarters toward each other, a small coffee table with a bowl of popcorn between them",
+    table: "a small coffee table with a bowl of popcorn",
+    lampes: "an arc floor lamp, and a table lamp with an Edison bulb",
     vue: "a huge window on the lit Manhattan skyline, the fire escape in front of it",
     chat: "a round cat bed on the wide windowsill",
     tele: "a huge flat TV on the brick wall",
@@ -128,18 +146,42 @@ export const PIECES_DUO = [
     moment: "soir",
     lieu: "a lively street corner in Brooklyn in the evening, seen from the sidewalk: the stoop of a brownstone building and the high brick wall of the building next to it",
     signature: "warm streetlights, colorful shop glows and neon without any letters, big colorful abstract street-art murals (no letters at all), string lights across the street, a fire hydrant, a basketball on the sidewalk; urban, funky and cool",
-    places: "two upturned wooden crates on the sidewalk, close together and turned three-quarters toward each other",
+    table: "an upturned wooden crate used as a little table",
+    lampes: "a warm streetlight, and a lit lantern hanging by the stoop",
     vue: "the street behind, a yellow taxi passing by, lit windows and the evening sky above the rooftops",
     chat: "a flattened cardboard box for a cat on the bottom step of the stoop",
     tele: "a huge outdoor LED screen mounted on the brick wall",
     platine: "A record player (a turntable) on a folding DJ table with a big speaker, on the OTHER side from the screen, with a few vinyl records beside it",
-    cadres: "Two big EMPTY poster frames fixed on the brick wall: a plain light mat inside, no picture, no drawing",
+    cadres: "Three big EMPTY poster frames fixed on the brick wall (two big ones and a smaller one): a plain light mat inside, no picture, no drawing",
     etagere: "One long wooden plank shelf fixed on the brick wall, completely EMPTY (nothing at all on it)",
+  },
+  {
+    cle: "chambre-musicale",
+    nom: "La chambre musicale",
+    pour: "la musique, les voyages",
+    emoji: "🎧",
+    moment: "soir",
+    lieu: "the music bedroom of IMAGE 1, a cosy and colourful teenager's room",
+    signature: "exactly the colours, materials, furniture and objects of IMAGE 1",
+    vue: "the window of IMAGE 1, with the sky clearly visible",
+    chat: "a round cat cushion on the floor",
+    tele: "a flat TV on the wall",
+    table: "a small low table",
+    lampes: "a desk lamp, and a string of fairy lights",
+    /** (faite d'après l'image déposée sur la page de l'admin, `source.png` : la personne retirée, une télé ajoutée) */
+    depuisImage: true,
   },
 ] as const;
 export type PieceDuo = (typeof PIECES_DUO)[number]["cle"];
 export const pieceDuoValide = (x: unknown): x is PieceDuo => PIECES_DUO.some((p) => p.cle === x);
 export const pieceDuoDe = (x: PieceDuo) => PIECES_DUO.find((p) => p.cle === x)!;
+/** La pièce faite d'après une image déposée par le propriétaire (la chambre musicale) ? */
+export const depuisImage = (x: PieceDuo): boolean => Boolean((pieceDuoDe(x) as { depuisImage?: boolean }).depuisImage);
+/**
+ * La version de la consigne d'une pièce faite (`fabrique.json`) : 3, les éléments de la maquette (le lot M0). Une pièce
+ * faite avant est signalée « ancienne consigne » sur la page de l'admin, pour être refaite.
+ */
+export const VERSION_PIECES_DUO = 3;
 
 /**
  * 🌤️ LES TROIS LUMIÈRES : chaque pièce existe au matin, au soir et la nuit (la même pièce, les mêmes emplacements ; la
@@ -178,15 +220,16 @@ export type EmplacementsDuo = {
   fenetre?: Zone;
   places: PlaceDuo[];
   chat?: { x: number; y: number };
+  /** (le lot M0) la table basse (le talkie, les objets posés, les surprises), et les lampes (elles éclairent la nuit) */
+  table?: Zone;
+  lampes?: Zone[];
   /**
    * 🛋️ (le salon du duo, lot S1 ; `docs/univers/salon-du-duo.md`, section 4.11) posés à la main sur la page d'essai du
    * salon (« ✋ Les emplacements du salon ») : les carreaux de la fenêtre en polygone (de 3 à 12 points : la météo ne tombe
-   * que dedans), les lampes (leurs points : elles éclairent la nuit), la table (la zone où l'on pose une fleur, une tasse,
-   * le talkie d'un vocal) et les fentes de l'étagère (où se posent les souvenirs).
+   * que dedans) et les fentes de l'étagère (où se posent les souvenirs). (La table et les lampes, des boîtes, se tracent
+   * sur la page des pièces.)
    */
   fenetreCoins?: [number, number][];
-  lampes?: { x: number; y: number }[];
-  table?: Zone;
   fentes?: { x: number; y: number }[];
 };
 
@@ -199,6 +242,8 @@ export const EMPLACEMENTS_DITS = {
   fenetre: { emoji: "🪟", nom: "La fenêtre", sert: "la vue, le temps qu’il fait" },
   places: { emoji: "🪑", nom: "Vos deux places", sert: "vos figurines" },
   chat: { emoji: "🐾", nom: "Le coin du chat", sert: "votre compagnon" },
+  table: { emoji: "☕", nom: "La table basse", sert: "le talkie, ce qu’on pose" },
+  lampes: { emoji: "💡", nom: "Les lampes", sert: "la lumière, la nuit" },
 } as const;
 
 const fraction = (x: unknown) => (typeof x === "number" && Number.isFinite(x) && x >= 0 && x <= 1 ? x : null);
@@ -248,10 +293,10 @@ export function emplacementsValides(o: unknown): EmplacementsDuo {
   const platine = zoneValide(r.platine);
   const etagere = zoneValide(r.etagere);
   const fenetre = zoneValide(r.fenetre);
-  // (🛋️ le salon du duo, lot S1 : la fenêtre en polygone, les lampes, la table, les fentes)
-  const fenetreCoins = polygoneValide(r.fenetreCoins);
-  const lampes = pointsValides(r.lampes, 6);
   const table = zoneValide(r.table);
+  const lampes = (Array.isArray(r.lampes) ? r.lampes : []).map(zoneValide).filter((z): z is Zone => Boolean(z)).slice(0, 4);
+  // (🛋️ le salon du duo, lot S1 : la fenêtre en polygone, les fentes de l'étagère)
+  const fenetreCoins = polygoneValide(r.fenetreCoins);
   const fentes = pointsValides(r.fentes, 8);
   return {
     ...(tele ? { tele } : {}),
@@ -262,9 +307,9 @@ export function emplacementsValides(o: unknown): EmplacementsDuo {
     ...(fenetre ? { fenetre } : {}),
     places,
     ...(cx !== null && cy !== null ? { chat: { x: cx, y: cy } } : {}),
-    ...(fenetreCoins ? { fenetreCoins } : {}),
-    ...(lampes.length ? { lampes } : {}),
     ...(table ? { table } : {}),
+    ...(lampes.length ? { lampes } : {}),
+    ...(fenetreCoins ? { fenetreCoins } : {}),
     ...(fentes.length ? { fentes } : {}),
   };
 }
@@ -298,7 +343,7 @@ export const ZONE_MIN = { largeur: 0.09, hauteur: 0.05 } as const;
  * trop petit (zoomé, un timbre-poste), deux places trop loin l'une de l'autre (la caméra ne les cadrerait pas ensemble).
  * La fenêtre n'y est pas (l'étagère peut être sous elle).
  */
-export function alertesEmplacements(e: EmplacementsDuo): string[] {
+export function alertesEmplacements(e: EmplacementsDuo, min: { largeur: number; hauteur: number } = ZONE_MIN): string[] {
   // (son nom, sa zone, féminin ?, sa hauteur compte ? — une étagère est fine : seule sa largeur compte)
   type Objet = [string, Zone, boolean, boolean];
   const objets: Objet[] = [
@@ -320,8 +365,8 @@ export function alertesEmplacements(e: EmplacementsDuo): string[] {
     }
   for (const [n, z, f, hauteur] of objets) {
     const petit = `${n} est ${f ? "petite" : "petit"}`;
-    if (z[2] < ZONE_MIN.largeur) dit.push(`${petit} (${pct(z[2])} de la largeur)`);
-    else if (hauteur && z[3] < ZONE_MIN.hauteur) dit.push(`${petit} (${pct(z[3])} de la hauteur)`);
+    if (z[2] < min.largeur) dit.push(`${petit} (${pct(z[2])} de la largeur)`);
+    else if (hauteur && z[3] < min.hauteur) dit.push(`${petit} (${pct(z[3])} de la hauteur)`);
   }
   if (e.places.length === 2 && Math.abs(e.places[0].x - e.places[1].x) > 0.5) dit.push(`les deux places sont loin l’une de l’autre (${pct(Math.abs(e.places[0].x - e.places[1].x))} de la largeur)`);
   return dit.map((x) => x.charAt(0).toUpperCase() + x.slice(1));
@@ -341,11 +386,57 @@ export type PieceDuoVue = {
   lumieres: Partial<Record<MomentDuo, string>>;
   ajuste?: boolean;
   alertes: string[];
+  /** (le lot M0) faite avec une consigne d'avant les éléments de la maquette : à refaire */
+  ancienne?: boolean;
+  /** (la chambre musicale) faite d'après une image déposée ; cette image, signée, si elle l'est */
+  depuisImage?: boolean;
+  source?: string;
+  /** 🌅 l'image en largeur (la maison de chacun) */
+  large: LargeVue;
 };
 export type EtatPiecesDuo = { pieces: PieceDuoVue[]; moteurs: { image: boolean; regard: boolean } };
 
+// ─── 🌅 LA PIÈCE EN LARGEUR : LA MAISON DE CHACUN (le lot M0, `ma-maison.md`, 2.2) ────────────────────────────────────
+/**
+ * La pièce « tout autour » : un panorama de 3584 × 1024 (la machinerie de la maison en panorama, `pieces-serveur.ts`),
+ * fait en trois images du moteur — le centre (1536 × 1024, la même pièce que l'image en hauteur, vue plus large, une
+ * place libre au milieu), puis la gauche et la droite (la toile prolongée, un masque) — puis assemblé sans moteur. Ensuite,
+ * ses deux autres lumières : chaque partie retouchée, puis assemblée. Une étape par passage, dans cet ordre.
+ */
+export const PARTIES_LARGE = ["centre", "gauche", "droite"] as const;
+export type PartieLarge = (typeof PARTIES_LARGE)[number];
+/** Les étapes d'une pièce en largeur : `centre`, `gauche`, `droite`, `panorama`, puis `centre-soir`… `panorama-nuit`. */
+export const etapesLarge = (p: PieceDuo): string[] => [
+  ...PARTIES_LARGE,
+  "panorama",
+  ...lumieresAFaire(p).flatMap((m) => [...PARTIES_LARGE.map((x) => `${x}-${m}`), `panorama-${m}`]),
+];
+/** Son fichier, dans `pieces-duo/<pièce>/large/` (les panoramas en webp, les parties en png). */
+export const fichierLarge = (e: string) => (e.startsWith("panorama") ? `${e}.webp` : `${e}.png`);
+/** La largeur sur la hauteur du panorama (3584 × 1024). */
+export const RATIO_LARGE = 3.5;
+/** « Assez grand » sur le panorama : les mêmes pixels qu'en hauteur (1024 × 1536), en fractions du panorama. */
+export const ZONE_MIN_LARGE = { largeur: (0.09 * 1024) / 3584, hauteur: (0.05 * 1536) / 1024 } as const;
+export type LargeVue = {
+  faites: string[];
+  aFaire: string[];
+  /** le panorama de chaque lumière faite, signé */
+  panoramas: Partial<Record<MomentDuo, string>>;
+  /** (tant que le panorama n'est pas fait) les parties faites, dans sa lumière à elle, signées */
+  parties: Partial<Record<PartieLarge, string>>;
+  /**
+   * Ses emplacements, posés à la main sur le panorama (en fractions du panorama) : les mêmes qu'en hauteur ; `places`
+   * n'en a qu'une, LE CENTRE (la boîte de la figurine assise dans son fauteuil, de la tête au sol, comme en hauteur).
+   */
+  emplacements?: EmplacementsDuo;
+  ajuste?: boolean;
+  alertes: string[];
+};
+
 /** 💶 Le coût, environ (novembre 2026) : une pièce en haute qualité ; le relevé, quelques millièmes. */
 export const COUT_PIECE_DUO = 0.17;
+/** 💶 Une pièce entière (le lot M0) : en hauteur, trois images ; en largeur, trois parties dans trois lumières. */
+export const COUT_PIECE_ENTIERE = COUT_PIECE_DUO * (3 + PARTIES_LARGE.length * 3);
 
 // ─── 🧩 L'EFFET « COLLAGE » : LE PREMIER ESSAI DE LA MAQUETTE (`piece-du-duo.md`, section 5) ─────────────────────────
 /**

@@ -255,40 +255,32 @@ await p.waitForTimeout(900);
 ok((await angle("moi")) !== v0, "les têtes des vrais calques vivent seules");
 await p.screenshot({ path: `${D}/salon-moteur-3-vrais-calques.png` });
 
-// ═══ ✋ LES EMPLACEMENTS DU SALON (lot S1) : la table, deux lampes, les carreaux de la fenêtre ═══
+// ═══ ✋ LES EMPLACEMENTS DU SALON (lot S1) : les carreaux de la fenêtre, les fentes de l'étagère ═══
 const releveAvant = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/salon/releve.json`)).json();
-await p.getByRole("button", { name: "Poser la fenêtre, les lampes, la table, les fentes" }).click();
+await p.getByRole("button", { name: "Poser les carreaux de la fenêtre, les fentes de l’étagère" }).click();
 const image = p.locator(".es-image img");
-ok(await attendre(async () => (await image.count()) === 1 && (await image.evaluate((i) => i.complete && i.naturalWidth > 0))), "« ✋ Les emplacements du salon » : la pièce, prête à tracer");
-// (la place de l'image, relue avant chaque geste : toucher un bouton fait défiler le tableau)
+ok(await attendre(async () => (await image.count()) === 1 && (await image.evaluate((i) => i.complete && i.naturalWidth > 0))), "« ✋ Les emplacements du salon » : la pièce, prête à poser");
+// (la place de l'image, relue avant chaque série de touchers : toucher un bouton fait défiler le tableau)
 let boite = null;
 const viser = async () => {
   await p.locator(".es-image").scrollIntoViewIfNeeded();
   boite = await p.locator(".es-image").boundingBox();
 };
 const vers = (x, y) => [boite.x + x * boite.width, boite.y + y * boite.height];
-await p.locator('[data-cible="table"]').click();
-await viser();
-await p.mouse.move(...vers(0.36, 0.72));
-await p.mouse.down();
-await p.mouse.move(...vers(0.5, 0.76), { steps: 4 });
-await p.mouse.move(...vers(0.62, 0.8), { steps: 4 });
-await p.mouse.up();
-ok((await p.locator(".es-table").count()) === 1 && /✓/.test(await p.locator('[data-cible="table"]').innerText()), "la table, tracée d'un glissé");
-await p.locator('[data-cible="lampes"]').click();
-await viser();
-for (const [x, y] of [[0.1, 0.5], [0.9, 0.5]]) await p.mouse.click(...vers(x, y));
-ok((await p.locator('[data-zone="lampe"]').count()) === 2, "deux lampes, d'un toucher chacune");
 await p.locator('[data-cible="fenetreCoins"]').click();
 await viser();
 for (const [x, y] of [[0.64, 0.08], [0.9, 0.08], [0.9, 0.36], [0.64, 0.36]]) await p.mouse.click(...vers(x, y));
 ok((await p.locator(".es-fenetre").count()) === 1 && (await p.locator(".es-point.fenetre").count()) === 4, "les carreaux de la fenêtre, point par point");
+await p.locator('[data-cible="fentes"]').click();
+await viser();
+for (const [x, y] of [[0.3, 0.3], [0.4, 0.3], [0.5, 0.3]]) await p.mouse.click(...vers(x, y));
+ok((await p.locator('[data-zone="fente"]').count()) === 3, "trois fentes, d'un toucher chacune");
 await p.locator(".es").screenshot({ path: `${D}/salon-moteur-4-emplacements.png` });
 await p.locator(".es").getByRole("button", { name: "Enregistrer" }).click();
 ok(await attendre(async () => /Enregistrés/.test(await p.locator(".es-dit").innerText().catch(() => ""))), "« Enregistrer » : enregistrés");
 const releveApres = await (await fetch(`${STOCK}/figurines-clients/pieces-duo/salon/releve.json`)).json();
 const ez = releveApres.emplacements;
-ok(ez.table?.length === 4 && Math.abs(ez.table[0] - 0.36) < 0.02 && ez.lampes?.length === 2 && ez.fenetreCoins?.length === 4, `dans le relevé de la pièce : la table, les lampes, la fenêtre (${JSON.stringify({ table: ez.table, lampes: ez.lampes })})`);
+ok(ez.fenetreCoins?.length === 4 && ez.fentes?.length === 3 && Math.abs(ez.fentes[0].x - 0.3) < 0.02, `dans le relevé de la pièce : la fenêtre, les fentes (${JSON.stringify(ez.fentes)})`);
 ok(releveApres.ajuste === releveAvant.ajuste && JSON.stringify(ez.places) === JSON.stringify(releveAvant.emplacements.places), "le reste du relevé n'a pas bougé (les places, leur lecture)");
 
 // ═══ RÉDUIRE LES ANIMATIONS ═══

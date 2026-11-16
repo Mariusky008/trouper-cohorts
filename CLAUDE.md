@@ -19,6 +19,9 @@ de chacun, les visites), lisez d'abord `docs/univers/vision.md` (les textes du p
 les gestes, le talkie-walkie, les mèmes dans la pièce, la télé, les cadres, l'étagère, la vitesse), lisez d'abord
 `docs/univers/salon-du-duo.md` : le cahier des charges commun aux deux sessions.
 
+**Si vous travaillez sur « Ma maison »** (la pièce de chacun, le catalogue des neuf pièces, l'inscription « Choisis ta
+pièce », la maison qui se remplit avec ce qu'on garde), lisez d'abord `docs/univers/ma-maison.md`.
+
 Règles communes :
 
 - On travaille en français.
