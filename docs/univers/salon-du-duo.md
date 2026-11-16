@@ -43,7 +43,7 @@ et tout se retrouve dans 💬 Messagerie.
 |---|---|---|
 | **En-tête** | ‹ retour ; l'avatar et le prénom de l'autre ; sous le prénom, sa présence (« Là, maintenant » avec un point vert, ou « Dernière visite à 8 h 13 ») ; 📚 le nombre de souvenirs (ouvre l'étagère) ; 🔥 les jours de suite | la présence existe (`presence`, le réglage « Montrer à mes proches quand je suis là ») |
 | **La scène** | la pièce du duo, les deux figurines assises, les objets (télé, cadres, étagère, table, lampes, fenêtre, coin du chat) ; en haut à droite les puces de l'heure (🌅 Le soir) et de la météo (🌧️ Pluie fine · 9°), le 📅 prochain rendez-vous ; en bas à droite 💬 Messagerie avec le nombre de non-lus ; un petit message en haut (« toast ») pour ce qui se passe | les pièces du duo, leurs trois lumières et l'image du duo existent (`piece-du-duo.md`) ; la scène actuelle (`proches.tsx`) n'en est pas encore faite |
-| **Les onglets** | 💌 Petites attentions · 🛋️ Ensemble · 🎭 Mèmes | — |
+| **Les onglets** | 💌 Petites attentions · 🛋️ Ensemble · 🎭 Mèmes ; **toucher l'onglet ouvert replie la barre de puces** (la scène s'agrandit d'autant), un toucher sur un onglet la rouvre ; le choix est gardé sur le téléphone (le propriétaire, le 16 novembre 2026 : « si je désélectionne Petites attentions, ne plus avoir les icônes dessous pour agrandir l'image globale ») | — |
 | **La barre de puces** | les gestes ou les mèmes de l'onglet choisi, qui défilent de côté | les panneaux et les réactions (`vivant.ts`) |
 | **La saisie** | ＋ (envoyer) ; « Écris à Camille… » ; à droite 🎙️ (appuyé : un vocal), qui devient ➤ dès qu'on écrit | la barre ＋ / Écrire / micro existe (lots M1 à M3) |
 
