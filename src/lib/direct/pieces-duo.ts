@@ -20,6 +20,13 @@
  * l'étagère et les cadres étaient pleins — ils sont vides ; les deux places sont proches, tournées l'une vers l'autre (la
  * caméra pourra les cadrer ensemble) ; la chambre : deux fauteuils devant la baie, plus le bord du lit ; la terrasse :
  * une véranda, une carafe de citronnade.
+ *
+ * TROIS LIEUX POUR LES PLUS JEUNES, ET DES OBJETS EN GRAND (16 novembre 2026, le propriétaire : « pour un ado de 15 ou
+ * 20 ans, ce n'est pas du tout funky et cool : il veut sûrement être dans un hangar, un appartement à New York ou dans une
+ * rue, toujours avec les mêmes objets mais en plus grand — ça fait petit, la télé ou le cadre ; une scène plus large où
+ * l'on voit plus de choses, et les figurines seront donc plus petites ») : le hangar, l'appart à New York, la rue ; et
+ * pour toutes, la consigne (`consignePieceDuo`) cadre plus large et fait les objets bien plus grands. Un lieu sans mur
+ * de salon (la rue) dit où vont la platine, les cadres et l'étagère (`platine`, `cadres`, `etagere`).
  */
 export const PIECES_DUO = [
   {
@@ -86,6 +93,48 @@ export const PIECES_DUO = [
     vue: "a big window on a rainy street, raindrops on the glass, umbrellas passing by",
     chat: "a cushion for a cat on the window seat",
     tele: "a flat TV on the wall",
+  },
+  {
+    cle: "hangar",
+    nom: "Le hangar",
+    pour: "entre potes",
+    emoji: "🛹",
+    moment: "soir",
+    lieu: "a huge converted warehouse, the coolest hangout for teenagers and young adults: raw brick walls, a very high ceiling with exposed black metal beams, giant industrial windows",
+    signature: "pink and electric-blue neon strip lights, colorful abstract street-art murals (no letters at all), a skateboard and a basketball hoop on the brick wall, string lights, big plants, a polished concrete floor; urban, funky and cool",
+    places: "a big worn leather sofa and a giant bean bag, close together and turned three-quarters toward each other, a low table made of wooden crates between them",
+    vue: "a giant industrial window on the city at dusk",
+    chat: "an old cushion for a cat on a wooden pallet",
+    tele: "a huge flat TV on the brick wall",
+  },
+  {
+    cle: "newyork",
+    nom: "L’appart à New York",
+    pour: "entre amis, en ville",
+    emoji: "🗽",
+    moment: "nuit",
+    lieu: "a cool apartment high up in New York City, with a huge window on the Manhattan skyline",
+    signature: "exposed brick and black metal, a fire escape just outside the window, warm Edison bulbs and a purple-blue neon glow, a rack of sneakers, a guitar on the wall, big plants; urban, funky and cool",
+    places: "a low modern sofa and a big round armchair, close together and turned three-quarters toward each other, a small coffee table with a bowl of popcorn between them",
+    vue: "a huge window on the lit Manhattan skyline, the fire escape in front of it",
+    chat: "a round cat bed on the wide windowsill",
+    tele: "a huge flat TV on the brick wall",
+  },
+  {
+    cle: "rue",
+    nom: "La rue",
+    pour: "pour traîner dehors",
+    emoji: "🌆",
+    moment: "soir",
+    lieu: "a lively street corner in Brooklyn in the evening, seen from the sidewalk: the stoop of a brownstone building and the high brick wall of the building next to it",
+    signature: "warm streetlights, colorful shop glows and neon without any letters, big colorful abstract street-art murals (no letters at all), string lights across the street, a fire hydrant, a basketball on the sidewalk; urban, funky and cool",
+    places: "two upturned wooden crates on the sidewalk, close together and turned three-quarters toward each other",
+    vue: "the street behind, a yellow taxi passing by, lit windows and the evening sky above the rooftops",
+    chat: "a flattened cardboard box for a cat on the bottom step of the stoop",
+    tele: "a huge outdoor LED screen mounted on the brick wall",
+    platine: "A record player (a turntable) on a folding DJ table with a big speaker, on the OTHER side from the screen, with a few vinyl records beside it",
+    cadres: "Two big EMPTY poster frames fixed on the brick wall: a plain light mat inside, no picture, no drawing",
+    etagere: "One long wooden plank shelf fixed on the brick wall, completely EMPTY (nothing at all on it)",
   },
 ] as const;
 export type PieceDuo = (typeof PIECES_DUO)[number]["cle"];

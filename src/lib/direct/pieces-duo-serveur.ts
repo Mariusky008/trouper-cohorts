@@ -61,24 +61,26 @@ const momentDe = (m: MomentDuo) => MOMENTS_DUO.find((x) => x.cle === m)!;
 /** La pièce : le décor de la conversation d'un duo, sans personne, avec les mêmes emplacements que les autres. */
 export function consignePieceDuo(p: PieceDuo): string {
   const x = pieceDuoDe(p);
+  // (un lieu sans mur de salon — la rue — dit où vont la platine, les cadres et l'étagère)
+  const o = x as { platine?: string; cadres?: string; etagere?: string };
   return [
-    `Create ${x.lieu}, as the place where two small collectible figurines (about 15 cm tall) meet and talk — a vertical portrait image.`,
+    `Create ${x.lieu}, as the place where two small collectible figurines (about 15 cm tall) meet and talk — a vertical portrait image, a WIDE shot that shows the whole place.`,
     "",
     `STYLE: ${STYLE_PIECES_DUO}`,
     "",
     `THIS ROOM'S OWN IDENTITY (it must not look like a generic golden room): ${x.signature}.`,
     `THE LIGHT: ${momentDe(x.moment).lumiere}.`,
     "",
-    "THE SAME OBJECTS ARE IN EVERY ROOM. Spread them around the room, each one on its own, with bare wall or space around it: no object overlaps, touches or hides another one. Each one is clearly visible, facing the viewer, not cut by the edge of the image, big enough to be tapped on a phone:",
-    `1. ${x.tele}: its screen switched off (plain dark glass), about one quarter of the image width, on one side of the room.`,
-    "2. A record player (a turntable) on a low cabinet or a side table, on the OTHER side of the room from the TV, with a few vinyl records beside it, about one fifth of the image width.",
-    "3. Two EMPTY picture frames hung on the wall above or behind the seats: a plain light mat inside, no picture, no drawing, each about one eighth of the image width.",
-    "4. One wall shelf, completely EMPTY (nothing at all on it), about one third of the image width, near the window — the duo's keepsakes will be placed on it later.",
+    "THE SAME OBJECTS ARE IN EVERY ROOM, AND THEY ARE BIG — they are the stars of the image. Spread them around, each one on its own, with bare wall or space around it: no object overlaps, touches or hides another one. Each one is clearly visible, facing the viewer, not cut by the edge of the image:",
+    `1. ${x.tele}: its screen switched off (plain dark glass), VERY LARGE — about two fifths of the image width — on one side.`,
+    `2. ${o.platine ?? "A record player (a turntable) on a low cabinet or a side table, on the OTHER side of the room from the TV, with a few vinyl records beside it"}, about one quarter of the image width.`,
+    `3. ${o.cadres ?? "Two big EMPTY picture frames hung on the wall above or behind the seats: a plain light mat inside, no picture, no drawing"}, each about one fifth of the image width (poster size).`,
+    `4. ${o.etagere ?? "One wall shelf, completely EMPTY (nothing at all on it), near the window"}, about two fifths of the image width — the duo's keepsakes will be placed on it later.`,
     `5. ${x.vue}.`,
-    `6. In the lower half of the image, in sharp focus: ${x.places}. The two seats are close to each other (about one third of the image width apart), each about one quarter of the image width, so that two figurines sitting there face each other and can be framed together. Leave the seats empty — two small figurines will sit there later.`,
+    `6. In the lower part of the image, in sharp focus: ${x.places}. The two seats are close to each other (about one quarter of the image width apart), each about one sixth of the image width: in this wide shot the figurines are small, the camera will come closer to them. Leave the seats empty — two small figurines will sit there later.`,
     `7. ${x.chat}, empty.`,
     "",
-    "COMPOSITION: the camera is at the figurines' eye level, looking into the room; the main light comes from the left.",
+    "COMPOSITION: a WIDE-ANGLE shot taken from a little further back and a little higher than the figurines' eye level, so that the whole place is visible, with room around the objects; the main light comes from the left.",
     "",
     "NO figurine, no person, no character, no animal, no text, no logo, no brand, nothing alcoholic.",
   ].join("\n");

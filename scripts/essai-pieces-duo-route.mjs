@@ -3,7 +3,7 @@
 // OpenAI.
 //
 // Réservé à l'administrateur. Le catalogue est le même pour tous, rangé à part de chaque habitant
-// (`pieces-duo/<pièce>/`). Les cinq pièces, rien de fait ; une pièce inconnue : refusée ; un passage fait la pièce (un
+// (`pieces-duo/<pièce>/`). Les huit pièces (les cinq premières, puis le hangar, l'appart à New York, la rue), rien de fait ; une pièce inconnue : refusée ; un passage fait la pièce (un
 // dessin, sans image de départ : le style des univers, les sept emplacements, personne dedans, rien d'alcoolisé),
 // rangée et signée ; le passage suivant, son relevé — sans modèle qui voit (la CI n'en a pas), le relevé est noté comme
 // raté et la pièce reste ; un relevé posé à la main est lu (les boîtes hors de l'image sont écartées) ; refaire le relevé :
@@ -60,18 +60,18 @@ const D = "pieces-duo/terrasse";
 ok((await appeler("")).statut === 403 && (await appeler("", { action: "fabriquer", piece: "salon" })).statut === 403, "l'administrateur seulement");
 ok((await appeler(COOKIE_ADMIN, { action: "fabriquer", piece: "grenier" })).statut === 400 && (await appeler(COOKIE_ADMIN, { action: "danser", piece: "salon" })).statut === 400, "une pièce ou une action inconnue : refusée");
 
-// ─── les cinq pièces ───
+// ─── les huit pièces ───
 const e0 = await appeler(COOKIE_ADMIN);
 ok(
   e0.statut === 200 &&
-    e0.etat?.pieces?.map((p) => p.cle).join(",") === "salon,cuisine,terrasse,chambre,cafe" &&
+    e0.etat?.pieces?.map((p) => p.cle).join(",") === "salon,cuisine,terrasse,chambre,cafe,hangar,newyork,rue" &&
     e0.etat.pieces.every((p) => p.nom && p.pour && p.emoji && !p.decor && !p.emplacements && ["matin", "soir", "nuit"].includes(p.moment) && Object.keys(p.lumieres ?? {}).length === 0 && p.alertes?.length === 0) &&
     piece(e0, "terrasse").moment === "matin" &&
     piece(e0, "chambre").moment === "soir" &&
     !/alcool/.test(piece(e0, "terrasse").pour) &&
     e0.etat.moteurs?.image === true &&
     e0.etat.moteurs.regard === false,
-  "les cinq pièces (salon, cuisine, terrasse, chambre vue mer, café), rien de fait ; le moteur d'image branché, pas de modèle qui voit",
+  "les huit pièces (salon, cuisine, terrasse, chambre vue mer, café ; hangar, appart à New York, rue), rien de fait ; le moteur d'image branché, pas de modèle qui voit",
 );
 
 // ─── 1. la pièce ───
@@ -91,7 +91,7 @@ ok(
     c.includes("THE LIGHT: daytime") &&
     c.includes("THE SAME OBJECTS ARE IN EVERY ROOM") &&
     c.includes("no object overlaps, touches or hides another one") &&
-    ["switched off", "about one quarter of the image width", "record player", "OTHER side of the room from the TV", "Two EMPTY picture frames", "completely EMPTY", "close to each other", "Leave the seats empty", "carafe of lemonade", "the main light comes from the left"].every((m) => c.includes(m)) &&
+    ["a WIDE shot that shows the whole place", "AND THEY ARE BIG", "switched off", "VERY LARGE — about two fifths of the image width", "record player", "OTHER side of the room from the TV", "Two big EMPTY picture frames", "(poster size)", "completely EMPTY", "close to each other", "each about one sixth of the image width", "the camera will come closer to them", "Leave the seats empty", "carafe of lemonade", "WIDE-ANGLE shot", "the main light comes from the left"].every((m) => c.includes(m)) &&
     c.includes("NO figurine, no person, no character, no animal, no text, no logo, no brand, nothing alcoholic"),
   `un dessin (sans image de départ) : sa signature et sa lumière (pas le doré de tous), les objets répartis et assez grands, l'étagère et les cadres vides, les places proches et vides, une carafe de citronnade, personne, rien d'alcoolisé (${c.slice(0, 60)}…)`,
 );

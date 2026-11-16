@@ -338,3 +338,30 @@ une fois la maquette validée), le chat dans son coin.
 lumière, les refus) et `scripts/navigateur/piece-du-duo.mjs` (l'arrivée, le glissé, les bulles, la télé — le clip du jour, un lien collé,
 allumée, avec le faux lecteur de l'essai de la télé —, les deux invitations, la cuisine sans zones ni lumières :
 « 👆 Les objets » dit ce qui manque, une lumière pas faite se fait ; ce qui a changé, la fenêtre).
+
+## 13. Trois lieux pour les plus jeunes, et des objets en grand (16 novembre 2026)
+
+Le propriétaire, après avoir joué la maquette : « pour un ado de 15 ou 20 ans, ce n'est pas du tout funky et cool : il
+veut sûrement être dans un hangar, un appartement à New York ou dans une rue, toujours avec les mêmes objets mais en
+plus grand — ça fait petit, la télé ou le cadre, sur la scène cuisine, chambre… ; une scène plus large où l'on voit plus
+de choses, et les figurines seront donc plus petites ».
+
+- **Trois lieux de plus** (`PIECES_DUO`, la session de l'univers) : **le hangar** (`hangar` : un entrepôt aménagé,
+  briques, poutres d'acier, néons rose et bleu, fresques sans lettres, un skate, un panier de basket ; un canapé de cuir
+  et un gros pouf), **l'appart à New York** (`newyork` : la nuit, la vue sur Manhattan, l'escalier de secours, néon
+  violet, une étagère de baskets, une guitare ; un canapé bas et un fauteuil rond), **la rue** (`rue` : un coin de rue à
+  Brooklyn le soir, le perron d'un immeuble de briques, un taxi jaune, des fresques sans lettres ; deux caisses
+  retournées). Les mêmes objets partout ; dans la rue, la télé est un grand écran LED sur le mur, la platine est sur une
+  table de DJ, les cadres sont des cadres d'affiches, l'étagère une planche fixée au mur (`platine`, `cadres`,
+  `etagere`, dans le catalogue). Rien d'alcoolisé, aucune lettre ni marque.
+- **Pour toutes les pièces** (`consignePieceDuo`) : un **plan large** (toute la pièce visible, la caméra un peu plus loin
+  et un peu plus haut) ; **les objets en grand**, les vedettes de l'image : la télé fait environ deux cinquièmes de la
+  largeur, la platine un quart, chaque cadre un cinquième (taille affiche), l'étagère deux cinquièmes ; **les places
+  plus petites** (chacune environ un sixième de la largeur, à un quart de la largeur l'une de l'autre) : les figurines
+  sont petites dans le plan large, la caméra s'approche d'elles pour la conversation (la maquette).
+- **La maquette** n'utilise que les pièces faites : les trois nouvelles y arrivent dès qu'elles sont fabriquées (sa
+  phrase d'invitation : `DANS` — « au hangar », « dans l'appart à New York », « dans la rue »).
+- **À faire par le propriétaire** : sur la page d'essais, « Faire ce qui manque » (les trois nouvelles, avec leurs trois
+  lumières : environ 1,53 €) ; et, pour avoir les objets en grand dans les cinq premières, « Refaire la pièce » pour
+  chacune (environ 0,51 € la pièce). Puis replacer leurs écrans de télé (« ✋ Replacer l'écran », sur l'essai de la
+  télé) et refaire les images du duo.

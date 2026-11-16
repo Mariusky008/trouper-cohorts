@@ -26,7 +26,17 @@ const PIECES = "/api/admin/direct/pieces-duo";
 type Objet = "tele" | "platine" | "cadre" | "etagere" | "fenetre" | "chat";
 type Plan = { type: "piece" } | { type: "places" } | { type: "objet"; objet: Objet };
 
-const DANS: Record<PieceDuo, string> = { salon: "dans le salon", cuisine: "dans la cuisine", terrasse: "sur la terrasse", chambre: "dans la chambre vue mer", cafe: "au café" };
+const DANS: Record<PieceDuo, string> = {
+  salon: "dans le salon",
+  cuisine: "dans la cuisine",
+  terrasse: "sur la terrasse",
+  chambre: "dans la chambre vue mer",
+  cafe: "au café",
+  // (16 novembre 2026, la session de l'univers : les trois lieux pour les plus jeunes)
+  hangar: "au hangar",
+  newyork: "dans l’appart à New York",
+  rue: "dans la rue",
+};
 const OBJETS: Record<Objet, { emoji: string; nom: string }> = {
   tele: { emoji: "📺", nom: "La télé" },
   platine: { emoji: "🎵", nom: "La platine" },
