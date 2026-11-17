@@ -23,6 +23,9 @@
 // POST { action: "aparte-effacer", cle, id } → { ok } : 🎭 il efface un aparté de leurs figurines (pour les deux)
 // POST { action: "meme", cle, id }      → { ok } : 🎭 il envoie son mème (fait dans le studio) dans leur conversation
 //                                          (la nouvelle interface, lot 4, `memes-proches-serveur.ts`) ; l'autre est prévenu
+// GET ?pouls=<clé>                      → { n, la, ecrit?, vu? } : 💓 le pouls du salon (lot S2, `pouls-serveur.ts`) — le
+//                                          numéro du dernier événement (un message, un mème, un geste, un effacement :
+//                                          chacun le fait battre), s'il est là (sinon sa dernière visite), s'il écrit
 // GET ?ouvrir=<clé>                     → { ouverture } : 🚪 le salon du duo (lot S0b, `lib/direct/salon-serveur.ts`) — le
 //                                          fil, la vie et la scène (la pièce, ses images à adresse stable) en une requête
 // (GET ?vivant= écrit aussi, après la réponse, l'aparté d'un échange qui vient de finir — lot R4b ; et 📚 leurs figurines
@@ -81,6 +84,7 @@ import { effacerEtagere, etagereAllumee, lignesEtagere, noterMesConversations, o
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 import { ouvrirSalon } from "@/lib/direct/salon-serveur";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
+import { battre, poulsAvec } from "@/lib/direct/pouls-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
@@ -99,6 +103,12 @@ export async function GET(request: Request) {
   if (q.get("moi")) {
     const f = await maFigurineVue(supabase, moi);
     return f ? NextResponse.json({ ok: true, moi: f }, { headers: sansCache }) : NextResponse.json({ error: "Ta figurine n’est pas encore prête." }, { status: 400 });
+  }
+  // 💓 le pouls du salon (lot S2) : le numéro du dernier événement, s'il est là, s'il écrit — moins de 300 octets
+  const pouls = q.get("pouls");
+  if (pouls) {
+    const r = await poulsAvec(supabase, moi, pouls);
+    return r.pouls ? NextResponse.json(r.pouls, { headers: sansCache }) : NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
   }
   // 🚪 le salon du duo (lot S0b) : le fil, la vie et la scène en une requête
   const ouvrir = q.get("ouvrir");
@@ -163,6 +173,7 @@ export async function POST(request: Request) {
     // 🔔 « Zoé t'a parlé ! » : après l'envoi, jamais bloquant
     const a = r.aPrevenir;
     if (a) after(() => prevenirDeLaParole(supabase, moi, a));
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
   // ✍️ (lot M1) un message écrit ; après la réponse, l'aperçu de son lien, puis « ✍️ Léa t'a écrit »
@@ -170,6 +181,8 @@ export async function POST(request: Request) {
     const r = await ecrireMessage(supabase, moi, p.cle, p.texte, p.tete);
     if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     const a = r.apres;
+    // (💓 le pouls bat d'abord : l'autre voit le message à son prochain battement)
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     if (a) after(() => apresEcrit(supabase, moi, a).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
@@ -183,6 +196,7 @@ export async function POST(request: Request) {
     const r = await envoyerPhoto(supabase, moi, p.cle, p.id, p.legende, p.tete);
     if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     const a = r.apres;
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     if (a) after(() => apresPhoto(supabase, moi, a).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
@@ -196,6 +210,7 @@ export async function POST(request: Request) {
     const r = await envoyerVideo(supabase, moi, p.cle, p.id, p.type, p.duree, p.images, p.legende, p.tete);
     if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     const a = r.apres;
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     if (a) after(() => apresVideo(supabase, moi, a).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
@@ -203,6 +218,7 @@ export async function POST(request: Request) {
   if (p?.action === "effacer") {
     const r = await effacerMessage(supabase, moi, p.cle, p.id);
     if (r.ok) await oublierMessage(supabase, moi, p.cle, p.id).catch(() => undefined);
+    if (r.ok) after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   // 📲 par WhatsApp : son message en lien ; la réponse de celui qui l'a reçu
@@ -231,6 +247,7 @@ export async function POST(request: Request) {
     const r = await poserGeste(supabase, moi, p.cle, p.type, p.quoi, p.message);
     if (!r.geste) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     const a = r.aPrevenir;
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     if (a) after(() => prevenirDuPanneau(supabase, moi, a));
     return NextResponse.json({ ok: true, geste: r.geste }, { headers: sansCache });
   }
@@ -238,6 +255,7 @@ export async function POST(request: Request) {
   if (p?.action === "meme") {
     const h = await hDeCle(supabase, p.cle);
     const r = !h ? { error: "Ce proche n’existe pas.", statut: 404 } : !(await seParlent(supabase, moi.id, h)) ? { error: "Vous pourrez vous parler quand vous vous serez ajoutés tous les deux.", statut: 403 } : await envoyerMemeAuProche(supabase, moi, h, p.id);
+    if (r.ok) after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   if (p?.action === "proche" || p?.action === "signaler") {

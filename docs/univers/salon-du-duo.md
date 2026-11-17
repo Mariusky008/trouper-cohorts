@@ -761,8 +761,8 @@ tableau d'essai. Sans `avec`, le banc d'essai du moteur ne change pas.
 - **La vitesse** : processeur ralenti ×4, la plus longue image pendant « je t'aime ❤️ » (la bulle, la tête qui parle,
   les cœurs) est de 67 ms environ (17 ms à vitesse normale) — le seuil de 50 ms s'essaiera sur les gestes (S3).
 
-**La suite du lot S2** : le pouls (la présence en direct, « … » quand l'autre écrit, ses messages qui arrivent) et
-l'arrivée (« depuis ta dernière visite ») ; puis la pièce du duo qu'on choisit au départ et dont on change (4.13).
+**La suite du lot S2** : le pouls et l'arrivée (section 11.9) ; puis la pièce du duo qu'on choisit au départ et dont on
+change (4.13).
 **Pas encore** : le ＋ et le 🎙️ de la saisie (S6, S4), les onglets et les puces (S3), le 📌 des bulles (S6).
 
 **Les essais** : `scripts/navigateur/salon-conversation.mjs` (iPhone : la bulle de l'autre, seule, au-dessus de sa tête,
@@ -770,6 +770,45 @@ dans la scène ; les non-lus ; ➤ en moins de 100 ms, la tête de l'autre qui r
 feuille en moins de 100 ms, les trois messages dans l'ordre, « Aujourd'hui », le voile qui la ferme ; un envoi refusé :
 la bulle défaite, le texte rendu, « Pas envoyé ») ; `scripts/navigateur/salon-ouvrir.mjs` (l'ouverture, refaite sur cet
 écran).
+
+### 11.9 Le pouls et l'arrivée (lot S2, deuxième partie)
+
+- **Le pouls** (7.4, étape 1 ; `src/lib/direct/pouls-serveur.ts`) : `GET /api/direct/proches?pouls=<clé>` →
+  `{ n, la, ecrit?, vu? }`, une vingtaine d'octets, jamais gardé en cache.
+  - `n` : le numéro du dernier événement du duo, noté dans `fils/<paire>/pouls.json` par `battre` après chaque message
+    (vocal, écrit, photo, vidéo), mème, geste et message effacé (la route le fait battre après sa réponse) ;
+    « il prépare » ne le fait pas battre ;
+  - `la` : l'autre est là (ClikMe ouvert dans les 2 min 30, s'il se montre) ; sinon `vu`, l'heure de sa dernière
+    visite (rien s'il ne se montre pas) ;
+  - `ecrit` : il écrit (`prepare.json`, frais de moins de 9 s).
+  Quatre petites lectures en parallèle ; qui parle à qui est gardé une minute en mémoire.
+- **Dans le salon** (`src/app/salon/salon.tsx`) :
+  - le pouls bat **toutes les 1,5 s quand l'autre est là, toutes les 10 s sinon, jamais page cachée** (il repart dès
+    que la page revient) ; la conversation n'est relue (`?fil=`) que si `n` a changé ;
+  - **ses messages arrivent en direct** : sa bulle, sa figurine qui le dit, la mienne qui réagit aux mots ; les
+    non-lus montent si 💬 est fermée ;
+  - **sa présence** en haut : « Là, maintenant », « Dernière visite à 8 h 13 », « … hier à … », « … lundi 14 novembre » ;
+  - **« … »** au-dessus de sa figurine quand il écrit ; et chez lui quand j'écris (redit toutes les 5 s, arrêté à
+    l'envoi ou quand la saisie se vide) ;
+  - je suis là : la page le dit toutes les minutes ;
+  - **il arrive** : sa figurine se réveille et fait coucou (le geste « coucou » s'il est enregistré, sinon 👋), la
+    mienne se tourne vers elle ; **il part** : sa figurine somnole.
+- **L'arrivée** (4.1) : ce qu'il a laissé depuis ma dernière visite — ses messages et ses mèmes pas encore vus, que
+  le serveur marque `nouveau` une fois (rien n'est rejoué deux fois, et une conversation sans rien de neuf ne rejoue
+  rien) —, **rejoué un à un** : sa bulle, sa figurine qui le dit, la mienne qui réagit ; 1,4 à 3 s chacun, **12 s au
+  plus** (au-delà, les plus récents ; le reste est dans 💬) ; **un toucher sur la scène passe la suite** ; le dernier
+  reste. Puis, s'il n'est pas là, sa figurine somnole. (Le cahier prévoyait `?depuis=` : les marques `nouveau` de
+  `?ouvrir=` suffisent, dans la même requête.)
+- **Pas encore** : rejouer ses gestes (S3), le vocal posé sur la table (S4), le mème joué par sa figurine (S5), le
+  rappel de l'étagère (S6) ; la notification qui dit tout ce qui attend (« un bisou, un mème, 2 messages… ») viendra
+  avec la bascule (S8).
+
+**Les essais** : `scripts/essai-salon-pouls-route.mjs` (qui peut le lire ; moins de 300 octets ; la présence, sa
+dernière visite, celui qui ne se montre pas ; « il écrit » ; le pouls qui bat pour un message, un panneau, un
+effacement, et pas pour « il prépare ») ; `scripts/navigateur/salon-pouls.mjs` (iPhone : l'arrivée rejouée dans l'ordre
+en moins de 12 s, le dernier qui reste ; « Dernière visite à … » ; 10 s puis 1,5 s quand il arrive ; « … » ; son
+message en direct, les non-lus, la réaction ; « … » chez lui quand j'écris ; la page cachée sans pouls ; un toucher
+qui passe l'arrivée).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

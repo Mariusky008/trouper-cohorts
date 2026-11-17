@@ -27,7 +27,7 @@ import { APARTE, APARTE_MAX, ENREGISTRE_MS, GESTES_PAR_JOUR, gesteValide, pannea
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const cheminGestes = (pair: string) => `fils/${pair}/gestes.json`;
-const cheminPrepare = (pair: string) => `fils/${pair}/prepare.json`;
+export const cheminPrepare = (pair: string) => `fils/${pair}/prepare.json`;
 const cheminGestesJour = (h: string) => `${h}/gestes-jour.json`;
 const cheminApartes = (pair: string) => `fils/${pair}/apartes.json`;
 type AparteGarde = { id: string; le: string; jusqua: number; mots?: { de8: string; texte: string }[]; rien?: string; efface?: string };

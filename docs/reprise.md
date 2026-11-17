@@ -272,8 +272,9 @@ une fois (après « C'est moi ! », sinon après la première ouverture), à adr
 (l'administrateur : `?piece=1`), Pablito ne fabrique plus (l'interrupteur allumé), la carte pour ceux qui ont déjà un
 univers ; **à enregistrer par le propriétaire avant d'allumer** : la bulle `tuto-univers-6` de la bienvenue. **Fait, S2 (première partie)** :
 l'écran de la conversation, à `/univers/salon?avec=<clé>` — l'en-tête, une bulle par figurine, écrire (la bulle tout
-de suite, l'autre figurine qui réagit), 💬 Messagerie — section 11.8. **Ensuite** : le pouls et l'arrivée (S2b), puis la
-pièce du duo (S2c).
+de suite, l'autre figurine qui réagit), 💬 Messagerie — section 11.8. **Fait, S2 (deuxième partie)** : le pouls
+(`?pouls=`, l'autre en direct, « … », sa présence) et l'arrivée (ce qu'il a laissé, rejoué) — section 11.9.
+**Ensuite** : la pièce du duo (S2c).
 
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 
