@@ -52,9 +52,11 @@ salon) va dans ma maison ; **quelqu'un que j'apprécie** dans un salon peut deve
 
 ## 3. Les passions
 
-- **Une douzaine de thèmes au départ** (validé par le propriétaire, la liste reste à confirmer) :
-  ⚽ Foot et sport · 🎬 Séries et films · 🎵 Musique · 🎮 Jeux vidéo · 🍳 Cuisine · 📚 Révisions et études ·
-  👶 Jeunes parents (adultes) · 👗 Mode et beauté · 😂 Humour · ✈️ Voyages · 🐾 Animaux · 🧘 Bien-être.
+- **Douze thèmes au départ** (le propriétaire a laissé le choix, 17 novembre 2026 : ceux qui ont chaque jour des
+  vidéos françaises fraîches, et de quoi parler) :
+  ⚽ Foot et sport · 🎬 Séries et films · 🎵 Musique · 🎮 Jeux vidéo · 📺 Télé-réalité et people · 😂 Humour ·
+  🍳 Cuisine · 👗 Mode et beauté · 🎌 Manga et anime · 🐾 Animaux · 📚 Révisions et études ·
+  👶 Jeunes parents (adultes).
   Et, pour tout le monde, à part : **🗞️ Les potins de ma ville** (5.4).
 - **« Tes passions »** : on en choisit de 3 à 5, la première fois qu'on ouvre Découvrir (et plus tard depuis Moi). Un
   écran, des vignettes, un toucher par passion.
@@ -81,8 +83,8 @@ pas de pièce de plus ; ma maison devient l'endroit où je reçois.
 - Rangé dans `decouvrir/selection/<jour>/<theme>.json` (et `<theme>-jeunes.json`).
 - **Une page d'administration** (`/admin/humain/decouvrir`) montre la sélection du jour par thème ; l'administrateur
   peut retirer une vidéo (elle disparaît de toutes les télés) ou en ajouter une par son lien.
-- **La clé YouTube** (`YOUTUBE_API_KEY`) : à créer par le propriétaire dans Google Cloud et à ranger dans Vercel. Jamais
-  dans la discussion.
+- **La clé YouTube** (`YOUTUBE_API_KEY`) : créée par le propriétaire (Google Cloud, l'API « YouTube Data API v3 »
+  activée, la clé restreinte à elle) et rangée dans Vercel. Jamais dans la discussion.
 
 ### 4.2 Regarder
 
@@ -99,7 +101,7 @@ pas de pièce de plus ; ma maison devient l'endroit où je reçois.
 - « Inviter » : la liste de mes proches (ceux d'aujourd'hui, réciproques). Chacun reçoit une invitation (dans
   l'appli, et une notification) : « 🎬 Léa t'invite chez elle à regarder la télé » — « Venir » / « Pas maintenant »
   (comme l'invitation du salon du duo, `salon-du-duo.md` 11.10).
-- **Jusqu'à 4 places** (moi et 3 proches ; à confirmer). Chaque figurine s'assoit à sa place ; les bulles, les
+- **Jusqu'à 4 places** (moi et 3 proches). Chaque figurine s'assoit à sa place ; les bulles, les
   gestes et les mèmes marchent comme dans le duo, entre tous ceux qui sont là.
 - **La télé est synchronisée** : c'est moi, l'hôte, qui lance, mets en pause, passe. L'état tient dans un petit
   fichier (`salons-prives/<h>/tele.json` : `{ video, depart, pause?, n }`) ; chacun calcule où en est la vidéo
@@ -173,7 +175,8 @@ ceux qui ont vu la vidéo dans la journée, un stade — des dizaines de petites
 - fabriqué côté serveur (comme la vidéo de la figurine pour WhatsApp), partagé par le menu du téléphone (TikTok,
   Instagram, WhatsApp) : **chaque clip partagé montre ce que fait l'appli, avec de vraies têtes** ;
 - n'y paraissent que les proches qui l'acceptent (un réglage dans Moi : « Mes réactions peuvent apparaître dans les
-  clips de mes proches »).
+  clips de mes proches ») — **allumé par défaut** (décidé le 17 novembre 2026), **éteint par défaut pour les 15-17
+  ans** (un clip partagé sort de l'appli).
 
 **L'argument de communication** : « Regarde tes vidéos avec ceux que tu aimes, même quand ils sont loin. » La vidéo
 de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de ses amis, à côté d'elle, éclatent de rire.
@@ -195,7 +198,9 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 
 - **Écrire** (des bulles au-dessus des figurines, comme le duo), **les gestes** (sur une figurine : un coucou, un
   bravo, un rire), **les mèmes** (déjà modérés à la création).
-- **Pas au départ** : les vocaux, les photos, les vidéos personnelles (à modérer d'abord ; à reconsidérer plus tard).
+- **Pas au départ** (décidé le 17 novembre 2026) : les vocaux (une voix ne se modère pas avant d'être entendue, et
+  c'est le premier outil du harcèlement), les photos, les vidéos personnelles ; à reconsidérer après un mois de
+  salons ouverts, avec les chiffres de la modération. Entre proches, dans ma pièce, les vocaux restent permis.
 - **💬 La conversation** se relit dans une feuille, comme 💬 Messagerie ; elle est gardée **48 h** (à confirmer).
 - **L'étagère du salon** : les moments que tout le monde a aimés (un message qui a reçu beaucoup de gestes) y restent,
   sans limite de temps. Chacun peut « 📌 Garder » un moment : il va dans sa maison.
@@ -212,7 +217,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 - **Un salon par ville** : ce qui s'y passe, **les soirées, les événements**, les nouveautés, les travaux, ce qui ouvre
   et ce qui ferme. On connaît la ville de chacun (l'inscription, `ville_slug`). Le nom affiché : « 🗞️ Les potins de
   Dax ».
-- **Par ville quand elle a assez de monde** (une vingtaine d'inscrits, à confirmer), **sinon par département**
+- **Par ville quand elle a assez de monde** (une vingtaine d'inscrits), **sinon par département**
   (« 🗞️ Les potins des Landes ») ; il s'ouvre dès que le monde est là. Chacun ne voit que celui de sa ville (ou de
   son département).
 - **D'où viennent les potins** (chaque nuit, sur la télé du salon et dans une colonne « Aujourd'hui ») :
@@ -283,19 +288,21 @@ Chaque lot : ses essais (route et navigateur, comme le salon du duo), sa section
 Avant D0, une **maquette cliquable** (une page d'administration, comme la maquette de la pièce vivante) : la carte
 « ma télé du jour », ma pièce avec la télé, l'invitation, la liste des salons ouverts, un salon de 8 figurines.
 
-## 10. Ce qui reste à décider (le propriétaire)
+## 10. Les décisions (le propriétaire, 17 novembre 2026)
 
-1. ~~Ce que deviennent les deux parties actuelles de Découvrir~~ — **décidé le 17 novembre 2026 : on supprime le
-   défilement des mèmes et les vœux** (section 11).
-2. **La liste des douze thèmes** (section 3).
-3. **Le nombre de places** : 4 dans ma pièce, 8 dans un salon ouvert ?
-4. **Les vocaux dans les salons ouverts** : non au départ ?
-5. **La durée de la conversation d'un salon ouvert** : 48 h (les moments de l'étagère restent) ?
-6. **La clé YouTube** : à créer et à ranger dans Vercel avant D0.
-7. **« 📷 Ta figurine fait ta tête »** : permise aux 15-17 ans (avec le même accord) ou réservée aux adultes ? Et le
-   réglage « Mes réactions dans les clips de mes proches » : allumé ou éteint par défaut ?
-8. **Les potins de ma ville** : le seuil pour avoir son salon de ville (une vingtaine d'inscrits ?) ; la clé
-   OpenAgenda, à créer et à ranger dans Vercel avant D7.
+1. **Le défilement des mèmes et les vœux** : supprimés (section 11).
+2. **Les douze thèmes** : choisis (section 3).
+3. **Les places** : 4 dans ma pièce, 8 dans un salon ouvert.
+4. **Les vocaux dans les salons ouverts** : pas au départ (5.2).
+5. **La conversation d'un salon ouvert** : gardée 48 h ; les moments de l'étagère restent.
+6. **La clé YouTube** : créée et rangée dans Vercel (`YOUTUBE_API_KEY`).
+7. **« 📷 Ta figurine fait ta tête »** : permise aux 15-17 ans avec le même accord (rien n'est filmé ni gardé, seulement
+   la réaction) ; le réglage « Mes réactions dans les clips de mes proches » : allumé par défaut, éteint pour les 15-17
+   ans (4.5).
+8. **Les potins de ma ville** : un salon de ville à partir d'une vingtaine d'inscrits, sinon le département ; la clé
+   OpenAgenda créée et rangée dans Vercel (`OPENAGENDA_API_KEY`).
+
+**Plus rien n'attend le propriétaire avant la maquette et D0.**
 
 ## 11. Ce qu'on retire de l'ancienne page (décision du propriétaire, 17 novembre 2026)
 
