@@ -52,6 +52,8 @@ await semer(
 );
 await json(`${LEA.id}/proches.json`, { ids: [SAM.id] });
 await json(`${SAM.id}/proches.json`, { ids: [LEA.id] });
+// (🚪 le duo s'est déjà installé dans le salon : pas de « Où vous installez-vous ? » — c'est l'essai `salon-pieces.mjs`)
+await json(`fils/${[LEA.id, SAM.id].sort().join("_")}/piece.json`, { piece: "salon", le: maintenant });
 // (le salon : une pièce en hauteur, ses places relevées)
 const piece = (fond) =>
   sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1536"><rect width="1024" height="1000" fill="${fond}"/><rect y="1000" width="1024" height="536" fill="#8a6a4a"/><rect x="160" y="1050" width="704" height="300" rx="60" fill="#3c6e8a"/><rect x="620" y="200" width="300" height="260" fill="#bfe3ff"/></svg>`))

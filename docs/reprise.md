@@ -274,7 +274,11 @@ univers ; **à enregistrer par le propriétaire avant d'allumer** : la bulle `tu
 l'écran de la conversation, à `/univers/salon?avec=<clé>` — l'en-tête, une bulle par figurine, écrire (la bulle tout
 de suite, l'autre figurine qui réagit), 💬 Messagerie — section 11.8. **Fait, S2 (deuxième partie)** : le pouls
 (`?pouls=`, l'autre en direct, « … », sa présence) et l'arrivée (ce qu'il a laissé, rejoué) — section 11.9.
-**Ensuite** : la pièce du duo (S2c).
+**Fait, S2 (troisième partie)** : la pièce du duo (« Où vous installez-vous ? » la première fois, 🚪 en changer à
+tout moment, l'invitation « Venir » / « Pas maintenant » quand l'autre est là, toute pièce tout de suite), l'en-tête
+📚 🔥 📅, l'ombre au sol et la teinte du moment — section 11.10 (le contrat `salon.ts` complété).
+**Ensuite** : la bascule (S8, avec la notification qui dit tout ce qui attend) ; S9 seulement si le propriétaire trouve
+le pouls trop lent.
 
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 
