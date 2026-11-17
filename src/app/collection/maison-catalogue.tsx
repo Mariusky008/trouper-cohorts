@@ -254,8 +254,11 @@ function Choix({ catalogue, actuelle, onChoisir, onFermer }: { catalogue: Catalo
   );
 }
 
-/** 🏠 « Ma maison » : sa pièce (ou le choix de sa pièce). `plein` : toute la hauteur de l'écran (l'adresse d'essai). */
-export function MaisonDuCatalogue({ actif, plein = false }: { actif: boolean; plein?: boolean }) {
+/**
+ * 🏠 « Ma maison » : sa pièce (ou le choix de sa pièce). `plein` : toute la hauteur de l'écran (l'adresse d'essai).
+ * `onRenoncer` : sans pièce, le choix se ferme (qui garde son univers d'avant, le lot M3) ; sinon il reste ouvert.
+ */
+export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif: boolean; plein?: boolean; onRenoncer?: () => void }) {
   const [maison, setMaison] = useState<MaMaisonVue | null>(null);
   const [erreur, setErreur] = useState("");
   const [catalogue, setCatalogue] = useState<CatalogueMaison | null>(null);
@@ -303,7 +306,7 @@ export function MaisonDuCatalogue({ actif, plein = false }: { actif: boolean; pl
           {!plein && <p className="mmc-vide">{MAISON_VIDE}</p>}
         </>
       ) : null}
-      {ouvert && maison && <Choix catalogue={catalogue} actuelle={maison.scene ? maison.piece : null} onChoisir={choisir} onFermer={maison.scene ? () => setChoix(false) : undefined} />}
+      {ouvert && maison && <Choix catalogue={catalogue} actuelle={maison.scene ? maison.piece : null} onChoisir={choisir} onFermer={maison.scene ? () => setChoix(false) : onRenoncer} />}
       <style>{STYLES_MAISON_CATALOGUE}</style>
     </div>
   );

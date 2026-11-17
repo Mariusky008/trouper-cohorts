@@ -16,10 +16,11 @@
  *
  * 🏠 LA PIÈCE DE CHACUN (16 novembre 2026 au soir, `docs/univers/ma-maison.md` ; le lot M1) : quand l'interrupteur
  * `MA_MAISON_CATALOGUE` sera allumé, l'onglet montre sa pièce du catalogue (`maison-catalogue.tsx`) au lieu de l'univers
- * d'aujourd'hui.
+ * d'aujourd'hui — et, à qui a déjà un univers, une carte « Choisis ta pièce » (le lot M3, `MaisonOuUnivers`).
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
+import { TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
 import { DansLesPieces, useBoucle, type PieceVue } from "@/app/univers/piece-vivante";
 import { MaisonDuCatalogue } from "./maison-catalogue";
 import { EtagereChezMoi } from "./etagere";
@@ -59,19 +60,104 @@ function ApercuPiece({ p, joue, onEntrer }: { p: PieceVue; joue: boolean; onEntr
 }
 
 export function MaMaison({ actif }: { actif: boolean }) {
-  return MA_MAISON_CATALOGUE ? (
-    <div className="mm">
-      <MaisonDuCatalogue actif={actif} />
-      <EtagereChezMoi actif={actif} />
-    </div>
-  ) : (
-    <MonUnivers actif={actif} />
+  return MA_MAISON_CATALOGUE ? <MaisonOuUnivers actif={actif} /> : <MonUniversSeul actif={actif} />;
+}
+/** (l'univers d'aujourd'hui, tant que l'interrupteur est éteint) */
+function MonUniversSeul({ actif }: { actif: boolean }) {
+  return <MonUnivers actif={actif} etat={useMonUnivers(actif)} />;
+}
+
+/** Sa pièce du catalogue est-elle choisie ? (`null` le temps de le lire) */
+function useASaPiece(actif: boolean): boolean | null {
+  const [a, setA] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!actif) return;
+    let fini = false;
+    fetch("/api/direct/ma-piece", { cache: "no-store" })
+      .then(async (r) => (r.ok ? ((await r.json()) as { maison?: { scene?: unknown } }) : null))
+      .then((j) => !fini && setA(Boolean(j?.maison?.scene)))
+      .catch(() => !fini && setA(false));
+    return () => {
+      fini = true;
+    };
+  }, [actif]);
+  return a;
+}
+const CARTE_PLUS_TARD = "maison:carte-piece-plus-tard";
+const carteRemise = () => {
+  try {
+    return window.localStorage.getItem(CARTE_PLUS_TARD) === "1";
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * 🏠 « CHOISIS TA PIÈCE », POUR CEUX QUI ONT DÉJÀ UN UNIVERS (`docs/univers/ma-maison.md`, section 3 ; le lot M3). Sa pièce
+ * choisie : elle. Pas encore, et un univers fabriqué avant : il le garde, avec une carte proposée une fois (« Choisir ma
+ * pièce » ; « Plus tard » : un lien discret reste sous son univers). Ni pièce ni univers : « Choisis ta pièce ».
+ */
+export function MaisonOuUnivers({ actif }: { actif: boolean }) {
+  const aSaPiece = useASaPiece(actif);
+  const etat = useMonUnivers(actif);
+  const [choisir, setChoisir] = useState(false);
+  const [plusTard, setPlusTard] = useState(false);
+  useEffect(() => {
+    // (« Plus tard » : retenu sur ce téléphone ; lu après l'affichage, le serveur ne le connaît pas)
+    if (carteRemise()) void Promise.resolve().then(() => setPlusTard(true));
+  }, []);
+  const ancien = etat && etat !== "absent" && etat.etape === "decouverte" && etat.decor ? etat : null;
+  if (aSaPiece === null || etat === null)
+    return (
+      <div className="mm">
+        <div className="cm-fenetre cm-attente mm-attente" aria-hidden="true" />
+      </div>
+    );
+  if (aSaPiece || !ancien || choisir)
+    return (
+      <div className="mm">
+        <MaisonDuCatalogue actif={actif} onRenoncer={!aSaPiece && ancien ? () => setChoisir(false) : undefined} />
+        <EtagereChezMoi actif={actif} />
+      </div>
+    );
+  const remettre = () => {
+    try {
+      window.localStorage.setItem(CARTE_PLUS_TARD, "1");
+    } catch {
+      // (sans stockage : la carte reviendra, ce n'est pas grave)
+    }
+    setPlusTard(true);
+  };
+  return (
+    <MonUnivers
+      actif={actif}
+      etat={etat}
+      carte={
+        plusTard ? (
+          <button type="button" className="mm-carte-lien" data-carte-piece="lien" onClick={() => setChoisir(true)}>
+            {TEXTES_PIECE.carteLien}
+          </button>
+        ) : (
+          <section className="mm-carte" data-carte-piece="carte" aria-label={TEXTES_PIECE.carteTitre}>
+            <b>🏠 {TEXTES_PIECE.carteTitre}</b>
+            <p>{TEXTES_PIECE.carteTexte}</p>
+            <span>
+              <button type="button" className="mm-bouton" onClick={() => setChoisir(true)}>
+                {TEXTES_PIECE.carteOui}
+              </button>
+              <button type="button" className="mm-bouton clair" onClick={remettre}>
+                {TEXTES_PIECE.carteNon}
+              </button>
+            </span>
+          </section>
+        )
+      }
+    />
   );
 }
 
-/** (l'univers d'aujourd'hui, tant que l'interrupteur `MA_MAISON_CATALOGUE` est éteint) */
-function MonUnivers({ actif }: { actif: boolean }) {
-  const etat = useMonUnivers(actif);
+/** (l'univers d'aujourd'hui : pour tous tant que l'interrupteur `MA_MAISON_CATALOGUE` est éteint ; ensuite, pour ceux qui le gardent) */
+function MonUnivers({ actif, etat, carte }: { actif: boolean; etat: ReturnType<typeof useMonUnivers>; carte?: ReactNode }) {
   const { visites } = useMesVisites(actif);
   const pieces = useMesPieces(actif);
   const [page, setPage] = useState(0);
@@ -97,6 +183,7 @@ function MonUnivers({ actif }: { actif: boolean }) {
           </a>
         )}
       </header>
+      {pret && carte}
       {etat === null ? (
         <div className="cm-fenetre cm-attente mm-attente" aria-hidden="true" />
       ) : pret ? (
@@ -176,4 +263,10 @@ export const STYLES_MA_MAISON = `
 .mm-points button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.28);cursor:pointer}
 .mm-points button.la{background:#FF2E9A}
 .mm-points span{margin-left:6px;color:#CDB4C0;font-size:13.5px;font-weight:700}
+.mm-carte{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;background:linear-gradient(135deg,rgba(255,46,154,.22),rgba(255,180,90,.16));border:1px solid rgba(255,214,150,.35)}
+.mm-carte b{font-size:16.5px;color:#FFF4E6}
+.mm-carte p{margin:0;color:#EBD9E2;font-size:14px;line-height:1.45}
+.mm-carte span{display:flex;flex-wrap:wrap;gap:8px}
+.mm-carte .mm-bouton{border:0;cursor:pointer;font-family:inherit}
+.mm-carte-lien{align-self:flex-start;padding:6px 2px;border:0;background:none;color:#FFD3A6;font:inherit;font-size:14px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 `;

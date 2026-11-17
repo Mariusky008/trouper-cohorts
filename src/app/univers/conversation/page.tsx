@@ -2,6 +2,8 @@
 // D'ESSAI, RÉSERVÉE AU PROPRIÉTAIRE (une session d'administrateur), après sa nouvelle figurine (`/univers/figurine`).
 import { redirect } from "next/navigation";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
+import { ADRESSE_CHOISIR_PIECE } from "@/lib/direct/choisis-ta-piece";
+import { creationArretee } from "@/lib/direct/choisis-ta-piece-serveur";
 import { Conversation } from "./conversation";
 
 export const dynamic = "force-dynamic";
@@ -11,5 +13,7 @@ export const metadata = { title: "Ton univers — ClikMe" };
 
 export default async function PageConversation() {
   if (!(await universPermis())) redirect("/admin");
+  // (🏠 lot M3 : Pablito ne fabrique plus d'univers — on choisit sa pièce)
+  if (creationArretee()) redirect(ADRESSE_CHOISIR_PIECE);
   return <Conversation />;
 }

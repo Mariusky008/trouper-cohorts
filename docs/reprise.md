@@ -265,8 +265,13 @@ en une requête), le préchargement, les mesures de vitesse (« ⚡ La vitesse d
 dessous, le pivot), à adresse stable, pris par l'adresse d'essai — section 11.5. **Fait, lot S1 (seconde
 partie)** : les carreaux de la fenêtre et les fentes de l'étagère, tracés à la main sur l'adresse d'essai (la table et
 les lampes : le lot M0) — section 11.6. **Les décisions du soir** (section 12 du cahier, `ma-maison.md`) : les figurines
-sont posées, plus d'image du duo par paire. **Ensuite (S1)** : les calques de chaque figurine, faits une fois, et leur
-pose ; puis **M3** (l'inscription, « Choisis ta pièce ») et **S2** (la conversation).
+sont posées, plus d'image du duo par paire. **Fait, lot S1 (troisième partie)** : les calques de chaque figurine, faits
+une fois (après « C'est moi ! », sinon après la première ouverture), à adresse stable, et leur pose aux deux places
+(`calques-figurine-serveur.ts`, `figurine-calques.ts` ; « Ma maison » peut les prendre pour le centre) — section 11.7.
+**Fait, M3** (`ma-maison.md`, section 14) : « Choisis ta pièce » après « C'est moi ! » et à l'accueil `/univers`
+(l'administrateur : `?piece=1`), Pablito ne fabrique plus (l'interrupteur allumé), la carte pour ceux qui ont déjà un
+univers ; **à enregistrer par le propriétaire avant d'allumer** : la bulle `tuto-univers-6` de la bienvenue. **Ensuite** :
+**S2** (la conversation).
 
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 

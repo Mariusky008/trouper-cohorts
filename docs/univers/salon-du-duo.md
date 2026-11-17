@@ -689,7 +689,50 @@ comprises ; une pièce aux places relevées garde leur lecture ; la scène les d
 reste intact).
 
 **La suite du lot S1** (section 12) : les calques de chaque figurine, faits une fois (`ma-maison.md`, section 4), et
-leur pose aux deux places de la pièce, `CalquesDuo` composé à l'ouverture.
+leur pose aux deux places de la pièce, `CalquesDuo` composé à l'ouverture — fait, section 11.7.
+
+### 11.7 Les calques de chaque figurine, faits une fois, et leur pose (lot S1, troisième partie)
+
+- **D'où** : sa figurine assise dans son fauteuil (sa fiche, `references.assise`, le nouveau style `collection-1`).
+- **La découpe** (`src/lib/direct/calques-figurine-serveur.ts`, `sharp` seulement, aucun moteur d'image) :
+  - **le corps** : la plus grande silhouette seule (les traînées du détourage écartées), recadrée au plus près, la tête
+    d'origine comprise ;
+  - **la tête et ses repères** (sa boîte, le pivot au cou, la bouche, les joues) : relevés une fois par le modèle qui voit
+    s'il est branché (`regarderImage`, une analyse d'image, quelques millièmes d'euro : la tête avec la main si elle
+    touche le visage, jamais le fauteuil), vérifiés (`reperesValides`) ; sinon **estimés par la silhouette** : le crâne
+    (la ligne la plus large du premier tiers), le cou (la plus étroite ensuite, entre 22 % et 55 % de la hauteur, sinon
+    à 40 %), la tête dans la largeur du crâne (pour ne pas emporter les accoudoirs) ;
+  - **le calque de la tête** : ce que sa boîte contient, fondu sur deux points en bas.
+- **Rangés et publiés une fois** : `<habitant>/calques/<empreinte>-corps.png`, `-tete.png` et `.json` ; publiés en WebP
+  à adresse stable (`imageSalon` : le corps en 360 et 720 points, la tête en 180 et 360 — `LARGEURS_CALQUES`, moins de
+  80 Ko). Le `.json` garde les repères (dans le cadre de la figurine : de 0 à 1 sur la boîte du corps) **et les
+  adresses** : ouvrir une conversation ne demande qu'une lecture par figurine. Une nouvelle tenue (une nouvelle image) a
+  une autre empreinte : de nouveaux calques, les anciens restent (un téléphone qui les a encore).
+- **Quand** : après « C'est moi ! » (`POST /api/direct/nouvelle-figurine { action: "valider" }`, après la réponse) ; pour
+  une figurine validée avant, juste après la première ouverture d'une conversation où ils manquent (`aDecouper`,
+  `after()`) ; ou sur demande (ci-dessous).
+- **La pose** (`src/lib/direct/figurine-calques.ts`, partagé) : `poserFigurine(f, place, piece, { tracee, taille })` rend
+  la forme `CalqueFigurine` du contrat (**inchangé**), en fractions de la pièce — la boîte au milieu de la place, à la
+  `taille` voulue (de la tête au sol) ; sur une place relevée (un point d'assise), ce point aux 68 % de sa hauteur
+  (`ANCRE_FAUTEUIL`) ; sur une place tracée (de la tête au sol), le sol de la place ; la largeur suit son rapport et
+  celui de la pièce. **Pour « Ma maison »** (session de l'univers) : `calquesDeFigurine(supabase, h)` puis
+  `poserFigurine(f, centre, piece, { tracee: true })`.
+- **À l'ouverture d'une conversation** (`ouvrirSalon`) : les calques des deux figurines se lisent en même temps que le
+  reste, posés aux deux places à la même taille (`hauteurDuo`) — `scene.calques.a` la mienne, à gauche ; `b` la sienne,
+  à droite. Tant que l'une manque : la scène sans calques. Le téléphone précharge les quatre calques avec la plaque
+  (`imagesDe`, `src/app/salon/ouvrir.ts`).
+- **Sur l'adresse d'essai** : `?avec=<clé>` pose les deux figurines (le `sens` dit vers où chacune se penche ; l'image
+  n'est pas retournée) ; « 🎭 Les calques de ta figurine » (`POST /api/direct/salon { action: "calques" }`, l'habitant ;
+  `src/app/salon/apercu-calques.tsx`) montre le corps, la tête découpée, et les repères dessinés dessus.
+- **Ce qui reste** : regarder la vraie figurine dans la vraie pièce (le propriétaire, sur `/univers/salon`) ; l'ombre au
+  sol et la teinte du moment (`ma-maison.md`, section 4) viendront avec la conversation (S2).
+
+**Les essais** : `scripts/essai-calques-figurine-route.mjs` (sans session, sans figurine du nouveau style ; la traînée
+écartée ; la tête dans la largeur du crâne jusqu'au cou, le pivot, la bouche et les joues ; les fichiers rangés, le corps
+recadré, la tête sans rien du fauteuil ; servis en WebP transparent, gardés un an ; redemandés : rien n'est refait ; à
+l'ouverture : découpés après la réponse, puis posés aux deux places, à la même taille, la mienne à gauche ; une nouvelle
+tenue) et `scripts/navigateur/salon-ouvrir.mjs` (la première ouverture les découpe, la suivante les pose, la tête vit ;
+l'aperçu des calques).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

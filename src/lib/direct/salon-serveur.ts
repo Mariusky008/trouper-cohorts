@@ -8,12 +8,14 @@
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
-import { assisesDe, emplacementsValides, momentDuoDe, pieceDuoDe, pieceDuoValide, PLACES_PAR_DEFAUT, type EmplacementsDuo, type MomentDuo, type PieceDuo } from "./pieces-duo";
+import { assisesDe, emplacementsValides, hauteurDuo, momentDuoDe, pieceDuoDe, pieceDuoValide, PLACES_PAR_DEFAUT, type EmplacementsDuo, type MomentDuo, type PieceDuo } from "./pieces-duo";
 import { depotDans } from "./ma-figurine-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
-import type { OuvertureSalon, SceneSalon } from "./salon";
-import { filAvec } from "./talkie-serveur";
+import type { CalqueFigurine, OuvertureSalon, SceneSalon } from "./salon";
+import { filAvec, hDeCle } from "./talkie-serveur";
 import { vivantAvec } from "./vivant-serveur";
+import { calquesDeFigurine } from "./calques-figurine-serveur";
+import { poserFigurine, type FigurineLocale } from "./figurine-calques";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 
@@ -63,14 +65,38 @@ export async function ouvrirSalon(
   moi: Habitant,
   cle: unknown,
   maintenant = new Date(),
-): Promise<{ ouverture?: OuvertureSalon; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string; error?: string; statut?: number }> {
-  const [f, v, scene] = await Promise.all([filAvec(supabase, moi, cle), vivantAvec(supabase, moi, cle).catch(() => null), sceneDeLaPiece(supabase, PIECE_PAR_DEFAUT, momentDuoDe(heureDeParis(maintenant))).catch(() => null)]);
+): Promise<{ ouverture?: OuvertureSalon; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string; aDecouper?: string[]; error?: string; statut?: number }> {
+  // (🎭 les calques des deux figurines se lisent en même temps que le reste : une lecture chacune)
+  const hP = hDeCle(supabase, cle).catch(() => null);
+  const [f, v, scene, h, mienne, sienne] = await Promise.all([
+    filAvec(supabase, moi, cle),
+    vivantAvec(supabase, moi, cle).catch(() => null),
+    sceneDeLaPiece(supabase, PIECE_PAR_DEFAUT, momentDuoDe(heureDeParis(maintenant))).catch(() => null),
+    hP,
+    calquesDeFigurine(supabase, moi.id, { fabriquer: false }).catch(() => null),
+    hP.then((x) => (x ? calquesDeFigurine(supabase, x, { fabriquer: false }) : null)).catch(() => null),
+  ]);
   if (!f.fil) return { error: f.error, statut: f.statut };
+  // (posées aux deux places ; celles qui manquent sont découpées après la réponse)
+  const calques = scene && mienne && sienne ? calquesPoses(scene, mienne, sienne) : null;
+  const aDecouper = [...(mienne ? [] : [moi.id]), ...(sienne || !h ? [] : [h])];
   return {
-    ouverture: { cle: f.fil.cle, fil: f.fil, vivant: v?.vivant ?? null, scene },
+    ouverture: { cle: f.fil.cle, fil: f.fil, vivant: v?.vivant ?? null, scene: scene && calques ? { ...scene, calques } : scene },
     ...(v?.aPreparer ? { aPreparer: v.aPreparer } : {}),
     ...(v?.aNoter ? { aNoter: v.aNoter } : {}),
+    ...(aDecouper.length ? { aDecouper } : {}),
   };
+}
+
+/**
+ * 🪑 Les deux figurines posées aux deux places de la pièce, à la même taille (`hauteurDuo`) : `a`, la mienne, à gauche ;
+ * `b`, la sienne, à droite. (Les places de la scène sont des points d'assise.)
+ */
+export function calquesPoses(scene: Pick<SceneSalon, "places" | "plaque">, mienne: FigurineLocale, sienne: FigurineLocale): { a: CalqueFigurine; b: CalqueFigurine } {
+  const [gauche, droite] = [...scene.places].sort((p, q) => p.x - q.x);
+  const piece = { largeur: scene.plaque.largeur, hauteur: scene.plaque.hauteur };
+  const taille = hauteurDuo(scene.places);
+  return { a: poserFigurine(mienne, gauche, piece, { tracee: false, taille }), b: poserFigurine(sienne, droite, piece, { tracee: false, taille }) };
 }
 
 // ─── ⚡ LA VITESSE DU SALON (section 7.6) ─────────────────────────────────────────────────────────────────────────────

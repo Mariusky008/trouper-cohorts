@@ -10,7 +10,8 @@
  *     apparaît ; « C'est moi ! », « Retoucher » (avec ses mots, ou une idée toute prête), « Elle ne me ressemble pas » ;
  *     ses essais d'avant en petit (on revient à l'un d'eux d'un toucher) ;
  *   · VALIDÉE : « Ta figurine est prête ! », ses autres poses arrivent (bouche ouverte, debout), « Fais-la parler » ;
- *     « Découvrir ton univers » mène à la conversation avec Pablito (lot 3, `/univers/conversation`).
+ *     « Découvrir ton univers » mène à la conversation avec Pablito (lot 3, `/univers/conversation`) — ou, avec `piece`
+ *     (`docs/univers/ma-maison.md`, section 3 ; le lot M3), « 🏠 Choisis ta pièce ».
  *
  * Sans voix : Pablito ne parle qu'avec ses enregistrements, et il n'y en a pas encore pour cet écran.
  *
@@ -20,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { imageVisage, type Visage } from "@/lib/direct/guide";
 import { IDEES_RETOUCHE, VILLE_MAX, villeEcrite, type EtatNouvelleFigurine, type PropositionVue } from "@/lib/direct/nouvelle-figurine";
 import { RETOUCHE_FIGURINE_MAX } from "@/lib/direct/perso-consignes";
+import { ADRESSE_CHOISIR_PIECE, TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
 
 const ROUTE = "/api/direct/nouvelle-figurine";
 
@@ -52,7 +54,7 @@ async function photoReduite(f: File): Promise<string> {
   }
 }
 
-export function NouvelleFigurine() {
+export function NouvelleFigurine({ piece = false }: { piece?: boolean }) {
   const [etat, setEtat] = useState<EtatNouvelleFigurine | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -112,7 +114,7 @@ export function NouvelleFigurine() {
       ) : etape === "decouverte" ? (
         <Decouverte etat={etat} occupe={occupe} faire={faire} />
       ) : (
-        <Validee etat={etat} onRefaire={() => setRefaireDepuisLeDebut(true)} />
+        <Validee etat={etat} piece={piece} onRefaire={() => setRefaireDepuisLeDebut(true)} />
       )}
       {erreur && etat && (
         <p className="nf-erreur" role="alert">
@@ -371,7 +373,7 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatNouvelleFigurine; occup
 }
 
 // ─── validée ──────────────────────────────────────────────────────────────────────────────────────
-function Validee({ etat, onRefaire }: { etat: EtatNouvelleFigurine; onRefaire: () => void }) {
+function Validee({ etat, piece, onRefaire }: { etat: EtatNouvelleFigurine; piece: boolean; onRefaire: () => void }) {
   const f = etat.figurine;
   if (!f?.images.assise) return <p className="nf-centre">Un instant…</p>;
   return (
@@ -390,10 +392,22 @@ function Validee({ etat, onRefaire }: { etat: EtatNouvelleFigurine; onRefaire: (
           </div>
         )
       )}
-      <p className="nf-suite">Maintenant, j’aimerais découvrir ce qui fait ton univers…</p>
-      <a className="nf-bouton nf-vers" href="/univers/conversation">
-        Découvrir ton univers
-      </a>
+      {piece ? (
+        // (🏠 lot M3 : Pablito ne fabrique plus l'univers — on choisit sa pièce, et on arrive chez soi)
+        <>
+          <p className="nf-suite">{TEXTES_PIECE.suite}</p>
+          <a className="nf-bouton nf-vers" href={ADRESSE_CHOISIR_PIECE} data-suite="piece">
+            {TEXTES_PIECE.bouton}
+          </a>
+        </>
+      ) : (
+        <>
+          <p className="nf-suite">Maintenant, j’aimerais découvrir ce qui fait ton univers…</p>
+          <a className="nf-bouton nf-vers" href="/univers/conversation">
+            Découvrir ton univers
+          </a>
+        </>
+      )}
       <button type="button" className="nf-lien" onClick={onRefaire}>
         Refaire ma figurine
       </button>

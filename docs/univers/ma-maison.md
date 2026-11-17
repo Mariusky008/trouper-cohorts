@@ -187,6 +187,11 @@ serveur, avec `sharp` (quelques secondes, aucun appel au moteur d'image) :
 C'est exactement la forme `CalqueFigurine` du contrat commun (`src/lib/direct/salon.ts`) : **le contrat ne change
 pas**. Ce qui change, c'est d'où viennent les calques : de la figurine, et non plus de la découpe d'une image du duo.
 
+**Fait (lot S1, `salon-du-duo.md`, section 11.7)** : `calquesDeFigurine(supabase, h)`
+(`src/lib/direct/calques-figurine-serveur.ts`) rend les calques de sa figurine, à adresse stable, dans le cadre de la
+figurine ; `poserFigurine(f, centre, piece, { tracee: true })` (`src/lib/direct/figurine-calques.ts`) les pose au
+centre de sa maison, dans la forme `CalqueFigurine`.
+
 **La pose** :
 
 - **chez soi** : au `centre` du relevé en largeur, à l'`echelle` de la pièce, de face ;
@@ -275,7 +280,7 @@ une animation.
 | **S1 — Les calques** (salon-du-duo.md, section 9, modifié) | les calques de chaque figurine (section 4) ; leur pose aux places et au centre ; `CalquesDuo` composé à l'ouverture | messages et bienvenue | S0 |
 | **M1 — La maison** ✅ | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce — fait (section 13), derrière l'interrupteur | univers | M0, S1 |
 | **M2 — La maison qui se remplit** | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
-| **M3 — L'inscription** | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers | messages et bienvenue | M0 |
+| **M3 — L'inscription** ✅ | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers — fait (section 14), derrière l'interrupteur | messages et bienvenue | M0 |
 | **M4 — Découvrir** | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
 | **M5 — Les visites, la suite** | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
 
@@ -337,4 +342,42 @@ d'ici là, l'onglet garde l'univers d'aujourd'hui.
 **À savoir** : le panorama fait 1024 pixels de haut ; en plein écran sur un iPhone (844 points de haut, 3 pixels par
 point), il est agrandi environ 2,5 fois. S'il paraît flou sur les vraies images, on pourra faire chaque partie en plus
 grand (lot M0) ou réduire un peu la hauteur de la scène.
+
+---
+
+## 14. Le lot M3 : « Choisis ta pièce », ce qui est fait (16 novembre 2026)
+
+Derrière l'interrupteur `MA_MAISON_CATALOGUE` (éteint). **D'ici là, l'administrateur l'essaie en le demandant**, sur son
+téléphone d'habitant : `/univers/figurine?piece=1`, `/univers?piece=1` ; sans `?piece=1`, son parcours et celui de tout
+le monde ne changent pas. (Le module : `src/lib/direct/choisis-ta-piece.ts` ; côté serveur, `choisis-ta-piece-serveur.ts`.)
+
+- **Après « C'est moi ! »** (`/univers/figurine`) : « Maintenant, choisis ta pièce : ta figurine y sera chez elle. » et
+  « 🏠 Choisis ta pièce » — au lieu de « Découvrir ton univers » (la conversation avec Pablito). Le bouton mène au
+  choix : l'adresse d'essai `/univers/maison` aujourd'hui ; l'onglet « Ma maison » (`/collection#maison`) une fois
+  l'interrupteur allumé. Le choix lui-même est celui du lot M1 (les neuf, dans l'ordre de l'âge ; un toucher la montre
+  en grand ; « Je m'installe ici ») ; on arrive chez soi, sa figurine au centre, et la phrase « Ta maison se remplit
+  toute seule… ». Le premier proche : inchangé (l'onglet « Messages »).
+- **L'accueil `/univers`** (et `/univers/monde`) : sa figurine faite, sans univers (ou l'univers pas encore créé) —
+  « Ta pièce t'attend », « 🏠 Choisis ta pièce », au lieu de « Parler avec Pablito » et « Créer mon univers ». Sans
+  figurine : « D'abord ta figurine, assise dans son fauteuil. Ensuite, tu choisis ta pièce. »
+- **Pablito ne fabrique plus**, l'interrupteur allumé : `/univers/conversation` renvoie au choix de la pièce ;
+  `POST /api/direct/univers { action: "creer" }` répond 410 (« Pablito ne fabrique plus d'univers : choisis ta
+  pièce. »). Les retouches d'un univers déjà fabriqué restent possibles.
+- **Ceux qui ont déjà un univers fabriqué** (l'onglet « Ma maison », l'interrupteur allumé ; à essayer aujourd'hui sur
+  `/univers/maison?onglet=1`) : ils le gardent, avec la carte « 🏠 Nouveau : choisis ta pièce » (« Une pièce tout autour
+  de toi… Ton univers reste à toi tant que tu n'as pas choisi. ») — « Choisir ma pièce » ouvre le choix (avec ✕ : on
+  revient à son univers) ; « Plus tard » : la carte ne revient plus sur ce téléphone, un lien discret « 🏠 Choisir une
+  pièce » reste sous son univers. Sa pièce choisie, l'onglet la montre. Leurs objets suivront avec le lot M2 (les
+  emplacements sont les mêmes).
+- **La bienvenue** : le chemin montré devient « Ton selfie › Ta figurine › Ta pièce › Tes proches », l'interrupteur
+  allumé. **À enregistrer par le propriétaire avant d'allumer** : la bulle de Pablito `tuto-univers-6` dit encore « …
+  puis on discute cinq minutes, et je dessine les premiers endroits de ton univers ». Proposition : « Par toi ! Un
+  selfie pour ta figurine, puis tu choisis ta pièce, et elle se remplit avec ce que tu gardes. » (jamais de voix de
+  synthèse : elle reste telle quelle jusqu'à son enregistrement).
+
+**Les essais** : `scripts/navigateur/choisis-ta-piece.mjs` (iPhone : sans `?piece=1`, le parcours d'aujourd'hui ; après
+« C'est moi ! », « Choisis ta pièce » et plus la conversation ; l'accueil ; le choix sans ✕, le hangar d'abord pour 16
+ans ; chez elle ; un ancien univers : la carte, « Plus tard » retenu, le lien, ✕, le salon d'abord pour un adulte, sa
+pièce, plus de carte). Toujours verts : `nouvelle-figurine.mjs`, `univers-monde.mjs`, `visite-univers.mjs`,
+`ma-maison-catalogue.mjs`, `tuto.mjs`.
 

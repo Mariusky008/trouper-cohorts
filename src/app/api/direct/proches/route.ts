@@ -80,6 +80,7 @@ import { apresVideo, depotVideo, envoyerVideo, videosOuvertes } from "@/lib/dire
 import { effacerEtagere, etagereAllumee, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 import { ouvrirSalon } from "@/lib/direct/salon-serveur";
+import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
@@ -108,6 +109,8 @@ export async function GET(request: Request) {
     if (a) after(() => preparerAparte(supabase, a, moi).catch(() => undefined));
     const h = r.aNoter;
     if (h) after(() => preparerNotes(supabase, moi.id, h).catch(() => 0));
+    // 🎭 (lot S1) une figurine sans ses calques : découpée après la réponse, pour la prochaine ouverture
+    for (const id of r.aDecouper ?? []) after(() => calquesDeFigurine(supabase, id).catch(() => null));
     const o = r.ouverture;
     return NextResponse.json({ ok: true, ouverture: { ...o, fil: { ...o.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes() } } }, { headers: sansCache });
   }

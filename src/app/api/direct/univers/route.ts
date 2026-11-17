@@ -16,6 +16,8 @@ import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { changerAmbiance, etatUnivers, fabriquerUnivers, lancerCreation, mesurerSaFigurine, retoucherUnivers, revenirUnivers } from "@/lib/direct/univers-creation-serveur";
 import { fabriquerDecorDeSaison } from "@/lib/direct/saison-serveur";
+import { TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
+import { creationArretee } from "@/lib/direct/choisis-ta-piece-serveur";
 
 export const dynamic = "force-dynamic";
 // (le décor, puis l'image vedette : une minute environ chacun, après la réponse)
@@ -47,7 +49,10 @@ export async function POST(request: Request) {
   const h = moi.id;
   const r =
     p?.action === "creer"
-      ? await lancerCreation(supabase, h)
+      ? // (🏠 lot M3 : une fois l'interrupteur allumé, Pablito ne fabrique plus d'univers — on choisit sa pièce)
+        creationArretee()
+        ? { error: TEXTES_PIECE.plusDeCreation, statut: 410 }
+        : await lancerCreation(supabase, h)
       : p?.action === "retoucher"
         ? await retoucherUnivers(supabase, h, p.texte)
         : p?.action === "revenir"
