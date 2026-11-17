@@ -105,6 +105,9 @@ const STYLE = `
 .sc-stage>*{position:absolute}
 .sc-plaque{inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none}
 .sc-fig{pointer-events:none;will-change:transform}
+.sc-ombre{aspect-ratio:5/1;transform:translate(-50%,-62%);border-radius:50%;background:radial-gradient(closest-side,rgba(20,8,16,.5),rgba(20,8,16,.22) 60%,rgba(20,8,16,0));pointer-events:none}
+.sc-stage[data-moment="soir"] .sc-fig{filter:sepia(.16) saturate(1.12) brightness(.97)}
+.sc-stage[data-moment="nuit"] .sc-fig{filter:brightness(.74) saturate(.82) hue-rotate(-8deg)}
 .sc-calque{position:absolute;overflow:hidden}
 .sc-calque>img{position:absolute;display:block;max-width:none;user-select:none;-webkit-user-drag:none}
 .sc-tete{position:absolute;pointer-events:none;will-change:transform}
@@ -166,6 +169,8 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
   const secoueur = elt("div", "sc-secoueur");
   const camera = elt("div", "sc-camera");
   const stage = elt("div", "sc-stage");
+  // (lot S2 : les figurines prennent la teinte du moment — plus chaude le soir, plus sombre la nuit)
+  if (o.moment) stage.dataset.moment = o.moment;
   const plaque = elt("img", "sc-plaque");
   plaque.alt = "";
   plaque.decoding = "async";
@@ -198,6 +203,11 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     if (!f) continue;
     CALQUES[q] = { c: f.calque, sens: f.sens };
     const corps = f.calque.corps.boite;
+    // (lot S2 : une ombre au sol, sous le fauteuil — elle reste au sol quand la figurine bouge)
+    const ombre = elt("div", "sc-ombre");
+    ombre.dataset.ombre = q;
+    Object.assign(ombre.style, { left: pc(corps[0] + corps[2] / 2), top: pc(corps[1] + corps[3]), width: pc(corps[2] * 0.82) });
+    stage.append(ombre);
     const tete = f.calque.tete.boite;
     const u = union(corps, tete);
     const fig = elt("div", "sc-fig");

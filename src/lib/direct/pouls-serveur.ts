@@ -8,9 +8,11 @@
  *   millisecondes, où `battre` l'a noté dans `fils/<paire>/pouls.json` ; le salon ne relit la conversation que si
  *   ce numéro a changé ;
  * - `la` : l'autre est là (ClikMe ouvert dans les 2 min 30, s'il se montre) ; sinon `vu`, l'heure de sa dernière visite ;
- * - `ecrit` : il écrit (« … » au-dessus de sa figurine) — ce qu'il prépare, redit toutes les 5 s (`prepare.json`).
+ * - `ecrit` : il écrit (« … » au-dessus de sa figurine) — ce qu'il prépare, redit toutes les 5 s (`prepare.json`) ;
+ * - 🚪 (section 4.13) `piece` : la pièce du duo ; `invitation` : celle où il m'invite ; `refus` : il a dit « Pas
+ *   maintenant » à la mienne (`salon-serveur.ts`, `piece.json`).
  *
- * Quatre petites lectures en parallèle ; qui parle à qui est gardé une minute en mémoire (pas de relecture des proches
+ * Cinq petites lectures en parallèle ; qui parle à qui est gardé une minute en mémoire (pas de relecture des proches
  * à chaque battement).
  *
  * FICHIER SERVEUR.
@@ -21,12 +23,14 @@ import { ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { LA_MS, cheminLa, cheminReglages, hDeCle, pairDe, qui8, seParlent } from "./talkie-serveur";
 import { cheminPrepare } from "./vivant-serveur";
 import { ENREGISTRE_MS } from "./vivant";
+import { cheminPieceDuo, etatPieceDuo, type FichePieceDuo } from "./salon-serveur";
+import type { PieceDuo } from "./pieces-duo";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 export const cheminPouls = (pair: string) => `fils/${pair}/pouls.json`;
 
 /** Le pouls, tel que le téléphone le lit. */
-export type Pouls = { n: number; la: boolean; ecrit?: true; vu?: string };
+export type Pouls = { n: number; la: boolean; ecrit?: true; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; refus?: true };
 
 const DUO_MS = 60_000;
 const duos = new Map<string, { h: string; pair: string; jusqua: number }>();
@@ -48,17 +52,18 @@ async function duoDe(supabase: Supabase, moi: Habitant, cle: unknown): Promise<{
 export async function poulsAvec(supabase: Supabase, moi: Habitant, cle: unknown, maintenant = Date.now()): Promise<{ pouls?: Pouls; error?: string; statut?: number }> {
   const d = await duoDe(supabase, moi, cle);
   if ("error" in d) return d;
-  const [p, la, reglages, prepare] = await Promise.all([
+  const [p, la, reglages, prepare, piece] = await Promise.all([
     lireJson<{ n?: number }>(supabase, cheminPouls(d.pair)),
     lireJson<{ le?: number }>(supabase, cheminLa(d.h)),
     lireJson<{ presence?: boolean }>(supabase, cheminReglages(d.h)),
     lireJson<Record<string, number>>(supabase, cheminPrepare(d.pair)),
+    lireJson<FichePieceDuo>(supabase, cheminPieceDuo(d.pair)),
   ]);
   const visible = reglages.presence !== false;
   const le = Number(la.le) || 0;
   const estLa = visible && maintenant - le < LA_MS;
   const ecrit = maintenant - (Number(prepare[qui8(d.h)]) || 0) < ENREGISTRE_MS;
-  return { pouls: { n: Number(p.n) || 0, la: estLa, ...(ecrit ? { ecrit: true as const } : {}), ...(!estLa && visible && le ? { vu: new Date(le).toISOString() } : {}) } };
+  return { pouls: { n: Number(p.n) || 0, la: estLa, ...(ecrit ? { ecrit: true as const } : {}), ...(!estLa && visible && le ? { vu: new Date(le).toISOString() } : {}), ...etatPieceDuo(piece, qui8(moi.id), maintenant) } };
 }
 
 /** 💓 Un événement dans la conversation avec ce proche (un message, un mème, un geste, un message effacé) : le pouls bat. */

@@ -24,7 +24,9 @@ import { useEffect, useRef, useState } from "react";
 import { creerScene } from "./moteur";
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
 import { aRejouer, derniersDeChacun, dureeDite, heureDite, nomDuJour, parJour, reactionAuTexte, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
-import { autreQue, miseEnSceneDe, type OptionsScene, type OuvertureSalon, type Qui, type Scene } from "@/lib/direct/salon";
+import { autreQue, miseEnSceneDe, type CataloguePieces, type Flamme, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
+import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
+import { prochainRendezVous } from "./bulles";
 import { texteDuMessage, type Fil, type MemeFil, type MessageFil } from "@/lib/direct/talkie";
 
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
@@ -68,6 +70,12 @@ export async function chargerSalon(cle: string, surFlou: (flou: string) => void)
     pret: { plaque: sc.plaque.src, largeur: sc.plaque.largeur, hauteur: sc.plaque.hauteur, figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {} },
   };
 }
+
+/** Le nom d'une pièce, avec son emoji (« 🌿 La terrasse »). */
+const nomDePiece = (p: PieceDuo) => {
+  const x = PIECES_DUO.find((y) => y.cle === p);
+  return x ? `${x.emoji} ${x.nom}` : p;
+};
 
 /** L'autre figurine réagit à ce qui est dit (la maquette, telle quelle). `la` : l'autre est là (sinon elle somnole). */
 function reagir(s: Scene, q: Qui, texte: string, la: boolean) {
@@ -184,15 +192,36 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   // 🚪 (l'arrivée) ce qu'il a laissé depuis ma dernière visite, rejoué un à un
   const [rejoue, setRejoue] = useState<ARejouer | null>(null);
   const [arriveeFaite, setArriveeFaite] = useState(false);
+  // 🚪 (la pièce du duo) celle où l'on est ; les pièces prêtes (préchargées) ; la feuille du choix ; l'invitation reçue
+  const [sceneVue, setSceneVue] = useState<SceneSalon | null>(null);
+  const [catalogue, setCatalogue] = useState<CataloguePieces | null>(null);
+  const [choix, setChoix] = useState<"depart" | "changer" | null>(null);
+  const [invitation, setInvitation] = useState<PieceDuo | null>(null);
+  // 🔥 leurs jours de suite
+  const [flamme, setFlamme] = useState<Flamme | null>(null);
+  const [flammeMonte, setFlammeMonte] = useState(0);
+  const laRef = useRef(false);
+  const sceneVueRef = useRef<SceneSalon | null>(null);
+  const catalogueRef = useRef<CataloguePieces | null>(null);
+  const monInvitation = useRef<PieceDuo | null>(null);
+  const invitationsVues = useRef(new Set<string>());
+  // (mes changements de pièce : leur nombre, et ceux en cours — un pouls parti avant ou pendant l'un d'eux ne dit pas la pièce)
+  const mesChangements = useRef({ n: 0, enCours: 0 });
   const passer = useRef<(() => void) | null>(null);
   const feuilleOuverte = useRef(false);
   const lesMessages = useRef<MessageFil[]>([]);
   const prepare = useRef(0);
+  const prenomRef = useRef("");
   const cadre = useRef<HTMLDivElement>(null);
   const ici = useRef<HTMLDivElement>(null);
   const liste = useRef<HTMLDivElement>(null);
   const scene = useRef<Scene | null>(null);
   const minuteToast = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const arriveeFaiteRef = useRef(false);
+  const allerDansRef = useRef<(p: PieceDuo) => Promise<boolean>>(async () => false);
+  const flammeRef = useRef<(q: "moi" | "lui") => void>(() => undefined);
+  const flammeCourante = useRef<Flamme | null>(null);
+  const montrerRef = useRef<(t: string, ms?: number) => void>(() => undefined);
 
   // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
   useEffect(() => {
@@ -206,6 +235,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           setMessages(c.ouverture.fil.messages);
           setMemes(c.ouverture.fil.memes ?? []);
           setLa(c.ouverture.fil.la);
+          setSceneVue(c.ouverture.scene);
+          setFlamme(c.ouverture.flamme ?? null);
           setNonLus(c.ouverture.fil.messages.filter((m) => m.nouveau && !m.moi).length);
         }
       });
@@ -215,64 +246,120 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   }, [cle]);
 
   const pret = chargement.etat === "pret" ? chargement : null;
-  // 🎬 la scène, une fois la pièce prête ; ses temps mesurés (une fois par ouverture)
+  // 🎬 la scène de la pièce où l'on est (refaite quand on change de pièce : la plaque est déjà préchargée)
   useEffect(() => {
     const el = ici.current;
-    if (!pret || !el) return;
+    if (!sceneVue || !el) return;
+    const c = sceneVue.calques;
     const s = creerScene(el, {
-      ...pret.pret,
+      plaque: sceneVue.plaque.src,
+      largeur: sceneVue.plaque.largeur,
+      hauteur: sceneVue.plaque.hauteur,
+      // (ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche ; la teinte du moment)
+      figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {},
+      moment: sceneVue.moment,
       // (les bulles : au-dessus des têtes, là où la caméra les montre — écrit dans le style, jamais un rendu par image)
       surAncres: (a) => {
-        const c = cadre.current;
-        if (!c) return;
-        const h = c.clientHeight;
-        const w = c.clientWidth;
-        c.style.setProperty("--b-moi", `${Math.max(60, h - a.moi.y + 6)}px`);
-        c.style.setProperty("--b-autre", `${Math.max(60, h - a.autre.y + 6)}px`);
-        c.style.setProperty("--q-moi", `${Math.max(14, Math.min(150, a.moi.x - 16))}px`);
-        c.style.setProperty("--q-autre", `${Math.max(14, Math.min(150, w - a.autre.x - 16))}px`);
-        c.dataset.ancres = "1";
+        const cad = cadre.current;
+        if (!cad) return;
+        const h = cad.clientHeight;
+        const w = cad.clientWidth;
+        cad.style.setProperty("--b-moi", `${Math.max(60, h - a.moi.y + 6)}px`);
+        cad.style.setProperty("--b-autre", `${Math.max(60, h - a.autre.y + 6)}px`);
+        cad.style.setProperty("--q-moi", `${Math.max(14, Math.min(150, a.moi.x - 16))}px`);
+        cad.style.setProperty("--q-autre", `${Math.max(14, Math.min(150, w - a.autre.x - 16))}px`);
+        cad.dataset.ancres = "1";
       },
     });
     scene.current = s;
+    sceneVueRef.current = sceneVue;
+    // (une pièce de plus : s'il n'est pas là et que l'arrivée est passée, sa figurine somnole déjà)
+    if (!laRef.current && arriveeFaiteRef.current) s.figurine("autre").endormir();
+    try {
+      localStorage.setItem(`salon:piece:${cle}`, sceneVue.piece);
+    } catch {
+      // (sans stockage : la phrase « ✨ … vous a installés » pourra revenir, ce n'est pas grave)
+    }
+    return () => {
+      s.detruire();
+      if (scene.current === s) scene.current = null;
+    };
+  }, [sceneVue, cle]);
+
+  // ⏱️ ses temps mesurés, une fois par ouverture ; 🚪 l'arrivée : ce qu'il a laissé depuis ma dernière visite, rejoué un à
+  // un (12 s au plus ; un toucher passe la suite), puis, s'il n'est pas là, sa figurine somnole
+  useEffect(() => {
+    if (!pret) return;
     const raf = requestAnimationFrame(() => {
       marquer("salon:pret");
       setTemps(mesures());
       envoyerMesures(pret.deja);
     });
-    // 🚪 l'arrivée : ce qu'il a laissé depuis ma dernière visite, rejoué un à un (12 s au plus ; un toucher passe la suite),
-    // puis, s'il n'est pas là, sa figurine somnole
     const fil = pret.ouverture.fil;
     const suite = aRejouer(fil.messages, fil.memes ?? []);
     const minutes: ReturnType<typeof setTimeout>[] = [];
     const fin = () => {
       minutes.forEach(clearTimeout);
       passer.current = null;
+      arriveeFaiteRef.current = true;
       setRejoue(null);
       setArriveeFaite(true);
-      if (!fil.la && !s.figurine("autre").dort) s.figurine("autre").endormir();
+      const s = scene.current;
+      if (s && !laRef.current && !s.figurine("autre").dort) s.figurine("autre").endormir();
     };
     let t = 700;
     for (const x of suite) {
       minutes.push(
         setTimeout(() => {
           setRejoue(x);
+          const s = scene.current;
+          if (!s) return;
           s.figurine("autre").parler(tempsDeParole(x.texte));
-          minutes.push(setTimeout(() => reagir(s, "moi", x.texte, true), 450));
+          minutes.push(setTimeout(() => scene.current === s && reagir(s, "moi", x.texte, true), 450));
         }, t),
       );
       t += x.ms;
     }
     minutes.push(setTimeout(fin, suite.length ? t : 400));
     passer.current = suite.length ? fin : null;
+    // (✨ l'autre nous a installés ailleurs depuis ma dernière visite)
+    const sc = pret.ouverture.scene;
+    let avant: string | null = null;
+    try {
+      avant = localStorage.getItem(`salon:piece:${cle}`);
+    } catch {
+      avant = null;
+    }
+    if (sc?.installePar === "autre" && avant && avant !== sc.piece) minutes.push(setTimeout(() => montrerRef.current(`✨ ${fil.lui.prenom} vous a installés · ${nomDePiece(sc.piece)}`, 3200), 300));
     return () => {
       cancelAnimationFrame(raf);
       minutes.forEach(clearTimeout);
       passer.current = null;
-      s.detruire();
-      scene.current = null;
     };
-  }, [pret]);
+  }, [pret, cle]);
+
+  // 🚪 LES PIÈCES OÙ S'INSTALLER : demandées après l'ouverture, leurs plaques préchargées une à une (toute pièce s'ouvre
+  // ensuite tout de suite) ; la toute première fois, « Où vous installez-vous ? »
+  useEffect(() => {
+    if (!pret) return;
+    let fini = false;
+    const t = setTimeout(async () => {
+      const r = await fetch(`/api/direct/salon?pieces=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
+      const j = r?.ok ? ((await r.json().catch(() => null)) as { catalogue?: CataloguePieces } | null) : null;
+      if (fini || !j?.catalogue) return;
+      catalogueRef.current = j.catalogue;
+      setCatalogue(j.catalogue);
+      if (pret.ouverture.scene && pret.ouverture.scene.choisie === false) setChoix((c) => c ?? "depart");
+      for (const p of j.catalogue.pieces) {
+        if (fini) return;
+        await prechargerImage(p.scene.plaque);
+      }
+    }, 600);
+    return () => {
+      fini = true;
+      clearTimeout(t);
+    };
+  }, [pret, cle]);
 
   // 🟢 je suis là (toutes les minutes, page visible) : l'autre le voit
   useEffect(() => {
@@ -320,12 +407,14 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         setTimeout(() => scene.current === s && reagir(s, "moi", texteDeBulle(dernier), true), 450);
       }
       if (neufs.length && !feuilleOuverte.current) setNonLus((n) => n + neufs.length);
+      if (neufs.length) flammeRef.current("lui");
     };
     const battre = async () => {
       minute = null;
       if (fini || document.visibilityState !== "visible") return;
+      const avant = mesChangements.current.n;
       const r = await fetch(`/api/direct/proches?pouls=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
-      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string } | null) : null;
+      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; refus?: boolean } | null) : null;
       if (fini) return;
       if (p) {
         const n = Number(p.n) || 0;
@@ -347,6 +436,29 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           } else if (!s.figurine("autre").dort) s.figurine("autre").endormir();
         }
         laConnu = estLa;
+        laRef.current = estLa;
+        // 🚪 la pièce a changé (il a dit « Venir », ou nous a installés ailleurs pendant mon absence)
+        const ici = sceneVueRef.current?.piece;
+        const aJour = mesChangements.current.n === avant && !mesChangements.current.enCours;
+        if (aJour && p.piece && ici && p.piece !== ici) {
+          const dit = monInvitation.current === p.piece ? `✨ ${prenomRef.current} vous rejoint · ${nomDePiece(p.piece)}` : `✨ ${prenomRef.current} vous a installés · ${nomDePiece(p.piece)}`;
+          monInvitation.current = null;
+          void allerDansRef.current(p.piece).then((ok) => ok && montrerRef.current(dit, 3200));
+        }
+        // 🚪 il m'invite ailleurs ; il a dit « Pas maintenant » à mon invitation
+        if (p.invitation && !invitationsVues.current.has(p.invitation)) {
+          invitationsVues.current.add(p.invitation);
+          setInvitation(p.invitation);
+        }
+        // (plus d'invitation en cours — il a répondu, elle a expiré : la suivante, même vers la même pièce, se montrera)
+        if (!p.invitation) {
+          setInvitation(null);
+          invitationsVues.current.clear();
+        }
+        if (p.refus && monInvitation.current) {
+          monInvitation.current = null;
+          montrerRef.current(`${prenomRef.current} préfère rester ici pour l’instant`, 3200);
+        }
         if (connu === null ? n > dernierConnu + 1500 : n !== connu) await relire();
         connu = n;
       }
@@ -393,9 +505,119 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     if (minuteToast.current) clearTimeout(minuteToast.current);
     minuteToast.current = setTimeout(() => setToast(""), ms);
   };
+  useEffect(() => {
+    montrerRef.current = montrer;
+    laRef.current = la;
+    allerDansRef.current = allerDans;
+    flammeRef.current = monterLaFlamme;
+  });
+  useEffect(() => {
+    flammeCourante.current = flamme;
+  }, [flamme]);
+
+  /** 🚪 Aller dans une pièce (sa scène est dans le catalogue, sa plaque préchargée : tout de suite). */
+  async function allerDans(piece: PieceDuo): Promise<boolean> {
+    let cat = catalogueRef.current;
+    if (!cat?.pieces.some((x) => x.cle === piece)) {
+      const r = await fetch(`/api/direct/salon?pieces=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
+      const j = r?.ok ? ((await r.json().catch(() => null)) as { catalogue?: CataloguePieces } | null) : null;
+      if (j?.catalogue) {
+        cat = j.catalogue;
+        catalogueRef.current = cat;
+        setCatalogue(cat);
+      }
+    }
+    const p = cat?.pieces.find((x) => x.cle === piece);
+    if (!p) return false;
+    await prechargerImage(p.scene.plaque);
+    setSceneVue(p.scene);
+    return true;
+  }
+
+  /**
+   * 🚪 S'installer dans une pièce : la première fois, ou quand l'autre n'est pas là, on y est tout de suite (l'envoi suit) ;
+   * s'il est là, il est invité (« Venir » / « Pas maintenant »).
+   */
+  async function choisir(p: PieceDuSalon) {
+    const depart = choix === "depart";
+    setChoix(null);
+    if (!sceneVue || (p.cle === sceneVue.piece && !depart)) return;
+    await parMoi(() => sInstaller(p, depart));
+  }
+  /** (un changement de pièce de ma main : le pouls ne dit pas la pièce tant qu'il dure, ni s'il est parti avant sa fin) */
+  async function parMoi(f: () => Promise<void>) {
+    mesChangements.current.n += 1;
+    mesChangements.current.enCours += 1;
+    try {
+      await f();
+    } finally {
+      mesChangements.current.enCours -= 1;
+      mesChangements.current.n += 1;
+    }
+  }
+  async function sInstaller(p: PieceDuSalon, depart: boolean) {
+    if (!sceneVue) return;
+    const direct = depart || !la || sceneVue.choisie === false;
+    const avant = sceneVue;
+    if (direct && p.cle !== sceneVue.piece) {
+      await prechargerImage(p.scene.plaque);
+      setSceneVue(p.scene);
+    }
+    const r = await fetch("/api/direct/salon", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "piece", cle, piece: p.cle }) }).catch(() => null);
+    const j = r ? ((await r.json().catch(() => null)) as { piece?: PieceDuo; invitation?: boolean; error?: string } | null) : null;
+    if (!r?.ok || !j) {
+      if (direct) setSceneVue(avant);
+      montrer(j?.error ? `Pas changé : ${j.error}` : "Pas changé : réessaie.");
+      return;
+    }
+    if (j.invitation) {
+      if (direct) setSceneVue(avant);
+      monInvitation.current = p.cle;
+      montrer(`🚪 Tu invites ${prenom} · ${p.emoji} ${p.nom}…`, 3600);
+      return;
+    }
+    if (!direct) {
+      await prechargerImage(p.scene.plaque);
+      setSceneVue(p.scene);
+    }
+    montrer(`✨ Vous voilà · ${p.emoji} ${p.nom}`);
+  }
+
+  /** 🚪 Répondre à son invitation. */
+  async function repondre(oui: boolean) {
+    const piece = invitation;
+    setInvitation(null);
+    if (!piece) return;
+    await parMoi(async () => {
+      const r = await fetch("/api/direct/salon", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "venir", cle, oui }) }).catch(() => null);
+      const j = r ? ((await r.json().catch(() => null)) as { piece?: PieceDuo; error?: string } | null) : null;
+      if (!r?.ok) {
+        montrer(j?.error ?? "Ça n’a pas marché : réessaie.");
+        return;
+      }
+      if (oui && j?.piece && (await allerDans(j.piece))) montrer(`✨ Vous voilà · ${nomDePiece(j.piece)}`);
+    });
+  }
+
+  /** 🔥 La flamme monte d'un cran au premier échange du jour (chacun a écrit aujourd'hui). */
+  function monterLaFlamme(qui: "moi" | "lui") {
+    const f = flammeCourante.current;
+    if (!f || f[qui]) return;
+    const g: Flamme = { ...f, [qui]: true };
+    if (g.moi && g.lui) {
+      g.jours = f.jours + 1;
+      setFlammeMonte((n) => n + 1);
+      montrer(`🔥 ${g.jours} jour${g.jours > 1 ? "s" : ""} de suite !`, 3000);
+    }
+    flammeCourante.current = g;
+    setFlamme(g);
+  }
 
   const fil = pret?.ouverture.fil;
   const prenom = fil?.lui.prenom ?? "";
+  useEffect(() => {
+    prenomRef.current = prenom;
+  }, [prenom]);
   const peutEcrire = fil?.ecrire !== false;
 
   /** ✍️ Écrire : la bulle tout de suite, l'autre figurine réagit, puis l'envoi ; un échec défait et le dit. */
@@ -417,6 +639,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (!r.ok || !j?.message) throw new Error(j?.error || "");
       const vrai = j.message;
       setMessages((l) => l.map((m) => (m.id === provisoire.id ? vrai : m)));
+      monterLaFlamme("moi");
     } catch (e) {
       setMessages((l) => l.filter((m) => m.id !== provisoire.id));
       setTexte((x) => x || t);
@@ -429,6 +652,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const arriveeAVenir = !arriveeFaite && !rejoue && fil ? aRejouer(fil.messages, fil.memes ?? []).length > 0 : false;
   const sonDernier = rejoue ?? (sonDernierMessage && !arriveeAVenir ? { id: sonDernierMessage.id, texte: texteDeBulle(sonDernierMessage) } : null);
   const jours = fil ? parJour(messages, memes) : [];
+  const objetsEtagere = pret?.ouverture.vivant?.etagere?.objets ?? [];
+  const souvenirs = objetsEtagere.length;
+  const rdv = prochainRendezVous(objetsEtagere);
   const presence = la ? null : vu ? (nomDuJour(vu) === "Aujourd’hui" ? `Dernière visite à ${heureDite(vu)}` : nomDuJour(vu) === "Hier" ? `Dernière visite hier à ${heureDite(vu)}` : `Dernière visite ${nomDuJour(vu)}`) : "Pas là pour l’instant";
   const flou = chargement.etat !== "manque" ? chargement.flou : undefined;
 
@@ -461,6 +687,18 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             </span>
           )}
         </span>
+        {souvenirs > 0 && (
+          <span className="sd-pastille" data-souvenirs={souvenirs} aria-label={`${souvenirs} souvenirs sur votre étagère`}>
+            <span className="e">📚</span>
+            {souvenirs}
+          </span>
+        )}
+        {flamme && flamme.jours > 0 && (
+          <span key={flammeMonte} className={`sd-pastille${flammeMonte ? " monte" : ""}`} data-flamme={flamme.jours} aria-label={`${flamme.jours} jours de suite`}>
+            <span className="e">🔥</span>
+            {flamme.jours}
+          </span>
+        )}
       </header>
 
       <div
@@ -498,6 +736,35 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 </div>
               )}
             </div>
+            {catalogue && sceneVue && catalogue.pieces.length > 1 && (
+              <button type="button" className="sd-puce sd-porte" data-piece={sceneVue.piece} onClick={() => setChoix("changer")} aria-label="Changer de pièce">
+                <span className="e">🚪</span>
+                <span>{nomDePiece(sceneVue.piece)}</span>
+              </button>
+            )}
+            {rdv && (
+              <span className={`sd-puce sd-rdv${rdv.jour ? " jour" : ""}`} data-rdv>
+                <span className="e">{rdv.emoji}</span>
+                <span>
+                  {rdv.titre} · {rdv.quand}
+                </span>
+              </span>
+            )}
+            {invitation && (
+              <div className="sd-invite" role="alertdialog" aria-label="Une invitation" data-invitation={invitation}>
+                <p>
+                  🚪 {prenom} t’invite · {nomDePiece(invitation)}
+                </p>
+                <span>
+                  <button type="button" className="oui" onClick={() => void repondre(true)}>
+                    Venir
+                  </button>
+                  <button type="button" onClick={() => void repondre(false)}>
+                    Pas maintenant
+                  </button>
+                </span>
+              </div>
+            )}
             <button
               type="button"
               className="sd-puce sd-fil"
@@ -553,7 +820,37 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       </form>
 
       {/* 💬 Messagerie : construite à l'ouverture, elle monte du bas (un voile derrière ; le voile ou la poignée la ferment) */}
-      <div className={`sd-voile${feuille ? " vu" : ""}`} onClick={() => setFeuille(false)} aria-hidden />
+      <div
+        className={`sd-voile${feuille || choix ? " vu" : ""}`}
+        onClick={() => {
+          setFeuille(false);
+          setChoix(null);
+        }}
+        aria-hidden
+      />
+      {/* 🚪 « Où vous installez-vous ? » (la toute première fois) ; « Changer de pièce » (à tout moment) */}
+      <section className={`sd-choix${choix ? " vu" : ""}`} aria-label={choix === "depart" ? "Où vous installez-vous ?" : "Changer de pièce"} aria-hidden={!choix}>
+        <button type="button" className="sd-poignee" onClick={() => setChoix(null)}>
+          <h3>{choix === "depart" ? "Où vous installez-vous ?" : "Changer de pièce"}</h3>
+        </button>
+        <div className="sd-corps">
+          <p className="sd-sous">{la && sceneVue?.choisie ? `${prenom} est là : ce sera une invitation.` : `${prenom} vous retrouvera dans la pièce que tu choisis.`}</p>
+          <div className="sd-pieces">
+            {catalogue?.pieces.map((p) => (
+              <button key={p.cle} type="button" className={`sd-piece-carte${p.cle === sceneVue?.piece ? " ici" : ""}`} data-choisir={p.cle} onClick={() => void choisir(p)}>
+                <span className="sd-vignette" style={{ backgroundImage: `url("${p.scene.plaque.flou}")` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.scene.plaque.src} srcSet={p.scene.plaque.srcset} sizes="45vw" alt="" loading="lazy" draggable={false} />
+                </span>
+                <b>
+                  {p.emoji} {p.nom}
+                </b>
+                <small>{p.cle === sceneVue?.piece && choix !== "depart" ? "✓ Vous êtes ici" : p.cle === catalogue.proposee && choix === "depart" ? "✓ Ta pièce" : " "}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
       <section className={`sd-feuille${feuille ? " vu" : ""}`} aria-label="La messagerie" aria-hidden={!feuille}>
         <button type="button" className="sd-poignee" onClick={() => setFeuille(false)}>
           <h3>Toute la conversation avec {prenom}</h3>
@@ -600,6 +897,10 @@ export const STYLES_SALON = `
 .sd-qui b{font-size:16.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sd-qui span{font-size:12px;color:var(--doux);display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sd-pt{width:7px;height:7px;border-radius:50%;background:var(--vert);box-shadow:0 0 0 3px rgba(69,212,131,.22);flex:none}
+.sd-pastille{display:flex;align-items:center;gap:4px;height:34px;padding:0 11px;border-radius:17px;border:1.5px solid rgba(242,190,106,.65);background:rgba(242,190,106,.08);font:700 15px var(--app);color:#ffd99a;flex:none;box-sizing:border-box}
+.sd-pastille .e{font-family:var(--emoji);font-size:16px}
+.sd-pastille.monte{animation:sd-monte .9s cubic-bezier(.2,1.6,.4,1)}
+@keyframes sd-monte{0%{transform:scale(1)}35%{transform:scale(1.35)}100%{transform:scale(1)}}
 .sd-scene{position:relative;flex:1;min-height:0;margin:2px 10px 0;border-radius:26px;overflow:hidden;background:#3a1f16 center 30%/cover no-repeat;box-shadow:inset 0 0 0 1px rgba(242,190,106,.18)}
 .sd-ici{position:absolute;inset:0}
 .sd-bulles{position:absolute;z-index:4;display:flex;flex-direction:column;gap:5px;pointer-events:none;max-width:calc(50% - 14px);transition:bottom 1.3s cubic-bezier(.22,.8,.2,1)}
@@ -622,6 +923,16 @@ export const STYLES_SALON = `
 .sd-puce{position:absolute;z-index:5;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;font:700 13px var(--app);color:#fff;background:rgba(24,7,20,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .sd-puce .e{font-family:var(--emoji);font-size:16px}
 .sd-fil{bottom:10px;right:10px}
+.sd-porte{top:10px;left:10px;height:32px;padding:0 12px;font-size:12.5px;max-width:calc(50% - 20px)}
+.sd-porte span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sd-rdv{top:10px;right:10px;height:32px;padding:0 12px;font-size:12.5px;max-width:calc(50% - 20px)}
+.sd-rdv span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sd-rdv.jour{background:rgba(255,47,143,.82)}
+.sd-invite{position:absolute;z-index:9;left:0;right:0;margin:0 auto;top:54px;width:min(320px,88%);box-sizing:border-box;padding:12px 14px;border-radius:18px;background:rgba(255,246,234,.97);color:var(--encre);box-shadow:0 12px 30px rgba(0,0,0,.35);animation:sd-bulle .38s cubic-bezier(.2,1.5,.4,1) both}
+.sd-invite p{margin:0 0 10px;font:700 14px/1.35 var(--app);text-align:center}
+.sd-invite span{display:flex;gap:8px;justify-content:center}
+.sd-invite button{height:38px;padding:0 16px!important;border-radius:19px;background:rgba(42,20,36,.08)!important;font:700 14px var(--app)!important;color:var(--encre)!important}
+.sd-invite button.oui{background:var(--rose)!important;color:#fff!important}
 .sd-badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--rose);font:800 11px/18px var(--app);text-align:center;box-sizing:border-box}
 .sd-toast{position:absolute;z-index:8;left:50%;top:12px;margin:0;transform:translate(-50%,-8px);width:max-content;max-width:88%;box-sizing:border-box;padding:9px 14px;border-radius:16px;background:rgba(255,246,234,.96);color:var(--encre);font:650 13px/1.3 var(--app);text-align:center;box-shadow:0 10px 26px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
 .sd-toast.vu{opacity:1;transform:translate(-50%,0)}
@@ -636,8 +947,8 @@ export const STYLES_SALON = `
 .sd-envoyer svg{width:22px;height:22px}
 .sd-voile{position:absolute;inset:0;z-index:20;background:rgba(10,3,9,.5);opacity:0;pointer-events:none;transition:opacity .3s ease}
 .sd-voile.vu{opacity:1;pointer-events:auto}
-.sd-feuille{position:absolute;z-index:21;left:0;right:0;bottom:0;max-height:80%;display:flex;flex-direction:column;border-radius:26px 26px 0 0;background:#24101f;box-shadow:0 -10px 40px rgba(0,0,0,.45);transform:translateY(105%);visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.25,1),visibility 0s .38s}
-.sd-feuille.vu{transform:none;visibility:visible;transition:transform .38s cubic-bezier(.2,.9,.25,1)}
+.sd-feuille,.sd-choix{position:absolute;z-index:21;left:0;right:0;bottom:0;max-height:80%;display:flex;flex-direction:column;border-radius:26px 26px 0 0;background:#24101f;box-shadow:0 -10px 40px rgba(0,0,0,.45);transform:translateY(105%);visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.25,1),visibility 0s .38s}
+.sd-feuille.vu,.sd-choix.vu{transform:none;visibility:visible;transition:transform .38s cubic-bezier(.2,.9,.25,1)}
 .sd-poignee{flex:none;display:flex!important;flex-direction:column;align-items:center;gap:8px;padding:9px 16px 10px!important;border-bottom:1px solid rgba(255,255,255,.06)!important}
 .sd-poignee::before{content:"";width:38px;height:5px;border-radius:3px;background:#5d3a54}
 .sd-poignee h3{margin:0;font:700 15px var(--app);text-align:center}
@@ -657,4 +968,12 @@ export const STYLES_SALON = `
 .sd-evt img{width:32px;height:32px;border-radius:8px;object-fit:cover;flex:none}
 .sd-evt small{color:var(--doux);font-size:11px}
 .sd-vide{margin:24px 0;text-align:center;color:var(--doux)}
+.sd-sous{margin:0 0 4px;text-align:center;color:var(--doux);font:600 12.5px/1.35 var(--app)}
+.sd-pieces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sd-piece-carte{display:flex!important;flex-direction:column;gap:5px;text-align:left;padding:0!important}
+.sd-vignette{position:relative;display:block;aspect-ratio:2/3;border-radius:16px;overflow:hidden;background:#140812 center/cover no-repeat;box-shadow:inset 0 0 0 1px rgba(242,190,106,.18)}
+.sd-vignette img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sd-piece-carte.ici .sd-vignette{box-shadow:0 0 0 2.5px var(--or)}
+.sd-piece-carte b{font:700 13.5px var(--app)}
+.sd-piece-carte small{font:600 11.5px var(--app);color:var(--or);min-height:14px}
 `;

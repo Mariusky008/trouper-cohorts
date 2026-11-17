@@ -471,6 +471,7 @@ scene.detruire();
 | L'étagère (`/api/direct/etagere`) | noter, ranger, retirer, déposer, rappels | `action: "garder"` (📌), le genre `mot`, le rayon `rires`, les mèmes rangés (`memes`) |
 | La télé (`/api/direct/tele`) | le dernier lien YouTube, les clips de secours | ce que l'un y met (un lien, une vidéo, une affiche de film, une pochette), vu des deux |
 | Les cadres | « La mettre dans mon univers » (`ranger-univers.ts`) | les photos accrochées dans la pièce du duo (par cadre), changer celle d'un cadre |
+| La pièce du duo (`/api/direct/salon`) | — | `fils/<paire>/piece.json` ; `?pieces=<cle>` (le catalogue, scènes entières), actions `piece` et `venir` (l'invitation) ; dans le pouls : `piece`, `invitation`, `refus` (11.10) |
 | La pièce (`pieces-duo`) | décor, trois lumières, relevé, image du duo | le catalogue de neuf, en hauteur et en largeur (`ma-maison.md`, M0) ; `fenetreCoins`, `lampes`, `table`, `fentes`, `centre`, `echelle` ; les calques de chaque figurine, posés (section 5) |
 | La météo | — | `/api/direct/salon?meteo=<ville>` (Open-Meteo, une heure de cache) |
 
@@ -809,6 +810,58 @@ effacement, et pas pour « il prépare ») ; `scripts/navigateur/salon-pouls.mjs
 en moins de 12 s, le dernier qui reste ; « Dernière visite à … » ; 10 s puis 1,5 s quand il arrive ; « … » ; son
 message en direct, les non-lus, la réaction ; « … » chez lui quand j'écris ; la page cachée sans pouls ; un toucher
 qui passe l'arrivée).
+
+### 11.10 La pièce du duo, la flamme, l'en-tête, l'ombre et la teinte (lot S2, troisième partie)
+
+Le contrat `salon.ts` s'est complété (la PR le dit dans son titre) : `SceneSalon` gagne `choisie?` (le duo a choisi sa
+pièce) et `installePar?` (qui l'y a installé : `"moi"` / `"autre"`) ; `OuvertureSalon` gagne `flamme?`
+(`Flamme = { jours, moi, lui }`) ; s'ajoutent `PieceDuSalon` et `CataloguePieces`, et l'option `moment` du moteur.
+
+- **La pièce du duo** (4.13 ; `src/lib/direct/salon-serveur.ts`) : `fils/<paire>/piece.json`
+  `{ piece, le, par8, invitation? }`. À l'ouverture (`?ouvrir=`), la scène est celle de la pièce du duo ; sinon celle de
+  sa maison (`ma-maison.md`) ; sinon le salon — avec `choisie: false`, qui ouvre « Où vous installez-vous ? ».
+- **Les routes** (`/api/direct/salon`, l'habitant) :
+  - `GET ?pieces=<clé>` → le catalogue : **les pièces prêtes, chacune avec sa scène entière** (sa plaque dans la
+    lumière de l'heure, ses places, les deux figurines posées) — la sienne d'abord (`proposee`), puis l'ordre du
+    catalogue selon son âge ; et la pièce du duo (`piece`, ou `null`) ;
+  - `POST { action: "piece", cle, piece }` : la première fois, ou si l'autre n'est pas là (2 min 30), **la pièce
+    change** (`{ piece }`) ; s'il est là, **une invitation** (`{ invitation: true }`), qui vaut 2 minutes ; une pièce
+    inconnue → 400, pas encore faite → 409 ;
+  - `POST { action: "venir", cle, oui }` : « Venir » (la pièce change pour les deux ; c'est celui qui a invité qui les a
+    installés) ou « Pas maintenant » (celui qui a invité le voit une minute) ; une invitation périmée, déjà répondue ou
+    la sienne → 410.
+- **Le pouls** dit aussi la pièce du duo, l'invitation qui m'attend, le refus de la mienne (`piece?`, `invitation?`,
+  `refus?` ; la fiche lue à chaque battement, rien de plus à faire battre).
+- **Dans le salon** (`src/app/salon/salon.tsx`) :
+  - **« Où vous installez-vous ? »** la toute première fois : les vignettes des pièces prêtes, sa maison d'abord
+    (« ✓ Ta pièce ») ; un toucher et on y est (« ✨ Vous voilà · 🛋️ Le salon ») ;
+  - **🚪 la pièce, en haut à gauche de la scène, à tout moment** : « Changer de pièce » (« ✓ Vous êtes ici ») ; l'autre
+    n'est pas là : on y est tout de suite, il arrivera dans la nouvelle (« ✨ Léa vous a installés · … » chez lui) ;
+    il est là : « 🚪 Tu invites Sam · 🍳 La cuisine… », et chez lui une carte « 🚪 Léa t'invite · 🍳 La cuisine »
+    — **Venir** / **Pas maintenant** ; il vient : la pièce change chez les deux (« ✨ Sam vous rejoint · … ») ; il
+    refuse : « Sam préfère rester ici pour l'instant » ;
+  - **toute pièce s'ouvre tout de suite** (< 300 ms ; l'essai en mesure une vingtaine) : le catalogue arrive 0,6 s
+    après l'ouverture avec toutes les scènes, les plaques se préchargent une à une ; changer, c'est montrer la scène ;
+  - un pouls parti avant ou pendant un changement de ma main ne dit pas la pièce (il ramènerait l'ancienne).
+- **L'en-tête** (4.12) : **📚** le nombre de leurs souvenirs (l'étagère) ; **🔥** leurs jours de suite (l'heure de Paris,
+  les jours où tous les deux ont écrit, comptés sur les noms des messages : aujourd'hui compte dès que les deux ont
+  écrit), qui **monte d'un cran au premier échange du jour** (« 🔥 2 jours de suite ! ») ; **📅** en puce en haut à
+  droite de la scène, le prochain rendez-vous de l'étagère (« À venir ») : « 🎬 Ciné · dans 3 jours », « demain »,
+  « aujourd'hui » (en rose, le jour venu).
+- **L'ombre et la teinte** (`ma-maison.md`, section 4 ; `src/app/salon/moteur.ts`) : une ombre au sol sous chaque
+  figurine (`.sc-ombre`, 82 % de la largeur du corps) ; la teinte du moment de la plaque (`data-moment` sur la scène :
+  plus chaude le soir, plus sombre la nuit, rien le matin).
+- **Pas encore** : démarrer une conversation depuis « Chez moi » / « ＋ Nouveau » (la bascule, S8) ; les objets de la
+  table, les cadres et la télé qui suivent le duo d'une pièce à l'autre (S3, S7) ; le compte à rebours du jour venu.
+
+**Les essais** : `scripts/essai-salon-pieces-route.mjs` (le catalogue, sa maison d'abord, seulement les pièces prêtes,
+figurines posées ; la première ouverture, `choisie: false` ; la flamme ; 400, 409 ; le choix direct, `installePar` ;
+l'invitation, le refus, « Venir » ; une invitation périmée → 410) et `scripts/navigateur/salon-pieces.mjs` (deux
+iPhone : « Où vous installez-vous ? », la terrasse d'abord ; 📚 2, 📅 « Ciné · dans 3 jours », 🔥 1 ; les deux ombres,
+la teinte ; le salon en moins de 300 ms ; l'autre absent : tout de suite ; l'invitation chez lui, la carte qui tient
+dans la scène ; « Pas maintenant », puis réinvité, « Venir » : la cuisine chez les deux ; ils s'écrivent : 🔥 2 ; ni
+débordement, ni erreur, ni le mot interdit). Les essais `salon-ouvrir`, `salon-conversation` et `salon-pouls` partent
+d'un duo déjà installé dans le salon.
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

@@ -6,6 +6,7 @@
  * Partagé (l'écran, et les essais qui le lisent).
  */
 import type { MemeFil, MessageFil } from "@/lib/direct/talkie";
+import type { ObjetVu } from "@/lib/direct/etagere";
 
 /** La durée d'un vocal, « 0:07 ». */
 export const dureeDite = (s: number) => {
@@ -105,5 +106,27 @@ export function aRejouer(messages: readonly MessageFil[], memes: readonly MemeFi
     total += tous[i].ms;
   }
   return gardes;
+}
+
+/**
+ * 📅 LE PROCHAIN RENDEZ-VOUS (section 4.12) : sur leur étagère, « À venir », la date la plus proche, aujourd'hui compris
+ * (l'heure de Paris) — « aujourd'hui », « demain », « dans 3 jours », sinon « jeu. 19 nov. ».
+ */
+export function prochainRendezVous(objets: readonly ObjetVu[], maintenant = new Date()): { emoji: string; titre: string; quand: string; jour: boolean } | null {
+  const auj = maintenant.toLocaleDateString("fr-CA", { timeZone: "Europe/Paris" });
+  const prochain = objets
+    .filter((o) => o.rayon === "avenir" && typeof o.quand === "string" && /^\d{4}-\d{2}-\d{2}$/.test(o.quand) && o.quand >= auj && o.etat === "actif")
+    .sort((a, b) => String(a.quand).localeCompare(String(b.quand)))[0];
+  if (!prochain?.quand) return null;
+  const jours = Math.round((Date.parse(`${prochain.quand}T12:00:00Z`) - Date.parse(`${auj}T12:00:00Z`)) / 86_400_000);
+  const quand =
+    jours === 0
+      ? "aujourd’hui"
+      : jours === 1
+        ? "demain"
+        : jours < 7
+          ? `dans ${jours} jours`
+          : new Date(`${prochain.quand}T12:00:00Z`).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", weekday: "short", day: "numeric", month: "short" });
+  return { emoji: prochain.emoji || "📅", titre: prochain.titre, quand, jour: jours === 0 };
 }
 

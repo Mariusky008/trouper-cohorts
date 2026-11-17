@@ -68,6 +68,10 @@ export type SceneSalon = {
   places: PlaceDuo[];
   emplacements: EmplacementsDuo | null;
   calques?: { a: CalqueFigurine; b: CalqueFigurine };
+  /** (lot S2) le duo a choisi sa pièce (sinon : celle qu'on lui propose, et « Où vous installez-vous ? ») */
+  choisie?: boolean;
+  /** (lot S2) qui l'a installée là (« ✨ Léa vous a installés sur la terrasse ») */
+  installePar?: Qui;
 };
 /**
  * 🎭 Les calques d'une image du duo, publiés (lot S1) : la plaque et les quatre calques à adresse stable (`fichier` : leur
@@ -78,7 +82,17 @@ export type CalquesSalon = { plaque: ImageSalon; a: CalqueFigurine; b: CalqueFig
  * 🚪 TOUT CE QU'IL FAUT POUR OUVRIR UNE CONVERSATION, EN UNE REQUÊTE (`GET /api/direct/proches?ouvrir=<clé>`) : le fil
  * (les derniers messages), la vie (gestes, apartés, étagère) et la scène — `null` tant que la pièce n'est pas faite.
  */
-export type OuvertureSalon = { cle: string; fil: Fil; vivant: Vivant | null; scene: SceneSalon | null };
+export type OuvertureSalon = { cle: string; fil: Fil; vivant: Vivant | null; scene: SceneSalon | null; flamme?: Flamme };
+/**
+ * 🔥 (lot S2, section 4.12) LES JOURS DE SUITE où ils se sont écrit tous les deux : `jours` (aujourd'hui compris si
+ * c'est fait) ; `moi`, `lui` : chacun a déjà écrit aujourd'hui (l'heure de Paris) — la flamme monte d'un cran au premier
+ * échange du jour.
+ */
+export type Flamme = { jours: number; moi: boolean; lui: boolean };
+/** 🚪 (lot S2, section 4.13) Une pièce où s'installer : sa scène toute prête (les figurines posées à ses places). */
+export type PieceDuSalon = { cle: PieceDuo; nom: string; emoji: string; scene: SceneSalon };
+/** 🚪 Les pièces prêtes, celle qu'on propose d'abord (la sienne, chez soi), et celle du duo s'il en a choisi une. */
+export type CataloguePieces = { pieces: PieceDuSalon[]; proposee: PieceDuo; piece: PieceDuo | null };
 
 // ─── LES GESTES (section 4.4 ; leurs mises en scène : lot S3) ───────────────────────────────────────────────────────
 export type CategorieGeste = "attentions" | "ensemble";
@@ -281,6 +295,8 @@ export type OptionsScene = {
   cadrageVertical?: number;
   /** Forcer le mouvement réduit (sinon : `prefers-reduced-motion`). */
   reduit?: boolean;
+  /** (lot S2) le moment de la pièce : les figurines en prennent la teinte (plus chaude le soir, plus sombre la nuit). */
+  moment?: MomentDuo;
   /** Les ancres des bulles, à chaque changement de caméra ou de taille (jamais à chaque image). */
   surAncres?: (a: AncresBulles) => void;
   /** Le mode léger vient de se mettre en route. */
