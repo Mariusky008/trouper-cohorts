@@ -7,69 +7,28 @@
  * calques du lot S1 ; et un tableau qui fait jouer au moteur chacun de ses ressorts, de ses effets, de ses sons, la caméra
  * et les gestes déjà enregistrés (`./mises-en-scene`) — c'est ici que l'autre session essaie les siens.
  *
- * (Lot S0b) `?avec=<clé>` : UNE VRAIE CONVERSATION de l'administrateur, ouverte comme le salon l'ouvrira — une requête
- * (`?ouvrir=`), la vignette floue tout de suite, la pièce à adresse stable décodée hors de l'affichage, puis la scène ; les
- * temps mesurés (`salon:toucher` → `salon:plaque` → `salon:pret`) s'affichent et partent à « ⚡ La vitesse du salon ». Les
- * deux figurines y sont posées à leurs places (lot S1 : les calques de chacune, faits une fois). Sans `avec` : ses
- * conversations, préchargées dans un temps mort (les deux premières) et au premier contact du doigt ; et « 🎭 Les calques
+ * `?avec=<clé>` : UNE VRAIE CONVERSATION de l'administrateur, dans LE SALON DU DUO lui-même (`./salon`, le lot S2) —
+ * ouverte comme le salon l'ouvrira (lot S0b : une requête, la vignette floue, la pièce à adresse stable, les temps
+ * mesurés qui partent à « ⚡ La vitesse du salon »), les deux figurines posées (lot S1). Sans `avec` : ce banc d'essai, ses
+ * conversations (préchargées dans un temps mort, les deux premières, et au premier contact du doigt), et « 🎭 Les calques
  * de ta figurine » (`./apercu-calques`).
  */
 import "./mises-en-scene";
 import { useEffect, useRef, useState } from "react";
 import { bez, creerScene, ease } from "./moteur";
-import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, precharger, prechargerImage, prechargerQuandLibre } from "./ouvrir";
+import { marquer, precharger, prechargerImage, prechargerQuandLibre } from "./ouvrir";
 import { EmplacementsSalon } from "./emplacements-salon";
 import { ApercuCalques } from "./apercu-calques";
+import { SalonDuDuo } from "./salon";
 import { PUCES_GESTES, autreQue, miseEnSceneDe, type CalqueFigurine, type CalquesSalon, type OptionsScene, type Qui, type Scene } from "@/lib/direct/salon";
 import { ANCRE_ASSISE, hauteurDuo, type EtatCollage, type PlaceDuo } from "@/lib/direct/pieces-duo";
 
 /** Sur une posée (assise sans fauteuil, détourée au plus près), le cou, de haut en bas : la tête au-dessus, le corps dessous. */
 const COU = 0.42;
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
-type Avec = { cle: string; prenom: string; deja: boolean };
-type Chargement = { etat: "charge"; flou?: string } | { etat: "manque"; message: string } | { etat: "pret"; pret: Pret; flou?: string; avec?: Avec; calques?: boolean };
+type Chargement = { etat: "charge"; flou?: string } | { etat: "manque"; message: string } | { etat: "pret"; pret: Pret; flou?: string; calques?: boolean };
 type ProcheListe = { cle: string; prenom: string; lien?: string };
 type Vitesse = { ouvertures: number; deja: { n: number; mediane: number; p90: number }; premiere: { n: number; mediane: number; p90: number } };
-
-/** Cette conversation a-t-elle déjà été ouverte sur ce téléphone ? (et la noter) */
-function dejaVue(cle: string): boolean {
-  try {
-    const k = `salon:vu:${cle}`;
-    const vu = localStorage.getItem(k) === "1";
-    localStorage.setItem(k, "1");
-    return vu;
-  } catch {
-    return false;
-  }
-}
-
-/** 🚪 Une vraie conversation : la requête, la vignette floue dès qu'elle arrive, puis la pièce décodée. */
-async function chargerConversation(cle: string, surFlou: (flou: string) => void): Promise<Chargement> {
-  const o = await ouvrir(cle);
-  const sc = o.scene;
-  if (!sc) return { etat: "manque", message: `La pièce de votre conversation avec ${o.fil.lui.prenom} n’est pas encore faite.` };
-  surFlou(sc.plaque.flou);
-  // (la plaque d'abord — elle s'affiche —, les calques des figurines pendant ce temps)
-  const [plaque, ...calques] = imagesDe(o);
-  const enRoute = Promise.all(calques.map((i) => prechargerImage(i)));
-  await prechargerImage(plaque);
-  marquer("salon:plaque");
-  await enRoute;
-  const c = sc.calques;
-  return {
-    etat: "pret",
-    flou: sc.plaque.flou,
-    calques: !!c,
-    avec: { cle, prenom: o.fil.lui.prenom, deja: dejaVue(cle) },
-    pret: {
-      plaque: sc.plaque.src,
-      largeur: sc.plaque.largeur,
-      hauteur: sc.plaque.hauteur,
-      // (🎭 lot S1 : ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche)
-      figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {},
-    },
-  };
-}
 
 const image = (src: string) =>
   new Promise<HTMLImageElement>((ok, ko) => {
@@ -204,7 +163,6 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
   const [qui, setQui] = useState<Qui>("moi");
   const [tour, setTour] = useState(0);
   const [note, setNote] = useState("");
-  const [temps, setTemps] = useState<{ plaque?: number; pret?: number } | null>(null);
   const [proches, setProches] = useState<ProcheListe[] | null>(null);
   const [vitesse, setVitesse] = useState<Vitesse | null>(null);
   const [emplacements, setEmplacements] = useState(false);
@@ -213,15 +171,15 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
   const ancreAutre = useRef<HTMLSpanElement>(null);
   const cadence = useRef<HTMLSpanElement>(null);
   const scene = useRef<Scene | null>(null);
-  const mesuree = useRef<Avec | null>(null);
 
   useEffect(() => {
     let vivant = true;
-    // (une conversation ouverte directement par son adresse : le « toucher » est l'arrivée sur la page)
-    if (avec && !performance.getEntriesByName("salon:toucher", "mark").length) marquer("salon:toucher");
-    const c = avec
-      ? chargerConversation(avec, (flou) => vivant && setChargement({ etat: "charge", flou })).catch((e: unknown): Chargement => ({ etat: "manque", message: e instanceof Error ? e.message : "La conversation ne s’ouvre pas." }))
-      : charger().catch((): Chargement => ({ etat: "manque", message: "La pièce ou les figurines ne se chargent pas." }));
+    // (une conversation ouverte directement par son adresse : le « toucher » est l'arrivée sur la page ; le salon l'ouvre)
+    if (avec) {
+      if (!performance.getEntriesByName("salon:toucher", "mark").length) marquer("salon:toucher");
+      return;
+    }
+    const c = charger().catch((): Chargement => ({ etat: "manque", message: "La pièce ou les figurines ne se chargent pas." }));
     void c.then((x) => vivant && setChargement(x));
     return () => {
       vivant = false;
@@ -254,7 +212,6 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
 
   const allerA = (cle: string | null) => {
     if (cle) marquer("salon:toucher");
-    setTemps(null);
     setChargement({ etat: "charge" });
     setAvec(cle);
     try {
@@ -265,7 +222,6 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
   };
 
   const pret = chargement.etat === "pret" ? chargement.pret : null;
-  const conversation = chargement.etat === "pret" ? chargement.avec : undefined;
   useEffect(() => {
     const el = ici.current;
     if (!pret || !el) return;
@@ -282,16 +238,6 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
       surLeger: () => void Promise.resolve().then(() => setNote("Le mode léger s’est mis en route (moins de particules).")),
     });
     scene.current = s;
-    // (🚪 une vraie conversation : la scène est prête à l'image suivante ; ses temps s'affichent et partent, une fois)
-    let raf = 0;
-    if (conversation && mesuree.current !== conversation) {
-      mesuree.current = conversation;
-      raf = requestAnimationFrame(() => {
-        marquer("salon:pret");
-        setTemps(mesures());
-        envoyerMesures(conversation.deja);
-      });
-    }
     // (la cadence, écrite deux fois par seconde : jamais un rendu de React par image)
     let n = 0;
     let depuis = performance.now();
@@ -305,12 +251,11 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
       }
     });
     return () => {
-      cancelAnimationFrame(raf);
       fin();
       s.detruire();
       scene.current = null;
     };
-  }, [pret, tour, conversation]);
+  }, [pret, tour]);
 
   const jouer = (b: Bouton) => {
     if (scene.current) b.faire(scene.current, qui);
@@ -338,6 +283,8 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
     </section>
   );
 
+  // 🛋️ une vraie conversation : le salon du duo lui-même (le lot S2)
+  if (avec) return <SalonDuDuo key={avec} cle={avec} onRetour={() => allerA(null)} essai />;
   return (
     <main className="em">
       <style>{STYLES}</style>
@@ -363,29 +310,9 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
       </div>
       <div className="em-tableau">
         <header>
-          <b>{avec ? `🚪 Avec ${conversation?.prenom ?? "…"}` : "🛋️ Le moteur du salon"}</b>
+          <b>🛋️ Le moteur du salon</b>
           <span ref={cadence} className="em-cadence" />
         </header>
-        {avec && (
-          <section className="em-conversation" aria-label="La conversation">
-            <button type="button" onClick={() => allerA(null)}>
-              ← Le moteur
-            </button>
-            {temps && (
-              <p className="em-temps" role="status">
-                La pièce à l’écran : <b>{temps.plaque ?? "—"} ms</b> · prête : <b>{temps.pret ?? "—"} ms</b>
-                {conversation?.deja ? " (déjà vue sur ce téléphone)" : " (première fois sur ce téléphone)"}
-              </p>
-            )}
-            {pret && (
-              <p className="em-petit" data-calques={chargement.etat === "pret" && chargement.calques ? "poses" : "aucun"}>
-                {chargement.etat === "pret" && chargement.calques
-                  ? "🎭 Vos deux figurines, posées à leurs places (leurs calques, faits une fois chacune)."
-                  : "Vos figurines du nouveau style ne sont pas encore découpées toutes les deux : elles le seront juste après cette ouverture."}
-              </p>
-            )}
-          </section>
-        )}
         {!avec && pret && (
           <p className="em-petit" data-calques={chargement.etat === "pret" && chargement.calques ? "vrais" : "provisoires"}>
             {chargement.etat === "pret" && chargement.calques
@@ -480,8 +407,6 @@ export function EssaiMoteur({ avec: avecDeDepart = null }: { avec?: string | nul
 const STYLES = `
 .em{height:100dvh;background:#1d1626;color:#f6eefc;font:15px/1.35 system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 .em-scene{position:relative;flex:0 0 52dvh;min-height:260px;background:#120d18 center 30%/cover no-repeat;overflow:hidden}
-.em-conversation{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.em-temps{margin:0;font-variant-numeric:tabular-nums}
 .em-petit{margin:0;font-size:13px;opacity:.75}
 .em-vitesse p{margin:0;font-size:14px;font-variant-numeric:tabular-nums}
 .em-ici{position:absolute;inset:0}

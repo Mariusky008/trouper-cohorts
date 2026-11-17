@@ -734,6 +734,43 @@ l'ouverture : découpés après la réponse, puis posés aux deux places, à la 
 tenue) et `scripts/navigateur/salon-ouvrir.mjs` (la première ouverture les découpe, la suivante les pose, la tête vit ;
 l'aperçu des calques).
 
+### 11.8 La conversation : l'écran, les bulles, écrire, 💬 Messagerie (lot S2, première partie)
+
+**À l'adresse d'essai** `/univers/salon?avec=<clé>` (l'administrateur, sur ses vraies conversations ; on y arrive aussi
+par « Tes conversations ») : **le salon du duo lui-même** (`src/app/salon/salon.tsx`, `SalonDuDuo`), à la place du
+tableau d'essai. Sans `avec`, le banc d'essai du moteur ne change pas.
+
+- **L'en-tête** : ‹ retour, l'avatar et le prénom de l'autre, sa présence (« Là, maintenant », un point vert ; sinon
+  « Pas là pour l'instant » — l'heure de sa dernière visite viendra avec le pouls).
+- **La scène** : la pièce et les deux figurines posées (lots S0 et S1) ; **une bulle par figurine** — le dernier
+  message de chacun, seul (un écrit : son texte ; un vocal, une photo, une vidéo : « 🎙️ Un vocal · 0:07 », « 📷 Une
+  photo »…) —, au-dessus de sa tête, **posée hors de la caméra** aux ancres que le moteur donne (`surAncres` écrit
+  quatre variables de style : jamais un rendu par image), sa pointe vers la tête, jamais coupée ; « 💬 Messagerie » en
+  bas à droite, avec ses non-lus ; le petit message en haut (« toast »).
+- **Écrire** : ➤ → la bulle part de ma figurine **tout de suite** (15 ms mesurées, avant la réponse du serveur), sa tête
+  sautille le temps de la phrase ; 450 ms plus tard, la figurine de l'autre réagit à ce qui est dit, comme la
+  maquette (`reactionAuTexte`, `src/app/salon/bulles.ts`) : ❤️ 😘 « bisou », « je t'aime » → elle rougit, des cœurs, elle
+  penche la tête ; 😂 « haha », « mdr » → elle rit ; une question → elle penche la tête, un « ? » ; un « ! » → elle
+  sursaute ; sinon elle penche un peu la tête ; l'autre absent, sa figurine bouge à peine. L'envoi suit
+  (`POST /api/direct/proches { action: "ecrire" }`, lot M1) ; **un échec défait la bulle, rend le texte à la saisie et
+  le dit** (« Pas envoyé : réessaie. »).
+- **💬 Messagerie** : la feuille monte du bas (un voile derrière ; le voile ou la poignée la ferment), **construite à
+  l'ouverture** (5 ms mesurées) : toute la conversation par jour (« Aujourd'hui », « Hier », « lundi 14 novembre »), les
+  écrits et leurs liens, les vocaux qu'on écoute (▶, leurs mots), les photos, les vidéos, les mèmes en lignes ; « Toi ·
+  8 h 13 » sous chacun ; les non-lus remis à zéro.
+- **La vitesse** : processeur ralenti ×4, la plus longue image pendant « je t'aime ❤️ » (la bulle, la tête qui parle,
+  les cœurs) est de 67 ms environ (17 ms à vitesse normale) — le seuil de 50 ms s'essaiera sur les gestes (S3).
+
+**La suite du lot S2** : le pouls (la présence en direct, « … » quand l'autre écrit, ses messages qui arrivent) et
+l'arrivée (« depuis ta dernière visite ») ; puis la pièce du duo qu'on choisit au départ et dont on change (4.13).
+**Pas encore** : le ＋ et le 🎙️ de la saisie (S6, S4), les onglets et les puces (S3), le 📌 des bulles (S6).
+
+**Les essais** : `scripts/navigateur/salon-conversation.mjs` (iPhone : la bulle de l'autre, seule, au-dessus de sa tête,
+dans la scène ; les non-lus ; ➤ en moins de 100 ms, la tête de l'autre qui rit, le message parti pour de bon ; la
+feuille en moins de 100 ms, les trois messages dans l'ordre, « Aujourd'hui », le voile qui la ferme ; un envoi refusé :
+la bulle défaite, le texte rendu, « Pas envoyé ») ; `scripts/navigateur/salon-ouvrir.mjs` (l'ouverture, refaite sur cet
+écran).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

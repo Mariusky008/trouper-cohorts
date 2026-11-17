@@ -1,0 +1,489 @@
+"use client";
+
+/**
+ * 🛋️ LE SALON DU DUO — L'ÉCRAN DE LA CONVERSATION (`docs/univers/salon-du-duo.md`, sections 3, 4.2 et 4.3 ; le lot S2,
+ * première partie). Ce qu'on voit, de haut en bas, comme sur la maquette :
+ *
+ * - **l'en-tête** : ‹ retour, l'avatar et le prénom de l'autre, sa présence (« Là, maintenant ») ;
+ * - **la scène** : la pièce du duo et les deux figurines posées (le moteur, `./moteur`) ; **une bulle par figurine**,
+ *   au-dessus de sa tête, jamais coupée par la caméra (posée hors d'elle, aux ancres que le moteur donne) — le dernier
+ *   message de chacun, seul ; « 💬 Messagerie » en bas à droite, avec ses non-lus ; un petit message en haut (« toast ») ;
+ * - **la saisie** : « Écris à Camille… », ➤.
+ *
+ * **Écrire** : la bulle part de ma figurine tout de suite (avant la réponse du serveur), sa tête sautille le temps de la
+ * phrase ; l'autre figurine réagit à ce qui est dit (`reactionAuTexte`, `./bulles`) ; l'envoi suit
+ * (`POST /api/direct/proches { action: "ecrire" }`) ; un échec défait la bulle, rend le texte et le dit.
+ * **💬 Messagerie** : toute la conversation par jour (les écrits, les vocaux qu'on écoute, les photos, les vidéos, les
+ * mèmes), construite à l'ouverture (elle s'ouvre sans attendre).
+ *
+ * L'ouverture (une requête, la vignette floue, la pièce décodée hors de l'affichage, les temps mesurés) : le lot S0b
+ * (`./ouvrir`). La suite du lot S2 : le pouls (la présence en direct, « … »), l'arrivée (« depuis ta dernière visite »),
+ * la pièce du duo qu'on choisit et dont on change.
+ */
+import { useEffect, useRef, useState } from "react";
+import { creerScene } from "./moteur";
+import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
+import { derniersDeChacun, dureeDite, heureDite, parJour, reactionAuTexte, tempsDeParole, texteDeBulle } from "./bulles";
+import { autreQue, type OptionsScene, type OuvertureSalon, type Qui, type Scene } from "@/lib/direct/salon";
+import { texteDuMessage, type MessageFil } from "@/lib/direct/talkie";
+
+type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
+export type ChargementSalon =
+  | { etat: "charge"; flou?: string }
+  | { etat: "manque"; message: string }
+  | { etat: "pret"; ouverture: OuvertureSalon; pret: Pret; flou: string; deja: boolean; calques: boolean };
+
+/** Cette conversation a-t-elle déjà été ouverte sur ce téléphone ? (et la noter) */
+function dejaVue(cle: string): boolean {
+  try {
+    const k = `salon:vu:${cle}`;
+    const vu = localStorage.getItem(k) === "1";
+    localStorage.setItem(k, "1");
+    return vu;
+  } catch {
+    return false;
+  }
+}
+
+/** 🚪 Ouvrir une conversation : la requête, la vignette floue dès qu'elle arrive, puis la pièce et les calques décodés. */
+export async function chargerSalon(cle: string, surFlou: (flou: string) => void): Promise<ChargementSalon> {
+  const o = await ouvrir(cle);
+  const sc = o.scene;
+  if (!sc) return { etat: "manque", message: `La pièce de votre conversation avec ${o.fil.lui.prenom} n’est pas encore faite.` };
+  surFlou(sc.plaque.flou);
+  // (la plaque d'abord — elle s'affiche —, les calques des figurines pendant ce temps)
+  const [plaque, ...calques] = imagesDe(o);
+  const enRoute = Promise.all(calques.map((i) => prechargerImage(i)));
+  await prechargerImage(plaque);
+  marquer("salon:plaque");
+  await enRoute;
+  const c = sc.calques;
+  return {
+    etat: "pret",
+    ouverture: o,
+    flou: sc.plaque.flou,
+    deja: dejaVue(cle),
+    calques: !!c,
+    // (ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche)
+    pret: { plaque: sc.plaque.src, largeur: sc.plaque.largeur, hauteur: sc.plaque.hauteur, figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {} },
+  };
+}
+
+/** L'autre figurine réagit à ce qui est dit (la maquette, telle quelle). `la` : l'autre est là (sinon elle somnole). */
+function reagir(s: Scene, q: Qui, texte: string, la: boolean) {
+  const f = s.figurine(q);
+  if (f.dort || !la) {
+    f.secouer(0.3);
+    return;
+  }
+  const haut = s.repere(q, "haut");
+  switch (reactionAuTexte(texte)) {
+    case "coeurs":
+      s.fx.rougir(q, 2200);
+      s.fx.eclatCoeurs(s.repere(q, "tete"), 6);
+      f.pencher(8, 1500);
+      break;
+    case "rire":
+      f.rire(1);
+      s.fx.jaillir("😂", { x: haut.x, y: haut.y + 0.02 }, 1, { taille: 3.6 });
+      break;
+    case "question":
+      f.pencher(11, 1400);
+      s.fx.texteQuiMonte("?", { x: haut.x + (q === "moi" ? 0.07 : -0.07), y: haut.y + 0.03 }, { taille: 4.2, c: "#ffe27a" });
+      break;
+    case "surprise":
+      f.sursaut(0.7);
+      break;
+    default:
+      f.pencher(6, 1200);
+  }
+}
+
+/** ▶ Un vocal, dans 💬 : on l'écoute (un seul à la fois). */
+let enLecture: HTMLAudioElement | null = null;
+function Vocal({ m }: { m: MessageFil }) {
+  const [joue, setJoue] = useState(false);
+  const dit = texteDuMessage(m.repliques);
+  return (
+    <span className="sd-vocal">
+      <button
+        type="button"
+        className="sd-lire"
+        aria-label={joue ? "Arrêter" : "Écouter"}
+        onClick={() => {
+          if (joue && enLecture) {
+            enLecture.pause();
+            setJoue(false);
+            return;
+          }
+          enLecture?.pause();
+          const a = new Audio(m.son);
+          enLecture = a;
+          a.onended = a.onpause = () => setJoue(false);
+          void a.play().then(
+            () => setJoue(true),
+            () => setJoue(false),
+          );
+        }}
+      >
+        {joue ? "❚❚" : "▶"}
+      </button>
+      <small>🎙️ {dureeDite(m.duree)}</small>
+      {dit && <q>{dit}</q>}
+    </span>
+  );
+}
+
+/** Un message dans 💬 Messagerie. */
+function MessageDuFil({ m, prenom }: { m: MessageFil; prenom: string }) {
+  return (
+    <div className={`sd-msg ${m.moi ? "moi" : "autre"}`} data-message={m.id}>
+      {m.genre === "ecrit" ? (
+        <>
+          {m.texte && <span className="sd-texte">{m.texte}</span>}
+          {m.lien && (
+            <a className="sd-lien" href={m.lien.url} target="_blank" rel="noopener noreferrer nofollow">
+              🔗 {m.lien.titre || m.lien.site}
+            </a>
+          )}
+        </>
+      ) : m.genre === "photo" && m.photo ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="sd-piece" src={m.photo.url} width={m.photo.l} height={m.photo.h} alt={m.texte || "Une photo"} loading="lazy" />
+          {m.texte && <span className="sd-texte">{m.texte}</span>}
+        </>
+      ) : m.genre === "video" && m.video ? (
+        <>
+          <video className="sd-piece" src={m.video.url} poster={m.video.vignette} width={m.video.l} height={m.video.h} controls playsInline preload="none" />
+          {m.texte && <span className="sd-texte">{m.texte}</span>}
+        </>
+      ) : (
+        <Vocal m={m} />
+      )}
+      <small>
+        {m.moi ? "Toi" : prenom} · {heureDite(m.le)}
+      </small>
+    </div>
+  );
+}
+
+export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRetour?: () => void; essai?: boolean }) {
+  const [chargement, setChargement] = useState<ChargementSalon>({ etat: "charge" });
+  const [messages, setMessages] = useState<MessageFil[]>([]);
+  const [nonLus, setNonLus] = useState(0);
+  const [texte, setTexte] = useState("");
+  const [feuille, setFeuille] = useState(false);
+  const [toast, setToast] = useState("");
+  const [temps, setTemps] = useState<{ plaque?: number; pret?: number } | null>(null);
+  const cadre = useRef<HTMLDivElement>(null);
+  const ici = useRef<HTMLDivElement>(null);
+  const liste = useRef<HTMLDivElement>(null);
+  const scene = useRef<Scene | null>(null);
+  const minuteToast = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
+  useEffect(() => {
+    let vivant = true;
+    void chargerSalon(cle, (flou) => vivant && setChargement({ etat: "charge", flou }))
+      .catch((e: unknown): ChargementSalon => ({ etat: "manque", message: e instanceof Error ? e.message : "La conversation ne s’ouvre pas." }))
+      .then((c) => {
+        if (!vivant) return;
+        setChargement(c);
+        if (c.etat === "pret") {
+          setMessages(c.ouverture.fil.messages);
+          setNonLus(c.ouverture.fil.messages.filter((m) => m.nouveau && !m.moi).length);
+        }
+      });
+    return () => {
+      vivant = false;
+    };
+  }, [cle]);
+
+  const pret = chargement.etat === "pret" ? chargement : null;
+  // 🎬 la scène, une fois la pièce prête ; ses temps mesurés (une fois par ouverture)
+  useEffect(() => {
+    const el = ici.current;
+    if (!pret || !el) return;
+    const s = creerScene(el, {
+      ...pret.pret,
+      // (les bulles : au-dessus des têtes, là où la caméra les montre — écrit dans le style, jamais un rendu par image)
+      surAncres: (a) => {
+        const c = cadre.current;
+        if (!c) return;
+        const h = c.clientHeight;
+        const w = c.clientWidth;
+        c.style.setProperty("--b-moi", `${Math.max(60, h - a.moi.y + 6)}px`);
+        c.style.setProperty("--b-autre", `${Math.max(60, h - a.autre.y + 6)}px`);
+        c.style.setProperty("--q-moi", `${Math.max(14, Math.min(150, a.moi.x - 16))}px`);
+        c.style.setProperty("--q-autre", `${Math.max(14, Math.min(150, w - a.autre.x - 16))}px`);
+        c.dataset.ancres = "1";
+      },
+    });
+    scene.current = s;
+    const raf = requestAnimationFrame(() => {
+      marquer("salon:pret");
+      setTemps(mesures());
+      envoyerMesures(pret.deja);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      s.detruire();
+      scene.current = null;
+    };
+  }, [pret]);
+
+  // (la messagerie ouverte : en bas, le plus récent)
+  useEffect(() => {
+    if (!feuille) return;
+    const l = liste.current;
+    if (l) l.scrollTop = l.scrollHeight;
+  }, [feuille, messages]);
+  useEffect(() => () => void (minuteToast.current && clearTimeout(minuteToast.current)), []);
+
+  const montrer = (t: string, ms = 2600) => {
+    setToast(t);
+    if (minuteToast.current) clearTimeout(minuteToast.current);
+    minuteToast.current = setTimeout(() => setToast(""), ms);
+  };
+
+  const fil = pret?.ouverture.fil;
+  const prenom = fil?.lui.prenom ?? "";
+  const peutEcrire = fil?.ecrire !== false;
+
+  /** ✍️ Écrire : la bulle tout de suite, l'autre figurine réagit, puis l'envoi ; un échec défait et le dit. */
+  async function envoyer() {
+    const t = texte.trim();
+    if (!t || !fil) return;
+    const provisoire: MessageFil = { id: `envoi-${Date.now()}`, moi: true, le: new Date().toISOString(), duree: 0, son: "", repliques: [], genre: "ecrit", texte: t };
+    setMessages((l) => [...l, provisoire]);
+    setTexte("");
+    const s = scene.current;
+    if (s) {
+      s.figurine("moi").parler(tempsDeParole(t));
+      setTimeout(() => scene.current === s && reagir(s, autreQue("moi"), t, fil.la), 450);
+    }
+    try {
+      const r = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "ecrire", cle, texte: t }) });
+      const j = (await r.json().catch(() => null)) as { message?: MessageFil; error?: string } | null;
+      if (!r.ok || !j?.message) throw new Error(j?.error || "");
+      const vrai = j.message;
+      setMessages((l) => l.map((m) => (m.id === provisoire.id ? vrai : m)));
+    } catch (e) {
+      setMessages((l) => l.filter((m) => m.id !== provisoire.id));
+      setTexte((x) => x || t);
+      montrer(e instanceof Error && e.message ? `Pas envoyé : ${e.message}` : "Pas envoyé : réessaie.");
+    }
+  }
+
+  const { moi: monDernier, autre: sonDernier } = derniersDeChacun(messages);
+  const jours = fil ? parJour(messages, fil.memes ?? []) : [];
+  const flou = chargement.etat !== "manque" ? chargement.flou : undefined;
+
+  return (
+    <main className="sd">
+      <style>{STYLES_SALON}</style>
+      <header className="sd-entete">
+        {onRetour ? (
+          <button type="button" className="sd-retour" aria-label="Retour" onClick={onRetour}>
+            ‹
+          </button>
+        ) : (
+          <a className="sd-retour" aria-label="Retour" href="/collection#proches">
+            ‹
+          </a>
+        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {fil ? <img className="sd-avatar" src={fil.lui.neutre} alt="" /> : <span className="sd-avatar" aria-hidden />}
+        <span className="sd-qui">
+          <b>{prenom || "…"}</b>
+          {fil && (
+            <span data-presence={fil.la ? "la" : "absent"}>
+              {fil.la ? (
+                <>
+                  <i className="sd-pt" /> Là, maintenant
+                </>
+              ) : (
+                "Pas là pour l’instant"
+              )}
+            </span>
+          )}
+        </span>
+      </header>
+
+      <div
+        ref={cadre}
+        className="sd-scene"
+        data-pret={pret ? "1" : undefined}
+        data-calques={pret ? (pret.calques ? "poses" : "aucun") : undefined}
+        data-flou={flou ? "1" : undefined}
+        style={flou ? { backgroundImage: `url("${flou}")` } : undefined}
+      >
+        <div ref={ici} className="sd-ici" />
+        {pret && (
+          <>
+            <div className="sd-bulles moi" aria-live="polite">
+              {monDernier && (
+                <div key={monDernier.id} className="sd-bulle moi" data-bulle={monDernier.id}>
+                  {texteDeBulle(monDernier)}
+                </div>
+              )}
+            </div>
+            <div className="sd-bulles autre" aria-live="polite">
+              {sonDernier && (
+                <div key={sonDernier.id} className="sd-bulle autre" data-bulle={sonDernier.id}>
+                  {texteDeBulle(sonDernier)}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="sd-puce sd-fil"
+              onClick={() => {
+                setNonLus(0);
+                setFeuille(true);
+              }}
+            >
+              <span className="e">💬</span>
+              <span>Messagerie</span>
+              {nonLus > 0 && <span className="sd-badge">{nonLus}</span>}
+            </button>
+          </>
+        )}
+        <p className={`sd-toast${toast ? " vu" : ""}`} role="status">
+          {toast}
+        </p>
+        {chargement.etat === "charge" && !flou && <p className="sd-attente">La pièce arrive…</p>}
+        {chargement.etat === "manque" && <p className="sd-attente">{chargement.message}</p>}
+        {essai && temps && (
+          <p className="sd-temps" data-temps>
+            La pièce à l’écran : <b>{temps.plaque ?? "—"} ms</b> · prête : <b>{temps.pret ?? "—"} ms</b>
+            {pret?.deja ? " (déjà vue sur ce téléphone)" : " (première fois sur ce téléphone)"}
+          </p>
+        )}
+      </div>
+
+      <form
+        className="sd-saisie"
+        autoComplete="off"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void envoyer();
+        }}
+      >
+        <input
+          value={texte}
+          onChange={(e) => setTexte(e.target.value)}
+          placeholder={peutEcrire ? `Écris à ${prenom || "…"}…` : "L’écriture est en pause"}
+          aria-label={`Écrire à ${prenom}`}
+          maxLength={1000}
+          enterKeyHint="send"
+          disabled={!fil || !peutEcrire}
+        />
+        <button type="submit" className="sd-envoyer" aria-label="Envoyer" disabled={!texte.trim() || !fil || !peutEcrire}>
+          <svg viewBox="0 0 24 24" aria-hidden>
+            <path d="M4 12l15-7-5 15-3-6z" fill="#fff" />
+          </svg>
+        </button>
+      </form>
+
+      {/* 💬 Messagerie : construite à l'ouverture, elle monte du bas (un voile derrière ; le voile ou la poignée la ferment) */}
+      <div className={`sd-voile${feuille ? " vu" : ""}`} onClick={() => setFeuille(false)} aria-hidden />
+      <section className={`sd-feuille${feuille ? " vu" : ""}`} aria-label="La messagerie" aria-hidden={!feuille}>
+        <button type="button" className="sd-poignee" onClick={() => setFeuille(false)}>
+          <h3>Toute la conversation avec {prenom}</h3>
+        </button>
+        <div className="sd-corps" ref={liste}>
+          {jours.length ? (
+            jours.map((j) => (
+              <div key={j.jour} className="sd-jour-bloc">
+                <div className="sd-jour">{j.jour}</div>
+                {j.lignes.map((l) =>
+                  l.sorte === "message" ? (
+                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} />
+                  ) : (
+                    <div key={`meme-${l.meme.id}`} className="sd-evt" data-meme={l.meme.id}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={l.meme.image} alt="" loading="lazy" />
+                      <span>{l.meme.moi ? "🎭 Tu as envoyé un mème" : `🎭 ${prenom} t’a envoyé un mème`}</span>
+                      <small>{heureDite(l.meme.le)}</small>
+                    </div>
+                  ),
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="sd-vide">Pas encore de message entre vous : écris le premier !</p>
+          )}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// (les couleurs et les mesures de la maquette, section 3)
+export const STYLES_SALON = `
+.sd{--nuit:#1d0a1b;--carte:#2c1129;--trait:#5a3352;--or:#f2be6a;--rose:#ff2f8f;--creme:#fff6ea;--rosepale:#ffe0ee;--encre:#2a1424;--texte:#fbeef6;--doux:#c6a6bd;--vert:#45d483;
+  --app:-apple-system,"SF Pro Rounded","SF Pro Text",system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--emoji:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  position:relative;height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:var(--nuit);color:var(--texte);font-family:var(--app);-webkit-tap-highlight-color:transparent}
+.sd button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+.sd button:focus-visible,.sd input:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+.sd-entete{flex:none;height:54px;display:flex;align-items:center;gap:9px;padding:env(safe-area-inset-top,0px) 12px 0 8px}
+.sd-retour{width:26px;height:36px;display:grid;place-items:center;font-size:26px;line-height:1;color:var(--texte);text-decoration:none}
+.sd-avatar{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;background:var(--carte);box-shadow:0 0 0 2px var(--or)}
+.sd-qui{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.sd-qui b{font-size:16.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sd-qui span{font-size:12px;color:var(--doux);display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sd-pt{width:7px;height:7px;border-radius:50%;background:var(--vert);box-shadow:0 0 0 3px rgba(69,212,131,.22);flex:none}
+.sd-scene{position:relative;flex:1;min-height:0;margin:2px 10px 0;border-radius:26px;overflow:hidden;background:#3a1f16 center 30%/cover no-repeat;box-shadow:inset 0 0 0 1px rgba(242,190,106,.18)}
+.sd-ici{position:absolute;inset:0}
+.sd-bulles{position:absolute;z-index:4;display:flex;flex-direction:column;gap:5px;pointer-events:none;max-width:calc(50% - 14px);transition:bottom 1.3s cubic-bezier(.22,.8,.2,1)}
+.sd-bulles.moi{left:10px;bottom:var(--b-moi,60%);align-items:flex-start}
+.sd-bulles.autre{right:10px;bottom:var(--b-autre,58%);align-items:flex-end}
+.sd-scene:not([data-ancres]) .sd-bulles{visibility:hidden}
+.sd-bulle{position:relative;max-width:100%;box-sizing:border-box;background:var(--creme);color:var(--encre);font:600 13px/1.3 var(--app);padding:8px 11px;border-radius:16px;box-shadow:0 6px 16px rgba(30,6,24,.35);animation:sd-bulle .38s cubic-bezier(.2,1.5,.4,1) both;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.sd-bulle.moi{background:var(--rosepale);transform-origin:12% 100%}
+.sd-bulle.autre{transform-origin:88% 100%}
+.sd-bulles::after{content:"";position:absolute;bottom:-6px;width:12px;height:12px;transform:rotate(45deg);border-radius:2px}
+.sd-bulles.moi:has(.sd-bulle)::after{left:var(--q-moi,22px);background:var(--rosepale)}
+.sd-bulles.autre:has(.sd-bulle)::after{right:var(--q-autre,24px);background:var(--creme)}
+@keyframes sd-bulle{0%{opacity:0;transform:scale(.5) translateY(8px)}100%{opacity:1;transform:none}}
+.sd-puce{position:absolute;z-index:5;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;font:700 13px var(--app);color:#fff;background:rgba(24,7,20,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.sd-puce .e{font-family:var(--emoji);font-size:16px}
+.sd-fil{bottom:10px;right:10px}
+.sd-badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--rose);font:800 11px/18px var(--app);text-align:center;box-sizing:border-box}
+.sd-toast{position:absolute;z-index:8;left:50%;top:12px;margin:0;transform:translate(-50%,-8px);width:max-content;max-width:88%;box-sizing:border-box;padding:9px 14px;border-radius:16px;background:rgba(255,246,234,.96);color:var(--encre);font:650 13px/1.3 var(--app);text-align:center;box-shadow:0 10px 26px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
+.sd-toast.vu{opacity:1;transform:translate(-50%,0)}
+.sd-attente{position:absolute;inset:auto 16px 45%;margin:0;text-align:center;font-weight:600}
+.sd-temps{position:absolute;z-index:5;left:10px;bottom:10px;margin:0;max-width:calc(100% - 150px);padding:6px 9px;border-radius:12px;background:rgba(24,7,20,.62);font:600 11px/1.3 var(--app);font-variant-numeric:tabular-nums}
+.sd-saisie{flex:none;display:flex;gap:9px;align-items:center;padding:8px 12px max(12px,env(safe-area-inset-bottom,0px))}
+.sd-saisie input{flex:1;min-width:0;height:46px;box-sizing:border-box;border-radius:23px;border:1.5px solid var(--trait);background:#170816;color:var(--texte);padding:0 18px;font:500 15.5px var(--app)}
+.sd-saisie input::placeholder{color:#97738b}
+.sd-envoyer{width:48px;height:48px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--rose)!important;box-shadow:0 6px 18px rgba(255,47,143,.4);transition:transform .15s ease,opacity .15s ease}
+.sd-envoyer:disabled{opacity:.45;box-shadow:none}
+.sd-envoyer:not(:disabled):active{transform:scale(.92)}
+.sd-envoyer svg{width:22px;height:22px}
+.sd-voile{position:absolute;inset:0;z-index:20;background:rgba(10,3,9,.5);opacity:0;pointer-events:none;transition:opacity .3s ease}
+.sd-voile.vu{opacity:1;pointer-events:auto}
+.sd-feuille{position:absolute;z-index:21;left:0;right:0;bottom:0;max-height:80%;display:flex;flex-direction:column;border-radius:26px 26px 0 0;background:#24101f;box-shadow:0 -10px 40px rgba(0,0,0,.45);transform:translateY(105%);visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.25,1),visibility 0s .38s}
+.sd-feuille.vu{transform:none;visibility:visible;transition:transform .38s cubic-bezier(.2,.9,.25,1)}
+.sd-poignee{flex:none;display:flex!important;flex-direction:column;align-items:center;gap:8px;padding:9px 16px 10px!important;border-bottom:1px solid rgba(255,255,255,.06)!important}
+.sd-poignee::before{content:"";width:38px;height:5px;border-radius:3px;background:#5d3a54}
+.sd-poignee h3{margin:0;font:700 15px var(--app);text-align:center}
+.sd-corps{overflow-y:auto;overscroll-behavior:contain;padding:12px 16px 22px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.sd-jour-bloc{display:flex;flex-direction:column;gap:8px}
+.sd-jour{align-self:center;font:700 11px var(--app);letter-spacing:.06em;text-transform:uppercase;color:#a98a9f;margin-top:6px}
+.sd-msg{max-width:78%;padding:8px 12px;border-radius:16px;font:550 14px/1.35 var(--app);background:var(--creme);color:var(--encre);align-self:flex-start;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:4px}
+.sd-msg.moi{align-self:flex-end;background:var(--rosepale)}
+.sd-msg small{display:block;font-size:10.5px;color:#8e6f83}
+.sd-lien{color:#8a1f5a;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.sd-piece{display:block;max-width:180px;width:100%;height:auto;border-radius:10px}
+.sd-vocal{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:180px}
+.sd-lire{width:30px;height:30px;border-radius:50%;flex:none;display:grid!important;place-items:center;background:var(--rose)!important;color:#fff!important;font:800 11px var(--app)!important}
+.sd-vocal small{font:700 11px var(--app);color:#8a6a7e}
+.sd-vocal q{flex-basis:100%;font:italic 500 12px/1.35 var(--app);color:#5b3a50;quotes:"« " " »"}
+.sd-evt{align-self:center;display:flex;align-items:center;gap:8px;max-width:92%;padding:6px 10px;border-radius:14px;background:rgba(255,255,255,.06);font:600 12.5px/1.3 var(--app)}
+.sd-evt img{width:32px;height:32px;border-radius:8px;object-fit:cover;flex:none}
+.sd-evt small{color:var(--doux);font-size:11px}
+.sd-vide{margin:24px 0;text-align:center;color:var(--doux)}
+`;
