@@ -15,8 +15,9 @@ Les trois pages de l'univers se répondent :
 | 🏠 Ma maison | ma pièce, qui se remplit de ce que je garde | moi, et ceux que je reçois |
 | 🧭 **Découvrir** | **ma télé du jour, et des salons ouverts à tous, par passion** | **moi, mes proches, et les autres** |
 
-Les utilisateurs viennent de toute la France, et les duos ne vivent pas dans la même ville : **rien ici ne dépend
-d'un lieu** (ni ville, ni commerçant, ni rencontre de quartier). On se retrouve par passion.
+Les utilisateurs viennent de toute la France, et les duos ne vivent pas dans la même ville : **on se retrouve par
+passion**, pas par lieu (ni commerçant, ni rencontre de quartier). Une seule exception : **les potins de sa ville**
+(5.4), un salon où l'on parle de ce qui s'y passe.
 
 Découvrir a deux étages :
 
@@ -49,6 +50,7 @@ salon) va dans ma maison ; **quelqu'un que j'apprécie** dans un salon peut deve
 - **Une douzaine de thèmes au départ** (validé par le propriétaire, la liste reste à confirmer) :
   ⚽ Foot et sport · 🎬 Séries et films · 🎵 Musique · 🎮 Jeux vidéo · 🍳 Cuisine · 📚 Révisions et études ·
   👶 Jeunes parents (adultes) · 👗 Mode et beauté · 😂 Humour · ✈️ Voyages · 🐾 Animaux · 🧘 Bien-être.
+  Et, pour tout le monde, à part : **🗞️ Les potins de ma ville** (5.4).
 - **« Tes passions »** : on en choisit de 3 à 5, la première fois qu'on ouvre Découvrir (et plus tard depuis Moi). Un
   écran, des vignettes, un toucher par passion.
 - Rangé dans `<h>/passions.json` : `{ passions: string[], poids: Record<string, number>, le }`. Les poids montent
@@ -135,6 +137,34 @@ pas de pièce de plus ; ma maison devient l'endroit où je reçois.
 - **« Mes salons »** : les salons que je fréquente s'affichent dans ma pièce (des fanions au mur, un par thème), avec
   les moments que j'en ai gardés.
 
+### 5.4 🗞️ Les potins de ma ville (décision du propriétaire, 17 novembre 2026)
+
+- **Un salon par ville** : ce qui s'y passe, **les soirées, les événements**, les nouveautés, les travaux, ce qui ouvre
+  et ce qui ferme. On connaît la ville de chacun (l'inscription, `ville_slug`). Le nom affiché : « 🗞️ Les potins de
+  Dax ».
+- **Par ville quand elle a assez de monde** (une vingtaine d'inscrits, à confirmer), **sinon par département**
+  (« 🗞️ Les potins des Landes ») ; il s'ouvre dès que le monde est là. Chacun ne voit que celui de sa ville (ou de
+  son département).
+- **D'où viennent les potins** (chaque nuit, sur la télé du salon et dans une colonne « Aujourd'hui ») :
+  1. **la presse locale** : le flux Google Actualités du nom de la ville (et du département) ; on montre le titre, la
+     source et un lien vers l'article, jamais son texte (les droits des journaux) ;
+  2. **les soirées et les événements** : OpenAgenda (l'agenda ouvert où publient les villes, les offices de tourisme et
+     les associations ; une clé gratuite, `OPENAGENDA_API_KEY`, à ranger dans Vercel) ; les vidéos YouTube récentes qui
+     citent la ville ;
+  3. **les habitants** : « 🗞️ J'ai vu… » (un lieu, ce qui s'y passe) et « 📅 Une soirée, un événement » (quoi, où,
+     quand), modérés avant d'apparaître ;
+  4. **les mèmes déposés sur la carte « Autour »** dans cette ville.
+- **Les soirées et les événements vont sur l'étagère du salon, rayon « À venir »** (passés, ils s'effacent).
+  « 📌 Garder » en met un sur mon étagère : il devient mon prochain rendez-vous (le 📅 du salon du duo), et je peux
+  l'envoyer à un proche (« On y va ? »).
+- **Les règles** :
+  - on parle **des lieux et de ce qui se passe, jamais d'un particulier nommé, jamais de photo de quelqu'un** : la
+    modération bloque les prénoms et noms de particuliers avant l'affichage (les commerces, les lieux, les artistes à
+    l'affiche, les élus dans leur fonction restent permis) ;
+  - **rien d'alcoolisé** : une soirée tournée vers l'alcool (open bar, dégustation, bar à…) n'est ni reprise ni
+    acceptée ;
+  - **les 15-17 ans** voient les actualités et les événements de leur âge, **sans écrire**.
+
 ## 6. La modération et la sécurité (avec les salons ouverts, jamais après)
 
 - **Ce qui est écrit** passe par la modération qui existe déjà (les mots, et la modération des mèmes et d'« Autour »)
@@ -175,6 +205,7 @@ pas de pièce de plus ; ma maison devient l'endroit où je reçois.
 | **D3 + D4** | Les salons ouverts (instances de 8, présence, écrire, gestes, mèmes, la télé du thème) **avec** la modération et la sécurité | D2 |
 | **D5** | L'étagère des salons, « Mes salons » dans ma maison, « Ajouter en proche » depuis un salon | D3 |
 | **D6** | Les liens TikTok et Instagram collés sur la télé | D1 |
+| **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
 
 Chaque lot : ses essais (route et navigateur, comme le salon du duo), sa section dans ce document, une PR vers `main`.
 Avant D0, une **maquette cliquable** (une page d'administration, comme la maquette de la pièce vivante) : la carte
@@ -190,3 +221,5 @@ Avant D0, une **maquette cliquable** (une page d'administration, comme la maquet
 4. **Les vocaux dans les salons ouverts** : non au départ ?
 5. **La durée de la conversation d'un salon ouvert** : 48 h (les moments de l'étagère restent) ?
 6. **La clé YouTube** : à créer et à ranger dans Vercel avant D0.
+7. **Les potins de ma ville** : le seuil pour avoir son salon de ville (une vingtaine d'inscrits ?) ; la clé
+   OpenAgenda, à créer et à ranger dans Vercel avant D7.
