@@ -201,7 +201,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 - **Pas au départ** (décidé le 17 novembre 2026) : les vocaux (une voix ne se modère pas avant d'être entendue, et
   c'est le premier outil du harcèlement), les photos, les vidéos personnelles ; à reconsidérer après un mois de
   salons ouverts, avec les chiffres de la modération. Entre proches, dans ma pièce, les vocaux restent permis.
-- **💬 La conversation** se relit dans une feuille, comme 💬 Messagerie ; elle est gardée **48 h** (à confirmer).
+- **💬 La conversation** se relit dans une feuille, comme 💬 Messagerie ; elle est gardée **48 h**.
 - **L'étagère du salon** : les moments que tout le monde a aimés (un message qui a reçu beaucoup de gestes) y restent,
   sans limite de temps. Chacun peut « 📌 Garder » un moment : il va dans sa maison.
 - **Toucher une figurine** : son prénom, ses passions, « 👯 Ajouter en proche » (s'il accepte aussi, le duo s'ouvre),
