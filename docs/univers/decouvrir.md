@@ -285,9 +285,8 @@ Avant D0, une **maquette cliquable** (une page d'administration, comme la maquet
 
 ## 10. Ce qui reste à décider (le propriétaire)
 
-1. **Ce que deviennent les deux parties actuelles de Découvrir** : le défilement des mèmes en plein écran et les
-   vœux. Proposition : le défilement disparaît (la télé du jour le remplace) ; les vœux deviennent un salon ouvert à
-   part (« Les vœux »), ou restent une carte sous ma télé.
+1. ~~Ce que deviennent les deux parties actuelles de Découvrir~~ — **décidé le 17 novembre 2026 : on supprime le
+   défilement des mèmes et les vœux** (section 11).
 2. **La liste des douze thèmes** (section 3).
 3. **Le nombre de places** : 4 dans ma pièce, 8 dans un salon ouvert ?
 4. **Les vocaux dans les salons ouverts** : non au départ ?
@@ -297,3 +296,29 @@ Avant D0, une **maquette cliquable** (une page d'administration, comme la maquet
    réglage « Mes réactions dans les clips de mes proches » : allumé ou éteint par défaut ?
 8. **Les potins de ma ville** : le seuil pour avoir son salon de ville (une vingtaine d'inscrits ?) ; la clé
    OpenAgenda, à créer et à ranger dans Vercel avant D7.
+
+## 11. Ce qu'on retire de l'ancienne page (décision du propriétaire, 17 novembre 2026)
+
+**Le défilement des mèmes en plein écran et les vœux sont supprimés.** Pour que l'onglet ne reste jamais vide, on les
+retire **dans la PR qui livre la nouvelle page (D1)** : l'ancienne page part, ma télé du jour arrive.
+
+Ce qui part :
+- **l'écran** : `src/app/collection/decouvrir.tsx` (le défilement) et `src/app/collection/voeu.tsx` (les bulles, la
+  mission, « Fais un vœu », « Mon vœu », « Réponds avec ta tête », « Exaucé ») ; « Mes vœux » dans Moi et le badge du
+  vœu sur la carte de personnage ;
+- **le serveur** : `src/lib/direct/voeu.ts`, `src/lib/direct/voeu-serveur.ts`, `src/app/api/direct/voeu/route.ts` ;
+- **les notifications** : les tâches `/api/cron/voeu-soir` et `/api/cron/voeu-soir-ete` (et leurs lignes dans
+  `vercel.json`), la mission de 11 h 30 ;
+- **les essais** : `scripts/navigateur/voeu.mjs` (et sa ligne dans `scripts/navigateur/lancer-essais.sh` et dans la
+  liste de lint de la CI) ;
+- **le tuto** : les trois bulles de Pablito sur Découvrir (`public/collection/pablito/tuto-decouvrir-1..3.mp3`) parlent
+  de l'ancienne page ; **le propriétaire enregistrera les nouvelles** (jamais de voix de synthèse), en attendant le tuto
+  passe Découvrir.
+
+Ce qui reste :
+- **`sesDixHuitAns`** (dans `voeu-serveur.ts`) sert ailleurs (le catalogue des pièces, `salon-serveur.ts` ; la
+  séparation des 15-17 ans ici) : on le **déplace** dans un fichier à lui avant d'effacer `voeu-serveur.ts` ;
+- **la table `clik_voeu`** (`supabase/migrations/20261111090000_clik_voeu.sql`) : on ne l'efface pas tout de suite (une
+  migration qui la supprime viendra un mois plus tard, une fois sûr que rien ne la lit plus) ;
+- **les mèmes** eux-mêmes : on les crée toujours (« Créer »), on les envoie à ses proches, on les joue dans les salons ;
+  seul le défilement des mèmes d'inconnus disparaît.
