@@ -27,6 +27,11 @@ Découvrir a deux étages :
    figurine s'assoit sur une place libre, et on discute avec le moteur du salon du duo : les bulles, les gestes, les
    mèmes.
 
+**Le cœur de la page, et notre argument de communication : on ne regarde jamais une vidéo seul** (4.5). Quand je
+regarde une vidéo, les figurines de mes proches qui l'ont vue avant moi sont assises à côté de moi et réagissent à la
+seconde où ils ont réagi — même s'ils l'ont vue hier. **« Regarde tes vidéos avec ceux que tu aimes, même quand ils
+sont loin. »**
+
 Le fil qui relie tout : **les mêmes passions** font ma télé du jour et les salons ouverts (je regarde un but chez
 moi ; un toucher m'emmène dans le salon du foot pour en parler) ; **ce que je garde** (une vidéo, un moment d'un
 salon) va dans ma maison ; **quelqu'un que j'apprécie** dans un salon peut devenir un proche, et notre duo s'ouvre.
@@ -107,6 +112,71 @@ pas de pièce de plus ; ma maison devient l'endroit où je reçois.
   (TikTok : son lecteur public ; Instagram : l'oEmbed de Meta, qui demande le jeton de l'application Meta — sinon une
   carte qui ouvre Instagram).
 - La synchronisation n'est garantie que pour YouTube ; pour TikTok et Instagram, chacun lance la vidéo de son côté.
+
+### 4.5 ⭐ Jamais seul devant une vidéo (décision du propriétaire, 17 novembre 2026)
+
+**L'idée** : mes réactions à une vidéo sont notées **à la seconde près** (un rire à 0:42, un sursaut à 1:15, « nooon »
+à 1:30). Quand un proche regarde la même vidéo plus tard, ma figurine est assise à côté de lui et réagit au même
+moment. On regarde ensemble sans être là en même temps — ce qui manque aux gens éloignés (couples à distance,
+familles dispersées, amis d'enfance).
+
+**Pourquoi ça marche** : la sélection du jour est **la même pour tout le monde par thème** (4.1) — mes proches ont
+souvent vu les mêmes vidéos que moi. Et le moteur sait déjà rejouer (l'arrivée du salon du duo rejoue ce que l'autre a
+laissé, `salon-du-duo.md` 11.9) : ici, on rejoue selon le temps de la vidéo, pas l'heure.
+
+**Comment savoir quand on a réagi, sans bouton** — trois niveaux :
+
+1. **Ce que l'appli comprend toute seule (pour tout le monde, dès le départ)** :
+   - **ce que je fais de la vidéo** : je la passe avant 15 s → « bof » à ce moment ; je reviens en arrière → « oh ! »
+     au début du passage revu ; je la regarde jusqu'au bout → un ❤️ à la fin ;
+   - **des gestes sans viser**, n'importe où sur la scène hors de la télé : un toucher → ma figurine rit ; deux
+     touchers → un cœur ; un appui long → « oh ! » ;
+   - **ce que j'écris ou je dis** : une bulle tapée part à la bonne seconde, et sa réaction se déduit des mots
+     (`reactionAuTexte`, `src/app/salon/bulles.ts` : « c'est nul » → bof, « haha » → rire, « ! » → surprise) ; ou je
+     garde le doigt appuyé et je le dis : **ma vraie voix** (le talkie existant), rejouée à la seconde chez mes proches
+     (jamais dans un salon ouvert au départ, 5.2).
+2. **« 📷 Ta figurine fait ta tête » (si je l'accepte ; la fonction phare)** :
+   - la caméra avant regarde mon visage pendant la vidéo ; **rien n'est filmé, rien n'est envoyé** : le téléphone
+     reconnaît sur place un sourire, un rire, une surprise, une grimace (MediaPipe Face Landmarker, dans le navigateur,
+     ses « blendshapes », 5 images par seconde) ; on ne garde que « rire à 0:42 » ;
+   - repères de départ (à régler à l'essai) : rire = sourire > 0,6 et bouche ouverte > 0,35 pendant 0,4 s ; surprise =
+     sourcils levés > 0,5 et bouche ouverte > 0,3 ; grimace / bof = moue ou nez froncé > 0,4 ; une même réaction au plus
+     toutes les 2 s ;
+   - si l'on regarde en même temps (4.3), ma figurine copie mes expressions **en direct**, à côté d'eux ;
+   - **éteinte par défaut** ; un écran qui explique, un accord clair (la loi européenne sur l'IA demande d'informer
+     quand on détecte des émotions) ; une pastille 📷 visible tant qu'elle marche ; un toucher l'arrête. Le message :
+     « Ton téléphone voit que tu ris. Il ne garde que ça. »
+3. **Le rire entendu au micro : pas maintenant** (le son de la vidéo trompe la détection, et un micro qui écoute en
+   continu met mal à l'aise).
+
+**Ce qui est rangé** : `reactions/<video>/<h>.json` — `[{ t, sorte, texte?, vocal?, source, le }]` (`t` en secondes, au
+dixième ; `sorte` : rire, sourire, coeur, oh, surprise, bof, grimace, texte, vocal ; `source` : implicite, geste,
+camera, ecrit, voix). Seuls **mes proches** les voient (et, dans un salon ouvert, ceux de ce salon : 5.2).
+
+**Le rejouer** : à l'ouverture d'une vidéo, un seul appel rend les réactions de mes proches pour elle ; le lecteur
+(l'API IFrame de YouTube, `getCurrentTime`) déclenche chacune à sa seconde : la figurine rit, saute, sa bulle s'ouvre,
+sa voix se fait entendre. **Jusqu'à 3 proches assis à côté de moi** (les places de ma pièce, 4.3) — ceux qui ont le
+plus réagi ; les autres passent en petites têtes au bord de la télé. **Dans un salon ouvert** : les réactions de tous
+ceux qui ont vu la vidéo dans la journée, un stade — des dizaines de petites figurines qui sautent au but.
+
+**Des figurines prêtes à réagir** :
+- **tout de suite**, avec le moteur existant : rire (la tête qui sautille), sursauter, pencher la tête, le cœur, le
+  « bof » (somnoler un instant), les emojis qui jaillissent ;
+- **ensuite, de vraies expressions** : un petit lot de têtes par figurine (sourire, rire bouche ouverte, surprise,
+  bof, grimace), fait **une fois**, après « C'est moi ! », comme les calques (`salon-du-duo.md` 11.7), dans la suite
+  de l'essai des poses (`docs/reprise.md`, « Les poses de la figurine : l'essai P0 »).
+
+**🎬 « Nos réactions » : la boucle virale** :
+- à la fin d'une vidéo où au moins un proche a réagi : « 🎬 Nos réactions » → un clip de 10 s : ma pièce, nos
+  figurines au moment le plus fort (la seconde où l'on a le plus réagi), une phrase (« Quand Sam a vu le but 😂 »), un
+  carton avec le titre et la chaîne de la vidéo (**jamais ses images** : les droits), le logo ClikMe et clikme.fr ;
+- fabriqué côté serveur (comme la vidéo de la figurine pour WhatsApp), partagé par le menu du téléphone (TikTok,
+  Instagram, WhatsApp) : **chaque clip partagé montre ce que fait l'appli, avec de vraies têtes** ;
+- n'y paraissent que les proches qui l'acceptent (un réglage dans Moi : « Mes réactions peuvent apparaître dans les
+  clips de mes proches »).
+
+**L'argument de communication** : « Regarde tes vidéos avec ceux que tu aimes, même quand ils sont loin. » La vidéo
+de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de ses amis, à côté d'elle, éclatent de rire.
 
 ## 5. Les salons ouverts
 
@@ -202,6 +272,8 @@ pas de pièce de plus ; ma maison devient l'endroit où je reçois.
 | **D0** | « Tes passions » (l'écran, `passions.json`) ; la sélection YouTube de chaque nuit ; la page d'administration de la sélection | la clé YouTube |
 | **D1** | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
 | **D2** | Le moteur à N places (le contrat `salon.ts`) ; inviter des proches ; la télé synchronisée | D1 |
+| **D2b ⭐** | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
+| **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
 | **D3 + D4** | Les salons ouverts (instances de 8, présence, écrire, gestes, mèmes, la télé du thème) **avec** la modération et la sécurité | D2 |
 | **D5** | L'étagère des salons, « Mes salons » dans ma maison, « Ajouter en proche » depuis un salon | D3 |
 | **D6** | Les liens TikTok et Instagram collés sur la télé | D1 |
@@ -221,5 +293,7 @@ Avant D0, une **maquette cliquable** (une page d'administration, comme la maquet
 4. **Les vocaux dans les salons ouverts** : non au départ ?
 5. **La durée de la conversation d'un salon ouvert** : 48 h (les moments de l'étagère restent) ?
 6. **La clé YouTube** : à créer et à ranger dans Vercel avant D0.
-7. **Les potins de ma ville** : le seuil pour avoir son salon de ville (une vingtaine d'inscrits ?) ; la clé
+7. **« 📷 Ta figurine fait ta tête »** : permise aux 15-17 ans (avec le même accord) ou réservée aux adultes ? Et le
+   réglage « Mes réactions dans les clips de mes proches » : allumé ou éteint par défaut ?
+8. **Les potins de ma ville** : le seuil pour avoir son salon de ville (une vingtaine d'inscrits ?) ; la clé
    OpenAgenda, à créer et à ranger dans Vercel avant D7.
