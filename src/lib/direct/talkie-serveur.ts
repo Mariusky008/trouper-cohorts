@@ -97,7 +97,8 @@ const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 export const COMPRENDRE_PAR_JOUR = 40;
 /** Les messages envoyés par personne et par jour. */
 export const PAROLES_ENVOYEES_PAR_JOUR = 100;
-const LA_MS = 150_000;
+/** 🟢 « Là, maintenant » : ClikMe ouvert dans les 2 min 30 (la page le redit toutes les minutes). */
+export const LA_MS = 150_000;
 const MESSAGES_LUS = 40;
 
 // ─── les chemins ──────────────────────────────────────────────────────────────────────────────────
@@ -113,7 +114,7 @@ const lireNom = (n: string) => {
 };
 const cheminSon = (pair: string, id: string, ext: string) => `fils/${pair}/s/${id}.${ext}`;
 const cheminLus = (h: string) => `${h}/fils-lus.json`;
-const cheminLa = (h: string) => `${h}/la.json`;
+export const cheminLa = (h: string) => `${h}/la.json`;
 export const cheminReglages = (h: string) => `${h}/reglages.json`;
 /** ☀️ Son humeur du jour (`rituel-serveur.ts`) : { jour, visage, le, ecrites }. */
 export const cheminHumeur = (h: string) => `${h}/humeur.json`;

@@ -102,7 +102,8 @@ await p.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "networkidle"
 ok(await attendre(async () => (await p.locator('.sd-scene[data-pret][data-calques="poses"] .sc-fig').count()) === 2), "le salon : la pièce et les deux figurines posées");
 ok((await texte(".sd-qui b")) === "Sam", "en haut : Sam");
 const bulleSam = p.locator(".sd-bulle.autre");
-ok(await attendre(async () => (await texte(".sd-bulle.autre")) === "Coucou Léa ! Tu viens ce soir ?"), `la bulle de Sam : son dernier message, seul (${await texte(".sd-bulle.autre")})`);
+// (l'arrivée rejoue d'abord ses deux messages : on attend qu'elle finisse — lot S2, deuxième partie)
+ok(await attendre(async () => (await p.locator(".sd-bulle[data-rejoue]").count()) === 0 && (await texte(".sd-bulle.autre")) === "Coucou Léa ! Tu viens ce soir ?", 12000), `la bulle de Sam : son dernier message, seul (${await texte(".sd-bulle.autre")})`);
 ok((await p.locator(".sd-bulle").count()) === 1, "… et pas de bulle pour Léa (elle n’a rien écrit)");
 const place = await p.evaluate(() => {
   const s = document.querySelector(".sd-scene").getBoundingClientRect();

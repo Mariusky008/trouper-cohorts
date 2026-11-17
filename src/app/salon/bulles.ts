@@ -81,3 +81,29 @@ export function derniersDeChacun(messages: readonly MessageFil[]): { moi?: Messa
   }
   return { moi, autre };
 }
+
+/** 🚪 Ce que l'arrivée rejoue : un message ou un mème de l'autre, ce que sa bulle en dit, et combien de temps (ms). */
+export type ARejouer = { id: string; texte: string; ms: number };
+/** L'arrivée dure 12 s au plus (`salon-du-duo.md`, section 4.1) ; au-delà, on garde les plus récents (le reste est dans 💬). */
+export const ARRIVEE_MS = 12_000;
+/**
+ * 🚪 L'ARRIVÉE : ce que l'autre a laissé depuis ma dernière visite — ses messages et ses mèmes pas encore vus (le serveur
+ * les marque `nouveau`, une fois : rien n'est rejoué deux fois) —, du plus ancien au plus récent, chacun le temps de le
+ * lire (1,4 à 3 s), 12 s au plus en tout.
+ */
+export function aRejouer(messages: readonly MessageFil[], memes: readonly MemeFil[] = [], maxMs = ARRIVEE_MS): ARejouer[] {
+  const tous = [
+    ...messages.filter((m) => m.nouveau && !m.moi).map((m) => ({ id: m.id, texte: texteDeBulle(m), le: m.le })),
+    ...memes.filter((x) => x.nouveau && !x.moi).map((x) => ({ id: `meme-${x.id}`, texte: x.texte?.trim() ? `🎭 « ${x.texte.trim()} »` : "🎭 Un mème", le: x.le })),
+  ]
+    .sort((a, b) => Date.parse(a.le) - Date.parse(b.le))
+    .map((x) => ({ id: x.id, texte: x.texte, ms: Math.max(1400, Math.min(3000, 1000 + x.texte.length * 30)) }));
+  const gardes: ARejouer[] = [];
+  let total = 0;
+  for (let i = tous.length - 1; i >= 0 && total + tous[i].ms <= maxMs; i--) {
+    gardes.unshift(tous[i]);
+    total += tous[i].ms;
+  }
+  return gardes;
+}
+

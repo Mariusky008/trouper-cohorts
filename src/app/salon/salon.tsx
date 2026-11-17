@@ -23,9 +23,9 @@
 import { useEffect, useRef, useState } from "react";
 import { creerScene } from "./moteur";
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
-import { derniersDeChacun, dureeDite, heureDite, parJour, reactionAuTexte, tempsDeParole, texteDeBulle } from "./bulles";
-import { autreQue, type OptionsScene, type OuvertureSalon, type Qui, type Scene } from "@/lib/direct/salon";
-import { texteDuMessage, type MessageFil } from "@/lib/direct/talkie";
+import { aRejouer, derniersDeChacun, dureeDite, heureDite, nomDuJour, parJour, reactionAuTexte, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
+import { autreQue, miseEnSceneDe, type OptionsScene, type OuvertureSalon, type Qui, type Scene } from "@/lib/direct/salon";
+import { texteDuMessage, type Fil, type MemeFil, type MessageFil } from "@/lib/direct/talkie";
 
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
 export type ChargementSalon =
@@ -176,6 +176,18 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const [feuille, setFeuille] = useState(false);
   const [toast, setToast] = useState("");
   const [temps, setTemps] = useState<{ plaque?: number; pret?: number } | null>(null);
+  const [memes, setMemes] = useState<MemeFil[]>([]);
+  // 💓 (le pouls) l'autre est là ; sinon sa dernière visite ; il écrit
+  const [la, setLa] = useState(false);
+  const [vu, setVu] = useState<string | undefined>(undefined);
+  const [ecrit, setEcrit] = useState(false);
+  // 🚪 (l'arrivée) ce qu'il a laissé depuis ma dernière visite, rejoué un à un
+  const [rejoue, setRejoue] = useState<ARejouer | null>(null);
+  const [arriveeFaite, setArriveeFaite] = useState(false);
+  const passer = useRef<(() => void) | null>(null);
+  const feuilleOuverte = useRef(false);
+  const lesMessages = useRef<MessageFil[]>([]);
+  const prepare = useRef(0);
   const cadre = useRef<HTMLDivElement>(null);
   const ici = useRef<HTMLDivElement>(null);
   const liste = useRef<HTMLDivElement>(null);
@@ -192,6 +204,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         setChargement(c);
         if (c.etat === "pret") {
           setMessages(c.ouverture.fil.messages);
+          setMemes(c.ouverture.fil.memes ?? []);
+          setLa(c.ouverture.fil.la);
           setNonLus(c.ouverture.fil.messages.filter((m) => m.nouveau && !m.moi).length);
         }
       });
@@ -226,12 +240,145 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       setTemps(mesures());
       envoyerMesures(pret.deja);
     });
+    // 🚪 l'arrivée : ce qu'il a laissé depuis ma dernière visite, rejoué un à un (12 s au plus ; un toucher passe la suite),
+    // puis, s'il n'est pas là, sa figurine somnole
+    const fil = pret.ouverture.fil;
+    const suite = aRejouer(fil.messages, fil.memes ?? []);
+    const minutes: ReturnType<typeof setTimeout>[] = [];
+    const fin = () => {
+      minutes.forEach(clearTimeout);
+      passer.current = null;
+      setRejoue(null);
+      setArriveeFaite(true);
+      if (!fil.la && !s.figurine("autre").dort) s.figurine("autre").endormir();
+    };
+    let t = 700;
+    for (const x of suite) {
+      minutes.push(
+        setTimeout(() => {
+          setRejoue(x);
+          s.figurine("autre").parler(tempsDeParole(x.texte));
+          minutes.push(setTimeout(() => reagir(s, "moi", x.texte, true), 450));
+        }, t),
+      );
+      t += x.ms;
+    }
+    minutes.push(setTimeout(fin, suite.length ? t : 400));
+    passer.current = suite.length ? fin : null;
     return () => {
       cancelAnimationFrame(raf);
+      minutes.forEach(clearTimeout);
+      passer.current = null;
       s.detruire();
       scene.current = null;
     };
   }, [pret]);
+
+  // 🟢 je suis là (toutes les minutes, page visible) : l'autre le voit
+  useEffect(() => {
+    if (!pret) return;
+    const dire = () => {
+      // (la réponse est lue : une réponse jamais lue laisse sa requête ouverte)
+      if (document.visibilityState === "visible")
+        void fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "la" }) })
+          .then((r) => r.text())
+          .catch(() => undefined);
+    };
+    dire();
+    const n = setInterval(dire, 60_000);
+    return () => clearInterval(n);
+  }, [pret]);
+
+  // 💓 LE POULS : toutes les 1,5 s quand l'autre est là, toutes les 10 s sinon, jamais page cachée ; on ne relit la
+  // conversation que si son numéro a changé
+  useEffect(() => {
+    if (!pret) return;
+    let fini = false;
+    let minute: ReturnType<typeof setTimeout> | null = null;
+    let laConnu = pret.ouverture.fil.la;
+    let connu: number | null = null;
+    const dernierConnu = Math.max(0, ...pret.ouverture.fil.messages.map((m) => Date.parse(m.le) || 0), ...(pret.ouverture.fil.memes ?? []).map((m) => Date.parse(m.le) || 0));
+    const relire = async () => {
+      const r = await fetch(`/api/direct/proches?fil=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
+      const j = r?.ok ? ((await r.json().catch(() => null)) as { fil?: Fil } | null) : null;
+      const f = j?.fil;
+      if (!f || fini) return;
+      const connus = new Set(lesMessages.current.map((m) => m.id));
+      const neufs = f.messages.filter((m) => !m.moi && !connus.has(m.id));
+      setMessages((avant) => {
+        // (mes envois pas encore confirmés restent)
+        const enRoute = avant.filter((m) => m.id.startsWith("envoi-") && !f.messages.some((x) => x.moi && x.texte === m.texte));
+        return [...f.messages, ...enRoute];
+      });
+      setMemes(f.memes ?? []);
+      // (ses nouveaux messages : sa figurine les dit, la mienne réagit ; les non-lus, si 💬 est fermée)
+      const s = scene.current;
+      if (neufs.length && s) {
+        const dernier = neufs[neufs.length - 1];
+        if (s.figurine("autre").dort) s.figurine("autre").reveiller();
+        s.figurine("autre").parler(tempsDeParole(texteDeBulle(dernier)));
+        setTimeout(() => scene.current === s && reagir(s, "moi", texteDeBulle(dernier), true), 450);
+      }
+      if (neufs.length && !feuilleOuverte.current) setNonLus((n) => n + neufs.length);
+    };
+    const battre = async () => {
+      minute = null;
+      if (fini || document.visibilityState !== "visible") return;
+      const r = await fetch(`/api/direct/proches?pouls=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
+      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string } | null) : null;
+      if (fini) return;
+      if (p) {
+        const n = Number(p.n) || 0;
+        const estLa = Boolean(p.la);
+        setLa(estLa);
+        setVu(p.vu);
+        setEcrit(Boolean(p.ecrit));
+        const s = scene.current;
+        // (il arrive : sa figurine se réveille et fait coucou, la mienne se tourne vers elle ; il part : elle somnole)
+        if (s && estLa !== laConnu) {
+          if (estLa) {
+            s.figurine("autre").reveiller();
+            setTimeout(() => {
+              if (scene.current !== s) return;
+              if (miseEnSceneDe("coucou")) void s.geste("coucou", "autre");
+              else s.fx.jaillir("👋", s.repere("autre", "haut"), 1, { taille: 4 });
+              s.figurine("moi").pencher(8, 1400);
+            }, 500);
+          } else if (!s.figurine("autre").dort) s.figurine("autre").endormir();
+        }
+        laConnu = estLa;
+        if (connu === null ? n > dernierConnu + 1500 : n !== connu) await relire();
+        connu = n;
+      }
+      if (!fini) minute = setTimeout(battre, laConnu ? 1500 : 10_000);
+    };
+    const visible = () => {
+      if (document.visibilityState === "visible" && !minute) void battre();
+    };
+    document.addEventListener("visibilitychange", visible);
+    minute = setTimeout(battre, 1500);
+    return () => {
+      fini = true;
+      if (minute) clearTimeout(minute);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [pret, cle]);
+
+  // ✍️ « … » chez l'autre pendant que j'écris (redit toutes les 5 s ; fini à l'envoi ou quand la saisie se vide)
+  const direQueJEcris = (oui: boolean) => {
+    if (oui && Date.now() - prepare.current < 5000) return;
+    if (!oui && !prepare.current) return;
+    prepare.current = oui ? Date.now() : 0;
+    void fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", cle, oui }), keepalive: !oui })
+      .then((r) => r.text())
+      .catch(() => undefined);
+  };
+  useEffect(() => {
+    feuilleOuverte.current = feuille;
+  }, [feuille]);
+  useEffect(() => {
+    lesMessages.current = messages;
+  }, [messages]);
 
   // (la messagerie ouverte : en bas, le plus récent)
   useEffect(() => {
@@ -258,6 +405,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     const provisoire: MessageFil = { id: `envoi-${Date.now()}`, moi: true, le: new Date().toISOString(), duree: 0, son: "", repliques: [], genre: "ecrit", texte: t };
     setMessages((l) => [...l, provisoire]);
     setTexte("");
+    direQueJEcris(false);
     const s = scene.current;
     if (s) {
       s.figurine("moi").parler(tempsDeParole(t));
@@ -276,8 +424,12 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     }
   }
 
-  const { moi: monDernier, autre: sonDernier } = derniersDeChacun(messages);
-  const jours = fil ? parJour(messages, fil.memes ?? []) : [];
+  const { moi: monDernier, autre: sonDernierMessage } = derniersDeChacun(messages);
+  // (pendant l'arrivée, sa bulle dit ce qui est rejoué — rien avant qu'elle commence ; ensuite, son dernier message)
+  const arriveeAVenir = !arriveeFaite && !rejoue && fil ? aRejouer(fil.messages, fil.memes ?? []).length > 0 : false;
+  const sonDernier = rejoue ?? (sonDernierMessage && !arriveeAVenir ? { id: sonDernierMessage.id, texte: texteDeBulle(sonDernierMessage) } : null);
+  const jours = fil ? parJour(messages, memes) : [];
+  const presence = la ? null : vu ? (nomDuJour(vu) === "Aujourd’hui" ? `Dernière visite à ${heureDite(vu)}` : nomDuJour(vu) === "Hier" ? `Dernière visite hier à ${heureDite(vu)}` : `Dernière visite ${nomDuJour(vu)}`) : "Pas là pour l’instant";
   const flou = chargement.etat !== "manque" ? chargement.flou : undefined;
 
   return (
@@ -298,13 +450,13 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         <span className="sd-qui">
           <b>{prenom || "…"}</b>
           {fil && (
-            <span data-presence={fil.la ? "la" : "absent"}>
-              {fil.la ? (
+            <span data-presence={la ? "la" : "absent"}>
+              {la ? (
                 <>
                   <i className="sd-pt" /> Là, maintenant
                 </>
               ) : (
-                "Pas là pour l’instant"
+                presence
               )}
             </span>
           )}
@@ -318,6 +470,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         data-calques={pret ? (pret.calques ? "poses" : "aucun") : undefined}
         data-flou={flou ? "1" : undefined}
         style={flou ? { backgroundImage: `url("${flou}")` } : undefined}
+        onPointerDown={() => passer.current?.()}
       >
         <div ref={ici} className="sd-ici" />
         {pret && (
@@ -331,8 +484,17 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             </div>
             <div className="sd-bulles autre" aria-live="polite">
               {sonDernier && (
-                <div key={sonDernier.id} className="sd-bulle autre" data-bulle={sonDernier.id}>
-                  {texteDeBulle(sonDernier)}
+                <div key={sonDernier.id} className="sd-bulle autre" data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined}>
+                  {sonDernier.texte}
+                </div>
+              )}
+              {ecrit && (
+                <div className="sd-bulle autre ecrit" data-ecrit aria-label={`${prenom} écrit`}>
+                  <span className="sd-points">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
                 </div>
               )}
             </div>
@@ -373,7 +535,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       >
         <input
           value={texte}
-          onChange={(e) => setTexte(e.target.value)}
+          onChange={(e) => {
+            setTexte(e.target.value);
+            direQueJEcris(e.target.value.trim().length > 0);
+          }}
           placeholder={peutEcrire ? `Écris à ${prenom || "…"}…` : "L’écriture est en pause"}
           aria-label={`Écrire à ${prenom}`}
           maxLength={1000}
@@ -448,6 +613,12 @@ export const STYLES_SALON = `
 .sd-bulles.moi:has(.sd-bulle)::after{left:var(--q-moi,22px);background:var(--rosepale)}
 .sd-bulles.autre:has(.sd-bulle)::after{right:var(--q-autre,24px);background:var(--creme)}
 @keyframes sd-bulle{0%{opacity:0;transform:scale(.5) translateY(8px)}100%{opacity:1;transform:none}}
+.sd-bulle.ecrit{padding:10px 13px}
+.sd-points{display:flex;gap:4px;align-items:center;height:10px}
+.sd-points i{width:7px;height:7px;border-radius:50%;background:#8e6f83;animation:sd-point 1.1s ease-in-out infinite}
+.sd-points i:nth-child(2){animation-delay:.15s}.sd-points i:nth-child(3){animation-delay:.3s}
+@keyframes sd-point{0%,60%,100%{transform:none;opacity:.45}30%{transform:translateY(-4px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.sd-points i{animation:none}}
 .sd-puce{position:absolute;z-index:5;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;font:700 13px var(--app);color:#fff;background:rgba(24,7,20,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .sd-puce .e{font-family:var(--emoji);font-size:16px}
 .sd-fil{bottom:10px;right:10px}

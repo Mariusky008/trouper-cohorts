@@ -209,7 +209,8 @@ const figs = await p5.evaluate(() =>
 );
 ok(figs[0].x < figs[1].x && figs.every((f) => f.chargees), `la mienne à gauche, la sienne à droite, leurs images chargées (${figs.map((f) => Math.round(f.x)).join(" / ")})`);
 ok(figs.every((f) => f.adresses.every((a) => /^\/api\/direct\/salon\/fichier\/[0-9a-f]{32}-\d+\.webp$/.test(a ?? ""))), "leurs calques à adresse stable");
-ok(figs.every((f) => f.tete && f.tete.haut <= f.haut + 2 && f.tete.bas < f.bas), "la tête en haut de chacune, au-dessus du corps");
+// (Sam n'est pas là : sa figurine somnole, la tête penchée — lot S2 ; la tête reste dans le haut de la figurine)
+ok(figs.every((f) => f.tete && f.tete.haut <= f.haut + 0.25 * (f.bas - f.haut) && f.tete.bas < f.bas), "la tête en haut de chacune, au-dessus du corps");
 await p5.locator(`.sc-fig[data-figurine="moi"]`).first().scrollIntoViewIfNeeded().catch(() => undefined);
 await p5.screenshot({ path: `${D}/salon-ouvrir-2-figurines.png` });
 // (la tête bouge seule autour de son pivot : la scène vit)
