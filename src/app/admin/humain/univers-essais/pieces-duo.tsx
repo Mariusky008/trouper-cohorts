@@ -337,6 +337,7 @@ function Piece({
   refaire,
   ajuster,
   deposer,
+  refaireAncienne,
 }: {
   p: PieceDuoVue;
   voir: boolean;
@@ -345,6 +346,8 @@ function Piece({
   refaire: (quoi: "piece" | "releve" | "lumieres") => void;
   ajuster: (e: EmplacementsDuo) => Promise<string | null>;
   deposer: (image: string) => void;
+  /** (une pièce faite avec l'ancienne consigne : l'effacer, et la refaire en entier) */
+  refaireAncienne: () => void;
 }) {
   const [vue, setVue] = useState<MomentDuo>(p.moment);
   const [main, setMain] = useState(false);
@@ -355,7 +358,10 @@ function Piece({
   const src = vue === p.moment ? p.decor : (p.lumieres[vue] ?? p.decor);
   const lumieresFaites = lumieresAFaire(p.cle).every((m) => p.lumieres[m]);
   const attend = p.depuisImage && !p.source;
-  const prochaine = attend ? "" : !p.decor ? "Faire la pièce" : !e && !p.releveRate ? "Relever ses emplacements" : !lumieresFaites ? "Faire ses lumières" : "";
+  // (une pièce faite avec l'ancienne consigne : un seul geste, la refaire — le propriétaire, le 17 novembre : « je ne
+  // comprends pas ce que je dois faire » devant ses boutons)
+  const ancienne = Boolean(p.ancienne);
+  const prochaine = attend || ancienne ? "" : !p.decor ? "Faire la pièce" : !e && !p.releveRate ? "Relever ses emplacements" : !lumieresFaites ? "Faire ses lumières" : "";
   if (main && p.decor && src) return <Ajusteur p={p} src={src} enregistrer={ajuster} fermer={() => setMain(false)} />;
   return (
     <figure className="pd-piece" data-piece={p.cle}>
@@ -389,9 +395,19 @@ function Piece({
           {p.emoji} {p.nom}
         </b>{" "}
         <small>{p.pour}</small>
-        {p.ancienne && <span className="pd-rate">Faite avec l’ancienne consigne : à refaire, avec les éléments de la maquette.</span>}
-        {attend && <span className="pd-rate">Dépose d’abord l’image de la chambre (elle n’est pas dans le code) : la personne sera retirée, une télé ajoutée.</span>}
-        {p.decor && e && (
+        {ancienne && (
+          <span className="pd-rate">
+            Faite avec l’ancienne consigne. Touche « Refaire cette pièce » : elle s’efface et se refait avec les éléments de la maquette, en hauteur puis en
+            largeur (environ 20 minutes, garde la page ouverte).
+          </span>
+        )}
+        {attend && (
+          <span className="pd-rate">
+            Dépose l’image de la chambre de Camille (celle de la maquette « Chez Camille » : Camille assise par terre, son chat, ses vinyles). La personne et
+            les boutons dessinés dessus seront retirés, une télé ajoutée.
+          </span>
+        )}
+        {p.decor && e && !ancienne && (
           <span className="pd-trouves">
             Emplacements {p.ajuste ? "posés à la main" : "trouvés"} : {trouves.length}/9
           </span>
@@ -408,6 +424,11 @@ function Piece({
           {prochaine && (
             <button type="button" disabled={occupe} onClick={faire}>
               {occupe ? "… (une minute)" : prochaine}
+            </button>
+          )}
+          {ancienne && (
+            <button type="button" data-geste="refaire-ancienne" disabled={occupe} onClick={refaireAncienne}>
+              {occupe ? "… (garde la page ouverte)" : "🔁 Refaire cette pièce"}
             </button>
           )}
           {p.depuisImage && (
@@ -429,22 +450,22 @@ function Piece({
               />
             </label>
           )}
-          {p.decor && (
+          {p.decor && !ancienne && (
             <button type="button" className="clair" data-geste="ajuster" disabled={occupe} onClick={() => setMain(true)}>
               ✋ Ajuster à la main
             </button>
           )}
-          {p.decor && (
+          {p.decor && !ancienne && (
             <button type="button" className="clair" disabled={occupe} onClick={() => refaire("piece")}>
               Refaire la pièce
             </button>
           )}
-          {p.decor && (e || p.releveRate) && (
+          {p.decor && !ancienne && (e || p.releveRate) && (
             <button type="button" className="clair" disabled={occupe} onClick={() => refaire("releve")}>
               Refaire le relevé
             </button>
           )}
-          {Object.keys(p.lumieres).length > 0 && (
+          {Object.keys(p.lumieres).length > 0 && !ancienne && (
             <button type="button" className="clair" disabled={occupe} onClick={() => refaire("lumieres")}>
               Refaire les lumières
             </button>
@@ -614,29 +635,45 @@ export function PiecesDuDuo() {
     }
   }
   const lire = async () => ((await (await fetch(ROUTE, { cache: "no-store" })).json().catch(() => ({}))) as { etat?: EtatPiecesDuo }).etat;
+  /** Tout ce qui manque à une pièce : en hauteur (la pièce, son relevé, ses lumières), puis en largeur (douze étapes). */
+  async function faireLaPiece(cle: PieceDuoVue["cle"]): Promise<"fait" | "attend" | "rate"> {
+    // EN HAUTEUR : quatre passages au plus (la pièce, son relevé, ses deux autres lumières)
+    for (let k = 0; k < 4; k++) {
+      const v = (await lire())?.pieces.find((x) => x.cle === cle);
+      if (v?.depuisImage && !v.source) return "attend";
+      if (v?.decor && (v.emplacements || v.releveRate) && lumieresAFaire(cle).every((m) => v.lumieres?.[m])) break;
+      if (!(await mener(cle)) && !v?.decor) return "rate";
+    }
+    // EN LARGEUR : une étape par passage (le centre, la gauche, la droite, le panorama, puis ses deux autres lumières)
+    for (let k = 0; k < 4 * 3; k++) {
+      const v = (await lire())?.pieces.find((x) => x.cle === cle);
+      if (!v?.decor || !v.large.aFaire.length) break;
+      if (!(await mener(cle, "fabriquerLargeur"))) return "rate";
+    }
+    return "fait";
+  }
   async function toutFaire() {
     setDit("");
     let attend = false;
     try {
       for (const p of PIECES_DUO) {
-        // EN HAUTEUR : quatre passages au plus (la pièce, son relevé, ses deux autres lumières)
-        for (let k = 0; k < 4; k++) {
-          const v = (await lire())?.pieces.find((x) => x.cle === p.cle);
-          if (v?.depuisImage && !v.source) {
-            attend = true;
-            break;
-          }
-          if (v?.decor && (v.emplacements || v.releveRate) && lumieresAFaire(p.cle).every((m) => v.lumieres?.[m])) break;
-          if (!(await mener(p.cle)) && !v?.decor) return;
-        }
-        // EN LARGEUR : une étape par passage (le centre, la gauche, la droite, le panorama, puis ses deux autres lumières)
-        for (let k = 0; k < 4 * 3; k++) {
-          const v = (await lire())?.pieces.find((x) => x.cle === p.cle);
-          if (!v?.decor || !v.large.aFaire.length) break;
-          if (!(await mener(p.cle, "fabriquerLargeur"))) return;
-        }
+        const r = await faireLaPiece(p.cle);
+        if (r === "rate") return;
+        if (r === "attend") attend = true;
       }
       setDit(`Toutes les pièces sont faites, en hauteur et en largeur, en trois lumières${attend ? " (sauf la chambre musicale, qui attend son image)" : ""} : regarde-les sur ton téléphone, et pose leurs zones à la main.`);
+    } finally {
+      setOccupe(null);
+    }
+  }
+  /** 🔁 Une pièce faite avec l'ancienne consigne : effacée, puis refaite en entier. */
+  async function refaireUne(p: PieceDuoVue) {
+    if (!window.confirm(`Refaire ${p.nom.toLowerCase()} ? Ses images s’effacent, puis elle se refait avec les éléments de la maquette, en hauteur et en largeur (environ ${euros(COUT_PIECE_ENTIERE)} €, une vingtaine de minutes : garde la page ouverte).`)) return;
+    setDit("");
+    setOccupe(p.cle);
+    try {
+      await envoyer({ action: "refaire", piece: p.cle, quoi: "piece" });
+      if ((await faireLaPiece(p.cle)) === "fait") setDit(`${p.nom} est refaite : regarde-la, puis pose ses zones à la main (« ✋ Ajuster à la main »).`);
     } finally {
       setOccupe(null);
     }
@@ -664,12 +701,15 @@ export function PiecesDuDuo() {
     const j = await envoyer({ action, piece, emplacements });
     return j.error ?? null;
   }
-  async function deposer(piece: string, image: string) {
+  /** 🖼️ L'image de la chambre musicale : déposée, puis la chambre se fait tout de suite, en entier. */
+  async function deposer(piece: PieceDuoVue["cle"], image: string) {
     setDit("");
     setOccupe(piece);
     try {
       const j = await envoyer({ action: "deposerSource", piece, image });
-      setDit(j.error ?? "L’image est déposée : fais la pièce (« Faire la pièce »).");
+      if (j.error) return setDit(j.error);
+      setDit("L’image est déposée : la chambre se fait (une vingtaine de minutes, garde la page ouverte).");
+      if ((await faireLaPiece(piece)) === "fait") setDit("La chambre musicale est faite : regarde-la, puis pose ses zones à la main (« ✋ Ajuster à la main »).");
     } finally {
       setOccupe(null);
     }
@@ -677,6 +717,18 @@ export function PiecesDuDuo() {
   const faites = etat?.pieces.filter((p) => p.decor).length ?? 0;
   const anciennes = etat?.pieces.filter((p) => p.ancienne).length ?? 0;
   const bloque = (cle: string) => occupe === cle || (Boolean(occupe) && occupe !== cle);
+  // 🧭 LA MARCHE À SUIVRE (17 novembre 2026, le propriétaire devant la page : « quelle image ? », « je ne comprends pas ce
+  // que je dois faire ») : les gestes, dans l'ordre, selon où on en est
+  const sansImage = etat?.pieces.some((p) => p.depuisImage && !p.source) ?? false;
+  const manque = etat?.pieces.some((p) => !p.ancienne && !(p.depuisImage && !p.source) && (!p.decor || !lumieresAFaire(p.cle).every((m) => p.lumieres[m]) || p.large.aFaire.length > 0)) ?? false;
+  const etapes = [
+    sansImage && "🖼️ Tout en bas, sur la carte « La chambre musicale » : « Déposer l’image » — l’image de la chambre de Camille (celle de la maquette « Chez Camille »). La chambre se fait aussitôt.",
+    anciennes > 0 &&
+      `🔁 « ${anciennes === 1 ? "Refaire l’ancienne" : `Refaire les ${anciennes} anciennes`} » (ci-dessous) : elles s’effacent et se refont une par une, avec les éléments de la maquette — ou « 🔁 Refaire cette pièce » sur une carte, pour commencer par une seule. Une vingtaine de minutes par pièce : de préférence sur un ordinateur, la page ouverte. Si la page se ferme, « Faire ce qui manque » reprend où ça s’est arrêté.`,
+    anciennes === 0 && manque && "▶️ « Faire ce qui manque » (ci-dessous) : chaque pièce se fait, en hauteur puis en largeur. Garde la page ouverte.",
+    "✋ Quand une pièce est faite et te plaît : « Ajuster à la main » sur sa carte, puis dans « 🌅 Les pièces en largeur », pour tracer ses objets (la télé, les cadres, l’étagère…) et ses places.",
+    "🏠 Puis essaie ta maison sur ton téléphone : /univers/maison.",
+  ].filter((x): x is string => Boolean(x));
   return (
     <section aria-label="La pièce du duo" style={{ margin: "18px 0", padding: 16, border: "1px solid #e3d7c8", borderRadius: 16, background: "#fffaf3" }}>
       <h2 style={{ margin: "0 0 6px", fontSize: 20 }}>🛋️ Les neuf pièces : en hauteur (le salon du duo) et en largeur (la maison)</h2>
@@ -686,6 +738,13 @@ export function PiecesDuDuo() {
         largeur. Chacune existe le matin, le soir et la nuit. Faites une fois pour tous, environ {euros(COUT_PIECE_ENTIERE)} € la pièce (en hauteur et en largeur,
         trois lumières). Juge le style, puis trace les emplacements à la main.
       </p>
+      {etat && (
+        <ol className="pd-marche" aria-label="Ce qu’il faut faire">
+          {etapes.map((x) => (
+            <li key={x}>{x.includes("/univers/maison") ? <>🏠 Puis essaie ta maison sur ton téléphone : <a href="/univers/maison">/univers/maison</a>.</> : x}</li>
+          ))}
+        </ol>
+      )}
       {etat && !etat.moteurs.image && <p style={{ color: "#b3261e" }}>Le moteur d’image n’est pas branché ici.</p>}
       {etat && !etat.moteurs.regard && <p style={{ color: "#8a5a00" }}>Le modèle qui voit n’est pas branché ici : les emplacements ne seront pas relevés (les pièces, si).</p>}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", margin: "0 0 12px" }}>
@@ -717,6 +776,7 @@ export function PiecesDuDuo() {
             refaire={(q) => void refaire(p.cle, q)}
             ajuster={(e) => ajuster(p.cle, e)}
             deposer={(image) => void deposer(p.cle, image)}
+            refaireAncienne={() => void refaireUne(p)}
           />
         ))}
       </div>
@@ -739,6 +799,8 @@ export function PiecesDuDuo() {
         ))}
       </div>
       <style>{`
+.pd-marche{margin:0 0 14px;padding:12px 14px 12px 34px;border-radius:14px;background:#fff;border:2px solid #ff2e9a;display:flex;flex-direction:column;gap:8px;line-height:1.45;font-size:14.5px}
+.pd-marche li::marker{font-weight:800;color:#c2186f}
 .pd-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .pd-piece{margin:0;display:flex;flex-direction:column;gap:6px}
 .pd-image{position:relative;display:block;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:#2b1a0c}

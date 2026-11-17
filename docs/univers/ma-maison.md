@@ -134,7 +134,10 @@ en voir plus). Déposer une autre image efface ce qui en était fait.
 
 ### 2.4 Sur la page de l'admin
 
-`/admin/humain/univers-essais`, section « 🛋️ Les neuf pièces » :
+`/admin/humain/univers-essais`, section « 🛋️ Les neuf pièces » (depuis le 17 novembre, une **marche à suivre** en haut
+de la section dit les gestes dans l'ordre, selon où on en est ; une pièce « ancienne consigne » n'a plus qu'un bouton,
+« 🔁 Refaire cette pièce », qui l'efface et la refait en entier ; déposer l'image de la chambre musicale la fait
+aussitôt) :
 
 1. **« Refaire les anciennes »** : les pièces faites avec la consigne d'avant (sans `fabrique.json`) sont effacées, puis
    tout se refait. Le salon du duo (`/univers/salon`) montre la pièce par défaut tant qu'elle n'est pas refaite.
