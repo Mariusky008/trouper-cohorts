@@ -4,7 +4,7 @@
 // L'administrateur (Léa sur ce téléphone) et Sam sont proches ; le salon est fait. « Tes conversations » : Sam,
 // préchargé dans un temps mort (sa requête `?ouvrir=` et sa pièce partent avant qu'on le touche) ; on le touche : la
 // vignette floue, puis la pièce (son adresse stable), les temps mesurés (« première fois sur ce téléphone »), et la
-// mesure part à « ⚡ La vitesse du salon » ; « ← Le moteur », puis Sam encore : « déjà vue ». Un nouvel onglet : la pièce
+// mesure part à « ⚡ La vitesse du salon » ; ‹, puis Sam encore : « déjà vue ». Un nouvel onglet : la pièce
 // vient du cache du téléphone (rien de téléchargé). LA VITESSE, LE PROCESSEUR RALENTI ×4 : une conversation déjà vue
 // s'ouvre en moins de 800 ms (du toucher à la scène prête) ; pendant des effets, la plus longue image est mesurée.
 // (Lot S1) Leurs figurines du nouveau style : la première ouverture les découpe après la réponse ; la suivante les pose
@@ -101,32 +101,32 @@ ok(await attendre(async () => ouvrirs().length >= 1 && fichiers().length >= 1, 6
 // ═══ LE TOUCHER ═══
 const avantToucher = fichiers().length;
 await sam.click();
-ok(await attendre(async () => (await p.locator(".em-scene[data-pret] .sc-plaque").count()) === 1), "on touche Sam : la scène, sa pièce");
+ok(await attendre(async () => (await p.locator(".sd-scene[data-pret] .sc-plaque").count()) === 1), "on touche Sam : la scène, sa pièce");
 const src = await p.locator(".sc-plaque").getAttribute("src");
 ok(/^\/api\/direct\/salon\/fichier\/[0-9a-f]{32}-1080\.webp$/.test(src ?? ""), `la pièce à son adresse stable (${src})`);
 ok(fichiers().length === avantToucher, "rien de retéléchargé : la pièce préchargée sert telle quelle");
-ok((await p.locator(".em-scene[data-flou]").count()) === 1 && /^url\("data:image\/webp;base64,/.test(await p.locator(".em-scene").evaluate((e) => e.style.backgroundImage)), "la vignette floue, sous la pièce");
+ok((await p.locator(".sd-scene[data-flou]").count()) === 1 && /^url\("data:image\/webp;base64,/.test(await p.locator(".sd-scene").evaluate((e) => e.style.backgroundImage)), "la vignette floue, sous la pièce");
 ok(new URL(p.url()).searchParams.get("avec") === SAM.cle, "l'adresse dit avec qui (?avec=)");
-ok(await attendre(async () => /La pièce à l’écran : \d+ ms · prête : \d+ ms/.test(await texte(".em-temps"))), `les temps mesurés (${await texte(".em-temps")})`);
-ok(/première fois sur ce téléphone/.test(await texte(".em-temps")), "« première fois sur ce téléphone »");
-ok((await texte(".em-tableau header b")) === "🚪 Avec Sam", "« 🚪 Avec Sam »");
+ok(await attendre(async () => /La pièce à l’écran : \d+ ms · prête : \d+ ms/.test(await texte("[data-temps]"))), `les temps mesurés (${await texte("[data-temps]")})`);
+ok(/première fois sur ce téléphone/.test(await texte("[data-temps]")), "« première fois sur ce téléphone »");
+ok((await texte(".sd-qui b")) === "Sam", "le salon : son prénom en haut");
 await p.screenshot({ path: `${D}/salon-ouvrir-1-conversation.png` });
 ok(await attendre(() => demandes.some((d) => d.methode === "POST" && d.url.endsWith("/api/direct/salon")), 5000), "la mesure part (une fois, après l'arrivée)");
 await p.waitForTimeout(500);
 ok(demandes.filter((d) => d.methode === "POST" && d.url.endsWith("/api/direct/salon")).length === 1, "… une seule fois");
 
 // ═══ RETOUR, PUIS SAM ENCORE ═══
-await p.getByRole("button", { name: "← Le moteur" }).click();
-ok(await attendre(async () => (await sam.count()) === 1), "« ← Le moteur » : la liste revient");
+await p.getByRole("button", { name: "Retour" }).click();
+ok(await attendre(async () => (await sam.count()) === 1), "‹ : la liste revient");
 ok(await attendre(async () => /Déjà vue|la première fois : médiane \d+ ms/.test(await texte(".em-vitesse"))), `« ⚡ La vitesse du salon » compte l'ouverture (${await texte(".em-vitesse")})`);
 await sam.click();
-ok(await attendre(async () => /déjà vue sur ce téléphone/.test(await texte(".em-temps"))), `Sam encore : « déjà vue » (${await texte(".em-temps")})`);
+ok(await attendre(async () => /déjà vue sur ce téléphone/.test(await texte("[data-temps]"))), `Sam encore : « déjà vue » (${await texte("[data-temps]")})`);
 
 // ═══ UN NOUVEL ONGLET : LA PIÈCE VIENT DU CACHE ═══
 const p2 = await ctx.newPage();
 surveiller(p2);
 await p2.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "networkidle" });
-ok(await attendre(async () => (await p2.locator(".em-scene[data-pret] .sc-plaque").count()) === 1, 8000, p2), "un nouvel onglet, directement sur Sam : la scène");
+ok(await attendre(async () => (await p2.locator(".sd-scene[data-pret] .sc-plaque").count()) === 1, 8000, p2), "un nouvel onglet, directement sur Sam : la scène");
 const venue = await p2.evaluate((u) => {
   const e = performance.getEntriesByType("resource").find((x) => x.name.endsWith(u));
   return e ? { transfert: e.transferSize, octets: e.decodedBodySize } : null;
@@ -141,16 +141,18 @@ surveiller(p3);
 const cdp = await ctx.newCDPSession(p3);
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
 await p3.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "domcontentloaded" });
-ok(await attendre(async () => /prête : \d+ ms/.test(await texte(".em-temps", p3)), 20000, p3), "ralenti ×4 : Sam s'ouvre");
-const pret = Number(/prête : (\d+) ms/.exec(await texte(".em-temps", p3))?.[1]);
+ok(await attendre(async () => /prête : \d+ ms/.test(await texte("[data-temps]", p3)), 20000, p3), "ralenti ×4 : Sam s'ouvre");
+const pret = Number(/prête : (\d+) ms/.exec(await texte("[data-temps]", p3))?.[1]);
 ok(pret < 800, `ralenti ×4 : une conversation déjà vue, prête en moins de 800 ms, la requête comprise (${pret} ms)`);
+// (une phrase tendre : la bulle, la tête qui parle, puis l'autre figurine qui rougit, des cœurs — pendant qu'on mesure)
+await p3.locator(".sd-saisie input").fill("je t’aime ❤️");
 const pire = await p3.evaluate(
   () =>
     new Promise((ok) => {
       let pire = 0;
       let avant = performance.now();
       const fin = avant + 2000;
-      for (const n of ["💗 Cœurs", "✨ Étincelles", "💥 Lettrage"]) [...document.querySelectorAll("button")].find((x) => x.textContent.includes(n))?.click();
+      document.querySelector(".sd-envoyer")?.click();
       const image = (t) => {
         pire = Math.max(pire, t - avant);
         avant = t;
@@ -161,7 +163,7 @@ const pire = await p3.evaluate(
     }),
 );
 // (une mesure, pas encore un seuil : « aucune image de plus de 50 ms pendant un geste » s'essaiera sur les gestes, lot S3)
-console.log(`  (ralenti ×4 : la plus longue image pendant cœurs, étincelles et lettrage : ${pire} ms)`);
+console.log(`  (ralenti ×4 : la plus longue image pendant « je t’aime ❤️ » — la bulle, la tête qui parle, les cœurs : ${pire} ms)`);
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
 await p3.close();
 
@@ -194,7 +196,7 @@ await p4.close();
 const p5 = await ctx.newPage();
 surveiller(p5);
 await p5.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "networkidle" });
-ok(await attendre(async () => (await p5.locator('[data-calques="poses"]').count()) === 1 && (await p5.locator(".em-scene[data-pret] .sc-fig").count()) === 2, 8000, p5), "rouverte : les deux figurines, posées à leurs places");
+ok(await attendre(async () => (await p5.locator('[data-calques="poses"]').count()) === 1 && (await p5.locator(".sd-scene[data-pret] .sc-fig").count()) === 2, 8000, p5), "rouverte : les deux figurines, posées à leurs places");
 const figs = await p5.evaluate(() =>
   ["moi", "autre"].map((q) => {
     const f = document.querySelector(`.sc-fig[data-figurine="${q}"]`);
@@ -218,7 +220,7 @@ ok((await angle()) !== a0, "la tête de ma figurine bouge seule (sa respiration)
 await p5.close();
 
 // ═══ 🎭 « LES CALQUES DE TA FIGURINE » ═══
-await p.getByRole("button", { name: "← Le moteur" }).click();
+await p.getByRole("button", { name: "Retour" }).click();
 await p.getByRole("button", { name: "Voir les calques de ta figurine" }).click();
 ok(await attendre(async () => (await p.locator('[data-calques-figurine="estime"] img').count()) === 1, 8000), "« 🎭 Les calques de ta figurine » : le corps, estimé par la silhouette");
 const apercu = await p.evaluate(() => {

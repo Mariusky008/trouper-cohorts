@@ -270,8 +270,10 @@ une fois (après « C'est moi ! », sinon après la première ouverture), à adr
 (`calques-figurine-serveur.ts`, `figurine-calques.ts` ; « Ma maison » peut les prendre pour le centre) — section 11.7.
 **Fait, M3** (`ma-maison.md`, section 14) : « Choisis ta pièce » après « C'est moi ! » et à l'accueil `/univers`
 (l'administrateur : `?piece=1`), Pablito ne fabrique plus (l'interrupteur allumé), la carte pour ceux qui ont déjà un
-univers ; **à enregistrer par le propriétaire avant d'allumer** : la bulle `tuto-univers-6` de la bienvenue. **Ensuite** :
-**S2** (la conversation).
+univers ; **à enregistrer par le propriétaire avant d'allumer** : la bulle `tuto-univers-6` de la bienvenue. **Fait, S2 (première partie)** :
+l'écran de la conversation, à `/univers/salon?avec=<clé>` — l'en-tête, une bulle par figurine, écrire (la bulle tout
+de suite, l'autre figurine qui réagit), 💬 Messagerie — section 11.8. **Ensuite** : le pouls et l'arrivée (S2b), puis la
+pièce du duo (S2c).
 
 ## 0 decies. Les poses de la figurine : l'essai P0 (16 novembre 2026)
 
