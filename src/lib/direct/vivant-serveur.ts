@@ -7,6 +7,9 @@
  *   · `fils/<paire>/prepare.json` = { <de8>: horodatage } : qui prépare un message (la page le redit toutes les 5 s ;
  *     au-delà de 9 s sans nouvelles, c'est fini) ;
  *   · `<habitant>/gestes-jour.json` = { jour, n } : ses gestes du jour (300 au plus) ;
+ *   · 🛋️ (lot S3) `fils/<paire>/table.json` = { objets: [{ id, e, nom, de8, le }] } : ce qui est posé sur leur table (les
+ *     quatre derniers objets ; `id` : celui du geste qui l'a posé) ; `<habitant>/gestes-vus.json` = { <paire>: horodatage } :
+ *     jusqu'où il a vu les gestes de l'autre (ceux d'après sont `nouveau` : la page les rejoue) ;
  *   · `fils/<paire>/apartes.json` = { liste: [{ id, le, jusqua, mots: [{ de8, texte }] | rien | efface }], verrou } :
  *     🎭 leurs apartés (lot R4b) — `jusqua` : le dernier message de l'échange qu'il raconte (un seul par échange) ;
  *     `rien` : pas d'aparté pour cet échange (un sujet sensible, une figurine qui se tait, un message signalé).
@@ -22,13 +25,19 @@ import { texteLuDuMessage } from "./talkie";
 import { prevenirDUneParole } from "./appli-collection-serveur";
 import { hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { etagereDansLaScene } from "./etagere-serveur";
-import { APARTE, APARTE_MAX, ENREGISTRE_MS, GESTES_PAR_JOUR, gesteValide, panneauDe, reactionDe, type AparteVue, type GesteFil, type Vivant } from "./vivant";
+import { APARTE, APARTE_MAX, ENREGISTRE_MS, GESTES_PAR_JOUR, gesteDuSalon, gesteValide, objetDuGeste, panneauDe, reactionDe, type AparteVue, type GesteFil, type ObjetGeste, type Vivant } from "./vivant";
+import { PLACES_TABLE, type ObjetTable } from "./salon";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const cheminGestes = (pair: string) => `fils/${pair}/gestes.json`;
+/** 🌷 (lot S3) ce qui est posé sur leur table (les quatre derniers objets : une tulipe, un café, une surprise…) */
+const cheminTable = (pair: string) => `fils/${pair}/table.json`;
 export const cheminPrepare = (pair: string) => `fils/${pair}/prepare.json`;
 const cheminGestesJour = (h: string) => `${h}/gestes-jour.json`;
+const cheminGestesVus = (h: string) => `${h}/gestes-vus.json`;
+/** (sans trace : les gestes de l'autre des dernières 24 h sont nouveaux) */
+const VUS_PAR_DEFAUT_MS = 86_400_000;
 const cheminApartes = (pair: string) => `fils/${pair}/apartes.json`;
 type AparteGarde = { id: string; le: string; jusqua: number; mots?: { de8: string; texte: string }[]; rien?: string; efface?: string };
 type FicheApartes = { liste?: AparteGarde[]; verrou?: number };
@@ -58,7 +67,17 @@ function aparteAEcrire(f: FicheApartes, noms: { ts: number; de8: string }[], moi
 const GESTES_GARDES = 80;
 const GESTES_JOURS = 7;
 
-type GesteGarde = { id: string; de8: string; le: string; type: "panneau" | "reaction"; cle: string; message?: string };
+type GesteGarde = { id: string; de8: string; le: string; type: "panneau" | "reaction" | "geste"; cle: string; message?: string; objet?: ObjetGeste };
+type ObjetGarde = { id: string; e: string; nom: string; de8: string; le: string };
+
+/** 🌷 (lot S3) Ce qui est posé sur leur table, du plus ancien au plus récent (`moi` : posé par moi). */
+export async function lireTable(supabase: Supabase, pair: string, moi8: string): Promise<ObjetTable[]> {
+  const t = await lireJson<{ objets?: unknown }>(supabase, cheminTable(pair));
+  return (Array.isArray(t.objets) ? (t.objets as ObjetGarde[]) : [])
+    .filter((o) => o && typeof o.id === "string" && typeof o.e === "string" && typeof o.nom === "string" && typeof o.le === "string")
+    .slice(-PLACES_TABLE)
+    .map((o) => ({ id: o.id, e: o.e, nom: o.nom, moi: o.de8 === moi8, le: o.le }));
+}
 type Resultat<T> = T & { error?: string; statut?: number };
 
 /** Le proche (par sa clé), s'ils se parlent (ajoutés tous les deux). */
@@ -75,19 +94,29 @@ const gardes = (x: { liste?: unknown }) => (Array.isArray(x.liste) ? (x.liste as
 export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat<{ vivant?: Vivant; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string }>> {
   const q = await avecQui(supabase, moi, cle);
   if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
-  const [g, p, noms, ap] = await Promise.all([
+  const [g, p, noms, ap, vus] = await Promise.all([
     lireJson<{ liste?: unknown }>(supabase, cheminGestes(q.pair)),
     lireJson<Record<string, number>>(supabase, cheminPrepare(q.pair)),
     nomsDuFil(supabase, q.pair),
     lireJson<FicheApartes>(supabase, cheminApartes(q.pair)),
+    lireJson<Record<string, number>>(supabase, cheminGestesVus(moi.id)),
   ]);
   const moi8 = qui8(moi.id);
   const lui8 = qui8(q.h);
   const depuis = Date.now() - GESTES_JOURS * 86_400_000;
+  // 🛋️ (lot S3) ses gestes d'après ma dernière lecture sont nouveaux ; la trace avance (écrite seulement s'il y en a)
+  const vu = Number(vus[q.pair]) || Date.now() - VUS_PAR_DEFAUT_MS;
+  let dernierVu = vu;
   const gestes = gardes(g)
     .filter((x) => (x.de8 === moi8 || x.de8 === lui8) && Date.parse(s(x.le)) > depuis)
-    .map((x) => gesteValide({ ...x, moi: x.de8 === moi8 }))
+    .map((x) => {
+      const t = Date.parse(s(x.le)) || 0;
+      const nouveau = x.de8 === lui8 && t > vu;
+      if (nouveau) dernierVu = Math.max(dernierVu, t);
+      return gesteValide({ ...x, moi: x.de8 === moi8, ...(nouveau ? { nouveau: true } : {}) });
+    })
     .filter((x): x is GesteFil => Boolean(x));
+  if (dernierVu > vu) await ecrireJson(supabase, cheminGestesVus(moi.id), { ...vus, [q.pair]: dernierVu }).catch(() => false);
   const jusqua = aparteAEcrire(ap, noms, moi8, lui8, Date.now());
   // 📚 leur étagère (lot E1) : ce que leurs figurines ont noté ; un échange à lire (`aNoter` : le proche)
   const et = await etagereDansLaScene(supabase, moi, q.h, q.pair, noms).catch(() => ({ aNoter: false, scene: undefined }));
@@ -212,11 +241,24 @@ type APrevenir = { pour: string; prenom: string; url: string; cle: string; panne
 /**
  * 🪧👏 UN GESTE : un panneau (sa figurine le brandit, chez les deux), ou une réaction sur un message (une seule par
  * personne et par message : la nouvelle remplace l'ancienne). Le panneau prévient l'autre (« 🪧 Léa : « J'arrive ! » »).
+ * 🛋️ (lot S3) Ou un geste du salon (`type: "geste"`) : un bisou, un check, une fleur… ; ce qu'il pose (la tulipe, le café,
+ * la surprise — `surprise` : celle qu'il a tirée) va sur leur table (les quatre derniers objets).
  */
-export async function poserGeste(supabase: Supabase, moi: Habitant, cle: unknown, type: unknown, quoi: unknown, message: unknown): Promise<Resultat<{ geste?: GesteFil; aPrevenir?: APrevenir }>> {
+export async function poserGeste(
+  supabase: Supabase,
+  moi: Habitant,
+  cle: unknown,
+  type: unknown,
+  quoi: unknown,
+  message: unknown,
+  surprise?: unknown,
+): Promise<Resultat<{ geste?: GesteFil; aPrevenir?: APrevenir }>> {
   const panneau = type === "panneau" ? panneauDe(quoi) : null;
   const reaction = type === "reaction" ? reactionDe(quoi) : null;
-  if (!panneau && !reaction) return { error: "Ce geste n’existe pas.", statut: 400 };
+  const salon = type === "geste" ? gesteDuSalon(quoi) : null;
+  const objet = salon ? objetDuGeste(salon, surprise) : null;
+  if (!panneau && !reaction && !salon) return { error: "Ce geste n’existe pas.", statut: 400 };
+  if (salon === "surprise" && !objet) return { error: "Cette surprise n’existe pas.", statut: 400 };
   const q = await avecQui(supabase, moi, cle);
   if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
   const idMessage = s(message);
@@ -226,12 +268,26 @@ export async function poserGeste(supabase: Supabase, moi: Habitant, cle: unknown
   const n = c.jour === jour ? Number(c.n) || 0 : 0;
   if (n >= GESTES_PAR_JOUR) return { error: "Assez de gestes pour aujourd’hui : reviens demain.", statut: 429 };
   const moi8 = qui8(moi.id);
-  const g: GesteGarde = { id: randomUUID().replace(/-/g, "").slice(0, 12), de8: moi8, le: new Date().toISOString(), type: panneau ? "panneau" : "reaction", cle: (panneau ?? reaction)!.cle, ...(reaction ? { message: idMessage } : {}) };
+  const g: GesteGarde = {
+    id: randomUUID().replace(/-/g, "").slice(0, 12),
+    de8: moi8,
+    le: new Date().toISOString(),
+    type: panneau ? "panneau" : salon ? "geste" : "reaction",
+    cle: panneau ? panneau.cle : salon ? salon : reaction!.cle,
+    ...(reaction ? { message: idMessage } : {}),
+    ...(objet ? { objet } : {}),
+  };
   const avant = gardes(await lireJson<{ liste?: unknown }>(supabase, cheminGestes(q.pair)));
   // (sa réaction d'avant sur ce message s'en va : une par personne et par message)
   const liste = [...avant.filter((x) => !(reaction && x.type === "reaction" && x.de8 === moi8 && x.message === idMessage)), g].slice(-GESTES_GARDES);
   if (!(await ecrireJson(supabase, cheminGestes(q.pair), { liste }))) return { error: "Ton geste n’est pas parti. Réessaie.", statut: 502 };
   await ecrireJson(supabase, cheminGestesJour(moi.id), { jour, n: n + 1 });
+  // (🌷 ce qu'il pose va sur leur table : les quatre derniers objets)
+  if (objet) {
+    const t = await lireJson<{ objets?: unknown }>(supabase, cheminTable(q.pair));
+    const avantT = Array.isArray(t.objets) ? (t.objets as ObjetGarde[]) : [];
+    await ecrireJson(supabase, cheminTable(q.pair), { objets: [...avantT, { id: g.id, e: objet.e, nom: objet.nom, de8: moi8, le: g.le }].slice(-PLACES_TABLE) });
+  }
   const geste = gesteValide({ ...g, moi: true })!;
   if (!panneau) return { geste };
   const [{ ligne }, maCle] = await Promise.all([lireLigne(supabase, moi.id), poserProfil(supabase, moi.id)]);

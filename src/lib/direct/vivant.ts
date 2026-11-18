@@ -40,8 +40,43 @@ export type CleGeste = (typeof PANNEAUX)[number]["cle"] | (typeof REACTIONS)[num
 export const panneauDe = (cle: unknown) => PANNEAUX.find((p) => p.cle === cle) ?? null;
 export const reactionDe = (cle: unknown) => REACTIONS.find((r) => r.cle === cle) ?? null;
 
-/** Un geste de la conversation : un panneau, ou une réaction sur un message (`message` : son identifiant). */
-export type GesteFil = { id: string; moi: boolean; le: string; type: "panneau" | "reaction"; cle: string; message?: string };
+/**
+ * 🛋️ LES GESTES DU SALON DU DUO (`docs/univers/salon-du-duo.md`, 4.4 ; le lot S3) : leurs clés (leur nom, leur emoji et
+ * leur onglet : `GESTES`, `salon.ts`). Chacun est une petite mise en scène jouée chez les deux (`app/salon/gestes.ts`).
+ */
+export const CLES_GESTES_SALON = ["coucou", "bisou", "check", "chatouilles", "fleur", "calin", "cafe", "danser", "clip", "selfie", "photo", "surprise"] as const;
+export type CleGesteDuSalon = (typeof CLES_GESTES_SALON)[number];
+export const gesteDuSalon = (x: unknown): CleGesteDuSalon | null => CLES_GESTES_SALON.find((c) => c === x) ?? null;
+/** 🌷 Un objet posé sur la table par un geste : son emoji, son nom (« une tulipe »). */
+export type ObjetGeste = { e: string; nom: string };
+/** Ce que la fleur et le café posent sur la table. */
+export const OBJETS_DES_GESTES: Partial<Record<CleGesteDuSalon, ObjetGeste>> = { fleur: { e: "🌷", nom: "une tulipe" }, cafe: { e: "☕", nom: "un café" } };
+/** 🎁 Ce que la surprise laisse sur la table : une parmi celles-ci (tirée par celui qui la fait ; rien d'alcoolisé). */
+export const SURPRISES = [
+  { cle: "ourson", e: "🧸", nom: "un ourson" },
+  { cle: "cupcake", e: "🧁", nom: "un cupcake" },
+  { cle: "ballon", e: "🎈", nom: "un ballon" },
+  { cle: "chocolat", e: "🍫", nom: "du chocolat" },
+  { cle: "tournesol", e: "🌻", nom: "un tournesol" },
+  { cle: "etoile", e: "⭐", nom: "une étoile" },
+  { cle: "cookie", e: "🍪", nom: "un cookie" },
+  { cle: "mot", e: "💌", nom: "un petit mot" },
+] as const;
+export const surpriseDe = (cle: unknown) => SURPRISES.find((x) => x.cle === cle) ?? null;
+/** L'objet qu'un geste pose sur la table (la surprise : celle qui a été tirée), ou rien. */
+export function objetDuGeste(cle: CleGesteDuSalon, surprise?: unknown): ObjetGeste | null {
+  if (cle === "surprise") {
+    const x = surpriseDe(surprise);
+    return x ? { e: x.e, nom: x.nom } : null;
+  }
+  return OBJETS_DES_GESTES[cle] ?? null;
+}
+
+/**
+ * Un geste de la conversation : un panneau, une réaction sur un message (`message` : son identifiant), ou 🛋️ (lot S3) un
+ * geste du salon (`objet` : ce qu'il a posé sur la table). `nouveau` : de l'autre, pas encore vu (l'arrivée le rejoue).
+ */
+export type GesteFil = { id: string; moi: boolean; le: string; type: "panneau" | "reaction" | "geste"; cle: string; message?: string; objet?: ObjetGeste; nouveau?: boolean };
 /**
  * Ce que la conversation relit toutes les quelques secondes, page visible : s'il prépare un message, les gestes (des
  * sept derniers jours), et quand est arrivé le dernier message (un nouveau : elle se relit, et les figurines sursautent) ;
@@ -88,8 +123,19 @@ export function postureDe(humeur: Sentiment | null | undefined, silence: number)
 export function gesteValide(x: unknown): GesteFil | null {
   if (!x || typeof x !== "object") return null;
   const g = x as Record<string, unknown>;
-  const type = g.type === "panneau" || g.type === "reaction" ? g.type : null;
+  const type = g.type === "panneau" || g.type === "reaction" || g.type === "geste" ? g.type : null;
   if (!type || typeof g.id !== "string" || typeof g.le !== "string") return null;
-  if (type === "panneau" ? !panneauDe(g.cle) : !reactionDe(g.cle) || typeof g.message !== "string") return null;
-  return { id: g.id, moi: g.moi === true, le: g.le, type, cle: String(g.cle), ...(type === "reaction" ? { message: String(g.message) } : {}) };
+  if (type === "panneau" ? !panneauDe(g.cle) : type === "geste" ? !gesteDuSalon(g.cle) : !reactionDe(g.cle) || typeof g.message !== "string") return null;
+  const o = (g.objet ?? null) as Record<string, unknown> | null;
+  const objet = type === "geste" && o && typeof o.e === "string" && typeof o.nom === "string" && o.e.length <= 16 && o.nom.length <= 40 ? { e: o.e, nom: o.nom } : null;
+  return {
+    id: g.id,
+    moi: g.moi === true,
+    le: g.le,
+    type,
+    cle: String(g.cle),
+    ...(type === "reaction" ? { message: String(g.message) } : {}),
+    ...(objet ? { objet } : {}),
+    ...(g.nouveau === true ? { nouveau: true } : {}),
+  };
 }

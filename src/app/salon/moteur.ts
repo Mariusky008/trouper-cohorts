@@ -20,7 +20,7 @@
  *
  * MODULE DU NAVIGATEUR (il touche au DOM) : à n'importer que dans un composant client.
  */
-import { miseEnSceneDe, type Acteur, type AncresBulles, type CalqueFigurine, type CalqueImage, type CommandesFigurine, type EffetsScene, type OptionsScene, type Particule, type Point, type Qui, type Repere, type Scene, type Sens, type SonsScene, type Vue } from "@/lib/direct/salon";
+import { miseEnSceneDe, PLACES_TABLE, type Acteur, type AncresBulles, type CalqueFigurine, type CalqueImage, type CommandesFigurine, type EffetsScene, type EntreeObjet, type ObjetTable, type OptionsScene, type Particule, type Point, type Qui, type Repere, type Scene, type Sens, type SonsScene, type Vue } from "@/lib/direct/salon";
 import type { Zone } from "@/lib/direct/pieces-duo";
 
 const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
@@ -119,7 +119,21 @@ const STYLE = `
 .sc-lettrage.bleu{color:#7fe3ff}
 .sc-marque{position:absolute;font-family:${EMOJI};font-size:calc(var(--sw)*.05);line-height:1;pointer-events:none}
 .sc-rougeur{position:absolute;width:calc(var(--sw)*.06);height:calc(var(--sw)*.035);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(255,70,120,.75),rgba(255,90,140,0) 70%);pointer-events:none;opacity:0}
+.sc-objets{inset:0;pointer-events:none}
+.sc-objet{position:absolute;transform:translate(-50%,-100%);margin:0;padding:0;border:0;background:none;font-family:${EMOJI};font-size:calc(var(--sw)*.058);line-height:1;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+.sc-objet .corps{display:inline-block;transform-origin:50% 100%;filter:drop-shadow(0 2px 2px rgba(40,15,5,.55))}
+.sc-objet.balance .corps{animation:sc-balance 3.6s ease-in-out infinite}
+@keyframes sc-balance{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.sc-vapeur{position:absolute;left:50%;bottom:78%;width:70%;height:120%;transform:translateX(-50%);pointer-events:none;overflow:visible}
+.sc-vapeur path{fill:none;stroke:rgba(255,255,255,.75);stroke-width:2.2;stroke-linecap:round;filter:blur(.6px);animation:sc-vapeur 2.8s ease-in infinite;opacity:0}
+.sc-vapeur path:nth-child(2){animation-delay:.9s}.sc-vapeur path:nth-child(3){animation-delay:1.8s}
+@keyframes sc-vapeur{0%{transform:translateY(6px) scaleY(.7);opacity:0}25%{opacity:.85}100%{transform:translateY(-10px) scaleY(1.1) skewX(8deg);opacity:0}}
+.sc[data-reduit] .sc-objet .corps,.sc[data-reduit] .sc-vapeur path{animation:none}
+.sc-pancarte{position:absolute;padding:.38em .7em .42em;border-radius:.45em;background:linear-gradient(180deg,#ffe596,#f1b23a);color:#4a2a05;font:800 calc(var(--sw)*.04)/1 ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 .3em .7em rgba(60,30,0,.45),inset 0 -.15em 0 rgba(120,70,0,.35);white-space:nowrap;pointer-events:none}
+.sc-pancarte .e{font-family:${EMOJI}}
+.sc-pancarte::after{content:"";position:absolute;left:50%;top:100%;width:.2em;height:1.2em;background:linear-gradient(90deg,#6d4420,#a26a35);transform:translateX(-50%);border-radius:0 0 2px 2px}
 `;
+const VAPEUR = '<svg class="sc-vapeur" viewBox="0 0 30 40" aria-hidden="true"><path d="M9 38 C 3 30, 15 26, 9 18 S 5 8, 9 2"/><path d="M16 38 C 10 30, 22 26, 16 18 S 12 8, 16 2"/><path d="M23 38 C 17 30, 29 26, 23 18 S 19 8, 23 2"/></svg>';
 function installerStyle() {
   if (typeof document === "undefined" || document.getElementById("sc-style")) return;
   const s = document.createElement("style");
@@ -228,10 +242,12 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     FIGS[q] = { el: fig, vers: f.sens, ph: q === "moi" ? 0.7 : 2.6, l: 0, vl: 0, cl: 0, dx: 0, vdx: 0, cdx: 0, dy: 0, vdy: 0, danse: 0, coup: false };
   }
 
+  // (lot S3 : les objets laissés sur la table, au-dessus des figurines, sous les effets)
+  const objets = elt("div", "sc-objets");
   const fxc = elt("canvas", "sc-fx");
   const fctx = fxc.getContext("2d");
   const fxdom = elt("div", "sc-fxdom");
-  stage.append(fxc, fxdom);
+  stage.append(objets, fxc, fxdom);
   camera.append(stage);
   secoueur.append(camera);
   racine.append(secoueur);
@@ -803,7 +819,129 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
       );
       fx.rougir(q);
     },
+    pancarte(q, texte, ms = 2600) {
+      // (le panneau de la maquette, brandi à côté de la tête, du côté de l'autre)
+      const t = repere(q, "tete");
+      const s = CALQUES[q]?.sens ?? (q === "moi" ? 1 : -1);
+      const el = elt("div", "sc-pancarte");
+      const m = /^(.*?)\s*(\p{Extended_Pictographic}[\p{Extended_Pictographic}\u200d\ufe0f]*)$/u.exec(texte);
+      if (m) {
+        const e = elt("span", "e");
+        e.textContent = m[2];
+        el.append(`${m[1]} `, e);
+      } else el.textContent = texte;
+      el.style.left = pc(Math.min(0.9, Math.max(0.1, t.x + s * 0.13)));
+      el.style.top = pc(t.y);
+      fxdom.append(el);
+      return el
+        .animate(
+          [
+            { transform: "translate(-50%,-100%) scale(.3) rotate(-14deg)", opacity: 0 },
+            { transform: "translate(-50%,-100%) scale(1.12) rotate(6deg)", opacity: 1, offset: 0.1 },
+            { transform: "translate(-50%,-100%) scale(1) rotate(-5deg)", offset: 0.25 },
+            { transform: "translate(-50%,-100%) rotate(4deg)", offset: 0.45 },
+            { transform: "translate(-50%,-100%) rotate(-3deg)", offset: 0.65 },
+            { transform: "translate(-50%,-100%) rotate(0)", opacity: 1, offset: 0.88 },
+            { transform: "translate(-50%,-112%) scale(.85)", opacity: 0 },
+          ],
+          { duration: reduit ? 600 : ms, easing: "ease-in-out", fill: "forwards" },
+        )
+        .finished.then(
+          () => el.remove(),
+          () => el.remove(),
+        );
+    },
   };
+
+  // ─── 🌷 la table (lot S3) : quatre places sur la table basse relevée, sinon au sol entre les deux figurines ───
+  type Pose = { o: ObjetTable; el: HTMLButtonElement; i: number };
+  const POSES: (Pose | null)[] = Array.from({ length: PLACES_TABLE }, () => null);
+  // (on remplit le milieu d'abord)
+  const ORDRE_PLACES = [1, 2, 0, 3].filter((i) => i < PLACES_TABLE);
+  function place(i: number): Point {
+    const k = PLACES_TABLE > 1 ? i / (PLACES_TABLE - 1) : 0.5;
+    if (o.table) {
+      const [x, y, w, h] = o.table;
+      return { x: x + w * (0.2 + 0.6 * k), y: y + h * (0.4 + 0.04 * Math.sin(k * Math.PI)) };
+    }
+    const zs = (["moi", "autre"] as const).map((q) => CALQUES[q]?.c.corps.boite).filter((z): z is Zone => Boolean(z));
+    const m = milieu();
+    const y = zs.length ? zs.reduce((a, z) => a + z[1] + z[3] * 0.9, 0) / zs.length : 0.85;
+    const ecart = zs.length === 2 ? Math.abs(zs[1][0] + zs[1][2] / 2 - (zs[0][0] + zs[0][2] / 2)) * 0.45 : 0.24;
+    return { x: m.x + ecart * (k - 0.5), y: Math.min(0.97, y) };
+  }
+  /** L'indice où irait le prochain objet de `de` : une place libre (la plus proche de lui), sinon celle du plus ancien. */
+  function indiceLibre(de?: Qui): number {
+    const libres = ORDRE_PLACES.filter((i) => !POSES[i]);
+    if (libres.length) {
+      if (!de || !CALQUES[de]) return libres[0];
+      const cote = repere(de, "tete").x;
+      const vers = milieu().x + (cote - milieu().x) * 0.35;
+      return libres.reduce((a, i) => (Math.abs(place(i).x - vers) < Math.abs(place(a).x - vers) - 1e-6 ? i : a), libres[0]);
+    }
+    return POSES.reduce((a, p, i) => (p && POSES[a] && p.o.le < POSES[a]!.o.le ? i : a), 0);
+  }
+  function enlever(p: Pose) {
+    POSES[p.i] = null;
+    if (reduit) return p.el.remove();
+    p.el.animate([{ opacity: 1 }, { opacity: 0, transform: "translate(-50%,-90%) scale(.7)" }], { duration: 350, fill: "forwards" }).finished.then(
+      () => p.el.remove(),
+      () => p.el.remove(),
+    );
+  }
+  function poser(ob: ObjetTable, entree?: EntreeObjet): Point {
+    const deja = POSES.find((p) => p?.o.id === ob.id);
+    if (deja) return place(deja.i);
+    const de: Qui = ob.moi ? "moi" : "autre";
+    const i = indiceLibre(de);
+    if (POSES[i]) enlever(POSES[i]!);
+    const pt = place(i);
+    const el = elt("button", "sc-objet");
+    el.type = "button";
+    el.setAttribute("aria-label", ob.nom);
+    el.style.left = pc(pt.x);
+    el.style.top = pc(pt.y);
+    const corps = elt("span", "corps");
+    corps.textContent = ob.e;
+    el.append(corps);
+    if (ob.e === "☕") el.insertAdjacentHTML("beforeend", VAPEUR);
+    const pose: Pose = { o: ob, el, i };
+    el.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      o.surObjet?.(pose.o);
+      if (!reduit) corps.animate([{ transform: "none" }, { transform: "translateY(-18%) scale(1.1)" }, { transform: "none" }], { duration: 380, easing: "ease-out" });
+    });
+    objets.append(el);
+    POSES[i] = pose;
+    const balance = () => {
+      if (ob.e === "🌷" || ob.e === "🌻") el.classList.add("balance");
+    };
+    if (reduit || !entree) balance();
+    else if (entree === "pousse") {
+      corps
+        .animate([{ transform: "scale(.3,0)" }, { transform: "scale(1.1,1.22)", offset: 0.55 }, { transform: "scale(.94,.92)", offset: 0.78 }, { transform: "none" }], { duration: 950, easing: "ease-out" })
+        .finished.then(balance, balance);
+    } else if (entree === "glisse") {
+      const dir = repere(de, "tete").x < pt.x ? 1 : -1;
+      const dx = -dir * U() * 13;
+      corps.animate(
+        [
+          { transform: `translateX(${dx}px) rotate(${-14 * dir}deg)`, opacity: 0 },
+          { opacity: 1, offset: 0.15 },
+          { transform: `translateX(0) rotate(${7 * dir}deg)`, offset: 0.75 },
+          { transform: `rotate(${-3 * dir}deg)`, offset: 0.88 },
+          { transform: "none" },
+        ],
+        { duration: 700, easing: "cubic-bezier(.2,.8,.3,1)" },
+      );
+      balance();
+    } else {
+      corps
+        .animate([{ transform: "translateY(-120%) scale(.8)", opacity: 0 }, { transform: "translateY(0) scale(1.15,.8)", opacity: 1, offset: 0.55 }, { transform: "translateY(-18%) scale(.95,1.05)", offset: 0.75 }, { transform: "none" }], { duration: 650, easing: "ease-in" })
+        .finished.then(balance, balance);
+    }
+    return pt;
+  }
 
   // ─── les sons : un seul AudioContext, créé au premier toucher (n'importe où dans la page : les boutons du salon sont
   // hors de la scène) ───
@@ -955,6 +1093,17 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     },
     get occupee() {
       return enCours > 0;
+    },
+    poser,
+    placeLibre: (de) => place(indiceLibre(de)),
+    retirer(id) {
+      const p = POSES.find((x) => x?.o.id === id);
+      if (p) enlever(p);
+    },
+    get surTable() {
+      return POSES.filter((p): p is Pose => Boolean(p))
+        .map((p) => p.o)
+        .sort((a, b) => (a.le < b.le ? -1 : a.le > b.le ? 1 : 0));
     },
     reduit,
     get leger() {

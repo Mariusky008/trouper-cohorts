@@ -193,7 +193,8 @@ ok((await transformee(".sc-camera")) === "none", "« 🏠 La pièce » : la cam�
 
 // ═══ LES GESTES, LA SCÈNE REFAITE, LA PAGE CACHÉE ═══
 ok((await p.locator('section[aria-label="Les gestes"] button').count()) === 20, "les gestes : 5 attentions, 8 panneaux, 7 à faire ensemble");
-await p.locator('[data-geste="bisou"]').click();
+// (le lot S3 a mis en scène les gestes ; le clip vient avec la télé, lot S6)
+await p.locator('[data-geste="clip"]').click();
 ok(/n’a pas encore sa mise en scène/.test(await p.locator(".em-note").innerText()), "un geste sans mise en scène le dit");
 await p.locator(".em-recommencer").click();
 await p.waitForTimeout(400);

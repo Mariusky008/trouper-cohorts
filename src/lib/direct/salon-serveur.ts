@@ -18,7 +18,7 @@ import { LA_MS, cheminLa, cheminReglages, filAvec, hDeCle, nomsDuFil, pairDe, qu
 import { lireSaPiece } from "./ma-maison-serveur";
 import { ordreDuCatalogue } from "./ma-maison";
 import { sesDixHuitAns } from "./voeu-serveur";
-import { vivantAvec } from "./vivant-serveur";
+import { lireTable, vivantAvec } from "./vivant-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";
 import { poserFigurine, type FigurineLocale } from "./figurine-calques";
 
@@ -80,7 +80,7 @@ export async function ouvrirSalon(
     const voulue = pieceDuoValide(fiche.piece) ? fiche.piece : (sienne ?? PIECE_PAR_DEFAUT);
     return (await sceneDeLaPiece(supabase, voulue, moment).catch(() => null)) ?? (voulue !== PIECE_PAR_DEFAUT ? await sceneDeLaPiece(supabase, PIECE_PAR_DEFAUT, moment).catch(() => null) : null);
   });
-  const [f, v, scene, h, mienne, sienne, fiche, noms] = await Promise.all([
+  const [f, v, scene, h, mienne, sienne, fiche, noms, table] = await Promise.all([
     filAvec(supabase, moi, cle),
     vivantAvec(supabase, moi, cle).catch(() => null),
     sceneP,
@@ -89,6 +89,8 @@ export async function ouvrirSalon(
     hP.then((x) => (x ? calquesDeFigurine(supabase, x, { fabriquer: false }) : null)).catch(() => null),
     ficheP,
     hP.then((x) => (x ? nomsDuFil(supabase, pairDe(moi.id, x)) : [])).catch(() => []),
+    // (🌷 lot S3 : ce qui est posé sur leur table)
+    hP.then((x) => (x ? lireTable(supabase, pairDe(moi.id, x), qui8(moi.id)) : [])).catch(() => []),
   ]);
   if (!f.fil) return { error: f.error, statut: f.statut };
   // (posées aux deux places ; celles qui manquent sont découpées après la réponse)
@@ -98,7 +100,7 @@ export async function ouvrirSalon(
   const installe = choisie && fiche.par8 ? { installePar: fiche.par8 === qui8(moi.id) ? ("moi" as const) : ("autre" as const) } : {};
   const sceneVue = scene ? { ...scene, ...(calques ? { calques } : {}), choisie, ...installe } : null;
   return {
-    ouverture: { cle: f.fil.cle, fil: f.fil, vivant: v?.vivant ?? null, scene: sceneVue, ...(h ? { flamme: flammeDe(noms, qui8(moi.id), qui8(h), maintenant) } : {}) },
+    ouverture: { cle: f.fil.cle, fil: f.fil, vivant: v?.vivant ?? null, scene: sceneVue, ...(h ? { flamme: flammeDe(noms, qui8(moi.id), qui8(h), maintenant) } : {}), ...(table.length ? { table } : {}) },
     ...(v?.aPreparer ? { aPreparer: v.aPreparer } : {}),
     ...(v?.aNoter ? { aNoter: v.aNoter } : {}),
     ...(aDecouper.length ? { aDecouper } : {}),

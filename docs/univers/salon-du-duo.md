@@ -868,6 +868,56 @@ dans la scène ; « Pas maintenant », puis réinvité, « Venir » : la cuisine
 débordement, ni erreur, ni le mot interdit). Les essais `salon-ouvrir`, `salon-conversation` et `salon-pouls` partent
 d'un duo déjà installé dans le salon.
 
+### 11.11 Les gestes, les panneaux, la table, les réactions (lot S3, première partie — 18 novembre 2026)
+
+Le contrat `salon.ts` s'est complété (la PR le dit dans son titre) : `ObjetTable = { id, e, nom, moi, le }`,
+`EntreeObjet` (`"pousse"` · `"glisse"` · `"tombe"`), `PLACES_TABLE = 4` ; la scène gagne `poser(o, entree?)`,
+`placeLibre(de?)`, `retirer(id)`, `surTable` ; les effets, `pancarte(q, texte, ms?)` ; les options du moteur, `table?`
+(la table basse relevée) et `surObjet?` ; `OuvertureSalon` gagne `table?`.
+
+- **Le serveur** (`src/lib/direct/vivant.ts`, `vivant-serveur.ts`) : `POST /api/direct/proches { action: "geste",
+  type: "geste", quoi, surprise? }` — les douze clés de `GESTES` (`CLES_GESTES_SALON`), rangées avec les panneaux et
+  les réactions dans `fils/<paire>/gestes.json` (même limite par jour, le pouls bat après). **La fleur, le café et la
+  surprise posent un objet** (🌷 une tulipe, ☕ un café ; la surprise : une parmi huit, tirée par celui qui la fait et
+  vérifiée — 🧸 🧁 🎈 🍫 🌻 ⭐ 🍪 💌, rien d'alcoolisé) dans `fils/<paire>/table.json` (les quatre derniers, chacun avec
+  l'identifiant de son geste). L'ouverture (`?ouvrir=`) rend la table, vue de chacun. **Les gestes de l'autre d'après
+  ma dernière lecture sont `nouveau`** (une fois : `<habitant>/gestes-vus.json` avance ; sans trace, les dernières
+  24 h).
+- **Les mises en scène** (`src/app/salon/gestes.ts`, la maquette portée sur le moteur) : 👋 Coucou, 😘 Bisou (la marque
+  💋, la joue qui rougit), 🤜 Check (« BAM ! »), 🪶 Chatouilles (le fou rire), 🌷 Une fleur (elle vole, pousse sur la
+  table et s'y balance), 🤗 Câlin, ☕ Un café (la tasse glisse et fume ; deux tasses : « Pause café ! »), 🎶 Danser
+  (une petite ritournelle, jamais une voix), 🎁 Surprise (le paquet tombe, se trémousse, s'ouvre en confettis, et laisse
+  ce qu'il cachait) ; **les huit panneaux** (`panneau-<clé>`) : la figurine brandit sa pancarte, l'autre réagit (rit au
+  « MDR », applaudit au « Bravo ! »…) ; **les six réactions avec le corps** (`reaction-<clé>`). Ce qu'un geste pose
+  vient du serveur, confié avant le geste (`confierObjet`) ; un geste défait ne le pose pas (`annulerObjet`).
+- **L'écran** (`src/app/salon/salon.tsx`) :
+  - **la barre des gestes** sous la scène : **💌 Petites attentions** (cinq gestes, puis les huit panneaux) et
+    **🛋️ Ensemble** (quatre gestes : 📺 Un clip, 📸 Photo à deux et 🖼️ Accrocher viennent avec la télé et les cadres,
+    lot S6) ; toucher l'onglet ouvert replie la barre (la scène s'agrandit), un toucher la rouvre — gardé sur le
+    téléphone ;
+  - **un geste se joue au toucher**, chez moi, avec sa phrase en haut (« ☕ Tu as servi un café », « 🎁 Tu as fait une
+    surprise à Sam », puis « 🧁 Un cupcake ! » quand elle s'ouvre) ; puis il part ; refusé (« Assez de gestes pour
+    aujourd'hui ») : son objet s'en va, et on le dit ; trois gestes en attente au plus ;
+  - **ses gestes arrivent avec le pouls** (relus avec le fil quand son numéro change) et se jouent chez moi, l'un après
+    l'autre (« 🤜 Check avec Sam », « ☕ Sam a servi un café ») ;
+  - **l'arrivée rejoue d'abord ses gestes** (les trois derniers pas vus, chacun le temps de sa mise en scène), puis ses
+    messages ; un toucher passe la suite, et ce que les gestes devaient poser est déjà sur la table ;
+  - **la table** : ce qui y est posé est là dès l'ouverture, sur la table basse relevée de la pièce (sinon au sol, entre
+    les deux figurines), suit le duo d'une pièce à l'autre, et se touche (« 🌷 Sam a laissé une tulipe · 8 h 12 ») ;
+  - **un appui long sur sa bulle** (ou sur un de ses messages dans 💬) : les six réactions avec le corps ; ma figurine
+    la joue, et elle s'affiche sous le message dans 💬 ;
+  - **💬 Messagerie** montre aussi les gestes et les panneaux, à leur heure (« 😘 Sam t'a envoyé un bisou »).
+- **Pas encore** : la vie propre et le chat (S3, deuxième partie) ; 📺 Un clip, 📸 Photo à deux, 🖼️ Accrocher (S6) ;
+  la notification de ce qui attend (« un bisou, un mème, 2 messages… », S8).
+
+**Les essais** : `scripts/essai-salon-gestes-route.mjs` (un bisou ; 400 pour un geste inconnu, une surprise vide ou
+inventée ; 403 ; la tulipe, le café, l'ourson sur la table, les quatre derniers ; la table vue de chacun ; nouveau une
+fois, jamais les siens ; les panneaux et les réactions d'avant) et `scripts/navigateur/salon-gestes.mjs` (l'arrivée :
+le bisou, la tulipe, puis le message ; 13 puces 💌, 4 puces 🛋️ ; la barre repliée, gardée ; un café, une surprise qui
+garde son secret jusqu'à son ouverture, « J'arrive ! » ; en direct : un check, une fleur, un café ; quatre objets au
+plus ; toucher la tulipe ; un geste refusé, défait ; un appui long, 👏 ; 💬 ; ni débordement, ni erreur, ni le mot
+interdit).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :
