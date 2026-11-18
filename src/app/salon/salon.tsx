@@ -38,6 +38,8 @@ import { phraseDeNote, type ObjetVu } from "@/lib/direct/etagere";
 
 /** 📚 « Votre étagère » (lot S6) : chargée seulement quand on l'ouvre. */
 const FeuilleEtagere = dynamic(() => import("./etagere-feuille"), { ssr: false });
+/** ＋ « Envoyer à … » (lot S6) : chargée seulement quand on touche ＋. */
+const FeuilleEnvoi = dynamic(() => import("./envoyer"), { ssr: false });
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
 import { aRejouer, derniersDeChacun, dureeDite, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
 import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
@@ -326,6 +328,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   // 📚 (lot S6) leurs souvenirs (l'étagère), « Votre étagère » ouverte, la phrase de la figurine qui voit noter
   const [souvenirs, setSouvenirs] = useState<ObjetVu[]>([]);
   const [etagereOuverte, setEtagereOuverte] = useState(false);
+  // ＋ (lot S6) la feuille « Envoyer à … » ; le champ (pour un lien)
+  const [envoiOuvert, setEnvoiOuvert] = useState(false);
+  const [indiceLien, setIndiceLien] = useState(false);
+  const champ = useRef<HTMLInputElement>(null);
   const [phraseIa, setPhraseIa] = useState<{ q: Qui; texte: string; n: number } | null>(null);
   const etagere = useRef<EtagereDuSalon | null>(null);
   const souvenirsRef = useRef<ObjetVu[]>([]);
@@ -872,6 +878,19 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     etagere.current?.montrer(souvenirs);
   }, [souvenirs]);
 
+  /** ＋ Une photo, une vidéo partie : dans le fil, ma figurine la dit, la sienne réagit. */
+  function partageEnvoye(m: MessageFil) {
+    setEnvoiOuvert(false);
+    setMessages((l) => [...l, m]);
+    const s = scene.current;
+    if (s) {
+      s.figurine("moi").parler(tempsDeParole(texteDeBulle(m)));
+      setTimeout(() => scene.current === s && reagir(s, autreQue("moi"), texteDeBulle(m), laRef.current), 450);
+    }
+    chat.current?.reagir("message");
+    monterLaFlamme("moi");
+  }
+
   /** 🚪 Aller dans une pièce (sa scène est dans le catalogue, sa plaque préchargée : tout de suite). */
   async function allerDans(piece: PieceDuo): Promise<boolean> {
     let cat = catalogueRef.current;
@@ -1229,13 +1248,18 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           void envoyer();
         }}
       >
+        <button type="button" className="sd-joindre" aria-label="Envoyer une photo, une vidéo, un lien" data-joindre disabled={!fil || !peutEcrire} onClick={() => setEnvoiOuvert(true)}>
+          ＋
+        </button>
         <input
+          ref={champ}
           value={texte}
           onChange={(e) => {
             setTexte(e.target.value);
             direQueJEcris(e.target.value.trim().length > 0);
           }}
-          placeholder={peutEcrire ? `Écris à ${prenom || "…"}…` : "L’écriture est en pause"}
+          placeholder={!peutEcrire ? "L’écriture est en pause" : indiceLien ? "Colle un lien : YouTube, une chanson, un site…" : `Écris à ${prenom || "…"}…`}
+          onBlur={() => setIndiceLien(false)}
           aria-label={`Écrire à ${prenom}`}
           maxLength={1000}
           enterKeyHint="send"
@@ -1313,6 +1337,21 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           )}
         </div>
       </section>
+      {envoiOuvert && fil && (
+        <FeuilleEnvoi
+          cle={cle}
+          prenom={prenom}
+          photos={fil.photos !== false}
+          videos={fil.videos !== false}
+          onFermer={() => setEnvoiOuvert(false)}
+          onEnvoye={partageEnvoye}
+          onLien={() => {
+            setEnvoiOuvert(false);
+            setIndiceLien(true);
+            champ.current?.focus();
+          }}
+        />
+      )}
       {etagereOuverte && <FeuilleEtagere cle={cle} onFermer={() => setEtagereOuverte(false)} onRetire={(id) => setSouvenirs((l) => l.filter((o) => o.id !== id))} />}
     </main>
   );
@@ -1404,6 +1443,8 @@ button.sd-pastille{cursor:pointer}
 .sd-reac{display:flex;gap:2px;margin-top:-2px}
 .sd-reac .e{font-family:var(--emoji);font-size:14px;line-height:1}
 .sd-saisie{flex:none;display:flex;gap:9px;align-items:center;padding:8px 12px max(12px,env(safe-area-inset-bottom,0px))}
+.sd-joindre{width:46px;height:46px;border-radius:50%;flex:none;display:grid!important;place-items:center;font:400 26px/1 var(--app)!important;color:var(--texte)!important;box-shadow:inset 0 0 0 1.5px rgba(242,190,106,.7)}
+.sd-joindre:disabled{opacity:.45}
 .sd-saisie input{flex:1;min-width:0;height:46px;box-sizing:border-box;border-radius:23px;border:1.5px solid var(--trait);background:#170816;color:var(--texte);padding:0 18px;font:500 15.5px var(--app)}
 .sd-saisie input::placeholder{color:#97738b}
 .sd-envoyer{width:48px;height:48px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--rose)!important;box-shadow:0 6px 18px rgba(255,47,143,.4);transition:transform .15s ease,opacity .15s ease}
