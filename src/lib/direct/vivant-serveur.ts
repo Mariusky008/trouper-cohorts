@@ -94,12 +94,14 @@ const gardes = (x: { liste?: unknown }) => (Array.isArray(x.liste) ? (x.liste as
 export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat<{ vivant?: Vivant; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string }>> {
   const q = await avecQui(supabase, moi, cle);
   if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
-  const [g, p, noms, ap, vus] = await Promise.all([
+  const [g, p, noms, ap, vus, tv] = await Promise.all([
     lireJson<{ liste?: unknown }>(supabase, cheminGestes(q.pair)),
     lireJson<Record<string, number>>(supabase, cheminPrepare(q.pair)),
     nomsDuFil(supabase, q.pair),
     lireJson<FicheApartes>(supabase, cheminApartes(q.pair)),
     lireJson<Record<string, number>>(supabase, cheminGestesVus(moi.id)),
+    // 📺 (lot S6) ce que l'un des deux a mis à la télé
+    lireJson<{ message?: unknown; par8?: unknown; le?: unknown }>(supabase, `fils/${q.pair}/tele.json`).catch(() => ({}) as { message?: unknown; par8?: unknown; le?: unknown }),
   ]);
   const moi8 = qui8(moi.id);
   const lui8 = qui8(q.h);
@@ -120,8 +122,9 @@ export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown
   const jusqua = aparteAEcrire(ap, noms, moi8, lui8, Date.now());
   // 📚 leur étagère (lot E1) : ce que leurs figurines ont noté ; un échange à lire (`aNoter` : le proche)
   const et = await etagereDansLaScene(supabase, moi, q.h, q.pair, noms).catch(() => ({ aNoter: false, scene: undefined }));
+  const tele = s(tv.message) && s(tv.le) ? { tele: { message: s(tv.message), le: s(tv.le), par: s(tv.par8) === moi8 ? ("moi" as const) : ("lui" as const) } } : {};
   return {
-    vivant: { enregistre: Date.now() - (Number(p[lui8]) || 0) < ENREGISTRE_MS, gestes, dernier: noms.length ? noms[noms.length - 1].ts : 0, apartes: apartesVus(ap, moi8, lui8, depuis), ...(et.scene ? { etagere: et.scene } : {}) },
+    vivant: { enregistre: Date.now() - (Number(p[lui8]) || 0) < ENREGISTRE_MS, gestes, dernier: noms.length ? noms[noms.length - 1].ts : 0, apartes: apartesVus(ap, moi8, lui8, depuis), ...(et.scene ? { etagere: et.scene } : {}), ...tele },
     ...(jusqua ? { aPreparer: { h: q.h, pair: q.pair, jusqua } } : {}),
     ...(et.aNoter ? { aNoter: q.h } : {}),
   };

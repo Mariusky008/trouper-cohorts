@@ -26,13 +26,15 @@
  * agrandit l'écran ET ses boutons ensemble, dans les mêmes proportions.
  *
  * Le lecteur : celui de YouTube (`youtube-nocookie.com`, chargé au premier allumage) ; s'il ne se charge pas, un
- * simple cadre de YouTube.
+ * simple cadre de YouTube. 🎬 (lot S6, le salon du duo) une vidéo de leur conversation, filmée au téléphone
+ * (`sorte: "video"`) : une simple vidéo, posée de la même façon, avec le son (« ▶ Allumer » est le geste qui le donne).
  */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PHRASES_TELE, secoursApres, surYouTube, vignetteYouTube, type ClipSecours, type ProgrammeTele, type ZoneTele } from "@/lib/direct/tele";
 
-type Video = { id: string; debut?: number };
+/** Ce qui joue : une vidéo YouTube (`id`), ou une vidéo de leur conversation (`src`, son adresse ; `id` : son message). */
+type Video = { id: string; debut?: number; src?: string };
 type LecteurYT = { destroy?: () => void; playVideo?: () => void; unloadModule?: (m: string) => void };
 type EspaceYT = { Player: new (el: HTMLElement, o: Record<string, unknown>) => LecteurYT };
 type FenetreYT = Window & { YT?: EspaceYT; onYouTubeIframeAPIReady?: () => void };
@@ -124,6 +126,7 @@ function imageDe(p: ProgrammeTele): string {
   if (p.sorte === "youtube") return p.apercu || vignetteYouTube(p.id);
   if (p.sorte === "ouvrir") return p.apercu ?? "";
   if (p.sorte === "secours") return vignetteYouTube(p.id);
+  if (p.sorte === "video") return p.vignette;
   return "";
 }
 
@@ -182,7 +185,7 @@ export function TeleDuo({
   // continuer à profiter de toute la pièce » ; le lecteur suit l'écran, et un toucher ramène la caméra sur elle)
 
   useEffect(() => {
-    if (!video || simple) return;
+    if (!video || simple || video.src) return;
     let fini = false;
     let lecteur: LecteurYT | null = null;
     chargerYouTube()
@@ -238,6 +241,7 @@ export function TeleDuo({
     // (le lecteur se pose tout de suite sur l'écran : sa place, mesurée avant de l'allumer)
     setCadre(mesurer(ecran.current, sceneDe(ecran.current)));
     if (programme.sorte === "youtube" || programme.sorte === "secours") setVideo({ id: programme.id, ...(programme.debut ? { debut: programme.debut } : {}) });
+    else if (programme.sorte === "video") setVideo({ id: programme.message, src: programme.url });
   }
 
   const image = imageDe(programme);
@@ -263,7 +267,7 @@ export function TeleDuo({
         <span className="tv-ecran" aria-hidden="true" style={deforme}>
           {image && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt="" referrerPolicy="no-referrer" />
+            <img src={image} alt="" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
           )}
         </span>
       )}
@@ -328,8 +332,20 @@ export function TeleDuo({
             data-proche={proche ? "1" : "0"}
           >
             <div className="tv-deforme" style={deformeLecteur}>
-              <div className="tv-video" style={video169 ?? undefined}>
-                {simple ? (
+              <div className="tv-video" style={video.src ? { inset: 0 } : (video169 ?? undefined)}>
+                {video.src ? (
+                  <video
+                    className="tv-lecteur tv-fichier"
+                    src={video.src}
+                    autoPlay
+                    playsInline
+                    controls
+                    onError={() => {
+                      setNote({ texte: PHRASES_TELE.illisible });
+                      setVideo(null);
+                    }}
+                  />
+                ) : simple ? (
                   <iframe
                     className="tv-cadre"
                     title="La télé"
@@ -363,6 +379,7 @@ const STYLES_TELE = `
 .tv-video{position:absolute}
 .tv-lecteur,.tv-cadre{position:absolute;inset:0;width:100%;height:100%;border:0;overflow:hidden;background:#000}
 .tv-lecteur iframe{width:100%;height:100%;border:0}
+.tv-fichier{object-fit:cover}
 .tv-gestes{position:absolute;left:0;right:0;bottom:7%;display:flex;flex-direction:column;align-items:center;gap:2cqw;pointer-events:none}
 .tv.allumee .tv-gestes{top:100%;bottom:auto;margin-top:2cqw;align-items:flex-end}
 .tv-bouton,.tv-eteindre{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;gap:.3em;padding:.5em 1.1em;border:0;border-radius:999px;background:#ff2e9a;color:#fff;font-weight:800;font-size:5.4cqw;line-height:1.1;text-decoration:none;box-shadow:0 .5cqw 2.5cqw rgba(0,0,0,.35);cursor:pointer;white-space:nowrap}

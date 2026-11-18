@@ -36,6 +36,13 @@ export const PHRASES_TELE = {
   surYouTube: "▶ La regarder sur YouTube",
   eteinte: "Envoyez-vous un lien YouTube : il passera ici.",
   secours: "En attendant votre premier lien",
+  // (lot S6 : le salon du duo)
+  mettre: "📺 La mettre à la télé ?",
+  mise: "📺 À la télé !",
+  dejaLa: "📺 Elle passe déjà à la télé",
+  misePar: (prenom: string) => `📺 ${prenom} a mis quelque chose à la télé`,
+  illisible: "Cette vidéo ne se lit pas ici.",
+  pasALaTele: "Celui-là ne passe pas à la télé.",
 } as const;
 
 export type Plateforme = "youtube" | "tiktok" | "instagram";
@@ -53,9 +60,16 @@ export type ClipSecours = { id: string; debut?: number; titre?: string };
  */
 export const CLIPS_DU_PROPRIETAIRE: ClipSecours[] = [{ id: "7CGKeID7nRc" }, { id: "nd8RD3tjNQE" }, { id: "R2KeQqLzr00" }, { id: "ko70cExuzZM" }, { id: "e5s8MdtnbMM" }];
 
+/**
+ * 📺 (lot S6, `docs/univers/salon-du-duo.md` 4.8) ce que l'un des deux a mis à la télé lui-même (« 📺 La mettre à la
+ * télé ? ») : par qui, quand. Le message (`message`) reste à l'écran tant qu'un lien plus récent ne le remplace pas.
+ */
+export type MisALaTele = { par: "moi" | "lui"; le: string };
 export type ProgrammeTele =
-  | { sorte: "youtube"; id: string; debut?: number; url: string; titre?: string; apercu?: string; moi: boolean; le: string }
-  | { sorte: "ouvrir"; plateforme: "tiktok" | "instagram"; url: string; titre?: string; apercu?: string; moi: boolean; le: string }
+  | { sorte: "youtube"; id: string; debut?: number; url: string; titre?: string; apercu?: string; moi: boolean; le: string; message?: string; mis?: MisALaTele }
+  | { sorte: "ouvrir"; plateforme: "tiktok" | "instagram"; url: string; titre?: string; apercu?: string; moi: boolean; le: string; message?: string; mis?: MisALaTele }
+  /** (lot S6) une vidéo de leur conversation (filmée au téléphone), lue dans l'écran : ses adresses signées */
+  | { sorte: "video"; message: string; url: string; vignette: string; l: number; h: number; duree: number; titre?: string; moi: boolean; le: string; mis?: MisALaTele }
   | { sorte: "secours"; id: string; debut?: number; titre?: string }
   | { sorte: "eteinte" };
 
@@ -167,6 +181,13 @@ export function secoursDuJour(clips: ClipSecours[], cle: string): ClipSecours | 
 /** Le clip qui prend le relais d'une vidéo refusée : le suivant dans la liste (jamais elle-même). */
 export function secoursApres(clips: ClipSecours[], refusees: string[]): ClipSecours | null {
   return clips.find((c) => !refusees.includes(c.id)) ?? null;
+}
+
+/** (lot S6) Un message qui peut passer à la télé : une vidéo, ou un lien YouTube, TikTok ou Instagram. */
+export function passeALaTele(m: { genre?: string; video?: unknown; lien?: { url?: unknown } | null }): boolean {
+  if (m.genre === "video") return Boolean(m.video);
+  const url = typeof m.lien?.url === "string" ? m.lien.url : "";
+  return Boolean(url && plateformeDe(url));
 }
 
 /** Le programme d'un lien collé (l'essai de la télé, sur la page d'essais) : sans message, sans aperçu à lui. */
