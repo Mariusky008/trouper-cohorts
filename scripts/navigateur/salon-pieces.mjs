@@ -190,7 +190,7 @@ ok(await attendre(lea, async () => /Sam préfère rester ici/.test(await texte(l
 await lea.locator(".sd-porte").click();
 await lea.locator('[data-choisir="cuisine"]').click();
 ok(await attendre(sam, async () => (await sam.locator('.sd-invite[data-invitation="cuisine"]').count()) === 1, 5000), "elle réinvite : l'invitation revient chez Sam");
-await sam.getByRole("button", { name: "Venir" }).click();
+await sam.getByRole("button", { name: "Venir", exact: true }).click();
 ok(await attendre(sam, async () => (await plaque(sam)) === plaques.cuisine), "« Venir » : Sam est dans la cuisine");
 ok(await attendre(lea, async () => (await plaque(lea)) === plaques.cuisine, 5000), "Léa aussi");
 ok(await attendre(lea, async () => /Sam vous rejoint · 🍳 La cuisine/.test(await texte(lea, ".sd-toast.vu")), 3000), "« ✨ Sam vous rejoint · 🍳 La cuisine »");

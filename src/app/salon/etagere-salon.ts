@@ -53,6 +53,8 @@ export function installerEtagere(scene: Scene, places: Point[], surToucher: (o: 
   scene.couche("derriere").append(couche);
   let montres: ObjetVu[] = [];
   const dessiner = (pose?: string) => {
+    // (une pièce sans étagère relevée : rien à poser — `slice(-0)` les rendrait tous)
+    if (!places.length) return couche.replaceChildren();
     couche.replaceChildren(
       ...montres.slice(-places.length).map((o, i) => {
         const b = document.createElement("button");
