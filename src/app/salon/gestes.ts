@@ -452,6 +452,30 @@ enregistrerMiseEnScene("calin", async (s) => {
   await s.attendre(300);
 });
 
+// 📸 PHOTO À DEUX (lot S6) : elles se rapprochent, « Cheese ! », le flash et le déclic. La photo, elle, se fait dans le
+// téléphone de celui qui l'a demandée (`photo-a-deux.ts`), au moment du flash, et s'accroche au mur.
+/** Quand le flash part, après le début de la mise en scène (la photo se prend à cet instant). */
+export const FLASH_PHOTO_MS = 950;
+enregistrerMiseEnScene("selfie", async (s) => {
+  const { fx } = s;
+  const m = s.milieu();
+  for (const q of ["moi", "autre"] as const) {
+    const g = s.figurine(q);
+    if (g.dort) g.reveiller();
+    g.rapprocher(0.03, 2100);
+    g.pencher(11, 2100);
+    g.gonfler(1.03, 1900);
+  }
+  fx.lettrage("Cheese !", { x: m.x, y: m.y - 0.13 }, { couleur: "jaune", rot: 4, taille: 0.065, duree: 900 });
+  await s.attendre(FLASH_PHOTO_MS);
+  fx.flash(m, 170);
+  s.sons.bruit(60, 0.22, 3400);
+  await s.attendre(1150);
+  s.figurine("moi").bondir(0.4);
+  s.figurine("autre").bondir(0.4);
+  await s.attendre(250);
+});
+
 enregistrerMiseEnScene("cafe", async (s, de) => {
   const { fx } = s;
   const U = fx.u;

@@ -12,17 +12,12 @@
  * routes, les mêmes règles que l'écran d'aujourd'hui (lots M2, M3). Chargée seulement quand on touche ＋.
  */
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { photoPourEnvoi } from "../collection/photos";
 import { deposerAvecProgres, videoPourEnvoi, type VideoLue } from "../collection/videos";
 import { PHRASES_PHOTO, legendePhoto } from "@/lib/direct/photo";
 import type { MessageFil } from "@/lib/direct/talkie";
 
-type Reponse<T> = T & { error?: string };
-async function demander<T>(corps: Record<string, unknown>): Promise<{ statut: number; j: Reponse<T> }> {
-  const r = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
-  return { statut: r.status, j: (await r.json().catch(() => ({}))) as Reponse<T> };
-}
+import { demander, deposerPhoto, envoyerPhotoDeposee } from "./depot";
 
 export type Choisi = { sorte: "photo"; fichier: File } | { sorte: "video"; fichier: File };
 type Etat = { quoi: "lecture" } | { quoi: "prete" } | { quoi: "envoi"; part?: number } | { quoi: "verification" } | { quoi: "erreur"; texte: string; reessayer?: boolean };
@@ -108,17 +103,15 @@ export default function FeuilleEnvoi({
         if (!blob) return;
         if (!id) {
           setEtat({ quoi: "envoi" });
-          const d = await demander<{ seau: string; chemin: string; jeton: string; id: string }>({ action: "photo-depot", cle });
-          if (!d.j.jeton) return setEtat({ quoi: "erreur", texte: d.j.error || "Ta photo n’a pas pu partir. Réessaie." });
-          const { error } = await createClient().storage.from(d.j.seau).uploadToSignedUrl(d.j.chemin, d.j.jeton, blob, { contentType: blob.type });
-          if (error) return setEtat({ quoi: "erreur", texte: "Ta photo n’a pas pu partir. Réessaie." });
-          id = deposee.current = d.j.id;
+          const d = await deposerPhoto(cle, blob);
+          if (!d.id) return setEtat({ quoi: "erreur", texte: d.error || "Ta photo n’a pas pu partir. Réessaie." });
+          id = deposee.current = d.id;
         }
         setEtat({ quoi: "verification" });
-        const r = await demander<{ message: MessageFil }>({ action: "photo", cle, id, legende: leg });
-        if (r.j.message) return onEnvoye(r.j.message);
+        const r = await envoyerPhotoDeposee(cle, id, leg);
+        if (r.message) return onEnvoye(r.message);
         if (r.statut !== 503) deposee.current = null;
-        return setEtat({ quoi: "erreur", texte: r.j.error || "Ça n’a pas marché. Réessaie.", reessayer: r.statut === 503 || r.statut >= 500 });
+        return setEtat({ quoi: "erreur", texte: r.error || "Ça n’a pas marché. Réessaie.", reessayer: r.statut === 503 || r.statut >= 500 });
       }
       const v = preteVideo;
       if (!v) return;

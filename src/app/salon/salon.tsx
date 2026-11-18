@@ -32,7 +32,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { bez, creerScene, ease } from "./moteur";
 import "./mises-en-scene";
-import { annulerObjet, confierObjet } from "./gestes";
+import { annulerObjet, confierObjet, FLASH_PHOTO_MS } from "./gestes";
 import { installerChat, type ChatDuSalon, type EvenementChat } from "./chat";
 import { installerEtagere, placesEtagere, type EtagereDuSalon } from "./etagere-salon";
 import { phraseDeNote, type ObjetVu } from "@/lib/direct/etagere";
@@ -111,10 +111,10 @@ const nomDePiece = (p: PieceDuo) => {
 
 // ─── 🛋️ LES GESTES (lot S3) ───
 /**
- * Les puces de la barre : 📺 Un clip et 🖼️ Accrocher ouvrent la feuille de choix (lot S6 : la télé, les cadres — si la
- * pièce en a) ; 📸 Photo à deux viendra avec la photo à deux.
+ * Les puces de la barre : 📺 Un clip et 🖼️ Accrocher ouvrent la feuille de choix, 📸 Photo à deux prend leur photo et
+ * l'accroche (lot S6 : la télé, les cadres — seulement si la pièce en a).
  */
-const PUCES_DU_SALON = PUCES_GESTES.filter((p) => p.cle !== "selfie");
+const PUCES_DU_SALON = PUCES_GESTES;
 type Onglet = "attentions" | "ensemble";
 type Barre = { onglet: Onglet; replie: boolean };
 const BARRE = "salon:barre";
@@ -375,6 +375,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const [aChoisir, setAChoisir] = useState<{ mode: ModeChoix; cadre?: number } | null>(null);
   const [depart, setDepart] = useState<{ piece: Choisi; puis: { mode: ModeChoix; cadre?: number } } | null>(null);
   const cadresRef = useRef<CadreVu[]>([]);
+  const photoEnCours = useRef(false);
   const cadresVus = useRef("");
   const relireCadresRef = useRef<(marquer?: boolean) => void>(() => undefined);
   const recevoirCadresRef = useRef<(c: Vivant["cadres"]) => void>(() => undefined);
@@ -1060,6 +1061,33 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     relireCadresRef.current(true);
     if (c.par === "lui") montrer(PHRASES_CADRES.accrocheePar(prenomRef.current || "…"), 3000);
   }
+  /**
+   * 📸 Photo à deux : le geste (joué chez les deux : « Cheese ! », le flash), la photo de leurs figurines prise dans le
+   * téléphone au moment du flash, envoyée comme une photo, accrochée au mur.
+   */
+  async function prendrePhotoADeux(p: PuceGeste) {
+    const el = ici.current;
+    if (!el || photoEnCours.current) return;
+    photoEnCours.current = true;
+    const modules = Promise.all([import("./photo-a-deux"), import("./depot")]);
+    try {
+      void faireGeste(p);
+      await new Promise((ok) => setTimeout(ok, FLASH_PHOTO_MS + 40));
+      const [{ photoADeux }, { envoyerUnePhoto }] = await modules;
+      const blob = await photoADeux(el);
+      if (!blob) return montrer("La photo n’a pas pu se faire. Réessaie.");
+      const r = await envoyerUnePhoto(cle, blob, "Notre photo à deux");
+      if (!r.message) return montrer(r.error ? `Pas envoyée : ${r.error}` : "Pas envoyée : réessaie.");
+      const m = r.message;
+      setMessages((l) => [...l, m]);
+      monterLaFlamme("moi");
+      await accrocherPhoto(m.id);
+    } catch {
+      montrer("La photo n’a pas pu se faire. Réessaie.");
+    } finally {
+      photoEnCours.current = false;
+    }
+  }
   /** Un lien collé dans « Mettre à la télé » : il part comme un écrit, puis passe à la télé. */
   async function lienALaTele(url: string) {
     setAChoisir(null);
@@ -1467,8 +1495,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           </div>
           {!barre.replie && (
             <div className="sd-gestes" aria-label="Les gestes" data-gestes={barre.onglet}>
-              {PUCES_DU_SALON.filter((p) => p.cat === barre.onglet && (p.cle !== "clip" || zoneTele) && (p.cle !== "photo" || zonesCadres.length > 0)).map((p) => (
-                <button key={p.cle} type="button" className="sd-geste" data-geste={p.cle} disabled={!fil} onClick={() => (p.cle === "clip" ? setAChoisir({ mode: "tele" }) : p.cle === "photo" ? setAChoisir({ mode: "mur" }) : void faireGeste(p))}>
+              {PUCES_DU_SALON.filter((p) => p.cat === barre.onglet && (p.cle !== "clip" || zoneTele) && (p.cle !== "photo" || zonesCadres.length > 0) && (p.cle !== "selfie" || (zonesCadres.length > 0 && fil?.photos !== false))).map((p) => (
+                <button key={p.cle} type="button" className="sd-geste" data-geste={p.cle} disabled={!fil} onClick={() => (p.cle === "clip" ? setAChoisir({ mode: "tele" }) : p.cle === "photo" ? setAChoisir({ mode: "mur" }) : p.cle === "selfie" ? void prendrePhotoADeux(p) : void faireGeste(p))}>
                   <span className="e">{p.e}</span>
                   <span>{p.nom}</span>
                 </button>

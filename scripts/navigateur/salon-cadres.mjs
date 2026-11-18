@@ -8,7 +8,9 @@
 // 🛋️ Ensemble → 🖼️ Accrocher : la feuille, leurs deux photos ; celle de Sam va dans le cadre vide. Toucher un cadre :
 // la photo en grand, « Accrochée par toi · aujourd'hui », « 🖼️ Une autre photo ici » : la feuille (« Au mur »), une
 // autre photo, elle remplace. Sam accroche une photo : en direct, « 🖼️ Sam a accroché une photo ». 📺 Un clip : la
-// feuille « Mettre à la télé », le clip de Sam ; un lien collé part comme un écrit et passe à la télé. 🖼️ dans 💬.
+// feuille « Mettre à la télé », le clip de Sam ; un lien collé part comme un écrit et passe à la télé. 📸 Photo à deux :
+// « Cheese ! », le flash, leur photo prise dans le téléphone (1 200 × 900, pas une image vide), accrochée chacun son
+// tour (le cadre accroché depuis le plus longtemps), et Sam voit le geste. 🖼️ dans 💬.
 // Ni débordement, ni glissement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
@@ -159,7 +161,7 @@ ok((await cadresDe(SAM, LEA.cle)).find((c) => c.cadre === 0)?.message === maPhot
 // ═══ 🖼️ ACCROCHER (🛋️ ENSEMBLE) ═══
 await p.locator('.sd-onglet[data-onglet="ensemble"]').click();
 const puces = await p.evaluate(() => [...document.querySelectorAll(".sd-gestes .sd-geste")].map((x) => x.dataset.geste));
-ok(puces.join(",") === "calin,cafe,danser,clip,photo,surprise", `🛋️ : 📺 Un clip et 🖼️ Accrocher (la pièce a une télé et des cadres) (${puces.join(", ")})`);
+ok(puces.join(",") === "calin,cafe,danser,clip,selfie,photo,surprise", `🛋️ : 📺 Un clip, 📸 Photo à deux et 🖼️ Accrocher (la pièce a une télé et des cadres) (${puces.join(", ")})`);
 await p.locator('.sd-geste[data-geste="photo"]').click();
 await feuillePrete(".sd-choisir");
 ok((await p.locator(".sd-choisir-piece").count()) === 2, "la feuille : leurs deux photos");
@@ -200,6 +202,26 @@ ok((await texte(".sd-bulle.moi:not([data-ia])")).startsWith("https://youtu.be/Xy
 const prog = (await (await fetch(`${BASE}/api/direct/tele?avec=${LEA.cle}`, { headers: { cookie: `clikme_habitant=${SAM.jeton}` } })).json())?.programme;
 ok(prog?.sorte === "youtube" && prog.id === "XyZ12345678" && prog.mis?.par === "lui", "chez Sam : le nouveau clip, mis par Léa");
 await p.locator(".sd-recul").click();
+
+// ═══ 📸 PHOTO À DEUX ═══
+await p.waitForTimeout(1200);
+const avantSelfie = await auMur();
+await p.locator('.sd-geste[data-geste="selfie"]').click();
+ok(await attendre(() => p.evaluate(() => [...document.querySelectorAll(".sc-fxdom *")].some((x) => x.textContent === "Cheese !")), 2000), "📸 Photo à deux : « Cheese ! »");
+ok(await attendre(async () => (await texte(".sd-toast.vu")) === "🖼️ Accrochée !", 15000), "… le flash, la photo, « 🖼️ Accrochée ! »");
+const apresSelfie = await auMur();
+const selfie = apresSelfie.split(",")[0];
+ok(apresSelfie.split(",")[1] === avantSelfie.split(",")[1] && selfie !== avantSelfie.split(",")[0], `chacun son tour : elle remplace le cadre accroché depuis le plus longtemps (${avantSelfie} → ${apresSelfie})`);
+const filSam = (await (await fetch(`${BASE}/api/direct/proches?fil=${LEA.cle}`, { headers: { cookie: `clikme_habitant=${SAM.jeton}` } })).json())?.fil?.messages ?? [];
+const laPhoto = filSam.find((m) => m.id === selfie);
+ok(laPhoto?.genre === "photo" && laPhoto.texte === "Notre photo à deux" && laPhoto.photo?.l === 1200 && laPhoto.photo?.h === 900, `chez Sam : leur photo à deux, 1 200 × 900 (${laPhoto?.photo?.l} × ${laPhoto?.photo?.h})`);
+const octets = Buffer.from(await (await fetch(laPhoto.photo.url)).arrayBuffer());
+const stats = await sharp(octets).stats();
+ok(stats.channels.slice(0, 3).every((c) => c.stdev > 12), `… pas une image vide : la pièce et leurs figurines (écart ${stats.channels.slice(0, 3).map((c) => Math.round(c.stdev)).join("/")})`);
+const gestesSam = (await (await fetch(`${BASE}/api/direct/proches?vivant=${LEA.cle}`, { headers: { cookie: `clikme_habitant=${SAM.jeton}` } })).json())?.vivant?.gestes ?? [];
+ok(gestesSam.some((g) => g.cle === "selfie" && !g.moi), "Sam voit le geste (le flash se joue chez lui aussi)");
+await p.waitForTimeout(900);
+await p.screenshot({ path: `${D}/salon-cadres-4-photo-a-deux.png` });
 
 // ═══ DANS 💬 ═══
 await p.locator(".sd-fil").click();

@@ -976,7 +976,7 @@ ni débordement, ni erreur, ni le mot interdit).
   - **ce que l'autre garde, ou ce que leurs figurines notent, s'envole en direct** (relu avec le pouls) :
     « 📌 Sam a gardé · 😂 Le fou rire ».
 - **Pas encore** (lot S6, suite) : ＋ Envoyer — fait en partie, 11.14 ; la télé dans la pièce — faite, 11.15 ; les
-  cadres, 📺 Un clip, 🖼️ Accrocher — faits, 11.16 ; 📸 Photo à deux ; garder un mème (avec le lot S5).
+  cadres, 📺 Un clip, 🖼️ Accrocher, 📸 Photo à deux — faits, 11.16 ; garder un mème (avec le lot S5).
 
 **Les essais** : `scripts/essai-salon-garder-route.mjs` (une date samedi, une promesse, une blague dans « Nos fous
 rires », « vos mots », une réponse du modèle qui ne tient pas, déjà gardé, « malade » 422, 404, 403, 401, pas de limite,
@@ -1028,8 +1028,8 @@ saisie ; ni débordement, ni glissement, ni erreur, ni le mot interdit).
   message signalé n'y passe plus, chez celui qui l'a signalé.
 - **Le cadre du salon ne défile jamais** (`overflow: clip`) : un bouton touché dans une bulle ne fait plus glisser
   toute la page.
-- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; les films (l'affiche « Ce soir ») ;
-  📸 Photo à deux. (📺 Un clip et les cadres : 11.16.)
+- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; les films (l'affiche « Ce soir »).
+  (📺 Un clip, les cadres et 📸 Photo à deux : 11.16.)
 
 **Les essais** : `scripts/essai-tele-route.mjs` (la mettre à la télé : une vidéo, chez les deux, le pouls, le vivant ;
 un lien plus récent la remplace ; un ancien clip remis ; Spotify et photo 422, 404, 403, 401 ; signalée) et
@@ -1037,7 +1037,7 @@ un lien plus récent la remplace ; un ancien clip remis ; Spotify et photo 422, 
 télé ? », la caméra qui zoome, « ▶ Allumer » qui la lit avec le son, « ↩ La pièce » ; en direct ce que Sam y met ; 📺
 dans 💬 ; toucher la télé de loin ; ni glissement, ni erreur).
 
-### 11.16 🖼️ Les cadres, 🖼️ Accrocher et 📺 Un clip (lot S6, quatrième partie — 18 novembre 2026)
+### 11.16 🖼️ Les cadres, 🖼️ Accrocher, 📺 Un clip et 📸 Photo à deux (lot S6, quatrième partie — 18 novembre 2026)
 
 - **Les cadres de la pièce** (`emplacements.cadres`, quatre au plus) montrent leurs photos accrochées, posées dans le
   passe-partout peint ; la nuit et le soir les teintent comme la pièce. Ce qui est accroché est gardé par numéro de
@@ -1053,16 +1053,23 @@ dans 💬 ; toucher la télé de loin ; ni glissement, ni erreur).
   cadre vide ouvrent « Accrocher une photo au mur » — « 📷 Une photo de ton téléphone » (elle part comme un envoi du ＋,
   puis va au mur), « Ou l'une de vos photos » (« Au mur » sur celle du cadre) ; **📺 Un clip** ouvre « Mettre à la
   télé » — « Colle un lien : YouTube, TikTok, Instagram… » (il part comme un écrit, puis passe à la télé),
-  « 📱 Une vidéo de ton téléphone », « Ou l'un de vos clips » (« À la télé » sur celui qui passe). Les deux puces
+  « 📱 Une vidéo de ton téléphone », « Ou l'un de vos clips » (« À la télé » sur celui qui passe). Les puces
   n'apparaissent que si la pièce a une télé, des cadres.
-- **Pas encore** : 📸 Photo à deux ; les réactions qui s'envolent de la télé, « Sam regarde aussi » ; les films ; 📎
-  les fichiers ; 🎭 et 🎙️ dans le ＋ (lots S5, S4).
+- **📸 Photo à deux** (🛋️ Ensemble, si la pièce a des cadres et que les photos sont ouvertes) : le geste se joue chez les
+  deux (elles se rapprochent, « Cheese ! », le flash et le déclic — `gestes.ts`) ; au moment du flash, **le téléphone
+  compose leur photo** (`photo-a-deux.ts` : la pièce puis chaque calque à sa place, têtes penchées comprises, cadrée sur
+  le duo, 1 200 × 900, les images relues avec CORS) ; elle part comme une photo du ＋ (`depot.ts`, partagé avec
+  `envoyer.tsx` : déposée au seau, vérifiée par le serveur) avec sa légende « Notre photo à deux », et s'accroche au mur
+  (chacun son tour).
+- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; les films ; 📎 les fichiers ; 🎭 et
+  🎙️ dans le ＋ (lots S5, S4).
 
 **Les essais** : `scripts/essai-salon-cadres-route.mjs` (accrocher, chez les deux, le pouls, le vivant, remplacer ;
 vidéo et écrit 422, cadre 400, 404, 403, 401 ; signalée) et `scripts/navigateur/salon-cadres.mjs` (les cadres vides sur
 les zones relevées ; un cadre vide ouvre la feuille ; « 🖼️ L'accrocher au mur ? », l'envol, le premier cadre, chez
 Sam ; 🖼️ Accrocher et le cadre vide suivant ; la photo en grand, « Une autre photo ici » ; en direct ; 📺 Un clip, un
-lien collé qui passe à la télé ; 🖼️ dans 💬 ; ni glissement, ni erreur).
+lien collé qui passe à la télé ; 📸 Photo à deux : « Cheese ! », la photo 1 200 × 900 qui n'est pas vide, accrochée
+chacun son tour, le geste chez Sam ; 🖼️ dans 💬 ; ni glissement, ni erreur).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
