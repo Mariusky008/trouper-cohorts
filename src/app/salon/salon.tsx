@@ -19,12 +19,22 @@
  * L'ouverture (une requête, la vignette floue, la pièce décodée hors de l'affichage, les temps mesurés) : le lot S0b
  * (`./ouvrir`). La suite du lot S2 : le pouls (la présence en direct, « … »), l'arrivée (« depuis ta dernière visite »),
  * la pièce du duo qu'on choisit et dont on change.
+ *
+ * 🛋️ Le lot S3 : **la barre des gestes** sous la scène (💌 Petites attentions · 🛋️ Ensemble ; toucher l'onglet ouvert la
+ * replie, le choix est gardé sur le téléphone) — un geste se joue tout de suite chez moi (`./gestes`), puis part
+ * (`POST { action: "geste" }`) ; un échec le défait et le dit. Ses gestes arrivent avec le pouls (joués chez moi), et ceux
+ * de mon absence sont rejoués à l'arrivée, avant ses messages. Ce qu'un geste pose (une tulipe, un café, une surprise)
+ * reste sur la table et se touche. **Un appui long sur sa bulle** (ou sur un de ses messages dans 💬) : réagir avec le
+ * corps (👏 😂 ❤️ ✋ 🤦 😮).
  */
 import { useEffect, useRef, useState } from "react";
 import { creerScene } from "./moteur";
+import "./mises-en-scene";
+import { annulerObjet, confierObjet } from "./gestes";
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
-import { aRejouer, derniersDeChacun, dureeDite, heureDite, nomDuJour, parJour, reactionAuTexte, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
-import { autreQue, miseEnSceneDe, type CataloguePieces, type Flamme, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
+import { aRejouer, derniersDeChacun, dureeDite, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
+import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
+import { gesteDuSalon, objetDuGeste, REACTIONS, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
 import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
 import { prochainRendezVous } from "./bulles";
 import { texteDuMessage, type Fil, type MemeFil, type MessageFil } from "@/lib/direct/talkie";
@@ -76,6 +86,39 @@ const nomDePiece = (p: PieceDuo) => {
   const x = PIECES_DUO.find((y) => y.cle === p);
   return x ? `${x.emoji} ${x.nom}` : p;
 };
+
+// ─── 🛋️ LES GESTES (lot S3) ───
+/** Les puces de la barre : 📺 Un clip, 📸 Photo à deux et 🖼️ Accrocher viennent avec la télé et les cadres (lot S6). */
+const PUCES_DU_SALON = PUCES_GESTES.filter((p) => p.cle !== "clip" && p.cle !== "selfie" && p.cle !== "photo");
+type Onglet = "attentions" | "ensemble";
+type Barre = { onglet: Onglet; replie: boolean };
+const BARRE = "salon:barre";
+function lireBarre(): Barre {
+  try {
+    const x = JSON.parse(localStorage.getItem(BARRE) ?? "null") as Partial<Barre> | null;
+    return { onglet: x?.onglet === "ensemble" ? "ensemble" : "attentions", replie: x?.replie === true };
+  } catch {
+    return { onglet: "attentions", replie: false };
+  }
+}
+/** L'objet de la table qu'un geste a posé (son identifiant : celui du geste). */
+const objetDeGeste = (g: GesteFil): ObjetTable | null => (g.objet ? { id: g.id, e: g.objet.e, nom: g.objet.nom, moi: g.moi, le: g.le } : null);
+/** Jouer un geste du fil dans la scène (un panneau : `panneau-<clé>`, une réaction : `reaction-<clé>`), son objet confié avant. */
+function jouerGeste(s: Scene, g: GesteFil, de: Qui): Promise<void> {
+  const o = objetDeGeste(g);
+  if (o) confierObjet({ ...o, moi: de === "moi" });
+  return s.geste(g.type === "geste" ? g.cle : `${g.type}-${g.cle}`, de);
+}
+/** Ce qu'un geste dit en haut de la scène ; la surprise dit ce qu'elle cachait quand elle s'ouvre. */
+function annoncer(montrer: (t: string, ms?: number) => void, g: GesteFil, moi: boolean, prenom: string) {
+  montrer(g.type === "reaction" && !moi ? `${emojiDuGeste(g)} ${prenom} a réagi à ton message` : phraseDuGeste(g, moi, prenom, false), 2400);
+  if (g.type === "geste" && g.cle === "surprise" && g.objet) {
+    const o = g.objet;
+    setTimeout(() => montrer(surpriseDevoilee(o), 2600), OUVERTURE_SURPRISE_MS);
+  }
+}
+/** Un vrai message de l'autre (pas un mème, pas un envoi en route) : on peut y réagir. */
+const reagissable = (id: string | undefined) => Boolean(id && !id.startsWith("meme-") && !id.startsWith("envoi-"));
 
 /** L'autre figurine réagit à ce qui est dit (la maquette, telle quelle). `la` : l'autre est là (sinon elle somnole). */
 function reagir(s: Scene, q: Qui, texte: string, la: boolean) {
@@ -142,10 +185,30 @@ function Vocal({ m }: { m: MessageFil }) {
   );
 }
 
-/** Un message dans 💬 Messagerie. */
-function MessageDuFil({ m, prenom }: { m: MessageFil; prenom: string }) {
+/** Un appui long (450 ms) : les réactions avec le corps. */
+function appuiLong(id: string | undefined, faire: (id: string) => void) {
+  if (!reagissable(id)) return {};
+  let t: ReturnType<typeof setTimeout> | null = null;
+  const fin = () => {
+    if (t) clearTimeout(t);
+    t = null;
+  };
+  return {
+    onPointerDown: () => {
+      fin();
+      t = setTimeout(() => faire(id!), 450);
+    },
+    onPointerUp: fin,
+    onPointerLeave: fin,
+    onPointerCancel: fin,
+    onContextMenu: (e: { preventDefault: () => void }) => e.preventDefault(),
+  };
+}
+
+/** Un message dans 💬 Messagerie (sous lui, les réactions ; un appui long sur un des siens : y réagir). */
+function MessageDuFil({ m, prenom, reactions = [], surReagir }: { m: MessageFil; prenom: string; reactions?: GesteFil[]; surReagir?: (id: string) => void }) {
   return (
-    <div className={`sd-msg ${m.moi ? "moi" : "autre"}`} data-message={m.id}>
+    <div className={`sd-msg ${m.moi ? "moi" : "autre"}`} data-message={m.id} {...(!m.moi && surReagir ? appuiLong(m.id, surReagir) : {})}>
       {m.genre === "ecrit" ? (
         <>
           {m.texte && <span className="sd-texte">{m.texte}</span>}
@@ -172,6 +235,15 @@ function MessageDuFil({ m, prenom }: { m: MessageFil; prenom: string }) {
       <small>
         {m.moi ? "Toi" : prenom} · {heureDite(m.le)}
       </small>
+      {reactions.length > 0 && (
+        <span className="sd-reac" data-reactions={reactions.length}>
+          {reactions.map((g) => (
+            <span key={g.id} className="e" title={g.moi ? "Toi" : prenom}>
+              {emojiDuGeste(g)}
+            </span>
+          ))}
+        </span>
+      )}
     </div>
   );
 }
@@ -222,6 +294,15 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const flammeRef = useRef<(q: "moi" | "lui") => void>(() => undefined);
   const flammeCourante = useRef<Flamme | null>(null);
   const montrerRef = useRef<(t: string, ms?: number) => void>(() => undefined);
+  // 🛋️ (lot S3) les gestes et les panneaux de la conversation (sept jours) ; la barre ; la table ; le message où réagir
+  const [gestes, setGestes] = useState<GesteFil[]>([]);
+  const [barre, setBarre] = useState<Barre>({ onglet: "attentions", replie: false });
+  const [reagirA, setReagirA] = useState<string | null>(null);
+  const gestesConnus = useRef(new Set<string>());
+  const gestesOuverture = useRef<GesteFil[]>([]);
+  const table = useRef<ObjetTable[]>([]);
+  const enFile = useRef(0);
+  const recevoirRef = useRef<(liste: GesteFil[]) => void>(() => undefined);
 
   // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
   useEffect(() => {
@@ -232,6 +313,12 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         if (!vivant) return;
         setChargement(c);
         if (c.etat === "pret") {
+          // (🛋️ avant la scène : ce qui est sur la table, et les gestes de mon absence — leurs objets arrivent avec eux)
+          const g = c.ouverture.vivant?.gestes ?? [];
+          gestesOuverture.current = g;
+          gestesConnus.current = new Set(g.map((x) => x.id));
+          table.current = (c.ouverture.table ?? []).slice(-PLACES_TABLE);
+          setGestes(g);
           setMessages(c.ouverture.fil.messages);
           setMemes(c.ouverture.fil.memes ?? []);
           setLa(c.ouverture.fil.la);
@@ -258,6 +345,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       // (ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche ; la teinte du moment)
       figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {},
       moment: sceneVue.moment,
+      // (🌷 la table basse relevée : les objets s'y posent ; on les touche)
+      ...(sceneVue.emplacements?.table ? { table: sceneVue.emplacements.table } : {}),
+      surObjet: (o) => montrerRef.current(`${o.e} ${o.moi ? "Tu as posé" : `${prenomRef.current} a laissé`} ${o.nom} · ${heureDite(o.le)}`, 2600),
       // (les bulles : au-dessus des têtes, là où la caméra les montre — écrit dans le style, jamais un rendu par image)
       surAncres: (a) => {
         const cad = cadre.current;
@@ -273,6 +363,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     });
     scene.current = s;
     sceneVueRef.current = sceneVue;
+    // (🌷 ce qui est sur la table — sauf ce que les gestes de l'arrivée vont poser)
+    const aPoser = arriveeFaiteRef.current ? new Set<string>() : new Set(gestesARejouer(gestesOuverture.current).map((g) => g.id));
+    for (const o of table.current) if (!aPoser.has(o.id)) s.poser(o);
     // (une pièce de plus : s'il n'est pas là et que l'arrivée est passée, sa figurine somnole déjà)
     if (!laRef.current && arriveeFaiteRef.current) s.figurine("autre").endormir();
     try {
@@ -297,9 +390,17 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     });
     const fil = pret.ouverture.fil;
     const suite = aRejouer(fil.messages, fil.memes ?? []);
+    // (🛋️ ses gestes d'abord — trois au plus —, puis ses messages)
+    const sesGestes = gestesARejouer(pret.ouverture.vivant?.gestes ?? []);
+    const joues = new Set<string>();
     const minutes: ReturnType<typeof setTimeout>[] = [];
     const fin = () => {
       minutes.forEach(clearTimeout);
+      // (un toucher a passé la suite : ce que les gestes pas joués devaient poser est déjà là)
+      for (const g of sesGestes) {
+        const o = objetDeGeste(g);
+        if (o && !joues.has(g.id)) scene.current?.poser(o);
+      }
       passer.current = null;
       arriveeFaiteRef.current = true;
       setRejoue(null);
@@ -308,6 +409,19 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (s && !laRef.current && !s.figurine("autre").dort) s.figurine("autre").endormir();
     };
     let t = 700;
+    for (const g of sesGestes) {
+      minutes.push(
+        setTimeout(() => {
+          const s = scene.current;
+          if (!s) return;
+          joues.add(g.id);
+          if (s.figurine("autre").dort) s.figurine("autre").reveiller();
+          annoncer(montrerRef.current, g, false, fil.lui.prenom);
+          void jouerGeste(s, g, "autre");
+        }, t),
+      );
+      t += dureeDuGeste(g) + 300;
+    }
     for (const x of suite) {
       minutes.push(
         setTimeout(() => {
@@ -320,8 +434,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       );
       t += x.ms;
     }
-    minutes.push(setTimeout(fin, suite.length ? t : 400));
-    passer.current = suite.length ? fin : null;
+    const quelqueChose = suite.length > 0 || sesGestes.length > 0;
+    minutes.push(setTimeout(fin, quelqueChose ? t : 400));
+    passer.current = quelqueChose ? fin : null;
     // (✨ l'autre nous a installés ailleurs depuis ma dernière visite)
     const sc = pret.ouverture.scene;
     let avant: string | null = null;
@@ -386,7 +501,13 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     let connu: number | null = null;
     const dernierConnu = Math.max(0, ...pret.ouverture.fil.messages.map((m) => Date.parse(m.le) || 0), ...(pret.ouverture.fil.memes ?? []).map((m) => Date.parse(m.le) || 0));
     const relire = async () => {
-      const r = await fetch(`/api/direct/proches?fil=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
+      // (🛋️ lot S3 : ses gestes aussi — le pouls bat à chacun)
+      const [r, rv] = await Promise.all([
+        fetch(`/api/direct/proches?fil=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null),
+        fetch(`/api/direct/proches?vivant=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null),
+      ]);
+      const jv = rv?.ok ? ((await rv.json().catch(() => null)) as { vivant?: Vivant } | null) : null;
+      if (jv?.vivant && !fini) recevoirRef.current(jv.vivant.gestes);
       const j = r?.ok ? ((await r.json().catch(() => null)) as { fil?: Fil } | null) : null;
       const f = j?.fil;
       if (!f || fini) return;
@@ -510,10 +631,119 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     laRef.current = la;
     allerDansRef.current = allerDans;
     flammeRef.current = monterLaFlamme;
+    recevoirRef.current = recevoirGestes;
   });
   useEffect(() => {
     flammeCourante.current = flamme;
   }, [flamme]);
+
+  // ─── 🛋️ LES GESTES (lot S3) ───
+  useEffect(() => {
+    setBarre(lireBarre());
+  }, []);
+  /** Toucher l'onglet ouvert replie la barre (la scène s'agrandit) ; un autre onglet la rouvre. Gardé sur le téléphone. */
+  function basculer(o: Onglet) {
+    setBarre((b) => {
+      const n: Barre = !b.replie && b.onglet === o ? { onglet: o, replie: true } : { onglet: o, replie: false };
+      try {
+        localStorage.setItem(BARRE, JSON.stringify(n));
+      } catch {
+        // (sans stockage : la barre se rouvrira la prochaine fois)
+      }
+      return n;
+    });
+  }
+  /** 🌷 Un objet de plus sur la table (les quatre derniers). */
+  function surLaTable(o: ObjetTable) {
+    table.current = [...table.current.filter((x) => x.id !== o.id), o].slice(-PLACES_TABLE);
+  }
+  /** 💓 Les gestes relus avec le pouls : les siens, nouveaux, sont joués chez moi (trois au plus), l'un après l'autre. */
+  function recevoirGestes(liste: GesteFil[]) {
+    const neufs = liste.filter((g) => !gestesConnus.current.has(g.id));
+    for (const g of liste) gestesConnus.current.add(g.id);
+    // (mes gestes en route restent)
+    setGestes((avant) => [...liste, ...avant.filter((g) => g.id.startsWith("envoi-"))]);
+    const siens = neufs.filter((g) => !g.moi).slice(-3);
+    const s = scene.current;
+    if (!siens.length || !s) return;
+    if (s.figurine("autre").dort) s.figurine("autre").reveiller();
+    let suite = Promise.resolve();
+    for (const g of siens) {
+      const o = objetDeGeste(g);
+      if (o) surLaTable(o);
+      suite = suite.then(() => {
+        if (scene.current !== s) return;
+        annoncer(montrerRef.current, g, false, prenomRef.current);
+        return jouerGeste(s, g, "autre");
+      });
+    }
+  }
+  /** 👋 Faire un geste (ou brandir un panneau) : joué tout de suite chez moi, puis envoyé ; un échec le défait et le dit. */
+  async function faireGeste(p: PuceGeste) {
+    if (!fil) return;
+    // (trois gestes en attente au plus : on ne mitraille pas)
+    if (enFile.current >= 3) return;
+    const cleGeste = p.panneau ? null : gesteDuSalon(p.cle);
+    if (!p.panneau && !cleGeste) return;
+    const surprise = cleGeste === "surprise" ? SURPRISES[Math.floor(Math.random() * SURPRISES.length)] : null;
+    const objet = cleGeste ? objetDuGeste(cleGeste, surprise?.cle) : null;
+    const provisoire: GesteFil = { id: `envoi-${Date.now()}-${p.cle}`, moi: true, le: new Date().toISOString(), type: p.panneau ? "panneau" : "geste", cle: p.panneau ?? cleGeste!, ...(objet ? { objet } : {}) };
+    setGestes((l) => [...l, provisoire]);
+    annoncer(montrer, provisoire, true, prenom);
+    const o = objetDeGeste(provisoire);
+    if (o) surLaTable(o);
+    const s = scene.current;
+    if (s) {
+      enFile.current += 1;
+      void jouerGeste(s, provisoire, "moi").finally(() => (enFile.current -= 1));
+    }
+    try {
+      const r = await fetch("/api/direct/proches", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "geste", cle, type: provisoire.type, quoi: provisoire.cle, ...(surprise ? { surprise: surprise.cle } : {}) }),
+      });
+      const j = (await r.json().catch(() => null)) as { geste?: GesteFil; error?: string } | null;
+      if (!r.ok || !j?.geste) throw new Error(j?.error || "");
+      const vrai = j.geste;
+      gestesConnus.current.add(vrai.id);
+      setGestes((l) => l.map((g) => (g.id === provisoire.id ? vrai : g)));
+      // (l'objet de la table prend son vrai identifiant, pour la prochaine pièce)
+      if (o) table.current = table.current.map((x) => (x.id === o.id ? { ...x, id: vrai.id, le: vrai.le } : x));
+    } catch (e) {
+      setGestes((l) => l.filter((g) => g.id !== provisoire.id));
+      if (o) {
+        table.current = table.current.filter((x) => x.id !== o.id);
+        // (pas encore posé : il ne le sera pas ; déjà posé : il s'en va)
+        annulerObjet(o.id);
+        scene.current?.retirer(o.id);
+      }
+      montrer(e instanceof Error && e.message ? `Pas parti : ${e.message}` : "Pas parti : réessaie.");
+    }
+  }
+  /** 👏 Réagir avec le corps à un de ses messages : ma figurine le joue, puis la réaction part (une par message). */
+  async function reagirAuMessage(id: string, r: (typeof REACTIONS)[number]) {
+    setReagirA(null);
+    const provisoire: GesteFil = { id: `envoi-${Date.now()}-${r.cle}`, moi: true, le: new Date().toISOString(), type: "reaction", cle: r.cle, message: id };
+    let avant: GesteFil[] = [];
+    setGestes((l) => {
+      avant = l;
+      return [...l.filter((g) => !(g.type === "reaction" && g.moi && g.message === id)), provisoire];
+    });
+    const s = scene.current;
+    if (s) void s.geste(`reaction-${r.cle}`, "moi");
+    try {
+      const rep = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "geste", cle, type: "reaction", quoi: r.cle, message: id }) });
+      const j = (await rep.json().catch(() => null)) as { geste?: GesteFil; error?: string } | null;
+      if (!rep.ok || !j?.geste) throw new Error(j?.error || "");
+      const vrai = j.geste;
+      gestesConnus.current.add(vrai.id);
+      setGestes((l) => l.map((g) => (g.id === provisoire.id ? vrai : g)));
+    } catch (e) {
+      setGestes(avant);
+      montrer(e instanceof Error && e.message ? `Pas parti : ${e.message}` : "Pas parti : réessaie.");
+    }
+  }
 
   /** 🚪 Aller dans une pièce (sa scène est dans le catalogue, sa plaque préchargée : tout de suite). */
   async function allerDans(piece: PieceDuo): Promise<boolean> {
@@ -651,7 +881,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   // (pendant l'arrivée, sa bulle dit ce qui est rejoué — rien avant qu'elle commence ; ensuite, son dernier message)
   const arriveeAVenir = !arriveeFaite && !rejoue && fil ? aRejouer(fil.messages, fil.memes ?? []).length > 0 : false;
   const sonDernier = rejoue ?? (sonDernierMessage && !arriveeAVenir ? { id: sonDernierMessage.id, texte: texteDeBulle(sonDernierMessage) } : null);
-  const jours = fil ? parJour(messages, memes) : [];
+  const jours = fil ? parJour(messages, memes, undefined, gestes) : [];
+  const reactionsDe = (id: string) => gestes.filter((g) => g.type === "reaction" && g.message === id);
+  const messageAReagir = reagirA ? messages.find((m) => m.id === reagirA) : undefined;
   const objetsEtagere = pret?.ouverture.vivant?.etagere?.objets ?? [];
   const souvenirs = objetsEtagere.length;
   const rdv = prochainRendezVous(objetsEtagere);
@@ -722,7 +954,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             </div>
             <div className="sd-bulles autre" aria-live="polite">
               {sonDernier && (
-                <div key={sonDernier.id} className="sd-bulle autre" data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined}>
+                <div key={sonDernier.id} className="sd-bulle autre" data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined} {...appuiLong(sonDernier.id, setReagirA)}>
                   {sonDernier.texte}
                 </div>
               )}
@@ -765,6 +997,21 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 </span>
               </div>
             )}
+            {reagirA && (
+              <div className="sd-reagir" role="dialog" aria-label="Réagir à son message" data-reagir={reagirA}>
+                <p>Réagir{messageAReagir ? ` à « ${texteDeBulle(messageAReagir).slice(0, 40)}${texteDeBulle(messageAReagir).length > 40 ? "…" : ""} »` : ""}</p>
+                <span>
+                  {REACTIONS.map((r) => (
+                    <button key={r.cle} type="button" aria-label={r.nom} data-reaction={r.cle} onClick={() => void reagirAuMessage(reagirA, r)}>
+                      {r.emoji}
+                    </button>
+                  ))}
+                  <button type="button" className="sd-fermer" aria-label="Fermer" onClick={() => setReagirA(null)}>
+                    ✕
+                  </button>
+                </span>
+              </div>
+            )}
             <button
               type="button"
               className="sd-puce sd-fil"
@@ -791,6 +1038,43 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           </p>
         )}
       </div>
+
+      {/* 🛋️ la barre des gestes (lot S3) */}
+      {pret && (
+        <div className={`sd-barre${barre.replie ? " repliee" : ""}`}>
+          <div className="sd-onglets" role="tablist">
+            {(["attentions", "ensemble"] as const).map((o) => (
+              <button
+                key={o}
+                type="button"
+                role="tab"
+                className={`sd-onglet${!barre.replie && barre.onglet === o ? " actif" : ""}`}
+                aria-selected={barre.onglet === o}
+                aria-expanded={!barre.replie && barre.onglet === o}
+                data-onglet={o}
+                onClick={() => basculer(o)}
+              >
+                {o === "attentions" ? "💌 Petites attentions" : "🛋️ Ensemble"}
+                {barre.onglet === o && (
+                  <span className="sd-chevron" aria-hidden>
+                    ▾
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          {!barre.replie && (
+            <div className="sd-gestes" aria-label="Les gestes" data-gestes={barre.onglet}>
+              {PUCES_DU_SALON.filter((p) => p.cat === barre.onglet).map((p) => (
+                <button key={p.cle} type="button" className="sd-geste" data-geste={p.cle} disabled={!fil} onClick={() => void faireGeste(p)}>
+                  <span className="e">{p.e}</span>
+                  <span>{p.nom}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <form
         className="sd-saisie"
@@ -862,7 +1146,12 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 <div className="sd-jour">{j.jour}</div>
                 {j.lignes.map((l) =>
                   l.sorte === "message" ? (
-                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} />
+                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} />
+                  ) : l.sorte === "geste" ? (
+                    <div key={`geste-${l.g.id}`} className="sd-evt" data-geste-fil={l.g.cle}>
+                      <span>{phraseDuGeste(l.g, l.g.moi, prenom)}</span>
+                      <small>{heureDite(l.g.le)}</small>
+                    </div>
                   ) : (
                     <div key={`meme-${l.meme.id}`} className="sd-evt" data-meme={l.meme.id}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -938,6 +1227,28 @@ export const STYLES_SALON = `
 .sd-toast.vu{opacity:1;transform:translate(-50%,0)}
 .sd-attente{position:absolute;inset:auto 16px 45%;margin:0;text-align:center;font-weight:600}
 .sd-temps{position:absolute;z-index:5;left:10px;bottom:10px;margin:0;max-width:calc(100% - 150px);padding:6px 9px;border-radius:12px;background:rgba(24,7,20,.62);font:600 11px/1.3 var(--app);font-variant-numeric:tabular-nums}
+.sd-bulle.autre{pointer-events:auto;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.sd-reagir{position:absolute;z-index:9;left:0;right:0;margin:0 auto;top:54px;width:min(340px,92%);box-sizing:border-box;padding:10px 12px;border-radius:18px;background:rgba(255,246,234,.97);color:var(--encre);box-shadow:0 12px 30px rgba(0,0,0,.35);animation:sd-bulle .38s cubic-bezier(.2,1.5,.4,1) both}
+.sd-reagir p{margin:0 0 8px;font:700 12.5px/1.3 var(--app);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd-reagir span{display:flex;gap:4px;justify-content:center;align-items:center}
+.sd-reagir button{width:40px;height:40px;border-radius:50%;font-family:var(--emoji)!important;font-size:24px!important;line-height:1;display:grid!important;place-items:center;transition:transform .12s ease}
+.sd-reagir button:active{transform:scale(.88)}
+.sd-reagir .sd-fermer{font:700 15px var(--app)!important;color:#8e6f83!important;width:32px;height:32px}
+.sd-barre{flex:none}
+.sd-onglets{display:flex;gap:6px;padding:8px 12px 0}
+.sd-onglet{font:700 11.5px var(--app)!important;padding:5px 11px!important;border-radius:12px;color:#cdb0c4!important;box-shadow:inset 0 0 0 1px rgba(242,190,106,.25)}
+.sd-onglet.actif{background:rgba(242,190,106,.16)!important;color:#ffe2a6!important;box-shadow:inset 0 0 0 1px rgba(242,190,106,.55)}
+.sd-chevron{display:inline-block;margin-left:4px;font-size:9px;opacity:.7;transition:transform .2s ease}
+.sd-barre.repliee .sd-chevron{transform:rotate(180deg)}
+.sd-gestes{display:flex;gap:8px;overflow-x:auto;padding:7px 12px 2px;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.sd-gestes::-webkit-scrollbar{display:none}
+.sd-geste{flex:none;min-width:66px;height:56px;padding:0 8px!important;box-sizing:border-box;border-radius:16px;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--carte)!important;box-shadow:inset 0 0 0 1px rgba(242,190,106,.28);scroll-snap-align:start;transition:transform .12s ease}
+.sd-geste:active{transform:scale(.92)}
+.sd-geste:disabled{opacity:.5}
+.sd-geste .e{font-family:var(--emoji);font-size:23px;line-height:1}
+.sd-geste span:last-child{font-size:10.5px;font-weight:650;color:#ead2e2;white-space:nowrap}
+.sd-reac{display:flex;gap:2px;margin-top:-2px}
+.sd-reac .e{font-family:var(--emoji);font-size:14px;line-height:1}
 .sd-saisie{flex:none;display:flex;gap:9px;align-items:center;padding:8px 12px max(12px,env(safe-area-inset-bottom,0px))}
 .sd-saisie input{flex:1;min-width:0;height:46px;box-sizing:border-box;border-radius:23px;border:1.5px solid var(--trait);background:#170816;color:var(--texte);padding:0 18px;font:500 15.5px var(--app)}
 .sd-saisie input::placeholder{color:#97738b}

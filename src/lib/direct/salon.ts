@@ -82,7 +82,18 @@ export type CalquesSalon = { plaque: ImageSalon; a: CalqueFigurine; b: CalqueFig
  * 🚪 TOUT CE QU'IL FAUT POUR OUVRIR UNE CONVERSATION, EN UNE REQUÊTE (`GET /api/direct/proches?ouvrir=<clé>`) : le fil
  * (les derniers messages), la vie (gestes, apartés, étagère) et la scène — `null` tant que la pièce n'est pas faite.
  */
-export type OuvertureSalon = { cle: string; fil: Fil; vivant: Vivant | null; scene: SceneSalon | null; flamme?: Flamme };
+export type OuvertureSalon = { cle: string; fil: Fil; vivant: Vivant | null; scene: SceneSalon | null; flamme?: Flamme; table?: ObjetTable[] };
+
+// ─── 🌷 LA TABLE (lot S3, section 4.4) ───────────────────────────────────────────────────────────────────────────────
+/**
+ * Un objet posé sur la table de la pièce par un geste (une tulipe, un café, une surprise) : il reste (les quatre
+ * derniers), il suit le duo d'une pièce à l'autre, et se touche (« Camille a laissé une tulipe · 8 h 12 »).
+ */
+export type ObjetTable = { id: string; e: string; nom: string; moi: boolean; le: string };
+/** Comment il arrive sur la table : il pousse (la fleur), il glisse (la tasse), il tombe (la surprise) ; rien : il est là. */
+export type EntreeObjet = "pousse" | "glisse" | "tombe";
+/** Les places sur la table. */
+export const PLACES_TABLE = 4;
 /**
  * 🔥 (lot S2, section 4.12) LES JOURS DE SUITE où ils se sont écrit tous les deux : `jours` (aujourd'hui compris si
  * c'est fait) ; `moi`, `lui` : chacun a déjà écrit aujourd'hui (l'heure de Paris) — la flamme monte d'un cran au premier
@@ -238,6 +249,8 @@ export interface EffetsScene {
   rougir(q: Qui, ms?: number): void;
   /** La marque 💋 sur la joue (et le rouge). */
   marqueBisou(q: Qui): void;
+  /** (lot S3) La figurine brandit une pancarte au-dessus de sa tête (les panneaux : « J'arrive ! »), pendant `ms`. */
+  pancarte(q: Qui, texte: string, ms?: number): Promise<void>;
 }
 
 /** Les sons : des bruits et de courtes musiques, jamais une voix (`CLAUDE.md`). Coupés par l'interrupteur de l'iPhone. */
@@ -276,6 +289,21 @@ export interface Scene {
   surImage(fn: (dt: number, t: number) => void): () => void;
   /** Une mise en scène est en cours. */
   readonly occupee: boolean;
+  /**
+   * 🌷 (lot S3) Poser un objet sur la table (`OptionsScene.table`), à une place libre (la plus proche de qui le pose :
+   * `o.moi`), sinon à celle du plus ancien ; `entree` : son arrivée (rien : il est déjà là). Rend sa place (fractions de
+   * l'image). Un objet déjà posé (même `id`) ne bouge pas.
+   */
+  poser(o: ObjetTable, entree?: EntreeObjet): Point;
+  /**
+   * La place qu'aurait le prochain objet posé par `de` (pour y faire voler quelque chose avant) : une place libre, la
+   * plus proche de sa figurine.
+   */
+  placeLibre(de?: Qui): Point;
+  /** Retirer un objet de la table. */
+  retirer(id: string): void;
+  /** Ce qui est sur la table, du plus ancien au plus récent. */
+  readonly surTable: readonly ObjetTable[];
   /** `prefers-reduced-motion` : les mises en scène se réduisent à leur fin. */
   readonly reduit: boolean;
   /** Le mode léger s'est mis en route (des images trop lentes) : moins de particules. */
@@ -301,6 +329,10 @@ export type OptionsScene = {
   surAncres?: (a: AncresBulles) => void;
   /** Le mode léger vient de se mettre en route. */
   surLeger?: () => void;
+  /** 🌷 (lot S3) la table basse de la pièce (son relevé) : les objets s'y posent ; sans elle, entre les deux figurines. */
+  table?: Zone;
+  /** Un objet de la table est touché. */
+  surObjet?: (o: ObjetTable) => void;
 };
 
 // ─── LE REGISTRE DES MISES EN SCÈNE ──────────────────────────────────────────────────────────────────────────────────

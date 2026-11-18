@@ -4,7 +4,7 @@
  * `src/lib/direct/salon.ts`) et ajoute ici UNE ligne qui l'importe : le salon et son adresse d'essai importent ce
  * fichier-ci, et ont ainsi toutes les mises en scène.
  *
- * (Le 16 novembre 2026, lot S0 : aucune encore — un geste sans mise en scène ne fait rien, `scene.geste` rend tout de
- * suite.)
+ * (Un geste sans mise en scène ne fait rien : `scene.geste` rend tout de suite.)
  */
-export {};
+// 🛋️ lot S3 : les gestes (👋 😘 🤜 🪶 🌷 🤗 ☕ 🎶 🎁) et les huit panneaux
+import "./gestes";

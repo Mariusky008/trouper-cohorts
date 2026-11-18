@@ -19,7 +19,8 @@
 // POST { action: "proche", cle, oui }   → { ok } : « L'ajouter aussi » (ou le retirer de ses proches)
 // POST { action: "signaler", cle, id }  → { ok } : 🚩 un message qu'il ne veut plus voir (l'équipe le regarde)
 // POST { action: "prepare", cle, oui }  → { ok } : 🎭 il prépare un message (sa figurine se penche chez l'autre)
-// POST { action: "geste", cle, type: "panneau"|"reaction", quoi, message? } → { geste } : 🪧 un panneau, 👏 une réaction
+// POST { action: "geste", cle, type: "panneau"|"reaction"|"geste", quoi, message?, surprise? } → { geste } : 🪧 un panneau,
+//                                       👏 une réaction, 🛋️ un geste du salon (lot S3 : un bisou, une fleur posée sur la table…)
 // POST { action: "aparte-effacer", cle, id } → { ok } : 🎭 il efface un aparté de leurs figurines (pour les deux)
 // POST { action: "meme", cle, id }      → { ok } : 🎭 il envoie son mème (fait dans le studio) dans leur conversation
 //                                          (la nouvelle interface, lot 4, `memes-proches-serveur.ts`) ; l'autre est prévenu
@@ -244,7 +245,7 @@ export async function POST(request: Request) {
     return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   if (p?.action === "geste") {
-    const r = await poserGeste(supabase, moi, p.cle, p.type, p.quoi, p.message);
+    const r = await poserGeste(supabase, moi, p.cle, p.type, p.quoi, p.message, p.surprise);
     if (!r.geste) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     const a = r.aPrevenir;
     after(() => battre(supabase, moi, p.cle).catch(() => undefined));
