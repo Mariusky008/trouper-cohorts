@@ -559,7 +559,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (fini || document.visibilityState !== "visible") return;
       const avant = mesChangements.current.n;
       const r = await fetch(`/api/direct/proches?pouls=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
-      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; refus?: boolean } | null) : null;
+      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: boolean } | null) : null;
       if (fini) return;
       if (p) {
         const n = Number(p.n) || 0;
@@ -590,9 +590,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           monInvitation.current = null;
           void allerDansRef.current(p.piece).then((ok) => ok && montrerRef.current(dit, 3200));
         }
-        // 🚪 il m'invite ailleurs ; il a dit « Pas maintenant » à mon invitation
-        if (p.invitation && !invitationsVues.current.has(p.invitation)) {
-          invitationsVues.current.add(p.invitation);
+        // 🚪 il m'invite ailleurs ; il a dit « Pas maintenant » à mon invitation (une invitation : sa pièce et son heure —
+        // refusée puis refaite vers la même pièce, avant que le pouls ait vu le vide entre les deux, elle revient)
+        const cleInvitation = p.invitation ? `${p.invitation}:${p.invitationLe ?? 0}` : "";
+        if (p.invitation && !invitationsVues.current.has(cleInvitation)) {
+          invitationsVues.current.add(cleInvitation);
           setInvitation(p.invitation);
         }
         // (plus d'invitation en cours — il a répondu, elle a expiré : la suivante, même vers la même pièce, se montrera)

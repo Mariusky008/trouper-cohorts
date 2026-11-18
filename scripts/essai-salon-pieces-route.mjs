@@ -136,8 +136,12 @@ ok((await venir(SAM, LEA.cle, false)).statut === 200, "Sam : « Pas maintenant �
 ok((await pouls(LEA, SAM.cle)).corps?.refus === true, "Léa voit son refus");
 ok(!("invitation" in ((await pouls(SAM, LEA.cle)).corps ?? {})), "… l'invitation s'efface chez Sam");
 ok((await venir(SAM, LEA.cle, true)).statut === 410, "répondre encore : plus d'invitation (410)");
+await new Promise((ok) => setTimeout(ok, 5));
 r = await choisir(LEA, SAM.cle, "cuisine");
 ok(r.corps?.invitation === true, "Léa l'invite encore");
+// (la même pièce, une autre invitation : son heure la distingue de la refusée — l'écran de Sam la montre à nouveau)
+const ps2 = (await pouls(SAM, LEA.cle)).corps;
+ok(ps2?.invitation === "cuisine" && typeof ps?.invitationLe === "number" && typeof ps2.invitationLe === "number" && ps2.invitationLe > ps.invitationLe, "… la nouvelle invitation porte sa propre heure");
 r = await venir(SAM, LEA.cle, true);
 ok(r.statut === 200 && r.corps?.piece === "cuisine", "Sam : « Venir »");
 ok((await pouls(LEA, SAM.cle)).corps?.piece === "cuisine" && (await pouls(SAM, LEA.cle)).corps?.piece === "cuisine", "la cuisine, pour les deux");

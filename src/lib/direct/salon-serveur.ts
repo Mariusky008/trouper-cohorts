@@ -140,12 +140,16 @@ export const INVITATION_MS = 120_000;
 const REFUS_MS = 60_000;
 
 /** 🚪 Ce que le pouls dit de la pièce : celle du duo, l'invitation qui m'attend, le refus de la mienne. */
-export function etatPieceDuo(f: Partial<FichePieceDuo>, moi8: string, maintenant = Date.now()): { piece?: PieceDuo; invitation?: PieceDuo; refus?: true } {
+/**
+ * (`invitationLe` : quand l'invitation a été faite — deux invitations vers la même pièce, l'une refusée, l'autre faite
+ * juste après, ne se confondent pas chez celui qui les reçoit.)
+ */
+export function etatPieceDuo(f: Partial<FichePieceDuo>, moi8: string, maintenant = Date.now()): { piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: true } {
   const inv = f.invitation;
   const fraiche = inv && maintenant - inv.le < INVITATION_MS;
   return {
     ...(pieceDuoValide(f.piece) ? { piece: f.piece } : {}),
-    ...(inv && fraiche && !inv.non && inv.de8 !== moi8 ? { invitation: inv.piece } : {}),
+    ...(inv && fraiche && !inv.non && inv.de8 !== moi8 ? { invitation: inv.piece, invitationLe: inv.le } : {}),
     ...(inv && inv.non && inv.de8 === moi8 && maintenant - inv.non < REFUS_MS ? { refus: true as const } : {}),
   };
 }
