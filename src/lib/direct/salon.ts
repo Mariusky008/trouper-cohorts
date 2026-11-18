@@ -16,6 +16,7 @@
 import { PANNEAUX, type Vivant } from "./vivant";
 import type { EmplacementsDuo, MomentDuo, PieceDuo, PlaceDuo, Zone } from "./pieces-duo";
 import type { Fil } from "./talkie";
+import type { Boucle } from "./compagnons";
 
 // ─── QUI EST QUI ─────────────────────────────────────────────────────────────────────────────────────────────────────
 /** Dans la scène : « moi » (celui qui regarde) et « autre » (son proche). */
@@ -82,7 +83,13 @@ export type CalquesSalon = { plaque: ImageSalon; a: CalqueFigurine; b: CalqueFig
  * 🚪 TOUT CE QU'IL FAUT POUR OUVRIR UNE CONVERSATION, EN UNE REQUÊTE (`GET /api/direct/proches?ouvrir=<clé>`) : le fil
  * (les derniers messages), la vie (gestes, apartés, étagère) et la scène — `null` tant que la pièce n'est pas faite.
  */
-export type OuvertureSalon = { cle: string; fil: Fil; vivant: Vivant | null; scene: SceneSalon | null; flamme?: Flamme; table?: ObjetTable[] };
+export type OuvertureSalon = { cle: string; fil: Fil; vivant: Vivant | null; scene: SceneSalon | null; flamme?: Flamme; table?: ObjetTable[]; chat?: ChatSalon };
+
+/**
+ * 🐾 (lot S3, section 4.5) LE CHAT DU SALON : celui de l'essai C0, le même pour tous — son nom, ses boucles faites
+ * (vidéos sur fond vert, à adresse stable), son vrai son enregistré (le ronronnement), s'il est déposé.
+ */
+export type ChatSalon = { nom: string; boucles: Partial<Record<Boucle, string>>; son?: string };
 
 // ─── 🌷 LA TABLE (lot S3, section 4.4) ───────────────────────────────────────────────────────────────────────────────
 /**
@@ -285,6 +292,12 @@ export interface Scene {
   geste(cle: string, de: Qui): Promise<void>;
   /** Attendre `ms` (annulé avec la scène ; écourté en mouvement réduit). */
   attendre(ms: number): Promise<void>;
+  /**
+   * (lot S3) Une couche de la pièce, sur toute l'image, sous la caméra (ses enfants se placent en fractions de l'image) :
+   * `derriere` — entre la pièce et les figurines (le chat dans son coin) ; `devant` — devant elles (le chat sur mes
+   * genoux). La même à chaque appel ; retirée avec la scène.
+   */
+  couche(rang: "derriere" | "devant"): HTMLElement;
   /** Être appelé à chaque image (dt, t en secondes) — pour le chat, la télé… ; rend de quoi se désabonner. */
   surImage(fn: (dt: number, t: number) => void): () => void;
   /** Une mise en scène est en cours. */

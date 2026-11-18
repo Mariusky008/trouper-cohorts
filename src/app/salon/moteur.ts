@@ -119,7 +119,9 @@ const STYLE = `
 .sc-lettrage.bleu{color:#7fe3ff}
 .sc-marque{position:absolute;font-family:${EMOJI};font-size:calc(var(--sw)*.05);line-height:1;pointer-events:none}
 .sc-rougeur{position:absolute;width:calc(var(--sw)*.06);height:calc(var(--sw)*.035);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(255,70,120,.75),rgba(255,90,140,0) 70%);pointer-events:none;opacity:0}
-.sc-objets{inset:0;pointer-events:none}
+.sc-objets,.sc-couche{inset:0;pointer-events:none}
+.sc-stage[data-moment="soir"] .sc-couche .sc-teinte{filter:sepia(.16) saturate(1.12) brightness(.97)}
+.sc-stage[data-moment="nuit"] .sc-couche .sc-teinte{filter:brightness(.74) saturate(.82) hue-rotate(-8deg)}
 .sc-objet{position:absolute;transform:translate(-50%,-100%);margin:0;padding:0;border:0;background:none;font-family:${EMOJI};font-size:calc(var(--sw)*.058);line-height:1;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}
 .sc-objet .corps{display:inline-block;transform-origin:50% 100%;filter:drop-shadow(0 2px 2px rgba(40,15,5,.55))}
 .sc-objet.balance .corps{animation:sc-balance 3.6s ease-in-out infinite}
@@ -1006,6 +1008,27 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     jingle: (h) => (JINGLES[h] ?? JINGLES.joie).forEach((f, i) => sons.note(f, i * 0.13, 0.28)),
   };
 
+  // ─── (lot S3, section 4.5) la vie propre, au repos : toutes les 22 à 40 s, elles se regardent, ou l'une s'étire —
+  // jamais pendant une mise en scène, jamais en mouvement réduit ───
+  let prochaineVie = hasard(22, 40);
+  function vieAuRepos(t: number) {
+    if (reduit || t < prochaineVie) return;
+    prochaineVie = t + hasard(22, 40);
+    if (enCours > 0) return;
+    const eveilles = (["moi", "autre"] as const).filter((q) => TETES[q] && FIGS[q] && !TETES[q]!.dort);
+    if (!eveilles.length) return;
+    if (eveilles.length === 2 && Math.random() < 0.5) {
+      racine.dataset.vie = "regard";
+      for (const q of eveilles) pencher(q, 9, 1700);
+    } else {
+      const q = eveilles[Math.floor(Math.random() * eveilles.length)];
+      racine.dataset.vie = "etire";
+      commandes[q].pencherCorps(-5, 1300);
+      gonfler(q, 1.04, 1100);
+      plus(1300, () => sursaut(q, 0.25));
+    }
+  }
+
   // ─── la boucle, unique ; la page cachée ; le mode léger ───
   const abonnes = new Set<(dt: number, t: number) => void>();
   let raf = 0;
@@ -1020,6 +1043,7 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     horloge += dt;
     majTetes(dt, horloge);
     majFigs(dt, horloge);
+    vieAuRepos(horloge);
     majFx(Math.min(0.05, dtms / 1000));
     for (const f of abonnes) f(dt, horloge);
     // (le mode léger : la moyenne des images au-dessus de 20 ms pendant 2 s — pas pendant la première seconde et demie,
@@ -1093,6 +1117,16 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     },
     get occupee() {
       return enCours > 0;
+    },
+    couche(rang) {
+      const deja = stage.querySelector<HTMLElement>(`:scope>.sc-couche[data-couche="${rang}"]`);
+      if (deja) return deja;
+      const c = elt("div", "sc-couche");
+      c.dataset.couche = rang;
+      // (derrière : juste après la pièce ; devant : juste avant les objets de la table)
+      if (rang === "derriere") plaque.after(c);
+      else objets.before(c);
+      return c;
     },
     poser,
     placeLibre: (de) => place(indiceLibre(de)),

@@ -907,8 +907,8 @@ Le contrat `salon.ts` s'est complété (la PR le dit dans son titre) : `ObjetTab
   - **un appui long sur sa bulle** (ou sur un de ses messages dans 💬) : les six réactions avec le corps ; ma figurine
     la joue, et elle s'affiche sous le message dans 💬 ;
   - **💬 Messagerie** montre aussi les gestes et les panneaux, à leur heure (« 😘 Sam t'a envoyé un bisou »).
-- **Pas encore** : la vie propre et le chat (S3, deuxième partie) ; 📺 Un clip, 📸 Photo à deux, 🖼️ Accrocher (S6) ;
-  la notification de ce qui attend (« un bisou, un mème, 2 messages… », S8).
+- **Pas encore** : 📺 Un clip, 📸 Photo à deux, 🖼️ Accrocher (S6) ; la notification de ce qui attend (« un bisou, un
+  mème, 2 messages… », S8). (La vie propre et le chat : 11.12.)
 
 **Les essais** : `scripts/essai-salon-gestes-route.mjs` (un bisou ; 400 pour un geste inconnu, une surprise vide ou
 inventée ; 403 ; la tulipe, le café, l'ourson sur la table, les quatre derniers ; la table vue de chacun ; nouveau une
@@ -917,6 +917,39 @@ le bisou, la tulipe, puis le message ; 13 puces 💌, 4 puces 🛋️ ; la barre
 garde son secret jusqu'à son ouverture, « J'arrive ! » ; en direct : un check, une fleur, un café ; quatre objets au
 plus ; toucher la tulipe ; un geste refusé, défait ; un appui long, 👏 ; 💬 ; ni débordement, ni erreur, ni le mot
 interdit).
+
+### 11.12 Le chat et la vie propre (lot S3, deuxième partie — 18 novembre 2026)
+
+Le contrat `salon.ts` s'est complété (la PR le dit dans son titre) : `ChatSalon = { nom, boucles, son? }` et
+`OuvertureSalon.chat?` ; la scène gagne `couche(rang)` — une couche de la pièce, sous la caméra, `derriere` (entre la
+pièce et les figurines) ou `devant` (devant elles), pour ce que les autres lots y posent (le chat ; la télé, la météo
+viendront).
+
+- **Le chat** (`src/lib/direct/salon-chat-serveur.ts`, `src/app/salon/chat.ts`) : celui de l'essai C0, ses boucles
+  faites (`compagnons/chat/<boucle>/video.mp4`) et son ronronnement (`son.json`), relus à chaque ouverture ;
+  `GET /api/direct/salon/chat/<boucle>` (ou `son`) renvoie vers le fichier signé pour sept jours, et le téléphone garde
+  ce renvoi six jours (il ne retélécharge pas le chat à chaque conversation) ; sans boucle faite, pas de chat
+  (`CLIKME_CHAT_SALON=0` : le frein).
+  - **Le vert est retiré par la carte graphique** (WebGL, 7.3) : la même règle que l'essai C0 (le fond mesuré sur le
+    bord, les points à demi démêlés, l'ombre grise, le reflet vert éteint, le bord resserré), aucun calcul par le
+    processeur ; sans WebGL, pas de chat.
+  - **Où il vit** : dans son coin (`emplacements.chat` ; sinon au sol à côté de ma place), derrière les figurines ; sur
+    mes genoux, devant ma figurine. **Ce qu'il fait** : il dort ou s'assoit ; toutes les 18 à 40 s, autre chose (il joue,
+    il renifle, il vient sur mes genoux, il repart) ; **un message** : il dresse les oreilles ; **un check, une danse, une
+    surprise, des chatouilles, un fou rire, un « Bravo ! »** : il saute de joie ; **une fleur, un café** : il renifle ;
+    **on le touche** : des cœurs ; dans son coin, il marche jusqu'à mes genoux et y ronronne (son vrai son), et repart
+    une demi-minute plus tard. Une vidéo par boucle, faite la première fois qu'elle sert (les plus demandées se
+    préparent après l'ouverture) ; seule celle qu'on montre joue ; la page cachée, elle s'arrête ; en mouvement réduit,
+    il ne bouge pas.
+- **La vie propre** (`src/app/salon/moteur.ts`) : au repos, toutes les 22 à 40 s, les deux figurines se regardent, ou
+  l'une s'étire — jamais pendant une mise en scène, jamais endormie, jamais en mouvement réduit.
+
+**Les essais** : `scripts/essai-salon-chat-route.mjs` (sans boucle : pas de chat, 404 ; ses boucles et son son à
+l'ouverture, à adresse stable ; le renvoi signé, gardé six jours ; une boucle pas faite ou inconnue : 404 ; sans
+session : 403) et `scripts/navigateur/salon-chat.mjs` (sans boucle : pas de chat ; dans son coin, derrière, à sa place,
+une image passée par la carte graphique ; un message : les oreilles ; touché : il marche jusqu'à mes genoux, devant, et
+ronronne ; un check : un saut ; la page cachée : sa vidéo s'arrête ; au repos, les figurines se regardent ou s'étirent ;
+ni débordement, ni erreur, ni le mot interdit).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
