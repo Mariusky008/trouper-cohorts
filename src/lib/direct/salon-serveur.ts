@@ -19,6 +19,7 @@ import { lireSaPiece } from "./ma-maison-serveur";
 import { ordreDuCatalogue } from "./ma-maison";
 import { sesDixHuitAns } from "./voeu-serveur";
 import { lireTable, vivantAvec } from "./vivant-serveur";
+import { chatDuSalon } from "./salon-chat-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";
 import { poserFigurine, type FigurineLocale } from "./figurine-calques";
 
@@ -80,7 +81,7 @@ export async function ouvrirSalon(
     const voulue = pieceDuoValide(fiche.piece) ? fiche.piece : (sienne ?? PIECE_PAR_DEFAUT);
     return (await sceneDeLaPiece(supabase, voulue, moment).catch(() => null)) ?? (voulue !== PIECE_PAR_DEFAUT ? await sceneDeLaPiece(supabase, PIECE_PAR_DEFAUT, moment).catch(() => null) : null);
   });
-  const [f, v, scene, h, mienne, sienne, fiche, noms, table] = await Promise.all([
+  const [f, v, scene, h, mienne, sienne, fiche, noms, table, chat] = await Promise.all([
     filAvec(supabase, moi, cle),
     vivantAvec(supabase, moi, cle).catch(() => null),
     sceneP,
@@ -91,6 +92,8 @@ export async function ouvrirSalon(
     hP.then((x) => (x ? nomsDuFil(supabase, pairDe(moi.id, x)) : [])).catch(() => []),
     // (🌷 lot S3 : ce qui est posé sur leur table)
     hP.then((x) => (x ? lireTable(supabase, pairDe(moi.id, x), qui8(moi.id)) : [])).catch(() => []),
+    // (🐾 lot S3 : le chat du salon, le même pour tous)
+    chatDuSalon(supabase).catch(() => null),
   ]);
   if (!f.fil) return { error: f.error, statut: f.statut };
   // (posées aux deux places ; celles qui manquent sont découpées après la réponse)
@@ -100,7 +103,7 @@ export async function ouvrirSalon(
   const installe = choisie && fiche.par8 ? { installePar: fiche.par8 === qui8(moi.id) ? ("moi" as const) : ("autre" as const) } : {};
   const sceneVue = scene ? { ...scene, ...(calques ? { calques } : {}), choisie, ...installe } : null;
   return {
-    ouverture: { cle: f.fil.cle, fil: f.fil, vivant: v?.vivant ?? null, scene: sceneVue, ...(h ? { flamme: flammeDe(noms, qui8(moi.id), qui8(h), maintenant) } : {}), ...(table.length ? { table } : {}) },
+    ouverture: { cle: f.fil.cle, fil: f.fil, vivant: v?.vivant ?? null, scene: sceneVue, ...(h ? { flamme: flammeDe(noms, qui8(moi.id), qui8(h), maintenant) } : {}), ...(table.length ? { table } : {}), ...(chat ? { chat } : {}) },
     ...(v?.aPreparer ? { aPreparer: v.aPreparer } : {}),
     ...(v?.aNoter ? { aNoter: v.aNoter } : {}),
     ...(aDecouper.length ? { aDecouper } : {}),
@@ -137,12 +140,16 @@ export const INVITATION_MS = 120_000;
 const REFUS_MS = 60_000;
 
 /** 🚪 Ce que le pouls dit de la pièce : celle du duo, l'invitation qui m'attend, le refus de la mienne. */
-export function etatPieceDuo(f: Partial<FichePieceDuo>, moi8: string, maintenant = Date.now()): { piece?: PieceDuo; invitation?: PieceDuo; refus?: true } {
+/**
+ * (`invitationLe` : quand l'invitation a été faite — deux invitations vers la même pièce, l'une refusée, l'autre faite
+ * juste après, ne se confondent pas chez celui qui les reçoit.)
+ */
+export function etatPieceDuo(f: Partial<FichePieceDuo>, moi8: string, maintenant = Date.now()): { piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: true } {
   const inv = f.invitation;
   const fraiche = inv && maintenant - inv.le < INVITATION_MS;
   return {
     ...(pieceDuoValide(f.piece) ? { piece: f.piece } : {}),
-    ...(inv && fraiche && !inv.non && inv.de8 !== moi8 ? { invitation: inv.piece } : {}),
+    ...(inv && fraiche && !inv.non && inv.de8 !== moi8 ? { invitation: inv.piece, invitationLe: inv.le } : {}),
     ...(inv && inv.non && inv.de8 === moi8 && maintenant - inv.non < REFUS_MS ? { refus: true as const } : {}),
   };
 }

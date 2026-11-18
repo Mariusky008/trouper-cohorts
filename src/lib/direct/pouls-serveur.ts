@@ -30,7 +30,7 @@ type Supabase = ReturnType<typeof createAdminClient>;
 export const cheminPouls = (pair: string) => `fils/${pair}/pouls.json`;
 
 /** Le pouls, tel que le téléphone le lit. */
-export type Pouls = { n: number; la: boolean; ecrit?: true; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; refus?: true };
+export type Pouls = { n: number; la: boolean; ecrit?: true; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: true };
 
 const DUO_MS = 60_000;
 const duos = new Map<string, { h: string; pair: string; jusqua: number }>();

@@ -31,9 +31,10 @@ import { useEffect, useRef, useState } from "react";
 import { creerScene } from "./moteur";
 import "./mises-en-scene";
 import { annulerObjet, confierObjet } from "./gestes";
+import { installerChat, type ChatDuSalon, type EvenementChat } from "./chat";
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
 import { aRejouer, derniersDeChacun, dureeDite, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
-import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
+import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
 import { gesteDuSalon, objetDuGeste, REACTIONS, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
 import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
 import { prochainRendezVous } from "./bulles";
@@ -103,11 +104,21 @@ function lireBarre(): Barre {
 }
 /** L'objet de la table qu'un geste a posé (son identifiant : celui du geste). */
 const objetDeGeste = (g: GesteFil): ObjetTable | null => (g.objet ? { id: g.id, e: g.objet.e, nom: g.objet.nom, moi: g.moi, le: g.le } : null);
-/** Jouer un geste du fil dans la scène (un panneau : `panneau-<clé>`, une réaction : `reaction-<clé>`), son objet confié avant. */
-function jouerGeste(s: Scene, g: GesteFil, de: Qui): Promise<void> {
+/** 🐾 Ce qu'un geste fait au chat : de la joie (un saut), un objet posé (il renifle), sinon rien. */
+function evenementDuGeste(g: Pick<GesteFil, "type" | "cle">): EvenementChat | null {
+  if (g.type === "reaction") return g.cle === "mdr" || g.cle === "applaudir" ? "joie" : null;
+  if (g.type === "panneau") return g.cle === "mdr" || g.cle === "bravo" ? "joie" : null;
+  if (g.cle === "fleur" || g.cle === "cafe") return "objet";
+  return g.cle === "check" || g.cle === "danser" || g.cle === "surprise" || g.cle === "chatouilles" ? "joie" : null;
+}
+/** Jouer un geste du fil dans la scène (un panneau : `panneau-<clé>`, une réaction : `reaction-<clé>`), son objet confié avant ; le chat réagit. */
+function jouerGeste(s: Scene, g: GesteFil, de: Qui, chat?: ChatDuSalon | null): Promise<void> {
   const o = objetDeGeste(g);
   if (o) confierObjet({ ...o, moi: de === "moi" });
-  return s.geste(g.type === "geste" ? g.cle : `${g.type}-${g.cle}`, de);
+  const e = evenementDuGeste(g);
+  const fin = s.geste(g.type === "geste" ? g.cle : `${g.type}-${g.cle}`, de);
+  if (e && chat) setTimeout(() => chat.reagir(e), 700);
+  return fin;
 }
 /** Ce qu'un geste dit en haut de la scène ; la surprise dit ce qu'elle cachait quand elle s'ouvre. */
 function annoncer(montrer: (t: string, ms?: number) => void, g: GesteFil, moi: boolean, prenom: string) {
@@ -303,6 +314,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const table = useRef<ObjetTable[]>([]);
   const enFile = useRef(0);
   const recevoirRef = useRef<(liste: GesteFil[]) => void>(() => undefined);
+  // 🐾 (lot S3) le chat du salon
+  const chatSalon = useRef<ChatSalon | null>(null);
+  const chat = useRef<ChatDuSalon | null>(null);
 
   // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
   useEffect(() => {
@@ -318,6 +332,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           gestesOuverture.current = g;
           gestesConnus.current = new Set(g.map((x) => x.id));
           table.current = (c.ouverture.table ?? []).slice(-PLACES_TABLE);
+          chatSalon.current = c.ouverture.chat ?? null;
           setGestes(g);
           setMessages(c.ouverture.fil.messages);
           setMemes(c.ouverture.fil.memes ?? []);
@@ -366,6 +381,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     // (🌷 ce qui est sur la table — sauf ce que les gestes de l'arrivée vont poser)
     const aPoser = arriveeFaiteRef.current ? new Set<string>() : new Set(gestesARejouer(gestesOuverture.current).map((g) => g.id));
     for (const o of table.current) if (!aPoser.has(o.id)) s.poser(o);
+    // (🐾 le chat : dans son coin, ma place pour ses genoux)
+    const ch = chatSalon.current;
+    const maPlace = sceneVue.places[0];
+    chat.current = ch && maPlace ? installerChat(s, ch, { place: maPlace, ...(sceneVue.emplacements?.chat ? { coin: sceneVue.emplacements.chat } : {}) }) : null;
     // (une pièce de plus : s'il n'est pas là et que l'arrivée est passée, sa figurine somnole déjà)
     if (!laRef.current && arriveeFaiteRef.current) s.figurine("autre").endormir();
     try {
@@ -373,7 +392,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     } catch {
       // (sans stockage : la phrase « ✨ … vous a installés » pourra revenir, ce n'est pas grave)
     }
+    const ceChat = chat.current;
     return () => {
+      ceChat?.detruire();
+      if (chat.current === ceChat) chat.current = null;
       s.detruire();
       if (scene.current === s) scene.current = null;
     };
@@ -417,7 +439,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           joues.add(g.id);
           if (s.figurine("autre").dort) s.figurine("autre").reveiller();
           annoncer(montrerRef.current, g, false, fil.lui.prenom);
-          void jouerGeste(s, g, "autre");
+          void jouerGeste(s, g, "autre", chat.current);
         }, t),
       );
       t += dureeDuGeste(g) + 300;
@@ -429,6 +451,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           const s = scene.current;
           if (!s) return;
           s.figurine("autre").parler(tempsDeParole(x.texte));
+          chat.current?.reagir("message");
           minutes.push(setTimeout(() => scene.current === s && reagir(s, "moi", x.texte, true), 450));
         }, t),
       );
@@ -525,6 +548,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         const dernier = neufs[neufs.length - 1];
         if (s.figurine("autre").dort) s.figurine("autre").reveiller();
         s.figurine("autre").parler(tempsDeParole(texteDeBulle(dernier)));
+        chat.current?.reagir("message");
         setTimeout(() => scene.current === s && reagir(s, "moi", texteDeBulle(dernier), true), 450);
       }
       if (neufs.length && !feuilleOuverte.current) setNonLus((n) => n + neufs.length);
@@ -535,7 +559,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (fini || document.visibilityState !== "visible") return;
       const avant = mesChangements.current.n;
       const r = await fetch(`/api/direct/proches?pouls=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
-      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; refus?: boolean } | null) : null;
+      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: boolean } | null) : null;
       if (fini) return;
       if (p) {
         const n = Number(p.n) || 0;
@@ -566,9 +590,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           monInvitation.current = null;
           void allerDansRef.current(p.piece).then((ok) => ok && montrerRef.current(dit, 3200));
         }
-        // 🚪 il m'invite ailleurs ; il a dit « Pas maintenant » à mon invitation
-        if (p.invitation && !invitationsVues.current.has(p.invitation)) {
-          invitationsVues.current.add(p.invitation);
+        // 🚪 il m'invite ailleurs ; il a dit « Pas maintenant » à mon invitation (une invitation : sa pièce et son heure —
+        // refusée puis refaite vers la même pièce, avant que le pouls ait vu le vide entre les deux, elle revient)
+        const cleInvitation = p.invitation ? `${p.invitation}:${p.invitationLe ?? 0}` : "";
+        if (p.invitation && !invitationsVues.current.has(cleInvitation)) {
+          invitationsVues.current.add(cleInvitation);
           setInvitation(p.invitation);
         }
         // (plus d'invitation en cours — il a répondu, elle a expiré : la suivante, même vers la même pièce, se montrera)
@@ -674,7 +700,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       suite = suite.then(() => {
         if (scene.current !== s) return;
         annoncer(montrerRef.current, g, false, prenomRef.current);
-        return jouerGeste(s, g, "autre");
+        return jouerGeste(s, g, "autre", chat.current);
       });
     }
   }
@@ -695,7 +721,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     const s = scene.current;
     if (s) {
       enFile.current += 1;
-      void jouerGeste(s, provisoire, "moi").finally(() => (enFile.current -= 1));
+      void jouerGeste(s, provisoire, "moi", chat.current).finally(() => (enFile.current -= 1));
     }
     try {
       const r = await fetch("/api/direct/proches", {
@@ -731,7 +757,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       return [...l.filter((g) => !(g.type === "reaction" && g.moi && g.message === id)), provisoire];
     });
     const s = scene.current;
-    if (s) void s.geste(`reaction-${r.cle}`, "moi");
+    if (s) void jouerGeste(s, provisoire, "moi", chat.current);
     try {
       const rep = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "geste", cle, type: "reaction", quoi: r.cle, message: id }) });
       const j = (await rep.json().catch(() => null)) as { geste?: GesteFil; error?: string } | null;
@@ -859,6 +885,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     setTexte("");
     direQueJEcris(false);
     const s = scene.current;
+    chat.current?.reagir("message");
     if (s) {
       s.figurine("moi").parler(tempsDeParole(t));
       setTimeout(() => scene.current === s && reagir(s, autreQue("moi"), t, fil.la), 450);
