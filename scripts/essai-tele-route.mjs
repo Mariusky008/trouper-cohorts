@@ -10,6 +10,11 @@
 // rendu, huit au plus, sans double ; rien de YouTube : refusé, la liste d'avant reste. Une liste vide rangée à la main :
 // la télé éteinte.
 //
+// 📺 LA METTRE À LA TÉLÉ (lot S6, le salon du duo : `POST /api/direct/tele`) : Léa y met une vidéo filmée au téléphone —
+// chez les deux, la vidéo (ses adresses signées), « mise par Léa » ; le pouls bat ; le vivant le dit à Sam. Un lien plus
+// récent la remplace ; un ancien clip remis à la télé repasse. Un lien Spotify, une photo : 422 ; un message inconnu :
+// 404 ; Zoé (pas proche) : 403 ; sans session : 401. Sam signale la vidéo : chez lui, elle ne passe plus.
+//
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-tele-route.mjs
@@ -74,8 +79,8 @@ ok((await tele(LEA, SAM.cle)).programme?.id === t0.programme?.id, "le même clip
 // ─── le dernier lien YouTube ───
 const P = paire(SAM, LEA);
 await deposer(`fils/${P}/a/clip.webp`, PNG, "image/png");
-await lien(LEA, SAM, "https://youtu.be/AbCdEfGhIjK?t=1m5s", 30, { titre: "Notre chanson", image: `fils/${P}/a/clip.webp`, sorte: "video" });
-await lien(SAM, LEA, "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC", 20, { titre: "Une chanson", sorte: "musique" });
+const clip = await lien(LEA, SAM, "https://youtu.be/AbCdEfGhIjK?t=1m5s", 30, { titre: "Notre chanson", image: `fils/${P}/a/clip.webp`, sorte: "video" });
+const spotify = await lien(SAM, LEA, "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC", 20, { titre: "Une chanson", sorte: "musique" });
 const t1 = await tele(SAM, LEA.cle);
 ok(
   t1.programme?.sorte === "youtube" && t1.programme.id === "AbCdEfGhIjK" && t1.programme.debut === 65 && t1.programme.titre === "Notre chanson" && t1.programme.moi === false && /^http/.test(t1.programme.apercu ?? "") && !t1.programme.apercu.includes("ytimg"),
@@ -92,6 +97,50 @@ ok(t2.programme?.sorte === "ouvrir" && t2.programme.plateforme === "tiktok" && t
 await json(`${SAM.id}/paroles-cachees.json`, { ids: [tik] });
 ok((await tele(SAM, LEA.cle)).programme?.id === "AbCdEfGhIjK", "signalé par Sam : chez lui, la télé repasse le clip");
 ok((await tele(LEA, SAM.cle)).programme?.sorte === "ouvrir", "chez Léa, le TikTok reste");
+
+// ─── 📺 LA METTRE À LA TÉLÉ (lot S6) ───
+const mettre = async (q, avec, message) => {
+  const r = await fetch(`${BASE}/api/direct/tele`, { method: "POST", headers: { "content-type": "application/json", ...(q ? { cookie: `clikme_habitant=${q.jeton}` } : {}) }, body: JSON.stringify({ avec, message }) });
+  return { statut: r.status, ...(await r.json().catch(() => ({}))) };
+};
+const obtenir = async (q, chemin) => (await fetch(`${BASE}/api/direct/${chemin}`, { headers: { cookie: `clikme_habitant=${q.jeton}` } })).json().catch(() => ({}));
+/** Un message filmé (ou photographié) au téléphone, il y a quelques minutes. */
+async function piece(de, a, genre, ilYaMin) {
+  const pair = paire(de, a);
+  const ts = Date.now() - ilYaMin * 60_000;
+  const id = `tv${String(++rang).padStart(10, "0")}`;
+  const dossier = genre === "video" ? "v" : "p";
+  await deposer(`fils/${pair}/${dossier}/${id}.webm`, Buffer.from("faux webm"), "video/webm");
+  await deposer(`fils/${pair}/${dossier}/${id}.webp`, PNG, "image/webp");
+  const media = genre === "video" ? { chemin: `fils/${pair}/v/${id}.webm`, vignette: `fils/${pair}/v/${id}.webp`, l: 640, h: 360, duree: 4, type: "video/webm" } : { chemin: `fils/${pair}/p/${id}.webp`, l: 640, h: 480 };
+  await json(`fils/${pair}/m/${String(ts).padStart(13, "0")}-${qui8(de.id)}-${id}.json`, { id, de: de.id, le: new Date(ts).toISOString(), genre, legende: "Le concert", tete: null, media });
+  return id;
+}
+const video = await piece(LEA, SAM, "video", 8);
+const photo = await piece(LEA, SAM, "photo", 7);
+const n0 = (await obtenir(SAM, `proches?pouls=${LEA.cle}`)).n ?? 0;
+const m1 = await mettre(LEA, SAM.cle, video);
+ok(m1.statut === 200 && m1.programme?.sorte === "video" && m1.programme.message === video && /^http/.test(m1.programme.url) && /^http/.test(m1.programme.vignette) && m1.programme.duree === 4 && m1.programme.titre === "Le concert" && m1.programme.mis?.par === "moi", `Léa met sa vidéo à la télé (${JSON.stringify(m1.programme)?.slice(0, 160)})`);
+const t4 = await tele(SAM, LEA.cle);
+ok(t4.programme?.sorte === "video" && t4.programme.message === video && t4.programme.moi === false && t4.programme.mis?.par === "lui", "chez Sam : la vidéo, mise par Léa");
+ok(((await obtenir(SAM, `proches?pouls=${LEA.cle}`)).n ?? 0) > n0, "le pouls bat");
+const viv = (await obtenir(SAM, `proches?vivant=${LEA.cle}`)).vivant?.tele;
+ok(viv?.message === video && viv.par === "lui" && Boolean(viv.le), "le vivant le dit à Sam (« par lui »)");
+await lien(SAM, LEA, "https://www.youtube.com/watch?v=NeUfNeUf123", 0, { titre: "Plus récent" });
+ok((await tele(LEA, SAM.cle)).programme?.id === "NeUfNeUf123", "un lien plus récent la remplace");
+await new Promise((ok) => setTimeout(ok, 20));
+const m2 = await mettre(SAM, LEA.cle, clip);
+ok(m2.statut === 200 && m2.programme?.sorte === "youtube" && m2.programme.id === "AbCdEfGhIjK" && m2.programme.mis?.par === "moi", "un ancien clip remis à la télé repasse");
+ok((await tele(LEA, SAM.cle)).programme?.id === "AbCdEfGhIjK", "… chez les deux");
+ok((await mettre(SAM, LEA.cle, spotify)).statut === 422, "un lien Spotify : ne passe pas à la télé (422)");
+ok((await mettre(SAM, LEA.cle, photo)).statut === 422, "une photo : 422");
+ok((await mettre(SAM, LEA.cle, "inconnu0001")).statut === 404, "un message inconnu : 404");
+ok((await mettre(ZOE, SAM.cle, video)).statut === 403, "Zoé, pas proche : 403");
+ok((await mettre(null, LEA.cle, video)).statut === 401, "sans session : 401");
+await mettre(LEA, SAM.cle, video);
+await json(`${SAM.id}/paroles-cachees.json`, { ids: [tik, video] });
+ok((await tele(SAM, LEA.cle)).programme?.sorte !== "video", "Sam signale la vidéo : chez lui, elle ne passe plus");
+ok((await tele(LEA, SAM.cle)).programme?.message === video, "… chez Léa, elle reste");
 
 // ─── les clips de secours (l'administrateur) ───
 const ADMIN = "00000000-0000-4000-8000-0000000ad001";

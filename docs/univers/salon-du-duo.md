@@ -975,8 +975,8 @@ ni débordement, ni erreur, ni le mot interdit).
     **« Votre étagère »** (la page des lots E1 à E5, chargée seulement quand on l'ouvre) ;
   - **ce que l'autre garde, ou ce que leurs figurines notent, s'envole en direct** (relu avec le pouls) :
     « 📌 Sam a gardé · 😂 Le fou rire ».
-- **Pas encore** (lot S6, suite) : ＋ Envoyer — fait en partie, 11.14 ; la télé et les cadres dans la pièce, 📺 Un clip,
-  📸 Photo à deux, 🖼️ Accrocher ; garder un mème (avec le lot S5).
+- **Pas encore** (lot S6, suite) : ＋ Envoyer — fait en partie, 11.14 ; la télé dans la pièce — faite, 11.15 ; les
+  cadres, 📺 Un clip, 📸 Photo à deux, 🖼️ Accrocher ; garder un mème (avec le lot S5).
 
 **Les essais** : `scripts/essai-salon-garder-route.mjs` (une date samedi, une promesse, une blague dans « Nos fous
 rires », « vos mots », une réponse du modèle qui ne tient pas, déjà gardé, « malade » 422, 404, 403, 401, pas de limite,
@@ -1008,6 +1008,34 @@ l'envol sur l'étagère relevée, la phrase de l'autre figurine, ✓, « déjà 
 bulle, 💬, chez Sam ; une vidéo enregistrée par le navigateur, « 0:02 », « Envoi… » puis « Vérification… », déposée une
 fois, chez Sam ; la photo refusée, la modération en panne, un fichier qui n'est pas une photo, toucher à côté ; 🔗 et la
 saisie ; ni débordement, ni glissement, ni erreur, ni le mot interdit).
+
+### 11.15 📺 La télé dans la pièce (lot S6, troisième partie — 18 novembre 2026)
+
+- **La télé de la pièce** : le morceau autonome (`src/app/univers/tele-duo.tsx`, lots de la pièce du duo) est posé dans
+  la couche de derrière de la scène, sur l'écran relevé (`emplacements.tele`, et ses quatre coins s'ils sont posés à la
+  main) ; chargé après l'ouverture (`GET /api/direct/tele`), il ne la ralentit pas. **De loin**, elle montre ce qui passe
+  (l'aperçu, l'image), sans bouton ; **un toucher**, la caméra s'en approche (« ↩ La pièce » pour revenir) et
+  « ▶ Allumer la télé » la lit (avec le son : ce toucher est le geste qu'il faut sur iPhone).
+- **Ce qu'elle passe** (`tele-serveur.ts`) : le dernier lien YouTube, TikTok ou Instagram qu'ils se sont envoyé — ou,
+  s'il est plus récent, **ce que l'un des deux y a mis lui-même** (`fils/<paire>/tele.json` : le message, par qui,
+  quand) ; sinon le clip de secours du jour ; sinon, éteinte. Nouveau : **une vidéo filmée au téléphone** passe à la
+  télé (`sorte: "video"`, ses adresses signées), lue dans l'écran comme un clip.
+- **« 📺 La mettre à la télé ? »** (`POST /api/direct/tele { avec, message }`) : sous ma bulle quand mon dernier message
+  est une vidéo ou un lien qui passe à la télé, et 📺 sur mes messages de 💬. Un toucher : « 📺 À la télé ! », des
+  étincelles sur l'écran, la caméra s'en approche ; la question disparaît tant qu'elle y passe. Un lien Spotify, une
+  photo : « Celui-là ne passe pas à la télé. » (422). Le pouls bat ; **chez l'autre, en direct** (le vivant porte
+  `tele` : le message, quand, par qui), la télé relit son programme : « 📺 Sam a mis quelque chose à la télé ». Un
+  message signalé n'y passe plus, chez celui qui l'a signalé.
+- **Le cadre du salon ne défile jamais** (`overflow: clip`) : un bouton touché dans une bulle ne fait plus glisser
+  toute la page.
+- **Pas encore** : 📺 Un clip (🛋️ Ensemble) et sa feuille « Mettre à la télé » ; les réactions qui s'envolent de la
+  télé, « Sam regarde aussi » ; les films (l'affiche « Ce soir ») ; les cadres et 🖼️ Accrocher ; 📸 Photo à deux.
+
+**Les essais** : `scripts/essai-tele-route.mjs` (la mettre à la télé : une vidéo, chez les deux, le pouls, le vivant ;
+un lien plus récent la remplace ; un ancien clip remis ; Spotify et photo 422, 404, 403, 401 ; signalée) et
+`scripts/navigateur/salon-tele.mjs` (la télé de loin sur l'écran relevé ; une vidéo envoyée, « 📺 La mettre à la
+télé ? », la caméra qui zoome, « ▶ Allumer » qui la lit avec le son, « ↩ La pièce » ; en direct ce que Sam y met ; 📺
+dans 💬 ; toucher la télé de loin ; ni glissement, ni erreur).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

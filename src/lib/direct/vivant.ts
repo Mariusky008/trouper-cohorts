@@ -82,7 +82,9 @@ export type GesteFil = { id: string; moi: boolean; le: string; type: "panneau" |
  * sept derniers jours), et quand est arrivé le dernier message (un nouveau : elle se relit, et les figurines sursautent) ;
  * 📚 et leur étagère (lot E1, `etagere.ts`) : ce que leurs figurines ont noté, ce qu'il n'a pas encore vu se poser.
  */
-export type Vivant = { enregistre: boolean; gestes: GesteFil[]; dernier: number; apartes: AparteVue[]; etagere?: EtagereScene };
+/** 📺 (lot S6) ce que l'un des deux a mis à la télé lui-même : le message, quand, par qui (le salon relit alors le programme). */
+export type TeleVivante = { message: string; le: string; par: "moi" | "lui" };
+export type Vivant = { enregistre: boolean; gestes: GesteFil[]; dernier: number; apartes: AparteVue[]; etagere?: EtagereScene; tele?: TeleVivante };
 
 /**
  * 🎭 L'APARTÉ DES DEUX FIGURINES (lot R4b) : après un vrai échange et deux minutes de silence, elles se tournent l'une
