@@ -497,8 +497,13 @@ seule session à la fois par fichier.
 | **S5 — Les mèmes** | 4.7 entier, la vidéo au partage | univers | S2 |
 | **S6 — Les objets et l'étagère** | la télé et « Mettre à la télé », les cadres et « Accrocher », l'étagère (📌 Garder, Nos fous rires, les mèmes rangés), ＋ Envoyer et les films | univers | S2 |
 | **S7 — La lumière et la météo** | la nuit éclairée, la météo à la fenêtre, l'heure | univers | S1 |
-| **S8 — La bascule** | les essais de vitesse sur vrais téléphones, l'avis du propriétaire, l'interrupteur allumé, l'ancien écran retiré | les deux | tout |
-| **S9 — Le temps réel** | 7.4, étape 2 — seulement si le propriétaire trouve le délai du pouls gênant (section 10) | messages et bienvenue | S2 |
+| **S8 — La bascule** | les essais de vitesse sur vrais téléphones, l'avis du propriétaire, l'interrupteur allumé, l'ancien écran retiré ; la notification qui dit tout ce qui attend (« un bisou, un mème, 2 messages… ») | ~~les deux~~ univers (18 novembre) | tout |
+| **S9 — Le temps réel** | 7.4, étape 2 — seulement si le propriétaire trouve le délai du pouls gênant (section 10) | ~~messages et bienvenue~~ univers (18 novembre) | S2 |
+
+**18 novembre 2026** : la session des messages et de la bienvenue s'est arrêtée après S2 (faute de crédit). **La session
+de l'univers reprend tout ce qui reste** : S3, S6, S4, S5, S7 (les siens), puis S8 (la bascule, avec la notification
+de ce qui attend) ; S9 seulement si le propriétaire, après avoir joué le salon, trouve le délai du pouls gênant. Le
+propriétaire : « Ma maison », on la fera après avoir terminé la messagerie.
 
 **Chaque lot** : ses essais (une route contre le faux Supabase, un essai navigateur au format téléphone, ajoutés à
 `lancer-essais.sh`), sa doc (une section ici), une PR vers `main`, la CI au vert, puis le message au propriétaire avec
