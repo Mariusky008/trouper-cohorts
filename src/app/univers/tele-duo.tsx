@@ -127,6 +127,7 @@ function imageDe(p: ProgrammeTele): string {
   if (p.sorte === "ouvrir") return p.apercu ?? "";
   if (p.sorte === "secours") return vignetteYouTube(p.id);
   if (p.sorte === "video") return p.vignette;
+  if (p.sorte === "film") return p.affiche ?? "";
   return "";
 }
 
@@ -269,6 +270,13 @@ export function TeleDuo({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={image} alt="" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
           )}
+          {/* 🍿 (lot S6) un film : son titre sur l'écran, et « Ce soir » */}
+          {programme.sorte === "film" && (
+            <>
+              {!image && <span className="tv-titre-film">{programme.titre || programme.site}</span>}
+              <span className="tv-ce-soir">{PHRASES_TELE.ceSoirBadge}</span>
+            </>
+          )}
         </span>
       )}
       {proche && (
@@ -287,6 +295,10 @@ export function TeleDuo({
           ) : programme.sorte === "ouvrir" ? (
             <a className="tv-bouton" data-geste="ouvrir" href={programme.url} target="_blank" rel="noopener noreferrer">
               {PHRASES_TELE.ouvrir(programme.plateforme)}
+            </a>
+          ) : programme.sorte === "film" ? (
+            <a className="tv-bouton" data-geste="ouvrir" href={programme.url} target="_blank" rel="noopener noreferrer">
+              {PHRASES_TELE.ouvrirFilm(programme.site)}
             </a>
           ) : programme.sorte === "eteinte" ? (
             <small className="tv-rien">{PHRASES_TELE.eteinte}</small>
@@ -372,6 +384,8 @@ const STYLES_TELE = `
 .tv-ecran img{width:100%;height:100%;object-fit:cover;filter:saturate(.9) brightness(.82)}
 .tv-ecran::after{content:"";position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,0) 38%),radial-gradient(120% 90% at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%);pointer-events:none}
 .tv-ecran.noir{background:#000}
+.tv-ce-soir{position:absolute;left:4%;top:6%;padding:.25em .6em;border-radius:999px;background:#ffd400;color:#2a1424;font-weight:800;font-size:4.2cqw;line-height:1.1;box-shadow:0 .4cqw 1.6cqw rgba(0,0,0,.35);z-index:1}
+.tv-titre-film{position:absolute;inset:0;display:grid;place-items:center;padding:0 8%;color:#fff;font-weight:800;font-size:6cqw;line-height:1.15;text-align:center;background:radial-gradient(circle at 50% 40%,#3a1d4a,#0b0610)}
 .tv.en-perspective{background:transparent;box-shadow:none;border-radius:0}
 .tv.en-perspective .tv-ecran{border-radius:0}
 .tv-flottant{position:fixed;z-index:40;overflow:visible;background:transparent}

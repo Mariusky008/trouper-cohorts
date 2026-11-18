@@ -21,6 +21,7 @@ export function texteDeBulle(m: MessageFil): string {
   if (m.genre === "ecrit") return (m.texte ?? "").trim() || (m.lien ? `🔗 ${m.lien.titre || m.lien.site}` : "");
   if (m.genre === "photo") return m.texte?.trim() ? `📷 ${m.texte.trim()}` : "📷 Une photo";
   if (m.genre === "video") return m.texte?.trim() ? `🎬 ${m.texte.trim()}` : "🎬 Une vidéo";
+  if (m.genre === "fichier") return `📎 ${m.fichier?.nom ?? "Un PDF"}`;
   return `🎙️ Un vocal · ${dureeDite(m.duree)}`;
 }
 

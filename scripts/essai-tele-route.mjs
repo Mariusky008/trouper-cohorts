@@ -13,7 +13,9 @@
 // 📺 LA METTRE À LA TÉLÉ (lot S6, le salon du duo : `POST /api/direct/tele`) : Léa y met une vidéo filmée au téléphone —
 // chez les deux, la vidéo (ses adresses signées), « mise par Léa » ; le pouls bat ; le vivant le dit à Sam. Un lien plus
 // récent la remplace ; un ancien clip remis à la télé repasse. Un lien Spotify, une photo : 422 ; un message inconnu :
-// 404 ; Zoé (pas proche) : 403 ; sans session : 401. Sam signale la vidéo : chez lui, elle ne passe plus.
+// 404 ; Zoé (pas proche) : 403 ; sans session : 401. Sam signale la vidéo : chez lui, elle ne passe plus. 🍿 Un lien
+// Netflix ne passe pas tout seul à la télé ; mis à la télé, c'est un film (son site, son titre, son affiche signée),
+// chez les deux.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
@@ -141,6 +143,14 @@ await mettre(LEA, SAM.cle, video);
 await json(`${SAM.id}/paroles-cachees.json`, { ids: [tik, video] });
 ok((await tele(SAM, LEA.cle)).programme?.sorte !== "video", "Sam signale la vidéo : chez lui, elle ne passe plus");
 ok((await tele(LEA, SAM.cle)).programme?.message === video, "… chez Léa, elle reste");
+
+// ─── 🍿 un film ───
+const netflix = await lien(LEA, SAM, "https://www.netflix.com/title/80100172", 0, { titre: "Un film", image: `fils/${P}/a/clip.webp` });
+ok((await tele(LEA, SAM.cle)).programme?.sorte !== "film", "un lien Netflix ne passe pas tout seul à la télé");
+await new Promise((ok) => setTimeout(ok, 20));
+const f1 = await mettre(LEA, SAM.cle, netflix);
+ok(f1.statut === 200 && f1.programme?.sorte === "film" && f1.programme.site === "Netflix" && f1.programme.titre === "Un film" && /^http/.test(f1.programme.affiche ?? "") && f1.programme.mis?.par === "moi", `mis à la télé : un film, son affiche (${JSON.stringify(f1.programme)?.slice(0, 120)})`);
+ok((await tele(SAM, LEA.cle)).programme?.sorte === "film", "… chez Sam aussi");
 
 // ─── les clips de secours (l'administrateur) ───
 const ADMIN = "00000000-0000-4000-8000-0000000ad001";

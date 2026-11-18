@@ -37,6 +37,7 @@ import { QuestionRanger, STYLES_RANGER, useRangesDansMonUnivers } from "./ranger
 import { sorteARanger } from "@/lib/direct/ranger-univers";
 import { Calque, FeuillePanneaux, FeuilleReactions, useAppuiLong, useVivant, type Anim } from "./conversation-vivante";
 import { BarreEcrire, BoutonEffacer, BulleEcrite, STYLES_ECRIRE, motsDeLEcrit, type ChoixPlus } from "./ecrire";
+import { tailleDite } from "@/lib/direct/fichier";
 import { BullePhoto, CadrePhoto, FeuillePhoto, PhotoEnGrand, STYLES_PHOTOS } from "./photos";
 import { BulleVideo, CadreVideo, FeuilleVideo, VideoEnGrand, STYLES_VIDEOS } from "./videos";
 import { ECRIT } from "@/lib/direct/ecrit";
@@ -105,7 +106,7 @@ const quandCourt = (le: string) => {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
 };
 /** ✍️ 📷 🎬 (lots M1 à M3) un écrit, une photo, une vidéo : la figurine les dit sans aucun son (le son d'une vidéo : en grand). */
-const sansSon = (m: MessageFil) => m.genre === "ecrit" || m.genre === "photo" || m.genre === "video";
+const sansSon = (m: MessageFil) => m.genre === "ecrit" || m.genre === "photo" || m.genre === "video" || m.genre === "fichier";
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, "0")}`;
 
 // ─── l'onglet ─────────────────────────────────────────────────────────────────────────────────────
@@ -1732,6 +1733,25 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
                 }}
                 onEffacer={effacable ? () => void effacer(x) : undefined}
               />
+            );
+          // 📎 (lot S6) un PDF : sa carte ; un toucher le télécharge, sous son nom (jamais ouvert dans ClikMe)
+          if (x.genre === "fichier" && x.fichier)
+            return (
+              <li key={x.id} className={`${x.moi ? "moi" : "lui"} pr-ecrit-li`} data-fichier={x.id}>
+                <div className="pr-ecrit-bloc">
+                  <a className="pr-fichier" href={x.fichier.url} download={x.fichier.nom}>
+                    <span className="e">📄</span>
+                    <span>
+                      <b>{x.fichier.nom}</b>
+                      <small>
+                        PDF · {tailleDite(x.fichier.taille)} · {heure(x.le)}
+                        {x.nouveau ? " · nouveau" : ""}
+                      </small>
+                    </span>
+                  </a>
+                  {effacable && <BoutonEffacer onEffacer={() => void effacer(x)} />}
+                </div>
+              </li>
             );
           // 📷 (lot M2) une photo : sa vignette ; un toucher l'ouvre en grand, puis la figurine la montre
           if (x.genre === "photo")

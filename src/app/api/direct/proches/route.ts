@@ -54,6 +54,11 @@
 //      déposée part — sa durée lue dans le fichier (30 s au plus), ses trois images contrôlées par la modération
 //      (refusée : 422 ; sans service : 503, elle attend), sa vignette ; puis « 🎬 Léa t'a envoyé une vidéo ». Dix par
 //      jour. Le frein : `CLIKME_VIDEOS=0` (404).
+// 📎 LOT S6, LES PDF (`lib/direct/fichier.ts`, `fichier-serveur.ts` ; décidé par le propriétaire le 18 novembre 2026 :
+// seulement des PDF, sans contrôle, entre deux proches qui se sont ajoutés, ouverts en téléchargement) :
+// POST { action: "fichier-depot", cle }   → { seau, chemin, jeton, id } : où déposer son PDF (une adresse signée)
+// POST { action: "fichier", cle, id, nom } → { message } : le PDF déposé part — relu (10 Mo au plus, un vrai PDF :
+//      sinon 413, 422), rangé, puis « 📎 Léa t'a envoyé un PDF ». Vingt par jour. Le frein : `CLIKME_FICHIERS=0` (404).
 // Un proche se désigne toujours par sa clé de profil, jamais par son identifiant.
 import { etagerePeinteOuverte, peindreEtagere } from "@/lib/direct/etagere-peinte-serveur";
 import { NextResponse, after } from "next/server";
@@ -81,6 +86,7 @@ import { envoyerMemeAuProche } from "@/lib/direct/memes-proches-serveur";
 import { apresEcrit, ecritOuvert, ecrireMessage, effacerMessage } from "@/lib/direct/ecrit-serveur";
 import { apresPhoto, depotPhoto, envoyerPhoto, photosOuvertes } from "@/lib/direct/photo-serveur";
 import { apresVideo, depotVideo, envoyerVideo, videosOuvertes } from "@/lib/direct/video-serveur";
+import { apresFichier, depotFichier, envoyerFichier, fichiersOuverts } from "@/lib/direct/fichier-serveur";
 import { effacerEtagere, etagereAllumee, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
 import { ouvrirSalon } from "@/lib/direct/salon-serveur";
@@ -123,7 +129,7 @@ export async function GET(request: Request) {
     // 🎭 (lot S1) une figurine sans ses calques : découpée après la réponse, pour la prochaine ouverture
     for (const id of r.aDecouper ?? []) after(() => calquesDeFigurine(supabase, id).catch(() => null));
     const o = r.ouverture;
-    return NextResponse.json({ ok: true, ouverture: { ...o, fil: { ...o.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes() } } }, { headers: sansCache });
+    return NextResponse.json({ ok: true, ouverture: { ...o, fil: { ...o.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes(), fichiers: fichiersOuverts() } } }, { headers: sansCache });
   }
   const vivant = q.get("vivant");
   if (vivant) {
@@ -146,7 +152,7 @@ export async function GET(request: Request) {
       const avant = Date.now() + maxDuration * 1000 - 20_000;
       after(() => peindreEtagere(supabase, moi.id, avant).catch(() => false));
     }
-    return NextResponse.json({ ok: true, fil: { ...r.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes() } }, { headers: sansCache });
+    return NextResponse.json({ ok: true, fil: { ...r.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes(), fichiers: fichiersOuverts() } }, { headers: sansCache });
   }
   const [vivants, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);
   // 📚 la ligne de chacun, ce que l'étagère en dit (lot E2 : un rappel du jour, un souvenir pas encore vu, une relance)
@@ -213,6 +219,20 @@ export async function POST(request: Request) {
     const a = r.apres;
     after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     if (a) after(() => apresVideo(supabase, moi, a).catch(() => undefined));
+    return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
+  }
+  // 📎 (lot S6) où déposer son PDF ; puis il part (relu : un vrai PDF, 10 Mo au plus) et l'autre est prévenu
+  if (p?.action === "fichier-depot") {
+    const r = await depotFichier(supabase, moi, p.cle);
+    if (!r.jeton) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, seau: r.seau, chemin: r.chemin, jeton: r.jeton, id: r.id }, { headers: sansCache });
+  }
+  if (p?.action === "fichier") {
+    const r = await envoyerFichier(supabase, moi, p.cle, p.id, p.nom);
+    if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    const a = r.apres;
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
+    if (a) after(() => apresFichier(supabase, moi, a).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
   // 🗑️ (lot M1) il efface son message, dans les 24 heures : pour les deux ; ce que l'étagère en avait noté s'en va

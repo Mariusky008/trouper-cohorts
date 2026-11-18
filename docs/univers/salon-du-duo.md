@@ -976,7 +976,7 @@ ni débordement, ni erreur, ni le mot interdit).
   - **ce que l'autre garde, ou ce que leurs figurines notent, s'envole en direct** (relu avec le pouls) :
     « 📌 Sam a gardé · 😂 Le fou rire ».
 - **Pas encore** (lot S6, suite) : ＋ Envoyer — fait en partie, 11.14 ; la télé dans la pièce — faite, 11.15 ; les
-  cadres, 📺 Un clip, 📸 Photo à deux, 🖼️ Accrocher ; garder un mème (avec le lot S5).
+  cadres, 📺 Un clip, 🖼️ Accrocher, 📸 Photo à deux — faits, 11.16 ; garder un mème (avec le lot S5).
 
 **Les essais** : `scripts/essai-salon-garder-route.mjs` (une date samedi, une promesse, une blague dans « Nos fous
 rires », « vos mots », une réponse du modèle qui ne tient pas, déjà gardé, « malade » 422, 404, 403, 401, pas de limite,
@@ -1028,14 +1028,81 @@ saisie ; ni débordement, ni glissement, ni erreur, ni le mot interdit).
   message signalé n'y passe plus, chez celui qui l'a signalé.
 - **Le cadre du salon ne défile jamais** (`overflow: clip`) : un bouton touché dans une bulle ne fait plus glisser
   toute la page.
-- **Pas encore** : 📺 Un clip (🛋️ Ensemble) et sa feuille « Mettre à la télé » ; les réactions qui s'envolent de la
-  télé, « Sam regarde aussi » ; les films (l'affiche « Ce soir ») ; les cadres et 🖼️ Accrocher ; 📸 Photo à deux.
+- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; les films (l'affiche « Ce soir »).
+  (📺 Un clip, les cadres et 📸 Photo à deux : 11.16.)
 
 **Les essais** : `scripts/essai-tele-route.mjs` (la mettre à la télé : une vidéo, chez les deux, le pouls, le vivant ;
 un lien plus récent la remplace ; un ancien clip remis ; Spotify et photo 422, 404, 403, 401 ; signalée) et
 `scripts/navigateur/salon-tele.mjs` (la télé de loin sur l'écran relevé ; une vidéo envoyée, « 📺 La mettre à la
 télé ? », la caméra qui zoome, « ▶ Allumer » qui la lit avec le son, « ↩ La pièce » ; en direct ce que Sam y met ; 📺
 dans 💬 ; toucher la télé de loin ; ni glissement, ni erreur).
+
+### 11.16 🖼️ Les cadres, 🖼️ Accrocher, 📺 Un clip et 📸 Photo à deux (lot S6, quatrième partie — 18 novembre 2026)
+
+- **Les cadres de la pièce** (`emplacements.cadres`, quatre au plus) montrent leurs photos accrochées, posées dans le
+  passe-partout peint ; la nuit et le soir les teintent comme la pièce. Ce qui est accroché est gardé par numéro de
+  cadre (`fils/<paire>/cadres.json` ; `src/lib/direct/cadres.ts`, `cadres-serveur.ts`, `GET`/`POST /api/direct/cadres`) ;
+  une pièce qui a moins de cadres montre les premiers ; une photo signalée n'y est plus, chez celui qui l'a signalée.
+- **« 🖼️ L'accrocher au mur ? »** sous ma bulle quand mon dernier message est une photo (et 🖼️ sur mes photos de 💬) :
+  « 🖼️ Accrochée ! », 🖼️ s'envole de ma figurine jusqu'au cadre — **le premier vide, sinon chacun son tour** (celui
+  accroché depuis le plus longtemps) —, la photo s'y pose, des étincelles. Le pouls bat ; chez l'autre, en direct (le
+  vivant porte `cadres` : quand, par qui), le cadre change : « 🖼️ Sam a accroché une photo ».
+- **Toucher un cadre** : la photo en grand, sa légende, « Accrochée par toi · aujourd'hui », et **« 🖼️ Une autre photo
+  ici »** ; toucher un cadre vide ouvre la feuille.
+- **La feuille de choix** (`src/app/salon/choisir.tsx`, chargée à l'ouverture) : **🖼️ Accrocher** (🛋️ Ensemble) et un
+  cadre vide ouvrent « Accrocher une photo au mur » — « 📷 Une photo de ton téléphone » (elle part comme un envoi du ＋,
+  puis va au mur), « Ou l'une de vos photos » (« Au mur » sur celle du cadre) ; **📺 Un clip** ouvre « Mettre à la
+  télé » — « Colle un lien : YouTube, TikTok, Instagram… » (il part comme un écrit, puis passe à la télé),
+  « 📱 Une vidéo de ton téléphone », « Ou l'un de vos clips » (« À la télé » sur celui qui passe). Les puces
+  n'apparaissent que si la pièce a une télé, des cadres.
+- **📸 Photo à deux** (🛋️ Ensemble, si la pièce a des cadres et que les photos sont ouvertes) : le geste se joue chez les
+  deux (elles se rapprochent, « Cheese ! », le flash et le déclic — `gestes.ts`) ; au moment du flash, **le téléphone
+  compose leur photo** (`photo-a-deux.ts` : la pièce puis chaque calque à sa place, têtes penchées comprises, cadrée sur
+  le duo, 1 200 × 900, les images relues avec CORS) ; elle part comme une photo du ＋ (`depot.ts`, partagé avec
+  `envoyer.tsx` : déposée au seau, vérifiée par le serveur) avec sa légende « Notre photo à deux », et s'accroche au mur
+  (chacun son tour).
+- **🍿 Les films** (`tele.ts` : `SITES_FILMS`, `filmDe` — Netflix, Prime Video, Disney+, Canal+, Allociné, IMDb, Arte,
+  france.tv, Mubi, Max, Apple TV, Paramount+, Crunchyroll) : un lien de film ne passe jamais tout seul à la télé ; sous ma
+  bulle, **« 📺 À la télé ce soir ? »** (et 📺 dans 💬, et collé dans « Mettre à la télé ») : « 🍿 Ce soir, à la télé ! »,
+  la télé montre **son affiche** (l'aperçu du lien ; sinon son titre) avec **« 🍿 Ce soir »** et **« ▶ Ouvrir sur
+  Netflix »** (`sorte: "film"`), chez les deux ; et **« Notre film »** se pose pour les deux dans « À venir », ce jour-là
+  (un dépôt de l'étagère, une fois par jour).
+- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; 🎭 et 🎙️ dans le ＋ (lots S5, S4).
+  (📎 les PDF : 11.17.)
+
+**Les essais** : `scripts/essai-salon-cadres-route.mjs` (accrocher, chez les deux, le pouls, le vivant, remplacer ;
+vidéo et écrit 422, cadre 400, 404, 403, 401 ; signalée) et `scripts/navigateur/salon-cadres.mjs` (les cadres vides sur
+les zones relevées ; un cadre vide ouvre la feuille ; « 🖼️ L'accrocher au mur ? », l'envol, le premier cadre, chez
+Sam ; 🖼️ Accrocher et le cadre vide suivant ; la photo en grand, « Une autre photo ici » ; en direct ; 📺 Un clip, un
+lien collé qui passe à la télé ; 📸 Photo à deux : « Cheese ! », la photo 1 200 × 900 qui n'est pas vide, accrochée
+chacun son tour, le geste chez Sam ; 🖼️ dans 💬 ; ni glissement, ni erreur). Les films : `essai-tele-route.mjs` (un
+lien Netflix ne passe pas tout seul ; mis à la télé, un film, son site, son titre, son affiche) et
+`navigateur/salon-tele.mjs` (« 📺 À la télé ce soir ? », l'affiche « Ce soir », « ▶ Ouvrir sur Netflix », « Notre film »
+dans « À venir »).
+
+### 11.17 📎 Les PDF (lot S6, cinquième partie — 18 novembre 2026)
+
+**Décidé par le propriétaire le 18 novembre 2026** : « seulement des PDF, sans contrôle, entre deux proches qui se sont
+ajoutés, ouverts en téléchargement » (un document ne peut pas être contrôlé comme une photo).
+
+- **Les règles** (`src/lib/direct/fichier.ts`) : un PDF, 10 Mo au plus, vingt par jour ; son nom nettoyé (sans dossier,
+  sans caractère réservé, 80 signes, « .pdf » au bout) et passé aux mots interdits ; la notification « 📎 Léa t'a envoyé
+  un PDF » (et son nom) ; la ligne de « Chez moi » « 📎 Le nom.pdf » ; les figurines ne lisent pas les documents.
+- **Le serveur** (`fichier-serveur.ts`, `POST /api/direct/proches { action: "fichier-depot" | "fichier" }`) : comme une
+  photo, déposé tout droit au seau (une adresse signée), puis relu — **un vrai PDF** (`%PDF-` au début : une image
+  renommée est refusée, 422, et effacée), 10 Mo au plus (413) —, rangé (`fils/<paire>/f/<id>.pdf`), posé dans le fil
+  (`genre: "fichier"`). **Pas de modération** ; seulement entre deux proches qui se sont ajoutés tous les deux. Son
+  adresse signée (une heure) le **télécharge sous son nom** (`Content-Disposition: attachment`) : jamais ouvert dans
+  ClikMe. Effacer son message (24 heures) l'efface ; signalé, l'équipe le voit (« 📎 Un PDF », « Ouvrir le PDF »). Le
+  frein : `CLIKME_FICHIERS=0` (plus de PDF ; ceux qui sont partis restent).
+- **Dans le salon** : une quatrième case dans le ＋, **📎 PDF** (« un document, un billet, une recette ») ; son nom et sa
+  taille, pas de légende, « Envoyer » ; « 📎 Le nom.pdf » dans la bulle ; dans 💬, sa carte (📄, le nom, « PDF · 820 Ko ·
+  Télécharger »). L'ancien écran de conversation montre la même carte.
+
+**Les essais** : `scripts/essai-fichiers-route.mjs` (les portes ; un PDF déposé, son nom nettoyé, sa taille, rangé, son
+adresse qui télécharge ; chez Sam, « Chez moi », la notification ; une image renommée 422, plus de 10 Mo 413, jamais
+déposé 400, celui d'un autre 400, un mot interdit 422, un nom sans « .pdf » ; signalé, effacé) et
+`scripts/navigateur/salon-envoyer.mjs` (la case 📎, l'aperçu, la bulle, la carte dans 💬, un faux PDF refusé).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

@@ -84,7 +84,9 @@ export type GesteFil = { id: string; moi: boolean; le: string; type: "panneau" |
  */
 /** 📺 (lot S6) ce que l'un des deux a mis à la télé lui-même : le message, quand, par qui (le salon relit alors le programme). */
 export type TeleVivante = { message: string; le: string; par: "moi" | "lui" };
-export type Vivant = { enregistre: boolean; gestes: GesteFil[]; dernier: number; apartes: AparteVue[]; etagere?: EtagereScene; tele?: TeleVivante };
+/** 🖼️ (lot S6) la dernière photo accrochée au mur : quand, par qui (le salon relit alors les cadres). */
+export type CadresVivants = { le: string; par: "moi" | "lui" };
+export type Vivant = { enregistre: boolean; gestes: GesteFil[]; dernier: number; apartes: AparteVue[]; etagere?: EtagereScene; tele?: TeleVivante; cadres?: CadresVivants };
 
 /**
  * 🎭 L'APARTÉ DES DEUX FIGURINES (lot R4b) : après un vrai échange et deux minutes de silence, elles se tournent l'une

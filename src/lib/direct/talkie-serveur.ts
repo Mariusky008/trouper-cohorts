@@ -62,6 +62,7 @@ import { humeurValide } from "./rituel";
 import { STATS_MESSAGES_VIDES, dureeDeLecture, ligneDeLEcrit, texteDeBulle, type StatsJourMessages } from "./ecrit";
 import { PHOTO, lignePhoto } from "./photo";
 import { VIDEO, ligneVideo } from "./video";
+import { ligneFichier } from "./fichier";
 import {
   LIENS_PAR_JOUR,
   LIEN_JOURS,
@@ -127,7 +128,7 @@ export type FicheMessage = Partial<Fiche> & {
   id?: string;
   de?: string;
   le?: string;
-  genre?: "ecrit" | "photo" | "video";
+  genre?: "ecrit" | "photo" | "video" | "fichier";
   texte?: string;
   tete?: Sentiment | null;
   lien?: { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" };
@@ -135,7 +136,7 @@ export type FicheMessage = Partial<Fiche> & {
    * 📷 (lot M2) la photo, dans le seau (`fils/<paire>/p/<id>.webp`), et ses dimensions ; sa légende. 🎬 (lot M3) la
    * vidéo (`fils/<paire>/v/<id>.<ext>`), sa vignette (`…/v/<id>.webp`), sa durée (s), son format.
    */
-  media?: { chemin: string; l: number; h: number; vignette?: string; duree?: number; type?: string };
+  media?: { chemin: string; l: number; h: number; vignette?: string; duree?: number; type?: string; nom?: string; taille?: number };
   legende?: string;
 };
 
@@ -160,6 +161,32 @@ export async function vueDeLaVideo(supabase: Supabase, f: FicheMessage, moi: str
     genre: "video",
     ...(legende ? { texte: legende } : {}),
     video: { url, vignette, l: Number(f.media?.l) || 0, h: Number(f.media?.h) || 0, duree: Number(f.media?.duree) || 0 },
+    ...(nouveau ? { nouveau: true } : {}),
+  };
+}
+
+/**
+ * 📎 (lot S6) UN PDF, TEL QU'IL SE VOIT : son adresse signée (une heure) qui le TÉLÉCHARGE sous son nom (jamais lu dans
+ * ClikMe), son nom, sa taille ; une bulle « 📎 Le nom.pdf ».
+ */
+export async function vueDuFichier(supabase: Supabase, f: FicheMessage, moi: string, nouveau = false): Promise<MessageFil | null> {
+  const chemin = s(f.media?.chemin);
+  const nom = s(f.media?.nom) || "Document.pdf";
+  if (!s(f.id) || !chemin) return null;
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).createSignedUrl(chemin, 3600, { download: nom });
+  const url = s(data?.signedUrl);
+  if (!url) return null;
+  const dit = ligneFichier(nom);
+  return {
+    id: s(f.id),
+    moi: f.de === moi,
+    le: s(f.le),
+    duree: 3,
+    son: "",
+    repliques: [{ de: 0, a: 3, texte: texteDeBulle(dit), tete: sentimentValide(f.tete) ?? null }],
+    genre: "fichier",
+    texte: dit,
+    fichier: { url, nom, taille: Number(f.media?.taille) || 0 },
     ...(nouveau ? { nouveau: true } : {}),
   };
 }
@@ -403,6 +430,8 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
                 ? { texte: lignePhoto(m.legende), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, photo: true }
                 : m.genre === "video"
                   ? { texte: ligneVideo(m.legende), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, video: true }
+                : m.genre === "fichier"
+                  ? { texte: ligneFichier(m.media?.nom), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, fichier: true }
                 : { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
         }
         // 🎭 (lot 4) les mèmes envoyés entre eux : ils comptent dans les non lus ; le dernier, s'il est plus récent
@@ -484,6 +513,8 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
         if (f.genre === "photo") return vueDeLaPhoto(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
         // 🎬 (lot M3) une vidéo, à son heure
         if (f.genre === "video") return vueDeLaVideo(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
+        // 📎 (lot S6) un PDF, à son heure
+        if (f.genre === "fichier") return vueDuFichier(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
         if (!f.son) return null;
         const son = await signer(supabase, s(f.son), 3600);
         if (!son) return null;
@@ -916,7 +947,7 @@ export async function signalerParole(supabase: Supabase, moi: Habitant, cle: unk
 
 // ─── 🚩 les messages signalés, pour l'équipe (lot M2 : une photo aussi) ─────────────────────────────
 /** Un message signalé, tel que l'équipe le voit (`/admin/humain/figurines-clients`) : ce qui a été envoyé, par qui, et qui l'a signalé. */
-export type MessageSignale = { id: string; genre: "vocal" | "ecrit" | "photo" | "video"; de: string; par: string; le: string; texte: string; son?: string; photo?: string; video?: string };
+export type MessageSignale = { id: string; genre: "vocal" | "ecrit" | "photo" | "video" | "fichier"; de: string; par: string; le: string; texte: string; son?: string; photo?: string; video?: string; fichier?: string };
 const cheminSignalement = (id: string) => `moderation/paroles/${id}.json`;
 /** (le chemin d'un message, tel que le signalement le garde : jamais autre chose qu'un message d'un fil) */
 const cheminDeMessage = (x: unknown) => (typeof x === "string" && /^fils\/[0-9a-f-]+_[0-9a-f-]+\/m\/\d{13}-[0-9a-f]{8}-[a-z0-9]{12}\.json$/.test(x) ? x : null);
@@ -932,14 +963,15 @@ export async function messagesSignales(supabase: Supabase): Promise<MessageSigna
       if (!chemin) return null;
       const f = await lireJson<FicheMessage>(supabase, chemin);
       if (!f.id) return null;
-      const genre: MessageSignale["genre"] = f.genre === "ecrit" ? "ecrit" : f.genre === "photo" ? "photo" : f.genre === "video" ? "video" : "vocal";
-      const [son, photo, video] = await Promise.all([
+      const genre: MessageSignale["genre"] = f.genre === "ecrit" ? "ecrit" : f.genre === "photo" ? "photo" : f.genre === "video" ? "video" : f.genre === "fichier" ? "fichier" : "vocal";
+      const [son, photo, video, fichier] = await Promise.all([
         genre === "vocal" && f.son ? signer(supabase, s(f.son), 3600) : Promise.resolve(""),
         genre === "photo" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
         genre === "video" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
+        genre === "fichier" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
       ]);
-      const texte = genre === "ecrit" ? s(f.texte) : genre === "photo" || genre === "video" ? s(f.legende) : texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
-      return { id: s(f.id), genre, de: s(f.de), par: s(sig.par), le: s(sig.le), texte, ...(son ? { son } : {}), ...(photo ? { photo } : {}), ...(video ? { video } : {}) };
+      const texte = genre === "ecrit" ? s(f.texte) : genre === "photo" || genre === "video" ? s(f.legende) : genre === "fichier" ? s(f.media?.nom) : texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
+      return { id: s(f.id), genre, de: s(f.de), par: s(sig.par), le: s(sig.le), texte, ...(son ? { son } : {}), ...(photo ? { photo } : {}), ...(video ? { video } : {}), ...(fichier ? { fichier } : {}) };
     }),
   );
   const l = vus.filter((x): x is MessageSignale => x !== null);
