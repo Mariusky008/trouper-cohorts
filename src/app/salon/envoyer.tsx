@@ -24,11 +24,30 @@ async function demander<T>(corps: Record<string, unknown>): Promise<{ statut: nu
   return { statut: r.status, j: (await r.json().catch(() => ({}))) as Reponse<T> };
 }
 
-type Choisi = { sorte: "photo"; fichier: File } | { sorte: "video"; fichier: File };
+export type Choisi = { sorte: "photo"; fichier: File } | { sorte: "video"; fichier: File };
 type Etat = { quoi: "lecture" } | { quoi: "prete" } | { quoi: "envoi"; part?: number } | { quoi: "verification" } | { quoi: "erreur"; texte: string; reessayer?: boolean };
 
-export default function FeuilleEnvoi({ cle, prenom, photos, videos, onFermer, onEnvoye, onLien }: { cle: string; prenom: string; photos: boolean; videos: boolean; onFermer: () => void; onEnvoye: (m: MessageFil) => void; onLien: () => void }) {
-  const [choisi, setChoisi] = useState<Choisi | null>(null);
+export default function FeuilleEnvoi({
+  cle,
+  prenom,
+  photos,
+  videos,
+  depart,
+  onFermer,
+  onEnvoye,
+  onLien,
+}: {
+  cle: string;
+  prenom: string;
+  photos: boolean;
+  videos: boolean;
+  /** (lot S6) une pièce déjà choisie (« 📷 Une photo de ton téléphone » pour le mur, « 📱 Une vidéo » pour la télé) */
+  depart?: Choisi;
+  onFermer: () => void;
+  onEnvoye: (m: MessageFil) => void;
+  onLien: () => void;
+}) {
+  const [choisi, setChoisi] = useState<Choisi | null>(depart ?? null);
   const [etat, setEtat] = useState<Etat>({ quoi: "lecture" });
   const [legende, setLegende] = useState("");
   const [apercu, setApercu] = useState("");

@@ -30,7 +30,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { creerScene } from "./moteur";
+import { bez, creerScene, ease } from "./moteur";
 import "./mises-en-scene";
 import { annulerObjet, confierObjet } from "./gestes";
 import { installerChat, type ChatDuSalon, type EvenementChat } from "./chat";
@@ -43,6 +43,8 @@ const FeuilleEtagere = dynamic(() => import("./etagere-feuille"), { ssr: false }
 const FeuilleEnvoi = dynamic(() => import("./envoyer"), { ssr: false });
 /** 📺 La télé de la pièce (lot S6) : le morceau autonome (`univers/tele-duo.tsx`), posé sur l'écran relevé. */
 const TeleDuo = dynamic(() => import("@/app/univers/tele-duo").then((m) => m.TeleDuo), { ssr: false });
+/** 🖼️📺 « Accrocher une photo au mur » / « Mettre à la télé » (lot S6) : chargée seulement quand on l'ouvre. */
+const FeuilleChoisir = dynamic(() => import("./choisir"), { ssr: false });
 /** Le message qui passe à la télé (un lien, une vidéo), s'il y en a un. */
 const messageALaTele = (p: ProgrammeTele | undefined) => (p && (p.sorte === "youtube" || p.sorte === "ouvrir" || p.sorte === "video") ? p.message : undefined);
 /** Le dernier lien vidéo (YouTube, TikTok, Instagram) de la conversation : un nouveau, et la télé relit son programme. */
@@ -53,6 +55,9 @@ import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePiec
 import { gesteDuSalon, objetDuGeste, REACTIONS, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
 import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
 import { PHRASES_TELE, passeALaTele, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
+import { CADRES_MAX, PHRASES_CADRES, cadreLibre, ditAccrochee, type CadreVu } from "@/lib/direct/cadres";
+import type { ModeChoix } from "./choisir";
+import type { Choisi } from "./envoyer";
 import { prochainRendezVous } from "./bulles";
 import { texteDuMessage, type Fil, type MemeFil, type MessageFil } from "@/lib/direct/talkie";
 
@@ -105,8 +110,11 @@ const nomDePiece = (p: PieceDuo) => {
 };
 
 // ─── 🛋️ LES GESTES (lot S3) ───
-/** Les puces de la barre : 📺 Un clip, 📸 Photo à deux et 🖼️ Accrocher viennent avec la télé et les cadres (lot S6). */
-const PUCES_DU_SALON = PUCES_GESTES.filter((p) => p.cle !== "clip" && p.cle !== "selfie" && p.cle !== "photo");
+/**
+ * Les puces de la barre : 📺 Un clip et 🖼️ Accrocher ouvrent la feuille de choix (lot S6 : la télé, les cadres — si la
+ * pièce en a) ; 📸 Photo à deux viendra avec la photo à deux.
+ */
+const PUCES_DU_SALON = PUCES_GESTES.filter((p) => p.cle !== "selfie");
 type Onglet = "attentions" | "ensemble";
 type Barre = { onglet: Onglet; replie: boolean };
 const BARRE = "salon:barre";
@@ -233,7 +241,7 @@ function appuiLong(id: string | undefined, faire: (id: string) => void) {
 }
 
 /** Un message dans 💬 Messagerie (sous lui, les réactions ; un appui long sur un des siens : y réagir). */
-function MessageDuFil({ m, prenom, reactions = [], surReagir, garde, surGarder, surTele }: { m: MessageFil; prenom: string; reactions?: GesteFil[]; surReagir?: (id: string) => void; garde?: boolean; surGarder?: () => void; surTele?: () => void }) {
+function MessageDuFil({ m, prenom, reactions = [], surReagir, garde, surGarder, surTele, surAccrocher }: { m: MessageFil; prenom: string; reactions?: GesteFil[]; surReagir?: (id: string) => void; garde?: boolean; surGarder?: () => void; surTele?: () => void; surAccrocher?: () => void }) {
   return (
     <div className={`sd-msg ${m.moi ? "moi" : "autre"}`} data-message={m.id} {...(!m.moi && surReagir ? appuiLong(m.id, surReagir) : {})}>
       {m.genre === "ecrit" ? (
@@ -267,6 +275,11 @@ function MessageDuFil({ m, prenom, reactions = [], surReagir, garde, surGarder, 
         {surTele && (
           <button type="button" className="sd-tele-fil" data-tele-mettre={m.id} onClick={surTele} aria-label={PHRASES_TELE.mettre}>
             📺
+          </button>
+        )}
+        {surAccrocher && (
+          <button type="button" className="sd-tele-fil" data-accrocher={m.id} onClick={surAccrocher} aria-label={PHRASES_CADRES.accrocher}>
+            🖼️
           </button>
         )}
       </small>
@@ -353,7 +366,18 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   // 📺 (lot S6) la télé de la pièce : ce qu'elle passe, la couche où elle se pose, la caméra près d'elle ; ce que le pouls
   // en a dit (le dernier « mis à la télé »), le dernier lien vu
   const [tele, setTele] = useState<{ programme: ProgrammeTele; secours: ClipSecours[] } | null>(null);
-  const [teleHote, setTeleHote] = useState<HTMLElement | null>(null);
+  const [coucheHote, setCoucheHote] = useState<HTMLElement | null>(null);
+  // 🖼️ (lot S6) leurs photos au mur ; celle qu'on regarde en grand ; celle qui vient d'y arriver ; la feuille de choix
+  // (le mur, la télé) et la pièce du téléphone choisie de là ; ce que le pouls en a dit
+  const [cadres, setCadres] = useState<CadreVu[]>([]);
+  const [cadreGrand, setCadreGrand] = useState<number | null>(null);
+  const [cadrePose, setCadrePose] = useState<{ cadre: number; n: number } | null>(null);
+  const [aChoisir, setAChoisir] = useState<{ mode: ModeChoix; cadre?: number } | null>(null);
+  const [depart, setDepart] = useState<{ piece: Choisi; puis: { mode: ModeChoix; cadre?: number } } | null>(null);
+  const cadresRef = useRef<CadreVu[]>([]);
+  const cadresVus = useRef("");
+  const relireCadresRef = useRef<(marquer?: boolean) => void>(() => undefined);
+  const recevoirCadresRef = useRef<(c: Vivant["cadres"]) => void>(() => undefined);
   const [teleProche, setTeleProche] = useState(false);
   const teleVue = useRef("");
   const lienVu = useRef("");
@@ -436,7 +460,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     const maPlace = sceneVue.places[0];
     chat.current = ch && maPlace ? installerChat(s, ch, { place: maPlace, ...(sceneVue.emplacements?.chat ? { coin: sceneVue.emplacements.chat } : {}) }) : null;
     // (📺 la télé, si la pièce en a une : posée dans la couche de derrière, sur son écran relevé)
-    const rafTele = sceneVue.emplacements?.tele ? requestAnimationFrame(() => setTeleHote(s.couche("derriere"))) : 0;
+    // (🖼️ et ses cadres, s'il en a : la même couche)
+    const rafTele = sceneVue.emplacements?.tele || sceneVue.emplacements?.cadres?.length ? requestAnimationFrame(() => setCoucheHote(s.couche("derriere"))) : 0;
     // (une pièce de plus : s'il n'est pas là et que l'arrivée est passée, sa figurine somnole déjà)
     if (!laRef.current && arriveeFaiteRef.current) s.figurine("autre").endormir();
     try {
@@ -448,7 +473,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     const cetteEtagere = etagere.current;
     return () => {
       cancelAnimationFrame(rafTele);
-      setTeleHote(null);
+      setCoucheHote(null);
       setTeleProche(false);
       cetteEtagere?.detruire();
       if (etagere.current === cetteEtagere) etagere.current = null;
@@ -592,6 +617,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         recevoirRef.current(jv.vivant.gestes);
         recevoirSouvenirsRef.current(jv.vivant.etagere?.objets ?? []);
         recevoirTeleRef.current(jv.vivant.tele);
+        recevoirCadresRef.current(jv.vivant.cadres);
       }
       const j = r?.ok ? ((await r.json().catch(() => null)) as { fil?: Fil } | null) : null;
       const f = j?.fil;
@@ -722,6 +748,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     recevoirRef.current = recevoirGestes;
     recevoirSouvenirsRef.current = recevoirSouvenirs;
     recevoirTeleRef.current = recevoirTele;
+    recevoirCadresRef.current = recevoirCadres;
   });
   useEffect(() => {
     flammeCourante.current = flamme;
@@ -741,11 +768,28 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     teleVue.current = pret.ouverture.vivant?.tele?.le ?? "";
     lienVu.current = dernierLienDe(pret.ouverture.fil.messages);
     void lire();
+    // 🖼️ leurs photos au mur (celle qui change, si `marquer`, s'y pose)
+    const lireCadres = async (marquer = false) => {
+      const r = await fetch(`/api/direct/cadres?avec=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
+      const j = r?.ok ? ((await r.json().catch(() => null)) as { cadres?: CadreVu[] } | null) : null;
+      if (fini || !j?.cadres) return;
+      const avant = cadresRef.current;
+      const change = marquer ? j.cadres.find((c) => !avant.some((x) => x.cadre === c.cadre && x.message === c.message)) : undefined;
+      setCadres(j.cadres);
+      if (change) setCadrePose({ cadre: change.cadre, n: Date.now() });
+    };
+    relireCadresRef.current = (marquer) => void lireCadres(marquer);
+    cadresVus.current = pret.ouverture.vivant?.cadres?.le ?? "";
+    void lireCadres();
     return () => {
       fini = true;
       relireTeleRef.current = () => undefined;
+      relireCadresRef.current = () => undefined;
     };
   }, [pret, cle]);
+  useEffect(() => {
+    cadresRef.current = cadres;
+  }, [cadres]);
   const dernierLien = dernierLienDe(messages);
   useEffect(() => {
     if (!dernierLien || dernierLien === lienVu.current) return;
@@ -976,6 +1020,59 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     montrer(PHRASES_TELE.misePar(prenomRef.current || "…"), 3000);
   }
 
+  // ─── 🖼️ LES CADRES (lot S6) ───
+  const zonesCadres = (sceneVue?.emplacements?.cadres ?? []).slice(0, CADRES_MAX);
+  /**
+   * « 🖼️ L'accrocher au mur ? » : la photo s'envole de ma figurine jusqu'au cadre (le premier vide ; sinon, chacun son
+   * tour), chez les deux.
+   */
+  async function accrocherPhoto(id: string, cadre?: number) {
+    if (!zonesCadres.length) return;
+    const i = cadre ?? cadreLibre(cadres, zonesCadres.length);
+    if (cadres.some((c) => c.cadre === i && c.message === id)) return montrer(PHRASES_CADRES.dejaLa, 2000);
+    setAChoisir(null);
+    setFeuille(false);
+    setCadreGrand(null);
+    const r = await fetch("/api/direct/cadres", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ avec: cle, message: id, cadre: i }) }).catch(() => null);
+    const j = r ? ((await r.json().catch(() => null)) as { cadres?: CadreVu[]; error?: string } | null) : null;
+    if (!r?.ok || !j?.cadres) return montrer(j?.error || "Le mur ne répond pas. Réessaie.");
+    const ici = j.cadres.find((c) => c.cadre === i);
+    if (ici) cadresVus.current = ici.le;
+    // (l'envol : 🖼️ de ma figurine au cadre)
+    const s = scene.current;
+    const z = zonesCadres[i];
+    if (s && z && !s.reduit) {
+      const fin = s.fx.px({ x: z[0] + z[2] / 2, y: z[1] + z[3] / 2 });
+      const p0 = s.fx.px(s.repere("moi", "haut"));
+      const p1 = { x: (p0.x + fin.x) / 2, y: Math.min(p0.y, fin.y) - s.fx.px({ x: 0, y: 0.1 }).y };
+      const U = s.fx.u;
+      await s.fx.acteur({ e: "🖼️", duree: 1, pos: (u) => bez(p0, p1, fin, ease.io(u)), taille: (u) => U() * (5 - 1.5 * u), rot: (u) => Math.sin(u * Math.PI * 2) * 0.25 }).catch(() => undefined);
+    }
+    setCadres(j.cadres);
+    setCadrePose({ cadre: i, n: Date.now() });
+    if (s && z) s.fx.etincelles({ x: z[0] + z[2] / 2, y: z[1] + z[3] / 2 }, 8, { t: 0.8 });
+    montrer(PHRASES_CADRES.accrochee, 2200);
+  }
+  /** 💓 Le pouls dit qu'une photo a été accrochée : on relit les cadres (elle s'y pose) ; si c'est lui, on le dit. */
+  function recevoirCadres(c: Vivant["cadres"]) {
+    if (!c || c.le === cadresVus.current) return;
+    cadresVus.current = c.le;
+    relireCadresRef.current(true);
+    if (c.par === "lui") montrer(PHRASES_CADRES.accrocheePar(prenomRef.current || "…"), 3000);
+  }
+  /** Un lien collé dans « Mettre à la télé » : il part comme un écrit, puis passe à la télé. */
+  async function lienALaTele(url: string) {
+    setAChoisir(null);
+    const r = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "ecrire", cle, texte: url }) }).catch(() => null);
+    const j = r ? ((await r.json().catch(() => null)) as { message?: MessageFil; error?: string } | null) : null;
+    if (!r?.ok || !j?.message) return montrer(j?.error ? `Pas envoyé : ${j.error}` : "Pas envoyé : réessaie.");
+    const m = j.message;
+    lienVu.current = m.id;
+    partageEnvoye(m);
+    if (passeALaTele(m)) await mettreALaTele(m.id);
+    else montrer(PHRASES_TELE.pasALaTele, 2600);
+  }
+
   /** ＋ Une photo, une vidéo partie : dans le fil, ma figurine la dit, la sienne réagit. */
   function partageEnvoye(m: MessageFil) {
     setEnvoiOuvert(false);
@@ -1189,7 +1286,34 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         onPointerDown={() => passer.current?.()}
       >
         <div ref={ici} className="sd-ici" />
-        {teleHote && tele && zoneTele && createPortal(<TeleDuo programme={tele.programme} secours={tele.secours} zone={zoneTele} coins={sceneVue?.emplacements?.teleCoins} proche={teleProche} onToucher={() => approcherTele()} />, teleHote)}
+        {coucheHote && tele && zoneTele && createPortal(<TeleDuo programme={tele.programme} secours={tele.secours} zone={zoneTele} coins={sceneVue?.emplacements?.teleCoins} proche={teleProche} onToucher={() => approcherTele()} />, coucheHote)}
+        {coucheHote &&
+          zonesCadres.length > 0 &&
+          createPortal(
+            <>
+              {zonesCadres.map((z, i) => {
+                const c = cadres.find((x) => x.cadre === i);
+                return (
+                  <button
+                    key={`${i}-${cadrePose?.cadre === i ? cadrePose.n : 0}`}
+                    type="button"
+                    className={`sc-cadre${c ? " plein" : ""}${cadrePose?.cadre === i ? " pose" : ""}`}
+                    data-cadre={i}
+                    data-photo={c?.message ?? ""}
+                    style={{ left: `${z[0] * 100}%`, top: `${z[1] * 100}%`, width: `${z[2] * 100}%`, height: `${z[3] * 100}%` }}
+                    aria-label={c ? `La photo du cadre ${i + 1}` : "Un cadre vide : y accrocher une photo"}
+                    onClick={() => (c ? setCadreGrand(i) : setAChoisir({ mode: "mur", cadre: i }))}
+                  >
+                    {c && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.url} alt="" />
+                    )}
+                  </button>
+                );
+              })}
+            </>,
+            coucheHote,
+          )}
         {teleProche && (
           <button type="button" className="sd-recul" data-recul onClick={() => approcherTele(false)}>
             ↩ La pièce
@@ -1208,6 +1332,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                   {texteDeBulle(monDernier)}
                   {reagissable(monDernier.id) && (
                     <button type="button" className={`sd-garder${gardes.has(monDernier.id) ? " fait" : ""}`} data-garder={monDernier.id} aria-label={gardes.has(monDernier.id) ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} onClick={() => void garder(monDernier.id, true)} />
+                  )}
+                  {zonesCadres.length > 0 && reagissable(monDernier.id) && monDernier.genre === "photo" && !cadres.some((c) => c.message === monDernier.id) && (
+                    <button type="button" className="sd-mettre-tele sd-accrocher" data-accrocher={monDernier.id} onClick={() => void accrocherPhoto(monDernier.id)}>
+                      {PHRASES_CADRES.accrocher}
+                    </button>
                   )}
                   {zoneTele && reagissable(monDernier.id) && passeALaTele(monDernier) && messageALaTele(tele?.programme) !== monDernier.id && (
                     <button type="button" className="sd-mettre-tele" data-tele-mettre={monDernier.id} onClick={() => void mettreALaTele(monDernier.id)}>
@@ -1338,8 +1467,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           </div>
           {!barre.replie && (
             <div className="sd-gestes" aria-label="Les gestes" data-gestes={barre.onglet}>
-              {PUCES_DU_SALON.filter((p) => p.cat === barre.onglet).map((p) => (
-                <button key={p.cle} type="button" className="sd-geste" data-geste={p.cle} disabled={!fil} onClick={() => void faireGeste(p)}>
+              {PUCES_DU_SALON.filter((p) => p.cat === barre.onglet && (p.cle !== "clip" || zoneTele) && (p.cle !== "photo" || zonesCadres.length > 0)).map((p) => (
+                <button key={p.cle} type="button" className="sd-geste" data-geste={p.cle} disabled={!fil} onClick={() => (p.cle === "clip" ? setAChoisir({ mode: "tele" }) : p.cle === "photo" ? setAChoisir({ mode: "mur" }) : void faireGeste(p))}>
                   <span className="e">{p.e}</span>
                   <span>{p.nom}</span>
                 </button>
@@ -1424,7 +1553,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 <div className="sd-jour">{j.jour}</div>
                 {j.lignes.map((l) =>
                   l.sorte === "message" ? (
-                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && passeALaTele(l.m) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} />
+                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && passeALaTele(l.m) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} {...(zonesCadres.length > 0 && l.m.moi && reagissable(l.m.id) && l.m.genre === "photo" ? { surAccrocher: () => void accrocherPhoto(l.m.id) } : {})} />
                   ) : l.sorte === "geste" ? (
                     <div key={`geste-${l.g.id}`} className="sd-evt" data-geste-fil={l.g.cle}>
                       <span>{phraseDuGeste(l.g, l.g.moi, prenom)}</span>
@@ -1446,14 +1575,72 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           )}
         </div>
       </section>
-      {envoiOuvert && fil && (
+      {aChoisir && fil && (
+        <FeuilleChoisir
+          mode={aChoisir.mode}
+          pieces={(aChoisir.mode === "mur" ? messages.filter((m) => m.genre === "photo" && reagissable(m.id)) : messages.filter((m) => reagissable(m.id) && passeALaTele(m))).slice().reverse()}
+          telephone={aChoisir.mode === "mur" ? fil.photos !== false : fil.videos !== false}
+          enCours={aChoisir.mode === "mur" ? (aChoisir.cadre !== undefined ? cadres.find((c) => c.cadre === aChoisir.cadre)?.message : undefined) : messageALaTele(tele?.programme)}
+          onChoisi={(id) => (aChoisir.mode === "mur" ? void accrocherPhoto(id, aChoisir.cadre) : (setAChoisir(null), void mettreALaTele(id)))}
+          onFichier={(f) => {
+            setDepart({ piece: { sorte: aChoisir.mode === "mur" ? "photo" : "video", fichier: f }, puis: aChoisir });
+            setAChoisir(null);
+          }}
+          onLien={(url) => void lienALaTele(url)}
+          onFermer={() => setAChoisir(null)}
+        />
+      )}
+      {cadreGrand !== null &&
+        (() => {
+          const c = cadres.find((x) => x.cadre === cadreGrand);
+          if (!c) return null;
+          return (
+            <>
+              <div className="sd-voile vu" onClick={() => setCadreGrand(null)} aria-hidden />
+              <section className="sd-cadre-grand" role="dialog" aria-label="La photo au mur" data-cadre-grand={c.cadre}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.url} alt={c.legende || "La photo au mur"} />
+                {c.legende && <p>{c.legende}</p>}
+                <small>{ditAccrochee(c, prenom)}</small>
+                <span className="sd-cadre-boutons">
+                  <button type="button" onClick={() => setCadreGrand(null)}>
+                    Fermer
+                  </button>
+                  <button
+                    type="button"
+                    className="oui"
+                    data-autre
+                    onClick={() => {
+                      setCadreGrand(null);
+                      setAChoisir({ mode: "mur", cadre: c.cadre });
+                    }}
+                  >
+                    {PHRASES_CADRES.autre}
+                  </button>
+                </span>
+              </section>
+            </>
+          );
+        })()}
+      {(envoiOuvert || depart) && fil && (
         <FeuilleEnvoi
+          key={depart ? `depart-${depart.piece.fichier.name}-${depart.piece.fichier.size}` : "plus"}
           cle={cle}
           prenom={prenom}
           photos={fil.photos !== false}
           videos={fil.videos !== false}
-          onFermer={() => setEnvoiOuvert(false)}
-          onEnvoye={partageEnvoye}
+          {...(depart ? { depart: depart.piece } : {})}
+          onFermer={() => {
+            setEnvoiOuvert(false);
+            setDepart(null);
+          }}
+          onEnvoye={(m) => {
+            const puis = depart?.puis;
+            setDepart(null);
+            partageEnvoye(m);
+            if (puis?.mode === "mur") void accrocherPhoto(m.id, puis.cadre);
+            else if (puis?.mode === "tele") void mettreALaTele(m.id);
+          }}
           onLien={() => {
             setEnvoiOuvert(false);
             setIndiceLien(true);
@@ -1530,6 +1717,21 @@ export const STYLES_SALON = `
 .sd-bulle.ia{background:#fff4dc;box-shadow:0 0 0 1.5px #e9b44c,0 6px 16px rgba(30,6,24,.35)}
 .sd-mettre-tele{display:block!important;margin:6px 0 0;padding:4px 10px!important;border-radius:12px;background:#2a1424!important;color:#ffd99a!important;font:700 12px var(--app)!important;pointer-events:auto;white-space:nowrap}
 .sd-mettre-tele:active{transform:scale(.95)}
+.sc-cadre{position:absolute;pointer-events:auto;cursor:pointer}
+.sc-cadre img{position:absolute;left:11%;top:11%;width:78%;height:78%;object-fit:cover;border-radius:1px;box-shadow:0 0 0 1px rgba(0,0,0,.28),inset 0 0 8px rgba(0,0,0,.3)}
+.sc-cadre.pose img{animation:sc-accroche .8s cubic-bezier(.2,1.5,.4,1)}
+@keyframes sc-accroche{0%{transform:scale(.4) rotate(-8deg);opacity:0}100%{transform:none;opacity:1}}
+.sc[data-reduit] .sc-cadre.pose img{animation:none}
+.sc-stage[data-moment="nuit"] .sc-cadre img{filter:brightness(.74) saturate(.82)}
+.sc-stage[data-moment="soir"] .sc-cadre img{filter:sepia(.16) saturate(1.12) brightness(.97)}
+.sd-cadre-grand{position:absolute;z-index:22;left:16px;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;border-radius:22px;background:#24101f;box-shadow:0 18px 50px rgba(0,0,0,.55);animation:sd-grand .3s cubic-bezier(.2,1.2,.4,1) both}
+@keyframes sd-grand{0%{transform:translateY(-50%) scale(.85);opacity:0}100%{transform:translateY(-50%);opacity:1}}
+.sd-cadre-grand img{display:block;max-width:100%;max-height:56vh;border-radius:6px;box-shadow:0 0 0 6px #f6efe2,0 6px 20px rgba(0,0,0,.4);margin:6px 0 4px}
+.sd-cadre-grand p{margin:0;font:600 14.5px/1.35 var(--app);text-align:center}
+.sd-cadre-grand small{color:var(--doux);font:600 12.5px var(--app)}
+.sd-cadre-boutons{display:flex;gap:8px;margin-top:4px}
+.sd-cadre-boutons button{height:40px;padding:0 16px!important;border-radius:20px;background:rgba(255,255,255,.08)!important;font:700 13.5px var(--app)!important}
+.sd-cadre-boutons button.oui{background:var(--rose)!important;color:#fff!important}
 .sd-tele-fil{margin-left:6px;font:400 13px var(--emoji)!important;vertical-align:middle}
 .sd-recul{position:absolute;z-index:6;top:10px;left:10px;height:34px;padding:0 13px!important;border-radius:17px;background:rgba(24,7,20,.78)!important;color:var(--texte)!important;font:700 13px var(--app)!important;box-shadow:0 2px 10px rgba(0,0,0,.35)}
 .sc-couche .tv{pointer-events:auto}
