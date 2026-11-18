@@ -3,8 +3,8 @@
 /**
  * ＋ ENVOYER, DEPUIS LE SALON (`docs/univers/salon-du-duo.md`, section 4.8 ; le lot S6) — la feuille « Envoyer à Sam » :
  * 📷 Photo (« elle peut aller au mur »), 🎬 Vidéo (« elle peut passer à la télé »), 🔗 Lien (YouTube, une chanson, un
- * site : la saisie s'ouvre, l'aperçu du lien se fait comme pour un écrit). Le mème et le vocal viennent avec leurs lots
- * (S5, S4).
+ * site : la saisie s'ouvre, l'aperçu du lien se fait comme pour un écrit), 📎 PDF ; 🎙️ Un vocal (lot S4) ferme la feuille
+ * et rappelle qu'on garde le micro appuyé. Le mème vient avec son lot (S5).
  *
  * Une photo est réduite et redessinée dans le téléphone (aucune métadonnée ne part, `photoPourEnvoi`) ; une vidéo est
  * lue dans le téléphone (sa durée, trois images pour la vérification, `videoPourEnvoi`). Puis : l'adresse de dépôt
@@ -34,6 +34,7 @@ export default function FeuilleEnvoi({
   onFermer,
   onEnvoye,
   onLien,
+  onVocal,
 }: {
   cle: string;
   prenom: string;
@@ -46,6 +47,8 @@ export default function FeuilleEnvoi({
   onFermer: () => void;
   onEnvoye: (m: MessageFil) => void;
   onLien: () => void;
+  /** 🎙️ (lot S4) « Un vocal » : rappeler qu'on garde le micro appuyé */
+  onVocal?: () => void;
 }) {
   const [choisi, setChoisi] = useState<Choisi | null>(depart ?? null);
   const [etat, setEtat] = useState<Etat>({ quoi: "lecture" });
@@ -172,6 +175,14 @@ export default function FeuilleEnvoi({
         </button>
         {!choisi ? (
           <div className="sd-envoi-cases">
+            {onVocal && (
+              // 🎙️ (lot S4) le vocal : la feuille se ferme, le micro de la saisie rappelle qu'on le garde appuyé
+              <button type="button" className="sd-joint" data-joint="vocal" onClick={onVocal}>
+                <span className="e">🎙️</span>
+                <b>Un vocal</b>
+                <small>garde le micro appuyé</small>
+              </button>
+            )}
             {photos && (
               <button type="button" className="sd-joint" data-joint="photo" onClick={() => choixPhoto.current?.click()}>
                 <span className="e">📷</span>
