@@ -140,7 +140,9 @@ export function rangerTalkie(s: Scene, racine: HTMLElement, q: Qui, ms = 260): v
   t.classList.add("part");
   t.classList.remove("emet", "ecoute");
   // (repris entre-temps — `prendreTalkie` annule l'animation : il reste dans la main)
-  const fin = () => t.classList.contains("part") && t.remove();
+  const fin = () => {
+    if (t.classList.contains("part")) t.remove();
+  };
   if (s.reduit) return fin();
   t.animate([{ opacity: 1 }, { opacity: 0, translate: "0 45%", scale: "0.6" }], { duration: ms, fill: "forwards" }).finished.then(fin, fin);
 }
