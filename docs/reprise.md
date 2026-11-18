@@ -3,6 +3,21 @@
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
 
+## 0 terdecies. La messagerie d'abord ; une seule session (18 novembre 2026)
+
+**L'autre session (les messages et la bienvenue) s'est arrêtée après le lot S2** (le salon du duo : l'écran, les
+bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11.10) et le lot M3 (« Choisis ta pièce »).
+**La session de l'univers reprend tout.** L'ordre, décidé par le propriétaire :
+
+1. **finir la messagerie** (`salon-du-duo.md`, section 9) : S3 (les gestes et la vie), S6 (les objets et l'étagère),
+   S4 (le talkie-walkie), S5 (les mèmes), S7 (la lumière et la météo), puis **S8, la bascule** (les essais sur vrais
+   téléphones, l'avis du propriétaire, `SALON_DU_DUO` allumé, l'ancien écran `proches.tsx` retiré, et la notification
+   qui dit tout ce qui attend : « un bisou, un mème, 2 messages… ») ; **S9 (le temps réel)** seulement si le
+   propriétaire trouve le délai du pouls gênant ;
+2. **puis « Ma maison »** (`ma-maison.md` : M2, M4, M5) ;
+3. **puis « Découvrir »** (`decouvrir.md`, re-imaginée le 17 novembre ; ses décisions reportées le 18 : plus rien
+   n'attend le propriétaire avant la maquette et D0).
+
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 
 **À lire : `docs/univers/ma-maison.md`, puis la section 12 de `docs/univers/salon-du-duo.md`.** Après les maquettes
