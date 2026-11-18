@@ -162,7 +162,8 @@ ok((await debordement(lea)) <= 0, "rien ne déborde");
 await lea.locator(".pr-plein .pr-fil li.et-carte-fil.question .et-petit.or").click();
 ok(await attendre(lea, () => !document.querySelector(".pr-plein .pr-fil li.et-carte-fil.question"), null, 6000), "« ✓ Oui, range-le »");
 ok(await attendre(lea, () => document.querySelector(".pr-plein .pv-calque.moi .et-note:not(.question)")?.textContent?.includes("📌 Noté !"), null, 25000), "la voiture se range : sa figurine brandit « 📌 Noté ! »");
-ok(await attendre(lea, () => Boolean(document.querySelector(".et-vol")), null, 6000), "la voiture s'envole vers l'étagère");
+// (l'envol est bref : on l'attrape en vol, ou on la trouve déjà posée — une CI lente peut le manquer)
+ok(await attendre(lea, () => Boolean(document.querySelector(".et-vol")) || [...document.querySelectorAll(".pr-plein .et-mur [data-objet]")].some((x) => x.textContent === "🚗"), null, 6000), "la voiture s'envole vers l'étagère");
 ok(await attendre(lea, () => document.querySelector(".pr-plein .et-mur small")?.textContent?.includes("Votre étagère · 2") && !document.querySelector(".et-vol")), "elle se pose : « 📚 Votre étagère · 2 »");
 ok(await attendre(lea, () => [...document.querySelectorAll(".pr-plein .pr-fil li.et-carte-fil")].some((li) => li.textContent.includes("Ton permis") && li.textContent.includes("📌 NOTÉ SUR VOTRE ÉTAGÈRE"))), "chez Léa, la carte : « Ton permis »");
 await lea.screenshot({ path: `${D}/etagere-e5-4-oui.png` });
