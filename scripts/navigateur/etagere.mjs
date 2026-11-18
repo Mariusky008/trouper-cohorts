@@ -187,7 +187,7 @@ await sam.locator(".pr-plein .et-mur").click();
 await sam.waitForSelector(".et-page .et-meuble", { timeout: 15000 });
 ok((await texte(sam, ".et-page .et-qui")).startsWith("Léa et toi") && (await texte(sam, ".et-page .et-compteurs")).includes("2 souvenirs") && (await texte(sam, ".et-page .et-compteurs")).includes("0 promesse tenue"), "la page : « Léa et toi », 2 souvenirs, 0 promesse tenue");
 const rayons = (await sam.locator(".et-page .et-rayon .et-nom-rayon").allInnerTexts()).map(plat);
-ok(rayons.join(" · ") === "Nos fiertés · À venir · Ce qu’on aime", `les trois rayons (${rayons.join(" · ")})`);
+ok(rayons.join(" · ") === "Nos fiertés · À venir · Ce qu’on aime · Nos fous rires", `les quatre rayons (${rayons.join(" · ")})`);
 ok((await texte(sam, '.et-page .et-rayon[data-rayon="avenir"]')).includes("Le permis de Léa") && (await texte(sam, '.et-page .et-rayon[data-rayon="avenir"]')).includes("Le resto italien") && (await texte(sam, '.et-page .et-rayon[data-rayon="fiertes"]')).includes("rien encore"), "« À venir » : le permis de Léa, le resto ; « Nos fiertés » : rien encore");
 ok((await texte(sam, ".et-page .et-regles")).includes("demandent avant de les ranger") && (await texte(sam, ".et-page .et-regles")).includes("Rien de sensible (santé, argent, amours)") && (await texte(sam, ".et-page .et-regles")).includes("Les visiteurs de ton univers ne voient pas votre étagère"), "les règles, en clair (elles demandent avant de ranger)");
 await sam.screenshot({ path: `${D}/etagere-4-page.png` });

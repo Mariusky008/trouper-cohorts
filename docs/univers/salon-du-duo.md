@@ -951,6 +951,64 @@ une image passée par la carte graphique ; un message : les oreilles ; touché :
 ronronne ; un check : un saut ; la page cachée : sa vidéo s'arrête ; au repos, les figurines se regardent ou s'étirent ;
 ni débordement, ni erreur, ni le mot interdit).
 
+### 11.13 📌 Garder une bulle, l'étagère dans la pièce (lot S6, première partie — 18 novembre 2026)
+
+- **Le vocabulaire de l'étagère** (`src/lib/direct/etagere.ts`) : un genre `mot` (« vos mots », 💬, dans « Ce qu'on
+  aime ») et un quatrième rayon, **« Nos fous rires »** (`rires` : les blagues y vont désormais ; « Mes fous rires » sur
+  « Mon étagère ») ; la règle de la page dit « Et vous pouvez tout garder vous-mêmes : 📌 sur une bulle ». Un souvenir
+  gardé à la main porte `garde` (par qui) ; ce qu'on en voit, `garde: "moi" | "lui"` et `message` (le message d'où il
+  vient).
+- **Le serveur** (`src/lib/direct/etagere-serveur.ts`) : `POST /api/direct/etagere { action: "garder", avec, message }`
+  — le modèle (celui des notes) range ce message dans un genre : une date, une promesse, un goût, une blague, ou des
+  mots ; sa réponse est vérifiée par la même règle que les notes (la phrase exacte, pas de possessif, pas de prénom…) ;
+  sinon, ou sans modèle, **« vos mots »** : la phrase telle qu'elle a été dite, son début pour titre. **Pas de limite par
+  jour** ; un message ne se garde qu'une fois (`deja`) ; un sujet sensible ne se range pas (422 : « Celui-là, vos
+  figurines préfèrent ne pas le ranger… ») ; rangé tout de suite pour les deux (pas de « Je le range ? » : c'est lui qui
+  l'a demandé) ; le pouls bat. Un vocal se garde par sa transcription.
+- **Dans le salon** :
+  - **un 📌 dans le coin de chaque bulle** (la mienne, la sienne) **et sur chaque message de 💬** ; un toucher : la
+    figurine de celui qui l'a dit brandit « 📌 Noté ! », le souvenir s'envole jusqu'à l'étagère de la pièce,
+    « 📌 Noté sur votre étagère · 💬 Merci pour tout », l'autre figurine dit une phrase de la banque (une bulle dorée) ;
+    le 📌 devient ✓ ; un second toucher : « 📌 C'est déjà sur votre étagère » ;
+  - **l'étagère dans la pièce** (`src/app/salon/etagere-salon.ts`) : leurs souvenirs posés dans les fentes relevées
+    (`emplacements.fentes`), sinon sur deux rangées de la zone de l'étagère ; un toucher (ou 📚 dans l'en-tête) ouvre
+    **« Votre étagère »** (la page des lots E1 à E5, chargée seulement quand on l'ouvre) ;
+  - **ce que l'autre garde, ou ce que leurs figurines notent, s'envole en direct** (relu avec le pouls) :
+    « 📌 Sam a gardé · 😂 Le fou rire ».
+- **Pas encore** (lot S6, suite) : ＋ Envoyer — fait en partie, 11.14 ; la télé et les cadres dans la pièce, 📺 Un clip,
+  📸 Photo à deux, 🖼️ Accrocher ; garder un mème (avec le lot S5).
+
+**Les essais** : `scripts/essai-salon-garder-route.mjs` (une date samedi, une promesse, une blague dans « Nos fous
+rires », « vos mots », une réponse du modèle qui ne tient pas, déjà gardé, « malade » 422, 404, 403, 401, pas de limite,
+le pouls ; chez Sam : gardé par Léa, nouveau pour lui) et `scripts/navigateur/salon-garder.mjs` (le 📌, « 📌 Noté ! »,
+l'envol sur l'étagère relevée, la phrase de l'autre figurine, ✓, « déjà », 📚 ; dans 💬 ; en direct ; « Votre
+étagère » et ses quatre rayons ; « malade » ; ni débordement, ni erreur, ni le mot interdit). `verifier-etagere.mjs`,
+`navigateur/etagere.mjs` : les quatre rayons.
+
+### 11.14 ＋ Envoyer une photo, une vidéo, un lien (lot S6, deuxième partie — 18 novembre 2026)
+
+- **Le ＋ à gauche de la saisie** ouvre la feuille **« Envoyer à Sam »** (`src/app/salon/envoyer.tsx`, chargée seulement
+  au premier toucher) : **📷 Photo** (« elle peut aller au mur »), **🎬 Vidéo** (« elle peut passer à la télé »),
+  **🔗 Lien** (« YouTube, une chanson, un site »). Une case n'apparaît que si son envoi est ouvert (`fil.photos`,
+  `fil.videos` : les freins `CLIKME_PHOTOS`, `CLIKME_VIDEOS`).
+- **📷 et 🎬 reprennent tout ce qui existe** (lots M2, M3) : la photo réduite et redessinée dans le téléphone (aucune
+  métadonnée ne part), la vidéo lue dans le téléphone (sa durée, ses trois images) ; l'adresse de dépôt (`photo-depot`,
+  `video-depot`), le dépôt tout droit au seau (« Envoi… 42 % »), la vérification par le serveur (« Vérification… ») ;
+  une légende facultative (200 signes au plus). Ce qui ne part pas est dit dans la feuille : une photo refusée par la
+  modération (« Une autre »), la modération en panne (« Réessayer », sans redéposer), un fichier qui n'est pas une
+  photo, une vidéo trop longue ou illisible. Partie : la feuille se ferme, « 📷 La légende » (ou « 🎬 Une vidéo ») dans
+  ma bulle, ma figurine le dit, la sienne réagit, le chat aussi, la flamme monte ; la photo ou la vidéo est dans 💬.
+- **🔗 Lien** : la feuille se ferme et la saisie s'ouvre (« Colle un lien : YouTube, une chanson, un site… ») ; le lien
+  part comme un écrit (son aperçu se fait au serveur, lot M1).
+- **Pas encore** (lot S6, suite) : 🎭 Un mème et 🎙️ Un vocal dans la feuille (avec les lots S5 et S4) ; **📎 Fichier**
+  (un PDF, un document : la carte, l'icône selon le type, le nom, la taille) ; les **films** ; ce que devient chaque
+  envoi dans la pièce (« 🖼️ L'accrocher au mur ? », « 📺 La mettre à la télé ? », 4.8).
+
+**L'essai** : `scripts/navigateur/salon-envoyer.mjs` (le ＋ à sa place, les trois cases ; une photo, sa légende, sa
+bulle, 💬, chez Sam ; une vidéo enregistrée par le navigateur, « 0:02 », « Envoi… » puis « Vérification… », déposée une
+fois, chez Sam ; la photo refusée, la modération en panne, un fichier qui n'est pas une photo, toucher à côté ; 🔗 et la
+saisie ; ni débordement, ni glissement, ni erreur, ni le mot interdit).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

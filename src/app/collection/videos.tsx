@@ -146,7 +146,7 @@ export async function videoPourEnvoi(fichier: File): Promise<VideoLue | { erreur
  * 📤 LE DÉPÔT, AVEC CE QUI EST PARTI (une vidéo peut peser 25 Mo) : comme `uploadToSignedUrl` de Supabase (le même
  * formulaire, à la même adresse signée), mais en disant où il en est.
  */
-function deposerAvecProgres(seau: string, chemin: string, jeton: string, blob: Blob, onPart: (part: number) => void): Promise<boolean> {
+export function deposerAvecProgres(seau: string, chemin: string, jeton: string, blob: Blob, onPart: (part: number) => void): Promise<boolean> {
   return new Promise((ok) => {
     const x = new XMLHttpRequest();
     x.open("PUT", `${env.supabaseUrl}/storage/v1/object/upload/sign/${seau}/${chemin}?token=${encodeURIComponent(jeton)}`);

@@ -99,8 +99,8 @@ ok(E.detailPour({ ...base, genre: "promesse", titre: "Le resto", concerne: "deux
 ok(E.detailPour({ ...base, genre: "gout", nuance: "aime", titre: "Les pivoines", concerne: LEA }, MOI, "Léa", AUJ) === "Léa adore" && E.detailPour({ ...base, genre: "gout", nuance: "aime", titre: "Les pivoines", concerne: LEA }, LEA, "Sam", AUJ) === "tu adores", "un goût : « Léa adore » / « tu adores »");
 ok(E.detailPour({ ...base, genre: "gout", nuance: "envie", titre: "Le roman", concerne: LEA }, MOI, "Léa", AUJ) === "Léa en a envie" && E.detailPour({ ...base, genre: "gout", nuance: "envie", titre: "Le roman", concerne: "deux" }, MOI, "Léa", AUJ) === "vous en avez envie", "« Léa en a envie », « vous en avez envie »");
 ok(E.detailPour({ ...base, genre: "blague", titre: "Le canard", concerne: "deux" }, MOI, "Léa", AUJ) === "votre blague", "une blague : « votre blague »");
-ok(E.rayonDe({ genre: "date", etat: "actif" }) === "avenir" && E.rayonDe({ genre: "promesse", etat: "actif" }) === "avenir" && E.rayonDe({ genre: "gout", etat: "actif" }) === "aime" && E.rayonDe({ genre: "blague", etat: "actif" }) === "aime" && E.rayonDe({ genre: "promesse", etat: "tenue" }) === "fiertes" && E.rayonDe({ genre: "date", etat: "fierte" }) === "fiertes", "les rayons : à venir, ce qu'on aime, nos fiertés");
-ok(E.RAYONS.map((r) => r.nom).join(" · ") === "Nos fiertés · À venir · Ce qu’on aime", "les trois rayons, dans l'ordre");
+ok(E.rayonDe({ genre: "date", etat: "actif" }) === "avenir" && E.rayonDe({ genre: "promesse", etat: "actif" }) === "avenir" && E.rayonDe({ genre: "gout", etat: "actif" }) === "aime" && E.rayonDe({ genre: "blague", etat: "actif" }) === "rires" && E.rayonDe({ genre: "mot", etat: "actif" }) === "aime" && E.rayonDe({ genre: "promesse", etat: "tenue" }) === "fiertes" && E.rayonDe({ genre: "date", etat: "fierte" }) === "fiertes", "les rayons : à venir, ce qu'on aime, nos fiertés, (lot S6 du salon) nos fous rires");
+ok(E.RAYONS.map((r) => r.nom).join(" · ") === "Nos fiertés · À venir · Ce qu’on aime · Nos fous rires", "les quatre rayons, dans l'ordre");
 const vu = E.vueDe({ ...base, genre: "date", sorte: "epreuve", titre: "Le permis", titreToi: "Ton permis", concerne: LEA, quand: "2026-11-19", messageLe: "2026-11-13T17:42:00.000Z" }, { moi8: MOI, prenomMoi: "Sam", prenomAutre: "Léa", aujourdhui: AUJ });
 ok(vu.titre === "Le permis de Léa" && vu.detail === "jeudi 19 nov." && vu.de === "lui" && vu.ditPar === "Léa" && vu.rayon === "avenir" && !vu.pourMoi && E.momentCourt(vu.ditLe) === "ven. 13 nov., 18:42", `ce que Sam en voit (${vu.titre} · ${vu.detail} · dit par ${vu.ditPar} · ${E.momentCourt(vu.ditLe)})`);
 
@@ -286,7 +286,7 @@ ok(al.length === 4, `les quatre seuils : trop de souvenirs, trop de retirés, tr
   const deposes3 = [1, 2, 3].map((k) => ob4({ id: `d${k}`, genre: "gout", titre: `Le goût ${k}`, le: `${AUJ4}T09:0${k}:00.000Z`, message: `depot-d${k}` }));
   const rg = E.ranger(deposes3, [{ genre: "gout", emoji: "💐", titre: "Les pivoines", concerne: LEA, citation: "j'adore les pivoines", de8: LEA, message: "m9", nuance: "aime" }], { aujourdhui: AUJ4, le: `${AUJ4}T10:00:00.000Z`, nouvelId: () => "neuf" });
   ok(rg.neufs.join() === "neuf", "trois déposés à la main aujourd'hui : les figurines peuvent encore noter (leurs trois par jour sont à elles)");
-  ok(E.STATS_VIDES.deposes === 0 && E.GENRES_DEPOT.length === 5 && E.SORTES_DEPOT.length === 3 && E.RAYONS_MIENS.map((r) => r.nom).join("|") === "Mes fiertés|À venir|Ce que j’aime", "les déposés se comptent ; cinq genres, trois sortes de jour ; mes trois rayons");
+  ok(E.STATS_VIDES.deposes === 0 && E.GENRES_DEPOT.length === 5 && E.SORTES_DEPOT.length === 3 && E.RAYONS_MIENS.map((r) => r.nom).join("|") === "Mes fiertés|À venir|Ce que j’aime|Mes fous rires", "les déposés se comptent ; cinq genres, trois sortes de jour ; mes quatre rayons");
   const textesE4 = [E.REGLES_MON_ETAGERE, ...E.GENRES_DEPOT.flatMap((g) => [g.nom, g.indice]), ...E.SORTES_DEPOT.map((x) => x.nom), E.phraseRappel("mien", "Ton concert", "🎤"), E.notifRappel("mien", "Ton concert", "🎤").corps];
   ok(textesE4.every((x) => !GENRE.test(x) && passe(x) && !/exemple/i.test(x)), "les mots du lot E4 : sans accord, sans le mot interdit, sans alcool");
 }
@@ -389,6 +389,21 @@ ok(al.length === 4, `les quatre seuils : trop de souvenirs, trop de retirés, tr
   ok(E.borner(plein).length === 200 && E.borner(plein).some((x) => x.id === pp.id), "deux cents entrées au plus : les pierres tombales s'en vont, jamais une question qui attend");
   const textesE5 = [E.PANNEAU_QUESTION, E.PHRASE_NON, E.phraseQuestion(pp, LEA, "Sam"), E.phraseQuestion(pr, LEA, "Sam"), E.phraseQuestion(qi.objets[0], LEA, "Sam"), E.phraseQuestion(depot, LEA, "Sam"), lq.txt, E.notifQuestions(2).titre, E.notifQuestions(2).corps, E.REGLAGE_RANGE_SEUL.titre, E.REGLAGE_RANGE_SEUL.aide, E.REGLES_ETAGERE];
   ok(textesE5.every((x) => !GENRE.test(x) && passe(x) && !/exemple/i.test(x) && !/\b(l'as|l’as) eu\b/.test(x)), `les mots du lot E5 : sans accord, sans le mot interdit, sans alcool (${textesE5.filter((x) => GENRE.test(x) || !passe(x)).join(" | ") || "tous"})`);
+}
+
+// ═══ 📌 (le salon du duo, lot S6) CE QU'ON GARDE SOI-MÊME ═══
+{
+  const msg = { n: 1, id: "g1", de8: LEA, texte: "Tu es la personne la plus drôle que je connaisse, vraiment", jour: AUJ, le: "2026-11-13T18:00:00.000Z" };
+  const cg = { ...c, messages: [msg] };
+  const mots = E.souvenirDuMessage(null, cg, msg);
+  ok(mots?.genre === "mot" && mots.emoji === "💬" && mots.concerne === "deux" && mots.citation === msg.texte && mots.titre.length <= 28 && mots.titre.endsWith("…") && mots.message === "g1", `sans modèle : « vos mots » (${mots?.titre})`);
+  ok(E.detailPour(ob({ ...mots, id: "x", le: msg.le }), MOI, "Léa", AUJ) === "vos mots" && E.rayonDe({ genre: "mot", etat: "actif" }) === "aime", "« vos mots », dans « Ce qu'on aime »");
+  const blague = E.souvenirDuMessage({ genre: "blague", emoji: "😂", titre: "Le canard", concerne: "les deux", citation: "Tu es la personne la plus drôle" }, cg, msg);
+  ok(blague?.genre === "blague" && E.rayonDe({ ...blague, etat: "actif" }) === "rires", "le modèle dit une blague : dans « Nos fous rires »");
+  const faux = E.souvenirDuMessage({ genre: "gout", emoji: "💛", titre: "Mon truc", concerne: "les deux", citation: "une phrase jamais dite" }, cg, msg);
+  ok(faux?.genre === "mot", "le modèle se trompe (une phrase jamais dite, un possessif) : les mots, tels quels");
+  ok(E.souvenirDuMessage(null, cg, { ...msg, texte: "Rappelle-moi au 06 12 34 56 78" }) === null, "un numéro : ne se range pas");
+  ok(E.titreDeMots("Merci !") === "Merci" && E.titreDeMots("on se voit demain") === "On se voit demain", "un titre court : la phrase, avec sa majuscule");
 }
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nles règles de l'étagère tiennent ✓");

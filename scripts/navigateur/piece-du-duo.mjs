@@ -146,7 +146,7 @@ await ouvrirReglages();
 await p.locator(".md-panneau").getByRole("button", { name: "🍳" }).click();
 ok(/Volontaire 4 t’invite dans la cuisine/.test(await p.locator(".md-carte").innerText()), "une invitation : « Volontaire 4 t’invite dans la cuisine »");
 await capture("3-invitation");
-await p.getByRole("button", { name: "Venir" }).click();
+await p.getByRole("button", { name: "Venir", exact: true }).click();
 ok(await attendre(async () => (await attr("data-piece")) === "cuisine"), "« Venir » : on y est");
 
 // ─── la cuisine : aucune zone posée, une seule lumière ───

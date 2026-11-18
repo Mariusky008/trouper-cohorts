@@ -17,7 +17,8 @@
  * FICHIER PARTAGÉ (navigateur et serveur) : aucun accès à la base ici, aucun import qui ne soit pas un type.
  */
 
-export const GENRES = ["date", "promesse", "gout", "blague"] as const;
+/** (lot S6 du salon, 📌 Garder : `mot` — « vos mots », ce qu'on garde soi-même sans que ce soit une date, une promesse…) */
+export const GENRES = ["date", "promesse", "gout", "blague", "mot"] as const;
 export type GenreObjet = (typeof GENRES)[number];
 export const SORTES = ["epreuve", "fete", "evenement"] as const;
 export type SorteDate = (typeof SORTES)[number];
@@ -34,7 +35,8 @@ export type EtatObjet = "actif" | "tenue" | "fierte" | "passe" | "sommeil" | "re
  * l'autre (« Marc veut ranger sur votre étagère »).
  */
 export type Demande = { a: string; jusqua: string; issue?: true; par8?: string };
-export type RayonCle = "fiertes" | "avenir" | "aime";
+/** (lot S6 du salon : « Nos fous rires », les blagues et les fous rires) */
+export type RayonCle = "fiertes" | "avenir" | "aime" | "rires";
 
 /** Ce que le seau garde (`fils/<paire>/etagere.json`). Jamais l'identifiant d'un habitant : 8 signes tirés de lui. */
 export type ObjetGarde = {
@@ -83,6 +85,8 @@ export type ObjetGarde = {
    * message n'y touche pas. `lien` : l'adresse de la chanson ou de la vidéo.
    */
   image?: ImageObjet;
+  /** 📌 (lot S6 du salon) gardé à la main, par un toucher sur sa bulle : qui l'a gardé (8 signes). */
+  garde?: { par8: string };
 };
 /** 🖼️ Une pochette (une chanson), une vignette (une vidéo), une photo encadrée. */
 export type SorteImage = "musique" | "video" | "photo";
@@ -133,6 +137,9 @@ export type ObjetVu = {
   peutMontrer?: boolean;
   /** 🖼️ rangé depuis une conversation : sa pochette, sa vignette ou sa photo (signée par le serveur). */
   image?: ImageVue;
+  /** 📌 (lot S6 du salon) gardé à la main, par lui ou par l'autre ; `message` : le message d'où il vient. */
+  garde?: "moi" | "lui";
+  message?: string;
 };
 
 /** 🎭 L'étagère dans la scène de la conversation (relue avec la conversation vivante, toutes les 4 s). */
@@ -229,7 +236,7 @@ export const CATALOGUE: readonly string[] = [
   "🧦", "🎁", "🧸", "🧩", "🎲", "🪁", "🤝", "💛", "😂",
 ];
 /** L'emoji d'un genre, quand le modèle en choisit un hors liste. */
-export const EMOJI_DU_GENRE: Record<GenreObjet, string> = { date: "📅", promesse: "🤝", gout: "💛", blague: "😂" };
+export const EMOJI_DU_GENRE: Record<GenreObjet, string> = { date: "📅", promesse: "🤝", gout: "💛", blague: "😂", mot: "💬" };
 const sansVariante = (e: string) => e.replace(/️/g, "");
 export const emojiDuCatalogue = (e: unknown, genre: GenreObjet): string => {
   const x = typeof e === "string" ? sansVariante(e.trim()) : "";
@@ -362,19 +369,22 @@ export function detailPour(o: ObjetGarde, moi8: string, prenomAutre: string, auj
     if (o.concerne === moi8) return envie ? "tu en as envie" : "tu adores";
     return envie ? `${prenomAutre} en a envie` : `${prenomAutre} adore`;
   }
+  // (📌 lot S6 du salon : « vos mots », gardés à la main)
+  if (o.genre === "mot") return o.concerne === "deux" ? "vos mots" : o.concerne === moi8 ? "tes mots" : `les mots ${deDevant(prenomAutre)}`;
   // (lot E4 : une blague déposée sur sa propre étagère, ou vue par un visiteur)
   if (o.concerne === moi8) return "ta blague";
   return o.concerne === "deux" ? "votre blague" : `la blague ${deDevant(prenomAutre)}`;
 }
 
-/** Les trois rayons : « Nos fiertés », « À venir », « Ce qu'on aime ». */
+/** Les quatre rayons : « Nos fiertés », « À venir », « Ce qu'on aime » et (lot S6 du salon) « Nos fous rires ». */
 export const RAYONS: { cle: RayonCle; nom: string }[] = [
   { cle: "fiertes", nom: "Nos fiertés" },
   { cle: "avenir", nom: "À venir" },
   { cle: "aime", nom: "Ce qu’on aime" },
+  { cle: "rires", nom: "Nos fous rires" },
 ];
 export const rayonDe = (o: Pick<ObjetGarde, "genre" | "etat">): RayonCle =>
-  o.etat === "fierte" || o.etat === "tenue" ? "fiertes" : o.genre === "date" || o.genre === "promesse" ? "avenir" : "aime";
+  o.etat === "fierte" || o.etat === "tenue" ? "fiertes" : o.genre === "date" || o.genre === "promesse" ? "avenir" : o.genre === "blague" ? "rires" : "aime";
 
 /** Ce qui se voit sur l'étagère. */
 export const visible = (o: Pick<ObjetGarde, "etat">) => o.etat === "actif" || o.etat === "tenue" || o.etat === "fierte" || o.etat === "sommeil";
@@ -402,6 +412,8 @@ export function vueDe(o: ObjetGarde, c: { moi8: string; prenomMoi: string; preno
     deux: o.concerne === "deux",
     ...(o.etat === "tenue" && o.change?.le ? { tenueLe: o.change.le } : {}),
     ...(o.depose ? { depose: true as const } : {}),
+    ...(o.garde ? { garde: o.garde.par8 === c.moi8 ? ("moi" as const) : ("lui" as const) } : {}),
+    ...(o.message ? { message: o.message } : {}),
   };
 }
 
@@ -484,6 +496,29 @@ export function objetValide(x: unknown, c: ContexteNote): ObjetPropose | null {
   }
   if (genre === "gout") o.nuance = b.nuance === "envie" ? "envie" : "aime";
   return o;
+}
+
+// ─── 📌 (lot S6 du salon) CE QU'ON GARDE SOI-MÊME ───────────────────────────────────────────────────
+/** Le titre de « vos mots » : le début de la phrase, 28 signes au plus, coupé à un mot. */
+export function titreDeMots(texte: string): string {
+  const t = nettoyer(texte).replace(/[\s.!?…,;:]+$/, "");
+  if (t.length <= ETAGERE.titreMax) return majuscule(t);
+  const coupe = t.slice(0, ETAGERE.titreMax - 1);
+  const mot = coupe.lastIndexOf(" ");
+  return `${majuscule((mot > 10 ? coupe.slice(0, mot) : coupe).replace(/[\s.,;:!?]+$/, ""))}…`;
+}
+/**
+ * 📌 UN MESSAGE GARDÉ À LA MAIN : ce que le modèle en a fait (une date, une promesse, un goût, une blague, des mots),
+ * vérifié par la même règle que les notes ; sinon (pas de modèle, ou il s'est trompé) « vos mots » — la phrase telle
+ * qu'elle a été dite. `null` : elle ne se range pas (un mot qui ne passe pas, un numéro, un sujet sensible).
+ */
+export function souvenirDuMessage(x: unknown, c: ContexteNote, msg: MessageLu): ObjetPropose | null {
+  const o = x && typeof x === "object" ? objetValide({ ...(x as Record<string, unknown>), message: msg.n }, c) : null;
+  if (o) return o;
+  const citation = nettoyer(msg.texte).slice(0, ETAGERE.citationMax);
+  const titre = titreDeMots(citation);
+  if (titre.length < 2 || !c.passe(titre) || !c.passe(citation) || prive(citation) || echangeSensible([citation])) return null;
+  return { genre: "mot", emoji: EMOJI_DU_GENRE.mot, titre, concerne: "deux", citation, de8: msg.de8, message: msg.id, messageLe: msg.le };
 }
 
 /**
@@ -684,6 +719,8 @@ export const PHRASES_NOTE: Record<GenreObjet, readonly string[]> = {
   promesse: ["Promis, c’est promis 🤝 Je surveille", "Noté ! On verra qui tient parole 👀", "Je garde ça bien en vue 🤝"],
   gout: ["Bon à savoir 💛 Je garde ça", "Je note, ça peut servir 🎁", "Ça, je ne l’oublierai pas 💛"],
   blague: ["Celle-là, on la garde 😂", "Rangée avec nos meilleures 🏅", "Je la ressortirai, compte sur moi 😏"],
+  // (📌 lot S6 du salon : les phrases de la maquette)
+  mot: ["Je le garde précieusement 💬", "Ça, on ne l’oubliera pas 📌", "Rangé avec vos plus belles phrases ✨"],
 };
 const hache = (t: string) => [...t].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 export function phraseDeNote(genre: GenreObjet, graine: string, avant = ""): string {
@@ -694,7 +731,7 @@ export function phraseDeNote(genre: GenreObjet, graine: string, avant = ""): str
 
 /** Les règles, en clair (la page de l'étagère). */
 export const REGLES_ETAGERE =
-  "Vos figurines notent une ou deux choses par conversation, au plus, et demandent avant de les ranger. Rien de sensible (santé, argent, amours). Tout se voit des deux côtés, et chacun peut retirer un souvenir. Les visiteurs de ton univers ne voient pas votre étagère.";
+  "Vos figurines notent une ou deux choses par conversation, au plus, et demandent avant de les ranger. Rien de sensible (santé, argent, amours). Tout se voit des deux côtés, et chacun peut retirer un souvenir. Les visiteurs de ton univers ne voient pas votre étagère. Et vous pouvez tout garder vous-mêmes : 📌 sur une bulle.";
 
 // ─── lot E2 : plus tard ────────────────────────────────────────────────────────────────────────────
 /** Le titre, sa première lettre en minuscule (« le permis de Léa »). */
@@ -1048,6 +1085,7 @@ export const RAYONS_MIENS: { cle: RayonCle; nom: string }[] = [
   { cle: "fiertes", nom: "Mes fiertés" },
   { cle: "avenir", nom: "À venir" },
   { cle: "aime", nom: "Ce que j’aime" },
+  { cle: "rires", nom: "Mes fous rires" },
 ];
 export const REGLES_MON_ETAGERE =
   "Ce que vos figurines notent sur toi, dans toutes tes conversations, se range aussi ici. Tu peux y déposer ce que tu veux. Rien que pour toi : tu choisis ce que tes visiteurs voient.";
