@@ -349,6 +349,10 @@ export const STYLES_ECRIRE = `
 /* ✍️ l'écrit dans le fil : le texte en entier, sa carte de lien, « Effacer » */
 .pr-fil li.pr-ecrit-li{align-items:flex-start}
 .pr-ecrit-bloc{display:flex;flex-direction:column;align-items:flex-start;gap:4px;max-width:86%;min-width:0}
+.pr-fichier{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);color:inherit;text-decoration:none;max-width:100%}
+.pr-fichier .e{font-size:26px;line-height:1;flex:none}
+.pr-fichier b{display:block;font-weight:700;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.pr-fichier small{display:block;margin-top:2px;font-size:11.5px;opacity:.65}
 .pr-fil li.moi .pr-ecrit-bloc{align-items:flex-end}
 .pr-fil .pr-ecrit-bloc > button.pr-ecrit{max-width:100%}
 .pr-ecrit-texte{font-size:14px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}

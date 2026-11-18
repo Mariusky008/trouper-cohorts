@@ -17,9 +17,11 @@ import { deposerAvecProgres, videoPourEnvoi, type VideoLue } from "../collection
 import { PHRASES_PHOTO, legendePhoto } from "@/lib/direct/photo";
 import type { MessageFil } from "@/lib/direct/talkie";
 
-import { demander, deposerPhoto, envoyerPhotoDeposee } from "./depot";
+import { demander, deposerFichier, deposerPhoto, envoyerFichierDepose, envoyerPhotoDeposee } from "./depot";
+import { FICHIER, PHRASES_FICHIER, estUnPdf, nomDuFichier, tailleDite } from "@/lib/direct/fichier";
 
-export type Choisi = { sorte: "photo"; fichier: File } | { sorte: "video"; fichier: File };
+/** Ce qu'on envoie : une photo, une vidéo, ou (lot S6) un PDF. */
+export type Choisi = { sorte: "photo"; fichier: File } | { sorte: "video"; fichier: File } | { sorte: "fichier"; fichier: File };
 type Etat = { quoi: "lecture" } | { quoi: "prete" } | { quoi: "envoi"; part?: number } | { quoi: "verification" } | { quoi: "erreur"; texte: string; reessayer?: boolean };
 
 export default function FeuilleEnvoi({
@@ -27,6 +29,7 @@ export default function FeuilleEnvoi({
   prenom,
   photos,
   videos,
+  fichiers = false,
   depart,
   onFermer,
   onEnvoye,
@@ -36,6 +39,8 @@ export default function FeuilleEnvoi({
   prenom: string;
   photos: boolean;
   videos: boolean;
+  /** 📎 (lot S6) les PDF sont ouverts */
+  fichiers?: boolean;
   /** (lot S6) une pièce déjà choisie (« 📷 Une photo de ton téléphone » pour le mur, « 📱 Une vidéo » pour la télé) */
   depart?: Choisi;
   onFermer: () => void;
@@ -52,6 +57,7 @@ export default function FeuilleEnvoi({
   const deposee = useRef<string | null>(null);
   const choixPhoto = useRef<HTMLInputElement>(null);
   const choixVideo = useRef<HTMLInputElement>(null);
+  const choixFichier = useRef<HTMLInputElement>(null);
   const occupe = etat.quoi === "envoi" || etat.quoi === "verification" || etat.quoi === "lecture";
 
   /** Une pièce choisie : tout repart de zéro, puis on la lit. */
@@ -69,7 +75,16 @@ export default function FeuilleEnvoi({
     if (!choisi) return;
     let fini = false;
     let url = "";
-    if (choisi.sorte === "photo")
+    // 📎 un PDF : pas trop lourd, et c'est bien un PDF (ses premiers octets) — le serveur le revérifie
+    if (choisi.sorte === "fichier")
+      void (async () => {
+        const f = choisi.fichier;
+        if (f.size > FICHIER.max) return setEtat({ quoi: "erreur", texte: PHRASES_FICHIER.lourd });
+        const debut = new Uint8Array(await f.slice(0, 1024).arrayBuffer().catch(() => new ArrayBuffer(0)));
+        if (fini) return;
+        setEtat(estUnPdf(debut) ? { quoi: "prete" } : { quoi: "erreur", texte: PHRASES_FICHIER.pasUnPdf });
+      })();
+    else if (choisi.sorte === "photo")
       void photoPourEnvoi(choisi.fichier).then((p) => {
         if (fini) return;
         if (!p) return setEtat({ quoi: "erreur", texte: PHRASES_PHOTO.illisible });
@@ -98,6 +113,19 @@ export default function FeuilleEnvoi({
     if (!choisi || occupe || leg === null) return;
     try {
       let id = deposee.current;
+      if (choisi.sorte === "fichier") {
+        if (!id) {
+          setEtat({ quoi: "envoi" });
+          const d = await deposerFichier(cle, choisi.fichier);
+          if (!d.id) return setEtat({ quoi: "erreur", texte: d.error || "Ton PDF n’a pas pu partir. Réessaie.", reessayer: true });
+          id = deposee.current = d.id;
+        }
+        setEtat({ quoi: "verification" });
+        const r = await envoyerFichierDepose(cle, id, choisi.fichier.name);
+        if (r.message) return onEnvoye(r.message);
+        if (r.statut < 500) deposee.current = null;
+        return setEtat({ quoi: "erreur", texte: r.error || "Ça n’a pas marché. Réessaie.", reessayer: r.statut >= 500 });
+      }
       if (choisi.sorte === "photo") {
         const blob = pretePhoto;
         if (!blob) return;
@@ -140,7 +168,7 @@ export default function FeuilleEnvoi({
       <div className="sd-voile vu" onClick={fermer} aria-hidden />
       <section className="sd-envoi" role="dialog" aria-label={`Envoyer à ${prenom}`} data-envoi={choisi?.sorte ?? "choix"}>
         <button type="button" className="sd-poignee" onClick={fermer}>
-          <h3>{choisi ? (choisi.sorte === "photo" ? `📷 Une photo pour ${prenom}` : `🎬 Une vidéo pour ${prenom}`) : `Envoyer à ${prenom}`}</h3>
+          <h3>{choisi ? (choisi.sorte === "photo" ? `📷 Une photo pour ${prenom}` : choisi.sorte === "video" ? `🎬 Une vidéo pour ${prenom}` : `📎 Un PDF pour ${prenom}`) : `Envoyer à ${prenom}`}</h3>
         </button>
         {!choisi ? (
           <div className="sd-envoi-cases">
@@ -163,10 +191,24 @@ export default function FeuilleEnvoi({
               <b>Lien</b>
               <small>YouTube, une chanson, un site</small>
             </button>
+            {fichiers && (
+              <button type="button" className="sd-joint" data-joint="fichier" onClick={() => choixFichier.current?.click()}>
+                <span className="e">📎</span>
+                <b>PDF</b>
+                <small>{PHRASES_FICHIER.case}</small>
+              </button>
+            )}
           </div>
         ) : (
           <div className="sd-envoi-piece">
-            <div className="sd-envoi-apercu" data-etat={etat.quoi}>
+            <div className={`sd-envoi-apercu${choisi.sorte === "fichier" ? " pdf" : ""}`} data-etat={etat.quoi}>
+              {choisi.sorte === "fichier" && (
+                <span className="sd-envoi-pdf">
+                  <span className="e">📄</span>
+                  <b>{nomDuFichier(choisi.fichier.name)}</b>
+                  <small>{tailleDite(choisi.fichier.size)}</small>
+                </span>
+              )}
               {apercu && choisi.sorte === "video" ? (
                 <video src={apercu} poster={preteVideo?.images[1] ?? preteVideo?.images[0]} muted playsInline loop autoPlay />
               ) : (
@@ -176,8 +218,8 @@ export default function FeuilleEnvoi({
               {choisi.sorte === "video" && preteVideo && <span className="sd-envoi-duree">{duree(preteVideo.duree)}</span>}
               {voile && <span className="sd-envoi-voile">{voile}</span>}
             </div>
-            <input value={legende} onChange={(e) => setLegende(e.target.value)} placeholder="Une légende, si tu veux…" aria-label="Une légende" maxLength={240} disabled={etat.quoi === "envoi" || etat.quoi === "verification"} />
-            {leg === null && <small className="sd-envoi-dit">{PHRASES_PHOTO.legende}</small>}
+            {choisi.sorte !== "fichier" && <input value={legende} onChange={(e) => setLegende(e.target.value)} placeholder="Une légende, si tu veux…" aria-label="Une légende" maxLength={240} disabled={etat.quoi === "envoi" || etat.quoi === "verification"} />}
+            {leg === null && choisi.sorte !== "fichier" && <small className="sd-envoi-dit">{PHRASES_PHOTO.legende}</small>}
             {etat.quoi === "erreur" && <small className="sd-envoi-dit" role="alert">{etat.texte}</small>}
             <span className="sd-envoi-boutons">
               <button type="button" onClick={() => (etat.quoi === "erreur" && !etat.reessayer ? choisir(null) : fermer())} disabled={etat.quoi === "envoi" || etat.quoi === "verification"}>
@@ -213,6 +255,18 @@ export default function FeuilleEnvoi({
             if (f) choisir({ sorte: "video", fichier: f });
           }}
         />
+        <input
+          ref={choixFichier}
+          type="file"
+          accept="application/pdf,.pdf"
+          hidden
+          data-choix="fichier"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) choisir({ sorte: "fichier", fichier: f });
+          }}
+        />
       </section>
     </>
   );
@@ -233,6 +287,11 @@ const STYLES_ENVOI = `
 .sd-envoi-apercu{position:relative;display:grid;place-items:center;min-height:180px;max-height:42vh;border-radius:16px;overflow:hidden;background:#140812}
 .sd-envoi-apercu img,.sd-envoi-apercu video{display:block;max-width:100%;max-height:42vh;object-fit:contain}
 .sd-envoi-duree{position:absolute;top:10px;right:10px;padding:3px 8px;border-radius:10px;background:rgba(24,7,20,.78);font:700 12px var(--app)}
+.sd-envoi-apercu.pdf{min-height:120px}
+.sd-envoi-pdf{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px;text-align:center;max-width:90%}
+.sd-envoi-pdf .e{font-family:var(--emoji);font-size:40px;line-height:1}
+.sd-envoi-pdf b{font:700 14.5px/1.3 var(--app);overflow-wrap:anywhere}
+.sd-envoi-pdf small{font:600 12px var(--app);color:var(--doux)}
 .sd-envoi-voile{position:absolute;inset:auto 10px 10px;padding:6px 10px;border-radius:12px;background:rgba(24,7,20,.78);font:700 13px var(--app);text-align:center}
 .sd-envoi-piece input{height:44px;box-sizing:border-box;border-radius:22px;border:1.5px solid var(--trait);background:#170816;color:var(--texte);padding:0 16px;font:500 15px var(--app)}
 .sd-envoi-dit{color:#ffb3c7;font:600 12.5px/1.35 var(--app)}

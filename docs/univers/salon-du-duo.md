@@ -1067,8 +1067,8 @@ dans 💬 ; toucher la télé de loin ; ni glissement, ni erreur).
   la télé montre **son affiche** (l'aperçu du lien ; sinon son titre) avec **« 🍿 Ce soir »** et **« ▶ Ouvrir sur
   Netflix »** (`sorte: "film"`), chez les deux ; et **« Notre film »** se pose pour les deux dans « À venir », ce jour-là
   (un dépôt de l'étagère, une fois par jour).
-- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; 📎 les fichiers (en attente d'une
-  décision du propriétaire : un document ne peut pas être contrôlé comme une photo) ; 🎭 et 🎙️ dans le ＋ (lots S5, S4).
+- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; 🎭 et 🎙️ dans le ＋ (lots S5, S4).
+  (📎 les PDF : 11.17.)
 
 **Les essais** : `scripts/essai-salon-cadres-route.mjs` (accrocher, chez les deux, le pouls, le vivant, remplacer ;
 vidéo et écrit 422, cadre 400, 404, 403, 401 ; signalée) et `scripts/navigateur/salon-cadres.mjs` (les cadres vides sur
@@ -1079,6 +1079,30 @@ chacun son tour, le geste chez Sam ; 🖼️ dans 💬 ; ni glissement, ni erreu
 lien Netflix ne passe pas tout seul ; mis à la télé, un film, son site, son titre, son affiche) et
 `navigateur/salon-tele.mjs` (« 📺 À la télé ce soir ? », l'affiche « Ce soir », « ▶ Ouvrir sur Netflix », « Notre film »
 dans « À venir »).
+
+### 11.17 📎 Les PDF (lot S6, cinquième partie — 18 novembre 2026)
+
+**Décidé par le propriétaire le 18 novembre 2026** : « seulement des PDF, sans contrôle, entre deux proches qui se sont
+ajoutés, ouverts en téléchargement » (un document ne peut pas être contrôlé comme une photo).
+
+- **Les règles** (`src/lib/direct/fichier.ts`) : un PDF, 10 Mo au plus, vingt par jour ; son nom nettoyé (sans dossier,
+  sans caractère réservé, 80 signes, « .pdf » au bout) et passé aux mots interdits ; la notification « 📎 Léa t'a envoyé
+  un PDF » (et son nom) ; la ligne de « Chez moi » « 📎 Le nom.pdf » ; les figurines ne lisent pas les documents.
+- **Le serveur** (`fichier-serveur.ts`, `POST /api/direct/proches { action: "fichier-depot" | "fichier" }`) : comme une
+  photo, déposé tout droit au seau (une adresse signée), puis relu — **un vrai PDF** (`%PDF-` au début : une image
+  renommée est refusée, 422, et effacée), 10 Mo au plus (413) —, rangé (`fils/<paire>/f/<id>.pdf`), posé dans le fil
+  (`genre: "fichier"`). **Pas de modération** ; seulement entre deux proches qui se sont ajoutés tous les deux. Son
+  adresse signée (une heure) le **télécharge sous son nom** (`Content-Disposition: attachment`) : jamais ouvert dans
+  ClikMe. Effacer son message (24 heures) l'efface ; signalé, l'équipe le voit (« 📎 Un PDF », « Ouvrir le PDF »). Le
+  frein : `CLIKME_FICHIERS=0` (plus de PDF ; ceux qui sont partis restent).
+- **Dans le salon** : une quatrième case dans le ＋, **📎 PDF** (« un document, un billet, une recette ») ; son nom et sa
+  taille, pas de légende, « Envoyer » ; « 📎 Le nom.pdf » dans la bulle ; dans 💬, sa carte (📄, le nom, « PDF · 820 Ko ·
+  Télécharger »). L'ancien écran de conversation montre la même carte.
+
+**Les essais** : `scripts/essai-fichiers-route.mjs` (les portes ; un PDF déposé, son nom nettoyé, sa taille, rangé, son
+adresse qui télécharge ; chez Sam, « Chez moi », la notification ; une image renommée 422, plus de 10 Mo 413, jamais
+déposé 400, celui d'un autre 400, un mot interdit 422, un nom sans « .pdf » ; signalé, effacé) et
+`scripts/navigateur/salon-envoyer.mjs` (la case 📎, l'aperçu, la bulle, la carte dans 💬, un faux PDF refusé).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

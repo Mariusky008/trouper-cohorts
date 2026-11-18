@@ -56,6 +56,7 @@ import { gesteDuSalon, objetDuGeste, REACTIONS, SURPRISES, type GesteFil, type V
 import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
 import { PHRASES_TELE, filmALaTele, passeALaTele, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 import { CADRES_MAX, PHRASES_CADRES, cadreLibre, ditAccrochee, type CadreVu } from "@/lib/direct/cadres";
+import { PHRASES_FICHIER, tailleDite } from "@/lib/direct/fichier";
 import type { ModeChoix } from "./choisir";
 import type { Choisi } from "./envoyer";
 import { prochainRendezVous } from "./bulles";
@@ -264,6 +265,17 @@ function MessageDuFil({ m, prenom, reactions = [], surReagir, garde, surGarder, 
           <video className="sd-piece" src={m.video.url} poster={m.video.vignette} width={m.video.l} height={m.video.h} controls playsInline preload="none" />
           {m.texte && <span className="sd-texte">{m.texte}</span>}
         </>
+      ) : m.genre === "fichier" && m.fichier ? (
+        // 📎 (lot S6) un PDF : il se télécharge sous son nom (jamais ouvert dans ClikMe)
+        <a className="sd-fichier" href={m.fichier.url} download={m.fichier.nom} data-fichier={m.id}>
+          <span className="e">📄</span>
+          <span>
+            <b>{m.fichier.nom}</b>
+            <small>
+              PDF · {tailleDite(m.fichier.taille)} · {PHRASES_FICHIER.telecharger}
+            </small>
+          </span>
+        </a>
       ) : (
         <Vocal m={m} />
       )}
@@ -1669,6 +1681,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           prenom={prenom}
           photos={fil.photos !== false}
           videos={fil.videos !== false}
+          fichiers={fil.fichiers === true}
           {...(depart ? { depart: depart.piece } : {})}
           onFermer={() => {
             setEnvoiOuvert(false);
@@ -1772,6 +1785,10 @@ export const STYLES_SALON = `
 .sd-cadre-boutons{display:flex;gap:8px;margin-top:4px}
 .sd-cadre-boutons button{height:40px;padding:0 16px!important;border-radius:20px;background:rgba(255,255,255,.08)!important;font:700 13.5px var(--app)!important}
 .sd-cadre-boutons button.oui{background:var(--rose)!important;color:#fff!important}
+.sd-fichier{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);color:var(--texte);text-decoration:none;max-width:260px}
+.sd-fichier .e{font-family:var(--emoji);font-size:26px;line-height:1;flex:none}
+.sd-fichier b{display:block;font:700 13.5px/1.25 var(--app);overflow-wrap:anywhere}
+.sd-fichier small{display:block;margin-top:2px;font:600 11.5px var(--app);color:var(--doux)}
 .sd-tele-fil{margin-left:6px;font:400 13px var(--emoji)!important;vertical-align:middle}
 .sd-recul{position:absolute;z-index:6;top:10px;left:10px;height:34px;padding:0 13px!important;border-radius:17px;background:rgba(24,7,20,.78)!important;color:var(--texte)!important;font:700 13px var(--app)!important;box-shadow:0 2px 10px rgba(0,0,0,.35)}
 .sc-couche .tv{pointer-events:auto}

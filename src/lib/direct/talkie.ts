@@ -49,7 +49,9 @@ export type RepliqueProposee = { de: number; a: number; texte: string; propositi
  * 🎬 (lot M3, `video.ts`) `genre: "video"` : une vidéo — `video` (ses adresses signées, sa vignette, sa durée) ; comme une
  * photo pour le reste (la figurine montre sa vignette ; un toucher la lit en grand, avec son son).
  */
-export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage };
+export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video" | "fichier"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage; fichier?: FichierDuMessage };
+/** 📎 (lot S6) le PDF d'un message : son adresse signée (une heure, il se télécharge sous son nom), son nom, sa taille. */
+export type FichierDuMessage = { url: string; nom: string; taille: number };
 /** 🎬 (lot M3) la vidéo d'un message : son adresse signée et celle de sa vignette (une heure), ses dimensions, sa durée (s). */
 export type VideoDuMessage = { url: string; vignette: string; l: number; h: number; duree: number };
 /** 📷 (lot M2) la photo d'un message : son adresse signée (une heure), ses dimensions. */
@@ -77,7 +79,7 @@ export type ProcheVivant = {
   nonLus: number;
   lien: LienProche;
   /** son dernier message (`meme` : c'était un mème, lot 4 ; `ecrit` : un message écrit, lot M1) */
-  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean; ecrit?: boolean; photo?: boolean; video?: boolean };
+  dernier?: { texte: string; le: string; moi: boolean; meme?: boolean; ecrit?: boolean; photo?: boolean; video?: boolean; fichier?: boolean };
   venu?: boolean;
   humeur?: Sentiment;
   imageHumeur?: string;
@@ -107,7 +109,7 @@ export type MemeFil = { id: string; moi: boolean; le: string; image: string; tex
  * `photos` : 📷 lot M2 — on peut lui envoyer une photo ; `false` : `CLIKME_PHOTOS=0` ; `videos` : 🎬 lot M3, de même avec
  * `CLIKME_VIDEOS=0`)
  */
-export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[]; ecrire?: boolean; photos?: boolean; videos?: boolean };
+export type Fil = { cle: string; lui: FigurineVue; moi: FigurineVue; la: boolean; messages: MessageFil[]; chezMoi?: ChezMoi; memes?: MemeFil[]; ecrire?: boolean; photos?: boolean; videos?: boolean; fichiers?: boolean };
 
 export const cleValide = (x: unknown): string | null => (typeof x === "string" && /^[a-f0-9]{16}$/.test(x) ? x : null);
 export const texteDuMessage = (r: readonly Replique[]) =>
@@ -126,6 +128,8 @@ export function texteLuDuMessage(f: { genre?: unknown; texte?: unknown; lien?: {
   if (f.genre === "photo") return texteLuDeLaPhoto(f);
   // 🎬 (lot M3) d'une vidéo, sa légende seulement : jamais la vidéo
   if (f.genre === "video") return texteLuDeLaVideo(f);
+  // 📎 (lot S6) un PDF : rien (les figurines ne lisent pas les documents)
+  if (f.genre === "fichier") return "";
   return texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
 }
 

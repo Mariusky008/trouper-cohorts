@@ -24,7 +24,8 @@ objets, gardés par le serveur), les gestes en direct avec le pouls et rejoués 
 S3, deuxième partie** (la vie propre des figurines, le chat — faite aussi, 11.12), puis S6 (première partie faite :
 📌 Garder et l'étagère dans la pièce, 11.13 ; ＋ Envoyer une photo, une vidéo, un lien, 11.14 ; la télé dans la pièce et
 « 📺 La mettre à la télé ? », 11.15 ; les cadres, 🖼️ Accrocher, 📺 Un clip, 📸 Photo à deux et les films, 11.16 ; reste
-les réactions de la télé, et les fichiers — en attente d'une décision du propriétaire sur leur contrôle), S4, S5, S7, S8.
+les réactions de la télé ; les PDF, 11.17, décidés par le propriétaire : sans contrôle, entre proches, en téléchargement),
+S4, S5, S7, S8.
 
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 

@@ -29,6 +29,20 @@ export async function envoyerPhotoDeposee(cle: string, id: string, legende: stri
   return r.j.message ? { message: r.j.message, statut: r.statut } : { error: r.j.error || "Ça n’a pas marché. Réessaie.", statut: r.statut };
 }
 
+/** 📎 (lot S6) Déposer un PDF : son identifiant, ou l'erreur. */
+export async function deposerFichier(cle: string, fichier: Blob): Promise<{ id?: string; error?: string }> {
+  const d = await demander<{ seau: string; chemin: string; jeton: string; id: string }>({ action: "fichier-depot", cle });
+  if (!d.j.jeton) return { error: d.j.error || "Ton PDF n’a pas pu partir. Réessaie." };
+  const { error } = await createClient().storage.from(d.j.seau).uploadToSignedUrl(d.j.chemin, d.j.jeton, fichier, { contentType: "application/pdf" });
+  if (error) return { error: "Ton PDF n’a pas pu partir. Réessaie." };
+  return { id: d.j.id };
+}
+/** 📎 Envoyer le PDF déposé, sous son nom : le message, ou l'erreur et son statut. */
+export async function envoyerFichierDepose(cle: string, id: string, nom: string): Promise<{ message?: MessageFil; error?: string; statut: number }> {
+  const r = await demander<{ message: MessageFil }>({ action: "fichier", cle, id, nom });
+  return r.j.message ? { message: r.j.message, statut: r.statut } : { error: r.j.error || "Ça n’a pas marché. Réessaie.", statut: r.statut };
+}
+
 /** Les deux à la suite. */
 export async function envoyerUnePhoto(cle: string, blob: Blob, legende: string): Promise<{ message?: MessageFil; error?: string }> {
   const d = await deposerPhoto(cle, blob);

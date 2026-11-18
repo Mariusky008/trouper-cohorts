@@ -8,7 +8,9 @@
 // sa bulle, la photo dans 💬, et chez Sam (par la route). 🎬 : une vidéo enregistrée par le navigateur, lue dans le
 // téléphone (« 0:02 »), « Envoi… », puis « 🎬 Une vidéo » dans sa bulle. Une photo que la modération refuse : dit, et
 // « Une autre » ; la modération en panne : « Réessayer ». Un fichier qui n'est pas une photo : dit. 🔗 : la feuille se
-// ferme, la saisie s'ouvre (« Colle un lien… »). Ni débordement, ni erreur, ni le mot « exemple ».
+// ferme, la saisie s'ouvre (« Colle un lien… »). 📎 (décidé par le propriétaire : seulement des PDF, sans contrôle) : un
+// PDF, son nom et sa taille, pas de légende ; « 📎 Billets.pdf » dans sa bulle, sa carte dans 💬 (elle le télécharge) ;
+// une image renommée en .pdf : « Seuls les PDF peuvent partir. ». Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
@@ -171,7 +173,7 @@ ok(plus, "un ＋ à gauche de la saisie");
 ok(await ouvrirPlus(), "＋ : la feuille s'ouvre");
 ok((await texte(".sd-envoi .sd-poignee")) === "Envoyer à Sam", `« ${await texte(".sd-envoi .sd-poignee")} »`);
 const cases = await p.locator(".sd-joint").evaluateAll((l) => l.map((x) => `${x.dataset.joint}:${x.innerText.replace(/\s+/g, " ").trim()}`));
-ok(cases.join(" | ") === "photo:📷 Photo elle peut aller au mur | video:🎬 Vidéo elle peut passer à la télé | lien:🔗 Lien YouTube, une chanson, un site", `trois cases (${cases.join(" | ")})`);
+ok(cases.join(" | ") === "photo:📷 Photo elle peut aller au mur | video:🎬 Vidéo elle peut passer à la télé | lien:🔗 Lien YouTube, une chanson, un site | fichier:📎 PDF un document, un billet, une recette", `quatre cases (${cases.join(" | ")})`);
 await p.screenshot({ path: `${D}/salon-envoyer-1-plus.png` });
 
 // ═══ 📷 UNE PHOTO ═══
@@ -232,6 +234,29 @@ ok(await attendre(async () => (await texte('.sd-envoi-dit[role="alert"]')) === "
 await p.locator(".sd-voile.vu").click({ position: { x: 20, y: 20 } });
 ok(await attendre(async () => (await p.locator(".sd-envoi").count()) === 0, 3000), "toucher à côté : fermée");
 ok((await filDeSam()).filter((m) => m.genre === "photo").length === 1, "rien d'autre n'est parti");
+
+// ═══ 📎 UN PDF ═══
+const PDF = Buffer.from("%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n".padEnd(2400, " "));
+await ouvrirPlus();
+await choisir("fichier", "Billets.pdf", "application/pdf", PDF);
+ok(await attendre(async () => (await p.locator('.sd-envoi[data-envoi="fichier"] .sd-envoi-apercu[data-etat="prete"] .sd-envoi-pdf').count()) === 1, 6000), "📎 : son PDF, prêt");
+ok((await texte(".sd-envoi-pdf")) === "📄 Billets.pdf 2 Ko" && (await p.locator(".sd-envoi-piece input").count()) === 0, `son nom, sa taille, pas de légende (« ${await texte(".sd-envoi-pdf")} »)`);
+ok((await texte(".sd-envoi .sd-poignee")) === "📎 Un PDF pour Sam", `« ${await texte(".sd-envoi .sd-poignee")} »`);
+await p.locator(".sd-envoi [data-envoyer]").click();
+ok(await attendre(async () => (await p.locator(".sd-envoi").count()) === 0, 10000), "« Envoyer » : parti");
+ok(await attendre(async () => (await texte(".sd-bulle.moi:not([data-ia])")) === "📎 Billets.pdf", 4000), `dans sa bulle : « ${await texte(".sd-bulle.moi:not([data-ia])")} »`);
+ok((await filDeSam()).some((m) => m.genre === "fichier" && m.fichier?.nom === "Billets.pdf"), "chez Sam : le PDF");
+await p.locator(".sd-fil").click();
+ok(await attendre(async () => (await p.locator('.sd-feuille.vu .sd-msg.moi a.sd-fichier[download="Billets.pdf"]').count()) === 1, 4000), "dans 💬 : sa carte, qui le télécharge");
+ok((await texte(".sd-feuille .sd-fichier small")) === "PDF · 2 Ko · Télécharger", `« ${await texte(".sd-feuille .sd-fichier small")} »`);
+await p.locator(".sd-feuille .sd-poignee").click();
+await attendre(async () => (await p.locator(".sd-feuille.vu").count()) === 0, 2000);
+await p.waitForTimeout(500);
+await ouvrirPlus();
+await choisir("fichier", "faux.pdf", "application/pdf", PANNE);
+ok(await attendre(async () => (await texte('.sd-envoi-dit[role="alert"]')) === "Seuls les PDF peuvent partir.", 6000), "une image renommée en .pdf : « Seuls les PDF peuvent partir. »");
+await p.locator(".sd-voile.vu").click({ position: { x: 20, y: 20 } });
+await attendre(async () => (await p.locator(".sd-envoi").count()) === 0, 3000);
 
 // ═══ 🔗 UN LIEN ═══
 await ouvrirPlus();

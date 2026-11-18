@@ -131,7 +131,7 @@ export function MessageDuFilSignale({ m, le }: { m: MessageDuFil; le: string }) 
     setEnvoi(false);
     router.refresh();
   }
-  const quoi = m.genre === "photo" ? "📷 Une photo" : m.genre === "video" ? "🎬 Une vidéo" : m.genre === "ecrit" ? "✍️ Un écrit" : "🎙️ Un vocal";
+  const quoi = m.genre === "photo" ? "📷 Une photo" : m.genre === "video" ? "🎬 Une vidéo" : m.genre === "ecrit" ? "✍️ Un écrit" : m.genre === "fichier" ? "📎 Un PDF" : "🎙️ Un vocal";
   return (
     <div className="signale-fil" data-message={m.id} style={{ ...carte, alignItems: "flex-start" }}>
       {m.photo && (
@@ -145,6 +145,11 @@ export function MessageDuFilSignale({ m, le }: { m: MessageDuFil; le: string }) 
         </span>
         {m.texte && <span className="mots" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>« {m.texte} »</span>}
         {m.son && <audio controls src={m.son} preload="none" />}
+        {m.fichier && (
+          <a href={m.fichier} target="_blank" rel="noopener noreferrer">
+            Ouvrir le PDF
+          </a>
+        )}
         <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" className="remettre" disabled={envoi} onClick={() => moderer("remettre")}>
             Remettre
