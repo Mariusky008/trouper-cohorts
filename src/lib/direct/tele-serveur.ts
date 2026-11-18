@@ -18,7 +18,7 @@ import { battre } from "./pouls-serveur";
 import { jourParis } from "@/lib/jour-paris";
 import { ecrireJson, lireJson, signer } from "./ma-figurine-serveur";
 import { dossierMessages, hDeCle, nomsDuFil, pairDe, parolesCachees, qui8, seParlent, vueDeLaVideo, type FicheMessage } from "./talkie-serveur";
-import { CLIPS_DU_PROPRIETAIRE, PHRASES_TELE, TELE, clipsDeSecours, clipsValides, plateformeDe, secoursDuJour, videoYouTube, vignetteYouTube, type ClipSecours, type ProgrammeTele } from "./tele";
+import { CLIPS_DU_PROPRIETAIRE, PHRASES_TELE, TELE, clipsDeSecours, clipsValides, filmDe, plateformeDe, secoursDuJour, videoYouTube, vignetteYouTube, type ClipSecours, type ProgrammeTele } from "./tele";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -45,7 +45,8 @@ export async function ecrireSecours(supabase: Supabase, liens: unknown): Promise
 
 /**
  * Le programme d'un message : un lien YouTube (lu dans l'écran), TikTok ou Instagram (son aperçu, « ▶ Ouvrir ») ; avec
- * `videos` (lot S6), une vidéo de leur conversation (ses adresses signées). Sinon, rien.
+ * `videos` (lot S6 : ce que l'un des deux y met lui-même), aussi une vidéo de leur conversation (ses adresses signées) et
+ * un film, une série (son affiche « Ce soir »). Sinon, rien.
  */
 async function programmeDuMessage(supabase: Supabase, f: FicheMessage, moi: string, videos: boolean): Promise<ProgrammeTele | null> {
   if (!s(f.id)) return null;
@@ -59,9 +60,12 @@ async function programmeDuMessage(supabase: Supabase, f: FicheMessage, moi: stri
   const url = s(f.lien?.url);
   if (!url || (f.genre && f.genre !== "ecrit")) return null;
   const p = plateformeDe(url);
-  if (!p) return null;
+  const film = !p && videos ? filmDe(url) : null;
+  if (!p && !film) return null;
   const titre = s(f.lien?.titre).slice(0, 140);
   const image = s(f.lien?.image) ? await signer(supabase, s(f.lien?.image), 3600).catch(() => "") : "";
+  if (film) return { sorte: "film", message: s(f.id), url, site: film, ...(titre ? { titre } : {}), ...(image ? { affiche: image } : {}), moi: f.de === moi, le: s(f.le) };
+  if (!p) return null;
   const commun = { url, ...(titre ? { titre } : {}), moi: f.de === moi, le: s(f.le), message: s(f.id) };
   if (p === "youtube") {
     const v = videoYouTube(url)!;

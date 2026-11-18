@@ -7,8 +7,9 @@
 // télé ! », la caméra s'approche de la télé, « ↩ La pièce » ; la télé passe sa vidéo (« ▶ Allumer » la lit, avec le
 // son) ; la question disparaît de sa bulle. Chez Sam (par la route) : sa vidéo, mise par Léa. « ↩ La pièce » : la caméra
 // revient. Sam remet son clip à la télé : chez Léa, en direct, « 📺 Sam a mis quelque chose à la télé », la télé le
-// montre. Dans 💬, sa vidéo a un 📺. Toucher la télé de loin : la caméra s'en approche. Ni débordement, ni erreur, ni
-// le mot « exemple ».
+// montre. Dans 💬, sa vidéo a un 📺. 🍿 Léa écrit un lien Netflix : « 📺 À la télé ce soir ? » ; un toucher : « 🍿 Ce
+// soir, à la télé ! », l'affiche « Ce soir », et « Notre film » posé dans « À venir ». Toucher la télé de loin : la
+// caméra s'en approche. Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
@@ -215,10 +216,25 @@ ok(await attendre(async () => (await tv())?.programme === "video" && (await p.lo
 await p.locator(".sd-recul").click();
 await attendre(async () => (await tv())?.proche === false, 3000);
 
+// ═══ 🍿 UN FILM, CE SOIR ═══
+await p.locator(".sd-saisie input").fill("On regarde ça ? https://www.netflix.com/title/80100172");
+await p.locator(".sd-envoyer").click();
+ok(await attendre(async () => (await texte('.sd-mettre-tele[data-film]')) === "📺 À la télé ce soir ?", 6000), "un lien Netflix : « 📺 À la télé ce soir ? »");
+await p.locator(".sd-mettre-tele[data-film]").click();
+ok(await attendre(async () => (await texte(".sd-toast.vu")) === "🍿 Ce soir, à la télé !", 5000), "« 🍿 Ce soir, à la télé ! »");
+ok(await attendre(async () => (await tv())?.programme === "film" && (await texte(".tv-ce-soir")) === "🍿 Ce soir", 4000), "l'affiche « Ce soir » à la télé");
+ok((await texte('.tv-bouton[data-geste="ouvrir"]')) === "▶ Ouvrir sur Netflix", "« ▶ Ouvrir sur Netflix »");
+const etagere = async () => (await (await fetch(`${BASE}/api/direct/etagere?avec=${SAM.cle}`, { headers: { cookie: `clikme_habitant=${LEA.jeton}` } })).json())?.etagere?.objets ?? [];
+ok(await attendre(async () => (await etagere()).some((o) => o.titre === "Notre film" && o.rayon === "avenir"), 4000), "« Notre film » posé dans « À venir »");
+await p.waitForTimeout(1200);
+await p.screenshot({ path: `${D}/salon-tele-3-film.png` });
+await p.locator(".sd-recul").click();
+await attendre(async () => (await tv())?.proche === false, 3000);
+
 // ═══ TOUCHER LA TÉLÉ DE LOIN ═══
 await p.waitForTimeout(1600);
 await p.locator(".sc-couche .tv").click();
-ok(await attendre(async () => (await tv())?.proche === true && (await p.locator(".tv-bouton[data-geste=allumer]").count()) === 1, 3000), "toucher la télé de loin : la caméra s'en approche, « ▶ Allumer »");
+ok(await attendre(async () => (await tv())?.proche === true && (await p.locator(".tv-bouton").count()) === 1, 3000), "toucher la télé de loin : la caméra s'en approche, son bouton (« ▶ Ouvrir sur Netflix »)");
 
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "rien ne déborde");
 ok((await p.evaluate(() => document.querySelector(".sd").scrollTop)) === 0, "le salon n'a pas glissé");

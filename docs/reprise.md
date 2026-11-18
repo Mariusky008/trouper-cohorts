@@ -23,8 +23,8 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
 objets, gardés par le serveur), les gestes en direct avec le pouls et rejoués à l'arrivée, 💬 qui les montre. **Ensuite :
 S3, deuxième partie** (la vie propre des figurines, le chat — faite aussi, 11.12), puis S6 (première partie faite :
 📌 Garder et l'étagère dans la pièce, 11.13 ; ＋ Envoyer une photo, une vidéo, un lien, 11.14 ; la télé dans la pièce et
-« 📺 La mettre à la télé ? », 11.15 ; les cadres, 🖼️ Accrocher, 📺 Un clip et 📸 Photo à deux, 11.16 ; reste les
-fichiers, les films, les réactions de la télé), S4, S5, S7, S8.
+« 📺 La mettre à la télé ? », 11.15 ; les cadres, 🖼️ Accrocher, 📺 Un clip, 📸 Photo à deux et les films, 11.16 ; reste
+les réactions de la télé, et les fichiers — en attente d'une décision du propriétaire sur leur contrôle), S4, S5, S7, S8.
 
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 

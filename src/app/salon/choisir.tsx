@@ -13,7 +13,7 @@
  */
 import { useRef, useState } from "react";
 import { PHRASES_CADRES } from "@/lib/direct/cadres";
-import { plateformeDe, videoYouTube, vignetteYouTube } from "@/lib/direct/tele";
+import { filmDe, plateformeDe, videoYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import type { MessageFil } from "@/lib/direct/talkie";
 
 export type ModeChoix = "mur" | "tele";
@@ -52,7 +52,7 @@ export default function FeuilleChoisir({
   const fichier = useRef<HTMLInputElement>(null);
   const [lien, setLien] = useState("");
   const mur = mode === "mur";
-  const lienBon = Boolean(lien.trim() && plateformeDe(lien.trim()));
+  const lienBon = Boolean(lien.trim() && (plateformeDe(lien.trim()) || filmDe(lien.trim())));
   return (
     <>
       <style>{STYLES_CHOISIR}</style>
@@ -70,7 +70,7 @@ export default function FeuilleChoisir({
                 if (lienBon) onLien(lien.trim());
               }}
             >
-              <input value={lien} onChange={(e) => setLien(e.target.value)} placeholder="Colle un lien : YouTube, TikTok, Instagram…" aria-label="Un lien vidéo" inputMode="url" autoComplete="off" />
+              <input value={lien} onChange={(e) => setLien(e.target.value)} placeholder="Colle un lien : YouTube, TikTok, un film…" aria-label="Un lien vidéo" inputMode="url" autoComplete="off" />
               <button type="submit" className="oui" disabled={!lienBon} data-lien-tele>
                 📺
               </button>

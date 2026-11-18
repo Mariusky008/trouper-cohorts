@@ -43,6 +43,12 @@ export const PHRASES_TELE = {
   misePar: (prenom: string) => `📺 ${prenom} a mis quelque chose à la télé`,
   illisible: "Cette vidéo ne se lit pas ici.",
   pasALaTele: "Celui-là ne passe pas à la télé.",
+  // 🍿 (lot S6) les films
+  ceSoir: "📺 À la télé ce soir ?",
+  ceSoirMis: "🍿 Ce soir, à la télé !",
+  ceSoirBadge: "🍿 Ce soir",
+  ouvrirFilm: (site: string) => `▶ Ouvrir sur ${site}`,
+  notreFilm: "Notre film",
 } as const;
 
 export type Plateforme = "youtube" | "tiktok" | "instagram";
@@ -70,6 +76,8 @@ export type ProgrammeTele =
   | { sorte: "ouvrir"; plateforme: "tiktok" | "instagram"; url: string; titre?: string; apercu?: string; moi: boolean; le: string; message?: string; mis?: MisALaTele }
   /** (lot S6) une vidéo de leur conversation (filmée au téléphone), lue dans l'écran : ses adresses signées */
   | { sorte: "video"; message: string; url: string; vignette: string; l: number; h: number; duree: number; titre?: string; moi: boolean; le: string; mis?: MisALaTele }
+  /** 🍿 (lot S6) un film, une série (Netflix, Prime Video…) : son affiche « Ce soir », et « ▶ Ouvrir sur Netflix » */
+  | { sorte: "film"; message: string; url: string; site: string; titre?: string; affiche?: string; moi: boolean; le: string; mis?: MisALaTele }
   | { sorte: "secours"; id: string; debut?: number; titre?: string }
   | { sorte: "eteinte" };
 
@@ -181,6 +189,42 @@ export function secoursDuJour(clips: ClipSecours[], cle: string): ClipSecours | 
 /** Le clip qui prend le relais d'une vidéo refusée : le suivant dans la liste (jamais elle-même). */
 export function secoursApres(clips: ClipSecours[], refusees: string[]): ClipSecours | null {
   return clips.find((c) => !refusees.includes(c.id)) ?? null;
+}
+
+/**
+ * 🍿 (lot S6, `docs/univers/salon-du-duo.md` 4.8) LES SITES DE FILMS ET DE SÉRIES : un lien de l'un d'eux passe à la télé
+ * quand on le lui demande (« 📺 À la télé ce soir ? »), en affiche « Ce soir ».
+ */
+export const SITES_FILMS: { site: RegExp; nom: string }[] = [
+  { site: /(^|\.)netflix\.com$/, nom: "Netflix" },
+  { site: /(^|\.)primevideo\.com$/, nom: "Prime Video" },
+  { site: /(^|\.)disneyplus\.com$/, nom: "Disney+" },
+  { site: /(^|\.)canalplus\.com$/, nom: "Canal+" },
+  { site: /(^|\.)allocine\.fr$/, nom: "Allociné" },
+  { site: /(^|\.)imdb\.com$/, nom: "IMDb" },
+  { site: /(^|\.)arte\.tv$/, nom: "Arte" },
+  { site: /(^|\.)france\.tv$/, nom: "france.tv" },
+  { site: /(^|\.)mubi\.com$/, nom: "Mubi" },
+  { site: /(^|\.)(max\.com|hbomax\.com)$/, nom: "Max" },
+  { site: /^tv\.apple\.com$/, nom: "Apple TV" },
+  { site: /(^|\.)paramountplus\.com$/, nom: "Paramount+" },
+  { site: /(^|\.)crunchyroll\.com$/, nom: "Crunchyroll" },
+];
+/** Le site de films d'une adresse (« Netflix »), ou `null`. */
+export function filmDe(adresse: string): string | null {
+  try {
+    const u = new URL(adresse.trim());
+    if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+    const h = u.hostname.toLowerCase();
+    return SITES_FILMS.find((x) => x.site.test(h))?.nom ?? null;
+  } catch {
+    return null;
+  }
+}
+/** (lot S6) Un message qui passe à la télé en film, ce soir : un écrit dont le lien est un film, une série. */
+export function filmALaTele(m: { genre?: string; lien?: { url?: unknown } | null }): boolean {
+  const url = typeof m.lien?.url === "string" ? m.lien.url : "";
+  return (m.genre === undefined || m.genre === "ecrit") && Boolean(url && filmDe(url));
 }
 
 /** (lot S6) Un message qui peut passer à la télé : une vidéo, ou un lien YouTube, TikTok ou Instagram. */

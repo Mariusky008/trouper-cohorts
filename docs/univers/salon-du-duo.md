@@ -1061,15 +1061,24 @@ dans 💬 ; toucher la télé de loin ; ni glissement, ni erreur).
   le duo, 1 200 × 900, les images relues avec CORS) ; elle part comme une photo du ＋ (`depot.ts`, partagé avec
   `envoyer.tsx` : déposée au seau, vérifiée par le serveur) avec sa légende « Notre photo à deux », et s'accroche au mur
   (chacun son tour).
-- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; les films ; 📎 les fichiers ; 🎭 et
-  🎙️ dans le ＋ (lots S5, S4).
+- **🍿 Les films** (`tele.ts` : `SITES_FILMS`, `filmDe` — Netflix, Prime Video, Disney+, Canal+, Allociné, IMDb, Arte,
+  france.tv, Mubi, Max, Apple TV, Paramount+, Crunchyroll) : un lien de film ne passe jamais tout seul à la télé ; sous ma
+  bulle, **« 📺 À la télé ce soir ? »** (et 📺 dans 💬, et collé dans « Mettre à la télé ») : « 🍿 Ce soir, à la télé ! »,
+  la télé montre **son affiche** (l'aperçu du lien ; sinon son titre) avec **« 🍿 Ce soir »** et **« ▶ Ouvrir sur
+  Netflix »** (`sorte: "film"`), chez les deux ; et **« Notre film »** se pose pour les deux dans « À venir », ce jour-là
+  (un dépôt de l'étagère, une fois par jour).
+- **Pas encore** : les réactions qui s'envolent de la télé, « Sam regarde aussi » ; 📎 les fichiers (en attente d'une
+  décision du propriétaire : un document ne peut pas être contrôlé comme une photo) ; 🎭 et 🎙️ dans le ＋ (lots S5, S4).
 
 **Les essais** : `scripts/essai-salon-cadres-route.mjs` (accrocher, chez les deux, le pouls, le vivant, remplacer ;
 vidéo et écrit 422, cadre 400, 404, 403, 401 ; signalée) et `scripts/navigateur/salon-cadres.mjs` (les cadres vides sur
 les zones relevées ; un cadre vide ouvre la feuille ; « 🖼️ L'accrocher au mur ? », l'envol, le premier cadre, chez
 Sam ; 🖼️ Accrocher et le cadre vide suivant ; la photo en grand, « Une autre photo ici » ; en direct ; 📺 Un clip, un
 lien collé qui passe à la télé ; 📸 Photo à deux : « Cheese ! », la photo 1 200 × 900 qui n'est pas vide, accrochée
-chacun son tour, le geste chez Sam ; 🖼️ dans 💬 ; ni glissement, ni erreur).
+chacun son tour, le geste chez Sam ; 🖼️ dans 💬 ; ni glissement, ni erreur). Les films : `essai-tele-route.mjs` (un
+lien Netflix ne passe pas tout seul ; mis à la télé, un film, son site, son titre, son affiche) et
+`navigateur/salon-tele.mjs` (« 📺 À la télé ce soir ? », l'affiche « Ce soir », « ▶ Ouvrir sur Netflix », « Notre film »
+dans « À venir »).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

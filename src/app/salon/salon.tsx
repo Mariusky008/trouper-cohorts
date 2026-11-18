@@ -46,7 +46,7 @@ const TeleDuo = dynamic(() => import("@/app/univers/tele-duo").then((m) => m.Tel
 /** 🖼️📺 « Accrocher une photo au mur » / « Mettre à la télé » (lot S6) : chargée seulement quand on l'ouvre. */
 const FeuilleChoisir = dynamic(() => import("./choisir"), { ssr: false });
 /** Le message qui passe à la télé (un lien, une vidéo), s'il y en a un. */
-const messageALaTele = (p: ProgrammeTele | undefined) => (p && (p.sorte === "youtube" || p.sorte === "ouvrir" || p.sorte === "video") ? p.message : undefined);
+const messageALaTele = (p: ProgrammeTele | undefined) => (p && (p.sorte === "youtube" || p.sorte === "ouvrir" || p.sorte === "video" || p.sorte === "film") ? p.message : undefined);
 /** Le dernier lien vidéo (YouTube, TikTok, Instagram) de la conversation : un nouveau, et la télé relit son programme. */
 const dernierLienDe = (l: readonly MessageFil[]) => [...l].reverse().find((m) => m.genre === "ecrit" && !m.id.startsWith("envoi-") && passeALaTele(m))?.id ?? "";
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
@@ -54,7 +54,7 @@ import { aRejouer, derniersDeChacun, dureeDite, dureeDuGeste, emojiDuGeste, gest
 import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
 import { gesteDuSalon, objetDuGeste, REACTIONS, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
 import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
-import { PHRASES_TELE, passeALaTele, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
+import { PHRASES_TELE, filmALaTele, passeALaTele, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 import { CADRES_MAX, PHRASES_CADRES, cadreLibre, ditAccrochee, type CadreVu } from "@/lib/direct/cadres";
 import type { ModeChoix } from "./choisir";
 import type { Choisi } from "./envoyer";
@@ -1009,7 +1009,14 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     setFeuille(false);
     approcherTele();
     etincelerTele();
-    montrer(PHRASES_TELE.mise, 2200);
+    montrer(p.sorte === "film" ? PHRASES_TELE.ceSoirMis : PHRASES_TELE.mise, 2200);
+    // 🍿 un film ce soir : « Notre film », pour les deux, dans « À venir » (une fois par jour)
+    if (p.sorte === "film") {
+      const quand = new Date().toLocaleDateString("fr-CA", { timeZone: "Europe/Paris" });
+      void fetch("/api/direct/etagere", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "deposer", avec: cle, pour: "deux", genre: "date", sorte: "evenement", emoji: "🎬", titre: PHRASES_TELE.notreFilm, quand }) })
+        .then((r) => r.text())
+        .catch(() => undefined);
+    }
   }
   /** 💓 Le pouls dit que l'un des deux a mis quelque chose à la télé : on relit son programme ; si c'est lui, on le dit. */
   function recevoirTele(t: Vivant["tele"]) {
@@ -1097,7 +1104,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     const m = j.message;
     lienVu.current = m.id;
     partageEnvoye(m);
-    if (passeALaTele(m)) await mettreALaTele(m.id);
+    if (passeALaTele(m) || filmALaTele(m)) await mettreALaTele(m.id);
     else montrer(PHRASES_TELE.pasALaTele, 2600);
   }
 
@@ -1366,6 +1373,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                       {PHRASES_CADRES.accrocher}
                     </button>
                   )}
+                  {zoneTele && reagissable(monDernier.id) && filmALaTele(monDernier) && messageALaTele(tele?.programme) !== monDernier.id && (
+                    <button type="button" className="sd-mettre-tele" data-tele-mettre={monDernier.id} data-film onClick={() => void mettreALaTele(monDernier.id)}>
+                      {PHRASES_TELE.ceSoir}
+                    </button>
+                  )}
                   {zoneTele && reagissable(monDernier.id) && passeALaTele(monDernier) && messageALaTele(tele?.programme) !== monDernier.id && (
                     <button type="button" className="sd-mettre-tele" data-tele-mettre={monDernier.id} onClick={() => void mettreALaTele(monDernier.id)}>
                       {PHRASES_TELE.mettre}
@@ -1581,7 +1593,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 <div className="sd-jour">{j.jour}</div>
                 {j.lignes.map((l) =>
                   l.sorte === "message" ? (
-                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && passeALaTele(l.m) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} {...(zonesCadres.length > 0 && l.m.moi && reagissable(l.m.id) && l.m.genre === "photo" ? { surAccrocher: () => void accrocherPhoto(l.m.id) } : {})} />
+                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && (passeALaTele(l.m) || filmALaTele(l.m)) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} {...(zonesCadres.length > 0 && l.m.moi && reagissable(l.m.id) && l.m.genre === "photo" ? { surAccrocher: () => void accrocherPhoto(l.m.id) } : {})} />
                   ) : l.sorte === "geste" ? (
                     <div key={`geste-${l.g.id}`} className="sd-evt" data-geste-fil={l.g.cle}>
                       <span>{phraseDuGeste(l.g, l.g.moi, prenom)}</span>
