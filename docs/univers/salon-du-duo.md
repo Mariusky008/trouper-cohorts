@@ -951,6 +951,40 @@ une image passée par la carte graphique ; un message : les oreilles ; touché :
 ronronne ; un check : un saut ; la page cachée : sa vidéo s'arrête ; au repos, les figurines se regardent ou s'étirent ;
 ni débordement, ni erreur, ni le mot interdit).
 
+### 11.13 📌 Garder une bulle, l'étagère dans la pièce (lot S6, première partie — 18 novembre 2026)
+
+- **Le vocabulaire de l'étagère** (`src/lib/direct/etagere.ts`) : un genre `mot` (« vos mots », 💬, dans « Ce qu'on
+  aime ») et un quatrième rayon, **« Nos fous rires »** (`rires` : les blagues y vont désormais ; « Mes fous rires » sur
+  « Mon étagère ») ; la règle de la page dit « Et vous pouvez tout garder vous-mêmes : 📌 sur une bulle ». Un souvenir
+  gardé à la main porte `garde` (par qui) ; ce qu'on en voit, `garde: "moi" | "lui"` et `message` (le message d'où il
+  vient).
+- **Le serveur** (`src/lib/direct/etagere-serveur.ts`) : `POST /api/direct/etagere { action: "garder", avec, message }`
+  — le modèle (celui des notes) range ce message dans un genre : une date, une promesse, un goût, une blague, ou des
+  mots ; sa réponse est vérifiée par la même règle que les notes (la phrase exacte, pas de possessif, pas de prénom…) ;
+  sinon, ou sans modèle, **« vos mots »** : la phrase telle qu'elle a été dite, son début pour titre. **Pas de limite par
+  jour** ; un message ne se garde qu'une fois (`deja`) ; un sujet sensible ne se range pas (422 : « Celui-là, vos
+  figurines préfèrent ne pas le ranger… ») ; rangé tout de suite pour les deux (pas de « Je le range ? » : c'est lui qui
+  l'a demandé) ; le pouls bat. Un vocal se garde par sa transcription.
+- **Dans le salon** :
+  - **un 📌 dans le coin de chaque bulle** (la mienne, la sienne) **et sur chaque message de 💬** ; un toucher : la
+    figurine de celui qui l'a dit brandit « 📌 Noté ! », le souvenir s'envole jusqu'à l'étagère de la pièce,
+    « 📌 Noté sur votre étagère · 💬 Merci pour tout », l'autre figurine dit une phrase de la banque (une bulle dorée) ;
+    le 📌 devient ✓ ; un second toucher : « 📌 C'est déjà sur votre étagère » ;
+  - **l'étagère dans la pièce** (`src/app/salon/etagere-salon.ts`) : leurs souvenirs posés dans les fentes relevées
+    (`emplacements.fentes`), sinon sur deux rangées de la zone de l'étagère ; un toucher (ou 📚 dans l'en-tête) ouvre
+    **« Votre étagère »** (la page des lots E1 à E5, chargée seulement quand on l'ouvre) ;
+  - **ce que l'autre garde, ou ce que leurs figurines notent, s'envole en direct** (relu avec le pouls) :
+    « 📌 Sam a gardé · 😂 Le fou rire ».
+- **Pas encore** (lot S6, suite) : ＋ Envoyer (la feuille des six envois, les fichiers, les films) ; la télé et les
+  cadres dans la pièce, 📺 Un clip, 📸 Photo à deux, 🖼️ Accrocher ; garder un mème (avec le lot S5).
+
+**Les essais** : `scripts/essai-salon-garder-route.mjs` (une date samedi, une promesse, une blague dans « Nos fous
+rires », « vos mots », une réponse du modèle qui ne tient pas, déjà gardé, « malade » 422, 404, 403, 401, pas de limite,
+le pouls ; chez Sam : gardé par Léa, nouveau pour lui) et `scripts/navigateur/salon-garder.mjs` (le 📌, « 📌 Noté ! »,
+l'envol sur l'étagère relevée, la phrase de l'autre figurine, ✓, « déjà », 📚 ; dans 💬 ; en direct ; « Votre
+étagère » et ses quatre rayons ; « malade » ; ni débordement, ni erreur, ni le mot interdit). `verifier-etagere.mjs`,
+`navigateur/etagere.mjs` : les quatre rayons.
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

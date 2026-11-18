@@ -28,10 +28,16 @@
  * corps (👏 😂 ❤️ ✋ 🤦 😮).
  */
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { creerScene } from "./moteur";
 import "./mises-en-scene";
 import { annulerObjet, confierObjet } from "./gestes";
 import { installerChat, type ChatDuSalon, type EvenementChat } from "./chat";
+import { installerEtagere, placesEtagere, type EtagereDuSalon } from "./etagere-salon";
+import { phraseDeNote, type ObjetVu } from "@/lib/direct/etagere";
+
+/** 📚 « Votre étagère » (lot S6) : chargée seulement quand on l'ouvre. */
+const FeuilleEtagere = dynamic(() => import("./etagere-feuille"), { ssr: false });
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
 import { aRejouer, derniersDeChacun, dureeDite, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
 import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
@@ -217,7 +223,7 @@ function appuiLong(id: string | undefined, faire: (id: string) => void) {
 }
 
 /** Un message dans 💬 Messagerie (sous lui, les réactions ; un appui long sur un des siens : y réagir). */
-function MessageDuFil({ m, prenom, reactions = [], surReagir }: { m: MessageFil; prenom: string; reactions?: GesteFil[]; surReagir?: (id: string) => void }) {
+function MessageDuFil({ m, prenom, reactions = [], surReagir, garde, surGarder }: { m: MessageFil; prenom: string; reactions?: GesteFil[]; surReagir?: (id: string) => void; garde?: boolean; surGarder?: () => void }) {
   return (
     <div className={`sd-msg ${m.moi ? "moi" : "autre"}`} data-message={m.id} {...(!m.moi && surReagir ? appuiLong(m.id, surReagir) : {})}>
       {m.genre === "ecrit" ? (
@@ -245,6 +251,9 @@ function MessageDuFil({ m, prenom, reactions = [], surReagir }: { m: MessageFil;
       )}
       <small>
         {m.moi ? "Toi" : prenom} · {heureDite(m.le)}
+        {surGarder && reagissable(m.id) && (
+          <button type="button" className={`sd-garder-fil${garde ? " fait" : ""}`} data-garder={m.id} onClick={surGarder} aria-label={garde ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} />
+        )}
       </small>
       {reactions.length > 0 && (
         <span className="sd-reac" data-reactions={reactions.length}>
@@ -314,6 +323,14 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const table = useRef<ObjetTable[]>([]);
   const enFile = useRef(0);
   const recevoirRef = useRef<(liste: GesteFil[]) => void>(() => undefined);
+  // 📚 (lot S6) leurs souvenirs (l'étagère), « Votre étagère » ouverte, la phrase de la figurine qui voit noter
+  const [souvenirs, setSouvenirs] = useState<ObjetVu[]>([]);
+  const [etagereOuverte, setEtagereOuverte] = useState(false);
+  const [phraseIa, setPhraseIa] = useState<{ q: Qui; texte: string; n: number } | null>(null);
+  const etagere = useRef<EtagereDuSalon | null>(null);
+  const souvenirsRef = useRef<ObjetVu[]>([]);
+  const enGarde = useRef(new Set<string>());
+  const recevoirSouvenirsRef = useRef<(l: ObjetVu[]) => void>(() => undefined);
   // 🐾 (lot S3) le chat du salon
   const chatSalon = useRef<ChatSalon | null>(null);
   const chat = useRef<ChatDuSalon | null>(null);
@@ -333,6 +350,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           gestesConnus.current = new Set(g.map((x) => x.id));
           table.current = (c.ouverture.table ?? []).slice(-PLACES_TABLE);
           chatSalon.current = c.ouverture.chat ?? null;
+          souvenirsRef.current = c.ouverture.vivant?.etagere?.objets ?? [];
+          setSouvenirs(souvenirsRef.current);
           setGestes(g);
           setMessages(c.ouverture.fil.messages);
           setMemes(c.ouverture.fil.memes ?? []);
@@ -381,6 +400,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     // (🌷 ce qui est sur la table — sauf ce que les gestes de l'arrivée vont poser)
     const aPoser = arriveeFaiteRef.current ? new Set<string>() : new Set(gestesARejouer(gestesOuverture.current).map((g) => g.id));
     for (const o of table.current) if (!aPoser.has(o.id)) s.poser(o);
+    // (📚 leurs souvenirs sur l'étagère de la pièce ; un toucher ouvre « Votre étagère »)
+    etagere.current = installerEtagere(s, placesEtagere(sceneVue.emplacements), () => setEtagereOuverte(true));
+    etagere.current.montrer(souvenirsRef.current);
     // (🐾 le chat : dans son coin, ma place pour ses genoux)
     const ch = chatSalon.current;
     const maPlace = sceneVue.places[0];
@@ -393,7 +415,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       // (sans stockage : la phrase « ✨ … vous a installés » pourra revenir, ce n'est pas grave)
     }
     const ceChat = chat.current;
+    const cetteEtagere = etagere.current;
     return () => {
+      cetteEtagere?.detruire();
+      if (etagere.current === cetteEtagere) etagere.current = null;
       ceChat?.detruire();
       if (chat.current === ceChat) chat.current = null;
       s.detruire();
@@ -530,7 +555,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         fetch(`/api/direct/proches?vivant=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null),
       ]);
       const jv = rv?.ok ? ((await rv.json().catch(() => null)) as { vivant?: Vivant } | null) : null;
-      if (jv?.vivant && !fini) recevoirRef.current(jv.vivant.gestes);
+      if (jv?.vivant && !fini) {
+        recevoirRef.current(jv.vivant.gestes);
+        recevoirSouvenirsRef.current(jv.vivant.etagere?.objets ?? []);
+      }
       const j = r?.ok ? ((await r.json().catch(() => null)) as { fil?: Fil } | null) : null;
       const f = j?.fil;
       if (!f || fini) return;
@@ -658,6 +686,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     allerDansRef.current = allerDans;
     flammeRef.current = monterLaFlamme;
     recevoirRef.current = recevoirGestes;
+    recevoirSouvenirsRef.current = recevoirSouvenirs;
   });
   useEffect(() => {
     flammeCourante.current = flamme;
@@ -770,6 +799,78 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       montrer(e instanceof Error && e.message ? `Pas parti : ${e.message}` : "Pas parti : réessaie.");
     }
   }
+
+  // ─── 📌 (lot S6) GARDER UNE BULLE ; LEURS SOUVENIRS ───
+  useEffect(() => {
+    souvenirsRef.current = souvenirs;
+  }, [souvenirs]);
+  useEffect(() => {
+    if (!phraseIa) return;
+    const t = setTimeout(() => setPhraseIa(null), 3200);
+    return () => clearTimeout(t);
+  }, [phraseIa]);
+  /** Un souvenir s'envole jusqu'à l'étagère (de la figurine de celui qui l'a dit), puis s'y pose. */
+  async function poserSouvenir(o: ObjetVu) {
+    const s = scene.current;
+    if (s && etagere.current) await etagere.current.envol(o, o.de === "moi" ? "moi" : "autre");
+    setSouvenirs((l) => [...l.filter((x) => x.id !== o.id), o]);
+  }
+  /** 📌 Garder une bulle : « 📌 Noté ! » tout de suite, puis le souvenir (le modèle dit ce que c'est) s'envole. */
+  async function garder(id: string, deMoi: boolean) {
+    if (!reagissable(id) || enGarde.current.has(id)) return;
+    if (souvenirsRef.current.some((o) => o.message === id)) {
+      montrer("📌 C’est déjà sur votre étagère");
+      return;
+    }
+    enGarde.current.add(id);
+    const de: Qui = deMoi ? "moi" : "autre";
+    const s = scene.current;
+    if (s) {
+      void s.fx.pancarte(de, "📌 Noté !", 2200);
+      s.sons.note(1175, 0, 0.12, 0.03);
+    }
+    try {
+      const r = await fetch("/api/direct/etagere", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "garder", avec: cle, message: id }) });
+      const j = (await r.json().catch(() => null)) as { souvenir?: ObjetVu; deja?: boolean; error?: string } | null;
+      if (!r.ok || !j?.souvenir) throw new Error(j?.error || "");
+      const o = j.souvenir;
+      if (j.deja) {
+        setSouvenirs((l) => (l.some((x) => x.id === o.id) ? l : [...l, o]));
+        montrer("📌 C’est déjà sur votre étagère");
+        return;
+      }
+      await poserSouvenir(o);
+      montrer(`📌 Noté sur votre étagère · ${o.emoji} ${o.titre}`, 3000);
+      setPhraseIa({ q: autreQue(de), texte: phraseDeNote(o.genre, o.id), n: Date.now() });
+    } catch (e) {
+      montrer(e instanceof Error && e.message ? `Pas rangé : ${e.message}` : "Pas rangé : réessaie.");
+    } finally {
+      enGarde.current.delete(id);
+    }
+  }
+  /** 💓 Leurs souvenirs relus avec le pouls : ce qui vient d'arriver (gardé par l'autre, noté par leurs figurines) s'envole. */
+  function recevoirSouvenirs(liste: ObjetVu[]) {
+    const connus = new Set(souvenirsRef.current.map((o) => o.id));
+    const neufs = liste.filter((o) => !connus.has(o.id) && !enGarde.current.has(o.message ?? ""));
+    // (retirés par l'un des deux : ils s'en vont)
+    const restent = new Set(liste.map((o) => o.id));
+    if (souvenirsRef.current.some((o) => !restent.has(o.id))) setSouvenirs((l) => l.filter((o) => restent.has(o.id) || neufs.some((n) => n.id === o.id)));
+    if (!neufs.length) return;
+    void (async () => {
+      for (const o of neufs.slice(-2)) {
+        await poserSouvenir(o);
+        if (o.garde === "lui") montrer(`📌 ${prenomRef.current} a gardé · ${o.emoji} ${o.titre}`, 3000);
+      }
+      for (const o of neufs.slice(0, -2)) setSouvenirs((l) => [...l.filter((x) => x.id !== o.id), o]);
+      // (il les a vus se poser : l'envol ne se rejoue pas ailleurs)
+      void fetch("/api/direct/etagere", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "vu", avec: cle, ids: neufs.map((o) => o.id) }) })
+        .then((r) => r.text())
+        .catch(() => undefined);
+    })();
+  }
+  useEffect(() => {
+    etagere.current?.montrer(souvenirs);
+  }, [souvenirs]);
 
   /** 🚪 Aller dans une pièce (sa scène est dans le catalogue, sa plaque préchargée : tout de suite). */
   async function allerDans(piece: PieceDuo): Promise<boolean> {
@@ -910,9 +1011,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const sonDernier = rejoue ?? (sonDernierMessage && !arriveeAVenir ? { id: sonDernierMessage.id, texte: texteDeBulle(sonDernierMessage) } : null);
   const jours = fil ? parJour(messages, memes, undefined, gestes) : [];
   const reactionsDe = (id: string) => gestes.filter((g) => g.type === "reaction" && g.message === id);
+  const gardes = new Set(souvenirs.map((o) => o.message).filter((x): x is string => Boolean(x)));
   const messageAReagir = reagirA ? messages.find((m) => m.id === reagirA) : undefined;
-  const objetsEtagere = pret?.ouverture.vivant?.etagere?.objets ?? [];
-  const souvenirs = objetsEtagere.length;
+  const objetsEtagere = souvenirs;
+  const nbSouvenirs = objetsEtagere.length;
   const rdv = prochainRendezVous(objetsEtagere);
   const presence = la ? null : vu ? (nomDuJour(vu) === "Aujourd’hui" ? `Dernière visite à ${heureDite(vu)}` : nomDuJour(vu) === "Hier" ? `Dernière visite hier à ${heureDite(vu)}` : `Dernière visite ${nomDuJour(vu)}`) : "Pas là pour l’instant";
   const flou = chargement.etat !== "manque" ? chargement.flou : undefined;
@@ -946,11 +1048,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             </span>
           )}
         </span>
-        {souvenirs > 0 && (
-          <span className="sd-pastille" data-souvenirs={souvenirs} aria-label={`${souvenirs} souvenirs sur votre étagère`}>
+        {nbSouvenirs > 0 && (
+          <button type="button" className="sd-pastille" data-souvenirs={nbSouvenirs} aria-label={`${nbSouvenirs} souvenirs sur votre étagère`} onClick={() => setEtagereOuverte(true)}>
             <span className="e">📚</span>
-            {souvenirs}
-          </span>
+            {nbSouvenirs}
+          </button>
         )}
         {flamme && flamme.jours > 0 && (
           <span key={flammeMonte} className={`sd-pastille${flammeMonte ? " monte" : ""}`} data-flamme={flamme.jours} aria-label={`${flamme.jours} jours de suite`}>
@@ -973,16 +1075,32 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         {pret && (
           <>
             <div className="sd-bulles moi" aria-live="polite">
+              {phraseIa?.q === "moi" && (
+                <div key={phraseIa.n} className="sd-bulle moi ia" data-ia>
+                  {phraseIa.texte}
+                </div>
+              )}
               {monDernier && (
-                <div key={monDernier.id} className="sd-bulle moi" data-bulle={monDernier.id}>
+                <div key={monDernier.id} className={`sd-bulle moi${reagissable(monDernier.id) ? " a-epingle" : ""}`} data-bulle={monDernier.id}>
                   {texteDeBulle(monDernier)}
+                  {reagissable(monDernier.id) && (
+                    <button type="button" className={`sd-garder${gardes.has(monDernier.id) ? " fait" : ""}`} data-garder={monDernier.id} aria-label={gardes.has(monDernier.id) ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} onClick={() => void garder(monDernier.id, true)} />
+                  )}
                 </div>
               )}
             </div>
             <div className="sd-bulles autre" aria-live="polite">
               {sonDernier && (
-                <div key={sonDernier.id} className="sd-bulle autre" data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined} {...appuiLong(sonDernier.id, setReagirA)}>
+                <div key={sonDernier.id} className={`sd-bulle autre${reagissable(sonDernier.id) ? " a-epingle" : ""}`} data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined} {...appuiLong(sonDernier.id, setReagirA)}>
                   {sonDernier.texte}
+                  {reagissable(sonDernier.id) && (
+                    <button type="button" className={`sd-garder${gardes.has(sonDernier.id) ? " fait" : ""}`} data-garder={sonDernier.id} aria-label={gardes.has(sonDernier.id) ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} onPointerDown={(e) => e.stopPropagation()} onClick={() => void garder(sonDernier.id, false)} />
+                  )}
+                </div>
+              )}
+              {phraseIa?.q === "autre" && (
+                <div key={phraseIa.n} className="sd-bulle autre ia" data-ia>
+                  {phraseIa.texte}
                 </div>
               )}
               {ecrit && (
@@ -1173,7 +1291,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 <div className="sd-jour">{j.jour}</div>
                 {j.lignes.map((l) =>
                   l.sorte === "message" ? (
-                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} />
+                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} />
                   ) : l.sorte === "geste" ? (
                     <div key={`geste-${l.g.id}`} className="sd-evt" data-geste-fil={l.g.cle}>
                       <span>{phraseDuGeste(l.g, l.g.moi, prenom)}</span>
@@ -1195,6 +1313,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           )}
         </div>
       </section>
+      {etagereOuverte && <FeuilleEtagere cle={cle} onFermer={() => setEtagereOuverte(false)} onRetire={(id) => setSouvenirs((l) => l.filter((o) => o.id !== id))} />}
     </main>
   );
 }
@@ -1255,6 +1374,14 @@ export const STYLES_SALON = `
 .sd-attente{position:absolute;inset:auto 16px 45%;margin:0;text-align:center;font-weight:600}
 .sd-temps{position:absolute;z-index:5;left:10px;bottom:10px;margin:0;max-width:calc(100% - 150px);padding:6px 9px;border-radius:12px;background:rgba(24,7,20,.62);font:600 11px/1.3 var(--app);font-variant-numeric:tabular-nums}
 .sd-bulle.autre{pointer-events:auto;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.sd-bulle.a-epingle{padding-right:30px}
+.sd-garder{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;display:grid!important;place-items:center;font:700 12px var(--emoji)!important;color:#3a7a4a!important;pointer-events:auto;opacity:.85}
+.sd-garder::after,.sd-garder-fil::after{content:"📌"}
+.sd-garder.fait::after,.sd-garder-fil.fait::after{content:"✓"}
+.sd-garder:active{transform:scale(.88)}
+.sd-bulle.ia{background:#fff4dc;box-shadow:0 0 0 1.5px #e9b44c,0 6px 16px rgba(30,6,24,.35)}
+.sd-garder-fil{margin-left:6px;font:700 11px var(--emoji)!important;color:#3a7a4a!important;vertical-align:middle}
+button.sd-pastille{cursor:pointer}
 .sd-reagir{position:absolute;z-index:9;left:0;right:0;margin:0 auto;top:54px;width:min(340px,92%);box-sizing:border-box;padding:10px 12px;border-radius:18px;background:rgba(255,246,234,.97);color:var(--encre);box-shadow:0 12px 30px rgba(0,0,0,.35);animation:sd-bulle .38s cubic-bezier(.2,1.5,.4,1) both}
 .sd-reagir p{margin:0 0 8px;font:700 12.5px/1.3 var(--app);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sd-reagir span{display:flex;gap:4px;justify-content:center;align-items:center}

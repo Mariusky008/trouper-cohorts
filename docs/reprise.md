@@ -21,7 +21,8 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
 **Où on en est (18 novembre 2026)** : **S3, première partie, faite** (`salon-du-duo.md`, 11.11) — la barre des gestes
 (💌 / 🛋️), neuf gestes mis en scène, les huit panneaux brandis, les six réactions avec le corps, la table (quatre
 objets, gardés par le serveur), les gestes en direct avec le pouls et rejoués à l'arrivée, 💬 qui les montre. **Ensuite :
-S3, deuxième partie** (la vie propre des figurines, le chat — faite aussi, 11.12), puis S6, S4, S5, S7, S8.
+S3, deuxième partie** (la vie propre des figurines, le chat — faite aussi, 11.12), puis S6 (première partie faite :
+📌 Garder et l'étagère dans la pièce, 11.13 ; reste ＋ Envoyer, la télé, les cadres), S4, S5, S7, S8.
 
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 

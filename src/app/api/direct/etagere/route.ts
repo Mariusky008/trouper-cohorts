@@ -35,12 +35,16 @@
 // GET ?ranges=1                                → { ranges } : les messages qu'il a déjà rangés dans son univers
 // POST { action: "ranger-univers", avec, message }  → { ok, id, titre } : une chanson, une vidéo ou une photo qu'IL a
 //                                                envoyée, recopiée dans son univers (son étagère, « Ce que j'aime »)
+// POST { action: "garder", avec, message }       → { ok, souvenir, deja? } : 📌 (le salon du duo, lot S6) il garde une
+//                                                bulle sur leur étagère (le modèle dit ce que c'est ; sinon « vos
+//                                                mots ») ; déjà gardée : `deja` ; un sujet sensible : 422
 // Les règles du talkie : la session vérifiée, deux proches qui se sont ajoutés, sinon 403 ; jamais l'identifiant d'un
 // habitant, seulement sa clé. Le frein : `CLIKME_ETAGERE=0` (rien de noté, rien d'affiché : 404).
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { agirSurEtagere, agirSurMonEtagere, choisirRangeSeul, deposerSurEtagere, etagereAllumee, etagereAvec, goutsDe, mesRappels, monEtagere, rangeSeul, rangerDansMonUnivers, rangesDansMonUnivers } from "@/lib/direct/etagere-serveur";
+import { agirSurEtagere, agirSurMonEtagere, choisirRangeSeul, deposerSurEtagere, etagereAllumee, etagereAvec, garderMessage, goutsDe, mesRappels, monEtagere, rangeSeul, rangerDansMonUnivers, rangesDansMonUnivers } from "@/lib/direct/etagere-serveur";
+import { battre } from "@/lib/direct/pouls-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -75,11 +79,18 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
-  if (!p || !["retirer", "date", "vu", "pause", "reussi", "tenue", "annuler-tenue", "deposer", "montrer", "cacher", "oui", "non", "question-jouee", "range-seul", "ranger-univers"].includes(String(p.action))) return NextResponse.json({ error: "Demande incomplète." }, { status: 400, headers: sansCache });
+  if (!p || !["retirer", "date", "vu", "pause", "reussi", "tenue", "annuler-tenue", "deposer", "montrer", "cacher", "oui", "non", "question-jouee", "range-seul", "ranger-univers", "garder"].includes(String(p.action))) return NextResponse.json({ error: "Demande incomplète." }, { status: 400, headers: sansCache });
   // 📌 (lot E5) le réglage « Ma figurine range sans me demander »
   if (p.action === "range-seul") {
     if (!etagereAllumee()) return NextResponse.json({ error: "L’étagère n’est pas ouverte." }, { status: 404, headers: sansCache });
     return NextResponse.json({ ok: true, ...(await choisirRangeSeul(supabase, moi, p.oui)) }, { headers: sansCache });
+  }
+  // 📌 (le salon du duo, lot S6) garder une bulle ; le pouls bat (l'autre le voit se poser)
+  if (p.action === "garder") {
+    const r = await garderMessage(supabase, moi, p.avec, p.message);
+    if (!r.souvenir) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    if (!r.deja) after(() => battre(supabase, moi, p.avec).catch(() => undefined));
+    return NextResponse.json({ ok: true, souvenir: r.souvenir, ...(r.deja ? { deja: true } : {}) }, { headers: sansCache });
   }
   // 🎵 une chanson, une vidéo, une photo qu'il a envoyée : dans son univers
   if (p.action === "ranger-univers") {

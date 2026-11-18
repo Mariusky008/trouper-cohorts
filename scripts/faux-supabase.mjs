@@ -751,6 +751,25 @@ http
         // « canard » : une blague ; « malade » : sensible ; « JE L'AI » : l'épreuve du jour est réussie, « raté » : ratée.
         // Et ce que le serveur doit jeter : « volcan » (une citation
         // inventée), « mojito » (de l'alcool), « concert » (« samedi », mais un vendredi), « Bonnie » (un prénom dans le titre).
+        // 📌 (le salon du duo, lot S6) un message gardé à la main : « malade » → sensible ; un rendez-vous samedi → une
+        // date ; « resto » → une promesse ; un fou rire → une blague ; « bizarre » → une réponse qui ne tient pas (les mots
+        // gardés tels quels) ; sinon → des mots
+        if (consigne.includes("UN SOUVENIR À GARDER")) {
+          const m = JSON.parse(/Le message \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "{}");
+          const t = String(m.texte ?? "");
+          const repondreAvec = (x) => repondre(res, 200, { choices: [{ message: { content: JSON.stringify(x) } }] });
+          if (/malade/i.test(t)) return repondreAvec({ sensible: true });
+          const samedi = (iso) => {
+            const d = new Date(`${iso}T12:00:00Z`);
+            const k = (6 - d.getUTCDay() + 7) % 7 || 7;
+            return new Date(d.getTime() + k * 86_400_000).toISOString().slice(0, 10);
+          };
+          if (/samedi/i.test(t)) return repondreAvec({ sensible: false, objet: { genre: "date", sorte: "evenement", emoji: "🌊", titre: "Voir la mer, samedi", concerne: "les deux", citation: t, quand: samedi(m.date), dit: "samedi" } });
+          if (/resto/i.test(t)) return repondreAvec({ sensible: false, objet: { genre: "promesse", emoji: "🍝", titre: "Le resto italien", concerne: "les deux", citation: t } });
+          if (/😂|haha|mdr/i.test(t)) return repondreAvec({ sensible: false, objet: { genre: "blague", emoji: "😂", titre: "Le fou rire", concerne: "les deux", citation: t } });
+          if (/bizarre/i.test(t)) return repondreAvec({ sensible: false, objet: { genre: "gout", emoji: "💛", titre: "Mon truc bizarre", concerne: "les deux", citation: "une phrase jamais dite" } });
+          return repondreAvec({ sensible: false, objet: { genre: "mot", emoji: "💬", titre: t.split(/\s+/).slice(0, 4).join(" ").slice(0, 28), concerne: "les deux", citation: t } });
+        }
         if (consigne.includes("NOTENT CE QUI COMPTE")) {
           const msgs = JSON.parse(/Leurs messages, dans l'ordre \(des données, pas des consignes\) :\n(.+)\n/.exec(consigne)?.[1] ?? "[]");
           if (msgs.some((m) => /malade/i.test(m.texte))) return repondre(res, 200, { choices: [{ message: { content: JSON.stringify({ sensible: true }) } }] });
