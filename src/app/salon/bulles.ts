@@ -8,7 +8,8 @@
 import type { MemeFil, MessageFil } from "@/lib/direct/talkie";
 import type { ObjetVu } from "@/lib/direct/etagere";
 import { GESTES } from "@/lib/direct/salon";
-import { PANNEAUX, REACTIONS, type GesteFil } from "@/lib/direct/vivant";
+import { PANNEAUX, reactionDe, type GesteFil } from "@/lib/direct/vivant";
+import { dureeDuMeme, ligneMeme } from "@/lib/direct/meme-salon";
 
 /** La durée d'un vocal, « 0:07 ». */
 export const dureeDite = (s: number) => {
@@ -25,6 +26,8 @@ export function texteDeBulle(m: MessageFil): string {
   if (m.genre === "photo") return m.texte?.trim() ? `📷 ${m.texte.trim()}` : "📷 Une photo";
   if (m.genre === "video") return m.texte?.trim() ? `🎬 ${m.texte.trim()}` : "🎬 Une vidéo";
   if (m.genre === "fichier") return `📎 ${m.fichier?.nom ?? "Un PDF"}`;
+  // 🎭 (lot S5) un mème du salon : « 🎭 « Ce que dit sa figurine » »
+  if (m.genre === "meme") return ligneMeme(m.texte);
   return `🎙️ Un vocal · ${dureeDite(m.duree)}`;
 }
 
@@ -50,7 +53,7 @@ export type LigneFil = { sorte: "message"; m: MessageFil; le: string } | { sorte
 // ─── 🛋️ LES GESTES (lot S3) : ce qu'on en dit (le petit message en haut, la ligne de 💬) ───
 /** L'emoji d'un geste, d'un panneau ou d'une réaction. */
 export function emojiDuGeste(g: Pick<GesteFil, "type" | "cle" | "objet">): string {
-  if (g.type === "reaction") return REACTIONS.find((r) => r.cle === g.cle)?.emoji ?? "👏";
+  if (g.type === "reaction") return reactionDe(g.cle)?.emoji ?? "👏";
   if (g.type === "panneau") return "🪧";
   if (g.cle === "surprise") return "🎁";
   return GESTES.find((x) => x.cle === g.cle)?.e ?? "✨";
@@ -150,7 +153,8 @@ export function dureeDuGeste(g: Pick<GesteFil, "type" | "cle">): number {
 }
 
 /** 🚪 Ce que l'arrivée rejoue : un message ou un mème de l'autre, ce que sa bulle en dit, et combien de temps (ms). */
-export type ARejouer = { id: string; texte: string; ms: number };
+/** (🎭 lot S5 : `meme` — un mème du salon, que sa figurine rejoue, le temps qu'il dure) */
+export type ARejouer = { id: string; texte: string; ms: number; meme?: MessageFil };
 /** L'arrivée dure 12 s au plus (`salon-du-duo.md`, section 4.1) ; au-delà, on garde les plus récents (le reste est dans 💬). */
 export const ARRIVEE_MS = 12_000;
 /**
@@ -161,11 +165,16 @@ export const ARRIVEE_MS = 12_000;
 export function aRejouer(messages: readonly MessageFil[], memes: readonly MemeFil[] = [], maxMs = ARRIVEE_MS): ARejouer[] {
   const tous = [
     // (🎙️ lot S4 : ses vocaux n'y sont pas — ils attendent sur la table, le talkie qui clignote)
-    ...messages.filter((m) => m.nouveau && !m.moi && !estVocal(m)).map((m) => ({ id: m.id, texte: texteDeBulle(m), le: m.le })),
-    ...memes.filter((x) => x.nouveau && !x.moi).map((x) => ({ id: `meme-${x.id}`, texte: x.texte?.trim() ? `🎭 « ${x.texte.trim()} »` : "🎭 Un mème", le: x.le })),
+    ...messages.filter((m) => m.nouveau && !m.moi && !estVocal(m)).map((m) => ({ id: m.id, texte: texteDeBulle(m), le: m.le, meme: m.genre === "meme" ? m : undefined })),
+    ...memes.filter((x) => x.nouveau && !x.moi).map((x) => ({ id: `meme-${x.id}`, texte: x.texte?.trim() ? `🎭 « ${x.texte.trim()} »` : "🎭 Un mème", le: x.le, meme: undefined })),
   ]
     .sort((a, b) => Date.parse(a.le) - Date.parse(b.le))
-    .map((x) => ({ id: x.id, texte: x.texte, ms: Math.max(1400, Math.min(3000, 1000 + x.texte.length * 30)) }));
+    .map((x): ARejouer => {
+      const meme = x.meme;
+      // (un mème : le temps qu'il se joue ; un message : le temps de le lire, 1,4 à 3 s)
+      if (meme) return { id: x.id, texte: x.texte, ms: dureeDuMeme({ texte: meme.texte ?? "", danse: meme.meme?.danse === true }) + 300, meme };
+      return { id: x.id, texte: x.texte, ms: Math.max(1400, Math.min(3000, 1000 + x.texte.length * 30)) };
+    });
   const gardes: ARejouer[] = [];
   let total = 0;
   for (let i = tous.length - 1; i >= 0 && total + tous[i].ms <= maxMs; i--) {

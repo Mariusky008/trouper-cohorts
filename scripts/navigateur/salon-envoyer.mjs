@@ -173,7 +173,7 @@ ok(plus, "un ＋ à gauche de la saisie");
 ok(await ouvrirPlus(), "＋ : la feuille s'ouvre");
 ok((await texte(".sd-envoi .sd-poignee")) === "Envoyer à Sam", `« ${await texte(".sd-envoi .sd-poignee")} »`);
 const cases = await p.locator(".sd-joint").evaluateAll((l) => l.map((x) => `${x.dataset.joint}:${x.innerText.replace(/\s+/g, " ").trim()}`));
-ok(cases.join(" | ") === "vocal:🎙️ Un vocal garde le micro appuyé | photo:📷 Photo elle peut aller au mur | video:🎬 Vidéo elle peut passer à la télé | lien:🔗 Lien YouTube, une chanson, un site | fichier:📎 PDF un document, un billet, une recette", `cinq cases (${cases.join(" | ")})`);
+ok(cases.join(" | ") === "meme:🎭 Un mème joué par ta figurine | vocal:🎙️ Un vocal garde le micro appuyé | photo:📷 Photo elle peut aller au mur | video:🎬 Vidéo elle peut passer à la télé | lien:🔗 Lien YouTube, une chanson, un site | fichier:📎 PDF un document, un billet, une recette", `six cases (${cases.join(" | ")})`);
 await p.screenshot({ path: `${D}/salon-envoyer-1-plus.png` });
 
 // ═══ 📷 UNE PHOTO ═══

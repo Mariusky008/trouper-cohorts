@@ -406,6 +406,17 @@ enregistrerMiseEnScene("reaction-front", async (s, de) => {
   s.sons.bruit(70, 0.1, 600);
   await s.attendre(1300);
 });
+// (🎭 lot S5 : 🔥 sur la carte d'un mème — des flammes et des étincelles, la tête qui bondit)
+enregistrerMiseEnScene("reaction-feu", async (s, de) => {
+  const h = s.repere(de, "haut");
+  const f = s.figurine(de);
+  f.bondir(0.7);
+  f.gonfler(1.05, 900);
+  s.fx.jaillir("🔥", { x: h.x, y: h.y + 0.02 }, 3, { taille: 4 });
+  s.fx.etincelles(s.repere(de, "tete"), 10, { t: 0.9 });
+  s.sons.jingle("euphorie");
+  await s.attendre(1300);
+});
 enregistrerMiseEnScene("reaction-waouh", async (s, de) => {
   const h = s.repere(de, "haut");
   const f = s.figurine(de);

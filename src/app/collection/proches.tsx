@@ -106,7 +106,7 @@ const quandCourt = (le: string) => {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
 };
 /** ✍️ 📷 🎬 (lots M1 à M3) un écrit, une photo, une vidéo : la figurine les dit sans aucun son (le son d'une vidéo : en grand). */
-const sansSon = (m: MessageFil) => m.genre === "ecrit" || m.genre === "photo" || m.genre === "video" || m.genre === "fichier";
+const sansSon = (m: MessageFil) => m.genre === "ecrit" || m.genre === "photo" || m.genre === "video" || m.genre === "fichier" || m.genre === "meme";
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, "0")}`;
 
 // ─── l'onglet ─────────────────────────────────────────────────────────────────────────────────────
@@ -1772,14 +1772,15 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
                 dessous={dessous}
               />
             );
-          if (x.genre === "ecrit")
+          // (🎭 lot S5 : un mème joué dans le salon se montre ici comme un écrit — sa figurine le dit, sa tête)
+          if (x.genre === "ecrit" || x.genre === "meme")
             return (
               <BulleEcrite
                 key={x.id}
                 m={x}
                 img={img}
                 vu={i === iVue}
-                bas={`✍️ ${emojis ? `${emojis} · ` : ""}${heure(x.le)}${x.nouveau ? " · nouveau" : ""}${reactionsDe(x.id) ? ` · ${reactionsDe(x.id)}` : ""}`}
+                bas={`${x.genre === "meme" ? "🎭" : "✍️"} ${emojis ? `${emojis} · ` : ""}${heure(x.le)}${x.nouveau ? " · nouveau" : ""}${reactionsDe(x.id) ? ` · ${reactionsDe(x.id)}` : ""}`}
                 gestes={appui.props(x.id)}
                 onJouer={() => {
                   if (!appui.etaitLong()) jouerMessage(i, false);
