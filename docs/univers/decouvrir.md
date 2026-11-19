@@ -286,8 +286,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
 
 Chaque lot : ses essais (route et navigateur, comme le salon du duo), sa section dans ce document, une PR vers `main`.
-Avant D0, une **maquette cliquable** (une page d'administration, comme la maquette de la pièce vivante) : la carte
-« ma télé du jour », ma pièce avec la télé, l'invitation, la liste des salons ouverts, un salon de 8 figurines.
+Avant D0, une **maquette cliquable** : faite le 19 novembre 2026 (section 12).
 
 ## 10. Les décisions (le propriétaire, 17 novembre 2026)
 
@@ -334,3 +333,41 @@ Ce qui reste :
   migration qui la supprime viendra un mois plus tard, une fois sûr que rien ne la lit plus) ;
 - **les mèmes** eux-mêmes : on les crée toujours (« Créer »), on les envoie à ses proches, on les joue dans les salons ;
   seul le défilement des mèmes d'inconnus disparaît.
+
+## 12. La maquette cliquable (19 novembre 2026)
+
+Une page privée du propriétaire : `https://claude.ai/artifact/9KcRDhzyFm1z4BNetdnf4y` ; sa source :
+`docs/univers/maquettes/decouvrir.html` (à ouvrir dans un navigateur, à la largeur d'un téléphone). Les figurines y
+sont dessinées (aucune vraie tête), les vidéos aussi (dans l'appli, c'est le lecteur officiel de YouTube) ; rien ne part.
+
+Ce qu'on y joue :
+
+- **« Tes passions »** (3.) : les douze vignettes, de 3 à 5, « 🗞️ Les potins de Dax : pour tout le monde, en plus ».
+- **L'accueil** : la carte « Ma télé du jour » (la pièce, la télé allumée, « 🎬 3 vidéos t'attendent », « Sam, Léa et 2
+  proches en ont déjà vu : ils regarderont avec toi »), la phrase de communication, les salons de mes passions, les
+  potins de ma ville, les autres salons.
+- **Ma télé du jour, dans ma pièce** (4.2, 4.5) : ma figurine au centre ; Sam, Léa et Noé assis, « a vu hier soir »,
+  qui réagissent **à la seconde** où ils ont réagi (le sourire, « Il va tirer de là ?! », le « oh ! », le saut au but,
+  « NOOON 😱 », la voix de Sam) ; Inès en petite tête au bord de la télé ; les réactions de chacun en points sur la
+  ligne du temps. Les gestes sans viser (un toucher : je ris ; deux : un ❤️ ; appui long : « oh ! »), écrire à la
+  seconde, 🎙️ ma voix ; ce que l'appli comprend seule (passer avant 15 s : « bof » ; revenir en arrière : « oh ! » ; aller
+  au bout : ❤️). La troisième vidéo, que personne n'a vue : « Tu l'ouvres en premier : tes réactions attendront tes
+  proches ».
+- **📷 « Ta figurine fait ta tête »** : l'écran d'accord, la pastille, ma figurine qui refait ma tête aux moments forts
+  (imitée dans la maquette).
+- **👥 Inviter** (4.3) : trois proches au plus ; ce qu'ils reçoivent ; ceux qui sont là entrent et s'assoient « en
+  direct », les autres gardent l'invitation (et leurs réactions d'avant restent assises).
+- **🎬 « Nos réactions »** : le clip de 10 secondes (ma pièce, nos figurines au moment le plus fort, la phrase, le carton
+  titre et chaîne, ClikMe et clikme.fr), « Partager ».
+- **Un salon ouvert** (5.) : le salon du foot · 2 (le premier est complet), 8 places, ma figurine entre et s'assoit,
+  « Bienvenue 👋 », la conversation qui vit, les gestes entre figurines, la télé du thème à la même seconde pour tous,
+  **le stade** au but (« 🏟️ 214 l'ont vu aujourd'hui »). Toucher une figurine : son prénom, ses passions, 👋 👏 😂,
+  « 👯 Ajouter en proche », « 🏠 Voir sa maison » (ou « fermée aux visites »), « Ne plus voir », « Signaler ». Écrire :
+  un lien, un numéro, un réseau, un mot ou une question personnelle ne partent pas. 💬 la conversation (48 h), 🗄️
+  l'étagère du salon (📌 Garder : il va dans ma maison, et le fanion s'accroche à mon mur).
+- **🗞️ Les potins de Dax** (5.4) : la télé du salon passe la presse locale ; « 📰 Aujourd'hui » (la presse, les
+  soirées, les vidéos, les mèmes d'« Autour ») ; « 📅 À venir » (📌 Garder : mon prochain rendez-vous, « On y va ? » à un
+  proche) ; « J'ai vu… » et « Une soirée, un événement » (relus avant d'apparaître ; une soirée tournée vers l'alcool est
+  refusée).
+- **⚙︎ Les réglages de la maquette** : voir Découvrir comme un adulte ou à 15-17 ans (les salons à part, sans le salon
+  des jeunes parents, les potins en lecture seule, les clips éteints par défaut) ; recommencer depuis « Tes passions ».
