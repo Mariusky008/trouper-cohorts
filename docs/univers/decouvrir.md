@@ -359,9 +359,11 @@ Ce qu'on y joue :
   fais pour réagir moi-même ») : la rangée « Réagis : 😂 ❤️ 😮 😱 😴 » sous la télé, à côté des gestes sans viser ; sur
   ma figurine, « 😂 noté à 0:07 » ; les premières fois, « Sam, Léa, Noé et Inès le verront à cette seconde ».
 - **👀 « Ce que Sam verra »** (à la fin de la vidéo) : la vidéo rejouée du côté de Sam — Sam au centre, ma figurine
-  (« Alex ») assise à côté, qui réagit à mes secondes. **Une proposition, à décider** : si Sam l'a déjà vue, une
-  notification « 🎬 Alex a regardé « … » : revois-la avec ses réactions » (sinon, mes réactions ne lui parviendraient
-  jamais) ; si Sam ne l'a pas encore vue, ma figurine l'attend simplement à côté.
+  (« Alex ») assise à côté, qui réagit à mes secondes. **Décidé par le propriétaire (19 novembre 2026)** : si Sam l'a
+  déjà vue, une notification « 🎬 Alex a regardé « … » : revois-la avec ses réactions » (sinon, mes réactions ne lui
+  parviendraient jamais) ; si Sam ne l'a pas encore vue, ma figurine l'attend simplement à côté.
+- **Rendre les réactions addictives** (le propriétaire, 19 novembre : « voir que untel a mis un smiley à 4 min 32 ne va
+  pas créer une émulation ») — trois leviers, jouables dans la maquette, **à choisir** (section 13).
 - **📷 « Ta figurine fait ta tête »** : l'écran d'accord, la pastille, ma figurine qui refait ma tête aux moments forts
   (imitée dans la maquette).
 - **👥 Inviter** (4.3) : trois proches au plus ; ce qu'ils reçoivent ; ceux qui sont là entrent et s'assoient « en
@@ -380,3 +382,27 @@ Ce qu'on y joue :
   refusée).
 - **⚙︎ Les réglages de la maquette** : voir Découvrir comme un adulte ou à 15-17 ans (les salons à part, sans le salon
   des jeunes parents, les potins en lecture seule, les clips éteints par défaut) ; recommencer depuis « Tes passions ».
+
+## 13. Rendre les réactions addictives (proposé le 19 novembre 2026, à choisir)
+
+Le constat du propriétaire, après la maquette : un smiley à une seconde donnée ne crée ni envie ni émulation. Ce qui
+rend les vidéos de réaction (YouTube, TikTok) et les jeux entre amis addictifs : **un vrai visage** (le spectacle),
+**se comparer à ceux qu'on aime** (la relation), **un enjeu** (le jeu). Trois leviers, un par besoin — on peut tous
+les garder :
+
+1. **🎭 Sa vraie tête** (le spectacle). Avec « 📷 Ta figurine fait ta tête » allumée, on ne garde plus seulement « rire à
+   0:42 » mais **le mouvement de sa tête pendant quelques secondes** : des chiffres (le sourire, la bouche ouverte, les
+   sourcils, la tête qui part en arrière, dix fois par seconde), **jamais une image**. Sa figurine le rejoue : au but,
+   la tête de Sam part en arrière, les yeux s'écarquillent, les bras se lèvent, puis le fou rire. Une étiquette
+   « 📷 sa vraie tête » le signale. C'est la vidéo de réaction de son ami, sans caméra qui filme. (Dans la maquette :
+   Sam au but, Sam qui se plie de rire devant Pixel.) Il faut, pour l'appli, les expressions de chaque figurine (D2c)
+   et la tête sur ressort qui suit les mouvements.
+2. **🤝 Les synchros** (la relation). Réagir **au même moment** qu'un proche (à 1,8 s près) : « 🤝 Synchro avec Léa ! »,
+   les deux figurines se tapent dans la main. À la fin : « Synchros : Sam 2 · Léa 1 » ; « Avec qui tu ris le plus » :
+   « même humour » en pourcentage avec chaque proche, qui se retrouve aussi dans le salon du duo (« Vous riez des
+   mêmes choses : 78 % »). On regarde pour voir si l'on rit avec ceux qu'on aime ; on envoie des vidéos pour le savoir.
+3. **😤 Le défi « ne pas rire »** (le jeu). Sur les vidéos drôles : « Défi : ne pas rire. Sam a craqué à 0:12, Léa a
+   tenu. » — « Relever ». Les figurines de mes proches rient à côté de moi (c'est le piège) ; si je ris (😂, un toucher,
+   ou la caméra qui le voit) : « 😂 Craqué à 0:13 : Sam aussi, à 0:12 ». À la fin, le classement (« 🏆 Léa jusqu'au bout ·
+   Toi 0:13 · Sam 0:12 ») et « 😈 Défier un proche ». Sur l'accueil : « 😤 Sam te défie… ». Un format qui circule déjà
+   beaucoup sur les réseaux (le clip « J'ai tenu 0:26 » se partage).

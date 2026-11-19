@@ -159,6 +159,31 @@ h1{margin:0;font-weight:900;font-size:30px;letter-spacing:-.02em;line-height:1.1
 .fig.coucou .bras-d{animation:coucou .26s ease-in-out 7 alternate}
 @keyframes coucou{from{transform:rotate(-125deg)}to{transform:rotate(-165deg)}}
 .fig.estompe{opacity:.32}
+.fig .bras-g{transform-box:view-box;transform-origin:32px 100px}
+.fig.bras-haut .bras-d{animation:brasD 1.3s ease-in-out}
+.fig.bras-haut .bras-g{animation:brasG 1.3s ease-in-out}
+@keyframes brasD{0%,100%{transform:rotate(0)}20%,80%{transform:rotate(-155deg)}}
+@keyframes brasG{0%,100%{transform:rotate(0)}20%,80%{transform:rotate(155deg)}}
+.fig.bras-haut .tete{animation:rit .32s ease-in-out 4}
+.fig.recule .tete{animation:recule .6s ease-out forwards}
+@keyframes recule{0%{transform:none}35%{transform:translateY(-7px) rotate(-10deg) scale(1.07)}100%{transform:translateY(-3px) rotate(-6deg) scale(1.03)}}
+.fig.plie{animation:plie 1.3s ease-in-out}
+.fig.plie .tete{animation:rit .32s ease-in-out 4}
+@keyframes plie{0%,100%{transform:translate(-50%,0) rotate(0)}30%,70%{transform:translate(-50%,5%) rotate(6deg)}}
+.vraie-tete{position:absolute;transform:translate(-50%,-100%);padding:3px 9px;border-radius:999px;background:var(--rose);color:#fff;font-size:10.5px;font-weight:900;white-space:nowrap;z-index:8;pointer-events:none;animation:apparait .3s ease-out}
+.synchro{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);padding:9px 18px;border-radius:999px;background:linear-gradient(135deg,#fff0c8,var(--ambre));color:#2a1424;font-weight:900;font-size:15px;white-space:nowrap;z-index:9;pointer-events:none;box-shadow:0 10px 30px rgba(242,196,107,.55);animation:synchro 2.2s ease-out forwards}
+@keyframes synchro{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}14%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}24%{transform:translate(-50%,-50%) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%)}}
+.fin-carte{position:absolute;left:4%;right:4%;top:2.5%;display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px;border-radius:18px;background:rgba(10,4,9,.92);box-shadow:0 14px 34px rgba(0,0,0,.6);text-align:center;font-size:13px;font-weight:700;z-index:9;animation:apparait .3s ease-out}
+.fin-carte p{margin:0;color:var(--doux);font-size:12.5px;line-height:1.35}
+.fin-carte .fort{color:var(--texte);font-size:13.5px}
+.fin-carte div{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.barres{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.barres div{display:grid;grid-template-columns:38px minmax(0,1fr) 46px;align-items:center;gap:10px;font-weight:800}
+.barres svg{width:38px;height:38px;border-radius:50%;background:#4a2440}
+.barres i{display:block;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--rose),var(--ambre))}
+.barres small{display:block;font-size:12px;color:var(--sourd);font-weight:600}
+.bandeau.defi{border-radius:16px;background:rgba(255,214,120,.97)}
+.bandeau .non{background:transparent;color:#2a1424;padding:5px 7px}
 .fig .nom{position:absolute;left:50%;bottom:-1%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;padding:1px 8px 2px;border-radius:10px;background:rgba(18,7,15,.78);font-size:10.5px;font-weight:800;white-space:nowrap;line-height:1.25;pointer-events:none}
 .fig .nom em{font-family:var(--f-main);font-style:normal;font-size:12.5px;font-weight:700;color:var(--ambre);line-height:1}
 .fig .nom .dot{display:inline-block;width:6px;height:6px;margin-right:4px;border-radius:50%;background:var(--vert);box-shadow:0 0 6px var(--vert);vertical-align:1px}
@@ -407,12 +432,13 @@ const SALONNIERS=['malik','jade','hugo','emma','yanis','chloe','theo','nadia','p
 const VIDEOS=[
   {id:'foot',theme:'foot',dessin:'foot',titre:'La lucarne de la semaine, à la 89e',chaine:'Le foot du dimanche',duree:32,
     vus:{sam:'hier soir',lea:'ce matin',noe:'ce midi',ines:'hier'},
-    reactions:[{q:'sam',t:6.4,s:'sourire'},{q:'lea',t:11.8,s:'texte',x:'Il va tirer de là ?!'},{q:'noe',t:15.4,s:'bof'},{q:'sam',t:19.3,s:'oh'},{q:'sam',t:21.3,s:'surprise'},{q:'lea',t:21.5,s:'surprise'},{q:'noe',t:21.7,s:'rire'},{q:'ines',t:21.9,s:'rire'},{q:'lea',t:23.2,s:'texte',x:'NOOON 😱'},{q:'sam',t:25.2,s:'vocal',x:'Mais quelle frappe !'},{q:'noe',t:28.4,s:'coeur'},{q:'lea',t:31.4,s:'coeur'}],
+    reactions:[{q:'sam',t:6.4,s:'sourire'},{q:'lea',t:11.8,s:'texte',x:'Il va tirer de là ?!'},{q:'noe',t:15.4,s:'bof'},{q:'sam',t:19.3,s:'oh'},{q:'sam',t:21.3,s:'surprise',perf:'but'},{q:'lea',t:21.5,s:'surprise'},{q:'noe',t:21.7,s:'rire'},{q:'ines',t:21.9,s:'rire'},{q:'lea',t:23.2,s:'texte',x:'NOOON 😱'},{q:'sam',t:25.2,s:'vocal',x:'Mais quelle frappe !'},{q:'noe',t:28.4,s:'coeur'},{q:'lea',t:31.4,s:'coeur'}],
     moments:[{t:21.2,s:'surprise'}],fort:{phrase:'Quand Sam a vu le but 😱'},stade:214},
   {id:'chat',theme:'animaux',dessin:'chat',titre:'Pixel contre l’étagère',chaine:'Les bêtises de Pixel',duree:26,
-    vus:{sam:'hier'},
-    reactions:[{q:'sam',t:8.6,s:'sourire'},{q:'sam',t:11.4,s:'oh'},{q:'sam',t:12.5,s:'rire'},{q:'sam',t:14.6,s:'texte',x:'Pixel 😭😂'},{q:'sam',t:25.4,s:'coeur'}],
-    moments:[{t:12.3,s:'rire'}],fort:{phrase:'Quand Sam a vu Pixel rater son saut 😂'},stade:96},
+    vus:{sam:'hier',lea:'ce matin'},
+    reactions:[{q:'sam',t:8.6,s:'sourire'},{q:'lea',t:11.6,s:'oh'},{q:'sam',t:11.4,s:'oh'},{q:'sam',t:12.5,s:'rire',perf:'fourire'},{q:'sam',t:14.6,s:'texte',x:'Pixel 😭😂'},{q:'lea',t:16,s:'texte',x:'J’ai tenu 😤'},{q:'sam',t:25.4,s:'coeur'},{q:'lea',t:25.6,s:'coeur'}],
+    moments:[{t:12.3,s:'rire'}],fort:{phrase:'Quand Sam a vu Pixel rater son saut 😂'},stade:96,
+    defi:{sam:12.5,lea:null}},
   {id:'crepe',theme:'cuisine',dessin:'crepe',titre:'La crêpe qui voulait s’envoler',chaine:'Cuisine en 5 minutes',duree:28,
     vus:{},reactions:[],moments:[{t:14,s:'rire'}],fort:{phrase:'Quand la crêpe a atterri sur le chat 😂'},stade:57},
 ];
@@ -502,7 +528,7 @@ function figSVG(p){
   <g class="corps"><rect x="29" y="127" width="19" height="17" rx="8" fill="${p.bas}"/><rect x="52" y="127" width="19" height="17" rx="8" fill="${p.bas}"/>
   <ellipse cx="38" cy="147" rx="11" ry="5" fill="#2a1a1f"/><ellipse cx="62" cy="147" rx="11" ry="5" fill="#2a1a1f"/>
   <path d="M27 134Q25 100 36 93Q50 87 64 93Q75 100 73 134Z" fill="${p.haut}"/>
-  <path d="M32 100Q20 116 31 130" stroke="${p.haut}" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="31" cy="131" r="5.5" fill="${p.peau}"/>
+  <g class="bras-g"><path d="M32 100Q20 116 31 130" stroke="${p.haut}" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="31" cy="131" r="5.5" fill="${p.peau}"/></g>
   <g class="bras-d"><path d="M68 100Q80 116 69 130" stroke="${p.haut}" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="69" cy="131" r="5.5" fill="${p.peau}"/></g></g>
   <path d="M50 92l-7-2.5l14-2.5l-14-2.5l14-2.5l-7-2" stroke="#c9b3be" stroke-width="2.6" fill="none" stroke-linejoin="round"/>
   <g class="tete">${teteInner(p)}</g></svg>`;
@@ -736,6 +762,7 @@ function rendreAccueil(){
     <span class="allume"><i></i>Ta télé est allumée</span>
     <div class="tdj"><p class="sur">Ma télé du jour</p><h2>🎬 ${vids.length} vidéos t’attendent</h2><p class="themes">${courts.join(' · ')}</p>
       <div class="deja"><span class="tetes">${vus.slice(0,3).map(id=>teteSVG(GENS[id])).join('')}</span><span>${deja}</span></div>
+      <p class="themes" style="color:var(--ambre)">😤 Sam te défie : ne pas rire devant « Pixel contre l’étagère »</p>
       <span class="btn">▶ Regarder</span></div>
   </button>
   <p class="slogan">Regarde tes vidéos avec ceux que tu aimes, même quand ils sont loin.</p>
@@ -772,7 +799,7 @@ $$('[data-retour]').forEach(b=>b.addEventListener('click',()=>montrer('accueil')
 
 // ════════════════════════ MA TÉLÉ DU JOUR, DANS MA PIÈCE ════════════════════════
 const PLACES4=[{x:15,b:7,l:24},{x:38.5,b:7,l:24},{x:61.5,b:7,l:24},{x:85,b:7,l:24}];
-const piece={liste:[],i:0,tele:null,mes:{},live:new Set(),cam:false,camOk:false,notes:0,assis:[]};
+const piece={liste:[],i:0,tele:null,mes:{},live:new Set(),cam:false,camOk:false,notes:0,assis:[],flag:new Set(),defi:null,defiFait:{}};
 const scP=()=>$('#p-scene');
 function ouvrirPiece(){montrer('piece');piece.liste=videosDuJour();piece.i=0;piece.live.clear();
   const sc=scP();sc.innerHTML=`<div class="decor">${decorSVG(DECORS.maison)}</div>${teleHTML()}<div class="bord" id="p-bord"></div><p class="seul" id="p-seul" hidden></p>`;
@@ -791,7 +818,7 @@ function assisDe(v){
 }
 function chargerVideo(i,vueDe=null){
   piece.i=i;piece.mode=vueDe;const v=courante(),sc=scP();
-  $$('.fig,.bulle,.part-e,.indice,.bandeau,.note-moi',sc).forEach(x=>x.remove());
+  $$('.fig,.bulle,.part-e,.indice,.bandeau,.note-moi,.fin-carte,.synchro,.vraie-tete',sc).forEach(x=>x.remove());piece.defi=null;
   let assis,petites;
   if(vueDe){
     // 👀 ce que verra ce proche : lui au centre, ta figurine à côté de lui, qui réagit à TES secondes
@@ -804,6 +831,7 @@ function chargerVideo(i,vueDe=null){
     $('#b-retour-moi').addEventListener('click',()=>{chargerVideo(piece.i);majCam()});
   }else{
     ({assis,petites}=assisDe(v));piece.rejeu=v.reactions;
+    if(v.defi&&!(v.id in piece.defiFait))proposerDefi(v);
     poser(sc,'moi',PLACES4[1]);
     [0,2,3].forEach((k,j)=>{const id=assis[j];if(id)poser(sc,id,PLACES4[k],piece.live.has(id)?{direct:true}:{vu:'a vu '+v.vus[id]})});
   }
@@ -825,32 +853,88 @@ function tics(){
 function tickPiece(t0,t1){
   const v=courante(),sc=scP();
   $('#p-t').textContent=mmss(t1);$('.rempli',$('#p-ligne')).style.width=(t1/v.duree*100)+'%';
-  for(const r of piece.rejeu)if(r.t>t0&&r.t<=t1&&(piece.mode||!piece.live.has(r.q)))reagir(sc,r.q,r.s,r.x);
+  for(const r of piece.rejeu)if(r.t>t0&&r.t<=t1&&(piece.mode||!piece.live.has(r.q))){if(r.perf)performer(sc,r.q,r.perf);else reagir(sc,r.q,r.s,r.x)}
   if(!piece.mode)for(const m of v.moments)if(m.t>t0&&m.t<=t1){
     piece.live.forEach(id=>plusTard('piece',()=>reagir(sc,id,m.s),hasard(150,600)));
-    if(piece.cam)plusTard('piece',()=>{reagir(sc,'moi',m.s==='surprise'?'surprise':'rire');noter(m.s==='surprise'?'surprise':'rire','camera')},450);
+    if(piece.cam)plusTard('piece',()=>{performer(sc,'moi',m.s==='surprise'?'but':'fourire');noter(m.s==='surprise'?'surprise':'rire','camera')},450);
   }
+  if(piece.defi?.actif){const b=$('#bandeau-defi b');if(b)b.textContent=`😤 Tu tiens… ${mmss(t1)}`}
+  if(t1>t0)tenterSynchro();
+}
+// 🎭 sa vraie tête : ce que la caméra de Sam a vu, rejoué par sa figurine (des chiffres, jamais une image)
+const PERFS={but:[[0,'oh','recule','😱'],[450,'oh','bras-haut','⚽'],[1750,'rire','rit','🎉'],[3000,'rire','rit',''],[4300,'n','','']],fourire:[[0,'rire','rit','😂'],[1300,'rire','plie','😂'],[2600,'rire','rit','🤣'],[3900,'rire','plie',''],[5000,'n','','']]};
+function performer(sc,id,nom){
+  const f=figDe(sc,id);if(!f)return reagir(sc,id,nom==='but'?'surprise':'rire');
+  const b=document.createElement('span');b.className='vraie-tete';b.textContent=id==='moi'?'📷 ta tête':'📷 sa vraie tête';placerAuDessus(sc,f,b,.62);setTimeout(()=>b.remove(),PERFS[nom].at(-1)[0]);
+  for(const [ms,x,a,e] of PERFS[nom])plusTard('piece',()=>{clearTimeout(f._tx);f.dataset.x=x;if(a)animer(f,a,1300);if(e){jaillir(sc,f,e);setTimeout(()=>jaillir(sc,f,e),180)}},ms);
+}
+// 🤝 la synchro : réagir au même moment qu'un proche (à 1,8 s près)
+const momentsDe=q=>{const ts=piece.rejeu.filter(r=>r.q===q&&r.s!=='bof').map(r=>r.t).sort((a,b)=>a-b),m=[];for(const x of ts)if(!m.length||x-m.at(-1).at(-1)>2)m.push([x]);else m.at(-1).push(x);return m};
+const touche=(grappe,mes,now=1e9)=>grappe.some(x=>x<=now+.05&&mes.some(t=>Math.abs(t-x)<=1.8));
+const mesTemps=v=>(piece.mes[v.id]||[]).filter(r=>r.source!=='implicite').map(r=>r.t);
+const prochesLa=()=>[...piece.assis,...$$('.petite',scP()).map(x=>x.dataset.id)].filter(q=>PROCHES.includes(q)&&!piece.live.has(q));
+function tenterSynchro(){
+  if(piece.mode||!piece.tele)return;const v=courante(),now=piece.tele.t,mes=mesTemps(v),qs=[];
+  for(const q of prochesLa())for(const m of momentsDe(q)){const k=v.id+q+m[0];if(piece.flag.has(k))continue;if(touche(m,mes,now)){piece.flag.add(k);if(!qs.includes(q))qs.push(q)}}
+  if(!qs.length)return;const sc=scP(),moi=figDe(sc,'moi');
+  sc.querySelectorAll('.synchro').forEach(x=>x.remove());const s=document.createElement('div');s.className='synchro';
+  const noms=qs.map(q=>GENS[q].prenom);s.textContent=`🤝 Synchro avec ${noms.length>1?noms.slice(0,-1).join(', ')+' et '+noms.at(-1):noms[0]} !`;sc.appendChild(s);setTimeout(()=>s.remove(),2300);
+  if(moi){animer(moi,'saute',1100);qs.forEach(q=>{const o=figDe(sc,q)||sc.querySelector(`.petite[data-id="${q}"]`);if(o)voler(sc,moi,o,'✋')})}
+}
+function bilanSynchro(v){
+  return prochesLa().map(q=>{const m=momentsDe(q),mes=mesTemps(v),n=m.filter(g=>touche(g,mes)).length;return {q,n,sur:m.length,pc:m.length?Math.round(n/m.length*100):0}}).filter(x=>x.sur).sort((a,b)=>b.n-a.n||b.sur-a.sur);
+}
+// 😤 le défi : ne pas rire
+function proposerDefi(v){
+  const sc=scP(),noms=Object.entries(v.defi).map(([q,t])=>t==null?`${GENS[q].prenom} a tenu`:`${GENS[q].prenom} a craqué à ${mmss(t)}`).join(', ');
+  sc.insertAdjacentHTML('beforeend',`<div class="bandeau defi" id="bandeau-defi"><b>😤 Défi : ne pas rire. ${noms}.</b><button type="button" id="defi-oui">Relever</button><button type="button" class="non" id="defi-non" aria-label="Non merci">✕</button></div>`);
+  $('#defi-oui').addEventListener('click',()=>{piece.defi={actif:true};$('#defi-oui').remove();$('#defi-non').remove();piece.tele.aller(0);piece.tele.jouer();majJouer();
+    toast(piece.cam?'😤 C’est parti. 📷 est allumée : elle verra si tu ris.':'😤 C’est parti. Si tu ris, touche 😂 (ou allume 📷 : elle le verra pour toi).',{ms:3600})});
+  $('#defi-non').addEventListener('click',()=>$('#bandeau-defi').remove());
+}
+function finDefi(tenu,t){
+  const v=courante();piece.defi.actif=false;piece.defiFait[v.id]=tenu?null:t;
+  const b=$('#bandeau-defi b');const sam=v.defi.sam;
+  if(b)b.textContent=tenu?'😤 Tenu jusqu’au bout !':`😂 Craqué à ${mmss(t)}${sam!=null&&Math.abs(sam-t)<2?` : Sam aussi, à ${mmss(sam)}`:''}`;
+  setTimeout(()=>$('#bandeau-defi')?.remove(),4500);
 }
 const PRENOMS_PROCHES=PROCHES.map(id=>GENS[id].prenom).slice(0,-1).join(', ')+' et '+GENS[PROCHES.at(-1)].prenom;
 function noter(sorte,source,texte){
   if(piece.mode)return;
   const v=courante(),t=Math.round(piece.tele.t*10)/10,sc=scP();(piece.mes[v.id]||=[]).push({t,sorte,source,texte});tics();
   const moi=figDe(sc,'moi');if(moi){sc.querySelectorAll('.note-moi').forEach(x=>x.remove());const n=document.createElement('span');n.className='note-moi';n.textContent=`${EMO[source==='ecrit'?'texte':source==='voix'?'vocal':sorte]} noté à ${mmss(t)}`;placerAuDessus(sc,moi,n,.62);setTimeout(()=>n.remove(),1900)}
+  if(piece.defi?.actif&&(sorte==='rire'||sorte==='sourire'))finDefi(false,t);
   if(source==='camera'){if(!piece.camDit){piece.camDit=true;toast(`📷 Ton téléphone a vu que tu riais à ${mmss(t)}. Il ne garde que ça.`,{ms:3600})}return}
   if(source==='implicite')return;
   if(piece.notes<3){piece.notes++;toast(`${EMO[sorte]} noté à ${mmss(t)} : ${PRENOMS_PROCHES} le verront à cette seconde`,{ms:3200})}
 }
 function finPiece(){
   const v=courante(),sc=scP();majJouer();
-  if(piece.mode){const f=document.createElement('div');f.className='tele-fin';f.innerHTML=`<p>Voilà ce que ${GENS[piece.mode].prenom} verra : ta figurine à côté, à tes secondes.</p><div><button class="chip" data-encore>↺ Revoir</button><button class="btn petit" data-moi>Revenir à ma télé</button></div>`;$('.tele',sc).appendChild(f);
+  if(piece.mode){const f=document.createElement('div');f.className='fin-carte';f.innerHTML=`<p>Voilà ce que ${GENS[piece.mode].prenom} verra : ta figurine à côté, à tes secondes.</p><div><button class="chip" data-encore>↺ Revoir</button><button class="btn petit" data-moi>Revenir à ma télé</button></div>`;sc.appendChild(f);
     f.addEventListener('click',e=>{if(e.target.closest('[data-encore]'))chargerVideo(piece.i,piece.mode);if(e.target.closest('[data-moi]')){chargerVideo(piece.i);majCam()}});return}
   reagir(sc,'moi','coeur');noter('coeur','implicite');
+  if(piece.defi?.actif)finDefi(true);
+  const bilan=bilanSynchro(v),top=bilan[0];
+  const ligneSync=top?(top.n?`🤝 Synchros : ${bilan.filter(b=>b.n).map(b=>`${GENS[b.q].prenom} ${b.n}`).join(' · ')}`:`🤝 Aucune synchro : réagis en même temps qu’eux !`):'';
+  let ligneDefi='';
+  if(v.defi&&v.id in piece.defiFait){const l=[...Object.entries(v.defi).map(([q,x])=>({n:GENS[q].prenom,x})),{n:'Toi',x:piece.defiFait[v.id]}].sort((a,b)=>(a.x==null?1e9:a.x)<(b.x==null?1e9:b.x)?1:-1);
+    ligneDefi=`<p class="fort">😤 Ne pas rire : ${l.map((e,k)=>`${k?'':'🏆 '}${e.n} ${e.x==null?'jusqu’au bout':mmss(e.x)}`).join(' · ')}</p>`}
   const reactifs=[...piece.assis.filter(id=>v.reactions.some(r=>r.q===id)||piece.live.has(id))];
   const dernier=piece.i===piece.liste.length-1;
-  const f=document.createElement('div');f.className='tele-fin';
-  f.innerHTML=`<p>Regardée jusqu’au bout : un ❤️ noté à la fin</p><div><button class="btn petit ambre" data-sam>👀 Ce que Sam verra</button>${reactifs.length?'<button class="btn petit" data-clip>🎬 Nos réactions</button>':''}${dernier?'<button class="chip" data-revoir>↺ Revoir la première</button><button class="chip" data-salons>Les salons ›</button>':'<button class="chip" data-suiv>Suivante ›</button>'}</div>`;
-  $('.tele',sc).appendChild(f);
-  f.addEventListener('click',e=>{if(e.target.closest('[data-sam]'))voirComme('sam');if(e.target.closest('[data-clip]'))ouvrirClip(v,reactifs);if(e.target.closest('[data-suiv]'))chargerVideo(piece.i+1);if(e.target.closest('[data-revoir]'))chargerVideo(0);if(e.target.closest('[data-salons]'))montrer('accueil')});
+  const f=document.createElement('div');f.className='fin-carte';
+  f.innerHTML=`${ligneSync?`<p class="fort">${ligneSync}</p>`:''}${ligneDefi}<p>Regardée jusqu’au bout : un ❤️ noté à la fin</p><div>${ligneDefi?'<button class="chip" data-defier>😈 Défier un proche</button>':''}<button class="chip" data-humour>Avec qui tu ris le plus ›</button></div><div><button class="btn petit ambre" data-sam>👀 Ce que Sam verra</button>${reactifs.length?'<button class="btn petit" data-clip>🎬 Nos réactions</button>':''}${dernier?'<button class="chip" data-revoir>↺ Revoir la première</button><button class="chip" data-salons>Les salons ›</button>':'<button class="chip" data-suiv>Suivante ›</button>'}</div>`;
+  sc.appendChild(f);
+  f.addEventListener('click',e=>{if(e.target.closest('[data-humour]'))avecQui();if(e.target.closest('[data-defier]'))defier(v);if(e.target.closest('[data-sam]'))voirComme('sam');if(e.target.closest('[data-clip]'))ouvrirClip(v,reactifs);if(e.target.closest('[data-suiv]'))chargerVideo(piece.i+1);if(e.target.closest('[data-revoir]'))chargerVideo(0);if(e.target.closest('[data-salons]'))montrer('accueil')});
+}
+const BASE_HUMOUR={sam:78,lea:64,noe:41,ines:22};
+function avecQui(){
+  const vus=piece.liste.filter(v=>(piece.mes[v.id]||[]).length);const pc={...BASE_HUMOUR};
+  feuille(`<h2>Avec qui tu ris le plus</h2><p class="chapo">Chaque fois que tu réagis au même moment qu’un proche, c’est une synchro. Cette semaine :</p><div class="barres">${PROCHES.map(q=>({q,p:pc[q]})).sort((a,b)=>b.p-a.p).map(({q,p})=>`<div>${teteSVG(GENS[q])}<span>${GENS[q].prenom}<small>même humour</small><i style="width:${p}%"></i></span><span>${p} %</span></div>`).join('')}</div><p class="chapo">Le pourcentage se retrouve aussi dans votre salon (Messages) : « Vous riez des mêmes choses ».</p>`);
+}
+function defier(v){
+  const moi=piece.defiFait[v.id];
+  feuille(`<h2>😈 Défier un proche</h2><p class="chapo">Ton proche reçoit : « ${moi==null?'J’ai tenu jusqu’au bout':`J’ai craqué à ${mmss(moi)}`} devant « ${esc(v.titre)} ». À toi. »</p><div class="liste-gens">${PROCHES.map(id=>ligneGens(id,v.vus[id]?'l’a déjà vue':'ne l’a pas encore vue')).join('')}</div>`,f=>
+    $$('.ligne-gens',f).forEach(b=>b.addEventListener('click',()=>{fermerFeuille();toast(`😈 Défi envoyé à ${GENS[b.dataset.id].prenom}`)})));
 }
 function voirComme(id){
   const v=courante(),p=GENS[id];
@@ -859,7 +943,7 @@ function voirComme(id){
   feuille(`<h2>${p.prenom} l’a déjà vue ${v.vus[id]}</h2><p class="chapo">Pour que ${p.prenom} sache que tu l’as regardée, ClikMe lui envoie :</p><div class="notif"><small>ClikMe · maintenant</small><b>🎬 Alex a regardé « ${esc(v.titre)} » : revois-la avec ses réactions</b><div><span>Revoir</span><span>Plus tard</span></div></div><p class="chapo">Si ${p.prenom} ne l’avait pas encore vue, ta figurine l’attendrait simplement à côté, au moment où la vidéo passe.</p><button class="btn" id="voir-comme">Voir comme ${p.prenom}</button>`,f=>$('#voir-comme',f).addEventListener('click',go));
 }
 function majJouer(){const j=piece.tele?.joue;$('#p-jouer').textContent=j?'❚❚':'▶';$('#p-jouer').setAttribute('aria-label',j?'Pause':'Lecture')}
-$('#p-jouer').addEventListener('click',()=>{const T=piece.tele;if(T.fini){T.aller(0);T.jouer()}else if(T.joue){T.pause();if(piece.live.size)toast('❚❚ En pause pour tout le monde')}else T.jouer();majJouer()});
+$('#p-jouer').addEventListener('click',()=>{const T=piece.tele;if(T.fini){scP().querySelector('.fin-carte')?.remove();T.aller(0);T.jouer()}else if(T.joue){T.pause();if(piece.live.size)toast('❚❚ En pause pour tout le monde')}else T.jouer();majJouer()});
 $('#p-arriere').addEventListener('click',()=>{const T=piece.tele;T.aller(T.t-5);if(!T.joue)T.jouer();majJouer();noter('oh','implicite');toast(`↺ Retour en arrière : « oh ! » noté à ${mmss(T.t)}`,{ms:2400})});
 $('#p-suivante').addEventListener('click',()=>{const T=piece.tele;if(T.t<15&&!T.fini){noter('bof','implicite');toast(`Passée à ${mmss(T.t)} : un « bof » noté`,{ms:2200})}
   if(piece.i<piece.liste.length-1)chargerVideo(piece.i+1);else{T.pause();T.fini=true;majJouer();finPiece()}});
