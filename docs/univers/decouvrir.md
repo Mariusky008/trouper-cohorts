@@ -278,7 +278,8 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | Lot | Contenu | Dépend de |
 |---|---|---|
 | **D0** ✅ (section 14 ; attend la clé YouTube) | « Tes passions » (l'écran, `passions.json`) ; la sélection YouTube de chaque nuit ; la page d'administration de la sélection | la clé YouTube |
-| **D1** ✅ (section 15 ; à l'adresse d'essai, l'onglet ensuite) | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
+| **D1** ✅ (section 15) | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
+| **D1b** ✅ (section 16) | Ma télé du jour dans l'onglet Découvrir ; le retrait de l'ancienne page (section 11) | D1 |
 | **D2** | Le moteur à N places (le contrat `salon.ts`) ; inviter des proches ; la télé synchronisée | D1 |
 | **D2b ⭐** | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
 | **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
@@ -313,7 +314,8 @@ D0 et la suite) — D1 a besoin de Ma maison (ma pièce et sa télé).
 ## 11. Ce qu'on retire de l'ancienne page (décision du propriétaire, 17 novembre 2026)
 
 **Le défilement des mèmes en plein écran et les vœux sont supprimés.** Pour que l'onglet ne reste jamais vide, on les
-retire **dans la PR qui livre la nouvelle page (D1)** : l'ancienne page part, ma télé du jour arrive.
+retire **dans la PR qui met la nouvelle page dans l'onglet** : l'ancienne page part, ma télé du jour arrive. **Fait le
+19 novembre 2026 (le lot D1b, section 16).**
 
 Ce qui part :
 - **l'écran** : `src/app/collection/decouvrir.tsx` (le défilement) et `src/app/collection/voeu.tsx` (les bulles, la
@@ -325,12 +327,13 @@ Ce qui part :
 - **les essais** : `scripts/navigateur/voeu.mjs` (et sa ligne dans `scripts/navigateur/lancer-essais.sh` et dans la
   liste de lint de la CI) ;
 - **le tuto** : les trois bulles de Pablito sur Découvrir (`public/collection/pablito/tuto-decouvrir-1..3.mp3`) parlent
-  de l'ancienne page ; **le propriétaire enregistrera les nouvelles** (jamais de voix de synthèse), en attendant le tuto
-  passe Découvrir.
+  de l'ancienne page ; **le propriétaire enregistrera les nouvelles** (jamais de voix de synthèse) : réécrites, elles
+  s'affichent sans voix en attendant (section 16).
 
 Ce qui reste :
 - **`sesDixHuitAns`** (dans `voeu-serveur.ts`) sert ailleurs (le catalogue des pièces, `salon-serveur.ts` ; la
-  séparation des 15-17 ans ici) : on le **déplace** dans un fichier à lui avant d'effacer `voeu-serveur.ts` ;
+  séparation des 15-17 ans ici) : on le **déplace** dans un fichier à lui avant d'effacer `voeu-serveur.ts` (fait :
+  `majorite-serveur.ts`) ;
 - **la table `clik_voeu`** (`supabase/migrations/20261111090000_clik_voeu.sql`) : on ne l'efface pas tout de suite (une
   migration qui la supprime viendra un mois plus tard, une fois sûr que rien ne la lit plus) ;
 - **les mèmes** eux-mêmes : on les crée toujours (« Créer »), on les envoie à ses proches, on les joue dans les salons ;
@@ -462,8 +465,7 @@ grand écran ; suivante, garder, envoyer à un proche), qui remplace l'ancienne 
 ## 15. Le lot D1 : ma télé du jour (19 novembre 2026)
 
 **L'adresse d'essai `/univers/tele`** (pensée pour le téléphone ; dans les essais, l'administrateur seul, comme les autres
-adresses d'essai de l'univers). L'onglet Découvrir l'ouvrira — avec le retrait de l'ancienne page (section 11) — une
-fois que le propriétaire l'aura jouée sur son téléphone.
+adresses d'essai de l'univers). Depuis le lot D1b (section 16), c'est aussi l'onglet Découvrir de l'appli.
 
 **Ce qu'on y fait** :
 - **Pas encore de passions** : « Tes passions » d'abord (l'écran du lot D0), puis la télé.
@@ -508,6 +510,51 @@ YouTube : le grand écran en 16/9, la pièce et la figurine, allumer, suivante, 
 `YOUTUBE_API_KEY` rangée dans Vercel, et une première sélection (la nuit, ou « ↻ Refaire tous les thèmes » dans
 `/admin/humain/decouvrir`).
 
-**Ensuite** : l'onglet Découvrir (la carte « Ma télé du jour » en haut, la télé en plein écran au toucher) et le retrait
-de l'ancienne page (section 11), une fois la télé jouée par le propriétaire ; puis D2 (inviter des proches, la télé
-synchronisée).
+**Ensuite** : l'onglet Découvrir et le retrait de l'ancienne page (le lot D1b, section 16) ; puis D2 (inviter des
+proches, la télé synchronisée).
+
+## 16. Le lot D1b : l'onglet Découvrir, et l'ancienne page qui part (19 novembre 2026)
+
+Le propriétaire, le 19 novembre : « tu peux faire : l'onglet Découvrir (et le retrait de l'ancienne page : les mèmes en
+plein écran et les vœux) ».
+
+**L'onglet** (`ma-collection.tsx`, `#decouvrir`) : `TeleDuJourEcran` en mode onglet (`onglet`) — sous la barre du haut,
+sans prendre tout l'écran ; la note (« 📌 Gardée… ») et la feuille « Envoyer à… » passent devant le menu du bas. Pas
+encore de passions : « Tes passions » d'abord, là aussi (son bouton « C'est parti » au-dessus du menu).
+
+**Ce qui est parti** (section 11) : `app/collection/decouvrir.tsx` (le fil, la carte du mème du jour, « Les univers à
+visiter » — ils sont dans Ma maison depuis M4) ; `app/collection/voeu.tsx`, `lib/direct/voeu.ts`, `voeu-serveur.ts`,
+la route `/api/direct/voeu` ; les tâches `/api/cron/voeu-soir` et `voeu-soir-ete` (et leurs lignes dans `vercel.json`) ;
+la mission dans la notification de 11 h 30 ; « Mes vœux » et le badge « 🌟 A exaucé » dans Moi ;
+`scripts/navigateur/voeu.mjs`. Et, puisque le fil des mèmes de la ville n'existe plus nulle part : « 🌍 Poster sur le fil
+de ta ville » et « 🔥 Poster ma réponse (visible par les gens de Dax) » dans « Créer », « 🌍 Montrer dans Découvrir »
+dans « Mes mèmes » (le serveur garde ses règles, `action: "public"`, mais aucun écran ne s'en sert).
+
+**Ce qui a changé de place** :
+- **Le mème du jour** : la notification de 11 h 30 (`#jour`) ouvre **« Créer » sur le thème du jour** (son titre, ses
+  trois idées), l'adresse restant `#jour` (`versLeStudio(…, { garderAdresse: true })` — sans lui, l'adresse passait à
+  `#figurine` et revenait à `#jour`, sans fin). L'appli posée sur l'écran d'accueil, à sa première ouverture : « 🔔
+  Dernière étape : le mème du jour » est là, sur le thème du jour.
+- **Les anciens liens** `#voeu`, `#mission`, `#reponses` : « Découvrir ».
+- **L'étape « ✨ Faire un vœu »** (un cadeau de ClikMe, `etapes.ts`) devient **« 📺 Choisir tes passions »** (elle mène
+  à Découvrir) ; ceux qui avaient fait un vœu, ou répondu à trois questions du jour, la gardent.
+- **L'humeur douce** (tristesse, colère, « oh non ») : le geste « ✨ Faire un vœu » devient « 💬 Écrire à un proche » ;
+  deux phrases qui parlaient de vœu sont réécrites (« Un proche peut peut-être aider. Un petit mot ? » ; « Si ça peut
+  aider, écris à un proche. Sinon, je reste là. ») ; une réponse gardée avec l'ancien geste est relue avec le nouveau.
+- **Ses 18 ans** : `majorite-serveur.ts` (`sesDixHuitAns`, `direSesDixHuitAns`) ; ils se lisent aussi dans
+  `<habitant>/adulte.json` (déclaré pour ouvrir son univers à tous). La question « As-tu 18 ans ? » n'a plus d'écran
+  (elle était dans « Mon vœu ») : sans réponse, le salon des jeunes parents reste caché. À reposer, si besoin, dans
+  « Tes passions ».
+- **Le tuto** : les trois bulles de Découvrir sont réécrites pour la télé (`tuto.tsx`) ; elles s'affichent sans voix
+  jusqu'à ce que le propriétaire enregistre **`tuto-decouvrir-tele-1`**, **`-2`** et **`-3`** :
+  1. « Ici, c'est ta télé du jour : les vidéos de tes passions, choisies pour toi chaque nuit. »
+  2. « Pas pour toi ? « Suivante ». Elle te plaît ? « Garder » : elle va à la télé de ta maison. »
+  3. « Et pour la partager, « Envoyer à… » un proche : elle passe sur votre télé, dans votre salon. »
+
+**Ce qui reste** : la table `clik_voeu` (une migration la supprimera un mois plus tard) ; ce que la figurine du mois lit
+des vœux du mois (rien de neuf ne s'y ajoute) ; les mèmes eux-mêmes, envoyés aux proches et joués dans les salons.
+
+**Les essais** : `tele-du-jour.mjs` (l'onglet : la télé en grand écran sous la barre du haut, la note au-dessus du
+menu) ; `meme-du-jour.mjs` réécrit (`#jour` ouvre « Créer » sur le thème, ses trois idées ; les anciens liens ouvrent
+Découvrir) ; `appli-notif.mjs`, `humeur-reponse.mjs`, `verifier-humeur.mjs`, `personnage.mjs`, `ma-figurine.mjs`
+adaptés.

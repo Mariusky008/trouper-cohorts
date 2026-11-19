@@ -16,6 +16,10 @@
  *
  * Le lecteur de YouTube est chargé une fois (`chargerYouTube`, `tele-duo.tsx`) ; s'il ne répond pas, la vignette et
  * « ▶ La regarder sur YouTube ».
+ *
+ * 🔥 L'ONGLET « DÉCOUVRIR » (le lot D1b, 19 novembre 2026) : c'est elle, à la place des mèmes en plein écran et des vœux
+ * (`onglet` : sous la barre du haut, au-dessus du menu ; la note et la feuille « Envoyer à… » passent devant le menu).
+ * Seule, à l'adresse d'essai `/univers/tele`, elle prend tout l'écran.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PHRASES_TELE_DU_JOUR as P, duree, type TeleDuJour, type VideoTele } from "@/lib/direct/tele-du-jour";
@@ -39,7 +43,7 @@ const poster = (corps: Record<string, unknown>) =>
     .then(async (r) => ({ ok: r.ok, j: (await r.json().catch(() => ({}))) as { error?: string; deja?: boolean } }))
     .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { error?: string; deja?: boolean } }));
 
-export function TeleDuJourEcran() {
+export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
   const [tele, setTele] = useState<TeleDuJour | null>(null);
   const [erreur, setErreur] = useState("");
   const charger = useCallback(async () => {
@@ -52,13 +56,20 @@ export function TeleDuJourEcran() {
   useEffect(() => {
     void Promise.resolve().then(charger);
   }, [charger]);
-  if (!tele) return <main className="td td-centre">{erreur || "…"}<style>{STYLES}</style></main>;
+  const cls = `td${onglet ? " onglet" : ""}`;
+  if (!tele)
+    return (
+      <div className={`${cls} td-centre`}>
+        {erreur || "…"}
+        <style>{STYLES}</style>
+      </div>
+    );
   // (pas encore de passions : « Tes passions » d'abord, puis la télé)
-  if (!tele.passions.length) return <TesPassions onFini={() => void charger()} />;
-  return <Television tele={tele} />;
+  if (!tele.passions.length) return <TesPassions onglet={onglet} onFini={() => void charger()} />;
+  return <Television tele={tele} cls={cls} />;
 }
 
-function Television({ tele }: { tele: TeleDuJour }) {
+function Television({ tele, cls }: { tele: TeleDuJour; cls: string }) {
   const videos = tele.videos;
   const [i, setI] = useState(0);
   const [allumee, setAllumee] = useState(false);
@@ -216,7 +227,7 @@ function Television({ tele }: { tele: TeleDuJour }) {
   const fini = !v;
 
   return (
-    <main className="td" data-video={v?.id ?? ""} data-mode={enPiece ? "piece" : "grand"}>
+    <div className={cls} data-video={v?.id ?? ""} data-mode={enPiece ? "piece" : "grand"}>
       <header className="td-haut">
         <div>
           <p className="td-sur">📺 {P.titre}</p>
@@ -352,13 +363,15 @@ function Television({ tele }: { tele: TeleDuJour }) {
         </div>
       )}
       <style>{STYLES}</style>
-    </main>
+    </div>
   );
 }
 
 const STYLES = `
 .td{min-height:100dvh;max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 0 calc(24px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;gap:12px;overflow-x:hidden}
 .td-centre{align-items:center;justify-content:center;color:#ead3df}
+.td.onglet{min-height:0;padding:4px 0 0;background:none}
+.td.onglet.td-centre{min-height:50dvh}
 .td-haut{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:0 16px}
 .td-sur{margin:0;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#F2C46B}
 .td-compte{margin:4px 0 0;font-size:19px;font-weight:900}
@@ -385,6 +398,8 @@ const STYLES = `
 .td-lien{align-self:center;border:0;background:none;color:#ead3df;font:inherit;font-size:14.5px;font-weight:700;text-decoration:underline;padding:6px}
 .td-note{position:fixed;left:16px;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
 .td-voile{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:6}
+.td.onglet .td-note{bottom:calc(96px + env(safe-area-inset-bottom));z-index:25}
+.td.onglet .td-voile{z-index:40}
 .td-feuille{width:100%;max-width:520px;max-height:70dvh;overflow:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:#21101a;display:flex;flex-direction:column;gap:10px}
 .td-feuille-titre{margin:0;font-weight:900;font-size:17px}
 .td-feuille ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}

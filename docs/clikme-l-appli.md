@@ -1,6 +1,6 @@
 # ClikMe, l'appli en bref
 
-*À jour au 10 novembre 2026 (« Créer » sur un seul écran). Pour quelqu'un qui découvre l'appli : ce qu'elle fait, écran par écran, et pourquoi.*
+*À jour au 10 novembre 2026 (« Créer » sur un seul écran) ; « Découvrir » au 19 novembre 2026 (ta télé du jour). Pour quelqu'un qui découvre l'appli : ce qu'elle fait, écran par écran, et pourquoi.*
 
 ## En une phrase
 
@@ -57,27 +57,16 @@ Sous le bouton, **« ⚡ Ou réagir en un toucher : ta tête à la place des emo
 
 Un toucher, et c'est prêt à envoyer.
 
-### 🔥 Découvrir : ton vœu, ta mission, le fil de ta ville
+### 🔥 Découvrir : ta télé du jour
 
-Une fois ton premier mème fait, **l'appli s'ouvre ici**.
+*Depuis le 19 novembre 2026 (`docs/univers/decouvrir.md`, sections 11 et 15).* Les vidéos de **tes passions** (de 3 à
+5, choisies la première fois : le foot, la cuisine, les animaux…), sélectionnées chaque nuit sur YouTube, dans **ta
+pièce** (celle de Ma maison), la télé en grand écran. « ⏭ Suivante », « 📌 Garder » (elle va à la télé de ta maison),
+« 📤 Envoyer à… » un proche (elle passe sur la télé de votre salon). Ce que tu regardes jusqu'au bout revient plus
+souvent ; ce que tu passes vite, moins.
 
-- **✨ Mon vœu** (la première page) : une petite envie qu'une personne de ta ville pourrait t'aider à réaliser
-  (« Quelqu'un pour courir avec moi le dimanche matin »). Ta figurine le dit aux autres. Un seul vœu à la fois ; tu
-  peux le reformuler, le mettre en pause, en faire un autre. En haut, ton vœu en grand, puis les gens qui t'ont répondu.
-  Quand quelqu'un propose son aide (« ✋ Marius peut t'aider »), tu lui réponds avec ta figurine : vous devenez proches,
-  et vous continuez dans Proches, avec vos figurines. Ou « Pas pour moi » : il ne le saura pas.
-  À chaque tête qui t'encourage, tu peux répondre avec la tienne (« Merci ! », « Mort de rire »…) : l'autre la retrouve
-  dans ses bulles.
-  **Exaucé ?** « 🎉 Il est exaucé ! » : tu dis grâce à qui, et c'est la fête — tes jours, toutes les figurines qui y ont
-  cru, « Merci ! » à celui qui t'a aidé, et le mème de la victoire à partager. Celui qui t'a aidé gagne « 🌟 A exaucé un
-  vœu » sur sa carte de personnage. Cinq jours sans aide ? Pablito te propose de le dire autrement.
-- **🎯 Ta mission du jour** : trois vœux des autres à encourager, en une minute. Tu réponds **avec ta tête** (tes
-  visages déjà faits, et un mot en sticker : « J'Y CROIS ! »), tu proposes ton aide (une phrase toute prête, ou ta
-  voix), ou tu passes ton tour (l'autre ne le saura jamais). Mission faite : ton vœu passe en premier le lendemain, et
-  ta série (🔥) prend un jour.
-- **En plein écran, on glisse vers le haut** pour voir les mèmes des gens de ta ville, et ceux des commerçants.
-- **Le mème du jour** : un même thème pour toute la ville, chaque jour. Une notification le rappelle vers 11 h 30.
-- **On réagit d'un toucher** (😂 ❤️ 🔥), **ou on répond en duo** : ta figurine à côté de la sienne, dans la même vidéo.
+L'ancienne page (le fil des mèmes de la ville en plein écran, « Mon vœu » et sa mission) est partie, comme décidé le
+17 novembre. Le mème du jour reste : la notification de 11 h 30 ouvre « Créer » sur son thème.
 
 ### 📍 Autour : la carte
 
@@ -110,9 +99,7 @@ C'est la porte d'entrée : chaque message est une invitation, envoyée par un am
 ### 🙂 Moi
 
 - **Ta carte de personnage** : sept questions, et ClikMe devine qui tu es (ton titre, ton pouvoir, ta faiblesse).
-  C'est elle qui inspire « Surprends-moi ». Les vœux que tu as aidé à exaucer s'y voient (« 🌟 A exaucé 2 vœux »), si tu
-  le veux.
-- **Mes vœux** : les tiens (exaucés, en route, en pause), et ceux que tu as aidé à exaucer.
+  C'est elle qui inspire « Surprends-moi ».
 - **Ta figurine du mois** : dix jours sur ClikMe dans le mois, et elle gagne un nouveau look pour tes mèmes (le thème
   du mois : Halloween, Noël…).
 - **L'appli sur ton écran d'accueil**, et les notifications (le mème du jour, « Hugo t'a répondu ! »). Chacune se
@@ -160,8 +147,7 @@ Dans l'appli, on croise **leurs mèmes dans Découvrir** et **leurs lieux sur la
 
 Ce qui a bougé ces derniers jours, et où un regard neuf compte le plus :
 
-- **Mon vœu** (11 novembre) : est-ce qu'on a envie d'en faire un ? La mission du jour se fait-elle vraiment en une
-  minute ?
+- **Ta télé du jour** (19 novembre) : les vidéos te ressemblent-elles ? Envoie-t-on vraiment des vidéos à ses proches ?
 - **Créer, sur un seul écran** (10 novembre) : est-ce qu'on comprend tout de suite quoi faire ? Est-ce que « Sa
   version », sur le mème prêt, donne envie d'essayer la BD, le film, l'affiche ?
 - **Le message WhatsApp en vidéo** : est-ce que ça donne envie de répondre ?

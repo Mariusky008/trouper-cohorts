@@ -90,14 +90,6 @@
       "schedule": "40 6 * * *"
     },
     {
-      "path": "/api/cron/voeu-soir",
-      "schedule": "5 18 * * *"
-    },
-    {
-      "path": "/api/cron/voeu-soir-ete",
-      "schedule": "5 17 * * *"
-    },
-    {
       "path": "/api/cron/direct-nettoyage",
       "schedule": "40 3 * * *"
     },

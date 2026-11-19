@@ -106,12 +106,12 @@ ok((await texte(inconnu, ".cp h1")).includes("Léa") && (await inconnu.locator('
 ok((await debordement(inconnu)) <= 0, "la carte partagée ne déborde pas");
 await inconnu.screenshot({ path: `${D}/personnage-2-partagee.png`, fullPage: true });
 
-// ✨ « MES VŒUX » dans « Moi » (12 novembre 2026 : ils y remplacent la question du jour)
+// ✨ « MES VŒUX » ont quitté « Moi » le 19 novembre 2026 (avec l'ancien « Découvrir ») ; la question du jour n'y revient pas
 await lea.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
 await fermerPablito(lea, "#o-personnage");
-await lea.waitForSelector("#o-personnage .vx-mes", { timeout: 30000 });
-const mesTxt = await texte(lea, "#o-personnage .vx-mes");
-ok(mesTxt.includes("Mes vœux") && mesTxt.includes("Pas encore de vœu") && mesTxt.includes("Faire un nouveau vœu") && (await lea.locator("#o-personnage .cn-question").count()) === 0, `« Mes vœux » dans Moi, plus de question du jour (${mesTxt.slice(0, 120)})`);
+await lea.waitForSelector("#o-personnage .pc", { timeout: 30000 });
+const mesTxt = await texte(lea, "#o-personnage");
+ok(!mesTxt.includes("Mes vœux") && (await lea.locator("#o-personnage .vx-mes, #o-personnage .pc-exauce").count()) === 0 && (await lea.locator("#o-personnage .cn-question").count()) === 0, "plus de « Mes vœux » dans Moi, ni de question du jour");
 // ❓ la question du jour reste comprise par sa figurine (on y répond par l'API : elle n'a plus d'écran dans « Moi »)
 const q0 = await api(lea, "/api/direct/connaitre");
 await api(lea, "/api/direct/connaitre", { action: "question", cle: q0.question?.cle, texte: q0.question?.choix?.[0] ?? "Les crêpes du dimanche" });

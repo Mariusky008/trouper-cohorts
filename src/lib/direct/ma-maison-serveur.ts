@@ -42,7 +42,7 @@ import {
 } from "./ma-maison";
 import { emplacementsValides, fichierLarge, momentDuoDe, pieceDuoDe, pieceDuoValide, type MomentDuo, type PieceDuo } from "./pieces-duo";
 import { imageSalon } from "./salon-fichiers-serveur";
-import { sesDixHuitAns } from "./voeu-serveur";
+import { sesDixHuitAns } from "./majorite-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();

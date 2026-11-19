@@ -7,7 +7,7 @@
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { ecrireJson, lireJson } from "./ma-figurine-serveur";
-import { sesDixHuitAns } from "./voeu-serveur";
+import { sesDixHuitAns } from "./majorite-serveur";
 import { passionsValides, themesPour, type Passions, type ThemeDecouvrir } from "./decouvrir";
 import { nouveauPoids } from "./tele-du-jour";
 

@@ -8,10 +8,11 @@
 // secondes) : la deuxième, dans le même lecteur ; son thème descend. Finie : la suivante arrive toute seule, son thème
 // monte. 📌 Garder : « Gardée : elle est à la télé de ta maison », puis « Déjà chez toi ». 📤 Envoyer à… : Sam, son
 // proche ; un toucher : « Envoyée à Sam » — sur la télé de leur duo. 🛋️ Voir la pièce : la vidéo dans la télé de la
-// pièce ; ⛶ Grand écran : elle en ressort. Rien ne déborde, jamais le mot « exemple », aucune erreur.
+// pièce ; ⛶ Grand écran : elle en ressort. 🔥 L'onglet « Découvrir » de l'appli (le lot D1b) : c'est elle, sous la barre
+// du haut, sans déborder ; la note passe au-dessus du menu. Rien ne déborde, jamais le mot « exemple », aucune erreur.
 import crypto from "node:crypto";
 import sharp from "sharp";
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -126,7 +127,7 @@ ok(await attendre(noe, async () => (await noe.locator("[data-passion]").count())
 // ═══ LÉA : LA TÉLÉ EN GRAND ÉCRAN ═══
 const lea = await telephone(LEA);
 await lea.goto(`${BASE}/univers/tele`, { waitUntil: "domcontentloaded" });
-const main = lea.locator("main.td");
+const main = lea.locator(".td");
 ok(await attendre(lea, async () => Boolean(await main.getAttribute("data-video"))), "sa télé du jour s'ouvre");
 ok(/40 vidéos t’attendent/.test(await texte(lea.locator("[data-compte]"))), `« ${await texte(lea.locator("[data-compte]"))} »`);
 const enGrand = async () => {
@@ -183,6 +184,27 @@ ok(petite && petite.width < 300 && (await lea.locator(".faux-yt").count()) === 1
 await lea.screenshot({ path: `${D}/tele-du-jour-3-piece.png` });
 await lea.locator("[data-bascule]").click();
 ok(await attendre(lea, async () => (await main.getAttribute("data-mode")) === "grand" && (await enGrand())), "⛶ Grand écran : elle en ressort, toute la largeur");
+
+// ═══ 🔥 L'ONGLET « DÉCOUVRIR » DE L'APPLI (le lot D1b) : SA TÉLÉ DU JOUR ═══
+await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
+await fermerPablito(lea, "#o-decouvrir");
+const onglet = lea.locator("#o-decouvrir .td.onglet");
+ok(await attendre(lea, async () => Boolean(await onglet.getAttribute("data-video").catch(() => ""))), "l'onglet « Découvrir » : sa télé du jour");
+const tailles = await lea.evaluate(() => {
+  const e = document.querySelector("#o-decouvrir .td-ecran")?.getBoundingClientRect();
+  const s = document.querySelector("#o-decouvrir .td-scene")?.getBoundingClientRect();
+  return { e: e ? Math.round(e.width) : 0, s: s ? Math.round(s.width) : 0, ratio: e ? e.width / Math.max(1, e.height) : 0, td: getComputedStyle(document.querySelector("#o-decouvrir .td")).minHeight };
+});
+ok(tailles.e > 300 && tailles.e === tailles.s && Math.abs(tailles.ratio - 16 / 9) < 0.05 && tailles.td === "0px", `en grand écran dans l'onglet, toute la largeur (${tailles.e} points, 16/9), sans prendre tout l'écran`);
+await lea.locator("#o-decouvrir [data-garder]").click();
+ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-note]").count()) === 1), "la note s'affiche");
+const auDessus = await lea.evaluate(() => {
+  const n = document.querySelector("#o-decouvrir [data-note]")?.getBoundingClientRect();
+  const m = document.querySelector(".mc-nav")?.getBoundingClientRect();
+  return Boolean(n && m && n.bottom <= m.top + 1);
+});
+ok(auDessus, "la note passe au-dessus du menu du bas");
+await lea.screenshot({ path: `${D}/tele-du-jour-4-onglet.png` });
 
 ok(!(await lea.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1)), "rien ne déborde");
 ok(!/exemple/i.test(await lea.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");

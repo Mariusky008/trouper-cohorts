@@ -16,7 +16,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
 import type { Habitant } from "./habitant";
 import { ecrireJson, lireJson } from "./ma-figurine-serveur";
-import { sesDixHuitAns } from "./voeu-serveur";
+import { sesDixHuitAns } from "./majorite-serveur";
 import { themeDe, themesPour, type IdTheme, type VideoDuJour } from "./decouvrir";
 import { lireSelection } from "./selection-serveur";
 import { changerPoids, lirePassions } from "./passions-serveur";

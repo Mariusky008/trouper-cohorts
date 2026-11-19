@@ -3,8 +3,9 @@
 //
 // Léa était en colère hier ; ce matin, la joie : sa figurine prend sa tête de joie et lui dit, tout de suite, la
 // remontée — « 📲 Envoyer ma tête du jour » ouvre le studio avec ce visage et « Ma tête du jour ☀️ Et toi, ça va ? ».
-// Hugo en est à son troisième jour difficile : le mot doux à part, le 3114 en petit, et « ✨ Faire un vœu », discret,
-// qui ouvre « Mon vœu ». Max a déjà un vœu en route : sur sa colère, une phrase douce et « 💬 Écrire à un proche ». Zoé
+// Hugo en est à son troisième jour difficile : le mot doux à part, le 3114 en petit, et « 💬 Écrire à un proche »,
+// discret, qui ouvre « Proches » (« Faire un vœu » est parti le 19 novembre 2026). Max, sur sa colère : une phrase
+// douce et « 💬 Écrire à un proche ». Zoé
 // passe la feuille, puis choisit l'amour en haut de « Proches » : sa figurine lui répond là ; « 😍 Le mème « Je
 // t'aime » » ouvre le studio avec ce mème prêt et son visage d'amour. La même humeur redemandée : la même phrase. Rien
 // ne déborde, jamais le mot interdit, aucune erreur dans la page. (Le dimanche et les règles fines : sans téléphone,
@@ -58,8 +59,6 @@ for (const [x, cle, nom] of [
 // (leurs humeurs d'avant : Léa en colère hier ; Hugo, deux jours difficiles)
 await json(`${LEA.id}/humeurs.json`, { jours: { [avant(1)]: "colere" } });
 await json(`${HUGO.id}/humeurs.json`, { jours: { [avant(1)]: "tristesse", [avant(2)]: "colere" } });
-// (Max a un vœu en route)
-await semer("clik_voeu", [{ id: "voeumaxr3001", habitant_id: MAX.id, texte: "Quelqu’un pour un footing le samedi", categorie: "bouger", ville_slug: "dax", adulte: true, a_distance: false, cree_le: new Date().toISOString() }]);
 
 const b = await lancer({ humeur: true });
 let echecs = 0;
@@ -123,18 +122,18 @@ const hugo = await tel(HUGO);
 await matin(hugo, "tristesse");
 ok((await texte(hugo, ".rt-feuille .rr-bulle")).replace(/^Ta figurine /i, "") === "Trois jours que c’est lourd. Je reste là, tout près, aussi longtemps qu’il faut." && (await hugo.locator(".rt-feuille .rr.doux").count()) === 1, "Hugo, troisième jour difficile : le mot doux à part");
 ok((await texte(hugo, ".rt-feuille .rr-aide")) === "Si ça ne va vraiment pas, le 3114 répond jour et nuit." && (await hugo.locator('.rt-feuille .rr-aide a[href="tel:3114"]').count()) === 1, "le 3114 en petit, qu'un toucher appelle");
-ok((await texte(hugo, ".rt-feuille .rr-geste.discret")) === "✨ Faire un vœu" && (await hugo.locator(".rt-feuille .rr-fig i").count()) === 1, "« ✨ Faire un vœu », discret ; sa tête triste pas encore faite : sa figurine et l'emoji");
+ok((await texte(hugo, ".rt-feuille .rr-geste.discret")) === "💬 Écrire à un proche" && (await hugo.locator(".rt-feuille .rr-fig i").count()) === 1, "« 💬 Écrire à un proche », discret ; sa tête triste pas encore faite : sa figurine et l'emoji");
 await hugo.waitForTimeout(900);
 await hugo.screenshot({ path: `${D}/humeur-r3-3-hugo.png` });
 await hugo.locator(".rt-feuille .rr-geste").click();
-await hugo.waitForSelector("#o-decouvrir:not([hidden]) #voeu", { timeout: 30000 });
-ok(true, "« Faire un vœu » ouvre « Mon vœu », dans « Découvrir »");
+await hugo.waitForSelector("#o-proches:not([hidden])", { timeout: 30000 });
+ok(true, "« Écrire à un proche » ouvre « Proches »");
 
-// ═══ MAX : UN VŒU DÉJÀ EN ROUTE ═══
+// ═══ MAX : SA COLÈRE ═══
 const max = await tel(MAX);
 await matin(max, "colere");
 const bulleMax = (await texte(max, ".rt-feuille .rr-bulle")).replace(/^Ta figurine /i, "");
-ok(PHRASES("colere").includes(bulleMax) && (await texte(max, ".rt-feuille .rr-geste.discret")) === "💬 Écrire à un proche", `Max (sa colère, un vœu déjà en route) : « ${bulleMax} » et « 💬 Écrire à un proche »`);
+ok(PHRASES("colere").includes(bulleMax) && (await texte(max, ".rt-feuille .rr-geste.discret")) === "💬 Écrire à un proche", `Max (sa colère) : « ${bulleMax} » et « 💬 Écrire à un proche »`);
 await max.locator(".rt-feuille .rr-geste").click();
 await max.waitForFunction(() => location.hash === "#proches", null, { timeout: 15000 });
 ok(await max.waitForSelector("#o-proches:not([hidden])", { timeout: 15000 }).then(() => true).catch(() => false), "« Écrire à un proche » ouvre « Proches »");

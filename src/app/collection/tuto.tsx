@@ -52,11 +52,13 @@ export const PAGES_TUTO: { cle: PageTuto; vue: VueTuto; nom: string; dit: string
     cle: "decouvrir",
     vue: "decouvrir",
     nom: "Découvrir",
-    dit: "Le mème du jour, et ceux des gens de ta ville.",
+    dit: "Ta télé du jour : les vidéos de tes passions.",
+    // (19 novembre 2026, le lot D1b : Découvrir devient « Ma télé du jour » ; les trois bulles sont réécrites, et pas
+    // encore enregistrées — `tuto-decouvrir-tele-1` à `-3` : elles s'écrivent sans voix d'ici là)
     etapes: [
-      { t: "Chaque jour, un mème du jour : le même thème pour tout le monde. Réponds-y avec ta figurine !", v: "euphorie", cible: ["#o-decouvrir .dv-jour-carte"], sinon: ["#o-decouvrir .dv-jour"] },
-      { t: "Glisse vers le haut : voilà les mèmes des gens de ta ville.", v: "joie", cible: ["#o-decouvrir .dv-glisse"], sinon: ["#o-decouvrir .dv-fil .dv-carte"] },
-      { t: "Ça te fait rire ? Dis-le d’un toucher… ou réponds en duo : ta figurine à côté de la sienne.", v: "rire", cible: ["#o-decouvrir .dv-fil .dv-rail"] },
+      { t: "Ici, c’est ta télé du jour : les vidéos de tes passions, choisies pour toi chaque nuit.", v: "euphorie", cible: ["#o-decouvrir .td-ecran"], sinon: ["#o-decouvrir .tp-tuiles"], son: "tuto-decouvrir-tele-1" },
+      { t: "Pas pour toi ? « Suivante ». Elle te plaît ? « Garder » : elle va à la télé de ta maison.", v: "joie", cible: ["#o-decouvrir .td-gestes"], son: "tuto-decouvrir-tele-2" },
+      { t: "Et pour la partager, « Envoyer à… » un proche : elle passe sur votre télé, dans votre salon.", v: "rire", cible: ["#o-decouvrir [data-envoyer]"], son: "tuto-decouvrir-tele-3" },
     ],
   },
   {

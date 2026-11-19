@@ -25,7 +25,7 @@ const FONDS: Record<string, [string, string]> = {
   parents: ["#6a5078", "#32233c"],
 };
 
-export function TesPassions({ onFini }: { onFini?: (passions: string[]) => void }) {
+export function TesPassions({ onFini, onglet = false }: { onFini?: (passions: string[]) => void; onglet?: boolean }) {
   const [themes, setThemes] = useState<ThemeDecouvrir[] | null>(null);
   const [choix, setChoix] = useState<string[]>([]);
   const [erreur, setErreur] = useState("");
@@ -74,7 +74,7 @@ export function TesPassions({ onFini }: { onFini?: (passions: string[]) => void 
   };
 
   return (
-    <section className="tp" aria-label={PHRASES_PASSIONS.titre}>
+    <section className={`tp${onglet ? " onglet" : ""}`} aria-label={PHRASES_PASSIONS.titre}>
       <div className="tp-haut">
         <p className="tp-sur">{PHRASES_PASSIONS.sur}</p>
         <h1>{PHRASES_PASSIONS.titre}</h1>
@@ -119,6 +119,8 @@ export function TesPassions({ onFini }: { onFini?: (passions: string[]) => void 
       )}
       <style>{`
 .tp{min-height:100dvh;display:flex;flex-direction:column;gap:10px;max-width:480px;margin:0 auto;padding:calc(22px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif}
+.tp.onglet{min-height:0;padding-top:8px;background:none}
+.tp.onglet .tp-bas{bottom:calc(84px + env(safe-area-inset-bottom))}
 .tp-haut{display:flex;flex-direction:column;gap:8px}
 .tp-sur{margin:0;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#F2C46B}
 .tp h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1.1}

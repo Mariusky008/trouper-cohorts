@@ -6,7 +6,7 @@
  *
  * Dès qu'il choisit son humeur, dans la feuille du matin (ou en haut de « Proches ») : SA figurine, avec ce visage, lui
  * dit une phrase — écrite, sans voix — et un geste utile la suit (envoyer sa tête du jour, raconter à un proche, le mème
- * « Je t'aime », un mème avec cette tête, faire un vœu). Au troisième jour difficile d'affilée, le 3114 en petit. Le
+ * « Je t'aime », un mème avec cette tête, écrire à un proche). Au troisième jour difficile d'affilée, le 3114 en petit. Le
  * dimanche, « Ta semaine en visages » : sept têtes, une phrase, à partager.
  */
 import { useState } from "react";
@@ -29,9 +29,6 @@ function agir(r: ReponseHumeur) {
       return versLeStudio({ texte: memesDuMoment().find((m) => m.cle === "je-t-aime")?.texte ?? JE_T_AIME, visage: "amour" });
     case "meme":
       return versLeStudio({ visage: r.humeur });
-    case "voeu":
-      window.location.hash = "voeu";
-      return;
     default:
       window.location.hash = "proches";
   }

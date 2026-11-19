@@ -18,7 +18,9 @@ export type VersLeStudio = { texte?: string; look?: string; theme?: string; vill
 export const EVT_VERS_LE_STUDIO = "clikme-vers-le-studio";
 const CLE = "clikme-vers-le-studio-v1";
 
-export function versLeStudio(x: VersLeStudio) {
+/** (`garderAdresse` : l'adresse est déjà la bonne — `#jour`, que `ma-collection.tsx` mène à « Créer » ; sans lui, on
+ * passerait à `#figurine`, et l'adresse changée ramènerait ici, encore et encore) */
+export function versLeStudio(x: VersLeStudio, { garderAdresse = false }: { garderAdresse?: boolean } = {}) {
   try {
     window.sessionStorage.setItem(CLE, JSON.stringify(x));
   } catch {
@@ -26,6 +28,7 @@ export function versLeStudio(x: VersLeStudio) {
   }
   window.dispatchEvent(new CustomEvent<VersLeStudio>(EVT_VERS_LE_STUDIO, { detail: x }));
   // (l'onglet « Créer » s'ouvre : `ma-collection.tsx` suit l'adresse)
+  if (garderAdresse) return;
   if (window.location.hash !== "#figurine") window.location.hash = "figurine";
   else window.scrollTo({ top: 0, behavior: "smooth" });
 }

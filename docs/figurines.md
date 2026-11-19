@@ -1989,6 +1989,9 @@ c'est rare donc attendu, et cela fait un rituel du matin).
 
 ### 9.0 septvicies ✨ « Mon vœu » dans « Découvrir » : les lots 1, 2 et 3 (11 et 12 novembre)
 
+*Retiré le 19 novembre 2026, avec l'ancienne page de « Découvrir » (le propriétaire, le 17 novembre : « supprimés » ;
+`docs/univers/decouvrir.md`, sections 11 et 16). Ce qui suit est l'histoire.*
+
 Le propriétaire veut remplacer la « Question du jour » par **« Réalise mon vœu »** : je dépose un vœu avec ma figurine
 (une petite envie concrète, qu'une personne de ma ville pourrait m'aider à réaliser) ; chaque jour, des gens le
 découvrent et me répondent avec leur figurine ; quelqu'un peut m'aider. Son ingénieur a imaginé le parcours (un brief

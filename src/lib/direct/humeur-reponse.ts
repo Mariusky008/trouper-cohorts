@@ -4,7 +4,7 @@
  *
  * Dès qu'il choisit son humeur du matin, SA figurine prend ce visage et lui dit une phrase — écrite, sans voix — qui
  * finit sur un geste utile (envoyer sa tête du jour, raconter à un proche, le mème « Je t'aime », un mème avec cette
- * tête, faire un vœu). Les phrases sont écrites d'avance (validées par le propriétaire le 12 novembre 2026) : tout de
+ * * tête, écrire à un proche). Les phrases sont écrites d'avance (validées par le propriétaire le 12 novembre 2026) : tout de
  * suite, sans coût, sans risque. Elle se souvient de la veille (une remontée, une descente, une série) ; au troisième
  * jour difficile d'affilée, un mot doux à part, et le 3114 en petit. Le dimanche : « Ta semaine en visages ».
  *
@@ -90,7 +90,7 @@ export const PHRASES_HUMEUR: Partial<Record<Sentiment, readonly string[]>> = {
     "Les journées « oh non » finissent aussi. Je t’accompagne jusque-là.",
     "Je garde ta place au chaud, toute la journée.",
     "Ça arrive à tout le monde. Même aux figurines.",
-    "Quelqu’un près de chez toi peut peut-être aider. Un vœu ?",
+    "Un proche peut peut-être aider. Un petit mot ?",
     "Aujourd’hui, on ne demande rien de plus. Juste être là.",
     "Je suis de ton côté. Toute la journée.",
     "Un pas après l’autre. Je marche avec toi.",
@@ -117,7 +117,7 @@ export const PHRASES_HUMEUR: Partial<Record<Sentiment, readonly string[]>> = {
     "Je ne te demande rien. Je suis de ton côté.",
     "Quand ça redescendra, je serai encore là.",
     "Même dans la tempête, je reste ta figurine.",
-    "Si quelque chose peut changer, un vœu peut-être. Sinon, je reste là.",
+    "Si ça peut aider, écris à un proche. Sinon, je reste là.",
   ],
 };
 
@@ -160,13 +160,12 @@ export const SEMAINE = {
 export const LETTRES_JOURS = ["L", "M", "M", "J", "V", "S", "D"] as const;
 
 /** 👉 Le geste au bout de la phrase. */
-export type GesteHumeur = "envoyer" | "raconter" | "jetaime" | "meme" | "voeu" | "proches";
+export type GesteHumeur = "envoyer" | "raconter" | "jetaime" | "meme" | "proches";
 export const GESTES_HUMEUR: Record<GesteHumeur, string> = {
   envoyer: "📲 Envoyer ma tête du jour",
   raconter: "💬 Raconter à un proche",
   jetaime: "😍 Le mème « Je t’aime »",
   meme: "🎭 Un mème avec cette tête",
-  voeu: "✨ Faire un vœu",
   proches: "💬 Écrire à un proche",
 };
 /** Ce que sa figurine dit dans le mème « ma tête du jour » (le studio s'ouvre avec ce texte et ce visage). */
@@ -174,13 +173,13 @@ export const TETE_DU_JOUR: Partial<Record<Sentiment, string>> = {
   joie: "Ma tête du jour ☀️ Et toi, ça va ?",
   euphorie: "Ma tête du jour 🤩 Je déborde d’énergie ! Et toi ?",
 };
-/** Le geste d'une humeur (douce : un vœu s'il n'en a pas en route, sinon un proche — en discret). */
-export function gesteDe(h: Sentiment, aUnVoeu: boolean): GesteHumeur {
+/** Le geste d'une humeur (douce : écrire à un proche, en discret ; « Faire un vœu » est parti le 19 novembre 2026). */
+export function gesteDe(h: Sentiment): GesteHumeur {
   if (h === "joie" || h === "euphorie") return "envoyer";
   if (h === "rire") return "raconter";
   if (h === "amour") return "jetaime";
   if (h === "grimace") return "meme";
-  return aUnVoeu ? "proches" : "voeu";
+  return "proches";
 }
 
 export type SemaineVisages = { jours: { jour: string; lettre: string; humeur: Sentiment | null }[]; texte: string; ton: "soleil" | "montagnes" | "difficile" };
@@ -243,7 +242,7 @@ export function semaineDe(jour: string, jours: Record<string, string>): SemaineV
  * avant d'avoir tout dit), le geste, le 3114 au-delà de deux jours difficiles, la semaine le dimanche. Rend aussi
  * l'historique à garder. La même humeur redemandée le même jour : la même réponse.
  */
-export function reponseHumeur(h: Sentiment, jour: string, hist: HistoriqueHumeurs, aUnVoeu: boolean): { reponse: ReponseHumeur; hist: HistoriqueHumeurs } {
+export function reponseHumeur(h: Sentiment, jour: string, hist: HistoriqueHumeurs): { reponse: ReponseHumeur; hist: HistoriqueHumeurs } {
   if (hist.dernier?.jour === jour && hist.dernier.humeur === h) {
     const { jour: _j, ...reponse } = hist.dernier;
     void _j;
@@ -287,7 +286,7 @@ export function reponseHumeur(h: Sentiment, jour: string, hist: HistoriqueHumeur
   const reponse: ReponseHumeur = {
     humeur: h,
     texte: typo(texte),
-    geste: gesteDe(h, aUnVoeu),
+    geste: gesteDe(h),
     doux,
     ...(souvenir ? { souvenir: true as const } : {}),
     ...(aide ? { aide: true as const } : {}),
@@ -299,7 +298,9 @@ export function reponseHumeur(h: Sentiment, jour: string, hist: HistoriqueHumeur
 /** Une réponse relue (ce que le seau a gardé) : rien d'inventé, rien de cassé. */
 export function reponseValide(x: unknown, jour: string): ReponseHumeur | null {
   if (!x || typeof x !== "object") return null;
-  const r = x as Record<string, unknown>;
+  const r = { ...(x as Record<string, unknown>) };
+  // (gardée avant le 19 novembre 2026 : « Faire un vœu » est devenu « Écrire à un proche »)
+  if (r.geste === "voeu") r.geste = "proches";
   if (r.jour !== jour || !humeurConnue(r.humeur) || typeof r.texte !== "string" || !(typeof r.geste === "string" && r.geste in GESTES_HUMEUR)) return null;
   const { jour: _j, ...reponse } = r as unknown as ReponseHumeur & { jour: string };
   void _j;
