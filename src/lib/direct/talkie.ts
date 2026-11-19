@@ -51,7 +51,12 @@ export type RepliqueProposee = { de: number; a: number; texte: string; propositi
  * 🎙️ (lot S4, `vocal.ts`) un vocal du salon : `niveaux` (le volume du micro, un signe toutes les 60 ms : la forme de la
  * voix, et la tête qui parle) ; `ecoute` : celui à qui il était l'a écouté (sinon, son talkie attend sur la table).
  */
-export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video" | "fichier"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage; fichier?: FichierDuMessage; niveaux?: string; ecoute?: boolean };
+export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video" | "fichier" | "meme"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage; fichier?: FichierDuMessage; niveaux?: string; ecoute?: boolean; meme?: MemeDuMessage };
+/**
+ * 🎭 (lot S5, `meme-salon.ts`) un mème du salon : `texte` (ce que dit sa figurine), sa tête, s'il danse, le mème prêt d'où
+ * il vient — une donnée, jouée par le moteur chez les deux (pas une vidéo).
+ */
+export type MemeDuMessage = { tete: Sentiment; danse: boolean; pret?: string };
 /** 📎 (lot S6) le PDF d'un message : son adresse signée (une heure, il se télécharge sous son nom), son nom, sa taille. */
 export type FichierDuMessage = { url: string; nom: string; taille: number };
 /** 🎬 (lot M3) la vidéo d'un message : son adresse signée et celle de sa vignette (une heure), ses dimensions, sa durée (s). */
@@ -132,6 +137,8 @@ export function texteLuDuMessage(f: { genre?: unknown; texte?: unknown; lien?: {
   if (f.genre === "video") return texteLuDeLaVideo(f);
   // 📎 (lot S6) un PDF : rien (les figurines ne lisent pas les documents)
   if (f.genre === "fichier") return "";
+  // 🎭 (lot S5) un mème du salon : ce que dit sa figurine
+  if (f.genre === "meme") return typeof f.texte === "string" ? f.texte.trim() : "";
   return texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
 }
 

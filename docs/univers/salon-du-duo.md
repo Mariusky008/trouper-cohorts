@@ -1154,6 +1154,46 @@ appuyé — la barre, les deux talkies, le pouls de Sam, 0:02 —, la bulle, la 
 parle en direct puis son vocal qui joue seul, noté écouté ; Sam parti : la table, « il attend », écouté puis parti ; à
 l'arrivée, son talkie sur la table ; 💬 ; ＋ « 🎙️ Un vocal »).
 
+### 11.19 🎭 Les mèmes joués dans le salon (lot S5, première partie — 19 novembre 2026)
+
+La section 4.7, sur le moteur, sauf la voix, le duo rangé et la vidéo à partager (deuxième partie, ci-dessous).
+
+- **Les règles** (`src/lib/direct/meme-salon.ts`) : un mème est **une donnée** — son texte (120 signes au plus), sa tête
+  (😂 rire, 😄 joie, 🤩 euphorie, 😍 amour, 😜 grimace, 😢 tristesse, 😠 colère), « 🎶 Elle danse », et d'où il vient
+  (un mème prêt) ; soixante par jour ; les mèmes prêts sont ceux du moment (`memes-prets.ts`), le mème du jour en tête ;
+  les phrases de l'écran (`PHRASES_MEME`).
+- **L'onglet 🎭 Mèmes**, le troisième de la barre : « ✨ Du jour » (bordé d'or), « ✍️ Le mien », puis les mèmes prêts.
+  **Un toucher, et il est joué** (`src/app/salon/memes.ts`) : la caméra s'approche de ma figurine, **le projecteur**
+  s'allume (la pièce s'assombrit, un faisceau tombe d'en haut), le clap et « Action ! » (moins de 700 ms après le
+  toucher), **le texte mot à mot dans une bulle de BD** au-dessus d'elle (un mot toutes les 230 ms), la tête qui va avec
+  (fou rire : elle rit, des 😂 ; amour : elle penche, rougit, des cœurs ; euphorie : elle bondit, des étincelles ;
+  grimace : 😜 ; tristesse : 💧 ; colère : 💢 💨, la pièce tremble), la petite musique de l'humeur, la danse si on l'a
+  demandée ; « Coupez ! », la pièce revient, l'autre figurine réagit (elle rit, rougit ou penche la tête). Les bulles
+  ordinaires se cachent pendant le mème. Rien ne se télécharge.
+- **La carte** qui en reste, dans ma bulle et dans 💬 : 😂 « la phrase », « ▶ Revoir » (rejoué dans la pièce ; depuis
+  💬, la feuille se ferme d'abord) ; sur la carte du mème de l'autre, **😂 ❤️ 🔥** (une réaction comme les autres ; 🔥
+  « Le feu » est nouvelle, mise en scène comme les autres).
+- **✍️ Le mien** (et « 🎭 Un mème » dans le ＋) : la feuille « Ton mème » (`src/app/salon/feuille-meme.tsx`) — des idées
+  (les mèmes prêts : leur texte et leur tête), ce que dit ma figurine (le compte « 54 / 120 »), sa tête, « 🎶 Elle
+  danse », « 🎬 Action ! » (grisé tant que c'est vide) : la feuille se ferme, ma figurine le joue.
+- **Chez l'autre** : s'il est dans le salon, le pouls le lui apporte et **sa figurine le joue** aussitôt ; sinon,
+  **à son arrivée** (section 4.1), ma figurine le lui rejoue. « Chez moi » et l'ancien écran montrent 🎭 « la phrase ».
+- **Le serveur** (`src/lib/direct/meme-salon-serveur.ts`) : `POST /api/direct/proches { action: "meme-salon", cle, texte,
+  tete, danse, pret }` — seulement entre deux proches qui se parlent ; un mot interdit, 422 ; une fiche de message
+  `genre: "meme"` (`meme: { tete, danse, pret }`) ; le pouls bat ; **après la réponse**, la notification « 🎭 Léa t'a
+  envoyé un mème » et ce qu'il dit. Le fil donne `meme` (`MessageFil`).
+
+**Pas encore (deuxième partie du lot S5)** : 🎙️ Ma voix (le mème dit avec sa propre voix) ; la vignette de ma figurine
+sur la carte ; après un échange de mèmes, « Je le range ? » et le rayon « Nos fous rires » de l'étagère, « ▶ Le
+revoir » ; 📤 la vidéo pour WhatsApp (le même moteur dans une toile hors écran, `MediaRecorder`).
+
+**Les essais** : `scripts/essai-meme-salon-route.mjs` (les portes, pas entre deux inconnus ; un mème, sa tête, sa
+danse, d'où il vient, sans son ; chez Sam, « Chez moi », la notification, le pouls ; vide, plus de 120 signes, un mot
+interdit : refusés ; une tête inconnue devient la joie ; la réaction 🔥, une réaction inconnue refusée ; effacé) et `scripts/navigateur/salon-memes.mjs` (les trois onglets ; un toucher sur « Fou rire » : le
+projecteur, la bulle de BD mot à mot, tout s'éteint, la carte, « ▶ Revoir » ; « ✍️ Le mien » : la feuille, une idée,
+le compte, sa tête, la danse ; Sam qui en joue un, en direct, 😂 ❤️ 🔥 ; Sam qui en laisse un, rejoué à l'arrivée ; 💬 ;
+＋ « 🎭 Un mème »).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

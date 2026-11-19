@@ -36,9 +36,12 @@ export const REACTIONS = [
   { cle: "front", emoji: "🤦", nom: "Se taper le front" },
   { cle: "waouh", emoji: "😮", nom: "Waouh" },
 ] as const;
-export type CleGeste = (typeof PANNEAUX)[number]["cle"] | (typeof REACTIONS)[number]["cle"];
+export type CleGeste = (typeof PANNEAUX)[number]["cle"] | (typeof REACTIONS)[number]["cle"] | "feu";
 export const panneauDe = (cle: unknown) => PANNEAUX.find((p) => p.cle === cle) ?? null;
-export const reactionDe = (cle: unknown) => REACTIONS.find((r) => r.cle === cle) ?? null;
+/** 🎭 (lot S5) Sur la carte d'un mème : 😂 ❤️ 🔥 — le feu n'existe que là (pas dans l'appui long). */
+export const REACTION_FEU = { cle: "feu", emoji: "🔥", nom: "Le feu" } as const;
+export const REACTIONS_MEME = ["mdr", "coeur", "feu"] as const;
+export const reactionDe = (cle: unknown) => REACTIONS.find((r) => r.cle === cle) ?? (cle === REACTION_FEU.cle ? REACTION_FEU : null);
 
 /**
  * 🛋️ LES GESTES DU SALON DU DUO (`docs/univers/salon-du-duo.md`, 4.4 ; le lot S3) : leurs clés (leur nom, leur emoji et

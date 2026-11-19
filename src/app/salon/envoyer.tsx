@@ -4,7 +4,7 @@
  * ＋ ENVOYER, DEPUIS LE SALON (`docs/univers/salon-du-duo.md`, section 4.8 ; le lot S6) — la feuille « Envoyer à Sam » :
  * 📷 Photo (« elle peut aller au mur »), 🎬 Vidéo (« elle peut passer à la télé »), 🔗 Lien (YouTube, une chanson, un
  * site : la saisie s'ouvre, l'aperçu du lien se fait comme pour un écrit), 📎 PDF ; 🎙️ Un vocal (lot S4) ferme la feuille
- * et rappelle qu'on garde le micro appuyé. Le mème vient avec son lot (S5).
+ * et rappelle qu'on garde le micro appuyé ; 🎭 Un mème (lot S5) ouvre « Ton mème ».
  *
  * Une photo est réduite et redessinée dans le téléphone (aucune métadonnée ne part, `photoPourEnvoi`) ; une vidéo est
  * lue dans le téléphone (sa durée, trois images pour la vérification, `videoPourEnvoi`). Puis : l'adresse de dépôt
@@ -35,6 +35,7 @@ export default function FeuilleEnvoi({
   onEnvoye,
   onLien,
   onVocal,
+  onMeme,
 }: {
   cle: string;
   prenom: string;
@@ -49,6 +50,8 @@ export default function FeuilleEnvoi({
   onLien: () => void;
   /** 🎙️ (lot S4) « Un vocal » : rappeler qu'on garde le micro appuyé */
   onVocal?: () => void;
+  /** 🎭 (lot S5) « Un mème » : la feuille « Ton mème » */
+  onMeme?: () => void;
 }) {
   const [choisi, setChoisi] = useState<Choisi | null>(depart ?? null);
   const [etat, setEtat] = useState<Etat>({ quoi: "lecture" });
@@ -175,6 +178,14 @@ export default function FeuilleEnvoi({
         </button>
         {!choisi ? (
           <div className="sd-envoi-cases">
+            {onMeme && (
+              // 🎭 (lot S5) le mème : la feuille « Ton mème » (ma figurine le joue dans le salon)
+              <button type="button" className="sd-joint" data-joint="meme" onClick={onMeme}>
+                <span className="e">🎭</span>
+                <b>Un mème</b>
+                <small>joué par ta figurine</small>
+              </button>
+            )}
             {onVocal && (
               // 🎙️ (lot S4) le vocal : la feuille se ferme, le micro de la saisie rappelle qu'on le garde appuyé
               <button type="button" className="sd-joint" data-joint="vocal" onClick={onVocal}>

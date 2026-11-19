@@ -43,6 +43,8 @@ const FeuilleEtagere = dynamic(() => import("./etagere-feuille"), { ssr: false }
 const FeuilleEnvoi = dynamic(() => import("./envoyer"), { ssr: false });
 /** 📺 La télé de la pièce (lot S6) : le morceau autonome (`univers/tele-duo.tsx`), posé sur l'écran relevé. */
 const TeleDuo = dynamic(() => import("@/app/univers/tele-duo").then((m) => m.TeleDuo), { ssr: false });
+/** ✍️ « Ton mème » (lot S5) : chargée seulement quand on l'ouvre. */
+const FeuilleMeme = dynamic(() => import("./feuille-meme"), { ssr: false });
 /** 🖼️📺 « Accrocher une photo au mur » / « Mettre à la télé » (lot S6) : chargée seulement quand on l'ouvre. */
 const FeuilleChoisir = dynamic(() => import("./choisir"), { ssr: false });
 /** Le message qui passe à la télé (un lien, une vidéo), s'il y en a un. */
@@ -52,7 +54,7 @@ const dernierLienDe = (l: readonly MessageFil[]) => [...l].reverse().find((m) =>
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
 import { aRejouer, derniersDeChacun, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
 import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
-import { gesteDuSalon, objetDuGeste, REACTIONS, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
+import { gesteDuSalon, objetDuGeste, reactionDe, REACTIONS, REACTIONS_MEME, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
 import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
 import { PHRASES_TELE, filmALaTele, passeALaTele, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 import { CADRES_MAX, PHRASES_CADRES, cadreLibre, ditAccrochee, type CadreVu } from "@/lib/direct/cadres";
@@ -64,6 +66,8 @@ import { texteDuMessage, type Fil, type MemeFil, type MessageFil } from "@/lib/d
 import { PHRASES_VOCAL, formeDeVoix, niveauxDuVocal, niveauxEnTexte, tempsDit } from "@/lib/direct/vocal";
 import { STYLES_TALKIE, arreterLecture, debloquerSon, entendreEnDirect, installerTalkiesTable, lireVocal, prendreTalkie, rangerTalkie, secouerTalkieTable, vivreVoix, type TalkiesSurTable } from "./talkie";
 import { BoutonMicro, type FinMicro } from "./micro";
+import { STYLES_MEME, arreterMeme, jouerMeme } from "./memes";
+import { PHRASES_MEME, emojiDeTete, memesDuSalon, teteMeme, type MemeSalon } from "@/lib/direct/meme-salon";
 
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
 export type ChargementSalon =
@@ -119,13 +123,13 @@ const nomDePiece = (p: PieceDuo) => {
  * l'accroche (lot S6 : la télé, les cadres — seulement si la pièce en a).
  */
 const PUCES_DU_SALON = PUCES_GESTES;
-type Onglet = "attentions" | "ensemble";
+type Onglet = "attentions" | "ensemble" | "memes";
 type Barre = { onglet: Onglet; replie: boolean };
 const BARRE = "salon:barre";
 function lireBarre(): Barre {
   try {
     const x = JSON.parse(localStorage.getItem(BARRE) ?? "null") as Partial<Barre> | null;
-    return { onglet: x?.onglet === "ensemble" ? "ensemble" : "attentions", replie: x?.replie === true };
+    return { onglet: x?.onglet === "ensemble" || x?.onglet === "memes" ? x.onglet : "attentions", replie: x?.replie === true };
   } catch {
     return { onglet: "attentions", replie: false };
   }
@@ -228,6 +232,33 @@ function ContenuVocal({ m, prenom, joue, surLire }: { m: MessageFil; prenom: str
   );
 }
 
+/**
+ * 🎭 (lot S5) UN MÈME — dans sa bulle, ou dans 💬 : la tête et ce que dit sa figurine, « ▶ Revoir » (sa figurine le rejoue
+ * dans la scène) ; sur le sien (`reagir`) : 😂 ❤️ 🔥.
+ */
+function ContenuMeme({ m, surRevoir, reagir }: { m: MessageFil; surRevoir: () => void; reagir?: (cle: string) => void }) {
+  const tete = teteMeme(m.meme?.tete) ?? "joie";
+  const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
+  return (
+    <span className="sd-meme" data-meme-bulle={m.id}>
+      <span className="sd-meme-texte">
+        <span className="e">{emojiDeTete(tete)}</span> « {m.texte} »
+      </span>
+      <span className="sd-meme-actions">
+        <button type="button" className="sd-revoir" data-revoir={m.id} onPointerDown={stop} onClick={(e) => (stop(e), surRevoir())}>
+          {PHRASES_MEME.revoir}
+        </button>
+        {reagir &&
+          REACTIONS_MEME.map((cle) => (
+            <button key={cle} type="button" className="sd-reac-meme" data-reaction-meme={cle} aria-label={reactionDe(cle)?.nom} onPointerDown={stop} onClick={(e) => (stop(e), reagir(cle))}>
+              {reactionDe(cle)?.emoji}
+            </button>
+          ))}
+      </span>
+    </span>
+  );
+}
+
 /** Un appui long (450 ms) : les réactions avec le corps. */
 function appuiLong(id: string | undefined, faire: (id: string) => void) {
   if (!reagissable(id)) return {};
@@ -260,6 +291,7 @@ function MessageDuFil({
   surAccrocher,
   joue = false,
   surLire,
+  surRevoir,
 }: {
   m: MessageFil;
   prenom: string;
@@ -272,6 +304,8 @@ function MessageDuFil({
   /** 🎙️ (lot S4) ce vocal se joue ; ▶ le fait dire dans la scène */
   joue?: boolean;
   surLire?: (m: MessageFil) => void;
+  /** 🎭 (lot S5) « ▶ Revoir » : la figurine rejoue ce mème dans la scène */
+  surRevoir?: (m: MessageFil) => void;
 }) {
   return (
     <div className={`sd-msg ${m.moi ? "moi" : "autre"}`} data-message={m.id} {...(!m.moi && surReagir ? appuiLong(m.id, surReagir) : {})}>
@@ -295,6 +329,8 @@ function MessageDuFil({
           <video className="sd-piece" src={m.video.url} poster={m.video.vignette} width={m.video.l} height={m.video.h} controls playsInline preload="none" />
           {m.texte && <span className="sd-texte">{m.texte}</span>}
         </>
+      ) : m.genre === "meme" ? (
+        <ContenuMeme m={m} surRevoir={() => surRevoir?.(m)} />
       ) : m.genre === "fichier" && m.fichier ? (
         // 📎 (lot S6) un PDF : il se télécharge sous son nom (jamais ouvert dans ClikMe)
         <a className="sd-fichier" href={m.fichier.url} download={m.fichier.nom} data-fichier={m.id}>
@@ -446,6 +482,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const jouerVocalRef = useRef<(m: MessageFil, auto?: boolean) => void>(() => undefined);
   const toucherTalkieRef = useRef<(q: Qui, id: string) => void>(() => undefined);
   const rangerTableRef = useRef<() => boolean>(() => false);
+  // 🎭 (lot S5) les mèmes : « Ton mème » ouvert ; jouer un mème du fil (de l'arrivée, du pouls)
+  const [feuilleMeme, setFeuilleMeme] = useState(false);
+  const [memeEnScene, setMemeEnScene] = useState(0);
+  const rejouerMemeRef = useRef<(m: MessageFil) => void>(() => undefined);
 
   // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
   useEffect(() => {
@@ -538,6 +578,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     return () => {
       // (📻 le vocal qui se joue s'arrête ; l'autre qui parlait en direct aussi ; les talkies de la table s'en vont)
       arreterLecture();
+      arreterMeme();
       direct.current?.();
       direct.current = null;
       cesTalkies.detruire();
@@ -605,6 +646,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           setRejoue(x);
           const s = scene.current;
           if (!s) return;
+          // (🎭 lot S5 : son mème, sa figurine le rejoue)
+          if (x.meme) {
+            if (s.figurine("autre").dort) s.figurine("autre").reveiller();
+            return rejouerMemeRef.current(x.meme);
+          }
           s.figurine("autre").parler(tempsDeParole(x.texte));
           chat.current?.reagir("message");
           minutes.push(setTimeout(() => scene.current === s && reagir(s, "moi", x.texte, true), 450));
@@ -715,6 +761,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           direct.current?.();
           direct.current = null;
           jouerVocalRef.current(dernier, true);
+        } else if (dernier.genre === "meme") {
+          // 🎭 (lot S5) son mème : sa figurine le joue
+          rejouerMemeRef.current(dernier);
         } else {
           s.figurine("autre").parler(tempsDeParole(texteDeBulle(dernier)));
           setTimeout(() => scene.current === s && reagir(s, "moi", texteDeBulle(dernier), true), 450);
@@ -844,6 +893,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     rangerTableRef.current = rangerTable;
     jouerVocalRef.current = (m, auto) => void jouerUnVocal(m, auto);
     toucherTalkieRef.current = toucherTalkie;
+    rejouerMemeRef.current = (m) => void rejouerMeme(m);
   });
   useEffect(() => {
     flammeCourante.current = flamme;
@@ -977,7 +1027,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     }
   }
   /** 👏 Réagir avec le corps à un de ses messages : ma figurine le joue, puis la réaction part (une par message). */
-  async function reagirAuMessage(id: string, r: (typeof REACTIONS)[number]) {
+  async function reagirAuMessage(id: string, r: { cle: string; emoji: string; nom: string }) {
     setReagirA(null);
     const provisoire: GesteFil = { id: `envoi-${Date.now()}-${r.cle}`, moi: true, le: new Date().toISOString(), type: "reaction", cle: r.cle, message: id };
     let avant: GesteFil[] = [];
@@ -1213,6 +1263,52 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     }
     chat.current?.reagir("message");
     monterLaFlamme("moi");
+  }
+
+  // ─── 🎭 LES MÈMES (lot S5) ───
+  /** Un mème du fil, rejoué par la figurine de celui qui l'a fait (▶ Revoir, son arrivée, en direct). */
+  async function rejouerMeme(m: MessageFil) {
+    const s = scene.current;
+    if (!s || m.genre !== "meme" || !m.texte) return;
+    arreterLecture();
+    setTeleProche(false);
+    // (pendant qu'il se joue, la bulle de BD remplace les bulles)
+    setMemeEnScene((n) => n + 1);
+    await jouerMeme(s, m.moi ? "moi" : "autre", { texte: m.texte, tete: teteMeme(m.meme?.tete) ?? "joie", danse: m.meme?.danse === true }).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
+  }
+  /** ▶ Revoir, depuis 💬 : la feuille se ferme, la figurine le rejoue. */
+  function revoirDepuisLeFil(m: MessageFil) {
+    setFeuille(false);
+    setTimeout(() => void rejouerMeme(m), 350);
+  }
+  /**
+   * 🎭 Je joue un mème (un mème prêt, le mème du jour, « Ton mème ») : ma figurine le joue tout de suite (« Action ! »
+   * en moins de 700 ms), puis il part ; un échec le défait et le dit.
+   */
+  async function faireUnMeme(m: MemeSalon) {
+    if (!fil) return;
+    setFeuilleMeme(false);
+    const provisoire: MessageFil = { id: `envoi-${Date.now()}`, moi: true, le: new Date().toISOString(), duree: 0, son: "", repliques: [], genre: "meme", texte: m.texte, meme: { tete: m.tete, danse: m.danse, ...(m.pret ? { pret: m.pret } : {}) } };
+    setMessages((l) => [...l, provisoire]);
+    chat.current?.reagir("message");
+    const s = scene.current;
+    if (s) {
+      arreterLecture();
+      setTeleProche(false);
+      setMemeEnScene((n) => n + 1);
+      void jouerMeme(s, "moi", m).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
+    }
+    try {
+      const r = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "meme-salon", cle, texte: m.texte, tete: m.tete, danse: m.danse, ...(m.pret ? { pret: m.pret } : {}) }) });
+      const j = (await r.json().catch(() => null)) as { message?: MessageFil; error?: string } | null;
+      if (!r.ok || !j?.message) throw new Error(j?.error || "");
+      const vrai = j.message;
+      setMessages((l) => l.map((x) => (x.id === provisoire.id ? vrai : x)));
+      monterLaFlamme("moi");
+    } catch (e) {
+      setMessages((l) => l.filter((x) => x.id !== provisoire.id));
+      montrer(e instanceof Error && e.message ? `Pas parti : ${e.message}` : PHRASES_MEME.pasParti, 3600);
+    }
   }
 
   // ─── 📻 LE TALKIE-WALKIE (lot S4) ───
@@ -1538,6 +1634,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const sonDernier = rejoue ?? (sonDernierMessage && !arriveeAVenir ? { id: sonDernierMessage.id, texte: texteDeBulle(sonDernierMessage) } : null);
   // (🎙️ lot S4 : son dernier message est un vocal — sa bulle a ▶, la forme de sa voix, ce qu'il a dit)
   const sonVocal = sonDernierMessage && sonDernier?.id === sonDernierMessage.id && estVocal(sonDernierMessage) ? sonDernierMessage : null;
+  // (🎭 lot S5 : son dernier message est un mème — ou celui que l'arrivée rejoue)
+  const sonMeme = rejoue?.meme ?? (sonDernierMessage && sonDernier?.id === sonDernierMessage.id && sonDernierMessage.genre === "meme" ? sonDernierMessage : null);
   const jours = fil ? parJour(messages, memes, undefined, gestes) : [];
   const reactionsDe = (id: string) => gestes.filter((g) => g.type === "reaction" && g.message === id);
   const gardes = new Set(souvenirs.map((o) => o.message).filter((x): x is string => Boolean(x)));
@@ -1552,6 +1650,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     <main className="sd" onPointerDownCapture={debloquerSon}>
       <style>{STYLES_SALON}</style>
       <style>{STYLES_TALKIE}</style>
+      <style>{STYLES_MEME}</style>
       <header className="sd-entete">
         {onRetour ? (
           <button type="button" className="sd-retour" aria-label="Retour" onClick={onRetour}>
@@ -1598,6 +1697,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         data-pret={pret ? "1" : undefined}
         data-calques={pret ? (pret.calques ? "poses" : "aucun") : undefined}
         data-flou={flou ? "1" : undefined}
+        data-meme-joue={memeEnScene > 0 ? "1" : undefined}
         style={flou ? { backgroundImage: `url("${flou}")` } : undefined}
         onPointerDown={() => passer.current?.()}
       >
@@ -1644,8 +1744,14 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 </div>
               )}
               {monDernier && (
-                <div key={monDernier.id} className={`sd-bulle moi${reagissable(monDernier.id) ? " a-epingle" : ""}${estVocal(monDernier) ? " vocal" : ""}`} data-bulle={monDernier.id}>
-                  {estVocal(monDernier) ? <ContenuVocal m={monDernier} prenom={prenom} joue={joue === monDernier.id} surLire={() => void jouerUnVocal(monDernier)} /> : texteDeBulle(monDernier)}
+                <div key={monDernier.id} className={`sd-bulle moi${reagissable(monDernier.id) ? " a-epingle" : ""}${estVocal(monDernier) ? " vocal" : ""}${monDernier.genre === "meme" ? " meme" : ""}`} data-bulle={monDernier.id}>
+                  {estVocal(monDernier) ? (
+                    <ContenuVocal m={monDernier} prenom={prenom} joue={joue === monDernier.id} surLire={() => void jouerUnVocal(monDernier)} />
+                  ) : monDernier.genre === "meme" ? (
+                    <ContenuMeme m={monDernier} surRevoir={() => void rejouerMeme(monDernier)} />
+                  ) : (
+                    texteDeBulle(monDernier)
+                  )}
                   {reagissable(monDernier.id) && (
                     <button type="button" className={`sd-garder${gardes.has(monDernier.id) ? " fait" : ""}`} data-garder={monDernier.id} aria-label={gardes.has(monDernier.id) ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} onClick={() => void garder(monDernier.id, true)} />
                   )}
@@ -1669,8 +1775,14 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             </div>
             <div className="sd-bulles autre" aria-live="polite">
               {sonDernier && (
-                <div key={sonDernier.id} className={`sd-bulle autre${reagissable(sonDernier.id) ? " a-epingle" : ""}${sonVocal ? " vocal" : ""}`} data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined} {...appuiLong(sonDernier.id, setReagirA)}>
-                  {sonVocal ? <ContenuVocal m={sonVocal} prenom={prenom} joue={joue === sonVocal.id} surLire={() => void jouerUnVocal(sonVocal)} /> : sonDernier.texte}
+                <div key={sonDernier.id} className={`sd-bulle autre${reagissable(sonDernier.id) ? " a-epingle" : ""}${sonVocal ? " vocal" : ""}${sonMeme ? " meme" : ""}`} data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined} {...appuiLong(sonDernier.id, setReagirA)}>
+                  {sonVocal ? (
+                    <ContenuVocal m={sonVocal} prenom={prenom} joue={joue === sonVocal.id} surLire={() => void jouerUnVocal(sonVocal)} />
+                  ) : sonMeme ? (
+                    <ContenuMeme m={sonMeme} surRevoir={() => void rejouerMeme(sonMeme)} {...(reagissable(sonMeme.id) ? { reagir: (c: string) => void reagirAuMessage(sonMeme.id, reactionDe(c)!) } : {})} />
+                  ) : (
+                    sonDernier.texte
+                  )}
                   {reagissable(sonDernier.id) && (
                     <button type="button" className={`sd-garder${gardes.has(sonDernier.id) ? " fait" : ""}`} data-garder={sonDernier.id} aria-label={gardes.has(sonDernier.id) ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} onPointerDown={(e) => e.stopPropagation()} onClick={() => void garder(sonDernier.id, false)} />
                   )}
@@ -1766,7 +1878,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       {pret && (
         <div className={`sd-barre${barre.replie ? " repliee" : ""}`}>
           <div className="sd-onglets" role="tablist">
-            {(["attentions", "ensemble"] as const).map((o) => (
+            {(["attentions", "ensemble", "memes"] as const).map((o) => (
               <button
                 key={o}
                 type="button"
@@ -1777,7 +1889,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 data-onglet={o}
                 onClick={() => basculer(o)}
               >
-                {o === "attentions" ? "💌 Petites attentions" : "🛋️ Ensemble"}
+                {o === "attentions" ? "💌 Petites attentions" : o === "ensemble" ? "🛋️ Ensemble" : PHRASES_MEME.onglet}
                 {barre.onglet === o && (
                   <span className="sd-chevron" aria-hidden>
                     ▾
@@ -1786,7 +1898,27 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
               </button>
             ))}
           </div>
-          {!barre.replie && (
+          {/* 🎭 (lot S5) les mèmes : le mème du jour, « ✍️ Le mien », puis les mèmes prêts du moment */}
+          {!barre.replie && barre.onglet === "memes" && (
+            <div className="sd-gestes" aria-label="Les mèmes" data-gestes="memes">
+              {memesDuSalon()
+                .flatMap((m, i) => (i === 0 ? [m, null] : [m]))
+                .map((m) =>
+                  m ? (
+                    <button key={m.cle} type="button" className={`sd-geste${m.cle === "du-jour" ? " du-jour" : ""}`} data-meme-pret={m.cle} disabled={!fil} onClick={() => void faireUnMeme({ texte: m.texte, tete: m.tete, danse: Boolean(m.danse), pret: m.cle })}>
+                      <span className="e">{m.cle === "du-jour" ? "✨" : m.emoji}</span>
+                      <span>{m.cle === "du-jour" ? PHRASES_MEME.duJour : m.nom}</span>
+                    </button>
+                  ) : (
+                    <button key="mien" type="button" className="sd-geste" data-meme-mien disabled={!fil} onClick={() => setFeuilleMeme(true)}>
+                      <span className="e">✍️</span>
+                      <span>{PHRASES_MEME.lemien}</span>
+                    </button>
+                  ),
+                )}
+            </div>
+          )}
+          {!barre.replie && barre.onglet !== "memes" && (
             <div className="sd-gestes" aria-label="Les gestes" data-gestes={barre.onglet}>
               {PUCES_DU_SALON.filter((p) => p.cat === barre.onglet && (p.cle !== "clip" || zoneTele) && (p.cle !== "photo" || zonesCadres.length > 0) && (p.cle !== "selfie" || (zonesCadres.length > 0 && fil?.photos !== false))).map((p) => (
                 <button key={p.cle} type="button" className="sd-geste" data-geste={p.cle} disabled={!fil} onClick={() => (p.cle === "clip" ? setAChoisir({ mode: "tele" }) : p.cle === "photo" ? setAChoisir({ mode: "mur" }) : p.cle === "selfie" ? void prendrePhotoADeux(p) : void faireGeste(p))}>
@@ -1879,7 +2011,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 <div className="sd-jour">{j.jour}</div>
                 {j.lignes.map((l) =>
                   l.sorte === "message" ? (
-                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && (passeALaTele(l.m) || filmALaTele(l.m)) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} {...(zonesCadres.length > 0 && l.m.moi && reagissable(l.m.id) && l.m.genre === "photo" ? { surAccrocher: () => void accrocherPhoto(l.m.id) } : {})} joue={joue === l.m.id} surLire={lireDepuisLeFil} />
+                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && (passeALaTele(l.m) || filmALaTele(l.m)) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} {...(zonesCadres.length > 0 && l.m.moi && reagissable(l.m.id) && l.m.genre === "photo" ? { surAccrocher: () => void accrocherPhoto(l.m.id) } : {})} joue={joue === l.m.id} surLire={lireDepuisLeFil} surRevoir={revoirDepuisLeFil} />
                   ) : l.sorte === "geste" ? (
                     <div key={`geste-${l.g.id}`} className="sd-evt" data-geste-fil={l.g.cle}>
                       <span>{phraseDuGeste(l.g, l.g.moi, prenom)}</span>
@@ -1973,6 +2105,10 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             setIndiceLien(true);
             champ.current?.focus();
           }}
+          onMeme={() => {
+            setEnvoiOuvert(false);
+            setFeuilleMeme(true);
+          }}
           onVocal={() => {
             setEnvoiOuvert(false);
             setTexte("");
@@ -1981,6 +2117,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           }}
         />
       )}
+      {feuilleMeme && fil && <FeuilleMeme prenom={prenom} onAction={(m) => void faireUnMeme(m)} onFermer={() => setFeuilleMeme(false)} />}
       {etagereOuverte && <FeuilleEtagere cle={cle} onFermer={() => setEtagereOuverte(false)} onRetire={(id) => setSouvenirs((l) => l.filter((o) => o.id !== id))} />}
     </main>
   );
@@ -2125,6 +2262,16 @@ button.sd-pastille{cursor:pointer}
 .sd-vague{flex:1;min-width:52px;height:24px;display:flex;align-items:center;gap:2px}
 .sd-vague i{flex:1;border-radius:2px;background:rgba(60,20,50,.3);min-height:3px}
 .sd-vague i.lu{background:var(--rose)}
+.sd-scene[data-meme-joue] .sd-bulles{visibility:hidden}
+.sd-bulle.meme{display:block;-webkit-line-clamp:unset;pointer-events:auto;width:min(230px,100%)}
+.sd-meme{display:flex;flex-direction:column;gap:6px}
+.sd-meme-texte{font:700 13px/1.3 var(--app);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.sd-meme-texte .e{font-family:var(--emoji)}
+.sd-meme-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sd-revoir{height:26px;padding:0 10px!important;border-radius:13px;background:#2a1424!important;color:#ffd99a!important;font:700 12px var(--app)!important;pointer-events:auto}
+.sd-reac-meme{width:28px;height:28px;border-radius:50%;display:grid!important;place-items:center;background:rgba(42,20,36,.08)!important;font:16px var(--emoji)!important;pointer-events:auto}
+.sd-reac-meme:active,.sd-revoir:active{transform:scale(.9)}
+.sd-geste.du-jour{border-color:var(--or)!important}
 .sd-bulle.vocal{display:block;-webkit-line-clamp:unset;pointer-events:auto;width:min(230px,100%)}
 .sd-bulle.vocal .sd-vocal{min-width:0}
 .sd-bulle.vocal .sd-lire{pointer-events:auto}

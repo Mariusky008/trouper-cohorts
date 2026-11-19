@@ -26,7 +26,10 @@ S3, deuxième partie** (la vie propre des figurines, le chat — faite aussi, 11
 « 📺 La mettre à la télé ? », 11.15 ; les cadres, 🖼️ Accrocher, 📺 Un clip, 📸 Photo à deux et les films, 11.16 ; reste
 les réactions de la télé ; les PDF, 11.17, décidés par le propriétaire : sans contrôle, entre proches, en téléchargement),
 **S4 fait** (le talkie-walkie, 11.18 : 🎙️ gardé appuyé, les niveaux, le talkie dans la tête, sur la table, « en direct »
-= le vocal joue tout de suite chez l'autre, la transcription après coup), **ensuite S5** (les mèmes), S7, S8.
+= le vocal joue tout de suite chez l'autre, la transcription après coup), **S5, première partie, faite** (les mèmes
+joués dans le salon, 11.19 : l'onglet 🎭, le projecteur, la bulle de BD, « ✍️ Le mien », en direct et à l'arrivée,
+« ▶ Revoir », 😂 ❤️ 🔥), **ensuite S5, deuxième partie** (🎙️ Ma voix, « Je le range ? » et « Nos fous rires », la vidéo
+📤 pour WhatsApp), S7, S8.
 
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 

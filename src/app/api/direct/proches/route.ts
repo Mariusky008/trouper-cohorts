@@ -64,6 +64,9 @@
 // POST { action: "vocal", cle, son, duree, niveaux } → { message } : au relâché, sa voix (une minute au plus), sa durée,
 //      ses niveaux (la forme de sa voix) ; après la réponse : « 🎙️ Léa t'a parlé ! », puis la transcription (le pouls bat)
 // POST { action: "ecoute", cle, id }     → { ok } : il a écouté le vocal de l'autre (son talkie quitte la table)
+// 🎭 LOT S5, LES MÈMES DU SALON (`lib/direct/meme-salon.ts`, `meme-salon-serveur.ts`) :
+// POST { action: "meme-salon", cle, texte, tete, danse, pret? } → { message } : un mème joué par sa figurine (une donnée :
+//      ce qu'elle dit, 120 signes, sa tête, sa danse), rangé dans leur fil ; « 🎭 Léa t'a envoyé un mème » après la réponse
 // Un proche se désigne toujours par sa clé de profil, jamais par son identifiant.
 import { etagerePeinteOuverte, peindreEtagere } from "@/lib/direct/etagere-peinte-serveur";
 import { NextResponse, after } from "next/server";
@@ -98,6 +101,7 @@ import { ouvrirSalon } from "@/lib/direct/salon-serveur";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
 import { battre, poulsAvec } from "@/lib/direct/pouls-serveur";
 import { apresVocal, envoyerVocal, vocalEcoute } from "@/lib/direct/vocal-serveur";
+import { apresMemeSalon, envoyerMemeSalon } from "@/lib/direct/meme-salon-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
@@ -249,6 +253,15 @@ export async function POST(request: Request) {
     const a = r.apres;
     after(() => battre(supabase, moi, p.cle).catch(() => undefined));
     if (a) after(async () => (await apresVocal(supabase, moi, a).catch(() => false)) && (await battre(supabase, moi, p.cle).catch(() => undefined)));
+    return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
+  }
+  // 🎭 (lot S5) un mème joué dans le salon : rangé dans leur fil ; l'autre est prévenu après la réponse
+  if (p?.action === "meme-salon") {
+    const r = await envoyerMemeSalon(supabase, moi, p.cle, { texte: p.texte, tete: p.tete, danse: p.danse, pret: p.pret });
+    if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    const a = r.apres;
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
+    if (a) after(() => apresMemeSalon(supabase, moi, a).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
   if (p?.action === "ecoute") {

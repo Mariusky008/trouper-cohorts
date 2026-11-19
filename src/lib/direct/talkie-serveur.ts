@@ -63,6 +63,7 @@ import { STATS_MESSAGES_VIDES, dureeDeLecture, ligneDeLEcrit, texteDeBulle, type
 import { PHOTO, lignePhoto } from "./photo";
 import { VIDEO, ligneVideo } from "./video";
 import { ligneFichier } from "./fichier";
+import { dureeDuMeme, ligneMeme, teteMeme } from "./meme-salon";
 import {
   LIENS_PAR_JOUR,
   LIEN_JOURS,
@@ -132,8 +133,10 @@ export type FicheMessage = Partial<Fiche> & {
   id?: string;
   de?: string;
   le?: string;
-  genre?: "ecrit" | "photo" | "video" | "fichier";
+  genre?: "ecrit" | "photo" | "video" | "fichier" | "meme";
   texte?: string;
+  /** 🎭 (lot S5) un mème du salon : sa tête, s'il danse, le mème prêt d'où il vient (son texte : `texte`) */
+  meme?: { tete?: string; danse?: boolean; pret?: string };
   tete?: Sentiment | null;
   lien?: { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" };
   /**
@@ -240,6 +243,31 @@ export async function vueDeLEcrit(supabase: Supabase, f: FicheMessage, moi: stri
     ...(f.lien?.url
       ? { lien: { url: s(f.lien.url), site: s(f.lien.site), ...(f.lien.titre ? { titre: s(f.lien.titre) } : {}), ...(image ? { image } : {}), ...(f.lien.sorte ? { sorte: f.lien.sorte } : {}) } }
       : {}),
+    ...(nouveau ? { nouveau: true } : {}),
+  };
+}
+
+/**
+ * 🎭 (lot S5) UN MÈME DU SALON, TEL QU'IL SE VOIT : ce que dit sa figurine, sa tête, s'il danse — une seule réplique (le
+ * texte, la tête), le temps qu'il se joue. Pas de son, pas d'image : le moteur le joue.
+ */
+export function vueDuMemeSalon(f: FicheMessage, moi: string, nouveau = false): MessageFil | null {
+  const texte = s(f.texte);
+  if (!s(f.id) || !texte) return null;
+  const tete = teteMeme(f.meme?.tete) ?? "joie";
+  const danse = f.meme?.danse === true;
+  const duree = Math.round(dureeDuMeme({ texte, danse }) / 100) / 10;
+  const pret = s(f.meme?.pret);
+  return {
+    id: s(f.id),
+    moi: f.de === moi,
+    le: s(f.le),
+    duree,
+    son: "",
+    repliques: [{ de: 0, a: duree, texte, tete }],
+    genre: "meme",
+    texte,
+    meme: { tete, danse, ...(pret ? { pret } : {}) },
     ...(nouveau ? { nouveau: true } : {}),
   };
 }
@@ -436,6 +464,8 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
                   ? { texte: ligneVideo(m.legende), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, video: true }
                 : m.genre === "fichier"
                   ? { texte: ligneFichier(m.media?.nom), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, fichier: true }
+                : m.genre === "meme"
+                  ? { texte: ligneMeme(m.texte), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, meme: true }
                 : { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
         }
         // 🎭 (lot 4) les mèmes envoyés entre eux : ils comptent dans les non lus ; le dernier, s'il est plus récent
@@ -519,6 +549,8 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
         if (f.genre === "video") return vueDeLaVideo(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
         // 📎 (lot S6) un PDF, à son heure
         if (f.genre === "fichier") return vueDuFichier(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
+        // 🎭 (lot S5) un mème du salon, à son heure
+        if (f.genre === "meme") return vueDuMemeSalon(f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
         if (!f.son) return null;
         const son = await signer(supabase, s(f.son), 3600);
         if (!son) return null;
@@ -978,7 +1010,7 @@ export async function signalerParole(supabase: Supabase, moi: Habitant, cle: unk
 
 // ─── 🚩 les messages signalés, pour l'équipe (lot M2 : une photo aussi) ─────────────────────────────
 /** Un message signalé, tel que l'équipe le voit (`/admin/humain/figurines-clients`) : ce qui a été envoyé, par qui, et qui l'a signalé. */
-export type MessageSignale = { id: string; genre: "vocal" | "ecrit" | "photo" | "video" | "fichier"; de: string; par: string; le: string; texte: string; son?: string; photo?: string; video?: string; fichier?: string };
+export type MessageSignale = { id: string; genre: "vocal" | "ecrit" | "photo" | "video" | "fichier" | "meme"; de: string; par: string; le: string; texte: string; son?: string; photo?: string; video?: string; fichier?: string };
 const cheminSignalement = (id: string) => `moderation/paroles/${id}.json`;
 /** (le chemin d'un message, tel que le signalement le garde : jamais autre chose qu'un message d'un fil) */
 const cheminDeMessage = (x: unknown) => (typeof x === "string" && /^fils\/[0-9a-f-]+_[0-9a-f-]+\/m\/\d{13}-[0-9a-f]{8}-[a-z0-9]{12}\.json$/.test(x) ? x : null);
@@ -994,14 +1026,14 @@ export async function messagesSignales(supabase: Supabase): Promise<MessageSigna
       if (!chemin) return null;
       const f = await lireJson<FicheMessage>(supabase, chemin);
       if (!f.id) return null;
-      const genre: MessageSignale["genre"] = f.genre === "ecrit" ? "ecrit" : f.genre === "photo" ? "photo" : f.genre === "video" ? "video" : f.genre === "fichier" ? "fichier" : "vocal";
+      const genre: MessageSignale["genre"] = f.genre === "ecrit" ? "ecrit" : f.genre === "photo" ? "photo" : f.genre === "video" ? "video" : f.genre === "fichier" ? "fichier" : f.genre === "meme" ? "meme" : "vocal";
       const [son, photo, video, fichier] = await Promise.all([
         genre === "vocal" && f.son ? signer(supabase, s(f.son), 3600) : Promise.resolve(""),
         genre === "photo" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
         genre === "video" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
         genre === "fichier" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
       ]);
-      const texte = genre === "ecrit" ? s(f.texte) : genre === "photo" || genre === "video" ? s(f.legende) : genre === "fichier" ? s(f.media?.nom) : texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
+      const texte = genre === "ecrit" || genre === "meme" ? s(f.texte) : genre === "photo" || genre === "video" ? s(f.legende) : genre === "fichier" ? s(f.media?.nom) : texteDuMessage(repliquesValides(f.repliques, Number(f.duree)) ?? []);
       return { id: s(f.id), genre, de: s(f.de), par: s(sig.par), le: s(sig.le), texte, ...(son ? { son } : {}), ...(photo ? { photo } : {}), ...(video ? { video } : {}), ...(fichier ? { fichier } : {}) };
     }),
   );
