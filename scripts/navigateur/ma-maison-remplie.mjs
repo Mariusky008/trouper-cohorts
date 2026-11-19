@@ -91,7 +91,7 @@ const ranges = [
   range("video00001", "video", "Le film du dimanche", "#3ad5c0", 80, "https://www.essai.invalid/film"),
 ];
 for (const r of ranges) await deposer(r.image.chemin, await image(r.couleur), "image/jpeg");
-await json(`${LEA.id}/etagere-perso.json`, { v: 1, objets: ranges.map(({ couleur, ...o }) => o), montres: [], caches: [] });
+await json(`${LEA.id}/etagere-perso.json`, { v: 1, objets: ranges.map((r) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== "couleur"))), montres: [], caches: [] });
 // (sur leur étagère partagée : un mot gardé par Léa (📌), un duo de mèmes rangé par elle, un mot gardé par Sam)
 const PAIRE = [LEA.id, SAM.id].sort().join("_");
 await json(`fils/${PAIRE}/etagere.json`, {
