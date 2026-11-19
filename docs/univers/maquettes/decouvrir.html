@@ -21,6 +21,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--ambre);outline-offset:2px}
 .app{position:relative;height:100%;max-width:460px;margin:0 auto;background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,var(--nuit) 62%);overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.04)}
 .vue{position:absolute;inset:0;display:flex;flex-direction:column;min-height:0}
+.vue[hidden]{display:none}
 .g{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* ─── boutons ─── */
@@ -107,13 +108,27 @@ h1{margin:0;font-weight:900;font-size:30px;letter-spacing:-.02em;line-height:1.1
 .decor svg{display:block;width:100%;height:100%}
 .tele{position:absolute;left:15.38%;top:9.23%;width:69.23%;height:29.23%;border-radius:7px;overflow:hidden;background:#05060c;box-shadow:0 0 0 5px #120810,0 0 0 6px rgba(255,255,255,.07),0 0 46px rgba(130,180,255,.32);z-index:2}
 .tele canvas{display:block;width:100%;height:100%}
-/* 📺 le grand écran (par défaut) : la télé prend toute la largeur du téléphone, la pièce et les figurines dessous */
-/* (la pièce garde ses proportions ; la télé prend toute la largeur du téléphone, en haut, quelle que soit sa hauteur) */
-.scene-wrap.grand{place-items:start center}
-.scene-wrap.grand .scene{overflow:visible}
-.scene-wrap.grand .tele{left:calc(50% - 50cqw);top:0;width:100cqw;height:56.25cqw;border-radius:0;box-shadow:0 12px 30px rgba(0,0,0,.55)}
-.scene-wrap.grand .bord{left:auto;right:3%;top:calc(56.25cqw + 8px);transform:none}
-.scene-wrap.grand .seul,.scene-wrap.grand .voix-dispo{top:calc(56.25cqw + 8px)}
+/* 📺 le grand écran (par défaut) : la télé en haut, toute la largeur, en 16/9 ; DESSOUS (plus par-dessus), la pièce, elle
+   aussi toute la largeur, cadrée sur le canapé, et les figurines dedans. Le propriétaire, le 19 novembre 2026 : sur
+   ordinateur, « j'aimerais voir tout le canapé » ; sur téléphone, « le salon ne prend pas toute la largeur et les
+   figurines sortent du cadre et touchent la vidéo ». La vue défile si le téléphone est court (le navigateur de WhatsApp).
+   Le cadrage : une bande de la pièce (son image fait 853 × 1844), --y0 son haut (en % de l'image), --h sa hauteur
+   (en part de l'image) ; les figurines, placées pour la pièce entière (--b), y sont recalées. */
+.vue:has(.scene-wrap.grand){overflow-y:auto;overscroll-behavior:contain}
+.vue:has(.scene-wrap.grand)>*{flex:none}
+#p-wrap{--y0:35;--h:.3}
+#s-wrap{--y0:36;--h:.4}
+.scene-wrap.grand{display:block;container-type:inline-size;padding-top:56.25%;overflow:visible}
+.scene-wrap.grand .scene{width:100%;height:auto;overflow:visible}
+#p-wrap.grand .scene{aspect-ratio:853/553}
+#s-wrap.grand .scene{aspect-ratio:853/738}
+.scene-wrap.grand .decor{overflow:hidden}
+#p-wrap.grand .fond-img{object-position:50% 50%}
+#s-wrap.grand .fond-img{object-position:50% 60%}
+.scene-wrap.grand .fig{bottom:calc((100 - ((11.5 + (100 - var(--b)) * .617) - var(--y0)) / var(--h)) * 1%) !important}
+.scene-wrap.grand .tele{left:0;top:-56.25cqw;width:100cqw;height:56.25cqw;border-radius:0;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.scene-wrap.grand .bord{left:auto;right:3%;top:8px;transform:none}
+.scene-wrap.grand .seul,.scene-wrap.grand .voix-dispo{top:8px}
 .taille-tele{position:absolute;left:6px;bottom:5px;z-index:4;display:flex;align-items:center;gap:4px;padding:3px 8px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:10.5px;font-weight:800}
 .tele-titre{position:absolute;inset:0 0 auto;display:flex;flex-direction:column;gap:1px;padding:7px 10px 18px;background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,0));opacity:0;transition:opacity .3s;pointer-events:none}
 .tele-titre.montre{opacity:1}
@@ -739,7 +754,7 @@ const EMO={bravo:'👏',rire:'😂',sourire:'😊',coeur:'❤️',oh:'😮',surp
 function reactionAuTexte(t){if(/(\bnul\b|\bbof\b|ennui|😴|🙄)/i.test(t))return 'bof';if(/(ha ?ha|hihi|mdr|ptdr|\blol\b|😂|🤣|😆)/i.test(t))return 'rire';if(/(❤|😍|🥰|j.?adore|trop beau|trop mignon)/i.test(t))return 'coeur';if(/(!|😱|waouh|\bwow\b|\boh\b|quoi)/i.test(t))return 'surprise';return 'sourire'}
 function figHTML(id,pl,x={}){
   const p=GENS[id];
-  return `<div class="fig${x.cls||''}" data-id="${id}" data-x="n" style="left:${pl.x}%;bottom:${pl.b}%;width:${pl.l}%;--d:${(-Math.random()*4).toFixed(2)}s">${figSVG(p)}<span class="nom"><span>${x.direct?'<i class="dot"></i>':''}${x.nom||p.prenom}</span>${x.vu?`<em>${x.vu}</em>`:''}</span></div>`;
+  return `<div class="fig${x.cls||''}" data-id="${id}" data-x="n" style="left:${pl.x}%;bottom:${pl.b}%;--b:${pl.b};width:${pl.l}%;--d:${(-Math.random()*4).toFixed(2)}s">${figSVG(p)}<span class="nom"><span>${x.direct?'<i class="dot"></i>':''}${x.nom||p.prenom}</span>${x.vu?`<em>${x.vu}</em>`:''}</span></div>`;
 }
 function poser(scene,id,pl,x={}){scene.insertAdjacentHTML('beforeend',figHTML(id,pl,x));return scene.lastElementChild}
 function entrer(scene,id,pl,x={}){const f=poser(scene,id,{...pl,x:112},x);requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.left=pl.x+'%'}));return f}
