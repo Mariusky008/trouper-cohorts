@@ -1233,6 +1233,62 @@ la carte puis sa transcription, chez Sam, « ▶ Revoir » avec ses mots ; Sam q
 range ? », Oui, la claquette dans « Nos fous rires », la fiche, « ▶ Le revoir » ; 📤 : la vidéo fabriquée, un vrai
 fichier vidéo, « ⬇️ Enregistrer »).
 
+### 11.21 🌙 La lumière et la météo (lot S7 — 19 novembre 2026)
+
+La section 4.11, sur le moteur (`src/app/salon/lumiere.ts`, d'après la maquette v5) ; tout est dans les couches de la
+pièce, sous la caméra.
+
+- **L'heure** : la pièce garde l'image de son moment (`momentDuoDe`, l'heure de Paris, côté serveur) ; les figurines en
+  prennent la teinte (lot S2). L'adresse d'essai accepte **`&moment=matin|soir|nuit`** pour essayer la lumière d'un autre
+  moment (la pièce garde son image).
+- **La nuit** : chaque lampe relevée (`lampes`) **éclaire** — un halo chaud qui respire (en « screen », jamais un voile
+  gris) ; la télé relevée jette sa **lueur bleue qui scintille** ; les coins s'assombrissent un peu ; **dehors**, dans les
+  carreaux, le ciel de nuit, **la lune, des étoiles qui scintillent, quelques fenêtres allumées** de la ville.
+- **La météo, à la fenêtre seulement** : une toile posée sur la boîte des carreaux relevés (`fenetreCoins`), **découpée
+  en polygone** (jamais sur les rideaux ni dedans), et un ciel teinté derrière la vitre. 🌧️ **La pluie** (fine ou
+  franche) : des traits qui tombent, des gouttes qui glissent sur la vitre, le ciel gris ; ⛈️ **l'orage** : la pluie
+  forte, **un éclair** qui illumine toute la pièce toutes les 5 à 9 s, un grondement, les figurines sursautent ; ❄️ **la
+  neige** : des flocons, la neige qui s'amasse en bas de la vitre ; 🌫️ le brouillard, ☁️ les nuages : le ciel seul ;
+  ☀️ **le soleil, de jour** : trois rayons qui entrent par la fenêtre vers le milieu du sol, une flaque de lumière, **de la
+  poussière qui danse dedans** (plus chauds le soir). Mouvement réduit : une image fixe ; le mode léger : moitié moins de
+  gouttes. Une pièce sans carreaux relevés : ni fenêtre ni rayons (les lampes, la nuit, oui).
+- **La puce** (en haut à droite de la scène) : « 🌧️ Pluie fine · 9° » ; un toucher : « Il pleut chez toi : la pluie
+  coule sur la vitre » (`PHRASES_METEO`).
+- **La source** (`src/lib/direct/meteo.ts`, `meteo-serveur.ts`) : `GET /api/direct/salon?meteo=1` (le cookie d'habitant)
+  → `{ meteo }` — le temps qu'il fait **dans SA ville** (`ville_slug`, jamais sa position), demandé **après l'ouverture**
+  (jamais pendant ; le téléphone le garde dix minutes). **Open-Meteo**, gratuit et sans clé, interrogé par le serveur : la
+  ville cherchée une fois (`meteo/villes/<slug>.json`), puis le temps **au plus une fois par heure par ville**
+  (`meteo/<slug>.json`) ; les codes météo (WMO) donnent ce que la fenêtre montre et son nom (« Grand soleil », « Nuit
+  claire », « Quelques nuages », « Brouillard », « Pluie fine », « Pluie », « Neige », « Orage »). Open-Meteo ne répond
+  pas : la dernière météo connue, sinon rien. `OPEN_METEO_URL`, `OPEN_METEO_GEO_URL` : le faux Open-Meteo des essais.
+
+**L'essai** : `scripts/navigateur/salon-lumiere.mjs` (la route — refusée sans session, « Pluie fine · 9° », gardée une
+heure par ville, une autre ville a son temps ; la puce et son toucher ; la pluie dans les carreaux, découpée en polygone,
+qui se dessine ; la nuit — le halo de la lampe, la lueur de la télé, les coins, le ciel de nuit ; le soleil — trois
+rayons, la flaque, la poussière ; l'orage et son éclair ; la neige).
+
+### 11.22 🔔 Ce qui attend (lot S8, première partie — 19 novembre 2026)
+
+La section 4.1 : « la notification dit tout ce qui attend ». `src/lib/direct/ce-qui-attend.ts` (les règles) et
+`ce-qui-attend-serveur.ts` (le compte).
+
+- **Le compte** : ce que l'autre m'a laissé **depuis ma dernière visite** — ses messages depuis la dernière fois que j'ai
+  lu notre fil (`<habitant>/fils-lus.json`, les trente derniers au plus : écrits, mèmes, photos, vidéos, PDF, vocaux), ses
+  gestes du salon et ses panneaux depuis les derniers que j'ai vus (`<habitant>/gestes-vus.json`).
+- **La phrase** : une seule chose attend, sa notification d'avant (« ✍️ Léa t'a écrit », « 🎭 Léa t'a envoyé un mème »…) ;
+  **deux ou plus : « 😘 Léa t'a laissé un bisou, un mème, 2 messages et un vocal »**, et dessous « Dans votre salon »
+  (avec ce que dit la dernière chose, s'il y a lieu). Les gestes d'abord (dans l'ordre, « 3 bisous » s'il revient, un
+  panneau entre guillemets), puis les mèmes, les messages, les photos, les vidéos, les PDF, les vocaux ; l'emoji : celui
+  du premier geste, sinon de ce qui attend. Elle **remplace la précédente** (le même `tag` : une seule notification par
+  proche dans le tiroir du téléphone).
+- **Un geste du salon prévient aussi** (« 😘 Léa t'a laissé un bisou », « Dans votre salon ») — seul ou dans la phrase ;
+  les réactions sur un message, non. Les mêmes règles qu’une parole (`prevenirDUneParole` : jamais à soi-même, trente
+  par jour au plus).
+
+**L'essai** : `scripts/essai-meme-salon-route.mjs`, « 🔔 CE QUI ATTEND » (le bisou seul d'abord ; puis un mème, deux
+messages, un vocal : la phrase qui dit tout ; tout lu, un seul message : sa notification à part entière ; un bisou
+ensuite : « un bisou et un message », « Dans votre salon » une seule fois).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

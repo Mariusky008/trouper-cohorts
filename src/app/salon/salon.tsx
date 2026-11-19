@@ -56,7 +56,7 @@ import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } f
 import { aRejouer, derniersDeChacun, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
 import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
 import { gesteDuSalon, objetDuGeste, reactionDe, REACTIONS, REACTIONS_MEME, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
-import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
+import { PIECES_DUO, momentDuoValide, type MomentDuo, type PieceDuo } from "@/lib/direct/pieces-duo";
 import { PHRASES_TELE, filmALaTele, passeALaTele, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 import { CADRES_MAX, PHRASES_CADRES, cadreLibre, ditAccrochee, type CadreVu } from "@/lib/direct/cadres";
 import { PHRASES_FICHIER, tailleDite } from "@/lib/direct/fichier";
@@ -69,6 +69,8 @@ import { STYLES_TALKIE, arreterLecture, debloquerSon, entendreEnDirect, installe
 import { BoutonMicro, type FinMicro } from "./micro";
 import type { VoixEnregistree } from "./feuille-meme";
 import { STYLES_MEME, arreterMeme, jouerMeme } from "./memes";
+import { STYLES_LUMIERE, installerLumiere, type LumiereSalon } from "./lumiere";
+import { PHRASES_METEO, puceMeteo, type Meteo } from "@/lib/direct/meteo";
 import { PHRASES_MEME, duoDuFil, emojiDeTete, memesDuSalon, teteMeme, type MemeSalon } from "@/lib/direct/meme-salon";
 
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
@@ -503,6 +505,17 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   /** (les duos à qui on a dit non, sur ce téléphone : le second mème de chacun) */
   const duosRefuses = useRef<Set<string> | null>(null);
   const [duoEnCours, setDuoEnCours] = useState(false);
+  /** 🌙 (lot S7) la lumière de la pièce ; 🌦️ le temps qu'il fait chez moi (demandé après l'ouverture) */
+  const lumiere = useRef<LumiereSalon | null>(null);
+  const [meteo, setMeteo] = useState<Meteo | null>(null);
+  const meteoRef = useRef<Meteo | null>(null);
+  const meteoDemandee = useRef(false);
+  /** (l'adresse d'essai : `?moment=nuit` essaie la lumière d'un autre moment — la pièce garde son image) */
+  const [momentEssai] = useState<MomentDuo | null>(() => {
+    if (typeof window === "undefined") return null;
+    const m = new URLSearchParams(window.location.search).get("moment");
+    return momentDuoValide(m) ? m : null;
+  });
   /** 📤 la vidéo d'un de mes mèmes, en fabrication (son son, ouvert pendant le toucher) */
   const [videoMeme, setVideoMeme] = useState<{ ctx: AudioContext; m: MessageFil } | null>(null);
   const rejouerMemeRef = useRef<(m: MessageFil) => void>(() => undefined);
@@ -550,7 +563,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       hauteur: sceneVue.plaque.hauteur,
       // (ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche ; la teinte du moment)
       figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {},
-      moment: sceneVue.moment,
+      moment: momentEssai ?? sceneVue.moment,
       // (🌷 la table basse relevée : les objets s'y posent ; on les touche)
       ...(sceneVue.emplacements?.table ? { table: sceneVue.emplacements.table } : {}),
       surObjet: (o) => montrerRef.current(`${o.e} ${o.moi ? "Tu as posé" : `${prenomRef.current} a laissé`} ${o.nom} · ${heureDite(o.le)}`, 2600),
@@ -593,9 +606,23 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       // (sans stockage : la phrase « ✨ … vous a installés » pourra revenir, ce n'est pas grave)
     }
     const ceChat = chat.current;
+    // (🌙 lot S7 : la lumière du moment — la nuit, les lampes et la télé ; la météo, dès qu'on la connaît)
+    const em = sceneVue.emplacements;
+    lumiere.current = installerLumiere(s, {
+      moment: momentEssai ?? sceneVue.moment,
+      largeur: sceneVue.plaque.largeur,
+      hauteur: sceneVue.plaque.hauteur,
+      ...(em?.fenetreCoins ? { fenetre: em.fenetreCoins } : {}),
+      ...(em?.lampes ? { lampes: em.lampes } : {}),
+      ...(em?.tele ? { tele: em.tele } : {}),
+    });
+    lumiere.current.meteo(meteoRef.current?.cle ?? null);
+    const cetteLumiere = lumiere.current;
     const cetteEtagere = etagere.current;
     const cesTalkies = talkies.current;
     return () => {
+      cetteLumiere.detruire();
+      if (lumiere.current === cetteLumiere) lumiere.current = null;
       // (📻 le vocal qui se joue s'arrête ; l'autre qui parlait en direct aussi ; les talkies de la table s'en vont)
       arreterLecture();
       arreterMeme();
@@ -613,7 +640,22 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       s.detruire();
       if (scene.current === s) scene.current = null;
     };
-  }, [sceneVue, cle]);
+  }, [sceneVue, cle, momentEssai]);
+
+  // 🌦️ (lot S7) le temps qu'il fait chez moi : demandé une fois la scène prête (jamais pendant l'ouverture)
+  useEffect(() => {
+    if (!pret || meteoDemandee.current) return;
+    meteoDemandee.current = true;
+    void fetch("/api/direct/salon?meteo=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { meteo?: Meteo | null } | null) => {
+        const m = j?.meteo ?? null;
+        meteoRef.current = m;
+        setMeteo(m);
+        lumiere.current?.meteo(m?.cle ?? null);
+      })
+      .catch(() => undefined);
+  }, [pret]);
 
   // ⏱️ ses temps mesurés, une fois par ouverture ; 🚪 l'arrivée : ce qu'il a laissé depuis ma dernière visite, rejoué un à
   // un (12 s au plus ; un toucher passe la suite), puis, s'il n'est pas là, sa figurine somnole
@@ -1783,6 +1825,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       <style>{STYLES_SALON}</style>
       <style>{STYLES_TALKIE}</style>
       <style>{STYLES_MEME}</style>
+      <style>{STYLES_LUMIERE}</style>
       <header className="sd-entete">
         {onRetour ? (
           <button type="button" className="sd-retour" aria-label="Retour" onClick={onRetour}>
@@ -1862,6 +1905,12 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             </>,
             coucheHote,
           )}
+        {meteo && !teleProche && (
+          <button type="button" className="sd-puce sd-meteo" data-meteo={meteo.cle} onPointerDown={(e) => e.stopPropagation()} onClick={() => montrer(`${meteo.emoji} ${PHRASES_METEO[meteo.cle]}`, 2800)}>
+            <span className="e">{meteo.emoji}</span>
+            <span>{puceMeteo(meteo)}</span>
+          </button>
+        )}
         {teleProche && (
           <button type="button" className="sd-recul" data-recul onClick={() => approcherTele(false)}>
             ↩ La pièce
@@ -2338,6 +2387,7 @@ export const STYLES_SALON = `
 .sd-puce{position:absolute;z-index:5;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;font:700 13px var(--app);color:#fff;background:rgba(24,7,20,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .sd-puce .e{font-family:var(--emoji);font-size:16px}
 .sd-fil{bottom:10px;right:10px}
+.sd-meteo{top:10px;right:10px;height:32px;padding:0 12px;font-size:12.5px;background:rgba(255,246,234,.92)!important;color:var(--encre)!important}
 .sd-porte{top:10px;left:10px;height:32px;padding:0 12px;font-size:12.5px;max-width:calc(50% - 20px)}
 .sd-porte span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sd-rdv{top:10px;right:10px;height:32px;padding:0 12px;font-size:12.5px;max-width:calc(50% - 20px)}
