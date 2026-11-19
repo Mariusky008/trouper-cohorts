@@ -175,10 +175,21 @@ async function demanderProposition(supabase: Supabase, h: string, de: "selfie" |
   return ok ? { id } : { error: "Ta demande n’a pas pu être rangée. Réessaie dans un instant.", statut: 502 };
 }
 
-/** 📸 Son selfie, et ses deux cases : sa première proposition est demandée. */
-export async function envoyerSelfie(supabase: Supabase, habitant: Habitant, photo: unknown, moi: unknown, age: unknown): Promise<{ id?: string; error?: string; statut?: number }> {
+/**
+ * Ses deux cases, et une photo qui s'ouvre (ou « sa photo d'avant ») : vérifiées avant même d'ouvrir son compte sur ce
+ * téléphone (`route.ts`), puis encore ici.
+ */
+export function selfieRecevable(photo: unknown, moi: unknown, age: unknown): { error: string; statut: number } | null {
   if (moi !== true) return { error: "Coche « C’est bien moi » : ta figurine, c’est toi.", statut: 400 };
   if (age !== true) return { error: "Il faut avoir 15 ans ou plus.", statut: 400 };
+  if (photo !== "avant" && !imageEnvoyee(photo)) return { error: "Ce selfie ne s’ouvre pas. Reprends-le.", statut: 400 };
+  return null;
+}
+
+/** 📸 Son selfie, et ses deux cases : sa première proposition est demandée. */
+export async function envoyerSelfie(supabase: Supabase, habitant: Habitant, photo: unknown, moi: unknown, age: unknown): Promise<{ id?: string; error?: string; statut?: number }> {
+  const refus = selfieRecevable(photo, moi, age);
+  if (refus) return refus;
   // (« Reprendre ma photo d'avant » : celle de sa figurine d'aujourd'hui)
   const photoDAvant = photo === "avant" ? await sonCheminDePhotoDAvant(supabase, habitant.id) : "";
   const brut = photo === "avant" ? (photoDAvant ? await telecharger(supabase, photoDAvant) : null) : imageEnvoyee(photo);

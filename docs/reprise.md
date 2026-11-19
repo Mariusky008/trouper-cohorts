@@ -29,6 +29,12 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    grand écran) ; **D0 fait** (section 14 : « Tes passions », la sélection YouTube de chaque nuit, l'administration) — il
    attend la clé YouTube (`YOUTUBE_API_KEY`, dans Vercel) ; ensuite D1, ma télé du jour dans ma pièce.
 
+**À savoir (19 novembre 2026)** : le projet Supabase de production est **bridé** — plan gratuit, 39 Go de données
+sortantes pour 5 Go permis (cycle du 8 novembre au 8 décembre) : il répond 402 à tout, d'où les « Ton compte n'a pas pu
+être créé » de la création de la figurine. Le propriétaire décide (plan payant, ou attendre le 8 décembre) ; réduire ce
+qui sort de Supabase reste à faire. Le même jour, la création de la figurine demande **« Ton prénom »** quand il n'est
+pas connu (`feuille-de-route.md`, section 5).
+
 **Où on en est (18 novembre 2026)** : **S3, première partie, faite** (`salon-du-duo.md`, 11.11) — la barre des gestes
 (💌 / 🛋️), neuf gestes mis en scène, les huit panneaux brandis, les six réactions avec le corps, la table (quatre
 objets, gardés par le serveur), les gestes en direct avec le pouls et rejoués à l'arrivée, 💬 qui les montre. **Ensuite :

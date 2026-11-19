@@ -44,6 +44,11 @@ export type EtatNouvelleFigurine = {
    * ClikMe a des commerçants
    */
   villeADonner?: { suggestions: { slug: string; nom: string }[] };
+  /**
+   * ✍️ son prénom n'est pas encore connu (pas de compte, ou un compte sans prénom) : demandé avec le selfie — ses proches
+   * le verront partout (19 novembre 2026 : « à aucun moment à l'inscription on me demande mon prénom »)
+   */
+  prenomADonner?: boolean;
   /** 🖼️ la photo de sa figurine d'aujourd'hui (signée), pour la refaire au nouveau style sans nouveau selfie */
   photoDAvant?: string;
   /** son personnage maître, une fois validé : ses images de référence (assise, et bientôt bouche ouverte et debout) */

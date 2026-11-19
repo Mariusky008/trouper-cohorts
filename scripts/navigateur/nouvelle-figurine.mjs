@@ -2,7 +2,7 @@
 // Supabase et son faux moteur d'image (jamais la vraie base, jamais OpenAI).
 //
 // Un visiteur sans session d'administrateur est renvoyé. Le propriétaire : « Créons ta figurine ! », « Créer ma
-// figurine » attend sa photo et ses deux cases ; l'atelier de Pablito ; « La voilà ! », sa figurine dans son fauteuil ;
+// figurine » attend sa photo, ses deux cases, sa ville et son prénom (rangés sur son compte) ; l'atelier de Pablito ; « La voilà ! », sa figurine dans son fauteuil ;
 // « ✏️ Retoucher », une idée toute prête (« Les cheveux plus courts ») : « Retouchée », ses deux essais en petit (on
 // revient au premier d'un toucher) ; « C'est moi ! » : « Ta figurine est prête ! », sa pose debout arrive, « Fais-la
 // parler ». Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
@@ -58,7 +58,11 @@ ok(await creer.isDisabled(), "sans « J'ai 15 ans ou plus » : toujours pas");
 await p.locator('.nf-selfie input[name="age"]').check();
 ok(await creer.isDisabled() && (await p.locator('.nf-selfie input[name="ville"]').count()) === 1, "🏙️ sans sa ville (pas encore de compte) : toujours pas");
 await p.locator('.nf-selfie input[name="ville"]').fill("Bordeaux");
-ok(!(await creer.isDisabled()) && (await debordement()) <= 0 && (await sansMotInterdit()), "sa photo, sa ville, ses deux cases : « Créer ma figurine » (rien ne déborde)");
+// ✍️ son prénom (le 19 novembre 2026 : « à aucun moment à l'inscription on me demande mon prénom »)
+const champPrenom = p.locator('.nf-selfie input[name="prenom"]');
+ok((await creer.isDisabled()) && (await champPrenom.count()) === 1 && (await champPrenom.getAttribute("autocomplete")) === "given-name", "✍️ sans son prénom : toujours pas");
+await champPrenom.fill("Camille");
+ok(!(await creer.isDisabled()) && (await debordement()) <= 0 && (await sansMotInterdit()), "sa photo, son prénom, sa ville, ses deux cases : « Créer ma figurine » (rien ne déborde)");
 await p.screenshot({ path: `${D}/nouvelle-figurine-1-selfie.png` });
 await creer.click();
 // (l'atelier : le faux moteur est rapide, il peut passer en un éclair)
@@ -67,6 +71,9 @@ if (atelier) await p.screenshot({ path: `${D}/nouvelle-figurine-2-atelier.png` }
 await p.waitForSelector(".nf-decouverte .nf-figurine", { timeout: 60000 }).catch(() => null);
 ok((await texte(".nf-decouverte .nf-titre")) === "La voilà !" && (await p.locator(".nf-decouverte .nf-scene img.nf-figurine").count()) === 1, `« La voilà ! » : sa figurine, dans son fauteuil${atelier ? " (après l'atelier)" : ""}`);
 const premiere = await p.locator(".nf-decouverte").getAttribute("data-proposition");
+const jeton = (await ctx.cookies()).find((c) => c.name === "clikme_habitant")?.value;
+const compte = jeton ? (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=prenom,ville_slug`)).json())[0] : null;
+ok(compte?.prenom === "Camille" && compte.ville_slug === "bordeaux", `son prénom et sa ville, rangés sur son compte (${compte?.prenom}, ${compte?.ville_slug})`);
 await p.screenshot({ path: `${D}/nouvelle-figurine-3-decouverte.png` });
 
 // ═══ UNE RETOUCHE ═══

@@ -3,8 +3,8 @@
 /**
  * 🧸 LA NOUVELLE FIGURINE, À L'ÉCRAN — chantier « Univers », lot 2 (`lib/direct/nouvelle-figurine.ts` : le parcours).
  *
- *   · LE SELFIE : « Créons ta figurine ! », sa photo (réduite dans le téléphone), « C'est bien moi », « J'ai 15 ans ou
- *     plus » ;
+ *   · LE SELFIE : « Créons ta figurine ! », sa photo (réduite dans le téléphone), son prénom s'il n'est pas encore
+ *     connu, sa ville sans compte sur ce téléphone, « C'est bien moi », « J'ai 15 ans ou plus » ;
  *   · L'ATELIER : Pablito essaie des têtes en sculptant, ce qu'il fait s'écrit, une barre avance (une minute environ) ;
  *   · LA DÉCOUVERTE : sa figurine, assise dans son fauteuil, sous une lumière chaude (« Film, chaleureux ») — elle
  *     apparaît ; « C'est moi ! », « Retoucher » (avec ses mots, ou une idée toute prête), « Elle ne me ressemble pas » ;
@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { imageVisage, type Visage } from "@/lib/direct/guide";
 import { IDEES_RETOUCHE, VILLE_MAX, villeEcrite, type EtatNouvelleFigurine, type PropositionVue } from "@/lib/direct/nouvelle-figurine";
 import { RETOUCHE_FIGURINE_MAX } from "@/lib/direct/perso-consignes";
+import { PRENOM_MAX, prenomValide } from "@/lib/direct/ma-figurine";
 import { ADRESSE_CHOISIR_PIECE, TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
 
 const ROUTE = "/api/direct/nouvelle-figurine";
@@ -109,7 +110,8 @@ export function NouvelleFigurine({ piece = false }: { piece?: boolean }) {
           branche={etat.branche}
           photoDAvant={etat.photoDAvant}
           villeADonner={etat.villeADonner}
-          onEnvoyer={(photo, ville) => faire({ action: "selfie", photo, moi: true, age: true, ...(ville ? { ville } : {}) })}
+          prenomADonner={etat.prenomADonner}
+          onEnvoyer={(photo, ville, prenom) => faire({ action: "selfie", photo, moi: true, age: true, ...(ville ? { ville } : {}), ...(prenom ? { prenom } : {}) })}
         />
       ) : etape === "fabrication" ? (
         <Atelier key={etat.propositions[0]?.id} demande={etat.propositions[0]?.demande} />
@@ -134,15 +136,19 @@ function Selfie({
   branche,
   photoDAvant,
   villeADonner,
+  prenomADonner,
   onEnvoyer,
 }: {
   occupe: boolean;
   branche: boolean;
   photoDAvant?: string;
   villeADonner?: { suggestions: { slug: string; nom: string }[] };
-  onEnvoyer: (photo: string, ville?: string) => void;
+  prenomADonner?: boolean;
+  onEnvoyer: (photo: string, ville?: string, prenom?: string) => void;
 }) {
   const [photo, setPhoto] = useState("");
+  // ✍️ son prénom (pas encore connu) : ses proches le verront partout
+  const [prenom, setPrenom] = useState("");
   // 🏙️ sa ville (pas encore de compte sur ce téléphone) : n'importe laquelle
   const [ville, setVille] = useState("");
   // 🖼️ sa photo d'avant (celle de sa figurine d'aujourd'hui) : reprise telle quelle, sans nouveau selfie
@@ -161,7 +167,8 @@ function Selfie({
     }
   }
   const villeOk = !villeADonner || villeEcrite(ville) !== "";
-  const pret = (Boolean(photo) || dAvant) && moi && age && villeOk && !occupe && branche;
+  const prenomOk = !prenomADonner || prenomValide(prenom) !== "";
+  const pret = (Boolean(photo) || dAvant) && moi && age && villeOk && prenomOk && !occupe && branche;
   const montree = dAvant ? photoDAvant : photo;
   return (
     <section className="nf-selfie" aria-label="Ton selfie">
@@ -178,8 +185,23 @@ function Selfie({
         </button>
       )}
       {lecture && <p className="nf-erreur">{lecture}</p>}
+      {prenomADonner && (
+        <label className="nf-champ">
+          <span>Ton prénom</span>
+          <input
+            type="text"
+            name="prenom"
+            value={prenom}
+            maxLength={PRENOM_MAX}
+            autoComplete="given-name"
+            autoCapitalize="words"
+            placeholder="Celui que tes proches connaissent"
+            onChange={(e) => setPrenom(e.target.value)}
+          />
+        </label>
+      )}
       {villeADonner && (
-        <label className="nf-ville">
+        <label className="nf-champ">
           <span>Ta ville</span>
           <input
             type="text"
@@ -204,7 +226,7 @@ function Selfie({
       <label className="nf-case">
         <input type="checkbox" name="age" checked={age} onChange={(e) => setAge(e.target.checked)} /> J’ai 15 ans ou plus
       </label>
-      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined)}>
+      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined, prenomADonner ? prenomValide(prenom) : undefined)}>
         {occupe ? "…" : "Créer ma figurine"}
       </button>
       {!branche && <p className="nf-doux">Le moteur d’image n’est pas branché ici.</p>}
@@ -437,8 +459,8 @@ const STYLES = `
 .nf-bouton:disabled{opacity:.45}
 .nf-vers{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .nf-lien{border:0;background:none;color:#6b4a2b;font-size:16px;text-decoration:underline;padding:8px}
-.nf-ville{display:flex;flex-direction:column;gap:6px;width:100%;max-width:340px;text-align:left;font-size:15px;font-weight:700;color:#4a3017}
-.nf-ville input{box-sizing:border-box;width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #e3cfb4;background:#fffaf3;color:#2b1a0c;font:inherit;font-size:16px;font-weight:500}
+.nf-champ{display:flex;flex-direction:column;gap:6px;width:100%;max-width:340px;text-align:left;font-size:15px;font-weight:700;color:#4a3017}
+.nf-champ input{box-sizing:border-box;width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #e3cfb4;background:#fffaf3;color:#2b1a0c;font:inherit;font-size:16px;font-weight:500}
 .nf-atelier{padding-top:5vh}
 .nf-pablito{position:relative;width:170px;height:200px}
 .nf-pablito img{width:100%;height:100%;object-fit:contain;animation:nf-sculpte 1.7s ease-in-out infinite}

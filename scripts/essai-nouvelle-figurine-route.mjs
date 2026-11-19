@@ -2,9 +2,9 @@
 // jamais la vraie base, jamais OpenAI (`lib/direct/nouvelle-figurine-serveur.ts`, `app/api/direct/nouvelle-figurine`).
 //
 // Réservée au propriétaire : personne d'autre n'y entre. Lui, sans compte sur ce téléphone : le selfie. Sans « C'est
-// bien moi » ni ses 15 ans, ou sans photo : rien. Son selfie : un compte posé sur ce téléphone, son âge noté, sa
-// première proposition faite après la réponse (la consigne « Sculptée, détourée », fond transparent, réglage fidèle,
-// signée). Une retouche avec ses mots (« les cheveux plus courts ») : sur la proposition, la même figurine, seule la
+// bien moi » ni ses 15 ans, sans photo, sans son prénom (ou un prénom grossier) ou sans sa ville : rien. Son selfie :
+// un compte posé sur ce téléphone, son prénom et son âge notés, sa première proposition faite après la réponse (la
+// consigne « Sculptée, détourée », fond transparent, réglage fidèle, signée). Une retouche avec ses mots (« les cheveux plus courts ») : sur la proposition, la même figurine, seule la
 // chose demandée change ; des mots qui ne passent pas, ou d'alcool : refusés. « Elle ne me ressemble pas » : une
 // nouvelle, d'après le selfie. « C'est moi ! » : sa fiche est une version validée du nouveau style (la retouche
 // comprise, refaisable à l'identique), puis sa bouche ouverte et debout arrivent. Douze propositions par jour au plus.
@@ -73,20 +73,26 @@ ok((await fetch(`${BASE}/univers/figurine`, { redirect: "manual" })).status !== 
 
 // ═══ LE SELFIE ═══
 const e0 = await appeler();
-ok(e0.etape === "selfie" && e0.branche === true && e0.restantes === 12 && Array.isArray(e0.villeADonner?.suggestions), `sans compte sur ce téléphone : le selfie, sa ville à donner, le moteur branché, douze essais (${e0.etape})`);
-ok((await appeler({ action: "selfie", photo: PHOTO, moi: false, age: true })).statut === 400 && (await appeler({ action: "selfie", photo: PHOTO, moi: true, age: false })).statut === 400, "sans « C'est bien moi » ou sans ses 15 ans : rien");
-ok((await appeler({ action: "selfie", photo: "pas une image", moi: true, age: true })).statut === 400, "sans photo : rien");
+ok(e0.etape === "selfie" && e0.branche === true && e0.restantes === 12 && Array.isArray(e0.villeADonner?.suggestions) && e0.prenomADonner === true, `sans compte sur ce téléphone : le selfie, son prénom et sa ville à donner, le moteur branché, douze essais (${e0.etape})`);
+ok((await appeler({ action: "selfie", photo: PHOTO, moi: false, age: true, prenom: "Noa", ville: "Dax" })).statut === 400 && (await appeler({ action: "selfie", photo: PHOTO, moi: true, age: false, prenom: "Noa", ville: "Dax" })).statut === 400, "sans « C'est bien moi » ou sans ses 15 ans : rien");
+ok((await appeler({ action: "selfie", photo: "pas une image", moi: true, age: true, prenom: "Noa", ville: "Dax" })).statut === 400, "sans photo : rien");
+// ✍️ son prénom (le 19 novembre 2026 : « à aucun moment à l'inscription on me demande mon prénom »)
+const sansPrenom = await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "Dax" });
+const prenomVide = await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "Dax", prenom: "1234" });
+const prenomGrossier = await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "Dax", prenom: "connard" });
+ok(sansPrenom.statut === 400 && /prénom/.test(sansPrenom.error ?? "") && prenomVide.statut === 400 && prenomGrossier.statut === 400 && /ne passe pas/.test(prenomGrossier.error ?? "") && !cookies.includes("clikme_habitant="), `sans son prénom, ou un prénom qui ne passe pas : rien (pas de compte ouvert) (${sansPrenom.error} | ${prenomGrossier.error})`);
 // 🏙️ sa ville : n'importe laquelle (le 13 novembre 2026 : « quiconque peut avoir l'application »)
-ok((await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true })).statut === 400 && (await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "4" })).statut === 400 && !cookies.includes("clikme_habitant="), "sans sa ville : rien (pas de compte ouvert)");
-const s1 = await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "Saint-Étienne" });
-ok(s1.statut === 200 && /^[a-z0-9]{12}$/.test(s1.id ?? "") && cookies.includes("clikme_habitant="), "son selfie et sa ville : un compte sur ce téléphone, sa première proposition demandée");
+ok((await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, prenom: "Noa" })).statut === 400 && (await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, prenom: "Noa", ville: "4" })).statut === 400 && !cookies.includes("clikme_habitant="), "sans sa ville : rien (pas de compte ouvert)");
+const s1 = await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, ville: "Saint-Étienne", prenom: "  Noa-Lou ✨ " });
+ok(s1.statut === 200 && /^[a-z0-9]{12}$/.test(s1.id ?? "") && cookies.includes("clikme_habitant="), "son selfie, son prénom et sa ville : un compte sur ce téléphone, sa première proposition demandée");
 const e1 = await attendre((e) => e.etape === "decouverte");
 const p1 = e1.propositions?.[0];
 ok(e1.etape === "decouverte" && p1?.etat === "fait" && /^http/.test(p1.image ?? "") && e1.restantes === 11, `faite après la réponse : la découverte, son image (${e1.etape}, ${p1?.etat}, ${e1.restantes} restantes)`);
 const jeton = /clikme_habitant=([^;]+)/.exec(cookies)[1];
-const sonCompte = (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=id,ville_slug`)).json())[0];
+const sonCompte = (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=id,ville_slug,prenom`)).json())[0];
 const h = sonCompte?.id;
 ok(sonCompte?.ville_slug === "saint-etienne", `sa ville, n'importe laquelle, rangée en clé (${sonCompte?.ville_slug}) : elle le reliera aux commerçants de la même ville`);
+ok(sonCompte?.prenom === "Noa-Lou", `son prénom, nettoyé, rangé sur son compte (${sonCompte?.prenom})`);
 const brouillon = h ? await lire(`${h}/perso/brouillon.json`) : null;
 const sig1 = brouillon?.propositions?.[0]?.signature;
 ok(Boolean(h) && brouillon?.selfie?.startsWith(`${h}/perso/selfie-`) && sig1?.entrees?.[0] === brouillon.selfie && sig1.fond === "transparent" && sig1.consigne.includes("RE-SCULPTED, NEVER COPIED"), "son selfie rangé chez lui ; la proposition signée (la consigne, son selfie en entrée, fond transparent)");
@@ -126,9 +132,10 @@ ok(Object.values(admin.perso?.refaisables ?? {}).length === 3 && Object.values(a
 await ecrire(`${h}/perso/brouillon.json`, { ...(await lire(`${h}/perso/brouillon.json`)), faites: 12 });
 ok((await appeler({ action: "refaire" })).statut === 429, "douze propositions dans la journée : c'est assez");
 await ecrire(`${h}/perso/brouillon.json`, { ...(await lire(`${h}/perso/brouillon.json`)), faites: 3 });
+ok(!(await appeler()).prenomADonner, "son prénom est connu : plus demandé");
 await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true });
 const e5 = await attendre((e) => e.etape === "decouverte");
-ok(e5.etape === "decouverte" && (await lire(`${h}/perso/fiche.json`))?.version === 1, "un nouveau selfie après validation : il en refait une (sa version 1 reste)");
+ok(e5.etape === "decouverte" && (await lire(`${h}/perso/fiche.json`))?.version === 1, "un nouveau selfie après validation (son prénom déjà connu) : il en refait une (sa version 1 reste)");
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nla nouvelle figurine tient ✓");
 process.exit(echecs ? 1 : 0);

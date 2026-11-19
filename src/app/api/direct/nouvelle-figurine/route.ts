@@ -3,9 +3,10 @@
 // gardent leur figurine d'aujourd'hui jusqu'à son feu vert (l'interrupteur `univers-pour-tous.ts`).
 //
 // GET                                         → { etape, propositions, restantes, branche, figurine? }
-// POST { action: "selfie", photo, moi, age, ville? } → { id } : son selfie (« C'est bien moi », « J'ai 15 ans ou plus ») ;
-//                                               sans compte sur ce téléphone, sa ville (n'importe laquelle) ; sa
-//                                               première proposition se fait après la réponse
+// POST { action: "selfie", photo, moi, age, ville?, prenom? } → { id } : son selfie (« C'est bien moi », « J'ai 15 ans
+//                                               ou plus ») ; sans compte sur ce téléphone, sa ville (n'importe
+//                                               laquelle) ; sans prénom connu, son prénom ; sa première proposition
+//                                               se fait après la réponse
 // POST { action: "retoucher", de, demande }   → { id } : une retouche avec ses mots, sur une proposition
 // POST { action: "refaire" }                  → { id } : « Elle ne me ressemble pas » (une nouvelle, d'après le selfie)
 // POST { action: "valider", id }              → { version } : « C'est moi ! » — sa fiche est enregistrée ; ses autres
@@ -15,14 +16,16 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
-import { assurerHabitant, causeHabitant, habitantCourant } from "@/lib/direct/habitant";
+import { assurerHabitant, causeHabitant, habitantCourant, type Habitant } from "@/lib/direct/habitant";
+import { prenomDe } from "@/lib/direct/ma-figurine-serveur";
+import { prenomValide } from "@/lib/direct/ma-figurine";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { poserLePont } from "@/lib/direct/pont-univers-serveur";
 import { villeEcrite } from "@/lib/direct/nouvelle-figurine";
 import { motInterdit } from "@/lib/direct/mots-interdits";
 import { villeSlug } from "@/lib/direct/ville";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
-import { envoyerSelfie, etatNouvelleFigurine, fabriquerProposition, fabriquerSesReferences, refaire, retoucher, valider } from "@/lib/direct/nouvelle-figurine-serveur";
+import { envoyerSelfie, etatNouvelleFigurine, fabriquerProposition, fabriquerSesReferences, refaire, retoucher, selfieRecevable, valider } from "@/lib/direct/nouvelle-figurine-serveur";
 
 export const dynamic = "force-dynamic";
 // (une image à la fois après la réponse, une minute environ ; ses deux autres images après « C'est moi ! »)
@@ -35,8 +38,13 @@ export async function GET() {
   if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
-  return NextResponse.json({ ok: true, ...(await etatNouvelleFigurine(supabase, moi?.id ?? null)) }, { headers: sansCache });
+  const etat = await etatNouvelleFigurine(supabase, moi?.id ?? null);
+  // (✍️ son prénom, demandé avec le selfie s'il n'est pas encore connu — et « Refaire ma figurine » repasse par le selfie)
+  if ((etat.etape === "selfie" || etat.etape === "validee") && !(await prenomConnu(moi))) etat.prenomADonner = true;
+  return NextResponse.json({ ok: true, ...etat }, { headers: sansCache });
 }
+
+const prenomConnu = async (moi: Habitant | null) => Boolean(moi && (await prenomDe(createAdminClient(), moi).catch(() => "")));
 
 export async function POST(request: Request) {
   if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
@@ -49,7 +57,14 @@ export async function POST(request: Request) {
   if (p?.action === "selfie") {
     try {
       // 🏙️ (sans compte sur ce téléphone : sa ville, n'importe laquelle — elle le relie aux commerçants de la même ville)
+      // (ses deux cases et sa photo d'abord : pas de compte ouvert pour rien)
+      const refus = selfieRecevable(p.photo, p.moi, p.age);
+      if (refus) return repondre(refus);
       const deja = await habitantCourant(supabase);
+      // ✍️ son prénom (s'il n'est pas déjà connu) : vérifié avant d'ouvrir son compte
+      const prenom = prenomValide(p.prenom);
+      if (prenom && motInterdit(prenom)) return NextResponse.json({ error: "Ce prénom ne passe pas : écris le tien 🙂" }, { status: 400 });
+      if (!prenom && !(await prenomConnu(deja))) return NextResponse.json({ error: "Dis-nous ton prénom." }, { status: 400 });
       const ville = villeEcrite(p.ville);
       if (!deja && (!ville || motInterdit(ville))) return NextResponse.json({ error: "Dis-nous ta ville." }, { status: 400 });
       const moi = deja ?? (await assurerHabitant(supabase, villeSlug(ville)));
@@ -57,6 +72,11 @@ export async function POST(request: Request) {
         // (l'administrateur voit la cause sur l'écran même ; les autres, le message seul)
         const cause = (await isCurrentUserAdmin().catch(() => false)) ? ` (pour l’administrateur : ${causeHabitant() || "cause inconnue"})` : "";
         return NextResponse.json({ error: `Ton compte n’a pas pu être créé sur ce téléphone. Réessaie dans un instant.${cause}` }, { status: 502 });
+      }
+      // (rangé sur son compte : ses proches le verront partout ; un prénom déjà connu ne change pas)
+      if (prenom && !moi.prenom) {
+        const { error } = await supabase.from("human_habitants").update({ prenom }).eq("id", moi.id);
+        if (error) console.error("[nouvelle-figurine] prénom non rangé :", error.message);
       }
       const r = await envoyerSelfie(supabase, moi, p.photo, p.moi, p.age);
       const id = r.id;
