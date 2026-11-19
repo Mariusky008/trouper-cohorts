@@ -22,17 +22,20 @@ import {
   MAISON_VIDE,
   PHRASES_AJOUT,
   PHRASES_MAISON,
+  PHRASES_VISITE,
+  VISIBILITES_MAISON,
   arriveeChezMoi,
   ditDeLObjet,
   type CatalogueMaison,
   type ContenuMaison,
   type EmplacementMaison,
   type MaMaisonVue,
+  type MaisonVisitee,
   type ObjetMaison,
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
 import { createPortal } from "react-dom";
-import { AjouterChezMoi, EnleverDeChezMoi } from "./ajouter-chez-moi";
+import { AjouterChezMoi, EnleverDeChezMoi, QuiPeutEntrer } from "./ajouter-chez-moi";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 
 const ROUTE = "/api/direct/ma-piece";
@@ -168,11 +171,14 @@ function Piece({
   phrase,
   onReglages,
   onMaison,
+  visite,
 }: {
   maison: MaMaisonVue & { scene: NonNullable<MaMaisonVue["scene"]> };
   phrase?: string;
   onReglages: () => void;
   onMaison: (m: MaMaisonVue) => void;
+  /** 🚪 (lot M4) en visite chez quelqu'un : son prénom ; frapper à sa porte (rien d'autre ne s'y fait) */
+  visite?: { prenom: string; frappe: boolean; onFrapper: () => Promise<string | null> };
 }) {
   const { scene, figurine } = maison;
   const pano = scene.panorama;
@@ -194,6 +200,8 @@ function Piece({
   const interrompre = useRef<() => void>(() => undefined);
   // ＋🗑️ (lot M2, deuxième partie) ajouter chez moi ; l'objet à enlever (un appui long) ; ce qui vient d'être fait
   const [ajout, setAjout] = useState(false);
+  const [qui, setQui] = useState(false);
+  const [frappe, setFrappe] = useState(Boolean(visite?.frappe));
   const [aEnlever, setAEnlever] = useState<ObjetMaison | null>(null);
   const [fait, setFait] = useState("");
   /** (le nouvel objet : la caméra va le voir, il s'éclaire un instant) */
@@ -230,8 +238,10 @@ function Piece({
   // ✨ L'ARRIVÉE (lot M2) : ce qu'il a gardé depuis sa dernière visite — la phrase, puis la caméra passe sur chacun (un
   // toucher l'arrête) ; ensuite le serveur retient la visite (`vu`). Rien de nouveau : la visite est retenue tout de suite.
   const pret = hauteur > 0;
+  const enVisiteChez = Boolean(visite);
   useEffect(() => {
-    if (!pret) return;
+    // (en visite : ni l'arrivée, ni la visite retenue — c'est sa maison à lui)
+    if (!pret || enVisiteChez) return;
     // (la réponse est lue : sans quoi la requête resterait ouverte)
     const dire = () =>
       void fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "vu" }) })
@@ -291,7 +301,7 @@ function Piece({
     };
     // (une fois la scène mesurée)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pret]);
+  }, [pret, enVisiteChez]);
   const zones = zonesDe(scene.emplacements);
   const dit = bulle ? EMPLACEMENTS_MAISON[bulle.cle] : null;
   const moment = MOMENTS_DUO.find((m) => m.cle === scene.moment);
@@ -356,6 +366,7 @@ function Piece({
                 setObjet(o);
               }}
               onAppuiLong={(o) => {
+                if (visite) return;
                 setObjet(null);
                 setAEnlever(o);
               }}
@@ -384,11 +395,31 @@ function Piece({
         </div>
       </div>
       <div className="mmc-haut">
+        {visite && (
+          <a className="mmc-reglages mmc-retour" href="/collection#proches" aria-label={PHRASES_VISITE.retour}>
+            ‹
+          </a>
+        )}
         <span className="mmc-nom">
-          {scene.emoji} {scene.nom}
+          {visite ? `🏠 ${PHRASES_VISITE.chez(visite.prenom)}` : `${scene.emoji} ${scene.nom}`}
           {moment && <small> · {moment.emoji}</small>}
         </span>
+        {!visite && (
         <span className="mmc-boutons">
+          <button
+            type="button"
+            className="mmc-reglages"
+            onClick={() => {
+              setIndice(false);
+              setObjet(null);
+              setBulle(null);
+              setQui(true);
+            }}
+            aria-label={PHRASES_VISITE.quiTitre}
+            data-geste="qui"
+          >
+            {VISIBILITES_MAISON.find((x) => x.v === (maison.visibilite ?? "proches"))?.titre.split(" ")[0] ?? "🚪"}
+          </button>
           <button
             type="button"
             className="mmc-reglages mmc-ajouter"
@@ -407,6 +438,7 @@ function Piece({
             ⚙️
           </button>
         </span>
+        )}
       </div>
       {arrivee && (
         <p className="mmc-arrivee" role="status" data-arrivee>
@@ -435,7 +467,7 @@ function Piece({
           <b>
             {objet.emoji} {objet.titre}
           </b>
-          <span>{ditDeLObjet(objet)}</span>
+          <span>{ditDeLObjet(objet, visite?.prenom)}</span>
           {(lienSur(objet.lien) || (objet.sorte === "photo" && objet.image)) && (
             <span className="mmc-actions">
               {lienSur(objet.lien) && (
@@ -464,6 +496,37 @@ function Piece({
           </button>
         </div>
       )}
+      {visite && !frappe && !objet && !bulle && (
+        <button
+          type="button"
+          className="mmc-frapper"
+          data-geste="frapper"
+          onClick={async () => {
+            const e = await visite.onFrapper();
+            if (e) {
+              setFait(e);
+              return;
+            }
+            setFrappe(true);
+            setFait(PHRASES_VISITE.frappe(visite.prenom));
+            window.setTimeout(() => setFait(""), 2600);
+          }}
+        >
+          {PHRASES_VISITE.frapper}
+        </button>
+      )}
+      {qui &&
+        createPortal(
+          <QuiPeutEntrer
+            maison={maison}
+            onFermer={() => setQui(false)}
+            onChoisi={(m) => {
+              setQui(false);
+              onMaison(m);
+            }}
+          />,
+          document.body,
+        )}
       {fait && (
         <p className="mmc-fait" role="status" data-fait>
           {fait}
@@ -503,7 +566,7 @@ function Piece({
         <div className="mmc-grand" role="dialog" aria-modal="true" aria-label={grand.titre} data-photo-grand onClick={() => setGrand(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={grand.image.src} alt={grand.titre} />
-          <p>{ditDeLObjet(grand)}</p>
+          <p>{ditDeLObjet(grand, visite?.prenom)}</p>
           <button type="button" aria-label="Fermer">
             ✕
           </button>
@@ -652,6 +715,54 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
   );
 }
 
+/**
+ * 🚪 (lot M4) LA MAISON DE QUELQU'UN, EN VISITE (`/univers/chez/<clé>`) : sa pièce en plein écran, sa figurine au centre,
+ * ce qu'il montre (tout pour ses proches ; pour les autres, ce qu'il a ajouté lui-même) ; « 🚪 Frapper à la porte ».
+ */
+export function VisiteDeLaMaison({ cle }: { cle: string }) {
+  const [v, setV] = useState<MaisonVisitee | null>(null);
+  useEffect(() => {
+    let fini = false;
+    void fetch(`${ROUTE}?chez=${encodeURIComponent(cle)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { visite?: MaisonVisitee }) => !fini && setV(j.visite ?? { etat: "absent" }))
+      .catch(() => !fini && setV({ etat: "absent" }));
+    return () => {
+      fini = true;
+    };
+  }, [cle]);
+  const frapper = async (): Promise<string | null> => {
+    try {
+      const r = await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "frapper", cle }) });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      return r.ok ? null : j.error || "Ça n’a pas marché : réessaie.";
+    } catch {
+      return "Pas de réseau : réessaie dans un instant.";
+    }
+  };
+  return (
+    <main className="mmc plein mmc-visite" data-visite={v?.etat ?? "charge"}>
+      {!v ? (
+        <div className="mmc-scene attente" aria-hidden="true" />
+      ) : v.etat === "ouvert" && v.maison.scene ? (
+        <Piece
+          maison={{ ...v.maison, scene: v.maison.scene }}
+          onReglages={() => undefined}
+          onMaison={() => undefined}
+          visite={v.chezSoi ? { prenom: v.prenom, frappe: true, onFrapper: frapper } : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper }}
+        />
+      ) : (
+        <div className="mmc-ferme">
+          <p>{v.etat === "reserve" ? PHRASES_VISITE.reserve(v.prenom ?? "Cette personne") : v.etat === "ferme" ? PHRASES_VISITE.ferme(v.prenom ?? "Cette personne") : PHRASES_VISITE.absent}</p>
+          <a href="/collection#proches">{PHRASES_VISITE.retour}</a>
+        </div>
+      )}
+      {v?.etat === "ouvert" && v.chezSoi && <p className="mmc-chez-soi">{PHRASES_VISITE.chezToi}</p>}
+      <style>{STYLES_MAISON_CATALOGUE}</style>
+    </main>
+  );
+}
+
 const STYLES_MAISON_CATALOGUE = `
 .mmc{position:relative;display:flex;flex-direction:column;gap:10px;color:#FFF4E6}
 .mmc-scene{position:relative;height:min(68svh,620px);border-radius:22px;overflow:hidden;background:#1a0f14;box-shadow:0 18px 40px -20px rgba(0,0,0,.8)}
@@ -682,6 +793,13 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-nom{padding:7px 13px;border-radius:999px;background:rgba(20,10,14,.62);font-weight:900;font-size:14.5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc-nom small{font-weight:700;opacity:.85}
 .mmc-boutons{display:flex;gap:8px}
+.mmc-retour{display:grid;place-items:center;text-decoration:none;color:#FFF4E6;font-size:24px;line-height:1;margin-right:auto}
+.mmc-haut .mmc-retour + .mmc-nom{margin-right:auto;margin-left:8px}
+.mmc-visite{min-height:100svh;background:#1a0f14}
+.mmc-ferme{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;font-size:16px;line-height:1.5}
+.mmc-ferme a{color:#f2be6a;font-weight:800;text-decoration:none}
+.mmc-chez-soi{position:fixed;left:50%;top:calc(62px + env(safe-area-inset-top));transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(20,10,14,.72);font-size:13.5px;white-space:nowrap}
+.mmc-frapper{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);white-space:nowrap;padding:13px 22px;border:0;border-radius:999px;background:#ff2f8f;color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(255,47,143,.8)}
 .mmc-ajouter{font-weight:900;color:#FFF4E6}
 .mmc-fait{position:absolute;left:50%;top:62px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(69,212,131,.92);color:#10261a;font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .3s ease-out}
 .mmc.plein .mmc-fait{top:calc(62px + env(safe-area-inset-top))}

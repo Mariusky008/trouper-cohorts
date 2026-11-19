@@ -1086,6 +1086,8 @@ export async function objetsDeMaMaison(supabase: Supabase, h: string): Promise<O
       ...(lien ? { lien } : {}),
       ...(o.avec ? { avec: o.avec } : {}),
       le: o.le,
+      // (🚪 lot M4 : ajouté à la main — ses visiteurs non proches le voient aussi)
+      ...(brut && /^(maison|depot)-/.test(brut.message) ? { aMoi: true as const } : {}),
     };
   };
   const deLeurs = await Promise.all(

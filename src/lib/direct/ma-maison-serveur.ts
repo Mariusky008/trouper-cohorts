@@ -20,6 +20,8 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFichePerso } from "./fiches-serveur";
 import { depotDans, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { objetsDeMaMaison } from "./etagere-serveur";
+import { poserProfil } from "./talkie-serveur";
+import { VISIBILITES, type Visibilite } from "./monde";
 import {
   CENTRE_PAR_DEFAUT,
   LARGEURS_FIGURINE,
@@ -126,6 +128,19 @@ export async function figurineDeLaMaison(supabase: Supabase, h: string): Promise
   return imageSalon(supabase, `${dossierMaison(h)}/figurine.png`, LARGEURS_FIGURINE);
 }
 
+/** 🚪 (lot M4) qui peut entrer chez lui (`<habitant>/ma-piece/visibilite.json`) : ses proches, d'office. */
+export const cheminVisibiliteMaison = (h: string) => `${dossierMaison(h)}/visibilite.json`;
+export async function visibiliteDeLaMaison(supabase: Supabase, h: string): Promise<Visibilite> {
+  const v = (await lireJson<{ v?: string }>(supabase, cheminVisibiliteMaison(h)).catch(() => ({}) as { v?: string })).v;
+  return (VISIBILITES as readonly string[]).includes(s(v)) ? (v as Visibilite) : "proches";
+}
+/** Il a déclaré 18 ans ou plus (`<habitant>/adulte.json`, le lot 6 des visites). */
+const aDitSesDixHuitAns = async (supabase: Supabase, h: string) => Boolean(s((await lireJson<{ le?: string }>(supabase, `${h}/adulte.json`).catch(() => ({}) as { le?: string })).le));
+/** 🏡 (lot M4) la vignette de sa pièce, pour « Les univers à visiter ». */
+export async function vignetteDeLaPiece(supabase: Supabase, p: PieceDuo): Promise<string> {
+  return (await imageSalon(supabase, `${dossierLarge(p)}/${fichierLarge("panorama")}`, LARGEURS_VIGNETTE).catch(() => null))?.src ?? "";
+}
+
 /** ✨ (lot M2) sa dernière visite chez lui (`<habitant>/ma-piece/vu.json`) : ce qui a été gardé depuis s'annonce à l'arrivée. */
 const cheminVu = (h: string) => `${dossierMaison(h)}/vu.json`;
 
@@ -135,14 +150,17 @@ const cheminVu = (h: string) => `${dossierMaison(h)}/vu.json`;
  */
 export async function maMaison(supabase: Supabase, h: string, maintenant = new Date()): Promise<MaMaisonVue> {
   const piece = await lireSaPiece(supabase, h);
-  const [scene, figurine, objets, vu] = await Promise.all([
+  const [scene, figurine, objets, vu, visibilite, adulte, cle] = await Promise.all([
     piece ? sceneDeLaMaison(supabase, piece, maintenant).catch(() => null) : Promise.resolve(null),
     figurineDeLaMaison(supabase, h).catch(() => null),
     piece ? objetsDeMaMaison(supabase, h).catch(() => []) : Promise.resolve([]),
     lireJson<{ le?: number }>(supabase, cheminVu(h)).catch(() => ({}) as { le?: number }),
+    visibiliteDeLaMaison(supabase, h),
+    aDitSesDixHuitAns(supabase, h),
+    poserProfil(supabase, h).catch(() => ""),
   ]);
   if (!scene) return { piece, scene, figurine };
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe: Number(vu.le) || 0 };
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe: Number(vu.le) || 0, visibilite, adulte, ...(cle ? { cle } : {}) };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */

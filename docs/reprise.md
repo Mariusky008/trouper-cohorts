@@ -17,7 +17,9 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
 2. **puis « Ma maison »** (`ma-maison.md` : M2, M4, M5) — **M2, première partie, faite** (section 15 : la pièce montre
    ce qu'on a gardé — les photos aux cadres, la chanson sur la platine, la vidéo à la télé, le reste sur l'étagère — et
    « ✨ 2 choses gardées avec Sam » à l'arrivée) ; **M2, deuxième partie, faite** (section 16 : « ＋ Ajouter chez moi » —
-   une photo, un film, une chanson, un livre… — et l'appui long « L'enlever de chez moi ») ; ensuite M4, M5 ;
+   une photo, un film, une chanson, un livre… — et l'appui long « L'enlever de chez moi »), **M4 fait** (section 17 : 🚪 qui
+   peut entrer, la maison en visite — tout pour les proches, ce qu'on a ajouté soi-même pour les autres —, frapper,
+   « Les univers à visiter ») ; ensuite M5 ; **le propriétaire testera tout après M5** (le salon et la maison) ;
 3. **puis « Découvrir »** (`decouvrir.md`, re-imaginée le 17 novembre ; ses décisions reportées le 18 : plus rien
    n'attend le propriétaire avant la maquette et D0).
 

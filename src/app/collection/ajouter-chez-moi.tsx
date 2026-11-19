@@ -9,9 +9,24 @@
  *   mot, facultatif. « Mettre chez moi » : la maison revient avec lui à sa place.
  * - `EnleverDeChezMoi` (un appui long sur un objet) : ce qu'on a ajouté disparaît ; ce qu'on a gardé dans une
  *   conversation reste sur l'étagère partagée.
+ * - `QuiPeutEntrer` (🚪, le lot M4) : ses proches (d'office), tout le monde (18 ans ou plus), lui seul ; et sa maison vue
+ *   comme ses visiteurs la voient.
  */
 import { useRef, useState } from "react";
-import { AJOUTS_MAISON, AJOUT_MOT_MAX, AJOUT_PHOTO, AJOUT_TITRE_MAX, OU_VA, PHRASES_AJOUT, type MaMaisonVue, type ObjetMaison, type QuoiAjout } from "@/lib/direct/ma-maison";
+import {
+  AJOUTS_MAISON,
+  AJOUT_MOT_MAX,
+  AJOUT_PHOTO,
+  AJOUT_TITRE_MAX,
+  OU_VA,
+  PHRASES_AJOUT,
+  PHRASES_VISITE,
+  VISIBILITES_MAISON,
+  type MaMaisonVue,
+  type ObjetMaison,
+  type QuoiAjout,
+} from "@/lib/direct/ma-maison";
+import type { Visibilite } from "@/lib/direct/monde";
 
 const ROUTE = "/api/direct/ma-piece";
 type Reponse = { ok?: boolean; id?: string; maison?: MaMaisonVue; error?: string };
@@ -191,6 +206,81 @@ export function EnleverDeChezMoi({ objet, onFermer, onEnleve }: { objet: ObjetMa
   );
 }
 
+export function QuiPeutEntrer({ maison, onFermer, onChoisi }: { maison: MaMaisonVue; onFermer: () => void; onChoisi: (m: MaMaisonVue) => void }) {
+  const [choix, setChoix] = useState<Visibilite>(maison.visibilite ?? "proches");
+  const [adulte, setAdulte] = useState(false);
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const dejaAdulte = maison.adulte === true;
+  async function garder() {
+    if (choix === "tous" && !dejaAdulte && !adulte) return setErreur(PHRASES_VISITE.adulteDit);
+    setEnCours(true);
+    setErreur("");
+    const r = await envoyer({ action: "visibilite", v: choix, ...(choix === "tous" && !dejaAdulte ? { adulte: true } : {}) });
+    setEnCours(false);
+    if (!r.maison) return setErreur(r.error || "Ça n’a pas marché : réessaie.");
+    onChoisi(r.maison);
+  }
+  return (
+    <div className="acm" role="dialog" aria-modal="true" aria-label={PHRASES_VISITE.quiTitre} data-qui-entre onClick={onFermer}>
+      <div className="acm-feuille" onClick={(e) => e.stopPropagation()}>
+        <div className="acm-tete">
+          <b>🚪 {PHRASES_VISITE.quiTitre}</b>
+          <button type="button" className="acm-fermer" aria-label="Fermer" onClick={onFermer}>
+            ✕
+          </button>
+        </div>
+        <div className="acm-qui">
+          {VISIBILITES_MAISON.map((x) => (
+            <button
+              key={x.v}
+              type="button"
+              className={choix === x.v ? "choisi" : ""}
+              aria-pressed={choix === x.v}
+              data-visibilite={x.v}
+              onClick={() => {
+                setChoix(x.v);
+                setErreur("");
+              }}
+            >
+              <b>{x.titre}</b>
+              <span>{x.dit}</span>
+            </button>
+          ))}
+        </div>
+        {choix === "tous" && !dejaAdulte && (
+          <label className="acm-adulte">
+            <input
+              type="checkbox"
+              checked={adulte}
+              onChange={(e) => {
+                setAdulte(e.target.checked);
+                setErreur("");
+              }}
+              data-adulte
+            />
+            {PHRASES_VISITE.adulte}
+          </label>
+        )}
+        {erreur && (
+          <p className="acm-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+        <button type="button" className="acm-principal" data-garder disabled={enCours} onClick={() => void garder()}>
+          {enCours ? "…" : "C’est bon"}
+        </button>
+        {maison.cle && (
+          <a className="acm-secondaire acm-lien" href={`/univers/chez/${maison.cle}?piece=1`} data-comme-eux>
+            {PHRASES_VISITE.commeEux}
+          </a>
+        )}
+      </div>
+      <style>{STYLES_AJOUTER}</style>
+    </div>
+  );
+}
+
 const STYLES_AJOUTER = `
 .acm{position:fixed;inset:0;z-index:35;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,5,8,.55);animation:acm-voile .2s ease-out}
 .acm-feuille{width:100%;max-width:520px;max-height:88svh;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding:16px 16px calc(18px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;background:#2c1129;color:#FFF4E6;font-family:-apple-system,"SF Pro Rounded",system-ui,"Segoe UI",Roboto,sans-serif;animation:acm-monte .25s ease-out}
@@ -213,6 +303,14 @@ const STYLES_AJOUTER = `
 .acm-principal:disabled{opacity:.6}
 .acm-secondaire{padding:11px;border:1px solid #5a3352;border-radius:999px;background:none;color:#FFF4E6;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
 .acm-erreur{margin:0;color:#ffb4a8;font-size:14px}
+.acm-qui{display:flex;flex-direction:column;gap:8px}
+.acm-qui button{display:flex;flex-direction:column;gap:3px;text-align:left;padding:12px 14px;border:1px solid #5a3352;border-radius:14px;background:rgba(255,255,255,.04);color:#FFF4E6;font:inherit;cursor:pointer}
+.acm-qui button.choisi{border-color:#f2be6a;background:rgba(242,190,106,.12)}
+.acm-qui b{font-size:15.5px}
+.acm-qui span{font-size:13.5px;color:#F3DCE6;line-height:1.4}
+.acm-adulte{display:flex;align-items:center;gap:10px;font-size:15px}
+.acm-adulte input{width:20px;height:20px}
+.acm-lien{text-align:center;text-decoration:none;display:block}
 @keyframes acm-voile{from{opacity:0}}
 @keyframes acm-monte{from{transform:translateY(24px);opacity:0}}
 @media (prefers-reduced-motion:reduce){.acm,.acm-feuille{animation:none}}

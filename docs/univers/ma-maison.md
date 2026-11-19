@@ -284,7 +284,7 @@ une animation.
 | **M1 — La maison** ✅ | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce — fait (section 13), derrière l'interrupteur | univers | M0, S1 |
 | **M2 — La maison qui se remplit** ✅ (sections 15 et 16) | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
 | **M3 — L'inscription** ✅ | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers — fait (section 14), derrière l'interrupteur | messages et bienvenue | M0 |
-| **M4 — Découvrir** | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
+| **M4 — Découvrir** ✅ (section 17) | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
 | **M5 — Les visites, la suite** | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
 
 Tout derrière un interrupteur (`MA_MAISON_CATALOGUE`, éteint) jusqu'à ce que le propriétaire l'ait jouée sur son
@@ -454,3 +454,33 @@ neuf choix ; sans photo, refusé ; une photo choisie, en aperçu, « dans un cad
 chanson sans nom ni lien refusée, puis avec son lien « sur la platine » ; un livre et son mot ; l'appui long sur le mot
 gardé avec Sam — enlevé de chez elle, toujours sur leur étagère ; sur le livre — parti de son étagère aussi ; la route
 refuse un choix inconnu, ne trouve pas un objet inconnu).
+
+---
+
+## 17. Le lot M4 : la maison en visite (19 novembre 2026)
+
+La section 8 (« Découvrir » : rien sans un geste). Derrière l'interrupteur `MA_MAISON_CATALOGUE` : allumé, la page de
+visite (`/univers/chez/<clé>`) montre la pièce du catalogue de celui qui en a une ; d'ici là, elle la montre à qui n'a
+pas d'univers fabriqué, ou quand on la demande (`?piece=1`, l'essai).
+
+- **🚪 Qui peut entrer** (en haut de sa pièce, à côté de ＋ et ⚙️ ; son emoji dit le choix) : **👯 Mes proches**
+  (d'office — ils voient tout ce qu'il a gardé), **🌍 Tout le monde** (« J'ai 18 ans ou plus » à cocher, une fois ; la
+  maison entre dans « 🏡 Les univers à visiter », avec la vignette de sa pièce), **🔒 Moi seul** (personne n'entre ; elle
+  quitte « Les univers à visiter »). « 👀 Voir ma maison comme mes visiteurs ». `<habitant>/ma-piece/visibilite.json` ;
+  `POST /api/direct/ma-piece { action: "visibilite", v, adulte? }` (`choisirVisibiliteMaison`, `visites-serveur.ts`).
+- **La maison en visite** (`maisonVisitee`, `GET /api/direct/ma-piece?chez=<clé>`, l'écran `VisiteDeLaMaison`) : sa
+  pièce en plein écran, « 🏠 Chez Léa », sa figurine au centre, ses objets à leur place. **Ses proches voient tout** ;
+  **les autres seulement ce qu'il a ajouté lui-même** (« ＋ Ajouter chez moi », un dépôt sur son étagère) — jamais ce qui
+  vient d'une conversation (les photos rangées, les mots gardés, les mèmes du duo) : un cadre garde alors son tableau.
+  Un objet touché : « Mis par Léa · … » ou « Gardé avec Sam ». Ni ＋, ni ⚙️, ni 🚪, ni l'appui long, ni l'arrivée chez
+  quelqu'un d'autre. Fermée : « La maison de Léa est ouverte à ses proches seulement. » / « Léa garde sa maison pour soi,
+  pour l'instant. »
+- **🚪 Frapper à la porte** : comme pour les univers (une visite notée par jour, Léa prévenue une fois par jour,
+  « ✓ Léa saura que tu as frappé ») — les visites (`chezQui`, `universOuvert`, `universPublics`) savent désormais entrer
+  dans une pièce du catalogue (`maisonOuUnivers`).
+
+**L'essai** : `scripts/navigateur/ma-maison-visite.mjs` (28 contrôles : Sam voit tout, Zoé trouve la maison réservée ; 🚪
+« 👯 » d'office, trois choix, « Tout le monde » refusé sans « 18 ans ou plus », puis 🌍 et « Les univers à visiter » ;
+Zoé : le livre seul, cadres vides, « Chez Léa », ni ＋ ni ⚙️, « Mis par Léa », la figurine de Léa, frapper et la visite
+notée ; Sam : les trois ; « 🔒 Moi seul » : fermée même pour Sam, sortie de « Découvrir », frapper refusé). Toujours
+verts : `ma-maison-remplie.mjs`, `ma-maison-catalogue.mjs`, `visite-univers.mjs`, `essai-visites-route.mjs`.
