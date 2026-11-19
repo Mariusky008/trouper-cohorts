@@ -30,9 +30,10 @@ les réactions de la télé ; les PDF, 11.17, décidés par le propriétaire : s
 joués dans le salon, 11.19 : l'onglet 🎭, le projecteur, la bulle de BD, « ✍️ Le mien », en direct et à l'arrivée,
 « ▶ Revoir », 😂 ❤️ 🔥), **S5, deuxième partie, faite** (11.20 : 🎙️ Ma voix, « Je le range ? » et « Nos fous rires »,
 la vidéo 📤 pour WhatsApp dans le décor du salon), **S7 fait** (11.21 : la nuit éclairée par les lampes et la télé, le ciel
-étoilé, la météo dans les carreaux — Open-Meteo par ville, une fois par heure —, la puce « Pluie fine · 9° »), **ensuite
-S8, la bascule** (essais sur vrais téléphones, l'avis du propriétaire, `SALON_DU_DUO` allumé, `proches.tsx` retiré, la
-notification de ce qui attend).
+étoilé, la météo dans les carreaux — Open-Meteo par ville, une fois par heure —, la puce « Pluie fine · 9° »), **S8, la
+notification de ce qui attend, faite** (11.22 : « 😘 Léa t'a laissé un bisou, un mème, 2 messages et un vocal » ; un
+geste du salon prévient aussi), **ensuite le reste de S8, la bascule** (essais sur vrais téléphones, l'avis du
+propriétaire, `SALON_DU_DUO` allumé, `proches.tsx` retiré).
 
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 

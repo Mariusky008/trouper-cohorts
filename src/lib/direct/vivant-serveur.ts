@@ -23,6 +23,7 @@ import { iaBranchee, motPasse, parlePourLui, styleDe } from "./rituel-serveur";
 import { motPropre } from "./rituel";
 import { texteLuDuMessage } from "./talkie";
 import { prevenirDUneParole } from "./appli-collection-serveur";
+import { notifDuGeste } from "./ce-qui-attend";
 import { hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { etagereDansLaScene } from "./etagere-serveur";
 import { APARTE, APARTE_MAX, ENREGISTRE_MS, GESTES_PAR_JOUR, gesteDuSalon, gesteValide, objetDuGeste, panneauDe, reactionDe, type AparteVue, type GesteFil, type ObjetGeste, type Vivant } from "./vivant";
@@ -30,12 +31,12 @@ import { PLACES_TABLE, type ObjetTable } from "./salon";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
-const cheminGestes = (pair: string) => `fils/${pair}/gestes.json`;
+export const cheminGestes = (pair: string) => `fils/${pair}/gestes.json`;
 /** 🌷 (lot S3) ce qui est posé sur leur table (les quatre derniers objets : une tulipe, un café, une surprise…) */
 const cheminTable = (pair: string) => `fils/${pair}/table.json`;
 export const cheminPrepare = (pair: string) => `fils/${pair}/prepare.json`;
 const cheminGestesJour = (h: string) => `${h}/gestes-jour.json`;
-const cheminGestesVus = (h: string) => `${h}/gestes-vus.json`;
+export const cheminGestesVus = (h: string) => `${h}/gestes-vus.json`;
 /** (sans trace : les gestes de l'autre des dernières 24 h sont nouveaux) */
 const VUS_PAR_DEFAUT_MS = 86_400_000;
 const cheminApartes = (pair: string) => `fils/${pair}/apartes.json`;
@@ -249,7 +250,7 @@ export async function direQuIlPrepare(supabase: Supabase, moi: Habitant, cle: un
   return { ok: true };
 }
 
-type APrevenir = { pour: string; prenom: string; url: string; cle: string; panneau: string };
+type APrevenir = { pour: string; prenom: string; url: string; cle: string; panneau?: string; geste?: string };
 /**
  * 🪧👏 UN GESTE : un panneau (sa figurine le brandit, chez les deux), ou une réaction sur un message (une seule par
  * personne et par message : la nouvelle remplace l'ancienne). Le panneau prévient l'autre (« 🪧 Léa : « J'arrive ! » »).
@@ -301,12 +302,17 @@ export async function poserGeste(
     await ecrireJson(supabase, cheminTable(q.pair), { objets: [...avantT, { id: g.id, e: objet.e, nom: objet.nom, de8: moi8, le: g.le }].slice(-PLACES_TABLE) });
   }
   const geste = gesteValide({ ...g, moi: true })!;
-  if (!panneau) return { geste };
+  // (🔔 un panneau prévient l'autre ; 😘 lot S8 : un geste du salon aussi — les réactions, non)
+  if (!panneau && !salon) return { geste };
   const [{ ligne }, maCle] = await Promise.all([lireLigne(supabase, moi.id), poserProfil(supabase, moi.id)]);
-  return { geste, aPrevenir: { pour: q.h, prenom: s(ligne?.prenom), url: `/collection?parler=${maCle}#proches`, cle: maCle, panneau: panneau.texte } };
+  return { geste, aPrevenir: { pour: q.h, prenom: s(ligne?.prenom), url: `/collection?parler=${maCle}#proches`, cle: maCle, ...(panneau ? { panneau: panneau.texte } : { geste: salon! }) } };
 }
 
-/** 🔔 « 🪧 Léa : « J'arrive ! » » (après le geste, jamais bloquant ; les mêmes règles qu'une parole). */
+/**
+ * 🔔 « 🪧 Léa : « J'arrive ! » », « 😘 Léa t'a laissé un bisou » (après le geste, jamais bloquant ; les mêmes règles
+ * qu'une parole ; plusieurs choses attendent : la phrase qui dit tout, `ce-qui-attend.ts`).
+ */
 export async function prevenirDuPanneau(supabase: Supabase, moi: Habitant, a: APrevenir): Promise<void> {
-  await prevenirDUneParole(supabase, a.pour, moi.id, a.prenom, { url: a.url, cle: a.cle, panneau: a.panneau }).catch(() => undefined);
+  const ecrit = a.geste ? notifDuGeste(a.prenom, a.geste) : null;
+  await prevenirDUneParole(supabase, a.pour, moi.id, a.prenom, { url: a.url, cle: a.cle, ...(a.panneau ? { panneau: a.panneau } : {}), ...(ecrit ? { ecrit } : {}) }).catch(() => undefined);
 }

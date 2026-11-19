@@ -1267,6 +1267,28 @@ heure par ville, une autre ville a son temps ; la puce et son toucher ; la pluie
 qui se dessine ; la nuit — le halo de la lampe, la lueur de la télé, les coins, le ciel de nuit ; le soleil — trois
 rayons, la flaque, la poussière ; l'orage et son éclair ; la neige).
 
+### 11.22 🔔 Ce qui attend (lot S8, première partie — 19 novembre 2026)
+
+La section 4.1 : « la notification dit tout ce qui attend ». `src/lib/direct/ce-qui-attend.ts` (les règles) et
+`ce-qui-attend-serveur.ts` (le compte).
+
+- **Le compte** : ce que l'autre m'a laissé **depuis ma dernière visite** — ses messages depuis la dernière fois que j'ai
+  lu notre fil (`<habitant>/fils-lus.json`, les trente derniers au plus : écrits, mèmes, photos, vidéos, PDF, vocaux), ses
+  gestes du salon et ses panneaux depuis les derniers que j'ai vus (`<habitant>/gestes-vus.json`).
+- **La phrase** : une seule chose attend, sa notification d'avant (« ✍️ Léa t'a écrit », « 🎭 Léa t'a envoyé un mème »…) ;
+  **deux ou plus : « 😘 Léa t'a laissé un bisou, un mème, 2 messages et un vocal »**, et dessous « Dans votre salon »
+  (avec ce que dit la dernière chose, s'il y a lieu). Les gestes d'abord (dans l'ordre, « 3 bisous » s'il revient, un
+  panneau entre guillemets), puis les mèmes, les messages, les photos, les vidéos, les PDF, les vocaux ; l'emoji : celui
+  du premier geste, sinon de ce qui attend. Elle **remplace la précédente** (le même `tag` : une seule notification par
+  proche dans le tiroir du téléphone).
+- **Un geste du salon prévient aussi** (« 😘 Léa t'a laissé un bisou », « Dans votre salon ») — seul ou dans la phrase ;
+  les réactions sur un message, non. Les mêmes règles qu’une parole (`prevenirDUneParole` : jamais à soi-même, trente
+  par jour au plus).
+
+**L'essai** : `scripts/essai-meme-salon-route.mjs`, « 🔔 CE QUI ATTEND » (le bisou seul d'abord ; puis un mème, deux
+messages, un vocal : la phrase qui dit tout ; tout lu, un seul message : sa notification à part entière ; un bisou
+ensuite : « un bisou et un message », « Dans votre salon » une seule fois).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

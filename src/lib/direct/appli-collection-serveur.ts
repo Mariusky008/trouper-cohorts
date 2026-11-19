@@ -272,7 +272,14 @@ export async function prevenirDUneParole(
   // ✍️ (lot M1) un message écrit : « ✍️ Léa t'a écrit », « 🔗 Léa t'a envoyé un lien » (`notifEcrit`, `ecrit.ts`) ;
   // 📷 (lot M2) une photo : « 📷 Léa t'a envoyé une photo » (`notifPhoto`, `photo.ts`) ; 🎬 (lot M3) une vidéo :
   // « 🎬 Léa t'a envoyé une vidéo » (`notifVideo`, `video.ts`)
-  const notif = o.ecrit ? { titre: o.ecrit.titre, corps: o.ecrit.corps, url: o.url, tag: `parole-${o.cle}` } : notifParole(prenom, o.url, o.cle, o.facon, o.panneau);
+  // 🔔 (lot S8, « ce qui attend ») deux choses ou plus l'attendent de ce proche : la phrase qui dit tout (« 😘 Léa t'a
+  // laissé un bisou, un mème, 2 messages et un vocal ») — elle remplace la précédente (le même `tag`)
+  const resume = await import("./ce-qui-attend-serveur").then((m) => m.resumeQuiAttend(supabase, pour, deQui, prenom, o.ecrit?.corps)).catch(() => null);
+  const notif = resume
+    ? { titre: resume.titre, corps: resume.corps, url: o.url, tag: `parole-${o.cle}` }
+    : o.ecrit
+      ? { titre: o.ecrit.titre, corps: o.ecrit.corps, url: o.url, tag: `parole-${o.cle}` }
+      : notifParole(prenom, o.url, o.cle, o.facon, o.panneau);
   const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
   const morts = abs.filter((_, i) => issues[i] === "mort");
   if (morts.length) {

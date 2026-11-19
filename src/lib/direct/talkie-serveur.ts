@@ -115,7 +115,7 @@ const lireNom = (n: string) => {
   return m ? { nom: n, ts: Number(m[1]), de8: m[2], id: m[3] } : null;
 };
 export const cheminSon = (pair: string, id: string, ext: string) => `fils/${pair}/s/${id}.${ext}`;
-const cheminLus = (h: string) => `${h}/fils-lus.json`;
+export const cheminLus = (h: string) => `${h}/fils-lus.json`;
 export const cheminLa = (h: string) => `${h}/la.json`;
 export const cheminReglages = (h: string) => `${h}/reglages.json`;
 /** ☀️ Son humeur du jour (`rituel-serveur.ts`) : { jour, visage, le, ecrites }. */
