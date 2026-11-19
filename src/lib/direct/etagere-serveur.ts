@@ -48,6 +48,7 @@ import { SEAU_FIGURINES, deposer, ecrireJson, lireJson, lireLigne, prochesDe, si
 import { EMOJI_IMAGE, PHRASES_RANGER, RANGER_UNIVERS, titreRange } from "./ranger-univers";
 import { iaBranchee, motPasse, parlePourLui } from "./rituel-serveur";
 import { texteLuDuMessage } from "./talkie";
+import { DUO_MS, titreDuDuo } from "./meme-salon";
 import { cheminReglages, dossierMessages, figurineVue, hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import {
   CATALOGUE,
@@ -144,7 +145,7 @@ type FicheEtagere = {
   /** 📌 (lot E5) le jour où chacun a vu sa question jouée dans la scène. */
   jouees?: Record<string, string>;
 };
-type FicheMessage = { id?: string; de?: string; le?: string; duree?: number; repliques?: unknown; genre?: string; texte?: string; lien?: { titre?: string } };
+type FicheMessage = { id?: string; de?: string; le?: string; duree?: number; repliques?: unknown; genre?: string; texte?: string; lien?: { titre?: string }; meme?: { tete?: string; danse?: boolean } };
 
 // ─── lot E5 : le réglage « Ma figurine range sans me demander » (éteint d'office) ────────────────────
 /** Il laisse sa figurine ranger sans lui demander. */
@@ -586,6 +587,66 @@ export async function garderMessage(supabase: Supabase, moi: Habitant, cle: unkn
     if (vieux) objets = objets.map((x) => (x.id === vieux.id ? { ...x, etat: "passe" as const } : x));
   }
   // (je l'ai vu se poser chez moi : l'envol ne se rejoue pas pour moi)
+  const vus = { ...(g.vus ?? {}), [moi8]: [...(g.vus?.[moi8] ?? []), o.id].slice(-ETAGERE.vusGardes) };
+  if (!(await ecrireEtagere(supabase, pair, { ...g, objets, vus }))) return { error: "Pas rangé : réessaie.", statut: 502 };
+  return { souvenir: vueDe(o, c) };
+}
+
+/**
+ * 🎬 « JE LE RANGE ? » (le salon du duo, lot S5 ; `docs/univers/salon-du-duo.md`, 4.7) : un duo de mèmes — deux mèmes de
+ * leur fil, l'un de chacun, à moins de 30 minutes l'un de l'autre — devient une claquette 🎬 du rayon « Nos fous rires »
+ * (une blague, pour les deux), avec les deux mèmes à rejouer (« ▶ Le revoir »). Rangé une fois (`deja`) ; le premier
+ * des deux qui dit oui range pour les deux.
+ */
+export async function rangerDuo(supabase: Supabase, moi: Habitant, cle: unknown, ids: unknown): Promise<Resultat<{ souvenir?: ObjetVu; deja?: true }>> {
+  if (!etagereAllumee()) return { error: "L’étagère se repose pour l’instant.", statut: 409 };
+  const liste = Array.isArray(ids) ? ids.map(s).filter((x) => /^[a-z0-9]{6,40}$/.test(x)) : [];
+  if (liste.length !== 2 || liste[0] === liste[1]) return { error: "Quel duo ?", statut: 400 };
+  const q = await avecQui(supabase, moi, cle);
+  if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
+  const { h, pair } = { h: q.h, pair: q.pair };
+  const [f, noms, prenomMoi, prenomAutre, ca, cb] = await Promise.all([lireEtagere(supabase, pair), nomsDuFil(supabase, pair), prenomDe(supabase, moi.id, "Toi"), prenomDe(supabase, h, "Ton proche"), parolesCachees(supabase, moi.id), parolesCachees(supabase, h)]);
+  const moi8 = qui8(moi.id);
+  const c = { moi8, prenomMoi, prenomAutre, aujourdhui: jourParis() };
+  const dejaLa = (g: FicheEtagere) => g.objets.find((o) => visible(o) && liste.every((id) => o.duo?.some((d) => d.id === id)));
+  const deja = dejaLa(f);
+  if (deja) return { deja: true, souvenir: vueDe(deja, c) };
+  const ns = liste.map((id) => noms.find((x) => x.id === id));
+  if (ns.some((n) => !n) || liste.some((id) => ca.has(id) || cb.has(id))) return { error: "Ce duo n’est plus là.", statut: 404 };
+  const [n1, n2] = (ns as NonNullable<(typeof ns)[number]>[]).sort((a, b) => a.ts - b.ts);
+  const fiches = await Promise.all([n1, n2].map((n) => lireJson<FicheMessage>(supabase, `${dossierMessages(pair)}/${n.nom}`)));
+  const [a, b] = fiches;
+  const auteurs = new Set([s(a.de), s(b.de)]);
+  if (a.genre !== "meme" || b.genre !== "meme" || auteurs.size !== 2 || !auteurs.has(moi.id) || !auteurs.has(h) || n2.ts - n1.ts > DUO_MS) return { error: "Ce n’est pas un duo de mèmes.", statut: 422 };
+  const texteDe = (x: FicheMessage) => s(x.texte);
+  const court = (t: string) => ([...t].length > 64 ? `${[...t].slice(0, 63).join("").trim()}…` : t);
+  const le = new Date().toISOString();
+  const o: ObjetGarde = {
+    id: randomUUID().replace(/-/g, "").slice(0, 12),
+    genre: "blague",
+    emoji: "🎬",
+    titre: titreDuDuo(texteDe(a)),
+    concerne: "deux",
+    citation: [a, b].map((x) => `🎭 « ${court(texteDe(x)) || "🎙️"} »`).join(" · "),
+    de8: qui8(s(a.de)),
+    message: s(a.id),
+    messageLe: s(a.le) || new Date(n1.ts).toISOString(),
+    le,
+    etat: "actif",
+    garde: { par8: moi8 },
+    duo: [a, b].map((x) => ({ id: s(x.id), de8: qui8(s(x.de)), texte: texteDe(x), tete: s(x.meme?.tete) || "joie", ...(x.meme?.danse === true ? { danse: true } : {}) })),
+  };
+  // (relue juste avant d'écrire : l'autre a pu dire oui entre-temps)
+  const g = await lireEtagere(supabase, pair);
+  const encore = dejaLa(g);
+  if (encore) return { deja: true, souvenir: vueDe(encore, c) };
+  // (l'étagère pleine : le plus ancien goût, blague ou mot s'en va)
+  let objets = [...g.objets, o];
+  const visibles = objets.filter(visible);
+  if (visibles.length > ETAGERE.max) {
+    const vieux = visibles.filter((x) => x.id !== o.id && (x.genre === "gout" || x.genre === "blague" || x.genre === "mot")).sort((x, y) => x.le.localeCompare(y.le))[0];
+    if (vieux) objets = objets.map((x) => (x.id === vieux.id ? { ...x, etat: "passe" as const } : x));
+  }
   const vus = { ...(g.vus ?? {}), [moi8]: [...(g.vus?.[moi8] ?? []), o.id].slice(-ETAGERE.vusGardes) };
   if (!(await ecrireEtagere(supabase, pair, { ...g, objets, vus }))) return { error: "Pas rangé : réessaie.", statut: 502 };
   return { souvenir: vueDe(o, c) };

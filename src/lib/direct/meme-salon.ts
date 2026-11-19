@@ -94,6 +94,30 @@ export function texteTranscrit(t: string): string {
   return `${(espace > MEME_MAX / 2 ? coupe.slice(0, espace) : coupe).trim()}…`;
 }
 
+/**
+ * 🎬 UN DUO DE MÈMES (« Je le range ? ») : ses deux derniers messages sont deux mèmes, l'un de chacun, à moins de
+ * 30 minutes l'un de l'autre ; proposé pendant 2 heures après le second.
+ */
+export const DUO_MS = 30 * 60_000;
+export const DUO_PROPOSE_MS = 2 * 3600_000;
+type MemeDuFil = { id: string; moi: boolean; le: string; genre?: string };
+/** Le duo à ranger : ses deux derniers messages (déjà partis), s'ils en font un ; sinon `null`. */
+export function duoDuFil<M extends MemeDuFil>(messages: readonly M[], maintenant: number): [M, M] | null {
+  const vrais = messages.filter((m) => !m.id.startsWith("envoi-"));
+  const [a, b] = vrais.slice(-2);
+  if (!a || !b || a.genre !== "meme" || b.genre !== "meme" || a.moi === b.moi) return null;
+  const ta = Date.parse(a.le);
+  const tb = Date.parse(b.le);
+  if (!Number.isFinite(ta) || !Number.isFinite(tb) || Math.abs(tb - ta) > DUO_MS || maintenant - tb > DUO_PROPOSE_MS) return null;
+  return [a, b];
+}
+/** Le titre d'un duo rangé (28 signes au plus) : le début du premier mème. */
+export function titreDuDuo(texte: string): string {
+  const t = texte.replace(/\s+/g, " ").trim();
+  if (!t) return "Un duo de mèmes";
+  return [...t].length <= 28 ? t : `${[...t].slice(0, 27).join("").trim()}…`;
+}
+
 /** Les phrases de l'écran (on tutoie ; jamais le genre deviné). */
 export const PHRASES_MEME = {
   onglet: "🎭 Mèmes",
@@ -126,4 +150,11 @@ export const PHRASES_MEME = {
   avecSaVoix: "Un mème, avec sa voix",
   avecSaVoixCourt: "Avec sa voix",
   avecTaVoix: "Un mème, avec ta voix",
+  // 🎬 le duo rangé
+  duoQuestion: "🎬 Je le range dans « Nos fous rires » ?",
+  duoOui: "🎬 Oui",
+  duoNon: "Non",
+  duoRange: "🎬 Rangé dans « Nos fous rires »",
+  duoPasRange: "Pas rangé : réessaie.",
+  leRevoir: "▶ Le revoir",
 } as const;

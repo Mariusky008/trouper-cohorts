@@ -8,7 +8,9 @@
 // (une réaction qui n'existe que sur un mème). 🎙️ MA VOIX : un mème dit avec sa voix, sans texte (sa voix, sa durée, ses
 // niveaux ; chez Sam ; « 🎭 🎙️ » dans « Chez moi » ; la notification « 🎙️ Avec sa voix ») — puis ce qu'elle a dit devient
 // son texte (la fausse transcription), le pouls bat ; avec un texte : il reste tel quel ; plus de 20 secondes, pas un son :
-// refusés. EFFACER : Léa l'efface, il n'est plus là (sa voix avec).
+// refusés. 🎬 « JE LE RANGE ? » : Sam répond par un mème, le duo se range dans « Nos fous rires » (une claquette 🎬,
+// les deux mèmes à rejouer), chez les deux ; une fois ; deux mèmes du même, un écrit, Max : refusés. EFFACER : Léa
+// l'efface, il n'est plus là (sa voix avec).
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
@@ -170,6 +172,24 @@ ok(avecTexte.statut === 200 && vt?.texte === "Coucou toi !" && vt.meme?.voix ===
 const tropLong = await meme(LEA, SAM, { texte: "", tete: "joie", son: wav(25), duree: 25, niveaux: NIVEAUX(25) });
 ok(tropLong.statut === 400, `plus de 20 secondes : 400 (« ${tropLong.error} »)`);
 ok((await meme(LEA, SAM, { texte: "", tete: "joie", son: `data:text/plain;base64,${Buffer.from("x".repeat(3000)).toString("base64")}`, duree: 2 })).statut === 400, "pas un son : 400");
+
+// ═══ 🎬 « JE LE RANGE ? » ═══
+const reponse = await meme(SAM, LEA, { texte: "Ha ha, trop bien !", tete: "rire" });
+const duo = [avecTexte.message?.id, reponse.message?.id];
+const etagere = (q, avec, corps) => fetch(`${BASE}/api/direct/etagere`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${q.jeton}` }, body: JSON.stringify({ avec: avec.cle, ...corps }) }).then(async (r) => ({ statut: r.status, ...(await r.json().catch(() => ({}))) }));
+const rg = await etagere(SAM, LEA, { action: "ranger-duo", messages: duo });
+const o = rg.souvenir;
+ok(rg.statut === 200 && o?.emoji === "🎬" && o.rayon === "rires" && o.genre === "blague" && o.deux === true && o.detail === "votre duo de mèmes", `Sam le range : une claquette 🎬 dans « Nos fous rires » (« ${o?.titre} », ${o?.detail})`);
+ok(o?.duo?.length === 2 && o.duo[0].de === "lui" && o.duo[0].texte === "Coucou toi !" && o.duo[1].de === "moi" && o.duo[1].tete === "rire", "… les deux mèmes, à rejouer (de qui, ce qu'ils disent, leur tête)");
+const chezLea = (await voir(LEA, `etagere?avec=${SAM.cle}`)).etagere;
+const vuLea = (chezLea?.objets ?? []).find((x) => x.id === o?.id);
+ok(vuLea?.duo?.[0]?.de === "moi" && vuLea.duo[1].de === "lui", "chez Léa aussi (le sien d'abord, puis celui de Sam)");
+const encore = await etagere(LEA, SAM, { action: "ranger-duo", messages: [...duo].reverse() });
+ok(encore.statut === 200 && encore.deja === true && encore.souvenir?.id === o?.id, "Léa dit oui aussi : il est déjà rangé (une fois)");
+ok((await etagere(LEA, SAM, { action: "ranger-duo", messages: [mv?.id, avecTexte.message?.id] })).statut === 422, "deux mèmes de Léa : pas un duo (422)");
+const ecritSam = await poster(SAM, { action: "ecrire", cle: LEA.cle, texte: "Et un mot écrit" });
+ok((await etagere(LEA, SAM, { action: "ranger-duo", messages: [avecTexte.message?.id, ecritSam.message?.id] })).statut === 422, "un mème et un écrit : pas un duo (422)");
+ok((await etagere(MAX, LEA, { action: "ranger-duo", messages: duo })).statut === 403, "Max : 403");
 
 // ═══ EFFACER ═══
 ok((await poster(LEA, { action: "effacer", cle: SAM.cle, id: m1?.id })).statut === 200, "Léa efface son mème");

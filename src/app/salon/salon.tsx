@@ -68,7 +68,7 @@ import { STYLES_TALKIE, arreterLecture, debloquerSon, entendreEnDirect, installe
 import { BoutonMicro, type FinMicro } from "./micro";
 import type { VoixEnregistree } from "./feuille-meme";
 import { STYLES_MEME, arreterMeme, jouerMeme } from "./memes";
-import { PHRASES_MEME, emojiDeTete, memesDuSalon, teteMeme, type MemeSalon } from "@/lib/direct/meme-salon";
+import { PHRASES_MEME, duoDuFil, emojiDeTete, memesDuSalon, teteMeme, type MemeSalon } from "@/lib/direct/meme-salon";
 
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
 export type ChargementSalon =
@@ -489,6 +489,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   /** ✍️ « Ton mème » ouverte (`voix` : par « 🎙️ Ma voix », le micro bat) */
   const [feuilleMeme, setFeuilleMeme] = useState<false | "texte" | "voix">(false);
   const [memeEnScene, setMemeEnScene] = useState(0);
+  /** 🎬 « Je le range ? » : le duo de mèmes proposé (ses deux messages), s'il y en a un */
+  const [duoPropose, setDuoPropose] = useState<[MessageFil, MessageFil] | null>(null);
+  /** (les duos à qui on a dit non, sur ce téléphone : le second mème de chacun) */
+  const duosRefuses = useRef<Set<string> | null>(null);
+  const [duoEnCours, setDuoEnCours] = useState(false);
   const rejouerMemeRef = useRef<(m: MessageFil) => void>(() => undefined);
 
   // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
@@ -1063,6 +1068,75 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     const t = setTimeout(() => setPhraseIa(null), 3200);
     return () => clearTimeout(t);
   }, [phraseIa]);
+  // ─── 🎬 « JE LE RANGE ? » (lot S5) ───
+  // (après un échange de mèmes — ses deux derniers messages, l'un de chacun — ma figurine propose de le ranger dans
+  // « Nos fous rires » ; pas pendant qu'un mème se joue ; plus jamais s'il est rangé, ou si j'ai dit non)
+  useEffect(() => {
+    if (!duosRefuses.current) {
+      duosRefuses.current = new Set();
+      try {
+        const l = JSON.parse(localStorage.getItem(`clikme-duos-non-${cle}`) ?? "[]") as unknown;
+        if (Array.isArray(l)) l.forEach((x) => typeof x === "string" && duosRefuses.current?.add(x));
+      } catch {
+        // (sans stockage : la question peut revenir)
+      }
+    }
+    const d = duoDuFil(messages, Date.now());
+    const range = d && souvenirs.some((o) => o.duo?.some((x) => x.id === d[1].id));
+    const voulu = d && !range && !duosRefuses.current.has(d[1].id) ? d : null;
+    void Promise.resolve().then(() => setDuoPropose((x) => (x?.[1].id === voulu?.[1].id ? x : voulu)));
+  }, [messages, souvenirs, cle]);
+  /** 🎬 Oui : le duo s'envole vers l'étagère, dans « Nos fous rires » (pour les deux). */
+  async function rangerLeDuo(d: [MessageFil, MessageFil]) {
+    if (duoEnCours) return;
+    setDuoEnCours(true);
+    try {
+      const r = await fetch("/api/direct/etagere", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "ranger-duo", avec: cle, messages: [d[0].id, d[1].id] }) });
+      const j = (await r.json().catch(() => null)) as { souvenir?: ObjetVu; error?: string } | null;
+      if (!r.ok || !j?.souvenir) throw new Error(j?.error || "");
+      setDuoPropose(null);
+      const s = scene.current;
+      if (s) s.sons.clac();
+      await poserSouvenir(j.souvenir);
+      montrer(PHRASES_MEME.duoRange, 3000);
+    } catch (e) {
+      montrer(e instanceof Error && e.message ? `Pas rangé : ${e.message}` : PHRASES_MEME.duoPasRange, 3600);
+    } finally {
+      setDuoEnCours(false);
+    }
+  }
+  /** Non : la question ne revient plus pour ce duo (sur ce téléphone). */
+  function refuserLeDuo(d: [MessageFil, MessageFil]) {
+    duosRefuses.current?.add(d[1].id);
+    try {
+      localStorage.setItem(`clikme-duos-non-${cle}`, JSON.stringify([...(duosRefuses.current ?? [])].slice(-40)));
+    } catch {
+      // (sans stockage : tant pis)
+    }
+    setDuoPropose(null);
+  }
+  /** ▶ Le revoir (depuis l'étagère) : les deux mèmes, l'un après l'autre, chacun par sa figurine. */
+  async function rejouerDuo(o: ObjetVu) {
+    for (const d of o.duo ?? []) {
+      if (!scene.current) return;
+      // (encore dans le fil : avec sa voix, s'il en a une ; sinon, tel qu'il a été rangé)
+      const m = messages.find((x) => x.id === d.id && x.genre === "meme") ?? {
+        id: d.id,
+        moi: d.de === "moi",
+        le: o.le,
+        duree: 0,
+        son: "",
+        repliques: [],
+        genre: "meme" as const,
+        texte: d.texte,
+        meme: { tete: teteMeme(d.tete) ?? "joie", danse: d.danse },
+      };
+      if (!m.texte && !m.meme?.voix) continue;
+      await rejouerMeme(m);
+      await new Promise((ok) => setTimeout(ok, 350));
+    }
+  }
+
   /** Un souvenir s'envole jusqu'à l'étagère (de la figurine de celui qui l'a dit), puis s'y pose. */
   async function poserSouvenir(o: ObjetVu) {
     const s = scene.current;
@@ -1773,6 +1847,19 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                   {phraseIa.texte}
                 </div>
               )}
+              {duoPropose && memeEnScene === 0 && (
+                <div key={`duo-${duoPropose[1].id}`} className="sd-bulle moi ia sd-duo" data-ia data-duo={duoPropose[1].id}>
+                  {PHRASES_MEME.duoQuestion}
+                  <span className="sd-duo-choix">
+                    <button type="button" data-duo-oui disabled={duoEnCours} onPointerDown={(e) => e.stopPropagation()} onClick={() => void rangerLeDuo(duoPropose)}>
+                      {PHRASES_MEME.duoOui}
+                    </button>
+                    <button type="button" data-duo-non onPointerDown={(e) => e.stopPropagation()} onClick={() => refuserLeDuo(duoPropose)}>
+                      {PHRASES_MEME.duoNon}
+                    </button>
+                  </span>
+                </div>
+              )}
               {monDernier && (
                 <div key={monDernier.id} className={`sd-bulle moi${reagissable(monDernier.id) ? " a-epingle" : ""}${estVocal(monDernier) ? " vocal" : ""}${monDernier.genre === "meme" ? " meme" : ""}`} data-bulle={monDernier.id}>
                   {estVocal(monDernier) ? (
@@ -2154,7 +2241,17 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         />
       )}
       {feuilleMeme && fil && <FeuilleMeme prenom={prenom} voix={feuilleMeme === "voix"} onAction={(m, v) => void faireUnMeme(m, v)} onFermer={() => setFeuilleMeme(false)} />}
-      {etagereOuverte && <FeuilleEtagere cle={cle} onFermer={() => setEtagereOuverte(false)} onRetire={(id) => setSouvenirs((l) => l.filter((o) => o.id !== id))} />}
+      {etagereOuverte && (
+        <FeuilleEtagere
+          cle={cle}
+          onFermer={() => setEtagereOuverte(false)}
+          onRetire={(id) => setSouvenirs((l) => l.filter((o) => o.id !== id))}
+          onRevoirDuo={(o) => {
+            setEtagereOuverte(false);
+            setTimeout(() => void rejouerDuo(o), 350);
+          }}
+        />
+      )}
     </main>
   );
 }
@@ -2221,6 +2318,10 @@ export const STYLES_SALON = `
 .sd-garder.fait::after,.sd-garder-fil.fait::after{content:"✓"}
 .sd-garder:active{transform:scale(.88)}
 .sd-bulle.ia{background:#fff4dc;box-shadow:0 0 0 1.5px #e9b44c,0 6px 16px rgba(30,6,24,.35)}
+.sd-bulle.sd-duo{display:block;-webkit-line-clamp:unset;overflow:visible}
+.sd-duo-choix{display:flex;gap:6px;margin-top:7px}
+.sd-duo-choix button{height:28px;padding:0 12px!important;border-radius:14px;background:#2a1424!important;color:#ffd99a!important;font:700 12px var(--app)!important;pointer-events:auto;white-space:nowrap}
+.sd-duo-choix button[data-duo-non]{background:transparent!important;color:#6b4a5e!important;box-shadow:inset 0 0 0 1.5px #d9b98a}
 .sd-mettre-tele{display:block!important;margin:6px 0 0;padding:4px 10px!important;border-radius:12px;background:#2a1424!important;color:#ffd99a!important;font:700 12px var(--app)!important;pointer-events:auto;white-space:nowrap}
 .sd-mettre-tele:active{transform:scale(.95)}
 .sc-cadre{position:absolute;pointer-events:auto;cursor:pointer}

@@ -11,7 +11,9 @@
 // 🎙️ « MA VOIX » (un faux micro) : la feuille, le micro qui bat ; gardé appuyé, la barre ; relâché, « 🎙️ Ta voix · 0:02 »,
 // « 🎬 Action ! » s'allume sans texte ; sa figurine le dit avec ma voix (🎙️ et la forme de la voix dans la bulle de BD,
 // qui se colore) ; la carte, puis ce que j'ai dit, écrit tout seul ; chez Sam, sa voix ; « ▶ Revoir », avec ses mots ;
-// Sam en joue un avec sa voix et un texte : sa figurine le dit chez Léa.
+// Sam en joue un avec sa voix et un texte : sa figurine le dit chez Léa. 🎬 « JE LE RANGE ? » : après cet échange, ma
+// figurine le propose ; « Oui » : le duo s'envole dans « Nos fous rires » ; l'étagère, sa fiche, « ▶ Le revoir » : les
+// deux mèmes rejoués, l'un après l'autre.
 // Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
@@ -226,6 +228,30 @@ const VOIX_SAM = "Je t’entends d’ici !";
 ok((await poster(SAM, { action: "meme-salon", cle: LEA.cle, texte: VOIX_SAM, tete: "joie", son: wav(1.6), duree: 1.6, niveaux: NIVEAUX(1.6) })).status === 200, "Sam en joue un avec sa voix (la route)");
 ok(await attendre(async () => (await p.locator('.sc-bd[data-meme="autre"][data-voix="1"]').count()) === 1, 15000), "sa figurine le dit chez Léa, avec sa voix");
 ok(await attendre(async () => (await bd("autre")) === VOIX_SAM, 6000), `… et ses mots (« ${await bd("autre")} »)`);
+await eteint();
+
+// ═══ 🎬 « JE LE RANGE ? » ═══
+ok(await attendre(async () => (await p.locator("[data-duo]").count()) === 1, 6000), `après l'échange de mèmes, ma figurine : « ${await texte("[data-duo]")} »`);
+await p.screenshot({ path: `${D}/salon-memes-7-je-le-range.png` });
+await p.locator("[data-duo-oui]").click();
+ok(await attendre(async () => (await p.locator("[data-duo]").count()) === 0, 4000), "« 🎬 Oui » : la question s'en va");
+let range = null;
+for (let k = 0; k < 25 && !range; k++) {
+  const e = await (await fetch(`${BASE}/api/direct/etagere?avec=${LEA.cle}`, { headers: { cookie: `clikme_habitant=${SAM.jeton}` } })).json().catch(() => null);
+  range = (e?.etagere?.objets ?? []).find((o) => o.duo?.length === 2) ?? null;
+  if (!range) await p.waitForTimeout(200);
+}
+ok(range?.emoji === "🎬" && range.rayon === "rires" && range.duo[1].de === "moi", "le duo est rangé dans « Nos fous rires » (chez Sam aussi)");
+ok(await attendre(async () => (await p.locator(".sd-pastille[data-souvenirs]").count()) === 1, 5000), "la pastille 📚 de l'étagère");
+await p.locator(".sd-pastille[data-souvenirs]").click();
+ok(await attendre(async () => (await p.locator(`[data-rayon="rires"] [data-objet="${range?.id}"]`).count()) === 1, 8000), "dans l'étagère : la claquette, rayon « Nos fous rires »");
+await p.locator(`[data-rayon="rires"] [data-objet="${range?.id}"]`).click();
+ok(await attendre(async () => (await p.locator(`[data-revoir-duo="${range?.id}"]`).count()) === 1, 3000), "sa fiche : « ▶ Le revoir »");
+await p.waitForTimeout(400);
+await p.screenshot({ path: `${D}/salon-memes-8-fiche-duo.png` });
+await p.locator(`[data-revoir-duo="${range?.id}"]`).click();
+ok(await attendre(async () => (await p.locator('.sc-bd[data-meme="moi"]').count()) === 1, 5000), "« ▶ Le revoir » : l'étagère se ferme, ma figurine rejoue le mien…");
+ok(await attendre(async () => (await p.locator('.sc-bd[data-meme="autre"]').count()) === 1, 15000), "… puis sa figurine, le sien");
 await eteint();
 
 // ═══ SAM JOUE UN MÈME : SA FIGURINE LE JOUE CHEZ LÉA ═══

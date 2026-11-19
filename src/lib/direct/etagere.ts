@@ -87,7 +87,16 @@ export type ObjetGarde = {
   image?: ImageObjet;
   /** 📌 (lot S6 du salon) gardé à la main, par un toucher sur sa bulle : qui l'a gardé (8 signes). */
   garde?: { par8: string };
+  /**
+   * 🎬 (lot S5 du salon, « Je le range ? ») un duo de mèmes, rangé dans « Nos fous rires » : les deux mèmes, tels qu'ils
+   * se rejouent (« ▶ Le revoir ») — de qui (8 signes), ce qu'il dit, sa tête, sa danse.
+   */
+  duo?: MemeDuDuo[];
 };
+/** 🎬 Un des deux mèmes d'un duo rangé. */
+export type MemeDuDuo = { id: string; de8: string; texte: string; tete: string; danse?: boolean };
+/** 🎬 Ce qu'en voit celui qui regarde : `de` — « moi » (c'était le sien) ou « lui ». */
+export type MemeDuDuoVu = { id: string; de: "moi" | "lui"; texte: string; tete: string; danse: boolean };
 /** 🖼️ Une pochette (une chanson), une vignette (une vidéo), une photo encadrée. */
 export type SorteImage = "musique" | "video" | "photo";
 export type ImageObjet = { chemin: string; l: number; h: number; sorte: SorteImage; lien?: string };
@@ -140,6 +149,8 @@ export type ObjetVu = {
   /** 📌 (lot S6 du salon) gardé à la main, par lui ou par l'autre ; `message` : le message d'où il vient. */
   garde?: "moi" | "lui";
   message?: string;
+  /** 🎬 (lot S5 du salon) un duo de mèmes : les deux, à rejouer (« ▶ Le revoir »). */
+  duo?: MemeDuDuoVu[];
 };
 
 /** 🎭 L'étagère dans la scène de la conversation (relue avec la conversation vivante, toutes les 4 s). */
@@ -371,6 +382,8 @@ export function detailPour(o: ObjetGarde, moi8: string, prenomAutre: string, auj
   }
   // (📌 lot S6 du salon : « vos mots », gardés à la main)
   if (o.genre === "mot") return o.concerne === "deux" ? "vos mots" : o.concerne === moi8 ? "tes mots" : `les mots ${deDevant(prenomAutre)}`;
+  // (🎬 lot S5 du salon : un duo de mèmes)
+  if (o.duo?.length) return "votre duo de mèmes";
   // (lot E4 : une blague déposée sur sa propre étagère, ou vue par un visiteur)
   if (o.concerne === moi8) return "ta blague";
   return o.concerne === "deux" ? "votre blague" : `la blague ${deDevant(prenomAutre)}`;
@@ -414,6 +427,7 @@ export function vueDe(o: ObjetGarde, c: { moi8: string; prenomMoi: string; preno
     ...(o.depose ? { depose: true as const } : {}),
     ...(o.garde ? { garde: o.garde.par8 === c.moi8 ? ("moi" as const) : ("lui" as const) } : {}),
     ...(o.message ? { message: o.message } : {}),
+    ...(o.duo?.length ? { duo: o.duo.map((d) => ({ id: d.id, de: d.de8 === c.moi8 ? ("moi" as const) : ("lui" as const), texte: d.texte, tete: d.tete, danse: d.danse === true })) } : {}),
   };
 }
 
