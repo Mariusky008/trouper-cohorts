@@ -28,6 +28,7 @@ import { decorVivant } from "./univers-vivant-serveur";
 import { completerMonde, lireFicheMonde } from "./fiches-serveur";
 import { cheminVisibiliteMaison, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vieDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { objetsDeMaMaison } from "./etagere-serveur";
+import { questionChezLui } from "./question-maison-serveur";
 import { MA_MAISON_CATALOGUE, objetsPlaces, placerChezMoi, type MaisonVisitee } from "./ma-maison";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
@@ -416,6 +417,8 @@ export async function maisonVisitee(supabase: Supabase, visiteur: Habitant | nul
     acces.proche ? vieDeLaMaison(supabase, h, { visiteur: true }).catch(() => ({})) : Promise.resolve({}),
     visiteur && acces.proche && !chezSoi ? lireSouvenirs(supabase, h) : Promise.resolve([] as Souvenir[]),
   ]);
+  // (💬 lot M5 : sa question du jour, à ses proches)
+  const question = visiteur && acces.proche && !chezSoi ? await questionChezLui(supabase, h, visiteur.id).catch(() => null) : null;
   if (!scene) return { etat: "absent" };
   const montres = acces.proche ? objets : objets.filter((o) => o.aMoi);
   const jour = jourParis();
@@ -433,6 +436,7 @@ export async function maisonVisitee(supabase: Supabase, visiteur: Habitant | nul
     frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && v.le.startsWith(jour))),
     ...(visiteur && acces.proche && !chezSoi ? { peutLaisser: true, mesCadeaux: souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length } : {}),
     ...(nouveaux.length ? { nouveaux } : {}),
+    ...(question ? { question } : {}),
   };
 }
 

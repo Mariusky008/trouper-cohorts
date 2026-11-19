@@ -69,7 +69,24 @@ export type MaMaisonVue = {
   absence?: string[];
   /** 🎁 (lot M5) sur la table basse : les cadeaux de mes proches — à ouvrir (`attente`), ou gardés */
   table?: CadeauMaison[];
+  /** 💬 (lot M5) ma question du jour, et ce que mes proches y ont répondu */
+  question?: QuestionChezMoi;
 };
+
+/** 💬 (lot M5) La question du jour, chez soi : ce que ses proches y ont répondu. */
+export type QuestionChezMoi = { q: string; reponses: { de: string; texte: string; le: string }[] };
+/** 💬 (lot M5) La question du jour d'un proche, en visite : sa réponse ne se découvre qu'après la sienne. */
+export type QuestionChezLui = { cle: string; q: string; choix?: string[]; maReponse?: string; saReponse?: string };
+export const PHRASES_QUESTION = {
+  chezLui: (prenom: string) => `💬 La question du jour de ${prenom}`,
+  chezMoi: "💬 Ta question du jour",
+  repondre: "Répondre",
+  indice: "Ta réponse, en quelques mots",
+  avant: (prenom: string) => `Réponds d’abord : tu découvriras ensuite la réponse de ${prenom}.`,
+  toi: "Toi",
+  arrivee: (prenoms: readonly string[]) =>
+    `💬 ${prenoms.length === 1 ? prenoms[0] : `${prenoms.slice(0, -1).join(", ")} et ${prenoms[prenoms.length - 1]}`} ${prenoms.length === 1 ? "a" : "ont"} répondu à ta question du jour`,
+} as const;
 
 /** 🎁 (lot M5) Un cadeau laissé par un proche (les souvenirs du lot 6 des visites), sur la table basse. */
 export type CadeauMaison = { id: string; emoji: string; nom: string; mot?: string; de: string; le: string; attente?: true };
@@ -124,6 +141,8 @@ export type MaisonVisitee =
       mesCadeaux?: number;
       /** ✨ (lot M5) ce qu'il a ajouté ou gardé aujourd'hui (la caméra passe dessus à l'arrivée) */
       nouveaux?: string[];
+      /** 💬 (lot M5) sa question du jour (à ses proches, s'il y a répondu) */
+      question?: QuestionChezLui;
     };
 export const PHRASES_VISITE = {
   chez: (prenom: string) => `Chez ${prenom}`,

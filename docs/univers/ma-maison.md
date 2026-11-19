@@ -285,7 +285,7 @@ une animation.
 | **M2 — La maison qui se remplit** ✅ (sections 15 et 16) | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
 | **M3 — L'inscription** ✅ | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers — fait (section 14), derrière l'interrupteur | messages et bienvenue | M0 |
 | **M4 — Découvrir** ✅ (section 17) | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
-| **M5 — Les visites, la suite** (première partie ✅, section 18) | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
+| **M5 — Les visites, la suite** ✅ (sections 18 et 19 ; le défi à deux attend le propriétaire, 19.1) | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
 
 Tout derrière un interrupteur (`MA_MAISON_CATALOGUE`, éteint) jusqu'à ce que le propriétaire l'ait jouée sur son
 téléphone. Chaque lot : ses essais (une route contre le faux Supabase, un essai navigateur au format téléphone), sa
@@ -512,3 +512,34 @@ La section 7 (« ce qui fait revenir ») — **sans aucun compteur de visites**.
 aujourd'hui » et la caméra, laisse un bouquet et un mot ; Léa rentre — « Sam a frappé à ta porte pendant ton absence »,
 sans nombre ; le paquet emballé ; « Ouvrir », « De Sam · « Pour toi » », « Le garder » ; son humeur chez elle ; Sam
 revient et voit son bouquet sur la table).
+
+## 19. Le lot M5, deuxième partie : la question du jour en visite (19 novembre 2026)
+
+Les maquettes : « la question du jour — sa réponse se découvre après la sienne ».
+
+- **Chez un proche qui a répondu ce matin à sa question du jour** (le lot 2a, `connaitre-serveur.ts`) : une pastille
+  « 💬 La question du jour de Léa ». Un toucher : la question, ses réponses à toucher (ou trois mots à écrire), « Réponds
+  d'abord : tu découvriras ensuite la réponse de Léa ». La sienne n'est **ni à l'écran ni envoyée** au téléphone tant
+  qu'on n'a pas répondu. « Répondre » : « Toi : 🏖️ Plage », « Léa : 🏔️ Montagne ». On revient : les deux y sont encore.
+  Pendant ce temps, frapper et la surprise s'effacent (une seule bulle à la fois).
+- **Chez soi** : à l'arrivée, après « Pendant ton absence », « 💬 Sam a répondu à ta question du jour » (trois prénoms au
+  plus, seulement ce qui est arrivé depuis sa dernière visite) ; la pastille « 💬 Ta question du jour » : la question et
+  ce que chacun y a répondu (les plus récents d'abord).
+- **Entre proches seulement** (un visiteur qui n'est pas un proche ne la voit pas, et la route le refuse) ; une réponse
+  par visiteur et par jour (la nouvelle remplace l'ancienne) ; les mêmes refus que la question du jour (les choix, la
+  longueur, pas de lien, les mots qui ne passent pas). Elle ne compte pas dans son journal : c'est celle de son hôte.
+- Le serveur : `question-maison-serveur.ts` (`questionChezLui`, `repondreChezLui`, `questionChezMoi`) ;
+  `<habitant>/ma-piece/reponses/<jour>.json` = { cle, reponses: [{ de, texte, le }] } ; `maMaison` et `maisonVisitee`
+  rendent `question` ; `POST /api/direct/ma-piece` { action: "repondre", chez, texte } rend la visite mise à jour.
+
+**L'essai** : `scripts/navigateur/ma-maison-question.mjs` (22 contrôles : chez Léa, Sam voit la pastille, la question et
+ses quatre choix, la réponse de Léa cachée — ni à l'écran ni dans ce que le serveur envoie ; « 🏖️ Plage », « Répondre »,
+« Toi » puis « Léa » ; une réponse hors des choix refusée ; ✕ ; il revient et les retrouve ; Zoé, qui n'est pas sa
+proche, refusée ; Léa rentre : « Sam a répondu à ta question du jour », « Sam : 🏖️ Plage » ; plus d'annonce ensuite).
+
+### 19.1 Ce qui attend le propriétaire : le défi à deux
+
+La section 7 et les maquettes parlent d'un « défi à deux qui devient un souvenir commun », sans dire lequel. Plutôt que de
+l'inventer, il attend la décision du propriétaire : quel défi (une photo à prendre chacun de son côté ? une question à
+deviner l'un sur l'autre ? un mème à faire à deux ?), et ce qu'il devient dans la maison (un cadre ? un objet sur
+l'étagère, « ✨ gardé avec … » ?).

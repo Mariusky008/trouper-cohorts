@@ -7,6 +7,7 @@
 // GET ?chez=<clé>           → { visite } : 🚪 (lot M4) sa maison, en visite (`MaisonVisitee`) — selon qui peut entrer ;
 //                              ouverte à tout visiteur (sans l'interrupteur : seuls ceux qui ont choisi une pièce en ont une)
 // POST { action: "visibilite", v, adulte? } → { maison } : 🚪 (lot M4) qui peut entrer chez lui
+// POST { action: "repondre", chez, texte } → { visite } : 💬 (lot M5) sa réponse à la question du jour d'un proche
 // POST { action: "choisir", piece } → { maison } : sa pièce (une pièce prête), ou en changer
 // POST { action: "vu" }     → { ok } : ✨ (lot M2) il est venu chez lui — ce qu'il a gardé jusqu'ici ne s'annonce plus
 // POST { action: "ajouter", quoi, titre?, lien?, mot?, image? } → { maison, id } : ＋ (lot M2) « Ajouter chez moi »
@@ -20,6 +21,7 @@ import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
 import { catalogueDeLaMaison, choisirSaPiece, maMaison, maMaisonVue } from "@/lib/direct/ma-maison-serveur";
 import { ajouterChezMoi, enleverDeChezMoi } from "@/lib/direct/etagere-serveur";
 import { choisirVisibiliteMaison, maisonVisitee } from "@/lib/direct/visites-serveur";
+import { repondreChezLui } from "@/lib/direct/question-maison-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -46,10 +48,18 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const p = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  // 💬 (lot M5) en visite chez un proche : sa réponse à la question du jour (comme la visite, sans l'interrupteur)
+  if (p?.action === "repondre") {
+    const { supabase, moi } = await habitant();
+    if (!moi) return NextResponse.json({ error: "Ta figurine n’est pas sur ce téléphone." }, { status: 401, headers: sansCache });
+    const r = await repondreChezLui(supabase, moi, p.chez, p.texte);
+    if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, visite: await maisonVisitee(supabase, moi, p.chez) }, { headers: sansCache });
+  }
   if (!(await permise())) return NextResponse.json({ error: "Bientôt 🙂" }, { status: 403, headers: sansCache });
   const { supabase, moi } = await habitant();
   if (!moi) return NextResponse.json({ error: "Ta figurine n’est pas sur ce téléphone." }, { status: 401, headers: sansCache });
-  const p = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (p?.action === "vu") {
     await maMaisonVue(supabase, moi.id);
     return NextResponse.json({ ok: true }, { headers: sansCache });

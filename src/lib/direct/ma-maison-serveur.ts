@@ -24,6 +24,7 @@ import { humeurDe } from "./rituel";
 import { objetDe } from "./visites";
 import type { Sentiment } from "./ma-figurine";
 import { objetsDeMaMaison } from "./etagere-serveur";
+import { questionChezMoi } from "./question-maison-serveur";
 import { poserProfil } from "./talkie-serveur";
 import { VISIBILITES, type Visibilite } from "./monde";
 import {
@@ -204,8 +205,12 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
   if (!scene) return { piece, scene, figurine };
   const vuLe = Number(vu.le) || 0;
   // (🙂🚪🎁 lot M5 : son humeur, qui a frappé depuis sa dernière visite, les cadeaux sur la table)
-  const vie = await vieDeLaMaison(supabase, h, { depuis: vuLe || Date.now() }).catch(() => ({}));
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie };
+  const [vie, question] = await Promise.all([
+    vieDeLaMaison(supabase, h, { depuis: vuLe || Date.now() }).catch(() => ({})),
+    // (💬 lot M5 : ce que mes proches ont répondu à ma question du jour)
+    questionChezMoi(supabase, h).catch(() => null),
+  ]);
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}) };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */

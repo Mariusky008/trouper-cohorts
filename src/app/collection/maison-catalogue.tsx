@@ -30,7 +30,9 @@ import {
   phraseAbsence,
   phraseNouveautes,
   PHRASES_CADEAU,
+  PHRASES_QUESTION,
   type CadeauMaison,
+  type QuestionChezLui,
   type CatalogueMaison,
   type ContenuMaison,
   type EmplacementMaison,
@@ -192,6 +194,8 @@ function Piece({
     mesCadeaux?: number;
     nouveaux?: string[];
     cle?: string;
+    /** 💬 (lot M5) sa question du jour (à ses proches) */
+    question?: QuestionChezLui;
   };
 }) {
   const { scene, figurine } = maison;
@@ -220,6 +224,11 @@ function Piece({
   const [ouvert, setOuvert] = useState(false);
   const [surprise, setSurprise] = useState(false);
   const [mesCadeaux, setMesCadeaux] = useState(visite?.mesCadeaux ?? 0);
+  // 💬 (lot M5) la question du jour : la bulle ouverte ; en visite, sa question (mise à jour quand on y répond)
+  const [questionOuverte, setQuestionOuverte] = useState(false);
+  const [question, setQuestion] = useState<QuestionChezLui | undefined>(visite?.question);
+  const [reponse, setReponse] = useState("");
+  const [erreurQ, setErreurQ] = useState("");
   const [frappe, setFrappe] = useState(Boolean(visite?.frappe));
   const [aEnlever, setAEnlever] = useState<ObjetMaison | null>(null);
   const [fait, setFait] = useState("");
@@ -269,7 +278,10 @@ function Piece({
     };
     // (chez moi : 🚪 qui a frappé pendant mon absence (lot M5), puis ✨ ce que j'ai gardé ; en visite chez un proche :
     // ✨ ce qu'il a mis chez lui aujourd'hui)
-    const absence = visite ? null : phraseAbsence(maison.absence ?? []);
+    // (💬 lot M5 : qui a répondu à ma question du jour depuis ma dernière visite)
+    const repondus = visite ? [] : [...new Set((maison.question?.reponses ?? []).filter((r) => (Date.parse(r.le) || 0) > (maison.vuLe ?? 0)).map((r) => r.de))];
+    const annonces = visite ? [] : [phraseAbsence(maison.absence ?? []), repondus.length ? PHRASES_QUESTION.arrivee(repondus) : null].filter((x): x is string => Boolean(x));
+    const absence = annonces[0] ?? null;
     const neufs = visite?.nouveaux?.length ? objetsPlaces(maison.contenu ?? { cadres: [], platine: null, tele: null, etagere: [], total: 0 }).filter((o) => visite.nouveaux!.includes(o.id)) : [];
     const a = visite
       ? neufs.length
@@ -313,6 +325,10 @@ function Piece({
     if (absence) {
       void Promise.resolve().then(() => !fini && setArrivee(absence));
       t = 2800;
+      for (const autre of annonces.slice(1)) {
+        minuteries.push(window.setTimeout(() => setArrivee(autre), t));
+        t += 2800;
+      }
     }
     if (a) {
       if (absence) minuteries.push(window.setTimeout(() => setArrivee(a.phrase), t));
@@ -566,6 +582,94 @@ function Piece({
           </button>
         </div>
       )}
+      {/* 💬 (lot M5) la question du jour : chez soi, ce qu'on y a répondu ; chez un proche, y répondre pour voir la sienne */}
+      {(visite ? question : maison.question) && !questionOuverte && !arrivee && !fait && (
+        <button
+          type="button"
+          className="mmc-qdj"
+          data-geste="question"
+          onClick={() => {
+            setIndice(false);
+            setBulle(null);
+            setObjet(null);
+            setCadeau(null);
+            setQuestionOuverte(true);
+          }}
+        >
+          {visite ? PHRASES_QUESTION.chezLui(visite.prenom) : PHRASES_QUESTION.chezMoi}
+        </button>
+      )}
+      {questionOuverte && (visite ? question : maison.question) && (
+        <div className="mmc-bulle" role="status" data-bulle="question">
+          <b>{(visite ? question : maison.question)!.q}</b>
+          {!visite ? (
+            <span className="mmc-reponses">
+              {maison.question!.reponses.map((r, i) => (
+                <span key={i} data-reponse>
+                  <strong>{r.de}</strong> : {r.texte}
+                </span>
+              ))}
+            </span>
+          ) : question?.maReponse ? (
+            <span className="mmc-reponses">
+              <span data-ma-reponse>
+                <strong>{PHRASES_QUESTION.toi}</strong> : {question.maReponse}
+              </span>
+              <span data-sa-reponse>
+                <strong>{visite.prenom}</strong> : {question.saReponse}
+              </span>
+            </span>
+          ) : (
+            <span className="mmc-repondre">
+              <small>{PHRASES_QUESTION.avant(visite.prenom)}</small>
+              {question?.choix ? (
+                <span className="mmc-actions">
+                  {question.choix.map((c) => (
+                    <a
+                      key={c}
+                      className="mmc-action"
+                      href="#"
+                      role="button"
+                      data-choix={c}
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        setReponse(c);
+                      }}
+                      aria-pressed={reponse === c}
+                    >
+                      {c}
+                    </a>
+                  ))}
+                </span>
+              ) : (
+                <input className="mmc-champ-reponse" data-champ="reponse" maxLength={120} placeholder={PHRASES_QUESTION.indice} value={reponse} onChange={(e) => setReponse(e.target.value)} />
+              )}
+              {erreurQ && <small className="mmc-erreur-q">{erreurQ}</small>}
+              <a
+                className="mmc-action"
+                href="#"
+                role="button"
+                data-repondre
+                onClick={async (ev) => {
+                  ev.preventDefault();
+                  if (!reponse.trim()) return;
+                  setErreurQ("");
+                  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "repondre", chez: visite.cle, texte: reponse }) })
+                    .then(async (x) => ({ ok: x.ok, j: (await x.json().catch(() => ({}))) as { visite?: MaisonVisitee; error?: string } }))
+                    .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { visite?: MaisonVisitee; error?: string } }));
+                  if (!r.ok) return setErreurQ(r.j.error || "Ça n’a pas marché : réessaie.");
+                  if (r.j.visite?.etat === "ouvert" && r.j.visite.question) setQuestion(r.j.visite.question);
+                }}
+              >
+                {PHRASES_QUESTION.repondre}
+              </a>
+            </span>
+          )}
+          <button type="button" onClick={() => setQuestionOuverte(false)} aria-label="Fermer">
+            ✕
+          </button>
+        </div>
+      )}
       {cadeau && (
         <div className="mmc-bulle" role="status" data-bulle="cadeau" data-cadeau-bulle={cadeau.id}>
           {cadeau.attente && !visite && !ouvert ? (
@@ -629,7 +733,7 @@ function Piece({
           </button>
         </div>
       )}
-      {visite && (visite.peutLaisser || !frappe) && !objet && !bulle && !cadeau && (
+      {visite && (visite.peutLaisser || !frappe) && !objet && !bulle && !cadeau && !questionOuverte && (
         <div className="mmc-actions-visite">
           {!frappe && (
             <button
@@ -916,7 +1020,7 @@ export function VisiteDeLaMaison({ cle }: { cle: string }) {
           visite={
             v.chezSoi
               ? { prenom: v.prenom, frappe: true, onFrapper: frapper, cle }
-              : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper, cle, peutLaisser: v.peutLaisser, mesCadeaux: v.mesCadeaux, nouveaux: v.nouveaux }
+              : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper, cle, peutLaisser: v.peutLaisser, mesCadeaux: v.mesCadeaux, nouveaux: v.nouveaux, question: v.question }
           }
         />
       ) : (
@@ -961,6 +1065,14 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-nom{padding:7px 13px;border-radius:999px;background:rgba(20,10,14,.62);font-weight:900;font-size:14.5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc-nom small{font-weight:700;opacity:.85}
 .mmc-boutons{display:flex;gap:8px}
+.mmc-qdj{position:absolute;left:10px;top:calc(60px + env(safe-area-inset-top));max-width:calc(100% - 20px);padding:7px 13px;border:0;border-radius:999px;background:rgba(255,246,234,.92);color:#2a1424;font-weight:800;font-size:13.5px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mmc-reponses,.mmc-repondre{grid-column:1;display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.mmc-reponses span{font-size:14px;color:#F3DCE6}
+.mmc-reponses strong{color:#FFF4E6}
+.mmc-repondre small{font-size:13px;color:#c6a6bd}
+.mmc-champ-reponse{padding:10px 12px;border:1px solid #5a3352;border-radius:12px;background:#1d0a1b;color:#FFF4E6;font:inherit;font-size:16px}
+.mmc-erreur-q{color:#ffb4a8!important}
+.mmc-bulle .mmc-action[aria-pressed="true"]{background:#f2be6a}
 .mmc-retour{display:grid;place-items:center;text-decoration:none;color:#FFF4E6;font-size:24px;line-height:1;margin-right:auto}
 .mmc-haut .mmc-retour + .mmc-nom{margin-right:auto;margin-left:8px}
 .mmc-visite{min-height:100svh;background:#1a0f14}
