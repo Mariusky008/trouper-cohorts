@@ -3,20 +3,55 @@
 /**
  * ✍️ « TON MÈME » (`docs/univers/salon-du-duo.md`, section 4.7 ; le lot S5) — la feuille qu'ouvrent « ✍️ Le mien »
  * (l'onglet 🎭 Mèmes) et « 🎭 Un mème » (le ＋) : des idées (les mèmes prêts : un toucher remplit), ce que dit ma figurine
- * (120 signes), sa tête (😂 😄 🤩 😍 😜 😢 😠), « 🎶 Elle danse », « 🎬 Action ! » — la feuille se ferme, ma figurine le
- * joue dans le salon. Chargée seulement quand on l'ouvre.
+ * (120 signes), sa tête (😂 😄 🤩 😍 😜 😢 😠), « 🎶 Elle danse », « 🎙️ Le dire avec ma voix » (le micro gardé appuyé,
+ * 20 secondes au plus : alors le texte est facultatif), « 🎬 Action ! » — la feuille se ferme, ma figurine le joue dans
+ * le salon. Chargée seulement quand on l'ouvre. `voix` : ouverte par « 🎙️ Ma voix » (le micro bat).
  */
-import { useState } from "react";
-import { MEME_MAX, PHRASES_MEME, TETES_MEME, memesDuSalon, texteDeMeme, type MemeSalon, type TeteMeme } from "@/lib/direct/meme-salon";
+import { useEffect, useRef, useState } from "react";
+import { MEME_MAX, MEME_VOIX_MAX, PHRASES_MEME, TETES_MEME, memesDuSalon, texteDeMeme, type MemeSalon, type TeteMeme } from "@/lib/direct/meme-salon";
+import { tempsDit } from "@/lib/direct/vocal";
+import { BoutonMicro } from "./micro";
 
-export default function FeuilleMeme({ prenom, onAction, onFermer }: { prenom: string; onAction: (m: MemeSalon) => void; onFermer: () => void }) {
+/** 🎙️ Ma voix, enregistrée dans la feuille (elle part avec le mème). */
+export type VoixEnregistree = { blob: Blob; duree: number; niveaux: number[] };
+
+export default function FeuilleMeme({
+  prenom,
+  voix: voixDabord = false,
+  onAction,
+  onFermer,
+}: {
+  prenom: string;
+  voix?: boolean;
+  onAction: (m: MemeSalon, voix?: VoixEnregistree) => void;
+  onFermer: () => void;
+}) {
   const [texte, setTexte] = useState("");
   const [tete, setTete] = useState<TeteMeme>("rire");
   const [danse, setDanse] = useState(false);
   const [pret, setPret] = useState<string | undefined>(undefined);
+  const [voix, setVoix] = useState<(VoixEnregistree & { url: string }) | null>(null);
+  const [astuce, setAstuce] = useState("");
+  const lecteur = useRef<HTMLAudioElement | null>(null);
+  // (sa voix remplacée ou la feuille fermée : son adresse est rendue, la lecture s'arrête)
+  useEffect(
+    () => () => {
+      lecteur.current?.pause();
+      if (voix) URL.revokeObjectURL(voix.url);
+    },
+    [voix],
+  );
   const idees = memesDuSalon().slice(0, 10);
   const n = [...texte.trim()].length;
-  const bon = Boolean(texteDeMeme(texte));
+  // (avec ma voix, le texte est facultatif)
+  const bon = n === 0 ? Boolean(voix) : Boolean(texteDeMeme(texte));
+  const ecouter = () => {
+    if (!voix) return;
+    if (!lecteur.current) lecteur.current = new Audio();
+    const a = lecteur.current;
+    a.src = voix.url;
+    void a.play().catch(() => undefined);
+  };
   return (
     <>
       <style>{STYLES_FEUILLE_MEME}</style>
@@ -74,7 +109,47 @@ export default function FeuilleMeme({ prenom, onAction, onFermer }: { prenom: st
           <input type="checkbox" checked={danse} onChange={(e) => setDanse(e.target.checked)} data-danse />
           {PHRASES_MEME.danse}
         </label>
-        <button type="button" className="sd-meme-action" data-action disabled={!bon} onClick={() => bon && onAction({ texte: texteDeMeme(texte)!, tete, danse, ...(pret ? { pret } : {}) })}>
+        <p className="sd-meme-titre">{PHRASES_MEME.direAvecVoix}</p>
+        <div className="sd-meme-voix" data-meme-voix-rang>
+          {voix ? (
+            <div className="sd-meme-ta-voix" data-ta-voix>
+              <b>{PHRASES_MEME.taVoix(tempsDit(voix.duree))}</b>
+              <button type="button" data-ecouter onClick={ecouter}>
+                {PHRASES_MEME.ecouter}
+              </button>
+              <button type="button" aria-label={PHRASES_MEME.effacerVoix} data-effacer-voix onClick={() => setVoix(null)}>
+                🗑️
+              </button>
+            </div>
+          ) : (
+            <small className="sd-meme-astuce" data-astuce-voix>
+              {astuce || PHRASES_MEME.gardeAppuye}
+            </small>
+          )}
+          <BoutonMicro
+            prenom={prenom}
+            rappel={voixDabord && !voix}
+            max={MEME_VOIX_MAX}
+            onDebut={() => {
+              lecteur.current?.pause();
+              setAstuce("");
+            }}
+            onNiveau={() => undefined}
+            onFin={(f) => {
+              if ("vocal" in f) return setVoix({ ...f.vocal, url: URL.createObjectURL(f.vocal.blob) });
+              if ("court" in f) return setAstuce(PHRASES_MEME.voixCourte);
+              if ("erreur" in f) setAstuce(f.erreur);
+            }}
+          />
+        </div>
+        {voix && n === 0 && <small className="sd-meme-facultatif">{PHRASES_MEME.texteFacultatif}</small>}
+        <button
+          type="button"
+          className="sd-meme-action"
+          data-action
+          disabled={!bon}
+          onClick={() => bon && onAction({ texte: texteDeMeme(texte) ?? "", tete, danse, ...(pret ? { pret } : {}) }, voix ? { blob: voix.blob, duree: voix.duree, niveaux: voix.niveaux } : undefined)}
+        >
           {PHRASES_MEME.action}
         </button>
       </section>
@@ -98,6 +173,14 @@ const STYLES_FEUILLE_MEME = `
 .sd-meme-tetes button.pris{border-color:var(--or)!important;background:#41203a!important;transform:scale(1.08)}
 .sd-meme-danse{display:flex;align-items:center;gap:10px;margin:14px 0 4px;font:650 14px var(--app)}
 .sd-meme-danse input{width:20px;height:20px;accent-color:var(--rose)}
+.sd-meme-voix{position:relative;display:flex;align-items:center;gap:12px;min-height:58px}
+.sd-meme-voix .sd-enreg{left:0;right:62px;top:50%;margin-top:-23px}
+.sd-meme-astuce{flex:1;font:500 13px/1.35 var(--app);color:var(--doux)}
+.sd-meme-ta-voix{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.sd-meme-ta-voix b{font:700 14px var(--app);white-space:nowrap}
+.sd-meme-ta-voix button{height:34px;padding:0 12px!important;border-radius:17px;background:#331729!important;border:1.5px solid var(--trait)!important;font:650 13px var(--app)!important;white-space:nowrap}
+.sd-meme-ta-voix button[data-effacer-voix]{font-family:var(--emoji)!important;padding:0 10px!important}
+.sd-meme-facultatif{display:block;margin-top:6px;font:500 12px/1.35 var(--app);color:var(--doux)}
 .sd-meme-action{margin-top:14px;height:50px;border-radius:25px;background:var(--rose)!important;color:#fff!important;font:800 16px var(--app)!important;box-shadow:0 8px 20px rgba(255,47,143,.35)}
 .sd-meme-action:disabled{opacity:.45;box-shadow:none}
 `;

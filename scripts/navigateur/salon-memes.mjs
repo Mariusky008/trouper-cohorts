@@ -8,6 +8,10 @@
 // « ✍️ Le mien » : la feuille « Ton mème » (des idées, ce qu'elle dit, 120 signes, sa tête, « 🎶 Elle danse »,
 // « 🎬 Action ! », grisé tant que c'est vide). Sam joue un mème : sa figurine le joue chez Léa, sa carte a 😂 ❤️ 🔥 (🔥
 // part). Sam en laisse un pendant l'absence de Léa : rejoué à l'arrivée. 💬 : « ▶ Revoir ». ＋ « 🎭 Un mème » : la feuille.
+// 🎙️ « MA VOIX » (un faux micro) : la feuille, le micro qui bat ; gardé appuyé, la barre ; relâché, « 🎙️ Ta voix · 0:02 »,
+// « 🎬 Action ! » s'allume sans texte ; sa figurine le dit avec ma voix (🎙️ et la forme de la voix dans la bulle de BD,
+// qui se colore) ; la carte, puis ce que j'ai dit, écrit tout seul ; chez Sam, sa voix ; « ▶ Revoir », avec ses mots ;
+// Sam en joue un avec sa voix et un texte : sa figurine le dit chez Léa.
 // Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
@@ -81,9 +85,9 @@ await poster(SAM, { action: "la" });
 await poster(SAM, { action: "ecrire", cle: LEA.cle, texte: "Coucou !" });
 
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
-const b = await lancer();
+const b = await lancer({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required"] });
 const erreurs = [];
-const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true, permissions: ["microphone"] });
 await ctx.addCookies([
   { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE },
   { name: "clikme_habitant", value: LEA.jeton, url: BASE },
@@ -106,8 +110,29 @@ const ouvrir = async () => {
   await p.addStyleTag({ content: "nextjs-portal{display:none!important}" });
 };
 
-const bd = async (qui) => (await texte(`.sc-bd[data-meme="${qui}"]`)).replace(/ /g, " ");
+const bd = async (qui) => (await texte(`.sc-bd[data-meme="${qui}"]`)).replace(/ /g, " ").replace("🎙️", "").trim();
 const eteint = () => attendre(async () => (await p.locator(".sc-projecteur, .sc-bd").count()) === 0, 9000);
+/** Un vrai petit son (WAV) de `sec` secondes. */
+function wav(sec) {
+  const taux = 8000;
+  const n = Math.round(sec * taux);
+  const o = Buffer.alloc(44 + n * 2);
+  o.write("RIFF", 0);
+  o.writeUInt32LE(36 + n * 2, 4);
+  o.write("WAVEfmt ", 8);
+  o.writeUInt32LE(16, 16);
+  o.writeUInt16LE(1, 20);
+  o.writeUInt16LE(1, 22);
+  o.writeUInt32LE(taux, 24);
+  o.writeUInt32LE(taux * 2, 28);
+  o.writeUInt16LE(2, 32);
+  o.writeUInt16LE(16, 34);
+  o.write("data", 36);
+  o.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) o.writeInt16LE(Math.round(Math.sin((i / taux) * 2 * Math.PI * 330) * 8000), 44 + i * 2);
+  return `data:audio/wav;base64,${o.toString("base64")}`;
+}
+const NIVEAUX = (sec) => Array.from({ length: Math.round((sec * 1000) / 60) }, (_, i) => Math.round(Math.abs(Math.sin(i / 3)) * 15).toString(16)).join("");
 
 await ouvrir();
 ok(await attendre(async () => (await texte(".sd-bulle.autre:not([data-ia])")) === "Coucou !", 15000), "le salon est ouvert (la bulle de Sam)");
@@ -119,7 +144,7 @@ ok(onglets.join(" | ") === "💌 Petites attentions | 🛋️ Ensemble | 🎭 M�
 await p.locator('.sd-onglet[data-onglet="memes"]').click();
 ok(await attendre(async () => (await p.locator('.sd-gestes[data-gestes="memes"]').count()) === 1, 2000), "🎭 Mèmes : la barre des mèmes");
 const puces = await p.locator('.sd-gestes[data-gestes="memes"] .sd-geste').evaluateAll((l) => l.map((x) => [...x.querySelectorAll("span")].map((y) => y.textContent.trim()).join(" ")));
-ok(puces[0] === "✨ Du jour" && puces[1] === "✍️ Le mien" && puces.includes("😂 Fou rire") && puces.includes("😍 Je t’aime"), `« Du jour », « Le mien », puis les mèmes prêts (${puces.slice(0, 5).join(" | ")}…)`);
+ok(puces[0] === "✨ Du jour" && puces[1] === "✍️ Le mien" && puces[2] === "🎙️ Ma voix" && puces.includes("😂 Fou rire") && puces.includes("😍 Je t’aime"), `« Du jour », « Le mien », « Ma voix », puis les mèmes prêts (${puces.slice(0, 5).join(" | ")}…)`);
 await p.screenshot({ path: `${D}/salon-memes-1-onglet.png` });
 
 // ═══ UN TOUCHER : IL EST JOUÉ ═══
@@ -164,6 +189,43 @@ ok(await attendre(async () => (await texte(".sd-bulle.moi.meme .sd-meme-texte"))
 chezSam = await filDe(SAM, LEA.cle);
 const m2 = chezSam.find((m) => m.genre === "meme" && m.texte === MIEN);
 ok(m2?.meme?.tete === "grimace" && m2.meme.danse === true && !m2.meme.pret, "chez Sam : sa tête, sa danse");
+await eteint();
+
+// ═══ 🎙️ MA VOIX ═══
+await p.locator("[data-meme-voix]").click();
+ok(await attendre(async () => (await p.locator("[data-feuille-meme]").count()) === 1, 3000), "« 🎙️ Ma voix » : la feuille « Ton mème »");
+ok((await p.locator("[data-feuille-meme] .sd-micro.rappel").count()) === 1, "… le micro bat (« garde-le appuyé »)");
+await attendre(() => p.evaluate(() => { const f = document.querySelector("[data-feuille-meme]"); return Boolean(f) && f.getAnimations().every((a) => a.playState === "finished"); }), 4000);
+await p.locator("[data-feuille-meme] .sd-micro").scrollIntoViewIfNeeded();
+const rm = await p.locator("[data-feuille-meme] .sd-micro").boundingBox();
+await p.mouse.move(rm.x + rm.width / 2, rm.y + rm.height / 2);
+await p.mouse.down();
+ok(await attendre(async () => (await p.locator("[data-feuille-meme] [data-enreg]").count()) === 1, 2000), "gardé appuyé : la barre ● rouge");
+await p.waitForTimeout(2300);
+await p.mouse.up();
+ok(await attendre(async () => /Ta voix · 0:0[23]/.test(await texte("[data-feuille-meme] [data-ta-voix]")), 3000), `relâché : « ${await texte("[data-feuille-meme] [data-ta-voix] b")} »`);
+ok(!(await p.locator("[data-feuille-meme] [data-action]").isDisabled()) && (await p.locator("[data-feuille-meme] .sd-meme-facultatif").count()) === 1, "sans texte, « 🎬 Action ! » s'allume (le texte est facultatif)");
+await p.locator('[data-tete-meme="amour"]').click();
+await p.screenshot({ path: `${D}/salon-memes-5-ma-voix.png` });
+await p.locator("[data-feuille-meme] [data-action]").click();
+ok(await attendre(async () => (await p.locator("[data-feuille-meme]").count()) === 0, 2000), "« 🎬 Action ! » : la feuille se ferme");
+ok(await attendre(async () => (await p.locator('.sc-bd[data-meme="moi"][data-voix="1"]').count()) === 1, 3000), "sa figurine le dit avec ma voix : 🎙️ dans la bulle de BD");
+ok((await p.locator('.sc-bd[data-meme="moi"] .sc-bd-voix i').count()) === 16, "sans texte : la forme de ma voix");
+ok(await attendre(async () => (await p.locator('.sc-bd[data-meme="moi"] .sc-bd-voix i.lu').count()) >= 4, 4000), "… qui se colore pendant qu'elle parle");
+await p.screenshot({ path: `${D}/salon-memes-6-voix-jouee.png` });
+await eteint();
+ok(await attendre(async () => (await p.locator(".sd-bulle.moi.meme [data-meme-voix]").count()) === 1, 3000), `sa carte : « ${await texte(".sd-bulle.moi.meme .sd-meme-texte")} »`);
+ok(await attendre(async () => /ce soir/.test(await texte(".sd-bulle.moi.meme .sd-meme-texte")), 20000), `ce que j'ai dit s'écrit tout seul : « ${await texte(".sd-bulle.moi.meme .sd-meme-texte")} »`);
+chezSam = await filDe(SAM, LEA.cle);
+const mv = chezSam.find((m) => m.genre === "meme" && m.meme?.voix);
+ok(Boolean(mv?.son) && mv.meme.tete === "amour" && mv.duree >= 1.5 && Boolean(mv.niveaux), `chez Sam : sa voix (${mv?.duree} s), sa tête, ses niveaux`);
+await p.locator(".sd-bulle.moi.meme [data-revoir]").click();
+ok(await attendre(async () => (await p.locator('.sc-bd[data-meme="moi"][data-voix="1"] span:not(.sc-bd-micro)').count()) >= 2, 4000), "« ▶ Revoir » : elle le redit, avec ses mots cette fois");
+await eteint();
+const VOIX_SAM = "Je t’entends d’ici !";
+ok((await poster(SAM, { action: "meme-salon", cle: LEA.cle, texte: VOIX_SAM, tete: "joie", son: wav(1.6), duree: 1.6, niveaux: NIVEAUX(1.6) })).status === 200, "Sam en joue un avec sa voix (la route)");
+ok(await attendre(async () => (await p.locator('.sc-bd[data-meme="autre"][data-voix="1"]').count()) === 1, 15000), "sa figurine le dit chez Léa, avec sa voix");
+ok(await attendre(async () => (await bd("autre")) === VOIX_SAM, 6000), `… et ses mots (« ${await bd("autre")} »)`);
 await eteint();
 
 // ═══ SAM JOUE UN MÈME : SA FIGURINE LE JOUE CHEZ LÉA ═══

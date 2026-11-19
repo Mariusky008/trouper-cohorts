@@ -54,9 +54,10 @@ export type RepliqueProposee = { de: number; a: number; texte: string; propositi
 export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video" | "fichier" | "meme"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage; fichier?: FichierDuMessage; niveaux?: string; ecoute?: boolean; meme?: MemeDuMessage };
 /**
  * 🎭 (lot S5, `meme-salon.ts`) un mème du salon : `texte` (ce que dit sa figurine), sa tête, s'il danse, le mème prêt d'où
- * il vient — une donnée, jouée par le moteur chez les deux (pas une vidéo).
+ * il vient — une donnée, jouée par le moteur chez les deux (pas une vidéo). `voix` : 🎙️ dit avec sa voix — `son` (son
+ * adresse signée), `duree` (celle de sa voix), `niveaux` ; `texte` peut être vide tant qu'elle n'est pas transcrite.
  */
-export type MemeDuMessage = { tete: Sentiment; danse: boolean; pret?: string };
+export type MemeDuMessage = { tete: Sentiment; danse: boolean; pret?: string; voix?: boolean };
 /** 📎 (lot S6) le PDF d'un message : son adresse signée (une heure, il se télécharge sous son nom), son nom, sa taille. */
 export type FichierDuMessage = { url: string; nom: string; taille: number };
 /** 🎬 (lot M3) la vidéo d'un message : son adresse signée et celle de sa vignette (une heure), ses dimensions, sa durée (s). */

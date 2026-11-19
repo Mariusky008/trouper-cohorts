@@ -48,6 +48,7 @@ import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type P
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
 import { fabriquerMeme, memePossible } from "@/lib/direct/meme";
+import { PHRASES_MEME } from "@/lib/direct/meme-salon";
 import {
   type MemeFil,
   PAROLE_MAX_S,
@@ -1777,7 +1778,7 @@ function Conversation({ cle, parler, onFermer, chezMoi }: { cle: string; parler:
             return (
               <BulleEcrite
                 key={x.id}
-                m={x}
+                m={x.genre === "meme" && !x.texte?.trim() ? { ...x, texte: `🎙️ ${x.moi ? PHRASES_MEME.avecTaVoix : PHRASES_MEME.avecSaVoix}` } : x}
                 img={img}
                 vu={i === iVue}
                 bas={`${x.genre === "meme" ? "🎭" : "✍️"} ${emojis ? `${emojis} · ` : ""}${heure(x.le)}${x.nouveau ? " · nouveau" : ""}${reactionsDe(x.id) ? ` · ${reactionsDe(x.id)}` : ""}`}

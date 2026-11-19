@@ -136,7 +136,7 @@ export type FicheMessage = Partial<Fiche> & {
   genre?: "ecrit" | "photo" | "video" | "fichier" | "meme";
   texte?: string;
   /** 🎭 (lot S5) un mème du salon : sa tête, s'il danse, le mème prêt d'où il vient (son texte : `texte`) */
-  meme?: { tete?: string; danse?: boolean; pret?: string };
+  meme?: { tete?: string; danse?: boolean; pret?: string; voix?: boolean };
   tete?: Sentiment | null;
   lien?: { url: string; site: string; titre?: string; image?: string; sorte?: "musique" | "video" };
   /**
@@ -249,25 +249,29 @@ export async function vueDeLEcrit(supabase: Supabase, f: FicheMessage, moi: stri
 
 /**
  * 🎭 (lot S5) UN MÈME DU SALON, TEL QU'IL SE VOIT : ce que dit sa figurine, sa tête, s'il danse — une seule réplique (le
- * texte, la tête), le temps qu'il se joue. Pas de son, pas d'image : le moteur le joue.
+ * texte, la tête), le temps qu'il se joue. Pas d'image : le moteur le joue. 🎙️ Dit avec sa voix : `son` (son adresse
+ * signée, donnée par l'appelant), `duree` (celle de sa voix), `niveaux` ; le texte peut attendre sa transcription.
  */
-export function vueDuMemeSalon(f: FicheMessage, moi: string, nouveau = false): MessageFil | null {
+export function vueDuMemeSalon(f: FicheMessage, moi: string, nouveau = false, son = ""): MessageFil | null {
   const texte = s(f.texte);
-  if (!s(f.id) || !texte) return null;
+  const voix = f.meme?.voix === true && Boolean(s(f.son));
+  if (!s(f.id) || (!texte && !voix) || (voix && !son)) return null;
   const tete = teteMeme(f.meme?.tete) ?? "joie";
   const danse = f.meme?.danse === true;
-  const duree = Math.round(dureeDuMeme({ texte, danse }) / 100) / 10;
+  const duree = voix ? Number(f.duree) || 0 : Math.round(dureeDuMeme({ texte, danse }) / 100) / 10;
   const pret = s(f.meme?.pret);
+  const niveaux = voix && typeof f.niveaux === "string" && /^[0-9a-f]+$/.test(f.niveaux) ? f.niveaux : "";
   return {
     id: s(f.id),
     moi: f.de === moi,
     le: s(f.le),
     duree,
-    son: "",
+    son: voix ? son : "",
     repliques: [{ de: 0, a: duree, texte, tete }],
     genre: "meme",
     texte,
-    meme: { tete, danse, ...(pret ? { pret } : {}) },
+    meme: { tete, danse, ...(pret ? { pret } : {}), ...(voix ? { voix: true } : {}) },
+    ...(niveaux ? { niveaux } : {}),
     ...(nouveau ? { nouveau: true } : {}),
   };
 }
@@ -465,7 +469,7 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
                 : m.genre === "fichier"
                   ? { texte: ligneFichier(m.media?.nom), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, fichier: true }
                 : m.genre === "meme"
-                  ? { texte: ligneMeme(m.texte), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, meme: true }
+                  ? { texte: ligneMeme(m.texte, Boolean(m.son)), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8, meme: true }
                 : { texte: texteDuMessage(repliquesValides(m.repliques, Number(m.duree)) ?? []), le: new Date(d.ts).toISOString(), moi: d.de8 === moi8 };
         }
         // 🎭 (lot 4) les mèmes envoyés entre eux : ils comptent dans les non lus ; le dernier, s'il est plus récent
@@ -550,7 +554,7 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
         // 📎 (lot S6) un PDF, à son heure
         if (f.genre === "fichier") return vueDuFichier(supabase, f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
         // 🎭 (lot S5) un mème du salon, à son heure
-        if (f.genre === "meme") return vueDuMemeSalon(f, moi.id, f.de !== moi.id && derniers[i].ts > vu);
+        if (f.genre === "meme") return vueDuMemeSalon(f, moi.id, f.de !== moi.id && derniers[i].ts > vu, f.son ? await signer(supabase, s(f.son), 3600) : "");
         if (!f.son) return null;
         const son = await signer(supabase, s(f.son), 3600);
         if (!son) return null;
@@ -1028,7 +1032,7 @@ export async function messagesSignales(supabase: Supabase): Promise<MessageSigna
       if (!f.id) return null;
       const genre: MessageSignale["genre"] = f.genre === "ecrit" ? "ecrit" : f.genre === "photo" ? "photo" : f.genre === "video" ? "video" : f.genre === "fichier" ? "fichier" : f.genre === "meme" ? "meme" : "vocal";
       const [son, photo, video, fichier] = await Promise.all([
-        genre === "vocal" && f.son ? signer(supabase, s(f.son), 3600) : Promise.resolve(""),
+        (genre === "vocal" || genre === "meme") && f.son ? signer(supabase, s(f.son), 3600) : Promise.resolve(""),
         genre === "photo" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
         genre === "video" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),
         genre === "fichier" && f.media?.chemin ? signer(supabase, s(f.media.chemin), 3600) : Promise.resolve(""),

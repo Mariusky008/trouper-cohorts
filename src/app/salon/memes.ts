@@ -6,12 +6,17 @@
  * grimace : 😜 ; tristesse : 💧 ; colère : 💢 💨) et une petite musique ; « Coupez ! », la pièce revient. L'autre figurine
  * réagit à la fin (elle rit, des cœurs…).
  *
- * Un mème est une donnée (texte, tête, danse) : rien ne se télécharge pendant qu'il se joue.
+ * Un mème est une donnée (texte, tête, danse) : rien ne se télécharge pendant qu'il se joue. 🎙️ Dit avec sa voix : elle
+ * joue dans le lecteur unique du salon (`talkie.ts`), la tête suit ses niveaux, les mots se répartissent sur elle (sans
+ * texte encore : la forme de sa voix se colore dans la bulle) ; pas de musique par-dessus. Le téléphone refuse le son
+ * (sans toucher) : le mème se joue quand même, en silence.
  *
  * MODULE DU NAVIGATEUR (il touche au DOM) : à n'importer que dans un composant client.
  */
 import { autreQue, type Qui, type Scene } from "@/lib/direct/salon";
-import { MOT_MS, PHRASES_MEME, type MemeSalon, type TeteMeme } from "@/lib/direct/meme-salon";
+import { MOT_MS, PHRASES_MEME, motMsAvecVoix, type MemeSalon, type TeteMeme } from "@/lib/direct/meme-salon";
+import { VOCAL, formeDeVoix, niveauA, niveauFaux, niveauxDe } from "@/lib/direct/vocal";
+import { jouerSon } from "./talkie";
 
 /** Le style du projecteur et de la bulle de BD (posé une fois dans la page du salon). */
 export const STYLES_MEME = `
@@ -22,6 +27,10 @@ export const STYLES_MEME = `
 .sc-bd::after{content:"";position:absolute;left:50%;bottom:calc(var(--sw)*-.022);width:calc(var(--sw)*.03);height:calc(var(--sw)*.03);background:#fff;border-right:calc(var(--sw)*.004) solid #1d0a1b;border-bottom:calc(var(--sw)*.004) solid #1d0a1b;transform:translateX(-50%) rotate(45deg)}
 .sc-bd span{display:inline-block;animation:sc-bd-mot .22s cubic-bezier(.2,1.6,.4,1) both}
 .sc-bd.part{animation:sc-bd-part .3s ease forwards}
+.sc-bd .sc-bd-micro{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;margin-right:.25em}
+.sc-bd .sc-bd-voix{display:inline-flex;align-items:center;gap:calc(var(--sw)*.005);height:calc(var(--sw)*.045);vertical-align:middle;animation:none!important}
+.sc-bd-voix i{display:block;width:calc(var(--sw)*.007);height:var(--h,50%);border-radius:9px;background:#d8c3d4;transition:background .15s ease}
+.sc-bd-voix i.lu{background:#ff2f8f}
 @keyframes sc-bd-pop{0%{opacity:0;transform:translate(-50%,-100%) scale(.5)}100%{opacity:1;transform:translate(-50%,-100%) scale(1)}}
 @keyframes sc-bd-mot{0%{opacity:0;transform:translateY(40%) scale(.6)}100%{opacity:1;transform:none}}
 @keyframes sc-bd-part{to{opacity:0;transform:translate(-50%,-110%) scale(.9)}}
@@ -95,9 +104,10 @@ export const arreterMeme = () => enCours?.();
  * 🎬 JOUER UN MÈME : la figurine de `de` le joue ; résolue à la fin (« Coupez ! », la pièce revenue). `surAction` : au
  * moment de « Action ! » (moins de 700 ms après le toucher).
  */
-export async function jouerMeme(s: Scene, de: Qui, m: Pick<MemeSalon, "texte" | "tete" | "danse">, surAction?: () => void): Promise<void> {
+export async function jouerMeme(s: Scene, de: Qui, m: Pick<MemeSalon, "texte" | "tete" | "danse" | "voix">, surAction?: () => void): Promise<void> {
   enCours?.();
   let fini = false;
+  let arreterSon: (() => void) | null = null;
   const couche = s.couche("devant");
   const t = s.repere(de, "tete");
   const h = s.repere(de, "haut");
@@ -118,6 +128,8 @@ export async function jouerMeme(s: Scene, de: Qui, m: Pick<MemeSalon, "texte" | 
     if (fini) return;
     fini = true;
     if (enCours === ranger) enCours = null;
+    arreterSon?.();
+    s.parle(de, 0);
     proj.classList.remove("vu");
     bulle.classList.add("part");
     setTimeout(() => {
@@ -136,19 +148,27 @@ export async function jouerMeme(s: Scene, de: Qui, m: Pick<MemeSalon, "texte" | 
   surAction?.();
   await s.attendre(450);
   if (fini) return;
-  // (les mots, un à un, dans la bulle de BD ; la tête qui va avec ; la musique)
+  // (les mots, un à un, dans la bulle de BD ; la tête qui va avec ; la musique — ou sa voix)
   couche.append(bulle);
-  const mots = m.texte.split(" ");
-  const sec = (mots.length * MOT_MS) / 1000 + 1;
-  s.sons.jingle(m.tete);
-  jouerLaTete(s, de, m.tete, sec);
-  s.figurine(de).parler(sec);
-  for (const mot of mots) {
-    if (fini) return;
+  const mots = m.texte ? m.texte.split(" ") : [];
+  const ajouterMot = (mot: string) => {
     const span = document.createElement("span");
     span.textContent = mot;
     bulle.append(span, document.createTextNode(" "));
-    await s.attendre(MOT_MS);
+  };
+  if (m.voix && m.voix.duree > 0) {
+    await direAvecSaVoix(s, de, m, mots, bulle, ajouterMot, () => fini, (a) => (arreterSon = a));
+    if (fini) return;
+  } else {
+    const sec = (mots.length * MOT_MS) / 1000 + 1;
+    s.sons.jingle(m.tete);
+    jouerLaTete(s, de, m.tete, sec);
+    s.figurine(de).parler(sec);
+    for (const mot of mots) {
+      if (fini) return;
+      ajouterMot(mot);
+      await s.attendre(MOT_MS);
+    }
   }
   if (m.danse && !fini) {
     s.figurine(de).danser(1.6);
@@ -162,4 +182,77 @@ export async function jouerMeme(s: Scene, de: Qui, m: Pick<MemeSalon, "texte" | 
   reagirAuMeme(s, de, m.tete);
   ranger();
   await s.attendre(500);
+}
+
+/**
+ * 🎙️ DIT AVEC SA VOIX : sa voix joue (le lecteur unique), la tête suit ses niveaux, les mots arrivent répartis sur elle
+ * — sans texte encore, la forme de sa voix se colore dans la bulle. Résolue quand sa voix a fini (ou à l'arrêt).
+ */
+async function direAvecSaVoix(
+  s: Scene,
+  de: Qui,
+  m: Pick<MemeSalon, "tete" | "voix">,
+  mots: string[],
+  bulle: HTMLElement,
+  ajouterMot: (mot: string) => void,
+  fini: () => boolean,
+  surSon: (arreter: () => void) => void,
+): Promise<void> {
+  const voix = m.voix!;
+  const niveaux = niveauxDe(voix.niveaux);
+  const niveau = (t: number) => (niveaux.length ? niveauA(niveaux, t) : niveauFaux(t, 3));
+  bulle.dataset.voix = "1";
+  const micro = document.createElement("span");
+  micro.className = "sc-bd-micro";
+  micro.textContent = "🎙️";
+  bulle.append(micro);
+  let barres: HTMLElement[] = [];
+  if (!mots.length) {
+    const forme = document.createElement("span");
+    forme.className = "sc-bd-voix";
+    barres = formeDeVoix(niveaux.length ? niveaux : Array.from({ length: 40 }, (_, i) => niveauFaux(i * 0.06, 3)), 16).map((h) => {
+      const i = document.createElement("i");
+      i.style.setProperty("--h", `${Math.round(18 + h * 82)}%`);
+      return i;
+    });
+    forme.append(...barres);
+    bulle.append(forme);
+  }
+  const son = await jouerSon(voix.url);
+  if (son) surSon(son.arreter);
+  if (fini()) return son?.arreter();
+  jouerLaTete(s, de, m.tete, voix.duree + 0.6);
+  const pas = motMsAvecVoix(mots.length, voix.duree);
+  const t0 = performance.now();
+  let dits = 0;
+  let derniere = -1;
+  let lus = -1;
+  await new Promise<void>((ok) => {
+    let desabonner: () => void = () => undefined;
+    const finir = () => {
+      desabonner();
+      s.parle(de, 0);
+      ok();
+    };
+    desabonner = s.surImage(() => {
+      if (fini()) return finir();
+      const t = son && son.a.currentTime > 0 ? son.a.currentTime : (performance.now() - t0) / 1000;
+      const k = Math.floor((t * 1000) / VOCAL.pasMs);
+      if (k !== derniere) {
+        derniere = k;
+        s.parle(de, niveau(t));
+      }
+      while (dits < mots.length && t * 1000 >= dits * pas) ajouterMot(mots[dits++]);
+      if (barres.length) {
+        const nb = Math.round(Math.min(1, t / voix.duree) * barres.length);
+        if (nb !== lus) {
+          lus = nb;
+          barres.forEach((b, j) => b.classList.toggle("lu", j < nb));
+        }
+      }
+      if ((son && son.a.ended) || t >= voix.duree + (son ? 1.2 : 0.2)) finir();
+    });
+  });
+  // (les mots qui restent, d'un coup)
+  while (!fini() && dits < mots.length) ajouterMot(mots[dits++]);
 }

@@ -40,6 +40,7 @@ export function BoutonMicro({
   prenom,
   desactive,
   rappel = false,
+  max = VOCAL.max,
   onDebut,
   onNiveau,
   onFin,
@@ -48,6 +49,8 @@ export function BoutonMicro({
   desactive?: boolean;
   /** le bouton bat deux fois (« garde-le appuyé ») */
   rappel?: boolean;
+  /** la durée la plus longue (s) : une minute pour un vocal, 20 secondes pour un mème dit avec sa voix */
+  max?: number;
   onDebut: () => void;
   onNiveau: (n: number) => void;
   onFin: (f: FinMicro) => void;
@@ -180,7 +183,7 @@ export function BoutonMicro({
         rappels.current.onNiveau(n);
         if (temps.current) temps.current.textContent = tempsDit(t);
         dessiner(e.niveaux);
-        if (t >= VOCAL.max) return void finir(false);
+        if (t >= max) return void finir(false);
       }
       e.raf = requestAnimationFrame(tic);
     };
@@ -218,7 +221,7 @@ export function BoutonMicro({
     const rec = e.rec;
     rec.onstop = () => {
       const blob = e.morceaux.length ? new Blob(e.morceaux, { type: rec.mimeType || "audio/webm" }) : null;
-      rendre(blob ? { vocal: { blob, duree: Math.min(VOCAL.max, duree), niveaux: e.niveaux } } : { erreur: PHRASES_VOCAL.pasParti });
+      rendre(blob ? { vocal: { blob, duree: Math.min(max, duree), niveaux: e.niveaux } } : { erreur: PHRASES_VOCAL.pasParti });
     };
     try {
       if (rec.state !== "inactive") rec.stop();

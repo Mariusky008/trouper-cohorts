@@ -27,7 +27,7 @@
  * reste sur la table et se touche. **Un appui long sur sa bulle** (ou sur un de ses messages dans 💬) : réagir avec le
  * corps (👏 😂 ❤️ ✋ 🤦 😮).
  */
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { bez, creerScene, ease } from "./moteur";
@@ -66,6 +66,7 @@ import { texteDuMessage, type Fil, type MemeFil, type MessageFil } from "@/lib/d
 import { PHRASES_VOCAL, formeDeVoix, niveauxDuVocal, niveauxEnTexte, tempsDit } from "@/lib/direct/vocal";
 import { STYLES_TALKIE, arreterLecture, debloquerSon, entendreEnDirect, installerTalkiesTable, lireVocal, prendreTalkie, rangerTalkie, secouerTalkieTable, vivreVoix, type TalkiesSurTable } from "./talkie";
 import { BoutonMicro, type FinMicro } from "./micro";
+import type { VoixEnregistree } from "./feuille-meme";
 import { STYLES_MEME, arreterMeme, jouerMeme } from "./memes";
 import { PHRASES_MEME, emojiDeTete, memesDuSalon, teteMeme, type MemeSalon } from "@/lib/direct/meme-salon";
 
@@ -239,10 +240,12 @@ function ContenuVocal({ m, prenom, joue, surLire }: { m: MessageFil; prenom: str
 function ContenuMeme({ m, surRevoir, reagir }: { m: MessageFil; surRevoir: () => void; reagir?: (cle: string) => void }) {
   const tete = teteMeme(m.meme?.tete) ?? "joie";
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
+  const voix = m.meme?.voix === true;
   return (
-    <span className="sd-meme" data-meme-bulle={m.id}>
+    <span className="sd-meme" data-meme-bulle={m.id} {...(voix ? { "data-meme-voix": "1" } : {})}>
       <span className="sd-meme-texte">
-        <span className="e">{emojiDeTete(tete)}</span> « {m.texte} »
+        <span className="e">{emojiDeTete(tete)}</span>
+        {voix && <span className="e"> 🎙️</span>} {m.texte ? `« ${m.texte} »` : m.moi ? PHRASES_MEME.avecTaVoix : PHRASES_MEME.avecSaVoix}
       </span>
       <span className="sd-meme-actions">
         <button type="button" className="sd-revoir" data-revoir={m.id} onPointerDown={stop} onClick={(e) => (stop(e), surRevoir())}>
@@ -483,7 +486,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const toucherTalkieRef = useRef<(q: Qui, id: string) => void>(() => undefined);
   const rangerTableRef = useRef<() => boolean>(() => false);
   // 🎭 (lot S5) les mèmes : « Ton mème » ouvert ; jouer un mème du fil (de l'arrivée, du pouls)
-  const [feuilleMeme, setFeuilleMeme] = useState(false);
+  /** ✍️ « Ton mème » ouverte (`voix` : par « 🎙️ Ma voix », le micro bat) */
+  const [feuilleMeme, setFeuilleMeme] = useState<false | "texte" | "voix">(false);
   const [memeEnScene, setMemeEnScene] = useState(0);
   const rejouerMemeRef = useRef<(m: MessageFil) => void>(() => undefined);
 
@@ -1269,12 +1273,13 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   /** Un mème du fil, rejoué par la figurine de celui qui l'a fait (▶ Revoir, son arrivée, en direct). */
   async function rejouerMeme(m: MessageFil) {
     const s = scene.current;
-    if (!s || m.genre !== "meme" || !m.texte) return;
+    const voix = m.meme?.voix && m.son && m.duree > 0 ? { url: m.son, duree: m.duree, niveaux: m.niveaux ?? "" } : undefined;
+    if (!s || m.genre !== "meme" || (!m.texte && !voix)) return;
     arreterLecture();
     setTeleProche(false);
     // (pendant qu'il se joue, la bulle de BD remplace les bulles)
     setMemeEnScene((n) => n + 1);
-    await jouerMeme(s, m.moi ? "moi" : "autre", { texte: m.texte, tete: teteMeme(m.meme?.tete) ?? "joie", danse: m.meme?.danse === true }).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
+    await jouerMeme(s, m.moi ? "moi" : "autre", { texte: m.texte ?? "", tete: teteMeme(m.meme?.tete) ?? "joie", danse: m.meme?.danse === true, ...(voix ? { voix } : {}) }).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
   }
   /** ▶ Revoir, depuis 💬 : la feuille se ferme, la figurine le rejoue. */
   function revoirDepuisLeFil(m: MessageFil) {
@@ -1283,12 +1288,25 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   }
   /**
    * 🎭 Je joue un mème (un mème prêt, le mème du jour, « Ton mème ») : ma figurine le joue tout de suite (« Action ! »
-   * en moins de 700 ms), puis il part ; un échec le défait et le dit.
+   * en moins de 700 ms), puis il part ; un échec le défait et le dit. `enreg` : 🎙️ dit avec ma voix — elle joue tout
+   * de suite (de ce téléphone), puis part avec lui.
    */
-  async function faireUnMeme(m: MemeSalon) {
+  async function faireUnMeme(m: MemeSalon, enreg?: VoixEnregistree) {
     if (!fil) return;
     setFeuilleMeme(false);
-    const provisoire: MessageFil = { id: `envoi-${Date.now()}`, moi: true, le: new Date().toISOString(), duree: 0, son: "", repliques: [], genre: "meme", texte: m.texte, meme: { tete: m.tete, danse: m.danse, ...(m.pret ? { pret: m.pret } : {}) } };
+    const voix = enreg ? { url: URL.createObjectURL(enreg.blob), duree: Math.round(enreg.duree * 100) / 100, niveaux: niveauxEnTexte(enreg.niveaux) } : undefined;
+    const provisoire: MessageFil = {
+      id: `envoi-${Date.now()}`,
+      moi: true,
+      le: new Date().toISOString(),
+      duree: voix?.duree ?? 0,
+      son: voix?.url ?? "",
+      repliques: [],
+      genre: "meme",
+      texte: m.texte,
+      meme: { tete: m.tete, danse: m.danse, ...(m.pret ? { pret: m.pret } : {}), ...(voix ? { voix: true } : {}) },
+      ...(voix ? { niveaux: voix.niveaux } : {}),
+    };
     setMessages((l) => [...l, provisoire]);
     chat.current?.reagir("message");
     const s = scene.current;
@@ -1296,10 +1314,22 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       arreterLecture();
       setTeleProche(false);
       setMemeEnScene((n) => n + 1);
-      void jouerMeme(s, "moi", m).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
+      void jouerMeme(s, "moi", { ...m, ...(voix ? { voix } : {}) }).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
     }
     try {
-      const r = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "meme-salon", cle, texte: m.texte, tete: m.tete, danse: m.danse, ...(m.pret ? { pret: m.pret } : {}) }) });
+      const son = enreg
+        ? await new Promise<string>((ok, ko) => {
+            const lecteur = new FileReader();
+            lecteur.onload = () => ok(String(lecteur.result));
+            lecteur.onerror = () => ko(new Error(""));
+            lecteur.readAsDataURL(enreg.blob);
+          })
+        : "";
+      const r = await fetch("/api/direct/proches", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "meme-salon", cle, texte: m.texte, tete: m.tete, danse: m.danse, ...(m.pret ? { pret: m.pret } : {}), ...(voix ? { son, duree: voix.duree, niveaux: voix.niveaux } : {}) }),
+      });
       const j = (await r.json().catch(() => null)) as { message?: MessageFil; error?: string } | null;
       if (!r.ok || !j?.message) throw new Error(j?.error || "");
       const vrai = j.message;
@@ -1898,7 +1928,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
               </button>
             ))}
           </div>
-          {/* 🎭 (lot S5) les mèmes : le mème du jour, « ✍️ Le mien », puis les mèmes prêts du moment */}
+          {/* 🎭 (lot S5) les mèmes : le mème du jour, « ✍️ Le mien », « 🎙️ Ma voix », puis les mèmes prêts du moment */}
           {!barre.replie && barre.onglet === "memes" && (
             <div className="sd-gestes" aria-label="Les mèmes" data-gestes="memes">
               {memesDuSalon()
@@ -1910,10 +1940,16 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                       <span>{m.cle === "du-jour" ? PHRASES_MEME.duJour : m.nom}</span>
                     </button>
                   ) : (
-                    <button key="mien" type="button" className="sd-geste" data-meme-mien disabled={!fil} onClick={() => setFeuilleMeme(true)}>
-                      <span className="e">✍️</span>
-                      <span>{PHRASES_MEME.lemien}</span>
-                    </button>
+                    <Fragment key="mien">
+                      <button type="button" className="sd-geste" data-meme-mien disabled={!fil} onClick={() => setFeuilleMeme("texte")}>
+                        <span className="e">✍️</span>
+                        <span>{PHRASES_MEME.lemien}</span>
+                      </button>
+                      <button type="button" className="sd-geste" data-meme-voix disabled={!fil} onClick={() => setFeuilleMeme("voix")}>
+                        <span className="e">🎙️</span>
+                        <span>{PHRASES_MEME.maVoix}</span>
+                      </button>
+                    </Fragment>
                   ),
                 )}
             </div>
@@ -2107,7 +2143,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           }}
           onMeme={() => {
             setEnvoiOuvert(false);
-            setFeuilleMeme(true);
+            setFeuilleMeme("texte");
           }}
           onVocal={() => {
             setEnvoiOuvert(false);
@@ -2117,7 +2153,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           }}
         />
       )}
-      {feuilleMeme && fil && <FeuilleMeme prenom={prenom} onAction={(m) => void faireUnMeme(m)} onFermer={() => setFeuilleMeme(false)} />}
+      {feuilleMeme && fil && <FeuilleMeme prenom={prenom} voix={feuilleMeme === "voix"} onAction={(m, v) => void faireUnMeme(m, v)} onFermer={() => setFeuilleMeme(false)} />}
       {etagereOuverte && <FeuilleEtagere cle={cle} onFermer={() => setEtagereOuverte(false)} onRetire={(id) => setSouvenirs((l) => l.filter((o) => o.id !== id))} />}
     </main>
   );
