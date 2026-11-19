@@ -14,9 +14,10 @@
  * puis ses pièces défilent — on glisse de l'une à l'autre, la vidéo de celle qu'on regarde joue en boucle ; un toucher,
  * on entre en plein écran (`app/univers/piece-vivante.tsx` : ses vedettes, la caméra qui s'approche).
  *
- * 🏠 LA PIÈCE DE CHACUN (16 novembre 2026 au soir, `docs/univers/ma-maison.md` ; le lot M1) : quand l'interrupteur
- * `MA_MAISON_CATALOGUE` sera allumé, l'onglet montre sa pièce du catalogue (`maison-catalogue.tsx`) au lieu de l'univers
- * d'aujourd'hui — et, à qui a déjà un univers, une carte « Choisis ta pièce » (le lot M3, `MaisonOuUnivers`).
+ * 🏠 LA PIÈCE DE CHACUN (16 novembre 2026 au soir, `docs/univers/ma-maison.md` ; le lot M1) : l'interrupteur
+ * `MA_MAISON_CATALOGUE` allumé (19 novembre 2026 ; `catalogue`, la valeur du serveur), l'onglet montre sa pièce du
+ * catalogue (`maison-catalogue.tsx`) au lieu de l'univers d'avant — et, à qui a déjà un univers, une carte « Choisis ta
+ * pièce » (le lot M3, `MaisonOuUnivers`).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
@@ -59,8 +60,9 @@ function ApercuPiece({ p, joue, onEntrer }: { p: PieceVue; joue: boolean; onEntr
   );
 }
 
-export function MaMaison({ actif }: { actif: boolean }) {
-  return MA_MAISON_CATALOGUE ? <MaisonOuUnivers actif={actif} /> : <MonUniversSeul actif={actif} />;
+/** (`catalogue` : l'interrupteur `MA_MAISON_CATALOGUE`, tel que le serveur le donne — `interrupteurs-serveur.ts`) */
+export function MaMaison({ actif, catalogue = MA_MAISON_CATALOGUE }: { actif: boolean; catalogue?: boolean }) {
+  return catalogue ? <MaisonOuUnivers actif={actif} /> : <MonUniversSeul actif={actif} />;
 }
 /** (l'univers d'aujourd'hui, tant que l'interrupteur est éteint) */
 function MonUniversSeul({ actif }: { actif: boolean }) {

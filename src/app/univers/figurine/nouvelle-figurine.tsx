@@ -22,7 +22,7 @@ import { imageVisage, type Visage } from "@/lib/direct/guide";
 import { IDEES_RETOUCHE, VILLE_MAX, villeEcrite, type EtatNouvelleFigurine, type PropositionVue } from "@/lib/direct/nouvelle-figurine";
 import { RETOUCHE_FIGURINE_MAX } from "@/lib/direct/perso-consignes";
 import { PRENOM_MAX, prenomValide } from "@/lib/direct/ma-figurine";
-import { ADRESSE_CHOISIR_PIECE, TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
+import { TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
 
 const ROUTE = "/api/direct/nouvelle-figurine";
 
@@ -57,7 +57,8 @@ async function photoReduite(f: File): Promise<string> {
   }
 }
 
-export function NouvelleFigurine({ piece = false }: { piece?: boolean }) {
+/** (`piece` : où mène « 🏠 Choisis ta pièce » — vide : le parcours d'avant, `choisis-ta-piece-serveur.ts`) */
+export function NouvelleFigurine({ piece = "" }: { piece?: string }) {
   const [etat, setEtat] = useState<EtatNouvelleFigurine | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -397,7 +398,7 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatNouvelleFigurine; occup
 }
 
 // ─── validée ──────────────────────────────────────────────────────────────────────────────────────
-function Validee({ etat, piece, onRefaire }: { etat: EtatNouvelleFigurine; piece: boolean; onRefaire: () => void }) {
+function Validee({ etat, piece, onRefaire }: { etat: EtatNouvelleFigurine; piece: string; onRefaire: () => void }) {
   const f = etat.figurine;
   if (!f?.images.assise) return <p className="nf-centre">Un instant…</p>;
   return (
@@ -420,7 +421,7 @@ function Validee({ etat, piece, onRefaire }: { etat: EtatNouvelleFigurine; piece
         // (🏠 lot M3 : Pablito ne fabrique plus l'univers — on choisit sa pièce, et on arrive chez soi)
         <>
           <p className="nf-suite">{TEXTES_PIECE.suite}</p>
-          <a className="nf-bouton nf-vers" href={ADRESSE_CHOISIR_PIECE} data-suite="piece">
+          <a className="nf-bouton nf-vers" href={piece} data-suite="piece">
             {TEXTES_PIECE.bouton}
           </a>
         </>

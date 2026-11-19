@@ -5,17 +5,15 @@
  * figurine assise, **« Choisis ta pièce »** (les neuf du catalogue, dans l'ordre de l'âge : `ma-maison.ts`), et on
  * arrive chez soi, tout de suite. Pablito accueille toujours, mais ne fabrique plus rien.
  *
- * Derrière l'interrupteur `MA_MAISON_CATALOGUE` (éteint) : en attendant, l'administrateur l'essaie sur son téléphone
- * d'habitant en le demandant (`/univers/figurine?piece=1`, `/univers?piece=1`), et choisit sa pièce à l'adresse d'essai
- * `/univers/maison` ; tous les autres, et lui sans `?piece=1`, gardent le parcours d'aujourd'hui. Allumé : pour tout le
- * monde, et le choix se fait dans l'onglet « Ma maison » de l'appli.
+ * Derrière l'interrupteur `MA_MAISON_CATALOGUE`, allumé le 19 novembre 2026 : pour tout le monde, et le choix se fait
+ * dans l'onglet « Ma maison » de l'appli. Freiné (`CLIKME_MA_MAISON=0`, `interrupteurs-serveur.ts`), l'administrateur
+ * l'essaie sur son téléphone d'habitant en le demandant (`/univers/figurine?piece=1`, `/univers?piece=1`), et choisit sa
+ * pièce à l'adresse d'essai `/univers/maison` ; tous les autres, et lui sans `?piece=1`, gardent le parcours d'avant.
  *
  * Partagé (l'écran et le serveur).
  */
-import { MA_MAISON_CATALOGUE } from "./ma-maison";
-
-/** Où l'on choisit sa pièce (et où l'on arrive chez soi). */
-export const ADRESSE_CHOISIR_PIECE = MA_MAISON_CATALOGUE ? "/collection#maison" : "/univers/maison";
+/** Où l'on choisit sa pièce (et où l'on arrive chez soi) : l'onglet « Ma maison », ou l'adresse d'essai (freiné). */
+export const adresseChoisirPiece = (catalogue: boolean) => (catalogue ? "/collection#maison" : "/univers/maison");
 
 /** Les mots du parcours (à l'écran seulement : Pablito n'a pas d'enregistrement pour eux). */
 export const TEXTES_PIECE = {
@@ -39,7 +37,8 @@ export const TEXTES_PIECE = {
 } as const;
 
 /** Le chemin de l'inscription, dans la bienvenue (les étapes montrées, sans voix). */
-export const CHEMIN_INSCRIPTION: readonly { e: string; t: string }[] = MA_MAISON_CATALOGUE
+export const cheminInscription = (catalogue: boolean): readonly { e: string; t: string }[] =>
+  catalogue
   ? [
       { e: "📸", t: "Ton selfie" },
       { e: "🧸", t: "Ta figurine" },

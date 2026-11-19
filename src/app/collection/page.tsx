@@ -9,6 +9,7 @@ import { villeSlug } from "@/lib/direct/ville";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { jetonValide } from "@/lib/direct/appli-collection-serveur";
 import { universPourTous } from "@/lib/direct/univers-pour-tous";
+import { maisonPourTous, salonPourTous } from "@/lib/direct/interrupteurs-serveur";
 import { MaCollection } from "./ma-collection";
 
 export const dynamic = "force-dynamic";
@@ -69,5 +70,6 @@ async function villesClikMe(): Promise<{ slug: string; nom: string }[]> {
 }
 
 export default async function PageCollection() {
-  return <MaCollection villes={await villesClikMe()} univers={universPourTous()} />;
+  // (🔀 les interrupteurs, côté serveur : il peut les freiner sans déployer — `interrupteurs-serveur.ts`)
+  return <MaCollection villes={await villesClikMe()} univers={universPourTous()} maison={maisonPourTous()} salon={salonPourTous()} />;
 }

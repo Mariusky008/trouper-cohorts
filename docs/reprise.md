@@ -34,6 +34,12 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    à enregistrer par le propriétaire, `tuto-decouvrir-tele-1..3`) ; ensuite D2 (inviter des proches, la télé
    synchronisée).
 
+**Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
+l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les
+conversations s'ouvrent dans le salon). Freins sans déployer : `CLIKME_MA_MAISON=0`, `CLIKME_SALON_DU_DUO=0`
+(`interrupteurs-serveur.ts` ; `ma-maison.md` section 20, `salon-du-duo.md` 11.24). La CI tourne freinée. À enregistrer
+par le propriétaire : `tuto-univers-6b` (la dernière bulle de la bienvenue, « …puis tu choisis ta pièce… »).
+
 **À savoir (19 novembre 2026)** : (le soir même, le propriétaire a pris le plan Pro : Supabase répond de nouveau.) Le
 projet Supabase de production était **bridé** — plan gratuit, 39 Go de données
 sortantes pour 5 Go permis (cycle du 8 novembre au 8 décembre) : il répond 402 à tout, d'où les « Ton compte n'a pas pu

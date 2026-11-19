@@ -132,7 +132,11 @@ const ALIAS: Record<string, Vue> = {
   presence: "personnage",
 };
 
-export function MaCollection({ villes = [], univers = false }: { villes?: { slug: string; nom: string }[]; univers?: boolean }) {
+/**
+ * (`maison` : « Ma maison » du catalogue, et l'inscription « Choisis ta pièce » ; `salon` : les conversations dans le salon
+ * du duo — les interrupteurs, tels que le serveur les donne, `interrupteurs-serveur.ts`)
+ */
+export function MaCollection({ villes = [], univers = false, maison = false, salon = false }: { villes?: { slug: string; nom: string }[]; univers?: boolean; maison?: boolean; salon?: boolean }) {
   const [etat, setEtat] = useState<EtatMaFigurine | null>(null);
   const [charge, setCharge] = useState(false);
   const [vue, setVue] = useState<Vue>("figurine");
@@ -400,7 +404,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
         {univers && ouverts.has("maison") && (
           <section className="mc-onglet" id="o-maison" hidden={vue !== "maison"} aria-label="Ma maison">
             <OngletVisible.Provider value={vue === "maison"}>
-              <MaMaison actif={vue === "maison"} />
+              <MaMaison actif={vue === "maison"} catalogue={maison} />
             </OngletVisible.Provider>
           </section>
         )}
@@ -409,7 +413,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
         {ouverts.has("proches") && (
           <section className="mc-onglet" id="o-proches" hidden={vue !== "proches"} aria-label="Proches">
             <OngletVisible.Provider value={vue === "proches"}>
-              <Proches compte={compte} prete={prete} allerA={allerA} onNonLus={setNonLus} onNouveautes={setNouveautes} chezMoi={univers} />
+              <Proches compte={compte} prete={prete} allerA={allerA} onNonLus={setNonLus} onNouveautes={setNouveautes} chezMoi={univers} salonPourTous={salon} />
             </OngletVisible.Provider>
           </section>
         )}
@@ -460,7 +464,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
             if (univers) window.location.assign("/univers/figurine");
             else allerA("creer");
           };
-          return BIENVENUE_CHEZ_PABLITO ? <BienvenueSelonPablito onFini={finirBienvenue} onCreer={creer} /> : <BienvenueTuto onFini={finirBienvenue} onCreer={creer} />;
+          return BIENVENUE_CHEZ_PABLITO ? <BienvenueSelonPablito onFini={finirBienvenue} onCreer={creer} /> : <BienvenueTuto onFini={finirBienvenue} onCreer={creer} catalogue={maison} />;
         })()}
 
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;

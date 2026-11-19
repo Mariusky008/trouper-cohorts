@@ -1,15 +1,18 @@
 // 🛋️ LA BASCULE VERS LE SALON DU DUO (`docs/univers/salon-du-duo.md`, 11.23 ; le lot S8) — l'interrupteur
-// `SALON_DU_DUO` (éteint) et l'essai d'un téléphone (`/collection?salon=1`), sur un téléphone, contre le faux Supabase.
+// `SALON_DU_DUO` (allumé le 19 novembre 2026 ; ici freiné, `CLIKME_SALON_DU_DUO=0`, comme toute la CI) et l'essai d'un
+// téléphone (`/collection?salon=1`), sur un téléphone, contre le faux Supabase.
 //
 // Sans rien : la conversation s'ouvre dans l'ancien écran. `/collection?salon=1` : le téléphone le retient (l'adresse
 // redevient propre) ; la même carte ouvre le salon du duo, par-dessus la page (le prénom, les deux figurines posées, la
 // bulle de Sam) ; « ‹ » le referme sur la liste ; la notification (`?parler=<clé>`) l'ouvre tout droit ; le retour du
-// téléphone le referme ; le toucher est marqué (la vitesse du salon). `?salon=0` : l'ancien écran revient. Ni erreur, ni
-// débordement, ni le mot « exemple ».
+// téléphone le referme ; le toucher est marqué (la vitesse du salon). `?salon=0` : l'ancien écran revient. 🔀 ALLUMÉ
+// (une seconde app, sans frein) : sans rien, la même carte ouvre le salon ; `?salon=0` reste une porte de sortie. Ni
+// erreur, ni débordement, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
+import { lancerSecondeApp } from "../seconde-app.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -159,6 +162,27 @@ await laListe(`/collection?salon=0&v=${Date.now()}#proches`);
 ok((await p.evaluate(() => localStorage.getItem("clikme-salon"))) === "0", "?salon=0 : retenu");
 await p.locator(carte).click();
 ok(await attendre(async () => (await p.locator(".pr-plein .pr-scene").count()) === 1 && (await p.locator("[data-salon-du-duo]").count()) === 0), "… et l'ancien écran revient");
+
+// ═══ 🔀 L'INTERRUPTEUR ALLUMÉ (19 novembre 2026) : SANS RIEN, LE SALON ═══
+// (une seconde app, sans frein — `BASE_ALLUMEE` : celle qu'on a lancée soi-même, en local)
+const { base: ALLUME, arreter } = process.env.BASE_ALLUMEE ? { base: process.env.BASE_ALLUMEE, arreter: () => {} } : await lancerSecondeApp({ env: { CLIKME_SALON_DU_DUO: "1" } });
+const ctxA = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+await ctxA.addCookies([{ name: "clikme_habitant", value: LEA.jeton, url: ALLUME }]);
+const pa = await ctxA.newPage();
+pa.on("pageerror", (e) => erreurs.push(String(e)));
+await pa.goto(`${ALLUME}/collection?v=${Date.now()}#proches`, { waitUntil: "networkidle" });
+await fermerPablito(pa, "#o-proches");
+await pa.waitForSelector(carte, { timeout: 60000 });
+ok((await pa.evaluate(() => localStorage.getItem("clikme-salon"))) === null, "allumé : le téléphone n'a rien choisi");
+await pa.locator(carte).click();
+ok(await attendre(async () => (await pa.locator("[data-salon-du-duo]").count()) === 1 && (await pa.locator(".pr-plein").count()) === 0, 30000), "… et la carte ouvre le salon du duo, plus l'ancien écran");
+await pa.screenshot({ path: `${D}/salon-bascule-allume.png` });
+await pa.locator("[data-salon-du-duo] .sd-retour").click();
+await pa.goto(`${ALLUME}/collection?salon=0&v=${Date.now()}#proches`, { waitUntil: "networkidle" });
+await pa.waitForSelector(carte, { timeout: 60000 });
+await pa.locator(carte).click();
+ok(await attendre(async () => (await pa.locator(".pr-plein .pr-scene").count()) === 1 && (await pa.locator("[data-salon-du-duo]").count()) === 0), "`?salon=0` : une porte de sortie, l'ancien écran");
+arreter();
 
 const corps = await p.evaluate(() => document.body.innerText);
 ok(!/exemple/i.test(corps), "jamais le mot « exemple »");

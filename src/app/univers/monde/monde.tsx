@@ -32,7 +32,7 @@ import { IDEES_RETOUCHE_UNIVERS, RETOUCHE_UNIVERS_MAX, type CleUnivers, type Eta
 import { VISIBILITES_DITES, objetDe, type MesVisites } from "@/lib/direct/visites";
 import type { Visibilite } from "@/lib/direct/monde";
 import { ChoixAmbiance } from "../choix-ambiance";
-import { ADRESSE_CHOISIR_PIECE, TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
+import { TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
 
 const ROUTE = "/api/direct/univers";
 
@@ -69,7 +69,8 @@ const MENU_DE_DEMAIN = [
   { ico: "📍", nom: "Autour", href: "/collection#autour" },
 ] as const;
 
-export function Monde({ accueil = false, piece = false }: { accueil?: boolean; piece?: boolean }) {
+/** (`piece` : où mène « 🏠 Choisis ta pièce » — vide : le parcours d'avant, `choisis-ta-piece-serveur.ts`) */
+export function Monde({ accueil = false, piece = "" }: { accueil?: boolean; piece?: string }) {
   const [etat, setEtat] = useState<EtatUnivers | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -169,7 +170,7 @@ export function Monde({ accueil = false, piece = false }: { accueil?: boolean; p
           <img className="um-pablito" src={imageVisage("joie", "n")} alt="" />
           <p className="um-titre">{TEXTES_PIECE.accueilTitre}</p>
           <p className="um-doux">{TEXTES_PIECE.accueilTexte}</p>
-          <a className="um-bouton" href={ADRESSE_CHOISIR_PIECE}>
+          <a className="um-bouton" href={piece}>
             {TEXTES_PIECE.bouton}
           </a>
         </section>

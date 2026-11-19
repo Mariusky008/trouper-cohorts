@@ -1,6 +1,6 @@
 // 🏠 « MA MAISON » — LA PIÈCE DE CHACUN (`lib/direct/ma-maison-serveur.ts`, `docs/univers/ma-maison.md` ; le lot M1) :
-// la sienne seulement (le cookie d'habitant). Derrière l'interrupteur `MA_MAISON_CATALOGUE` (éteint) : en attendant,
-// l'administrateur seul (l'adresse d'essai `/univers/maison`).
+// la sienne seulement (le cookie d'habitant). Derrière l'interrupteur `MA_MAISON_CATALOGUE` (allumé le 19 novembre 2026 ;
+// freiné, `CLIKME_MA_MAISON=0` : l'administrateur seul, à l'adresse d'essai `/univers/maison`).
 //
 // GET                       → { maison: { piece, scene, figurine } } : sa pièce, à cette heure, et sa figurine
 // GET ?catalogue=1          → { catalogue: { pieces, piece } } : les neuf, dans l'ordre de son âge, et leurs vignettes
@@ -17,7 +17,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
+import { maisonPourTous } from "@/lib/direct/interrupteurs-serveur";
 import { catalogueDeLaMaison, choisirSaPiece, maMaison, maMaisonVue } from "@/lib/direct/ma-maison-serveur";
 import { ajouterChezMoi, enleverDeChezMoi } from "@/lib/direct/etagere-serveur";
 import { choisirVisibiliteMaison, maisonVisitee } from "@/lib/direct/visites-serveur";
@@ -26,7 +26,7 @@ import { repondreChezLui } from "@/lib/direct/question-maison-serveur";
 export const dynamic = "force-dynamic";
 
 const sansCache = { "cache-control": "private, no-store" };
-const permise = async () => MA_MAISON_CATALOGUE || (await isCurrentUserAdmin());
+const permise = async () => maisonPourTous() || (await isCurrentUserAdmin());
 
 async function habitant() {
   const supabase = createAdminClient();

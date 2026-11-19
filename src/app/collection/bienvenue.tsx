@@ -24,7 +24,8 @@
  * Toi et Léa sont de petits personnages dessinés : le nouveau venu n'a pas encore sa figurine.
  */
 import { Fragment, useEffect, useRef, useState } from "react";
-import { CHEMIN_INSCRIPTION } from "@/lib/direct/choisis-ta-piece";
+import { cheminInscription } from "@/lib/direct/choisis-ta-piece";
+import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
 import { SONS_PABLITO, imagePablitoDebout } from "@/lib/direct/guide";
 import { Guide, debloquerLaVoix, useVoixBulle, type Visage } from "./guide";
 
@@ -32,7 +33,8 @@ import { Guide, debloquerLaVoix, useVoixBulle, type Visage } from "./guide";
  * Les bulles de Pablito (son visage, son enregistrement et sa durée, en secondes : la bulle s'écrit au rythme de sa voix),
  * et ce qu'on lui répond — la dernière : « Je crée ma figurine ».
  */
-export const BIENVENUE: { t: string; v: Visage; son: string; duree: number; toi?: string }[] = [
+type BulleBienvenue = { t: string; v: Visage; son: string; duree: number; toi?: string };
+export const BIENVENUE: BulleBienvenue[] = [
   { t: "Salut ! Moi, c’est Pablito, le patron de ClikMe. Bienvenue !", v: "joie", son: "tuto-bienvenue-1", duree: 4.05, toi: "C’est quoi, ClikMe ?" },
   { t: "ClikMe, c’est un peu comme WhatsApp : tu parles avec tes proches. Mais ici, vos conversations créent un univers commun entre vous.", v: "euphorie", son: "tuto-univers-2", duree: 6.69, toi: "C’est-à-dire ?" },
   { t: "Chaque personne a sa figurine, faite à partir de son selfie. Au fil de vos conversations, elle range tout : les souvenirs, les rappels, les infos.", v: "joie", son: "tuto-univers-3", duree: 8.67, toi: "Et quoi d’autre ?" },
@@ -40,6 +42,14 @@ export const BIENVENUE: { t: string; v: Visage; son: string; duree: number; toi?
   { t: "Petit à petit, il te définit mieux que tu ne pourrais l’imaginer. Tes proches peuvent le visiter… et toi, visiter les leurs.", v: "joie", son: "tuto-univers-5", duree: 7.63, toi: "Ça commence comment ?" },
   { t: "Par toi ! Un selfie pour ta figurine, puis on discute cinq minutes, et je dessine les premiers endroits de ton univers.", v: "joie", son: "tuto-univers-6", duree: 6.11 },
 ];
+/**
+ * 🏠 (« Ma maison » allumée, 19 novembre 2026) la dernière bulle, pour le nouveau parcours : plus de conversation pour
+ * fabriquer un univers, on choisit sa pièce. Pas encore enregistrée par le propriétaire (`tuto-univers-6b`) : elle
+ * s'écrit sans voix d'ici là (jamais de voix de synthèse).
+ */
+const DERNIERE_MAISON: BulleBienvenue = { t: "Par toi ! Un selfie pour ta figurine, puis tu choisis ta pièce, et elle se remplit avec ce que tu gardes.", v: "joie", son: "tuto-univers-6b", duree: 6 };
+/** Les bulles, selon l'interrupteur (`catalogue`) */
+const bullesDe = (catalogue: boolean): BulleBienvenue[] => (catalogue ? [...BIENVENUE.slice(0, -1), DERNIERE_MAISON] : BIENVENUE);
 /** Qui peut entrer : les quatre réglages de la porte, l'un après l'autre. */
 const ACCES = ["🌍 Tout le monde", "💞 Mes proches", "✋ Sur demande", "🔒 Rien que moi"];
 
@@ -86,7 +96,7 @@ export function PablitoDebout({ parle }: { parle: boolean }) {
 }
 
 /** 🌍 L'univers qui grandit, au-dessus de la conversation (ce qu'il montre suit la bulle : les classes `d1` à `d6`). */
-function Scene({ i, parle, acces }: { i: number; parle: boolean; acces: number }) {
+function Scene({ i, parle, acces, catalogue }: { i: number; parle: boolean; acces: number; catalogue: boolean }) {
   return (
     <div className="bv-scene" aria-hidden="true">
       <span className="bv-etoiles" />
@@ -130,7 +140,7 @@ function Scene({ i, parle, acces }: { i: number; parle: boolean; acces: number }
 
       {/* (🏠 lot M3 : « Ta pièce » au lieu de « 5 minutes avec Pablito », une fois l'interrupteur allumé) */}
       <span className="bv-chemin">
-        {CHEMIN_INSCRIPTION.map((x, k) => (
+        {cheminInscription(catalogue).map((x, k) => (
           <Fragment key={x.t}>
             {k > 0 && <span className="bv-fleche">›</span>}
             <span className={`bv-etape${k === 0 ? " toi" : ""}`}>
@@ -145,7 +155,8 @@ function Scene({ i, parle, acces }: { i: number; parle: boolean; acces: number }
 }
 
 /** 👋 LA BIENVENUE, à la toute première arrivée : la conversation avec Pablito, l'univers qui grandit, « Je crée ma figurine ». */
-export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer: () => void }) {
+export function BienvenueTuto({ onFini, onCreer, catalogue = MA_MAISON_CATALOGUE }: { onFini: () => void; onCreer: () => void; catalogue?: boolean }) {
+  const BULLES = bullesDe(catalogue);
   const [reduit] = useState(mouvementReduit);
   // la bulle en cours ; « Pablito écrit… » (les trois points) avant elle ; ses lettres déjà écrites
   const [i, setI] = useState(0);
@@ -155,8 +166,8 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
   const [heure] = useState(heureDuTelephone);
   const fil = useRef<HTMLDivElement>(null);
   const bouton = useRef<HTMLButtonElement>(null);
-  const b = BIENVENUE[i];
-  const derniere = i === BIENVENUE.length - 1;
+  const b = BULLES[i];
+  const derniere = i === BULLES.length - 1;
   const vu = reduit ? b.t.length : n;
   // (au rythme de sa voix : deux lettres à la fois, la bulle finit avec elle ; sans enregistrement, vite)
   const rythme = SONS_PABLITO[b.son] ? Math.min(140, Math.max(22, (b.duree * 1000 * 0.92) / Math.ceil(b.t.length / 2))) : 22;
@@ -205,7 +216,7 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
   const repondre = () => {
     // (pendant ce toucher : sa voix débloquée, pour la bulle qui arrive)
     debloquerLaVoix();
-    setI((x) => Math.min(BIENVENUE.length - 1, x + 1));
+    setI((x) => Math.min(BULLES.length - 1, x + 1));
     setN(0);
     setEcrit(!reduit);
   };
@@ -224,7 +235,7 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
             Clik<b>Me</b>
           </span>
           <span className="bv-points" aria-hidden="true">
-            {BIENVENUE.map((_, k) => (
+            {BULLES.map((_, k) => (
               <i key={k} className={k < i ? "fait" : k === i ? "la" : undefined} />
             ))}
           </span>
@@ -235,11 +246,11 @@ export function BienvenueTuto({ onFini, onCreer }: { onFini: () => void; onCreer
           )}
         </header>
 
-        <Scene i={i} parle={tape || voix.parle} acces={acces} />
+        <Scene i={i} parle={tape || voix.parle} acces={acces} catalogue={catalogue} />
 
         <div className="bv-fil" ref={fil} aria-live="polite" aria-label="Ta conversation avec Pablito" onClick={toucherFil}>
           <span className="bv-jour">Aujourd’hui</span>
-          {BIENVENUE.slice(0, i + 1).map((x, k) => {
+          {BULLES.slice(0, i + 1).map((x, k) => {
             const enCours = k === i;
             return (
               <div key={k} className="bv-msgs">
