@@ -107,6 +107,12 @@ h1{margin:0;font-weight:900;font-size:30px;letter-spacing:-.02em;line-height:1.1
 .decor svg{display:block;width:100%;height:100%}
 .tele{position:absolute;left:15.38%;top:9.23%;width:69.23%;height:29.23%;border-radius:7px;overflow:hidden;background:#05060c;box-shadow:0 0 0 5px #120810,0 0 0 6px rgba(255,255,255,.07),0 0 46px rgba(130,180,255,.32);z-index:2}
 .tele canvas{display:block;width:100%;height:100%}
+/* 📺 le grand écran (par défaut) : la télé prend toute la largeur du téléphone, la pièce et les figurines dessous */
+.scene-wrap.grand .scene{width:100cqw;height:100cqh}
+.scene-wrap.grand .tele{left:0;top:0;width:100%;height:auto;aspect-ratio:16/9;border-radius:0;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.scene-wrap.grand .bord{left:auto;right:3%;top:calc(56.25cqw + 8px);transform:none}
+.scene-wrap.grand .seul,.scene-wrap.grand .voix-dispo{top:calc(56.25cqw + 10px)}
+.taille-tele{position:absolute;left:6px;bottom:5px;z-index:4;display:flex;align-items:center;gap:4px;padding:3px 8px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:10.5px;font-weight:800}
 .tele-titre{position:absolute;inset:0 0 auto;display:flex;flex-direction:column;gap:1px;padding:7px 10px 18px;background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,0));opacity:0;transition:opacity .3s;pointer-events:none}
 .tele-titre.montre{opacity:1}
 .tele-titre small{font-size:10px;font-weight:600;color:#ddd}
@@ -488,7 +494,7 @@ const hasard=(a,b)=>a+Math.random()*(b-a);
 const lire=k=>{try{return localStorage.getItem(k)}catch{return null}};
 const ecrire=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
 function melange(hex,k){const n=parseInt(hex.slice(1),16);const f=v=>Math.round(k>=0?v+(255-v)*k:v*(1+k));return '#'+[n>>16,n>>8&255,n&255].map(f).map(x=>x.toString(16).padStart(2,'0')).join('')}
-const etat={passions:[],age:'adulte',clips:true};
+const etat={passions:[],age:'adulte',clips:true,grand:true};
 const minuteries={piece:[],salon:[],clip:[]};
 const plus=(vue,id)=>{minuteries[vue].push(id);return id};
 const nettoyer=vue=>{minuteries[vue].forEach(id=>{clearTimeout(id);clearInterval(id)});minuteries[vue]=[]};
@@ -582,7 +588,7 @@ function decorSVG(d0,o={}){
   <ellipse cx="195" cy="488" rx="182" ry="26" fill="${d.tapis}" opacity=".5"/>${poufs}${tetes}</svg>`;
 }
 const fondWrap=d=>`linear-gradient(180deg,${d.mur[0]},${d.mur[1]} 69%,${(d.sol||DECOR_BASE.sol)[0]} 69%,${(d.sol||DECOR_BASE.sol)[1]})`;
-function teleHTML(){return `<div class="tele"><canvas width="480" height="270"></canvas><div class="tele-titre"><small></small><b></b></div><div class="tele-pause" hidden>❚❚</div><span class="tele-yt"><b>▶</b> YouTube</span><div class="stade"></div><p class="stade-txt" hidden></p></div>`}
+function teleHTML(){return `<div class="tele"><canvas width="480" height="270"></canvas><div class="tele-titre"><small></small><b></b></div><div class="tele-pause" hidden>❚❚</div><span class="tele-yt"><b>▶</b> YouTube</span><button type="button" class="taille-tele" aria-label="Changer la taille de la télé"></button><div class="stade"></div><p class="stade-txt" hidden></p></div>`}
 
 // ─── ce qui passe à la télé (dessiné : dans l'appli, c'est le lecteur officiel de YouTube) ───
 const EMOJI_F='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
@@ -802,6 +808,8 @@ $('#b-maquette').addEventListener('click',()=>feuille(`<h2>Réglages de la maque
   $('#r-recommencer',f).addEventListener('click',()=>{fermerFeuille();etat.passions=[];rendrePassions();montrer('passions')});
 }));
 
+function majTaille(){for(const w of [$('#p-wrap'),$('#s-wrap')]){w.classList.toggle('grand',etat.grand);w.querySelectorAll('.taille-tele').forEach(b=>b.textContent=etat.grand?'🛋️ Voir la pièce':'⛶ Grand écran')}}
+document.addEventListener('click',e=>{const b=e.target.closest('.taille-tele');if(!b)return;e.stopPropagation();etat.grand=!etat.grand;majTaille();ecrire('clikme-maquette-grand',etat.grand?'1':'0')});
 function montrer(v){
   if(v!=='piece'){nettoyer('piece');piece.tele?.arreter();piece.tele=null}
   if(v!=='salon'){nettoyer('salon');salon.tele?.arreter();salon.tele=null}
@@ -816,7 +824,7 @@ const scP=()=>$('#p-scene');
 function ouvrirPiece(){montrer('piece');piece.liste=videosDuJour();piece.i=0;piece.live.clear();
   const sc=scP();sc.innerHTML=`<div class="decor">${decorSVG(DECORS.maison)}</div>${teleHTML()}<div class="bord" id="p-bord"></div><p class="seul" id="p-seul" hidden></p>`;
   $('#p-wrap').style.background=fondWrap(DECORS.maison);
-  piece.tele=new Tele($('.tele',sc),{tick:tickPiece,fin:finPiece});
+  piece.tele=new Tele($('.tele',sc),{tick:tickPiece,fin:finPiece});majTaille();
   chargerVideo(0);
   if(!piece.dejaVenu){piece.dejaVenu=true;plusTard('piece',()=>indice(sc,'Pour réagir : 😂 ❤️ 😮 sous la télé, ou touche la pièce. Touche Sam, Léa ou Noé pour leur répondre, au moment même.',7000),900)}
   majCam();
@@ -1099,7 +1107,7 @@ function ouvrirSalon(id){
   $('#s-titre').textContent=potins?`🗞️ Les potins de ${VILLE}`:`${th.e} ${th.salon}${th.instance?' · '+th.instance:''}`;
   const sous=k=>`${k} ici · ${8-k?`${8-k} place${8-k>1?'s':''} libre${8-k>1?'s':''}`:'complet'} · 8 places${ado?' · 15-17 ans':''}`;
   $('#s-sous').textContent=sous(n);
-  const sc=scS();sc.innerHTML=`<div class="decor">${decorSVG(DECORS[id],{poufs:true})}</div>${teleHTML()}`;$('#s-wrap').style.background=fondWrap(DECORS[id]);
+  const sc=scS();sc.innerHTML=`<div class="decor">${decorSVG(DECORS[id],{poufs:true})}</div>${teleHTML()}`;$('#s-wrap').style.background=fondWrap(DECORS[id]);majTaille();
   const places=PLACES8.map((_,k)=>k).filter(k=>k!==MA_PLACE);
   salon.gens.forEach((g,k)=>poser(sc,g,PLACES8[places[k]]));
   const v=videoDuSalon(th);
@@ -1207,6 +1215,7 @@ $('#po-vu').addEventListener('click',()=>proposer('vu'));$('#po-soiree').addEven
 gestes($('#s-scene'),(s,e)=>{if(e.target.closest('.fig'))return;const sc=scS();if(figDe(sc,'moi'))reagir(sc,'moi',s)});
 
 // ════════════════════════ DÉPART ════════════════════════
+etat.grand=lire('clikme-maquette-grand')!=='0';
 try{const p=JSON.parse(lire('clikme-maquette-passions')||'null');if(Array.isArray(p)&&p.length>=3)etat.passions=p.filter(id=>THEME(id))}catch{}
 rendrePassions();
 if(etat.passions.length>=3){rendreAccueil();montrer('accueil')}else montrer('passions');

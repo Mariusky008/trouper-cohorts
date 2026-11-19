@@ -82,6 +82,7 @@ export async function deposer(supabase: Supabase, chemin: string, octets: Buffer
     await supabase.storage.createBucket(SEAU_FIGURINES, { public: false });
     ({ error } = await envoyer());
   }
+  if (error) console.error("[stockage] dépôt refusé :", chemin, error.message);
   return !error;
 }
 

@@ -132,7 +132,9 @@ export async function assurerHabitant(supabase: Supabase, villeSlug: string): Pr
       maxAge: UN_AN,
     });
     return h;
-  } catch {
+  } catch (e) {
+    // (la cause, dans les journaux du serveur : sans elle, « Ça n'a pas marché » ne dit rien — 19 novembre 2026)
+    console.error("[habitant] création impossible :", e instanceof Error ? e.message : e);
     return null;
   }
 }

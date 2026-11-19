@@ -26,9 +26,11 @@ import { ADRESSE_CHOISIR_PIECE, TEXTES_PIECE } from "@/lib/direct/choisis-ta-pie
 const ROUTE = "/api/direct/nouvelle-figurine";
 
 async function demander<T>(corps: Record<string, unknown>): Promise<T> {
-  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
+  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) }).catch(() => null);
+  if (!r) throw new Error("Pas de réseau : réessaie dans un instant.");
   const j = (await r.json().catch(() => ({}))) as T & { error?: string };
-  if (!r.ok || j.error) throw new Error(j.error || "Ça n’a pas marché. Réessaie.");
+  // (sans message du serveur — une page d'erreur de l'hébergeur — : son code, pour savoir d'où ça vient)
+  if (!r.ok || j.error) throw new Error(j.error || `Le serveur n’a pas répondu (${r.status}). Réessaie dans un instant.`);
   return j;
 }
 const message = (e: unknown) => (e instanceof Error && e.message ? e.message : "Ça n’a pas marché. Réessaie.");
