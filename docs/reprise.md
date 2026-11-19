@@ -28,8 +28,8 @@ les réactions de la télé ; les PDF, 11.17, décidés par le propriétaire : s
 **S4 fait** (le talkie-walkie, 11.18 : 🎙️ gardé appuyé, les niveaux, le talkie dans la tête, sur la table, « en direct »
 = le vocal joue tout de suite chez l'autre, la transcription après coup), **S5, première partie, faite** (les mèmes
 joués dans le salon, 11.19 : l'onglet 🎭, le projecteur, la bulle de BD, « ✍️ Le mien », en direct et à l'arrivée,
-« ▶ Revoir », 😂 ❤️ 🔥), **ensuite S5, deuxième partie** (🎙️ Ma voix, « Je le range ? » et « Nos fous rires », la vidéo
-📤 pour WhatsApp), S7, S8.
+« ▶ Revoir », 😂 ❤️ 🔥), **S5, deuxième partie, faite** (11.20 : 🎙️ Ma voix, « Je le range ? » et « Nos fous rires »,
+la vidéo 📤 pour WhatsApp dans le décor du salon), **ensuite S7** (la lumière et la météo), puis S8.
 
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 
