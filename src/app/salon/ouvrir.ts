@@ -22,7 +22,10 @@ const enCours = new Map<string, { le: number; p: Promise<OuvertureSalon>; apercu
 
 /** (✓ l'ouverture pour de bon d'une conversation préchargée : le serveur la marque lue — une fois, jamais bloquant) */
 function direLue(cle: string): void {
-  void fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "lu", cle }), keepalive: true }).catch(() => undefined);
+  // (la réponse est lue : sans quoi la requête resterait ouverte)
+  void fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "lu", cle }), keepalive: true })
+    .then((r) => r.text())
+    .catch(() => undefined);
 }
 
 /**

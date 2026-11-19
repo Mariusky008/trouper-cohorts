@@ -85,6 +85,8 @@ export type ObjetGarde = {
    * message n'y touche pas. `lien` : l'adresse de la chanson ou de la vidéo.
    */
   image?: ImageObjet;
+  /** ＋ (lot M2 de « Ma maison », ajouté à la main) un film, un clip, une chanson sans image : où il va, son lien. */
+  media?: { sorte: "musique" | "video"; lien?: string };
   /** 📌 (lot S6 du salon) gardé à la main, par un toucher sur sa bulle : qui l'a gardé (8 signes). */
   garde?: { par8: string };
   /**

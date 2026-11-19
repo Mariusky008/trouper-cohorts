@@ -18,13 +18,15 @@
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFichePerso } from "./fiches-serveur";
-import { depotDans } from "./ma-figurine-serveur";
+import { depotDans, ecrireJson, lireJson } from "./ma-figurine-serveur";
+import { objetsDeMaMaison } from "./etagere-serveur";
 import {
   CENTRE_PAR_DEFAUT,
   LARGEURS_FIGURINE,
   LARGEURS_PANORAMA,
   LARGEURS_VIGNETTE,
   piecesDansLOrdre,
+  placerChezMoi,
   type CatalogueMaison,
   type MaMaisonVue,
   type ScenePiece,
@@ -124,11 +126,28 @@ export async function figurineDeLaMaison(supabase: Supabase, h: string): Promise
   return imageSalon(supabase, `${dossierMaison(h)}/figurine.png`, LARGEURS_FIGURINE);
 }
 
-/** 🏠 Sa maison : sa pièce, sa scène à cette heure, sa figurine. */
+/** ✨ (lot M2) sa dernière visite chez lui (`<habitant>/ma-piece/vu.json`) : ce qui a été gardé depuis s'annonce à l'arrivée. */
+const cheminVu = (h: string) => `${dossierMaison(h)}/vu.json`;
+
+/**
+ * 🏠 Sa maison : sa pièce, sa scène à cette heure, sa figurine ; (lot M2) ce qu'il a gardé, à ses emplacements
+ * (`placerChezMoi`), et sa dernière visite (`vuLe`).
+ */
 export async function maMaison(supabase: Supabase, h: string, maintenant = new Date()): Promise<MaMaisonVue> {
   const piece = await lireSaPiece(supabase, h);
-  const [scene, figurine] = await Promise.all([piece ? sceneDeLaMaison(supabase, piece, maintenant).catch(() => null) : Promise.resolve(null), figurineDeLaMaison(supabase, h).catch(() => null)]);
-  return { piece, scene, figurine };
+  const [scene, figurine, objets, vu] = await Promise.all([
+    piece ? sceneDeLaMaison(supabase, piece, maintenant).catch(() => null) : Promise.resolve(null),
+    figurineDeLaMaison(supabase, h).catch(() => null),
+    piece ? objetsDeMaMaison(supabase, h).catch(() => []) : Promise.resolve([]),
+    lireJson<{ le?: number }>(supabase, cheminVu(h)).catch(() => ({}) as { le?: number }),
+  ]);
+  if (!scene) return { piece, scene, figurine };
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe: Number(vu.le) || 0 };
+}
+
+/** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */
+export async function maMaisonVue(supabase: Supabase, h: string): Promise<void> {
+  await ecrireJson(supabase, cheminVu(h), { le: Date.now() });
 }
 
 /** 📋 Le catalogue : les neuf pièces dans l'ordre de son âge, chacune avec sa vignette si elle est prête. */
