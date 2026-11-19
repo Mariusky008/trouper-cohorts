@@ -18,7 +18,7 @@ export const STYLES_MEME = `
 .sc-projecteur{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;z-index:6;background:radial-gradient(circle at var(--px,30%) var(--py,55%),rgba(255,236,190,.10) 0,rgba(255,236,190,.04) 13%,rgba(8,4,10,.72) 27%,rgba(8,4,10,.82) 60%)}
 .sc-projecteur::before{content:"";position:absolute;left:calc(var(--px,30%) - 9%);top:0;width:18%;height:var(--py,55%);background:linear-gradient(180deg,rgba(255,240,200,.32),rgba(255,240,200,.08));clip-path:polygon(35% 0,65% 0,100% 100%,0 100%);filter:blur(2px)}
 .sc-projecteur.vu{opacity:1}
-.sc-bd{position:absolute;z-index:7;transform:translate(-50%,-100%);max-width:calc(var(--sw)*.5);min-width:calc(var(--sw)*.16);box-sizing:border-box;padding:calc(var(--sw)*.018) calc(var(--sw)*.024);border-radius:calc(var(--sw)*.03);background:#fff;color:#1d0a1b;border:calc(var(--sw)*.004) solid #1d0a1b;box-shadow:0 calc(var(--sw)*.008) 0 #1d0a1b;font:800 calc(var(--sw)*.034)/1.25 -apple-system,"SF Pro Rounded",system-ui,sans-serif;text-align:center;pointer-events:none;animation:sc-bd-pop .25s cubic-bezier(.2,1.6,.4,1) both}
+.sc-bd{position:absolute;z-index:7;transform:translate(-50%,-100%);max-width:calc(var(--sw)*.42);min-width:calc(var(--sw)*.14);box-sizing:border-box;padding:calc(var(--sw)*.018) calc(var(--sw)*.024);border-radius:calc(var(--sw)*.03);background:#fff;color:#1d0a1b;border:calc(var(--sw)*.004) solid #1d0a1b;box-shadow:0 calc(var(--sw)*.008) 0 #1d0a1b;font:800 calc(var(--sw)*.027)/1.25 -apple-system,"SF Pro Rounded",system-ui,sans-serif;text-align:center;pointer-events:none;animation:sc-bd-pop .25s cubic-bezier(.2,1.6,.4,1) both}
 .sc-bd::after{content:"";position:absolute;left:50%;bottom:calc(var(--sw)*-.022);width:calc(var(--sw)*.03);height:calc(var(--sw)*.03);background:#fff;border-right:calc(var(--sw)*.004) solid #1d0a1b;border-bottom:calc(var(--sw)*.004) solid #1d0a1b;transform:translateX(-50%) rotate(45deg)}
 .sc-bd span{display:inline-block;animation:sc-bd-mot .22s cubic-bezier(.2,1.6,.4,1) both}
 .sc-bd.part{animation:sc-bd-part .3s ease forwards}
@@ -143,10 +143,10 @@ export async function jouerMeme(s: Scene, de: Qui, m: Pick<MemeSalon, "texte" | 
   s.sons.jingle(m.tete);
   jouerLaTete(s, de, m.tete, sec);
   s.figurine(de).parler(sec);
-  for (const [i, mot] of mots.entries()) {
+  for (const mot of mots) {
     if (fini) return;
     const span = document.createElement("span");
-    span.textContent = i < mots.length - 1 ? `${mot} ` : mot;
+    span.textContent = mot;
     bulle.append(span, document.createTextNode(" "));
     await s.attendre(MOT_MS);
   }

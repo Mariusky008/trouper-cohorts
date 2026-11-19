@@ -1,0 +1,122 @@
+// 🎭 LES MÈMES DU SALON (le lot S5 ; `lib/direct/meme-salon.ts`, `meme-salon-serveur.ts`), PAR LES ROUTES — contre le faux
+// Supabase, jamais la vraie base.
+//
+// Léa et Sam sont proches ; Max a ajouté Léa, pas l'inverse. Sans session : refusé ; Max : 403. Léa joue un mème (ce que
+// dit sa figurine, sa tête, sa danse, le mème prêt d'où il vient) : rangé dans leur fil (`genre: "meme"`) ; chez Sam,
+// « nouveau », sa ligne de « Chez moi » (« 🎭 « … » »), la notification « 🎭 Léa t'a envoyé un mème » ; le pouls bat.
+// CE QUI EST REFUSÉ : vide, plus de 120 signes, un mot interdit ; une tête inconnue devient la joie. 🔥 : Sam y réagit
+// (une réaction qui n'existe que sur un mème). EFFACER : Léa l'efface, il n'est plus là.
+//
+//   node scripts/faux-supabase.mjs
+//   (l'app sur :3821, avec les variables de la CI)
+//   node scripts/essai-meme-salon-route.mjs
+import crypto from "node:crypto";
+import { recus, telephone } from "./navigateur/commun.mjs";
+
+const F = "http://127.0.0.1:54321/rest/v1";
+const FAUX = F.replace("/rest/v1", "");
+const BASE = process.env.ESSAI_BASE || "http://localhost:3821";
+const STOCK = `${FAUX}/storage/v1/object`;
+const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
+const deposer = (chemin, corps, type) => fetch(`${STOCK}/figurines-clients/${chemin}`, { method: "POST", headers: { "content-type": type }, body: corps });
+const json = (chemin, x) => deposer(chemin, JSON.stringify(x), "application/json");
+const cleProfil = (h) => crypto.createHash("sha256").update(`clikme-profil:${h}`).digest("hex").slice(0, 16);
+const attendre = (ms) => new Promise((ok) => setTimeout(ok, ms));
+
+let echecs = 0;
+const ok = (c, m) => {
+  if (!c) echecs++;
+  console.log(c ? "  ok  " : "ÉCHEC ", m);
+};
+
+const qui = (n, prenom) => ({ id: `3e3e3e3e-0000-4000-8000-0000000f50${String(n).padStart(2, "0")}`, jeton: `jeton-meme-salon-route-00${String(n).padStart(2, "0")}`, prenom });
+const LEA = qui(1, "Léa");
+const SAM = qui(2, "Sam");
+const MAX = qui(3, "Max");
+const GENS = [LEA, SAM, MAX];
+for (const x of GENS) x.cle = cleProfil(x.id);
+const maintenant = new Date().toISOString();
+await semer("human_habitants", GENS.map((x) => ({ id: x.id, device_token: x.jeton, prenom: x.prenom, ville_slug: "dax" })));
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+for (const x of GENS) {
+  await deposer(`${x.id}/neutre-essai.png`, PNG, "image/png");
+  await json(`profils/${x.cle}.json`, { h: x.id });
+}
+await semer(
+  "clik_ma_figurine",
+  GENS.map((x) => ({ habitant_id: x.id, prenom: x.prenom, photo: `${x.id}/photo.jpg`, accord_le: maintenant, neutre: `${x.id}/neutre-essai.png`, parle: `${x.id}/neutre-essai.png`, prete_le: maintenant })),
+);
+await json(`${LEA.id}/proches.json`, { ids: [SAM.id] });
+await json(`${SAM.id}/proches.json`, { ids: [LEA.id] });
+await json(`${MAX.id}/proches.json`, { ids: [LEA.id] });
+const telSam = telephone("sam-meme-salon");
+await json(`notif/abonnes/${SAM.id}.json`, { h: SAM.id, ville: "dax", abonnements: [telSam.abonnement], le: new Date().toISOString() });
+
+const voir = async (q, chemin) => {
+  const r = await fetch(`${BASE}/api/direct/${chemin}`, { headers: q ? { cookie: `clikme_habitant=${q.jeton}` } : {} });
+  return { statut: r.status, ...(await r.json().catch(() => ({}))) };
+};
+const poster = async (q, corps) => {
+  const r = await fetch(`${BASE}/api/direct/proches`, { method: "POST", headers: { "content-type": "application/json", ...(q ? { cookie: `clikme_habitant=${q.jeton}` } : {}) }, body: JSON.stringify(corps) });
+  return { statut: r.status, ...(await r.json().catch(() => ({}))) };
+};
+const fil = async (q, avec) => (await voir(q, `proches?fil=${avec.cle}`)).fil;
+const pouls = (q, avec) => voir(q, `proches?pouls=${avec.cle}`);
+
+const meme = (q, avec, o) => poster(q, { action: "meme-salon", cle: avec.cle, ...o });
+
+// ═══ QUI PEUT ═══
+const sans = await poster(null, { action: "meme-salon", cle: SAM.cle, texte: "Coucou", tete: "joie" });
+ok([401, 403].includes(sans.statut) && !sans.message, `sans session : refusé (${sans.statut})`);
+ok((await meme(MAX, LEA, { texte: "Coucou", tete: "joie" })).statut === 403, "Max (pas proche) : 403");
+
+// ═══ LÉA JOUE UN MÈME ═══
+const n0 = (await pouls(SAM, LEA)).n ?? 0;
+const TEXTE = "Non mais attends… j’en peux plus. Arrête, j’ai mal aux joues.";
+const e1 = await meme(LEA, SAM, { texte: TEXTE, tete: "rire", danse: true, pret: "fou-rire" });
+const m1 = e1.message;
+ok(e1.statut === 200 && m1?.genre === "meme" && m1.texte === TEXTE && m1.meme?.tete === "rire" && m1.meme.danse === true && m1.meme.pret === "fou-rire" && m1.moi === true, `il part : son texte, sa tête, sa danse, d'où il vient (${JSON.stringify(m1?.meme)})`);
+ok(!m1?.son && m1?.duree > 3, `pas de son, la durée de son jeu (${m1?.duree} s)`);
+let chezSam = await fil(SAM, LEA);
+const vu = chezSam?.messages?.find((m) => m.id === m1?.id);
+ok(vu && !vu.moi && vu.nouveau === true && vu.genre === "meme" && vu.texte === TEXTE && vu.meme?.tete === "rire", "chez Sam : le mème, « nouveau », sa tête");
+const pLea = ((await voir(SAM, "proches")).proches ?? []).find((x) => x.cle === LEA.cle);
+ok(pLea?.dernier?.meme === true && pLea.dernier.texte === `🎭 « ${TEXTE} »`, `« Chez moi », chez Sam : « ${pLea?.dernier?.texte} »`);
+let notifs = [];
+for (let k = 0; k < 30 && !notifs.some((n) => n.title === "🎭 Léa t’a envoyé un mème"); k++) {
+  notifs = await recus(telSam);
+  await attendre(300);
+}
+const n1 = notifs.find((n) => n.title === "🎭 Léa t’a envoyé un mème");
+ok(n1?.body === TEXTE, `la notification : « ${n1?.title} » — « ${n1?.body} »`);
+let bat = false;
+for (let k = 0; k < 20 && !bat; k++) {
+  bat = ((await pouls(SAM, LEA)).n ?? 0) > n0;
+  if (!bat) await attendre(200);
+}
+ok(bat, "le pouls a battu");
+
+// ═══ CE QUI EST REFUSÉ ═══
+const vide = await meme(LEA, SAM, { texte: "   ", tete: "joie" });
+ok(vide.statut === 400, `vide : 400 (« ${vide.error} »)`);
+const long = await meme(LEA, SAM, { texte: "a".repeat(121), tete: "joie" });
+ok(long.statut === 400 && /120/.test(long.error ?? ""), `plus de 120 signes : 400 (« ${long.error} »)`);
+ok((await meme(LEA, SAM, { texte: "Espèce de connard", tete: "colere" })).statut === 422, "un mot interdit : 422");
+const inconnue = await meme(LEA, SAM, { texte: "Bonne nuit !", tete: "pas-une-tete", danse: "oui" });
+ok(inconnue.statut === 200 && inconnue.message?.meme?.tete === "joie" && inconnue.message.meme.danse === false, "une tête inconnue : la joie ; une danse qui n'est pas « vrai » : non");
+ok(!(await meme(LEA, SAM, { texte: "Hop", tete: "joie", pret: "../pas un mème" })).message?.meme?.pret, "un mème prêt illisible : pas gardé");
+
+// ═══ 🔥 : SAM Y RÉAGIT ═══
+const reac = await poster(SAM, { action: "geste", cle: LEA.cle, type: "reaction", quoi: "feu", message: m1?.id });
+ok(reac.statut === 200 && reac.geste?.cle === "feu" && reac.geste.message === m1?.id, "Sam y réagit : 🔥");
+const vivant = (await voir(LEA, `proches?vivant=${SAM.cle}`)).vivant;
+ok(vivant?.gestes?.some((g) => g.type === "reaction" && g.cle === "feu" && g.message === m1?.id && !g.moi), "chez Léa : sa réaction 🔥, sur son mème");
+ok((await poster(SAM, { action: "geste", cle: LEA.cle, type: "reaction", quoi: "pas-une-reaction", message: m1?.id })).statut >= 400, "une réaction qui n'existe pas : refusée");
+
+// ═══ EFFACER ═══
+ok((await poster(LEA, { action: "effacer", cle: SAM.cle, id: m1?.id })).statut === 200, "Léa efface son mème");
+chezSam = await fil(SAM, LEA);
+ok(!chezSam?.messages?.some((m) => m.id === m1?.id), "chez Sam : il n'est plus là");
+
+console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTout est bon.");
+process.exit(echecs ? 1 : 0);

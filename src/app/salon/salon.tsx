@@ -484,6 +484,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const rangerTableRef = useRef<() => boolean>(() => false);
   // 🎭 (lot S5) les mèmes : « Ton mème » ouvert ; jouer un mème du fil (de l'arrivée, du pouls)
   const [feuilleMeme, setFeuilleMeme] = useState(false);
+  const [memeEnScene, setMemeEnScene] = useState(0);
   const rejouerMemeRef = useRef<(m: MessageFil) => void>(() => undefined);
 
   // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
@@ -1271,7 +1272,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     if (!s || m.genre !== "meme" || !m.texte) return;
     arreterLecture();
     setTeleProche(false);
-    await jouerMeme(s, m.moi ? "moi" : "autre", { texte: m.texte, tete: teteMeme(m.meme?.tete) ?? "joie", danse: m.meme?.danse === true });
+    // (pendant qu'il se joue, la bulle de BD remplace les bulles)
+    setMemeEnScene((n) => n + 1);
+    await jouerMeme(s, m.moi ? "moi" : "autre", { texte: m.texte, tete: teteMeme(m.meme?.tete) ?? "joie", danse: m.meme?.danse === true }).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
   }
   /** ▶ Revoir, depuis 💬 : la feuille se ferme, la figurine le rejoue. */
   function revoirDepuisLeFil(m: MessageFil) {
@@ -1292,7 +1295,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     if (s) {
       arreterLecture();
       setTeleProche(false);
-      void jouerMeme(s, "moi", m);
+      setMemeEnScene((n) => n + 1);
+      void jouerMeme(s, "moi", m).finally(() => setMemeEnScene((n) => Math.max(0, n - 1)));
     }
     try {
       const r = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "meme-salon", cle, texte: m.texte, tete: m.tete, danse: m.danse, ...(m.pret ? { pret: m.pret } : {}) }) });
@@ -1693,6 +1697,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         data-pret={pret ? "1" : undefined}
         data-calques={pret ? (pret.calques ? "poses" : "aucun") : undefined}
         data-flou={flou ? "1" : undefined}
+        data-meme-joue={memeEnScene > 0 ? "1" : undefined}
         style={flou ? { backgroundImage: `url("${flou}")` } : undefined}
         onPointerDown={() => passer.current?.()}
       >
@@ -2257,6 +2262,7 @@ button.sd-pastille{cursor:pointer}
 .sd-vague{flex:1;min-width:52px;height:24px;display:flex;align-items:center;gap:2px}
 .sd-vague i{flex:1;border-radius:2px;background:rgba(60,20,50,.3);min-height:3px}
 .sd-vague i.lu{background:var(--rose)}
+.sd-scene[data-meme-joue] .sd-bulles{visibility:hidden}
 .sd-bulle.meme{display:block;-webkit-line-clamp:unset;pointer-events:auto;width:min(230px,100%)}
 .sd-meme{display:flex;flex-direction:column;gap:6px}
 .sd-meme-texte{font:700 13px/1.3 var(--app);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
