@@ -28,7 +28,9 @@
 //                                          numéro du dernier événement (un message, un mème, un geste, un effacement :
 //                                          chacun le fait battre), s'il est là (sinon sa dernière visite), s'il écrit
 // GET ?ouvrir=<clé>                     → { ouverture } : 🚪 le salon du duo (lot S0b, `lib/direct/salon-serveur.ts`) — le
-//                                          fil, la vie et la scène (la pièce, ses images à adresse stable) en une requête
+//                                          fil, la vie et la scène (la pièce, ses images à adresse stable) en une requête ;
+//                                          `&apercu=1` (⚡ lot S8, un préchargement) : rien n'est marqué lu
+// POST { action: "lu", cle }            → { ok } : ✓ (lot S8) la conversation préchargée, ouverte pour de bon : lue
 // (GET ?vivant= écrit aussi, après la réponse, l'aparté d'un échange qui vient de finir — lot R4b ; et 📚 leurs figurines
 //  notent ce qui compte sur leur étagère — lot E1, `etagere-serveur.ts` ; GET (la liste) le fait pour six conversations)
 // 📲 L'ÉTAPE 5, PAR WHATSAPP :
@@ -99,7 +101,7 @@ import { apresVideo, depotVideo, envoyerVideo, videosOuvertes } from "@/lib/dire
 import { apresFichier, depotFichier, envoyerFichier, fichiersOuverts } from "@/lib/direct/fichier-serveur";
 import { effacerEtagere, etagereAllumee, lignesEtagere, noterMesConversations, oublierMessage, preparerNotes } from "@/lib/direct/etagere-serveur";
 import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuPanneau, vivantAvec } from "@/lib/direct/vivant-serveur";
-import { ouvrirSalon } from "@/lib/direct/salon-serveur";
+import { marquerLu, ouvrirSalon } from "@/lib/direct/salon-serveur";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
 import { battre, poulsAvec } from "@/lib/direct/pouls-serveur";
 import { apresVocal, envoyerVocal, vocalEcoute } from "@/lib/direct/vocal-serveur";
@@ -132,7 +134,8 @@ export async function GET(request: Request) {
   // 🚪 le salon du duo (lot S0b) : le fil, la vie et la scène en une requête
   const ouvrir = q.get("ouvrir");
   if (ouvrir) {
-    const r = await ouvrirSalon(supabase, moi, ouvrir);
+    // (⚡ lot S8 : `&apercu=1`, un préchargement — rien n'est marqué lu ; `POST { action: "lu" }` le fera à l'ouverture)
+    const r = await ouvrirSalon(supabase, moi, ouvrir, new Date(), { marquer: q.get("apercu") !== "1" });
     if (!r.ouverture) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
     const a = r.aPreparer;
     if (a) after(() => preparerAparte(supabase, a, moi).catch(() => undefined));
@@ -181,6 +184,11 @@ export async function POST(request: Request) {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 403 });
   if (p?.action === "la") return NextResponse.json({ ok: true, ...(await marquerLa(supabase, moi)) }, { headers: sansCache });
+  // ✓ (⚡ lot S8) une conversation préchargée, ouverte pour de bon : ce qu'il m'a laissé est lu
+  if (p?.action === "lu") {
+    const r = await marquerLu(supabase, moi, p.cle);
+    return r.ok ? NextResponse.json({ ok: true }, { headers: sansCache }) : NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+  }
   if (p?.action === "comprendre") {
     const r = await comprendre(supabase, moi, p.son, p.duree);
     if (!r.repliques) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400 });

@@ -44,6 +44,8 @@ import { ECRIT } from "@/lib/direct/ecrit";
 import { CarteEtagere, CarteNote, CartePoussiere, CarteQuestion, CarteRallume, MurEtagere, PageEtagere, PastilleEtagere, RappelsDuMatin, useEtagere } from "./etagere";
 import { idees, type CarteVue, type ObjetVu, type QuestionVue } from "@/lib/direct/etagere";
 import { versLeStudio } from "./vers-le-studio";
+import { SalonDansLAppli, useSalonDuDuo, useSalonPrecharge } from "./vers-le-salon";
+import { marquer, precharger } from "@/app/salon/ouvrir";
 import { postureDe, reactionDe, panneauDe, type AparteVue, type GesteFil, type Posture } from "@/lib/direct/vivant";
 import { humeurDe } from "@/lib/direct/rituel";
 import { sentimentDe, type Sentiment } from "@/lib/direct/ma-figurine";
@@ -142,6 +144,9 @@ export function Proches({
     setPlusOuvert(Boolean(x));
   };
   const rituel = useRituel();
+  // 🛋️ (lot S8, la bascule) le salon du duo à la place de l'ancienne conversation : l'interrupteur `SALON_DU_DUO`, ou
+  // l'essai de ce téléphone (`/collection?salon=1`) — `vers-le-salon.tsx`
+  const salon = useSalonDuDuo();
   useEffect(() => {
     if (chezMoi && visible && compte && prete) void chargerRituel();
   }, [chezMoi, visible, compte, prete]);
@@ -158,14 +163,19 @@ export function Proches({
   const [lienCopie, setLienCopie] = useState(false);
 
   // (« Retour », sur le téléphone, referme la conversation au lieu de quitter ClikMe : elle prend une page d'historique)
-  const ouvrir = useCallback((x: { cle: string; parler: boolean }) => {
-    try {
-      window.history.pushState({ clikmeFil: true }, "");
-    } catch {
-      /* rien */
-    }
-    setOuvert(x);
-  }, []);
+  const ouvrir = useCallback(
+    (x: { cle: string; parler: boolean }) => {
+      // (⚡ le salon mesure son ouverture depuis ce toucher : « ⚡ La vitesse du salon », chez l'administrateur)
+      if (salon) marquer("salon:toucher");
+      try {
+        window.history.pushState({ clikmeFil: true }, "");
+      } catch {
+        /* rien */
+      }
+      setOuvert(x);
+    },
+    [salon],
+  );
   const fermer = useCallback(() => {
     if ((window.history.state as { clikmeFil?: boolean } | null)?.clikmeFil) window.history.back();
     else setOuvert(null);
@@ -217,7 +227,9 @@ export function Proches({
     u.searchParams.delete("parler");
     u.searchParams.delete("proche");
     try {
-      window.history.replaceState(null, "", `${u.pathname}${u.search}${u.hash}`);
+      // (⚡ lot S8 : sans que le routeur de Next.js le suive — `__NA` le lui dit. Sinon son arbre gardait `?parler=` et
+      // l'adresse non : « Retour », après une notification, rechargeait toute l'appli au lieu de refermer la conversation)
+      window.history.replaceState({ ...(window.history.state ?? {}), __NA: true }, "", `${u.pathname}${u.search}${u.hash}`);
     } catch {
       /* rien */
     }
@@ -242,6 +254,9 @@ export function Proches({
   // (✨ « Mon vœu » : « Parler à Marius » l'ouvre micro prêt — `parler`)
   const ouvrirFil = useCallback((cle: string, parler = false) => ouvrir({ cle, parler }), [ouvrir]);
   useConversationDemandee(ouvrirFil, Boolean(compte && prete));
+  // ⚡ (le salon) ses deux premières conversations, et le salon lui-même, préchargés dans un temps mort
+  const clesDuSalon = useMemo(() => (donnees?.proches ?? []).filter((p) => p.lien === "proches").map((p) => p.cle), [donnees]);
+  useSalonPrecharge(salon && visible && Boolean(compte && prete) && !ouvert, clesDuSalon);
 
   // 🎁🚪 (« Chez moi ») qui a frappé à ma porte, qui m'a laissé un cadeau : une découverte animée (`visites-recues.tsx`),
   // ouverte toute seule en arrivant quand il y a du nouveau (une fois par nouveauté et par session)
@@ -365,8 +380,11 @@ export function Proches({
         </Feuille>
       )}
 
+      {/* 🛋️ (lot S8) le salon du duo, posé sur la page entière lui aussi */}
+      {ouvert && salon && createPortal(<SalonDansLAppli key={ouvert.cle} cle={ouvert.cle} onFermer={fermer} />, document.body)}
       {/* (posée sur la page entière : elle couvre le menu, quoi que fassent les onglets) */}
       {ouvert &&
+        !salon &&
         createPortal(
           <Conversation
             key={ouvert.cle}
@@ -539,6 +557,8 @@ export function Proches({
                     disabled={p.lien !== "proches" && !e.cadeaux.length}
                     // (un cadeau de lui attend : on l'ouvre d'abord — puis « Lui dire merci » mène à notre conversation)
                     onClick={() => (e.cadeaux.length ? setDecouverte(e.cadeaux.map((s) => ({ genre: "cadeau", s }))) : ouvrir({ cle: p.cle, parler: false }))}
+                    // (⚡ le salon : la conversation part dès le premier contact du doigt)
+                    onPointerDown={salon && p.lien === "proches" && !e.cadeaux.length ? () => precharger(p.cle) : undefined}
                     aria-label={`Ta conversation avec ${p.prenom}`}
                   >
                     <span className={`cm-avatar${p.etagere?.gris ? " gris" : ""}`}>

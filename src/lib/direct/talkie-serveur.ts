@@ -517,7 +517,13 @@ export async function changerProche(supabase: Supabase, moi: Habitant, cle: unkn
 
 // ─── la conversation ──────────────────────────────────────────────────────────────────────────────
 /** 💬 SA CONVERSATION AVEC CE PROCHE : leurs deux figurines, ses 40 derniers messages ; ceux qu'il n'avait pas vus le sont. */
-export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): Promise<{ fil?: Fil; error?: string; statut?: number }> {
+export async function filAvec(
+  supabase: Supabase,
+  moi: Habitant,
+  cle: unknown,
+  // (⚡ lot S8 : un préchargement ne marque rien — ni lu, ni « vu » ; l'ouverture pour de bon le fait, `marquerLu`)
+  { marquer = true }: { marquer?: boolean } = {},
+): Promise<{ fil?: Fil; error?: string; statut?: number }> {
   const h = await hDeCle(supabase, cle);
   if (!h) return { error: "Ce proche n’existe pas.", statut: 404 };
   if (!(await seParlent(supabase, moi.id, h))) return { error: "Vous pourrez vous parler quand vous vous serez ajoutés tous les deux.", statut: 403 };
@@ -578,8 +584,8 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
   const nouveaux = messages.filter((m) => m.nouveau);
   // 🎭 (lot 4) les mèmes de leur conversation
   const memes = await memesDuFil(supabase, moi.id, h, vu).catch(() => []);
-  if (nouveaux.length || memes.some((x) => x.nouveau)) await ecrireJson(supabase, cheminLus(moi.id), { ...lus, [h]: Date.now() });
-  if (nouveaux.length) await Promise.all(nouveaux.map(() => noter(supabase, pair, h, "vu")));
+  if (marquer && (nouveaux.length || memes.some((x) => x.nouveau))) await ecrireJson(supabase, cheminLus(moi.id), { ...lus, [h]: Date.now() });
+  if (marquer && nouveaux.length) await Promise.all(nouveaux.map(() => noter(supabase, pair, h, "vu")));
   return { fil: { cle: cleProfil(h), lui, moi: mienne, la, messages, ...(chezMoi ? { chezMoi } : {}), ...(memes.length ? { memes } : {}) } };
 }
 
