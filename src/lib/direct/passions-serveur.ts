@@ -9,6 +9,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { sesDixHuitAns } from "./voeu-serveur";
 import { passionsValides, themesPour, type Passions, type ThemeDecouvrir } from "./decouvrir";
+import { nouveauPoids } from "./tele-du-jour";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const chemin = (h: string) => `${h}/passions.json`;
@@ -25,6 +26,13 @@ export async function vuePassions(supabase: Supabase, h: string): Promise<{ pass
   const themes = themesPour(adulte);
   const permis = new Set(themes.map((t) => t.id as string));
   return { passions: (p?.passions ?? []).filter((id) => permis.has(id)), themes, adulte: adulte === true };
+}
+
+/** 📺 (lot D1) Un thème monte ou descend après une vidéo de sa télé du jour (`nouveauPoids`, `tele-du-jour.ts`). */
+export async function changerPoids(supabase: Supabase, h: string, theme: string, quoi: "fin" | "garde" | "passee"): Promise<void> {
+  const p = await lirePassions(supabase, h);
+  if (!p) return;
+  await ecrireJson(supabase, chemin(h), { ...p, poids: { ...p.poids, [theme]: nouveauPoids(p.poids[theme], quoi) } } satisfies Passions);
 }
 
 /** Il choisit ses passions (de 3 à 5) ; les poids d'avant restent. */

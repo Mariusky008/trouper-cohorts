@@ -27,7 +27,9 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    cliquable est faite** (19 novembre, `decouvrir.md` section 12 ; `docs/univers/maquettes/decouvrir.html`) : elle
    a été jouée et ajustée avec le propriétaire (`decouvrir.md`, section 13 : partager le moment, sans défi ni score ; le
    grand écran) ; **D0 fait** (section 14 : « Tes passions », la sélection YouTube de chaque nuit, l'administration) — il
-   attend la clé YouTube (`YOUTUBE_API_KEY`, dans Vercel) ; ensuite D1, ma télé du jour dans ma pièce.
+   attend la clé YouTube (`YOUTUBE_API_KEY`, dans Vercel) ; **D1 fait** (section 15 : ma télé du jour à l'adresse
+   d'essai `/univers/tele` — le grand écran, ma pièce et ma figurine, Suivante, Garder, Envoyer à un proche) ; ensuite
+   l'onglet Découvrir et le retrait de l'ancienne page, une fois la télé jouée par le propriétaire.
 
 **À savoir (19 novembre 2026)** : le projet Supabase de production est **bridé** — plan gratuit, 39 Go de données
 sortantes pour 5 Go permis (cycle du 8 novembre au 8 décembre) : il répond 402 à tout, d'où les « Ton compte n'a pas pu

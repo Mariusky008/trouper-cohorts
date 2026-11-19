@@ -40,8 +40,8 @@ type EspaceYT = { Player: new (el: HTMLElement, o: Record<string, unknown>) => L
 type FenetreYT = Window & { YT?: EspaceYT; onYouTubeIframeAPIReady?: () => void };
 
 let chargement: Promise<EspaceYT> | null = null;
-/** Le lecteur de YouTube, chargé une fois (au premier allumage). */
-function chargerYouTube(): Promise<EspaceYT> {
+/** Le lecteur de YouTube, chargé une fois (au premier allumage) — 📺 ma télé du jour s'en sert aussi (`tele-du-jour.tsx`). */
+export function chargerYouTube(): Promise<EspaceYT> {
   const w = window as FenetreYT;
   if (w.YT?.Player) return Promise.resolve(w.YT);
   if (!chargement)
