@@ -92,7 +92,7 @@ async function avecQui(supabase: Supabase, moi: Habitant, cle: unknown): Promise
 const gardes = (x: { liste?: unknown }) => (Array.isArray(x.liste) ? (x.liste as GesteGarde[]) : []);
 
 /** 🎭 LA CONVERSATION VIVANTE : s'il prépare un message, leurs gestes (sept jours), l'heure de leur dernier message. */
-export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat<{ vivant?: Vivant; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string }>> {
+export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown, { marquer = true }: { marquer?: boolean } = {}): Promise<Resultat<{ vivant?: Vivant; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string }>> {
   const q = await avecQui(supabase, moi, cle);
   if (!q.h || !q.pair) return { error: q.error, statut: q.statut };
   const [g, p, noms, ap, vus, tv, cad] = await Promise.all([
@@ -121,7 +121,8 @@ export async function vivantAvec(supabase: Supabase, moi: Habitant, cle: unknown
       return gesteValide({ ...x, moi: x.de8 === moi8, ...(nouveau ? { nouveau: true } : {}) });
     })
     .filter((x): x is GesteFil => Boolean(x));
-  if (dernierVu > vu) await ecrireJson(supabase, cheminGestesVus(moi.id), { ...vus, [q.pair]: dernierVu }).catch(() => false);
+  // (⚡ lot S8 : un préchargement ne la fait pas avancer)
+  if (marquer && dernierVu > vu) await ecrireJson(supabase, cheminGestesVus(moi.id), { ...vus, [q.pair]: dernierVu }).catch(() => false);
   const jusqua = aparteAEcrire(ap, noms, moi8, lui8, Date.now());
   // 📚 leur étagère (lot E1) : ce que leurs figurines ont noté ; un échange à lire (`aNoter` : le proche)
   const et = await etagereDansLaScene(supabase, moi, q.h, q.pair, noms).catch(() => ({ aNoter: false, scene: undefined }));

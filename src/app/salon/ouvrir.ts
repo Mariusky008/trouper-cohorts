@@ -3,7 +3,9 @@
  * téléphone, sans React :
  *
  * - `ouvrir(cle)` : une seule requête (`GET /api/direct/proches?ouvrir=`), partagée si elle est déjà partie (un
- *   préchargement), gardée 20 s (rouvrir tout de suite ne relit rien) ;
+ *   préchargement), gardée 20 s (rouvrir tout de suite ne relit rien). ⚡ (lot S8) un préchargement ne marque rien
+ *   (`&apercu=1`) : sans quoi, dans l'appli, les deux premières conversations de la liste seraient « lues » sans avoir été
+ *   ouvertes ; l'ouverture pour de bon qui le reprend dit au serveur qu'elle est lue (`POST { action: "lu" }`) ;
  * - `prechargerImage(img)` : la plaque ou un calque, téléchargé ET décodé hors de l'affichage (`img.decode()`) ; ses
  *   adresses ne changent jamais : le téléphone les garde un an ;
  * - `precharger(cle)` : la conversation et ses images, dans un temps mort (`requestIdleCallback`) ou au premier contact
@@ -16,18 +18,33 @@
 import type { ImageSalon, OuvertureSalon } from "@/lib/direct/salon";
 
 const GARDE_MS = 20_000;
-const enCours = new Map<string, { le: number; p: Promise<OuvertureSalon> }>();
+const enCours = new Map<string, { le: number; p: Promise<OuvertureSalon>; apercu: boolean }>();
 
-/** La conversation avec ce proche, en une requête (partagée avec un préchargement déjà parti). */
-export function ouvrir(cle: string, { frais = false } = {}): Promise<OuvertureSalon> {
+/** (✓ l'ouverture pour de bon d'une conversation préchargée : le serveur la marque lue — une fois, jamais bloquant) */
+function direLue(cle: string): void {
+  void fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "lu", cle }), keepalive: true }).catch(() => undefined);
+}
+
+/**
+ * La conversation avec ce proche, en une requête (partagée avec un préchargement déjà parti). `apercu` : un
+ * préchargement (rien n'est marqué lu).
+ */
+export function ouvrir(cle: string, { frais = false, apercu = false } = {}): Promise<OuvertureSalon> {
   const deja = enCours.get(cle);
-  if (deja && !frais && Date.now() - deja.le < GARDE_MS) return deja.p;
-  const p = fetch(`/api/direct/proches?ouvrir=${encodeURIComponent(cle)}`, { cache: "no-store" }).then(async (r) => {
+  if (deja && !frais && Date.now() - deja.le < GARDE_MS) {
+    // (un préchargement repris pour de bon : la conversation est lue)
+    if (deja.apercu && !apercu) {
+      deja.apercu = false;
+      void deja.p.then(() => direLue(cle)).catch(() => undefined);
+    }
+    return deja.p;
+  }
+  const p = fetch(`/api/direct/proches?ouvrir=${encodeURIComponent(cle)}${apercu ? "&apercu=1" : ""}`, { cache: "no-store" }).then(async (r) => {
     const j = (await r.json().catch(() => null)) as { ouverture?: OuvertureSalon; error?: string } | null;
     if (!r.ok || !j?.ouverture) throw new Error(j?.error || "La conversation ne s’ouvre pas.");
     return j.ouverture;
   });
-  enCours.set(cle, { le: Date.now(), p });
+  enCours.set(cle, { le: Date.now(), p, apercu });
   p.catch(() => enCours.delete(cle));
   return p;
 }
@@ -62,7 +79,7 @@ export function imagesDe(o: OuvertureSalon): Pick<ImageSalon, "src">[] {
 
 /** Précharger une conversation (sa requête, ses images) ; jamais d'erreur. */
 export function precharger(cle: string): void {
-  ouvrir(cle)
+  ouvrir(cle, { apercu: true })
     .then((o) => Promise.all(imagesDe(o).map((i) => prechargerImage(i))))
     .catch(() => undefined);
 }

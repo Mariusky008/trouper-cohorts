@@ -14,11 +14,11 @@ import { assisesDe, emplacementsValides, hauteurDuo, momentDuoDe, pieceDuoDe, pi
 import { depotDans, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
 import type { CalqueFigurine, CataloguePieces, Flamme, OuvertureSalon, PieceDuSalon, SceneSalon } from "./salon";
-import { LA_MS, cheminLa, cheminReglages, filAvec, hDeCle, nomsDuFil, pairDe, qui8, seParlent } from "./talkie-serveur";
+import { LA_MS, cheminLa, cheminLus, cheminReglages, filAvec, hDeCle, noter, nomsDuFil, pairDe, qui8, seParlent } from "./talkie-serveur";
 import { lireSaPiece } from "./ma-maison-serveur";
 import { ordreDuCatalogue } from "./ma-maison";
 import { sesDixHuitAns } from "./voeu-serveur";
-import { lireTable, vivantAvec } from "./vivant-serveur";
+import { cheminGestes, cheminGestesVus, lireTable, vivantAvec } from "./vivant-serveur";
 import { chatDuSalon } from "./salon-chat-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";
 import { poserFigurine, type FigurineLocale } from "./figurine-calques";
@@ -65,12 +65,15 @@ export async function sceneDeLaPiece(supabase: Supabase, piece: PieceDuo, moment
 /**
  * 🚪 Tout ce qu'il faut pour ouvrir la conversation avec ce proche : le fil, la vie, la scène. Rend aussi ce que la route
  * fait après la réponse (l'aparté d'un échange qui vient de finir, les notes de l'étagère), comme `?vivant=`.
+ * `marquer: false` (⚡ lot S8, un préchargement, `&apercu=1`) : rien n'est marqué lu ni vu — l'ouverture pour de bon le
+ * fait ensuite (`marquerLu`).
  */
 export async function ouvrirSalon(
   supabase: Supabase,
   moi: Habitant,
   cle: unknown,
   maintenant = new Date(),
+  { marquer = true }: { marquer?: boolean } = {},
 ): Promise<{ ouverture?: OuvertureSalon; aPreparer?: { h: string; pair: string; jusqua: number }; aNoter?: string; aDecouper?: string[]; error?: string; statut?: number }> {
   // (🎭 les calques des deux figurines se lisent en même temps que le reste : une lecture chacune ; 🚪 la pièce du duo, ou
   // celle qu'on lui propose ; 🔥 leurs jours de suite)
@@ -82,8 +85,8 @@ export async function ouvrirSalon(
     return (await sceneDeLaPiece(supabase, voulue, moment).catch(() => null)) ?? (voulue !== PIECE_PAR_DEFAUT ? await sceneDeLaPiece(supabase, PIECE_PAR_DEFAUT, moment).catch(() => null) : null);
   });
   const [f, v, scene, h, mienne, sienne, fiche, noms, table, chat] = await Promise.all([
-    filAvec(supabase, moi, cle),
-    vivantAvec(supabase, moi, cle).catch(() => null),
+    filAvec(supabase, moi, cle, { marquer }),
+    vivantAvec(supabase, moi, cle, { marquer }).catch(() => null),
     sceneP,
     hP,
     calquesDeFigurine(supabase, moi.id, { fabriquer: false }).catch(() => null),
@@ -340,4 +343,34 @@ export async function poserEmplacementsSalon(supabase: Supabase, piece: unknown,
   }
   const ok = await d.ecrire("releve.json", Buffer.from(JSON.stringify({ ...releve, emplacements: garde, salonLe: new Date().toISOString() })), "application/json");
   return ok ? { emplacements: emplacementsValides(garde) } : { erreur: "Pas enregistré : réessaie." };
+}
+
+/**
+ * ✓ (⚡ lot S8) UNE CONVERSATION PRÉCHARGÉE (`?ouvrir=<clé>&apercu=1`), OUVERTE POUR DE BON : ce qu'il m'a laissé est lu
+ * (ses messages : `fils-lus.json`, et leur « vu » ; ses gestes : `gestes-vus.json`) — comme l'aurait fait l'ouverture
+ * sans préchargement. Rien n'est écrit s'il n'y a rien de nouveau.
+ */
+export async function marquerLu(supabase: Supabase, moi: Habitant, cle: unknown): Promise<{ ok?: true; error?: string; statut?: number }> {
+  const h = await hDeCle(supabase, cle);
+  if (!h) return { error: "Ce proche n’existe pas.", statut: 404 };
+  if (!(await seParlent(supabase, moi.id, h))) return { error: "Vous pourrez vous parler quand vous vous serez ajoutés tous les deux.", statut: 403 };
+  const pair = pairDe(moi.id, h);
+  const lui8 = qui8(h);
+  const [noms, lus, gestes, gvus] = await Promise.all([
+    nomsDuFil(supabase, pair),
+    lireJson<Record<string, number>>(supabase, cheminLus(moi.id)),
+    lireJson<{ liste?: unknown }>(supabase, cheminGestes(pair)),
+    lireJson<Record<string, number>>(supabase, cheminGestesVus(moi.id)),
+  ]);
+  const maintenant = Date.now();
+  const nouveaux = noms.filter((n) => n.de8 === lui8 && n.ts > (Number(lus[h]) || 0));
+  const vuG = Number(gvus[pair]) || 0;
+  const sesGestes = (Array.isArray(gestes.liste) ? (gestes.liste as { de8?: string; le?: string }[]) : []).filter((g) => g.de8 === lui8 && Date.parse(String(g.le)) > vuG);
+  const dernierGeste = sesGestes.reduce((m, g) => Math.max(m, Date.parse(String(g.le)) || 0), 0);
+  await Promise.all([
+    nouveaux.length ? ecrireJson(supabase, cheminLus(moi.id), { ...lus, [h]: maintenant }) : null,
+    ...nouveaux.slice(-30).map(() => noter(supabase, pair, h, "vu")),
+    dernierGeste ? ecrireJson(supabase, cheminGestesVus(moi.id), { ...gvus, [pair]: Math.min(dernierGeste, maintenant) }) : null,
+  ]);
+  return { ok: true };
 }

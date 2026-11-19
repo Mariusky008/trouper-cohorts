@@ -1289,6 +1289,38 @@ La section 4.1 : « la notification dit tout ce qui attend ». `src/lib/direct/c
 messages, un vocal : la phrase qui dit tout ; tout lu, un seul message : sa notification à part entière ; un bisou
 ensuite : « un bisou et un message », « Dans votre salon » une seule fois).
 
+### 11.23 🛋️ La bascule : l'interrupteur, et l'essai d'un téléphone (lot S8, deuxième partie — 19 novembre 2026)
+
+- **L'interrupteur** `SALON_DU_DUO` (`src/lib/direct/salon-interrupteur.ts`), **éteint**. Allumé, **toutes les portes de
+  l'appli** ouvrent le salon du duo à la place de l'ancienne conversation : la liste « Chez moi », la notification
+  (`/collection?parler=<clé>`), « Lui répondre » (l'humeur du matin), les rappels du matin, « À qui parler ? »… — elles
+  passent toutes par la même fonction de `proches.tsx` (`ouvrir`). Le salon est posé sur la page entière, par-dessus le
+  menu ; « ‹ » ou le retour du téléphone le referment sur la liste (`src/app/collection/vers-le-salon.tsx`).
+- **L'essai d'un téléphone, avant de l'allumer pour tous** : **`/collection?salon=1`**, une fois — le téléphone s'en
+  souvient (`localStorage`, `clikme-salon`) et l'adresse redevient propre ; **`/collection?salon=0`** ramène l'ancien
+  écran. Chacun des deux d'une conversation peut le faire sur le sien : c'est ainsi que le propriétaire la joue, à deux,
+  sur deux vrais téléphones. Allumé pour tous, `?salon=0` reste une porte de sortie pour un téléphone.
+- **La vitesse** : le salon n'est téléchargé qu'au besoin, mais **en avance**, dans un temps mort, avec les **deux
+  premières conversations** de la liste (une requête chacune, leurs images décodées) ; une ligne touchée part dès le
+  premier contact du doigt. Le toucher est marqué (`salon:toucher`) : les vraies ouvertures, sur les vrais téléphones,
+  arrivent dans « ⚡ La vitesse du salon » (l'admin), par appareil.
+- **⚡ Un préchargement ne marque rien** (corrigé ici) : `GET /api/direct/proches?ouvrir=<clé>&apercu=1` rend la même
+  ouverture sans marquer ses messages lus ni ses gestes vus (sans quoi les deux premières conversations de la liste
+  auraient perdu leurs pastilles, et « ce qui attend » se serait trompé) ; l'ouverture pour de bon qui reprend un
+  préchargement le dit au serveur : **`POST { action: "lu", cle }`** (`marquerLu`, `salon-serveur.ts`).
+- **Le retour après une notification** ne recharge plus toute l'appli : l'adresse nettoyée de son `?parler=` l'est
+  sans que le routeur de Next.js le suive (avant : il gardait l'ancienne adresse dans son arbre, et « Retour »
+  rechargeait la page au lieu de refermer la conversation — l'ancien écran avait le même défaut).
+- **Ce qui reste de S8** : le propriétaire joue le salon sur ses téléphones (iPhone et Android), dit ce qu'il en pense ;
+  on mesure la vitesse réelle ; puis **`SALON_DU_DUO = true`** (une PR d'une ligne) ; puis, quelques jours plus tard,
+  l'ancien écran retiré de `proches.tsx`. Ce que l'ancien écran avait et que le salon n'a pas encore : « Parler à … »
+  qui l'ouvrait micro prêt (le salon s'ouvre, le 🎙️ est là) ; « 🎭 un mème » qui menait au studio (le salon a ses mèmes).
+
+**L'essai** : `scripts/navigateur/salon-bascule.mjs` (34 contrôles : l'aperçu ne marque rien, `lu` marque, un inconnu
+refusé ; sans rien, l'ancien écran ; `?salon=1` retenu, l'adresse propre, la conversation préchargée sans être lue, la
+même carte ouvre le salon — la pièce, les figurines, la bulle —, lue pour de bon, posé sur toute la page, le toucher
+marqué ; « ‹ » sans recharger ; la notification l'ouvre tout droit, le retour le referme sans recharger ; `?salon=0`).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :
