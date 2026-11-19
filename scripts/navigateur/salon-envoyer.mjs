@@ -201,11 +201,25 @@ p.on("request", (r) => r.method() === "PUT" && r.url().includes("/storage/v1/obj
 await choisir("video", "concert.webm", "video/webm", CONCERT);
 ok(await attendre(async () => (await p.locator('.sd-envoi[data-envoi="video"] .sd-envoi-apercu[data-etat="prete"] video').count()) === 1, 25000), "🎬 : sa vidéo, lue dans le téléphone");
 ok((await texte(".sd-envoi-duree")) === "0:02", `sa durée : « ${await texte(".sd-envoi-duree")} »`);
-const voiles = [];
-const regard = setInterval(() => void texte(".sd-envoi-voile").then((t) => t && !voiles.includes(t.replace(/\d+ %/, "x %")) && voiles.push(t.replace(/\d+ %/, "x %"))), 40);
+// (le voile, regardé DANS la page — un observateur, rien ne lui échappe, même un envoi très rapide)
+await p.evaluate(() => {
+  const w = /** @type {any} */ (window);
+  w.__voiles = [];
+  const noter = () => {
+    const x = document.querySelector(".sd-envoi-voile")?.textContent?.replace(/\s+/g, " ").trim();
+    const k = x?.replace(/\d+ %/, "x %");
+    if (k && !w.__voiles.includes(k)) w.__voiles.push(k);
+  };
+  w.__regard = new MutationObserver(noter);
+  w.__regard.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
+});
 await p.locator(".sd-envoi [data-envoyer]").click();
 ok(await attendre(async () => (await p.locator(".sd-envoi").count()) === 0, 30000), "« Envoyer » : partie");
-clearInterval(regard);
+const voiles = await p.evaluate(() => {
+  const w = /** @type {any} */ (window);
+  w.__regard?.disconnect();
+  return w.__voiles ?? [];
+});
 ok(voiles.some((v) => v.startsWith("Envoi…")), `« Envoi… » puis « Vérification… » (${voiles.join(" → ")})`);
 ok(envois.length === 1, "déposée une fois, tout droit au seau");
 ok(await attendre(async () => (await texte(".sd-bulle.moi:not([data-ia])")) === "🎬 Une vidéo", 4000), `dans sa bulle : « ${await texte(".sd-bulle.moi:not([data-ia])")} »`);
