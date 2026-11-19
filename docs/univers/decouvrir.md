@@ -414,7 +414,7 @@ Ce que la maquette joue maintenant :
 **📺 Le grand écran** (le propriétaire, 19 novembre : « l'écran de la télé ne va-t-il pas être trop petit pour voir les
 vidéos ? ») : par défaut, la télé prend **toute la largeur du téléphone** (la vidéo en 16/9, 390 points au lieu de 246),
 la pièce et les figurines juste dessous ; « 🛋️ Voir la pièce » la remet dans son meuble, « ⛶ Grand écran » l'agrandit
-(le choix est gardé). Pareil dans les salons ouverts. Plus grand encore, plus tard : le téléphone tourné en largeur (la
+(seulement pour ce moment : on revient toujours en grand écran). Pareil dans les salons ouverts. Plus grand encore, plus tard : le téléphone tourné en largeur (la
 vidéo plein écran, les figurines en petit sur le bas de l'image).
 
 **Dans les salons ouverts** (même retour du propriétaire : « je n'ai aucun moyen de réagir si ce n'est écrire ») : la

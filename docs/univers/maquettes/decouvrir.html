@@ -811,7 +811,7 @@ $('#b-maquette').addEventListener('click',()=>feuille(`<h2>Réglages de la maque
 }));
 
 function majTaille(){for(const w of [$('#p-wrap'),$('#s-wrap')]){w.classList.toggle('grand',etat.grand);w.querySelectorAll('.taille-tele').forEach(b=>b.textContent=etat.grand?'🛋️ Voir la pièce':'⛶ Grand écran')}}
-document.addEventListener('click',e=>{const b=e.target.closest('.taille-tele');if(!b)return;e.stopPropagation();etat.grand=!etat.grand;majTaille();ecrire('clikme-maquette-grand',etat.grand?'1':'0')});
+document.addEventListener('click',e=>{const b=e.target.closest('.taille-tele');if(!b)return;e.stopPropagation();etat.grand=!etat.grand;majTaille()});
 function montrer(v){
   if(v!=='piece'){nettoyer('piece');piece.tele?.arreter();piece.tele=null}
   if(v!=='salon'){nettoyer('salon');salon.tele?.arreter();salon.tele=null}
@@ -826,7 +826,7 @@ const scP=()=>$('#p-scene');
 function ouvrirPiece(){montrer('piece');piece.liste=videosDuJour();piece.i=0;piece.live.clear();
   const sc=scP();sc.innerHTML=`<div class="decor">${decorSVG(DECORS.maison)}</div>${teleHTML()}<div class="bord" id="p-bord"></div><p class="seul" id="p-seul" hidden></p>`;
   $('#p-wrap').style.background=fondWrap(DECORS.maison);
-  piece.tele=new Tele($('.tele',sc),{tick:tickPiece,fin:finPiece});majTaille();
+  piece.tele=new Tele($('.tele',sc),{tick:tickPiece,fin:finPiece});etat.grand=true;majTaille();
   chargerVideo(0);
   if(!piece.dejaVenu){piece.dejaVenu=true;plusTard('piece',()=>indice(sc,'Pour réagir : 😂 ❤️ 😮 en bas, ou touche la pièce. Touche Sam ou Léa pour leur répondre.',7000),900)}
   majCam();
@@ -1109,7 +1109,7 @@ function ouvrirSalon(id){
   $('#s-titre').textContent=potins?`🗞️ Les potins de ${VILLE}`:`${th.e} ${th.salon}${th.instance?' · '+th.instance:''}`;
   const sous=k=>`${k} ici · ${8-k?`${8-k} place${8-k>1?'s':''} libre${8-k>1?'s':''}`:'complet'} · 8 places${ado?' · 15-17 ans':''}`;
   $('#s-sous').textContent=sous(n);
-  const sc=scS();sc.innerHTML=`<div class="decor">${decorSVG(DECORS[id],{poufs:true})}</div>${teleHTML()}`;$('#s-wrap').style.background=fondWrap(DECORS[id]);majTaille();
+  const sc=scS();sc.innerHTML=`<div class="decor">${decorSVG(DECORS[id],{poufs:true})}</div>${teleHTML()}`;$('#s-wrap').style.background=fondWrap(DECORS[id]);etat.grand=true;majTaille();
   const places=PLACES8.map((_,k)=>k).filter(k=>k!==MA_PLACE);
   salon.gens.forEach((g,k)=>poser(sc,g,PLACES8[places[k]]));
   const v=videoDuSalon(th);
@@ -1217,7 +1217,6 @@ $('#po-vu').addEventListener('click',()=>proposer('vu'));$('#po-soiree').addEven
 gestes($('#s-scene'),(s,e)=>{if(e.target.closest('.fig'))return;const sc=scS();if(figDe(sc,'moi'))reagir(sc,'moi',s)});
 
 // ════════════════════════ DÉPART ════════════════════════
-etat.grand=lire('clikme-maquette-grand')!=='0';
 try{const p=JSON.parse(lire('clikme-maquette-passions')||'null');if(Array.isArray(p)&&p.length>=3)etat.passions=p.filter(id=>THEME(id))}catch{}
 rendrePassions();
 if(etat.passions.length>=3){rendreAccueil();montrer('accueil')}else montrer('passions');
