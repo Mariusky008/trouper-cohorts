@@ -59,6 +59,11 @@
 // POST { action: "fichier-depot", cle }   → { seau, chemin, jeton, id } : où déposer son PDF (une adresse signée)
 // POST { action: "fichier", cle, id, nom } → { message } : le PDF déposé part — relu (10 Mo au plus, un vrai PDF :
 //      sinon 413, 422), rangé, puis « 📎 Léa t'a envoyé un PDF ». Vingt par jour. Le frein : `CLIKME_FICHIERS=0` (404).
+// 🎙️ LOT S4, LE TALKIE-WALKIE DU SALON (`lib/direct/vocal.ts`, `vocal-serveur.ts`) :
+// POST { action: "prepare", cle, oui, facon: "parle" } : il parle dans son talkie (le pouls le dit : `parle`)
+// POST { action: "vocal", cle, son, duree, niveaux } → { message } : au relâché, sa voix (une minute au plus), sa durée,
+//      ses niveaux (la forme de sa voix) ; après la réponse : « 🎙️ Léa t'a parlé ! », puis la transcription (le pouls bat)
+// POST { action: "ecoute", cle, id }     → { ok } : il a écouté le vocal de l'autre (son talkie quitte la table)
 // Un proche se désigne toujours par sa clé de profil, jamais par son identifiant.
 import { etagerePeinteOuverte, peindreEtagere } from "@/lib/direct/etagere-peinte-serveur";
 import { NextResponse, after } from "next/server";
@@ -92,6 +97,7 @@ import { direQuIlPrepare, effacerAparte, poserGeste, preparerAparte, prevenirDuP
 import { ouvrirSalon } from "@/lib/direct/salon-serveur";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
 import { battre, poulsAvec } from "@/lib/direct/pouls-serveur";
+import { apresVocal, envoyerVocal, vocalEcoute } from "@/lib/direct/vocal-serveur";
 
 export const dynamic = "force-dynamic";
 // (comprendre : la transcription, puis les têtes proposées)
@@ -235,6 +241,21 @@ export async function POST(request: Request) {
     if (a) after(() => apresFichier(supabase, moi, a).catch(() => undefined));
     return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
   }
+  // 🎙️ (lot S4) le talkie du salon : au relâché, le vocal part ; après la réponse, l'autre est prévenu, puis ce qu'il a
+  // dit est écrit (le pouls bat à nouveau : les deux relisent la transcription)
+  if (p?.action === "vocal") {
+    const r = await envoyerVocal(supabase, moi, p.cle, p.son, p.duree, p.niveaux);
+    if (!r.message) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    const a = r.apres;
+    after(() => battre(supabase, moi, p.cle).catch(() => undefined));
+    if (a) after(async () => (await apresVocal(supabase, moi, a).catch(() => false)) && (await battre(supabase, moi, p.cle).catch(() => undefined)));
+    return NextResponse.json({ ok: true, message: r.message }, { headers: sansCache });
+  }
+  if (p?.action === "ecoute") {
+    const r = await vocalEcoute(supabase, moi, p.cle, p.id);
+    if (r.nouveau) after(() => battre(supabase, moi, p.cle).catch(() => undefined));
+    return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
+  }
   // 🗑️ (lot M1) il efface son message, dans les 24 heures : pour les deux ; ce que l'étagère en avait noté s'en va
   if (p?.action === "effacer") {
     const r = await effacerMessage(supabase, moi, p.cle, p.id);
@@ -257,7 +278,7 @@ export async function POST(request: Request) {
   }
   // 🎭 la conversation vivante (lot R4a)
   if (p?.action === "prepare") {
-    const r = await direQuIlPrepare(supabase, moi, p.cle, p.oui);
+    const r = await direQuIlPrepare(supabase, moi, p.cle, p.oui, p.facon);
     return NextResponse.json(r.ok ? { ok: true } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   if (p?.action === "aparte-effacer") {

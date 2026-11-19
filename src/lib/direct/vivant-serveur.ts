@@ -236,11 +236,16 @@ export async function effacerAparte(supabase: Supabase, moi: Habitant, cle: unkn
 }
 
 /** ✍️ Il prépare un message (ou il a fini) : sa figurine se penche chez l'autre. */
-export async function direQuIlPrepare(supabase: Supabase, moi: Habitant, cle: unknown, oui: unknown): Promise<Resultat<{ ok?: true }>> {
+/**
+ * (🎙️ lot S4) `facon: "parle"` : il parle dans son talkie (pas : il écrit) — noté à côté (`<de8>~` = 1), le pouls le dit
+ * (`parle`) : chez l'autre, sa figurine lève son talkie et la mienne met le sien à l'oreille.
+ */
+export async function direQuIlPrepare(supabase: Supabase, moi: Habitant, cle: unknown, oui: unknown, facon?: unknown): Promise<Resultat<{ ok?: true }>> {
   const q = await avecQui(supabase, moi, cle);
   if (!q.pair) return { error: q.error, statut: q.statut };
   const p = await lireJson<Record<string, number>>(supabase, cheminPrepare(q.pair));
-  await ecrireJson(supabase, cheminPrepare(q.pair), { ...p, [qui8(moi.id)]: oui === false ? 0 : Date.now() });
+  const k = qui8(moi.id);
+  await ecrireJson(supabase, cheminPrepare(q.pair), { ...p, [k]: oui === false ? 0 : Date.now(), [`${k}~`]: oui !== false && facon === "parle" ? 1 : 0 });
   return { ok: true };
 }
 

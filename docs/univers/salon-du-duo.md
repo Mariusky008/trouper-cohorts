@@ -1104,6 +1104,56 @@ adresse qui télécharge ; chez Sam, « Chez moi », la notification ; une image
 déposé 400, celui d'un autre 400, un mot interdit 422, un nom sans « .pdf » ; signalé, effacé) et
 `scripts/navigateur/salon-envoyer.mjs` (la case 📎, l'aperçu, la bulle, la carte dans 💬, un faux PDF refusé).
 
+### 11.18 🎙️ Le talkie-walkie (lot S4 — 18 novembre 2026)
+
+La section 4.6, telle quelle, sur le moteur. **« Elle m'entend en direct »** (choix proposé au propriétaire le
+18 novembre, sans avis contraire) : ce n'est pas un appel ; le vocal part au relâché, et **chez l'autre, s'il est dans le
+salon, il joue tout de suite** (le pouls le lui apporte en une seconde et demie) ; pendant qu'on parle, il voit déjà sa
+figurine parler dans son talkie.
+
+- **Les règles** (`src/lib/direct/vocal.ts`) : une minute au plus, 0,7 s au moins ; **les niveaux** — le volume du micro
+  toutes les 60 ms, un signe hexadécimal chacun (« 0 » à « f » : 1 000 signes pour une minute) — dessinent la forme de
+  la voix (24 barres) et font parler la tête à la lecture, sans décoder le son ; les phrases de l'écran (`PHRASES_VOCAL`).
+- **La saisie** (`src/app/salon/micro.tsx`) : à droite, 🎙️ ; il devient ➤ dès qu'on écrit. **Gardé appuyé** : la barre
+  (● rouge, 0:04, la forme de la voix en direct, « ‹ glisse pour effacer »), le bouton grossit, rouge ; le talkie démarre
+  à l'appui, sans attendre le micro. **Relâché** : le vocal part. **Glissé à gauche** (90 px) : « 🗑️ Vocal effacé ». **Trop
+  court** : « 📻 Garde le micro appuyé et parle, comme un talkie-walkie… », le micro bat. Le micro refusé : on le dit.
+  Au clavier : Espace ou Entrée, gardés enfoncés. Le ＋ a une case **🎙️ Un vocal** (« garde le micro appuyé ») : la feuille
+  se ferme, l'astuce, le micro bat.
+- **Dans la scène** (`src/app/salon/talkie.ts`, le SVG de la maquette v6) : ma figurine lève son talkie — **posé dans le
+  calque de sa tête**, il suit le ressort et le penché —, lumière verte, la tête parle au niveau de ma voix, des ondes
+  partent vers l'autre ; **s'il est là**, son talkie va à son oreille (orange) et sa tête penche. Au relâché : « kssht »,
+  le bip de fin, chacun range son talkie. **S'il n'est pas là**, mon talkie se pose **sur la table**, de mon côté, couché,
+  sa lumière rouge qui clignote, une pastille 🎙️ (« 📻 Ton vocal attend Sam sur la table ») ; il s'en va quand il l'a
+  écouté (« 📻 Sam a écouté ton vocal »). Parti « en direct » mais pas écouté dans les quinze secondes (il n'était pas
+  vraiment dans le salon) : il finit sur la table aussi.
+- **La bulle d'un vocal** : ▶, la forme de la voix, sa durée ; **ce qu'il a dit, écrit dessous** (trois lignes) ; les
+  barres se colorent pendant la lecture. ▶ (la bulle, 💬, ou son talkie sur la table) : la figurine de celui qui a parlé
+  reprend son talkie et le dit, la tête suit ses niveaux ; l'autre penche la tête. Depuis 💬, la feuille se ferme d'abord.
+- **Chez l'autre** : le pouls dit **`parle`** pendant que j'enregistre (`prepare` avec `facon: "parle"`, redit toutes
+  les 5 s) — sa figurine lève son talkie et parle au rythme d'une voix, la mienne tient le sien à l'oreille (« 📻 Léa te
+  parle… ») ; puis le vocal arrive avec le pouls et **joue tout de suite**. Un seul lecteur de son pour tout le salon,
+  débloqué au premier toucher (sur iPhone, un son ne part sans toucher que d'un lecteur déjà débloqué) ; si le téléphone
+  refuse quand même, le talkie se pose sur la table (« 📻 Sam t'a laissé un vocal : touche le talkie sur la table »).
+- **À l'arrivée** (section 4.1) : ses vocaux ne sont pas rejoués en bulle ; **le dernier pas encore écouté attend sur la
+  table** (une semaine au plus) ; un toucher, sa figurine le dit.
+- **Le serveur** (`src/lib/direct/vocal-serveur.ts`) : `POST /api/direct/proches { action: "vocal", cle, son, duree,
+  niveaux }` — sa voix (data URL, comme les vocaux d'avant ; 48 kbit/s), rangée comme eux (`fils/<paire>/s/<id>.<ext>`),
+  sa fiche avec `niveaux` et une réplique sans texte ; les cent messages du jour. **Après la réponse** : « 🎙️ Léa t'a
+  parlé ! », puis **la transcription** (les quarante du jour de « comprendre » ; jusqu'à 45 s) devient ses répliques (sans
+  tête choisie : la sienne) ; un mot interdit : pas de texte, la voix reste ; le pouls bat, les deux relisent. Elle sert
+  aussi au 📌 et à « Je le range ? » (`texteLuDuMessage`). `POST { action: "ecoute", cle, id }` : il a écouté le vocal de
+  l'autre — `ecoute` noté dans la fiche, une fois, le pouls bat (seulement un vocal de l'autre : sinon 404). Le fil donne
+  `niveaux` et `ecoute` (`MessageFil`). L'ancien écran lit ces vocaux comme les siens (une réplique, sa tête à lui).
+
+**Les essais** : `scripts/essai-vocal-route.mjs` (les portes ; un vocal, sa durée, ses niveaux, rangé, chez Sam, la
+notification ; la transcription après coup et le pouls ; plus d'une minute, trop court, pas un son : refusés ; des
+niveaux illisibles ou trop longs ; écouté — une fois, pas le sien, pas un écrit ; `parle` / `ecrit` dans le pouls ;
+effacé, sa voix avec) et `scripts/navigateur/salon-talkie.mjs` (un faux micro : 🎙️ et ➤, le toucher trop court, gardé
+appuyé — la barre, les deux talkies, le pouls de Sam, 0:02 —, la bulle, la transcription, glissé à gauche ; Sam qui
+parle en direct puis son vocal qui joue seul, noté écouté ; Sam parti : la table, « il attend », écouté puis parti ; à
+l'arrivée, son talkie sur la table ; 💬 ; ＋ « 🎙️ Un vocal »).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

@@ -17,6 +17,9 @@ export const dureeDite = (s: number) => {
 };
 
 /** Ce que dit la bulle d'un message (un écrit : son texte ; un vocal, une photo, une vidéo : ce que c'est). */
+/** 🎙️ Un vocal (pas un écrit, une photo, une vidéo, un PDF). */
+export const estVocal = (m: Pick<MessageFil, "genre" | "son">) => !m.genre && Boolean(m.son);
+
 export function texteDeBulle(m: MessageFil): string {
   if (m.genre === "ecrit") return (m.texte ?? "").trim() || (m.lien ? `🔗 ${m.lien.titre || m.lien.site}` : "");
   if (m.genre === "photo") return m.texte?.trim() ? `📷 ${m.texte.trim()}` : "📷 Une photo";
@@ -157,7 +160,8 @@ export const ARRIVEE_MS = 12_000;
  */
 export function aRejouer(messages: readonly MessageFil[], memes: readonly MemeFil[] = [], maxMs = ARRIVEE_MS): ARejouer[] {
   const tous = [
-    ...messages.filter((m) => m.nouveau && !m.moi).map((m) => ({ id: m.id, texte: texteDeBulle(m), le: m.le })),
+    // (🎙️ lot S4 : ses vocaux n'y sont pas — ils attendent sur la table, le talkie qui clignote)
+    ...messages.filter((m) => m.nouveau && !m.moi && !estVocal(m)).map((m) => ({ id: m.id, texte: texteDeBulle(m), le: m.le })),
     ...memes.filter((x) => x.nouveau && !x.moi).map((x) => ({ id: `meme-${x.id}`, texte: x.texte?.trim() ? `🎭 « ${x.texte.trim()} »` : "🎭 Un mème", le: x.le })),
   ]
     .sort((a, b) => Date.parse(a.le) - Date.parse(b.le))

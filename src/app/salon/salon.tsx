@@ -50,7 +50,7 @@ const messageALaTele = (p: ProgrammeTele | undefined) => (p && (p.sorte === "you
 /** Le dernier lien vidéo (YouTube, TikTok, Instagram) de la conversation : un nouveau, et la télé relit son programme. */
 const dernierLienDe = (l: readonly MessageFil[]) => [...l].reverse().find((m) => m.genre === "ecrit" && !m.id.startsWith("envoi-") && passeALaTele(m))?.id ?? "";
 import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } from "./ouvrir";
-import { aRejouer, derniersDeChacun, dureeDite, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
+import { aRejouer, derniersDeChacun, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
 import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
 import { gesteDuSalon, objetDuGeste, REACTIONS, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
 import { PIECES_DUO, type PieceDuo } from "@/lib/direct/pieces-duo";
@@ -59,8 +59,11 @@ import { CADRES_MAX, PHRASES_CADRES, cadreLibre, ditAccrochee, type CadreVu } fr
 import { PHRASES_FICHIER, tailleDite } from "@/lib/direct/fichier";
 import type { ModeChoix } from "./choisir";
 import type { Choisi } from "./envoyer";
-import { prochainRendezVous } from "./bulles";
+import { estVocal, prochainRendezVous } from "./bulles";
 import { texteDuMessage, type Fil, type MemeFil, type MessageFil } from "@/lib/direct/talkie";
+import { PHRASES_VOCAL, formeDeVoix, niveauxDuVocal, niveauxEnTexte, tempsDit } from "@/lib/direct/vocal";
+import { STYLES_TALKIE, arreterLecture, debloquerSon, entendreEnDirect, installerTalkiesTable, lireVocal, prendreTalkie, rangerTalkie, secouerTalkieTable, vivreVoix, type TalkiesSurTable } from "./talkie";
+import { BoutonMicro, type FinMicro } from "./micro";
 
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
 export type ChargementSalon =
@@ -155,6 +158,12 @@ function annoncer(montrer: (t: string, ms?: number) => void, g: GesteFil, moi: b
 }
 /** Un vrai message de l'autre (pas un mème, pas un envoi en route) : on peut y réagir. */
 const reagissable = (id: string | undefined) => Boolean(id && !id.startsWith("meme-") && !id.startsWith("envoi-"));
+/** Un envoi en route déjà arrivé au serveur : le même texte ; (🎙️ lot S4) un vocal de la même durée, parti à ce moment-là. */
+const dejaArrive = (m: MessageFil, x: MessageFil) => x.moi && (estVocal(m) ? estVocal(x) && Math.abs(x.duree - m.duree) < 0.02 && Date.parse(x.le) >= Date.parse(m.le) - 10_000 : x.texte === m.texte);
+/** (📻 un vocal sur la table : une semaine au plus) */
+const SUR_TABLE_MS = 7 * 86_400_000;
+/** (📻 un vocal parti « en direct » : le temps que son téléphone le joue et le note écouté ; sinon, il va sur la table) */
+const DIRECT_MS = 15_000;
 
 /** L'autre figurine réagit à ce qui est dit (la maquette, telle quelle). `la` : l'autre est là (sinon elle somnole). */
 function reagir(s: Scene, q: Qui, texte: string, la: boolean) {
@@ -186,36 +195,34 @@ function reagir(s: Scene, q: Qui, texte: string, la: boolean) {
   }
 }
 
-/** ▶ Un vocal, dans 💬 : on l'écoute (un seul à la fois). */
-let enLecture: HTMLAudioElement | null = null;
-function Vocal({ m }: { m: MessageFil }) {
-  const [joue, setJoue] = useState(false);
+/**
+ * 🎙️ (lot S4) UN VOCAL — dans sa bulle, ou dans 💬 : ▶, la forme de sa voix (ses niveaux ; les barres se colorent à la
+ * lecture, `[data-vague]`), sa durée ; ce qu'il a dit, écrit dessous (sa transcription, quand elle est arrivée). ▶ le fait
+ * dire par la figurine de celui qui a parlé, dans la scène (`surLire`).
+ */
+function ContenuVocal({ m, prenom, joue, surLire }: { m: MessageFil; prenom: string; joue: boolean; surLire: () => void }) {
   const dit = texteDuMessage(m.repliques);
+  const forme = formeDeVoix(niveauxDuVocal(m));
   return (
-    <span className="sd-vocal">
+    <span className="sd-vocal" data-vocal={m.id}>
       <button
         type="button"
         className="sd-lire"
-        aria-label={joue ? "Arrêter" : "Écouter"}
-        onClick={() => {
-          if (joue && enLecture) {
-            enLecture.pause();
-            setJoue(false);
-            return;
-          }
-          enLecture?.pause();
-          const a = new Audio(m.son);
-          enLecture = a;
-          a.onended = a.onpause = () => setJoue(false);
-          void a.play().then(
-            () => setJoue(true),
-            () => setJoue(false),
-          );
+        aria-label={joue ? "Arrêter" : m.moi ? PHRASES_VOCAL.ecouterMien : PHRASES_VOCAL.ecouterSien(prenom)}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          surLire();
         }}
       >
         {joue ? "❚❚" : "▶"}
       </button>
-      <small>🎙️ {dureeDite(m.duree)}</small>
+      <span className="sd-vague" data-vague={m.id} aria-hidden>
+        {forme.map((h, i) => (
+          <i key={i} style={{ height: `${Math.round(16 + h * 84)}%` }} />
+        ))}
+      </span>
+      <small>{tempsDit(m.duree)}</small>
       {dit && <q>{dit}</q>}
     </span>
   );
@@ -242,7 +249,30 @@ function appuiLong(id: string | undefined, faire: (id: string) => void) {
 }
 
 /** Un message dans 💬 Messagerie (sous lui, les réactions ; un appui long sur un des siens : y réagir). */
-function MessageDuFil({ m, prenom, reactions = [], surReagir, garde, surGarder, surTele, surAccrocher }: { m: MessageFil; prenom: string; reactions?: GesteFil[]; surReagir?: (id: string) => void; garde?: boolean; surGarder?: () => void; surTele?: () => void; surAccrocher?: () => void }) {
+function MessageDuFil({
+  m,
+  prenom,
+  reactions = [],
+  surReagir,
+  garde,
+  surGarder,
+  surTele,
+  surAccrocher,
+  joue = false,
+  surLire,
+}: {
+  m: MessageFil;
+  prenom: string;
+  reactions?: GesteFil[];
+  surReagir?: (id: string) => void;
+  garde?: boolean;
+  surGarder?: () => void;
+  surTele?: () => void;
+  surAccrocher?: () => void;
+  /** 🎙️ (lot S4) ce vocal se joue ; ▶ le fait dire dans la scène */
+  joue?: boolean;
+  surLire?: (m: MessageFil) => void;
+}) {
   return (
     <div className={`sd-msg ${m.moi ? "moi" : "autre"}`} data-message={m.id} {...(!m.moi && surReagir ? appuiLong(m.id, surReagir) : {})}>
       {m.genre === "ecrit" ? (
@@ -277,7 +307,7 @@ function MessageDuFil({ m, prenom, reactions = [], surReagir, garde, surGarder, 
           </span>
         </a>
       ) : (
-        <Vocal m={m} />
+        <ContenuVocal m={m} prenom={prenom} joue={joue} surLire={() => surLire?.(m)} />
       )}
       <small>
         {m.moi ? "Toi" : prenom} · {heureDite(m.le)}
@@ -399,6 +429,23 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   // 🐾 (lot S3) le chat du salon
   const chatSalon = useRef<ChatSalon | null>(null);
   const chat = useRef<ChatDuSalon | null>(null);
+  // 🎙️ (lot S4) le talkie : j'enregistre ; le vocal qui se joue ; le micro qui rappelle qu'on le garde appuyé ; les talkies
+  // posés sur la table (le vocal qui attend, de chaque côté) ; mes vocaux qu'il a entendus en direct ; les siens que j'ai
+  // écoutés ; il parle en direct (de quoi l'arrêter) ; il m'écoute pendant que j'enregistre ; le « je parle » redit
+  const [enregistre, setEnregistre] = useState(false);
+  const [joue, setJoue] = useState<string | null>(null);
+  const [rappelMicro, setRappelMicro] = useState(0);
+  const talkies = useRef<TalkiesSurTable | null>(null);
+  const entendusEnDirect = useRef(new Set<string>());
+  const ecoutes = useRef(new Set<string>());
+  const direct = useRef<(() => void) | null>(null);
+  const ilEcoute = useRef(false);
+  const jEnregistre = useRef(false);
+  const pasAvant = useRef(0);
+  const redireParle = useRef<ReturnType<typeof setInterval> | null>(null);
+  const jouerVocalRef = useRef<(m: MessageFil, auto?: boolean) => void>(() => undefined);
+  const toucherTalkieRef = useRef<(q: Qui, id: string) => void>(() => undefined);
+  const rangerTableRef = useRef<() => boolean>(() => false);
 
   // 🚪 l'ouverture (une requête ; la vignette floue tout de suite ; la pièce et les calques décodés)
   useEffect(() => {
@@ -472,6 +519,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     const ch = chatSalon.current;
     const maPlace = sceneVue.places[0];
     chat.current = ch && maPlace ? installerChat(s, ch, { place: maPlace, ...(sceneVue.emplacements?.chat ? { coin: sceneVue.emplacements.chat } : {}) }) : null;
+    // (📻 lot S4 : les talkies de la table — un vocal qui attend d'être écouté ; ceux d'avant s'y reposent, sans tomber)
+    talkies.current = installerTalkiesTable(s, sceneVue.emplacements?.table, (q, id) => toucherTalkieRef.current(q, id));
+    rangerTableRef.current();
     // (📺 la télé, si la pièce en a une : posée dans la couche de derrière, sur son écran relevé)
     // (🖼️ et ses cadres, s'il en a : la même couche)
     const rafTele = sceneVue.emplacements?.tele || sceneVue.emplacements?.cadres?.length ? requestAnimationFrame(() => setCoucheHote(s.couche("derriere"))) : 0;
@@ -484,7 +534,14 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     }
     const ceChat = chat.current;
     const cetteEtagere = etagere.current;
+    const cesTalkies = talkies.current;
     return () => {
+      // (📻 le vocal qui se joue s'arrête ; l'autre qui parlait en direct aussi ; les talkies de la table s'en vont)
+      arreterLecture();
+      direct.current?.();
+      direct.current = null;
+      cesTalkies.detruire();
+      if (talkies.current === cesTalkies) talkies.current = null;
       cancelAnimationFrame(rafTele);
       setCoucheHote(null);
       setTeleProche(false);
@@ -525,6 +582,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       setArriveeFaite(true);
       const s = scene.current;
       if (s && !laRef.current && !s.figurine("autre").dort) s.figurine("autre").endormir();
+      // (📻 lot S4 : son vocal qui m'attend se pose sur la table, le talkie qui clignote)
+      if (rangerTableRef.current()) montrerRef.current(PHRASES_VOCAL.laisse(fil.lui.prenom), 3600);
     };
     let t = 700;
     for (const g of sesGestes) {
@@ -637,9 +696,11 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (!f || fini) return;
       const connus = new Set(lesMessages.current.map((m) => m.id));
       const neufs = f.messages.filter((m) => !m.moi && !connus.has(m.id));
+      // (📻 lot S4 : mes vocaux qu'il vient d'écouter — sauf ceux qu'il a entendus en direct)
+      const entendus = f.messages.filter((m) => m.moi && m.ecoute && estVocal(m) && !entendusEnDirect.current.has(m.id) && lesMessages.current.some((x) => x.id === m.id && !x.ecoute));
       setMessages((avant) => {
         // (mes envois pas encore confirmés restent)
-        const enRoute = avant.filter((m) => m.id.startsWith("envoi-") && !f.messages.some((x) => x.moi && x.texte === m.texte));
+        const enRoute = avant.filter((m) => m.id.startsWith("envoi-") && !f.messages.some((x) => dejaArrive(m, x)));
         return [...f.messages, ...enRoute];
       });
       setMemes(f.memes ?? []);
@@ -648,10 +709,18 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (neufs.length && s) {
         const dernier = neufs[neufs.length - 1];
         if (s.figurine("autre").dort) s.figurine("autre").reveiller();
-        s.figurine("autre").parler(tempsDeParole(texteDeBulle(dernier)));
         chat.current?.reagir("message");
-        setTimeout(() => scene.current === s && reagir(s, "moi", texteDeBulle(dernier), true), 450);
+        if (estVocal(dernier)) {
+          // 📻 (lot S4) son vocal joue tout de suite : il m'a parlé « en direct »
+          direct.current?.();
+          direct.current = null;
+          jouerVocalRef.current(dernier, true);
+        } else {
+          s.figurine("autre").parler(tempsDeParole(texteDeBulle(dernier)));
+          setTimeout(() => scene.current === s && reagir(s, "moi", texteDeBulle(dernier), true), 450);
+        }
       }
+      if (entendus.length) montrerRef.current(PHRASES_VOCAL.ecoute(prenomRef.current), 2600);
       if (neufs.length && !feuilleOuverte.current) setNonLus((n) => n + neufs.length);
       if (neufs.length) flammeRef.current("lui");
     };
@@ -660,7 +729,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (fini || document.visibilityState !== "visible") return;
       const avant = mesChangements.current.n;
       const r = await fetch(`/api/direct/proches?pouls=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
-      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: boolean } | null) : null;
+      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; parle?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: boolean } | null) : null;
       if (fini) return;
       if (p) {
         const n = Number(p.n) || 0;
@@ -669,6 +738,16 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         setVu(p.vu);
         setEcrit(Boolean(p.ecrit));
         const s = scene.current;
+        // 📻 (lot S4) il parle dans son talkie : sa figurine le lève, la mienne tient le sien à l'oreille ; il a fini
+        const el = ici.current;
+        if (p.parle && !direct.current && s && el && !jEnregistre.current) {
+          direct.current = entendreEnDirect(s, el, "autre");
+          montrerRef.current(PHRASES_VOCAL.parle(prenomRef.current), 2600);
+        }
+        if (!p.parle && direct.current) {
+          direct.current();
+          direct.current = null;
+        }
         // (il arrive : sa figurine se réveille et fait coucou, la mienne se tourne vers elle ; il part : elle somnole)
         if (s && estLa !== laConnu) {
           if (estLa) {
@@ -684,9 +763,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         laConnu = estLa;
         laRef.current = estLa;
         // 🚪 la pièce a changé (il a dit « Venir », ou nous a installés ailleurs pendant mon absence)
-        const ici = sceneVueRef.current?.piece;
+        const pieceIci = sceneVueRef.current?.piece;
         const aJour = mesChangements.current.n === avant && !mesChangements.current.enCours;
-        if (aJour && p.piece && ici && p.piece !== ici) {
+        if (aJour && p.piece && pieceIci && p.piece !== pieceIci) {
           const dit = monInvitation.current === p.piece ? `✨ ${prenomRef.current} vous rejoint · ${nomDePiece(p.piece)}` : `✨ ${prenomRef.current} vous a installés · ${nomDePiece(p.piece)}`;
           monInvitation.current = null;
           void allerDansRef.current(p.piece).then((ok) => ok && montrerRef.current(dit, 3200));
@@ -762,6 +841,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     recevoirSouvenirsRef.current = recevoirSouvenirs;
     recevoirTeleRef.current = recevoirTele;
     recevoirCadresRef.current = recevoirCadres;
+    rangerTableRef.current = rangerTable;
+    jouerVocalRef.current = (m, auto) => void jouerUnVocal(m, auto);
+    toucherTalkieRef.current = toucherTalkie;
   });
   useEffect(() => {
     flammeCourante.current = flamme;
@@ -1133,6 +1215,190 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     monterLaFlamme("moi");
   }
 
+  // ─── 📻 LE TALKIE-WALKIE (lot S4) ───
+  /**
+   * Les talkies de la table : son dernier vocal pas encore écouté (de son côté), le mien qu'il n'a pas encore écouté (du
+   * mien) — les vocaux du salon (ceux qui ont leurs niveaux), d'une semaine au plus. Rend vrai si le sien vient de s'y
+   * poser.
+   */
+  function rangerTable(): boolean {
+    const t = talkies.current;
+    if (!t || !arriveeFaiteRef.current) return false;
+    const maintenant = Date.now();
+    const attend = (m: MessageFil) => estVocal(m) && Boolean(m.niveaux) && !m.ecoute && maintenant - Date.parse(m.le) < SUR_TABLE_MS;
+    const l = lesMessages.current;
+    const sien = [...l].reverse().find((m) => !m.moi && attend(m) && !ecoutes.current.has(m.id));
+    // (le mien : pas pendant qu'il est encore dans ma main — il se pose une demi-seconde après l'envoi ; ni, quelques
+    // secondes, s'il m'écoutait en direct — son téléphone le joue et le note écouté ; sinon, il finit sur la table)
+    const enMain = maintenant < pasAvant.current;
+    const mien = enMain ? undefined : [...l].reverse().find((m) => m.moi && attend(m) && !(entendusEnDirect.current.has(m.id) && maintenant - Date.parse(m.le) < DIRECT_MS));
+    let pose = false;
+    if (sien && t.id("autre") !== sien.id) {
+      t.poser("autre", sien.id, PHRASES_VOCAL.ecouterSien(prenomRef.current));
+      pose = true;
+    } else if (!sien) t.retirer("autre");
+    const avant = t.id("moi");
+    // (mon envoi en route devient le vrai vocal : il ne retombe pas)
+    if (mien && avant !== mien.id) t.poser("moi", mien.id, PHRASES_VOCAL.attend(prenomRef.current), !avant?.startsWith("envoi-"));
+    else if (!mien && !enMain) t.retirer("moi");
+    return pose;
+  }
+  /** ▶ Un vocal dans la scène : la figurine de qui l'a dit reprend son talkie et le dit ; le sien est noté écouté. */
+  async function jouerUnVocal(m: MessageFil, auto = false) {
+    const s = scene.current;
+    const el = ici.current;
+    // (j'enregistre : son vocal m'attendra sur la table)
+    if (!s || !el || (auto && jEnregistre.current)) {
+      rangerTable();
+      return;
+    }
+    if (!m.moi) {
+      ecoutes.current.add(m.id);
+      if (talkies.current?.id("autre") === m.id) talkies.current.retirer("autre");
+    }
+    setJoue(m.id);
+    const r = await lireVocal(s, el, m, () => setJoue((j) => (j === m.id ? null : j)));
+    if (r.etat === "bloque") {
+      setJoue((j) => (j === m.id ? null : j));
+      if (!m.moi) ecoutes.current.delete(m.id);
+      rangerTable();
+      montrer(auto ? PHRASES_VOCAL.laisse(prenom) : "Le son ne part pas : réessaie.", 3600);
+      return;
+    }
+    if (!m.moi) marquerEcoute(m.id);
+  }
+  /** ▶ Un vocal, depuis 💬 : la feuille se ferme, la figurine le dit dans la scène. */
+  function lireDepuisLeFil(m: MessageFil) {
+    setFeuille(false);
+    setTimeout(() => void jouerUnVocal(m), 350);
+  }
+  /** 👂 J'ai écouté son vocal : noté (chez lui, son talkie quitte la table). */
+  function marquerEcoute(id: string) {
+    if (!reagissable(id)) return;
+    setMessages((l) => l.map((x) => (x.id === id ? { ...x, ecoute: true } : x)));
+    void fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "ecoute", cle, id }) })
+      .then((r) => r.text())
+      .catch(() => undefined);
+  }
+  /** Un talkie de la table est touché : le sien, je l'écoute ; le mien, il attend encore. */
+  function toucherTalkie(q: Qui, id: string) {
+    const m = lesMessages.current.find((x) => x.id === id);
+    if (q === "autre" && m) return void jouerUnVocal(m);
+    if (ici.current) secouerTalkieTable(ici.current, q);
+    montrer(PHRASES_VOCAL.attend(prenom));
+  }
+  /** (« je parle dans mon talkie » : chez lui, sa figurine le voit — redit toutes les 5 s, fini au relâché) */
+  const direQueJeParle = (oui: boolean) =>
+    void fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", cle, oui, facon: "parle" }), keepalive: !oui })
+      .then((r) => r.text())
+      .catch(() => undefined);
+  /** 🎙️ J'appuie : mon talkie se lève (vert), « kssht » ; s'il est là, son talkie va à son oreille. */
+  function debutMicro() {
+    arreterLecture();
+    direct.current?.();
+    direct.current = null;
+    jEnregistre.current = true;
+    setEnregistre(true);
+    const s = scene.current;
+    const el = ici.current;
+    if (s && el) {
+      prendreTalkie(s, el, "moi", "emet");
+      s.sons.kssht();
+      ilEcoute.current = laRef.current && !s.figurine("autre").dort;
+      if (ilEcoute.current) {
+        prendreTalkie(s, el, "autre", "ecoute");
+        s.figurine("autre").pencher(7, 60_000);
+      }
+    }
+    direQueJeParle(true);
+    if (redireParle.current) clearInterval(redireParle.current);
+    redireParle.current = setInterval(() => direQueJeParle(true), 5000);
+  }
+  /** La tête parle au rythme de ma voix, des ondes partent vers l'autre. */
+  function niveauMicro(n: number) {
+    const s = scene.current;
+    const el = ici.current;
+    if (s && el) vivreVoix(s, el, "moi", n, 0.45);
+  }
+  /** On relâche : le vocal part ; on a glissé : effacé ; trop court : l'astuce ; le micro refusé : on le dit. */
+  function finMicro(f: FinMicro) {
+    jEnregistre.current = false;
+    setEnregistre(false);
+    if (redireParle.current) clearInterval(redireParle.current);
+    redireParle.current = null;
+    direQueJeParle(false);
+    if ("vocal" in f) return void envoyerUnVocal(f.vocal);
+    ilEcoute.current = false;
+    const s = scene.current;
+    const el = ici.current;
+    if (s && el) {
+      rangerTalkie(s, el, "moi");
+      rangerTalkie(s, el, "autre");
+      s.figurine("autre").pencher(0, 300);
+    }
+    if ("annule" in f) return montrer(PHRASES_VOCAL.efface);
+    if ("court" in f) {
+      setRappelMicro((n) => n + 1);
+      return montrer(PHRASES_VOCAL.astuce, 3800);
+    }
+    montrer(f.erreur, 3600);
+  }
+  /**
+   * 📻 Mon vocal part : sa bulle tout de suite (▶, la forme de ma voix, sa durée), le bip de fin ; s'il m'écoutait, il
+   * m'a entendu en direct ; sinon, mon talkie se pose sur la table et l'attend. Puis l'envoi ; un échec défait et le dit.
+   */
+  async function envoyerUnVocal(v: { blob: Blob; duree: number; niveaux: number[] }) {
+    const s = scene.current;
+    const el = ici.current;
+    const provisoire: MessageFil = { id: `envoi-${Date.now()}`, moi: true, le: new Date().toISOString(), duree: Math.round(v.duree * 100) / 100, son: URL.createObjectURL(v.blob), repliques: [], niveaux: niveauxEnTexte(v.niveaux) };
+    const enDirect = ilEcoute.current;
+    ilEcoute.current = false;
+    if (enDirect) entendusEnDirect.current.add(provisoire.id);
+    // (il est encore dans ma main une demi-seconde ; puis, s'il ne m'écoutait pas, il se pose sur la table)
+    pasAvant.current = Date.now() + 500;
+    setMessages((l) => [...l, provisoire]);
+    chat.current?.reagir("message");
+    if (s && el) {
+      s.sons.bipFin();
+      setTimeout(() => rangerTalkie(s, el, "moi"), 380);
+      if (enDirect)
+        setTimeout(() => {
+          rangerTalkie(s, el, "autre");
+          s.figurine("autre").pencher(6, 900);
+        }, 520);
+    }
+    setTimeout(() => rangerTableRef.current(), 520);
+    // (en direct : s'il ne l'a pas vraiment écouté, il finit sur la table)
+    if (enDirect) setTimeout(() => rangerTableRef.current(), DIRECT_MS + 300);
+    try {
+      const son = await new Promise<string>((ok, ko) => {
+        const lecteur = new FileReader();
+        lecteur.onload = () => ok(String(lecteur.result));
+        lecteur.onerror = () => ko(new Error(""));
+        lecteur.readAsDataURL(v.blob);
+      });
+      const r = await fetch("/api/direct/proches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "vocal", cle, son, duree: provisoire.duree, niveaux: provisoire.niveaux }) });
+      const j = (await r.json().catch(() => null)) as { message?: MessageFil; error?: string } | null;
+      if (!r.ok || !j?.message) throw new Error(j?.error || "");
+      const vrai = j.message;
+      if (enDirect) entendusEnDirect.current.add(vrai.id);
+      setMessages((l) => l.map((m) => (m.id === provisoire.id ? vrai : m)));
+      monterLaFlamme("moi");
+    } catch (e) {
+      setMessages((l) => l.filter((m) => m.id !== provisoire.id));
+      montrer(e instanceof Error && e.message ? `Pas parti : ${e.message}` : PHRASES_VOCAL.pasParti, 3600);
+    }
+  }
+  useEffect(() => {
+    rangerTableRef.current();
+  }, [messages, arriveeFaite]);
+  useEffect(
+    () => () => {
+      if (redireParle.current) clearInterval(redireParle.current);
+    },
+    [],
+  );
+
   /** 🚪 Aller dans une pièce (sa scène est dans le catalogue, sa plaque préchargée : tout de suite). */
   async function allerDans(piece: PieceDuo): Promise<boolean> {
     let cat = catalogueRef.current;
@@ -1270,6 +1536,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   // (pendant l'arrivée, sa bulle dit ce qui est rejoué — rien avant qu'elle commence ; ensuite, son dernier message)
   const arriveeAVenir = !arriveeFaite && !rejoue && fil ? aRejouer(fil.messages, fil.memes ?? []).length > 0 : false;
   const sonDernier = rejoue ?? (sonDernierMessage && !arriveeAVenir ? { id: sonDernierMessage.id, texte: texteDeBulle(sonDernierMessage) } : null);
+  // (🎙️ lot S4 : son dernier message est un vocal — sa bulle a ▶, la forme de sa voix, ce qu'il a dit)
+  const sonVocal = sonDernierMessage && sonDernier?.id === sonDernierMessage.id && estVocal(sonDernierMessage) ? sonDernierMessage : null;
   const jours = fil ? parJour(messages, memes, undefined, gestes) : [];
   const reactionsDe = (id: string) => gestes.filter((g) => g.type === "reaction" && g.message === id);
   const gardes = new Set(souvenirs.map((o) => o.message).filter((x): x is string => Boolean(x)));
@@ -1281,8 +1549,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const flou = chargement.etat !== "manque" ? chargement.flou : undefined;
 
   return (
-    <main className="sd">
+    <main className="sd" onPointerDownCapture={debloquerSon}>
       <style>{STYLES_SALON}</style>
+      <style>{STYLES_TALKIE}</style>
       <header className="sd-entete">
         {onRetour ? (
           <button type="button" className="sd-retour" aria-label="Retour" onClick={onRetour}>
@@ -1375,8 +1644,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 </div>
               )}
               {monDernier && (
-                <div key={monDernier.id} className={`sd-bulle moi${reagissable(monDernier.id) ? " a-epingle" : ""}`} data-bulle={monDernier.id}>
-                  {texteDeBulle(monDernier)}
+                <div key={monDernier.id} className={`sd-bulle moi${reagissable(monDernier.id) ? " a-epingle" : ""}${estVocal(monDernier) ? " vocal" : ""}`} data-bulle={monDernier.id}>
+                  {estVocal(monDernier) ? <ContenuVocal m={monDernier} prenom={prenom} joue={joue === monDernier.id} surLire={() => void jouerUnVocal(monDernier)} /> : texteDeBulle(monDernier)}
                   {reagissable(monDernier.id) && (
                     <button type="button" className={`sd-garder${gardes.has(monDernier.id) ? " fait" : ""}`} data-garder={monDernier.id} aria-label={gardes.has(monDernier.id) ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} onClick={() => void garder(monDernier.id, true)} />
                   )}
@@ -1400,8 +1669,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             </div>
             <div className="sd-bulles autre" aria-live="polite">
               {sonDernier && (
-                <div key={sonDernier.id} className={`sd-bulle autre${reagissable(sonDernier.id) ? " a-epingle" : ""}`} data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined} {...appuiLong(sonDernier.id, setReagirA)}>
-                  {sonDernier.texte}
+                <div key={sonDernier.id} className={`sd-bulle autre${reagissable(sonDernier.id) ? " a-epingle" : ""}${sonVocal ? " vocal" : ""}`} data-bulle={sonDernier.id} data-rejoue={rejoue ? "1" : undefined} {...appuiLong(sonDernier.id, setReagirA)}>
+                  {sonVocal ? <ContenuVocal m={sonVocal} prenom={prenom} joue={joue === sonVocal.id} surLire={() => void jouerUnVocal(sonVocal)} /> : sonDernier.texte}
                   {reagissable(sonDernier.id) && (
                     <button type="button" className={`sd-garder${gardes.has(sonDernier.id) ? " fait" : ""}`} data-garder={sonDernier.id} aria-label={gardes.has(sonDernier.id) ? "Déjà sur votre étagère" : "Le garder sur votre étagère"} onPointerDown={(e) => e.stopPropagation()} onClick={() => void garder(sonDernier.id, false)} />
                   )}
@@ -1531,7 +1800,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       )}
 
       <form
-        className="sd-saisie"
+        className={`sd-saisie${enregistre ? " enregistre" : ""}`}
         autoComplete="off"
         onSubmit={(e) => {
           e.preventDefault();
@@ -1555,11 +1824,16 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           enterKeyHint="send"
           disabled={!fil || !peutEcrire}
         />
-        <button type="submit" className="sd-envoyer" aria-label="Envoyer" disabled={!texte.trim() || !fil || !peutEcrire}>
-          <svg viewBox="0 0 24 24" aria-hidden>
-            <path d="M4 12l15-7-5 15-3-6z" fill="#fff" />
-          </svg>
-        </button>
+        {/* 🎙️ (lot S4) le micro, gardé appuyé : un vocal ; il devient ➤ dès qu'on écrit */}
+        {texte.trim() && !enregistre ? (
+          <button type="submit" className="sd-envoyer" aria-label="Envoyer" disabled={!fil || !peutEcrire}>
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <path d="M4 12l15-7-5 15-3-6z" fill="#fff" />
+            </svg>
+          </button>
+        ) : (
+          <BoutonMicro key={`micro-${rappelMicro}`} rappel={rappelMicro > 0} prenom={prenom} desactive={!fil} onDebut={debutMicro} onNiveau={niveauMicro} onFin={finMicro} />
+        )}
       </form>
 
       {/* 💬 Messagerie : construite à l'ouverture, elle monte du bas (un voile derrière ; le voile ou la poignée la ferment) */}
@@ -1605,7 +1879,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
                 <div className="sd-jour">{j.jour}</div>
                 {j.lignes.map((l) =>
                   l.sorte === "message" ? (
-                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && (passeALaTele(l.m) || filmALaTele(l.m)) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} {...(zonesCadres.length > 0 && l.m.moi && reagissable(l.m.id) && l.m.genre === "photo" ? { surAccrocher: () => void accrocherPhoto(l.m.id) } : {})} />
+                    <MessageDuFil key={l.m.id} m={l.m} prenom={prenom} reactions={reactionsDe(l.m.id)} surReagir={setReagirA} garde={gardes.has(l.m.id)} surGarder={() => void garder(l.m.id, l.m.moi)} {...(zoneTele && l.m.moi && reagissable(l.m.id) && (passeALaTele(l.m) || filmALaTele(l.m)) ? { surTele: () => void mettreALaTele(l.m.id) } : {})} {...(zonesCadres.length > 0 && l.m.moi && reagissable(l.m.id) && l.m.genre === "photo" ? { surAccrocher: () => void accrocherPhoto(l.m.id) } : {})} joue={joue === l.m.id} surLire={lireDepuisLeFil} />
                   ) : l.sorte === "geste" ? (
                     <div key={`geste-${l.g.id}`} className="sd-evt" data-geste-fil={l.g.cle}>
                       <span>{phraseDuGeste(l.g, l.g.moi, prenom)}</span>
@@ -1698,6 +1972,12 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             setEnvoiOuvert(false);
             setIndiceLien(true);
             champ.current?.focus();
+          }}
+          onVocal={() => {
+            setEnvoiOuvert(false);
+            setTexte("");
+            setRappelMicro((n) => n + 1);
+            montrer(PHRASES_VOCAL.astuce, 3800);
           }}
         />
       )}
@@ -1842,6 +2122,26 @@ button.sd-pastille{cursor:pointer}
 .sd-lien{color:#8a1f5a;font-weight:700;text-decoration:underline;text-underline-offset:2px}
 .sd-piece{display:block;max-width:180px;width:100%;height:auto;border-radius:10px}
 .sd-vocal{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:180px}
+.sd-vague{flex:1;min-width:52px;height:24px;display:flex;align-items:center;gap:2px}
+.sd-vague i{flex:1;border-radius:2px;background:rgba(60,20,50,.3);min-height:3px}
+.sd-vague i.lu{background:var(--rose)}
+.sd-bulle.vocal{display:block;-webkit-line-clamp:unset;pointer-events:auto;width:min(230px,100%)}
+.sd-bulle.vocal .sd-vocal{min-width:0}
+.sd-bulle.vocal .sd-lire{pointer-events:auto}
+.sd-bulle.vocal q{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.sd-saisie{position:relative}
+.sd-saisie.enregistre .sd-joindre,.sd-saisie.enregistre input{visibility:hidden}
+.sd-micro{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .15s ease,background .15s ease,box-shadow .15s ease}
+.sd-micro.actif{transform:scale(1.28);background:#ff3b5c!important;box-shadow:0 0 0 9px rgba(255,59,92,.2),0 6px 18px rgba(255,59,92,.45)}
+.sd-micro.rappel{animation:sd-rappel .9s ease 2}
+@keyframes sd-rappel{50%{transform:scale(1.25)}}
+.sd-enreg{position:absolute;left:12px;right:74px;top:8px;height:46px;box-sizing:border-box;border-radius:23px;background:#170816;display:flex;align-items:center;gap:9px;padding:0 14px;box-shadow:inset 0 0 0 1.5px rgba(255,90,110,.7);transform:translateX(var(--dx,0px));z-index:2}
+.sd-pt-rouge{width:10px;height:10px;border-radius:50%;background:#ff3b5c;flex:none;animation:sd-clignote 1s steps(2) infinite}
+@keyframes sd-clignote{50%{opacity:.2}}
+.sd-enreg b{font:700 14px var(--app);color:var(--texte);font-variant-numeric:tabular-nums;flex:none}
+.sd-enreg canvas{flex:1;min-width:0;height:26px}
+.sd-glisse{font:600 11px var(--app);color:#c08fb0;flex:none;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.sd-micro.rappel,.sd-pt-rouge{animation:none}}
 .sd-lire{width:30px;height:30px;border-radius:50%;flex:none;display:grid!important;place-items:center;background:var(--rose)!important;color:#fff!important;font:800 11px var(--app)!important}
 .sd-vocal small{font:700 11px var(--app);color:#8a6a7e}
 .sd-vocal q{flex-basis:100%;font:italic 500 12px/1.35 var(--app);color:#5b3a50;quotes:"« " " »"}

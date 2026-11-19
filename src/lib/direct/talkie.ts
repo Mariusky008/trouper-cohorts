@@ -48,8 +48,10 @@ export type RepliqueProposee = { de: number; a: number; texte: string; propositi
  * `texte` : sa légende ; une seule réplique (la légende, dans la tête choisie), le temps que la figurine la montre.
  * 🎬 (lot M3, `video.ts`) `genre: "video"` : une vidéo — `video` (ses adresses signées, sa vignette, sa durée) ; comme une
  * photo pour le reste (la figurine montre sa vignette ; un toucher la lit en grand, avec son son).
+ * 🎙️ (lot S4, `vocal.ts`) un vocal du salon : `niveaux` (le volume du micro, un signe toutes les 60 ms : la forme de la
+ * voix, et la tête qui parle) ; `ecoute` : celui à qui il était l'a écouté (sinon, son talkie attend sur la table).
  */
-export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video" | "fichier"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage; fichier?: FichierDuMessage };
+export type MessageFil = { id: string; moi: boolean; le: string; duree: number; son: string; repliques: Replique[]; nouveau?: boolean; genre?: "ecrit" | "photo" | "video" | "fichier"; texte?: string; lien?: LienDuMessage; photo?: PhotoDuMessage; video?: VideoDuMessage; fichier?: FichierDuMessage; niveaux?: string; ecoute?: boolean };
 /** 📎 (lot S6) le PDF d'un message : son adresse signée (une heure, il se télécharge sous son nom), son nom, sa taille. */
 export type FichierDuMessage = { url: string; nom: string; taille: number };
 /** 🎬 (lot M3) la vidéo d'un message : son adresse signée et celle de sa vignette (une heure), ses dimensions, sa durée (s). */

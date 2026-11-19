@@ -113,7 +113,7 @@ const lireNom = (n: string) => {
   const m = /^(\d{13})-([0-9a-f]{8})-([a-z0-9]+)\.json$/.exec(n);
   return m ? { nom: n, ts: Number(m[1]), de8: m[2], id: m[3] } : null;
 };
-const cheminSon = (pair: string, id: string, ext: string) => `fils/${pair}/s/${id}.${ext}`;
+export const cheminSon = (pair: string, id: string, ext: string) => `fils/${pair}/s/${id}.${ext}`;
 const cheminLus = (h: string) => `${h}/fils-lus.json`;
 export const cheminLa = (h: string) => `${h}/la.json`;
 export const cheminReglages = (h: string) => `${h}/reglages.json`;
@@ -122,7 +122,11 @@ export const cheminHumeur = (h: string) => `${h}/humeur.json`;
 const cheminCaches = (h: string) => `${h}/paroles-cachees.json`;
 const cheminCompteur = (h: string) => `${h}/talkie-jour.json`;
 
-type Fiche = { id: string; de: string; le: string; duree: number; son: string; type: string; repliques: Replique[] };
+/**
+ * (🎙️ lot S4, `vocal-serveur.ts`) un vocal du salon garde aussi `niveaux` (la forme de sa voix) et, une fois écouté par
+ * l'autre, `ecoute` (l'heure) — sa transcription arrive après coup, dans `repliques`.
+ */
+type Fiche = { id: string; de: string; le: string; duree: number; son: string; type: string; repliques: Replique[]; niveaux?: string; ecoute?: string };
 /** ✍️ (lot M1) Un message, vocal ou écrit, tel que le seau le garde. */
 export type FicheMessage = Partial<Fiche> & {
   id?: string;
@@ -519,7 +523,19 @@ export async function filAvec(supabase: Supabase, moi: Habitant, cle: unknown): 
         const son = await signer(supabase, s(f.son), 3600);
         if (!son) return null;
         const nouveau = f.de !== moi.id && derniers[i].ts > vu;
-        return { id: s(f.id), moi: f.de === moi.id, le: s(f.le), duree: Number(f.duree) || 0, son, repliques: repliquesValides(f.repliques, Number(f.duree)) ?? [], ...(nouveau ? { nouveau: true } : {}) };
+        // (🎙️ lot S4 : la forme de sa voix ; écouté ou non — sinon, son talkie attend sur la table)
+        const niveaux = typeof f.niveaux === "string" && /^[0-9a-f]+$/.test(f.niveaux) ? f.niveaux : "";
+        return {
+          id: s(f.id),
+          moi: f.de === moi.id,
+          le: s(f.le),
+          duree: Number(f.duree) || 0,
+          son,
+          repliques: repliquesValides(f.repliques, Number(f.duree)) ?? [],
+          ...(nouveau ? { nouveau: true } : {}),
+          ...(niveaux ? { niveaux } : {}),
+          ...(f.ecoute ? { ecoute: true } : {}),
+        };
       }),
     )
   ).filter((m): m is MessageFil => Boolean(m));
@@ -548,7 +564,7 @@ const dureeValide = (x: unknown) => {
 
 const voixBranchee = () => Boolean(s(process.env.OPENAI_TALKIE_API_KEY) || s(process.env.OPENAI_API_KEY));
 /** La transcription, découpée en phrases datées. `null` : pas de transcription. */
-export async function transcrire(son: { type: string; ext: string; octets: Buffer }, duree: number): Promise<{ start: number; end: number; text: string }[] | null> {
+export async function transcrire(son: { type: string; ext: string; octets: Buffer }, duree: number, ms = 20_000): Promise<{ start: number; end: number; text: string }[] | null> {
   const cle = s(process.env.OPENAI_TALKIE_API_KEY) || s(process.env.OPENAI_API_KEY);
   if (!cle) return null;
   const base = s(process.env.OPENAI_TALKIE_BASE_URL) || s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
@@ -559,7 +575,7 @@ export async function transcrire(son: { type: string; ext: string; octets: Buffe
     forme.append("response_format", "verbose_json");
     forme.append("timestamp_granularities[]", "segment");
     forme.append("file", new File([new Uint8Array(son.octets)], `parole.${son.ext}`, { type: son.type }));
-    const r = await fetch(`${base}/v1/audio/transcriptions`, { method: "POST", headers: { authorization: `Bearer ${cle}` }, body: forme, signal: AbortSignal.timeout(20_000) });
+    const r = await fetch(`${base}/v1/audio/transcriptions`, { method: "POST", headers: { authorization: `Bearer ${cle}` }, body: forme, signal: AbortSignal.timeout(ms) });
     if (!r.ok) return null;
     const j = (await r.json().catch(() => null)) as { text?: string; segments?: { start?: number; end?: number; text?: string }[] } | null;
     if (Array.isArray(j?.segments) && j.segments.length) return j.segments.map((x) => ({ start: Number(x.start) || 0, end: Number(x.end) || 0, text: s(x.text) }));
@@ -567,6 +583,21 @@ export async function transcrire(son: { type: string; ext: string; octets: Buffe
   } catch {
     return null;
   }
+}
+
+/**
+ * 🎙️ (lot S4) Transcrire un vocal du salon, s'il lui reste des transcriptions aujourd'hui (les mêmes quarante que
+ * « comprendre ») : ses phrases datées, `[]` s'il n'a rien dit de lisible, `null` sans transcription (pas de service,
+ * plus de place aujourd'hui, ou une panne).
+ */
+export async function transcrireDuJour(supabase: Supabase, h: string, son: { type: string; ext: string; octets: Buffer }, duree: number): Promise<{ start: number; end: number; text: string }[] | null> {
+  if (!voixBranchee()) return null;
+  const jour = jourParis();
+  const c = await lireJson<{ jour?: string; n?: number }>(supabase, cheminCompteur(h));
+  const n = c.jour === jour ? Number(c.n) || 0 : 0;
+  if (n >= COMPRENDRE_PAR_JOUR) return null;
+  await ecrireJson(supabase, cheminCompteur(h), { jour, n: n + 1 });
+  return transcrire(son, duree, 45_000);
 }
 
 const iaBranchee = () => Boolean(s(process.env.OPENAI_MEME_API_KEY) || s(process.env.OPENAI_API_KEY));

@@ -30,7 +30,8 @@ type Supabase = ReturnType<typeof createAdminClient>;
 export const cheminPouls = (pair: string) => `fils/${pair}/pouls.json`;
 
 /** Le pouls, tel que le téléphone le lit. */
-export type Pouls = { n: number; la: boolean; ecrit?: true; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: true };
+/** (🎙️ lot S4) `parle` : il parle dans son talkie (au lieu d'écrire). */
+export type Pouls = { n: number; la: boolean; ecrit?: true; parle?: true; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: true };
 
 const DUO_MS = 60_000;
 const duos = new Map<string, { h: string; pair: string; jusqua: number }>();
@@ -62,8 +63,21 @@ export async function poulsAvec(supabase: Supabase, moi: Habitant, cle: unknown,
   const visible = reglages.presence !== false;
   const le = Number(la.le) || 0;
   const estLa = visible && maintenant - le < LA_MS;
-  const ecrit = maintenant - (Number(prepare[qui8(d.h)]) || 0) < ENREGISTRE_MS;
-  return { pouls: { n: Number(p.n) || 0, la: estLa, ...(ecrit ? { ecrit: true as const } : {}), ...(!estLa && visible && le ? { vu: new Date(le).toISOString() } : {}), ...etatPieceDuo(piece, qui8(moi.id), maintenant) } };
+  const lui8 = qui8(d.h);
+  const prepare8 = maintenant - (Number(prepare[lui8]) || 0) < ENREGISTRE_MS;
+  // (🎙️ lot S4 : il parle dans son talkie, ou il écrit)
+  const parle = prepare8 && Number(prepare[`${lui8}~`]) === 1;
+  const ecrit = prepare8 && !parle;
+  return {
+    pouls: {
+      n: Number(p.n) || 0,
+      la: estLa,
+      ...(ecrit ? { ecrit: true as const } : {}),
+      ...(parle ? { parle: true as const } : {}),
+      ...(!estLa && visible && le ? { vu: new Date(le).toISOString() } : {}),
+      ...etatPieceDuo(piece, qui8(moi.id), maintenant),
+    },
+  };
 }
 
 /** 💓 Un événement dans la conversation avec ce proche (un message, un mème, un geste, un message effacé) : le pouls bat. */
