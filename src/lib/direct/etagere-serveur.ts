@@ -52,7 +52,7 @@ import { DUO_MS, titreDuDuo } from "./meme-salon";
 import { AJOUT_MOT_MAX, AJOUT_PHOTO, AJOUT_TITRE_MAX, ajoutDe, type ObjetMaison } from "./ma-maison";
 import { APERCU, apercuDuHtml, urlLisible } from "./ecrit";
 import { lireLeWeb } from "./ecrit-serveur";
-import { cheminReglages, dossierMessages, figurineVue, hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
+import { cheminReglages, dossierMessages, figurineVue, hDeCle, nomsDuFil, nomsRecents, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import {
   CATALOGUE,
   ETAGERE,
@@ -946,7 +946,8 @@ export async function lignesEtagere(supabase: Supabase, moi: Habitant, cles: str
       if (l) r[cle] = l;
       else {
         // 🕸️ (lot E3, le cas 5) la poussière : l'avatar passe en gris
-        const noms = await nomsDuFil(supabase, pair);
+        // (les cent derniers suffisent : la poussière en demande six — la liste se relit toutes les 45 s)
+        const noms = await nomsRecents(supabase, pair);
         const dernier = noms.length ? noms[noms.length - 1].ts : 0;
         if (etatEtagere({ dernier, messages: noms.length, objets: objets.filter(visible).length, maintenant: Date.now() }) === "poussiere") r[cle] = { ...LIGNE_POUSSIERE, gris: true };
       }

@@ -365,10 +365,22 @@ export async function imageDeSonHumeur(supabase: Supabase, h: string, humeur: Se
 /** Les messages d'une conversation (leurs noms : quand, de qui), du plus ancien au plus récent. */
 export async function nomsDuFil(supabase: Supabase, pair: string) {
   const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossierMessages(pair), { limit: 1000 });
-  return ((Array.isArray(data) ? data : []) as { name?: string }[])
+  return lireNoms(data);
+}
+const lireNoms = (data: unknown) =>
+  ((Array.isArray(data) ? data : []) as { name?: string }[])
     .map((f) => lireNom(s(f.name)))
     .filter((x): x is NonNullable<ReturnType<typeof lireNom>> => Boolean(x))
     .sort((a, b) => a.ts - b.ts);
+/**
+ * Les cent derniers messages d'un fil, dans l'ordre : ce que lisent les relectures régulières (la liste « Chez moi »
+ * toutes les 45 s, « là maintenant » toutes les minutes) — les non lus, le dernier message, la poussière. La liste
+ * entière (jusqu'à mille noms, quatre cents octets chacun) sortait de Supabase à chaque fois (19 novembre 2026).
+ */
+export const NOMS_RECENTS = 100;
+export async function nomsRecents(supabase: Supabase, pair: string) {
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossierMessages(pair), { limit: NOMS_RECENTS, sortBy: { column: "name", order: "desc" } });
+  return lireNoms(data);
 }
 
 /**
@@ -407,7 +419,7 @@ export async function marquerLa(supabase: Supabase, moi: Habitant): Promise<{ no
     [...miens].slice(0, 60).map(async (h) => {
       if (h === moi.id || !(await prochesDe(supabase, h)).has(moi.id)) return 0;
       const vu = Number(lus[h]) || 0;
-      return (await nomsDuFil(supabase, pairDe(moi.id, h))).filter((x) => x.de8 !== moi8 && x.ts > vu).length;
+      return (await nomsRecents(supabase, pairDe(moi.id, h))).filter((x) => x.de8 !== moi8 && x.ts > vu).length;
     }),
   );
   return { nonLus: n.reduce((a, b) => a + b, 0) };
@@ -451,7 +463,7 @@ export async function mesProchesVivants(supabase: Supabase, moi: Habitant): Prom
       let dernier: ProcheVivant["dernier"];
       if (lien === "proches") {
         const pair = pairDe(moi.id, h);
-        const noms = await nomsDuFil(supabase, pair);
+        const noms = await nomsRecents(supabase, pair);
         const vu = Number(lus[h]) || 0;
         nonLus = noms.filter((n) => n.de8 !== moi8 && n.ts > vu).length;
         const d = noms[noms.length - 1];

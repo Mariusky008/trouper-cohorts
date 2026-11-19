@@ -88,6 +88,10 @@ ok(s1.statut === 200 && /^[a-z0-9]{12}$/.test(s1.id ?? "") && cookies.includes("
 const e1 = await attendre((e) => e.etape === "decouverte");
 const p1 = e1.propositions?.[0];
 ok(e1.etape === "decouverte" && p1?.etat === "fait" && /^http/.test(p1.image ?? "") && e1.restantes === 11, `faite après la réponse : la découverte, son image (${e1.etape}, ${p1?.etat}, ${e1.restantes} restantes)`);
+// 🔁 (19 novembre 2026 : 39 Go sortis de Supabase) relue, la même image garde la même adresse : le téléphone la reprend
+// dans son cache au lieu de la retélécharger
+const e1bis = await appeler();
+ok(Boolean(p1?.image) && e1bis.propositions?.[0]?.image === p1.image, "relue, la même image garde la même adresse (le téléphone la reprend dans son cache)");
 const jeton = /clikme_habitant=([^;]+)/.exec(cookies)[1];
 const sonCompte = (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=id,ville_slug,prenom`)).json())[0];
 const h = sonCompte?.id;

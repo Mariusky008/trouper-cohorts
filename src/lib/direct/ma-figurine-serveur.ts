@@ -75,6 +75,8 @@ const MESSAGES_PAR_JOUR = 30;
 
 // ─── le stockage privé ────────────────────────────────────────────────────────────────────────
 export async function deposer(supabase: Supabase, chemin: string, octets: Buffer, type: string): Promise<boolean> {
+  // (un fichier redéposé : son adresse signée d'avant est oubliée — le téléphone verra le nouveau)
+  oublierAdresse(chemin);
   const envoyer = () => supabase.storage.from(SEAU_FIGURINES).upload(chemin, octets, { contentType: type, upsert: true });
   let { error } = await envoyer();
   if (error && /bucket/i.test(error.message)) {
@@ -83,13 +85,43 @@ export async function deposer(supabase: Supabase, chemin: string, octets: Buffer
     ({ error } = await envoyer());
   }
   if (error) console.error("[stockage] dépôt refusé :", chemin, error.message);
+  oublierAdresse(chemin);
   return !error;
+}
+
+// ─── 🔁 LES ADRESSES SIGNÉES, STABLES ────────────────────────────────────────────────────────────────
+/**
+ * Le 19 novembre 2026, Supabase a coupé le service : 39 Go sortis en onze jours pour 5 Go permis. La cause principale :
+ * une adresse signée NEUVE à chaque demande — le téléphone ne reconnaissait jamais l'image et la retéléchargeait (la
+ * liste « Chez moi », relue toutes les 45 s, retéléchargeait la figurine de chaque proche ; le salon, à chaque pouls).
+ *
+ * Désormais, le serveur garde en mémoire l'adresse de chaque fichier et la ressert telle quelle : signée pour 24 h au
+ * moins, resservie tant qu'il lui reste la moitié de sa durée (et au moins le temps demandé). Le téléphone la reconnaît :
+ * l'image vient de son cache. Un fichier redéposé (`deposer`) ou effacé par `depotDans` est oublié : la demande suivante
+ * reçoit une adresse neuve, et le téléphone voit le nouveau.
+ */
+const SIGNEE_AU_MOINS_S = 24 * 3600;
+const ADRESSES_GARDEES = 5000;
+const adresses = new Map<string, { url: string; fin: number; duree: number }>();
+/** Oublie l'adresse signée d'un fichier (redéposé, effacé). */
+export function oublierAdresse(chemin: string) {
+  adresses.delete(chemin);
 }
 
 export async function signer(supabase: Supabase, chemin: string, secondes = 3600): Promise<string> {
   if (!chemin) return "";
-  const { data } = await supabase.storage.from(SEAU_FIGURINES).createSignedUrl(chemin, secondes);
-  return s(data?.signedUrl);
+  const maintenant = Date.now();
+  const deja = adresses.get(chemin);
+  if (deja && deja.fin - maintenant >= Math.max(secondes, deja.duree / 2) * 1000) return deja.url;
+  const duree = Math.max(secondes, SIGNEE_AU_MOINS_S);
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).createSignedUrl(chemin, duree);
+  const url = s(data?.signedUrl);
+  if (!url) return "";
+  adresses.delete(chemin);
+  adresses.set(chemin, { url, fin: maintenant + duree * 1000, duree });
+  // (les plus anciennes s'en vont d'abord)
+  if (adresses.size > ADRESSES_GARDEES) adresses.delete(adresses.keys().next().value as string);
+  return url;
 }
 
 const empreinte = (b: Buffer | string) => createHash("sha1").update(b).digest("hex").slice(0, 16);
@@ -115,7 +147,10 @@ export function depotDans(supabase: Supabase, dossier: string): Depot {
     },
     lire: (nom) => telecharger(supabase, `${dossier}/${nom}`),
     ecrire: (nom, octets, type) => deposer(supabase, `${dossier}/${nom}`, octets, type),
-    effacer: async (nom) => void (await supabase.storage.from(SEAU_FIGURINES).remove([`${dossier}/${nom}`])),
+    effacer: async (nom) => {
+      oublierAdresse(`${dossier}/${nom}`);
+      await supabase.storage.from(SEAU_FIGURINES).remove([`${dossier}/${nom}`]);
+    },
   };
 }
 export const dossierExpressions = (habitantId: string, neutre: string) => `${habitantId}/expr-${empreinte(neutre)}`;

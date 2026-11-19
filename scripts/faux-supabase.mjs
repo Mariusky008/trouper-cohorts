@@ -27,7 +27,26 @@ const SEAUX_PRIVES = new Set(["salons-prives", "maison-privee", "figurines-clien
 
 const tables = new Map();
 const fichiers = new Map(); // `${seau}/${chemin}` → { type, octets }
-const signes = new Map(); // jeton → { cle, expire }
+const signes = new Map(); // jeton → { cle, expire } (les adresses d'envoi)
+/**
+ * Les adresses signées de LECTURE : vérifiables sans mémoire, comme les vraies (un jeton signé) — le serveur de l'appli
+ * garde ses adresses d'un essai à l'autre (`signer`, `ma-figurine-serveur.ts`), alors que ce faux repart à neuf.
+ */
+const SECRET_SIGNE = "faux-supabase-signature";
+const jetonSigne = (cle, expire) => {
+  const charge = Buffer.from(JSON.stringify({ cle, expire })).toString("base64url");
+  return `${charge}.${createHash("sha256").update(`${SECRET_SIGNE}.${charge}`).digest("base64url").slice(0, 22)}`;
+};
+const lireJetonSigne = (jeton) => {
+  const [charge, sceau] = String(jeton).split(".");
+  if (!charge || !sceau) return null;
+  if (createHash("sha256").update(`${SECRET_SIGNE}.${charge}`).digest("base64url").slice(0, 22) !== sceau) return null;
+  try {
+    return JSON.parse(Buffer.from(charge, "base64url").toString());
+  } catch {
+    return null;
+  }
+};
 let suite = 1;
 const maintenant = () => new Date().toISOString();
 const hex = (n) => randomBytes(n).toString("hex");
@@ -560,11 +579,9 @@ async function stockage(req, res, url) {
     if (req.method === "POST") {
       if (!fichiers.has(cle)) return repondre(res, 400, { statusCode: "404", error: "not_found", message: "Object not found" });
       const { expiresIn = 60 } = JSON.parse((await corps(req)).toString() || "{}");
-      const jeton = hex(12);
-      signes.set(jeton, { cle, expire: Date.now() + expiresIn * 1000 });
-      return repondre(res, 200, { signedURL: `/object/sign/${cle}?token=${jeton}` });
+      return repondre(res, 200, { signedURL: `/object/sign/${cle}?token=${jetonSigne(cle, Date.now() + expiresIn * 1000)}` });
     }
-    const s = signes.get(url.searchParams.get("token") || "");
+    const s = lireJetonSigne(url.searchParams.get("token") || "");
     if (!s || s.cle !== cle || s.expire < Date.now()) return repondre(res, 400, { error: "InvalidJWT", message: "Signature invalide ou expirée" });
     const f = fichiers.get(cle);
     res.writeHead(200, { "content-type": f.type });
@@ -596,7 +613,7 @@ async function stockage(req, res, url) {
       .filter(([cle]) => cle.startsWith(debut) && !cle.slice(debut.length).includes("/") && (!cherche || cle.slice(debut.length).toLowerCase().includes(cherche)))
       .map(([cle, f]) => ({ name: cle.slice(debut.length), id: cle, created_at: f.cree ?? null, updated_at: f.cree ?? null, metadata: { size: f.octets.length, mimetype: f.type } }));
     if (sortBy?.column === "created_at") liste.sort((x, y) => String(x.created_at).localeCompare(String(y.created_at)) * (sortBy.order === "desc" ? -1 : 1));
-    else liste.sort((x, y) => x.name.localeCompare(y.name));
+    else liste.sort((x, y) => x.name.localeCompare(y.name) * (sortBy?.column === "name" && sortBy.order === "desc" ? -1 : 1));
     // (comme la vraie : ses sous-dossiers aussi, sans `id`, après ses fichiers)
     const dossiers = [...new Set([...fichiers.keys()].filter((cle) => cle.startsWith(debut) && cle.slice(debut.length).includes("/")).map((cle) => cle.slice(debut.length).split("/")[0]))]
       .filter((n) => !cherche || n.toLowerCase().includes(cherche))
