@@ -543,3 +543,23 @@ La section 7 et les maquettes parlent d'un « défi à deux qui devient un souve
 l'inventer, il attend la décision du propriétaire : quel défi (une photo à prendre chacun de son côté ? une question à
 deviner l'un sur l'autre ? un mème à faire à deux ?), et ce qu'il devient dans la maison (un cadre ? un objet sur
 l'étagère, « ✨ gardé avec … » ?).
+
+## 20. Allumé pour tous (19 novembre 2026)
+
+Le propriétaire, après une nouvelle inscription : « après la figurine je n'arrive pas au choix de mon “ma maison”, je
+suis encore sur l'ancien concept d'univers où Pablito me pose des questions ». **`MA_MAISON_CATALOGUE = true`** :
+
+- après « C'est moi ! », **« 🏠 Choisis ta pièce »** mène à l'onglet « Ma maison » (`/collection#maison`), qui s'ouvre
+  sur le choix (les neuf, dans l'ordre de l'âge) ; l'accueil `/univers` dit pareil ; `/univers/conversation` y renvoie ;
+  Pablito ne fabrique plus d'univers (`creer` : 410) ;
+- ceux qui ont déjà un univers fabriqué le gardent, avec la carte « 🏠 Nouveau : choisis ta pièce » (section 14) ;
+- la bienvenue montre « Ton selfie › Ta figurine › Ta pièce › Tes proches », et sa dernière bulle devient « Par toi ! Un
+  selfie pour ta figurine, puis tu choisis ta pièce, et elle se remplit avec ce que tu gardes. » — **sans voix tant que
+  le propriétaire ne l'a pas enregistrée** (`tuto-univers-6b`, jamais de voix de synthèse).
+
+**Le frein** (comme « Univers pour tous ») : `CLIKME_MA_MAISON=0` éteint, « 1 » allume, sinon l'interrupteur
+(`src/lib/direct/interrupteurs-serveur.ts`). Le serveur décide ; les pages passent sa valeur aux écrans (`/collection` :
+`maison` ; `/univers/figurine`, `/univers`, `/univers/monde` : l'adresse de « Choisis ta pièce », `versSaPiece`). La CI
+et le serveur d'essai tournent freinés ; `choisis-ta-piece.mjs` essaie l'allumé sur une seconde app (« Univers pour
+tous » et « Ma maison » allumés, comme en ligne).
+

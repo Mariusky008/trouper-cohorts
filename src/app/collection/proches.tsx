@@ -123,6 +123,7 @@ export function Proches({
   onNonLus,
   onNouveautes,
   chezMoi = false,
+  salonPourTous,
 }: {
   compte: boolean | null;
   prete: boolean;
@@ -132,6 +133,8 @@ export function Proches({
   onNouveautes?: (n: number) => void;
   /** 🏡 « Chez moi » (l'interrupteur « Univers pour tous » allumé, `chez-moi.tsx`) : mon univers en haut, la liste façon WhatsApp */
   chezMoi?: boolean;
+  /** 🛋️ l'interrupteur `SALON_DU_DUO`, tel que le serveur le donne (`interrupteurs-serveur.ts`) */
+  salonPourTous?: boolean;
 }) {
   const visible = useContext(OngletVisible);
   // 🏡 (« Chez moi ») la feuille de mon humeur, et celle du « ＋ » (et, dedans, le choix du proche à qui parler)
@@ -146,7 +149,7 @@ export function Proches({
   const rituel = useRituel();
   // 🛋️ (lot S8, la bascule) le salon du duo à la place de l'ancienne conversation : l'interrupteur `SALON_DU_DUO`, ou
   // l'essai de ce téléphone (`/collection?salon=1`) — `vers-le-salon.tsx`
-  const salon = useSalonDuDuo();
+  const salon = useSalonDuDuo(salonPourTous);
   useEffect(() => {
     if (chezMoi && visible && compte && prete) void chargerRituel();
   }, [chezMoi, visible, compte, prete]);

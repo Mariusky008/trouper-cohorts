@@ -17,7 +17,7 @@ import type { CalqueFigurine, CataloguePieces, Flamme, OuvertureSalon, PieceDuSa
 import { LA_MS, cheminLa, cheminLus, cheminReglages, filAvec, hDeCle, noter, nomsDuFil, pairDe, qui8, seParlent } from "./talkie-serveur";
 import { lireSaPiece } from "./ma-maison-serveur";
 import { ordreDuCatalogue } from "./ma-maison";
-import { sesDixHuitAns } from "./voeu-serveur";
+import { sesDixHuitAns } from "./majorite-serveur";
 import { cheminGestes, cheminGestesVus, lireTable, vivantAvec } from "./vivant-serveur";
 import { chatDuSalon } from "./salon-chat-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";

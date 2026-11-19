@@ -21,6 +21,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--ambre);outline-offset:2px}
 .app{position:relative;height:100%;max-width:460px;margin:0 auto;background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,var(--nuit) 62%);overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.04)}
 .vue{position:absolute;inset:0;display:flex;flex-direction:column;min-height:0}
+.vue[hidden]{display:none}
 .g{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* ─── boutons ─── */
@@ -107,13 +108,27 @@ h1{margin:0;font-weight:900;font-size:30px;letter-spacing:-.02em;line-height:1.1
 .decor svg{display:block;width:100%;height:100%}
 .tele{position:absolute;left:15.38%;top:9.23%;width:69.23%;height:29.23%;border-radius:7px;overflow:hidden;background:#05060c;box-shadow:0 0 0 5px #120810,0 0 0 6px rgba(255,255,255,.07),0 0 46px rgba(130,180,255,.32);z-index:2}
 .tele canvas{display:block;width:100%;height:100%}
-/* 📺 le grand écran (par défaut) : la télé prend toute la largeur du téléphone, la pièce et les figurines dessous */
-/* (la pièce garde ses proportions ; la télé prend toute la largeur du téléphone, en haut, quelle que soit sa hauteur) */
-.scene-wrap.grand{place-items:start center}
-.scene-wrap.grand .scene{overflow:visible}
-.scene-wrap.grand .tele{left:calc(50% - 50cqw);top:0;width:100cqw;height:56.25cqw;border-radius:0;box-shadow:0 12px 30px rgba(0,0,0,.55)}
-.scene-wrap.grand .bord{left:auto;right:3%;top:calc(56.25cqw + 8px);transform:none}
-.scene-wrap.grand .seul,.scene-wrap.grand .voix-dispo{top:calc(56.25cqw + 8px)}
+/* 📺 le grand écran (par défaut) : la télé en haut, toute la largeur, en 16/9 ; DESSOUS (plus par-dessus), la pièce, elle
+   aussi toute la largeur, cadrée sur le canapé, et les figurines dedans. Le propriétaire, le 19 novembre 2026 : sur
+   ordinateur, « j'aimerais voir tout le canapé » ; sur téléphone, « le salon ne prend pas toute la largeur et les
+   figurines sortent du cadre et touchent la vidéo ». La vue défile si le téléphone est court (le navigateur de WhatsApp).
+   Le cadrage : une bande de la pièce (son image fait 853 × 1844), --y0 son haut (en % de l'image), --h sa hauteur
+   (en part de l'image) ; les figurines, placées pour la pièce entière (--b), y sont recalées. */
+.vue:has(.scene-wrap.grand){overflow-y:auto;overscroll-behavior:contain}
+.vue:has(.scene-wrap.grand)>*{flex:none}
+#p-wrap{--y0:35;--h:.3}
+#s-wrap{--y0:36;--h:.4}
+.scene-wrap.grand{display:block;container-type:inline-size;padding-top:56.25%;overflow:visible}
+.scene-wrap.grand .scene{width:100%;height:auto;overflow:visible}
+#p-wrap.grand .scene{aspect-ratio:853/553}
+#s-wrap.grand .scene{aspect-ratio:853/738}
+.scene-wrap.grand .decor{overflow:hidden}
+#p-wrap.grand .fond-img{object-position:50% 50%}
+#s-wrap.grand .fond-img{object-position:50% 60%}
+.scene-wrap.grand .fig{bottom:calc((100 - ((11.5 + (100 - var(--b)) * .617) - var(--y0)) / var(--h)) * 1%) !important}
+.scene-wrap.grand .tele{left:0;top:-56.25cqw;width:100cqw;height:56.25cqw;border-radius:0;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.scene-wrap.grand .bord{left:auto;right:3%;top:8px;transform:none}
+.scene-wrap.grand .seul,.scene-wrap.grand .voix-dispo{top:8px}
 .taille-tele{position:absolute;left:6px;bottom:5px;z-index:4;display:flex;align-items:center;gap:4px;padding:3px 8px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:10.5px;font-weight:800}
 .tele-titre{position:absolute;inset:0 0 auto;display:flex;flex-direction:column;gap:1px;padding:7px 10px 18px;background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,0));opacity:0;transition:opacity .3s;pointer-events:none}
 .tele-titre.montre{opacity:1}
@@ -153,7 +168,26 @@ h1{margin:0;font-weight:900;font-size:30px;letter-spacing:-.02em;line-height:1.1
 /* ─── les figurines ─── */
 .fig{position:absolute;transform:translateX(-50%);transition:left 1.3s cubic-bezier(.3,.8,.3,1),opacity .4s;z-index:3}
 .fig svg{display:block;width:100%;height:auto;overflow:visible}
-.fig .tete{transform-box:view-box;transform-origin:50px 90px;animation:vit 4.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+/* (19 novembre 2026, le propriétaire : « au niveau du graphisme du salon tu peux faire beaucoup mieux » — des pièces rendues
+   et de vrais petits personnages : ceux de la démo, à la place des figurines de chacun) */
+.fig .perso{position:relative}
+.fig .perso .tete{position:relative;transform-origin:50% 92%}
+.fig .perso img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none;user-select:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45))}
+.fig .perso .p-c,.fig .perso .p-s{position:absolute;inset:0;opacity:0}
+.fig .perso .p-c{animation:clin 5.3s infinite;animation-delay:var(--d,0s)}
+@keyframes clin{0%,95%{opacity:0}96%,98%{opacity:1}99%,100%{opacity:0}}
+.fig.coucou .perso .p-s,.fig.bras-haut .perso .p-s{opacity:1;animation:none}
+.fig.coucou .perso .p-c,.fig.bras-haut .perso .p-c{display:none}
+.fig .perso .p-x{position:absolute;right:-8%;top:-2%;font-style:normal;font-size:clamp(16px,6cqw,30px);line-height:1;opacity:0;transform:scale(.3);transition:opacity .15s,transform .25s cubic-bezier(.2,1.6,.4,1);font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+[data-x="rire"] .p-x::before{content:"😂"}[data-x="oh"] .p-x::before{content:"😮"}[data-x="coeur"] .p-x::before{content:"😍"}[data-x="bof"] .p-x::before{content:"😴"}
+[data-x="rire"] .p-x,[data-x="oh"] .p-x,[data-x="coeur"] .p-x,[data-x="bof"] .p-x{opacity:1;transform:scale(1)}
+.fond-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;pointer-events:none;-webkit-user-drag:none}
+.vig .fond-img{object-position:50% 34%}
+.vig-tv{position:absolute;left:19%;width:62%;top:6%;height:auto;filter:drop-shadow(0 6px 12px rgba(0,0,0,.55))}
+.carte-tele .vig,.carte-salon .vig,.carte-potins .vig{position:relative;overflow:hidden}
+.vig-perso{position:absolute;bottom:6%;height:calc(var(--k) * 40%);transform:translateX(-50%);filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+.fig svg .tete{transform-box:view-box;transform-origin:50px 90px}
+.fig .tete{animation:vit 4.4s ease-in-out infinite;animation-delay:var(--d,0s)}
 @keyframes vit{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
 .fig .y-n{transform-box:fill-box;transform-origin:center;animation:cligne 5.3s infinite;animation-delay:var(--d,0s)}
 @keyframes cligne{0%,95%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
@@ -446,7 +480,25 @@ const GENS={
   rayan:{prenom:'Rayan',peau:'#b37a52',cheveux:'#160d08',coupe:'boucle',haut:'#3c3c8f',bas:'#1f1f28',passions:['jeux','musique','manga'],maison:true},
   zoe:{prenom:'Zoé',peau:'#f5d6bd',cheveux:'#b0452a',coupe:'chignon',haut:'#46b3a9',bas:'#2a2a3c',passions:['manga','humour','revisions'],maison:false},
 };
+for(const [k,v] of Object.entries(GENS))v.id=k;
 const PROCHES=['sam','lea','noe','ines'];
+
+// 🎨 LES IMAGES (19 novembre 2026) : les pièces rendues et les petits personnages de la démo (`public/direct/ensemble`),
+// à la place des dessins — dans l'appli, ce sont la pièce de sa maison et la vraie figurine de chacun
+const IMG=location.protocol==='file:'?'../../../public/direct/ensemble/':'ensemble/';
+const SCENE_DE={maison:'chalet',foot:'terrasse',series:'bibliotheque',musique:'ocean',jeux:'verriere',tele:'terrasse',humour:'ocean',cuisine:'chalet',mode:'verriere',manga:'bibliotheque',animaux:'verriere',revisions:'bibliotheque',parents:'ocean',potins:'terrasse'};
+const PERSOS={moi:'soleil',sam:'denim',lea:'fleuri',noe:'melomane',ines:'artiste',malik:'curieux',jade:'lecteur',hugo:'jardinier',emma:'cosy',yanis:'rebelle',chloe:'voyageur',theo:'flaneur',nadia:'fantome-echarpe-violette',paul:'fantome-beret-rouge',lina:'fantome-bonnet',rayan:'fantome-casquette-bleue',zoe:'fantome-lunettes-rouges'};
+function imagesDe(id){
+  const n=PERSOS[id]||'cosy';
+  if(n.startsWith('fantome-'))return {a:`${IMG}${n}.webp`,c:['fantome-echarpe-violette','fantome-bonnet','fantome-beret-noir'].includes(n)?`${IMG}${n}-cligne.webp`:'',s:''};
+  return {a:`${IMG}${n}-assis.webp`,c:`${IMG}${n==='flaneur'?'flaneur-assis-cligne':n+'-cligne'}.webp`,s:n==='flaneur'?'':`${IMG}${n}-salue.webp`};
+}
+const fondIMG=theme=>`<img class="fond-img" src="${IMG}scene-${SCENE_DE[theme]||'chalet'}.webp" alt="" draggable="false">`;
+function vignetteIMG(theme,o={}){
+  const tv=o.tv?`<svg class="vig-tv" viewBox="54 42 282 164" aria-hidden="true">${teleVignette(o.tv)}</svg>`:'';
+  const tetes=(o.tetes||[]).map(t=>`<img class="vig-perso" src="${imagesDe(t.id).a}" alt="" style="left:${((t.x-(o.x0||0))/(o.l||390)*100).toFixed(1)}%;--k:${(t.k/.62).toFixed(2)}">`).join('');
+  return fondIMG(theme)+tv+tetes;
+}
 const SALONNIERS=['malik','jade','hugo','emma','yanis','chloe','theo','nadia','paul','lina','rayan','zoe'];
 
 // la sélection du jour (la même pour tout le monde, par thème) : ce que tes proches en ont fait, à la seconde
@@ -544,6 +596,7 @@ function teteInner(p){
   <path class="b-b" d="M44 64q6-2 12 0" stroke="#6b1d2c" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
 }
 function figSVG(p){
+  if(p.id){const im=imagesDe(p.id);return `<div class="perso"><div class="tete"><img class="p-a" src="${im.a}" alt="" draggable="false">${im.c?`<img class="p-c" src="${im.c}" alt="" draggable="false">`:''}${im.s?`<img class="p-s" src="${im.s}" alt="" draggable="false">`:''}<i class="p-x"></i></div></div>`}
   return `<svg viewBox="0 0 100 160" aria-hidden="true"><ellipse cx="50" cy="153" rx="30" ry="5" fill="rgba(0,0,0,.35)"/>
   <g class="corps"><rect x="29" y="127" width="19" height="17" rx="8" fill="${p.bas}"/><rect x="52" y="127" width="19" height="17" rx="8" fill="${p.bas}"/>
   <ellipse cx="38" cy="147" rx="11" ry="5" fill="#2a1a1f"/><ellipse cx="62" cy="147" rx="11" ry="5" fill="#2a1a1f"/>
@@ -553,7 +606,7 @@ function figSVG(p){
   <path d="M50 92l-7-2.5l14-2.5l-14-2.5l14-2.5l-7-2" stroke="#c9b3be" stroke-width="2.6" fill="none" stroke-linejoin="round"/>
   <g class="tete">${teteInner(p)}</g></svg>`;
 }
-const teteSVG=p=>`<svg viewBox="12 6 76 80" aria-hidden="true">${teteInner(p)}</svg>`;
+const teteSVG=p=>p.id?`<svg viewBox="0 0 100 100" aria-hidden="true"><image href="${imagesDe(p.id).a}" x="-22" y="-4" width="144" height="230" preserveAspectRatio="xMidYMin slice"/></svg>`:`<svg viewBox="12 6 76 80" aria-hidden="true">${teteInner(p)}</svg>`;
 
 function teleVignette(sorte){
   const T=`<rect x="60" y="48" width="270" height="152" rx="8" fill="#0a0d1a" stroke="#120810" stroke-width="7"/>`;
@@ -701,7 +754,7 @@ const EMO={bravo:'👏',rire:'😂',sourire:'😊',coeur:'❤️',oh:'😮',surp
 function reactionAuTexte(t){if(/(\bnul\b|\bbof\b|ennui|😴|🙄)/i.test(t))return 'bof';if(/(ha ?ha|hihi|mdr|ptdr|\blol\b|😂|🤣|😆)/i.test(t))return 'rire';if(/(❤|😍|🥰|j.?adore|trop beau|trop mignon)/i.test(t))return 'coeur';if(/(!|😱|waouh|\bwow\b|\boh\b|quoi)/i.test(t))return 'surprise';return 'sourire'}
 function figHTML(id,pl,x={}){
   const p=GENS[id];
-  return `<div class="fig${x.cls||''}" data-id="${id}" data-x="n" style="left:${pl.x}%;bottom:${pl.b}%;width:${pl.l}%;--d:${(-Math.random()*4).toFixed(2)}s">${figSVG(p)}<span class="nom"><span>${x.direct?'<i class="dot"></i>':''}${x.nom||p.prenom}</span>${x.vu?`<em>${x.vu}</em>`:''}</span></div>`;
+  return `<div class="fig${x.cls||''}" data-id="${id}" data-x="n" style="left:${pl.x}%;bottom:${pl.b}%;--b:${pl.b};width:${pl.l}%;--d:${(-Math.random()*4).toFixed(2)}s">${figSVG(p)}<span class="nom"><span>${x.direct?'<i class="dot"></i>':''}${x.nom||p.prenom}</span>${x.vu?`<em>${x.vu}</em>`:''}</span></div>`;
 }
 function poser(scene,id,pl,x={}){scene.insertAdjacentHTML('beforeend',figHTML(id,pl,x));return scene.lastElementChild}
 function entrer(scene,id,pl,x={}){const f=poser(scene,id,{...pl,x:112},x);requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.left=pl.x+'%'}));return f}
@@ -768,7 +821,7 @@ const XS_TETES=[75,135,195,255,315];
 function carteSalon(th){
   const n=presents(th),gens=gensDuSalon(th.id,n).slice(0,5);
   const tetes=gens.map((id,k)=>({id,x:XS_TETES[k],y:330,k:.5}));
-  return `<button class="carte-salon" data-salon="${th.id}"><div class="vig">${decorSVG(DECORS[th.id],{vb:'0 40 390 330',tv:th.dessin==='foot'?'foot':th.id,tetes})}<span class="ici"><i></i>${n} ici</span></div><b>${th.e} ${th.salon}${th.instance?' · '+th.instance:''}</b><small>${th.sujet}</small></button>`;
+  return `<button class="carte-salon" data-salon="${th.id}"><div class="vig">${vignetteIMG(th.id,{tv:th.dessin==='foot'?'foot':th.id,tetes})}<span class="ici"><i></i>${n} ici</span></div><b>${th.e} ${th.salon}${th.instance?' · '+th.instance:''}</b><small>${th.sujet}</small></button>`;
 }
 function rendreAccueil(){
   const vids=videosDuJour(),courts=[...new Set(vids.map(v=>THEME(v.theme).court))];
@@ -778,7 +831,7 @@ function rendreAccueil(){
   const ado=etat.age==='ado';
   $('#pile').innerHTML=`
   <button class="carte-tele" id="carte-tele" aria-label="Regarder ma télé du jour">
-    <div class="vig">${decorSVG(DECORS.maison,{vb:'0 40 390 320',tv:'foot',tetes:[{id:'sam',x:110,y:308,k:.62},{id:'moi',x:195,y:308,k:.62},{id:'lea',x:280,y:308,k:.62}]})}</div>
+    <div class="vig">${vignetteIMG('maison',{tv:'foot',tetes:[{id:'sam',x:110,y:308,k:.62},{id:'moi',x:195,y:308,k:.62},{id:'lea',x:280,y:308,k:.62}]})}</div>
     <span class="allume"><i></i>Ta télé est allumée</span>
     <div class="tdj"><p class="sur">Ma télé du jour</p><h2>🎬 ${vids.length} vidéos t’attendent</h2><p class="themes">${courts.join(' · ')}</p>
       <div class="deja"><span class="tetes">${vus.slice(0,3).map(id=>teteSVG(GENS[id])).join('')}</span><span>${deja}</span></div>
@@ -789,7 +842,7 @@ function rendreAccueil(){
   <h3 class="titre-sec">Les salons ouverts <small>par passion</small></h3>
   <p class="sous-sec">${ado?'Les salons des 15-17 ans : tu n’y croises jamais d’adulte. ':''}Tes passions d’abord. Tu entres, ta figurine s’assoit, on parle.</p>
   <div class="grille">${miens.map(carteSalon).join('')}</div>
-  <button class="carte-potins" data-salon="potins"><div class="vig">${decorSVG(DECORS.potins,{vb:'40 40 310 330',tv:'potins',tetes:gensDuSalon('potins',3).map((id,k)=>({id,x:[120,195,270][k],y:330,k:.5}))})}</div>
+  <button class="carte-potins" data-salon="potins"><div class="vig">${vignetteIMG('potins',{l:310,x0:40,tv:'potins',tetes:gensDuSalon('potins',3).map((id,k)=>({id,x:[120,195,270][k],y:330,k:.5}))})}</div>
     <div><em>Pour tout le monde · ta ville</em><b>🗞️ Les potins de ${VILLE}</b><small>${POTINS.presse.length} nouvelles aujourd’hui · ${POTINS.agenda.length} rendez-vous à venir${ado?' · tu lis, sans écrire':''}</small><small><span style="color:var(--vert)">●</span> ${POTINS_THEME.n} ici</small></div></button>
   <h3 class="titre-sec">Les autres salons</h3>
   <div class="grille">${autres.map(carteSalon).join('')}</div>`;
@@ -800,7 +853,7 @@ $('#pile').addEventListener('click',e=>{
 });
 $('#b-passions').addEventListener('click',()=>{rendrePassions();montrer('passions')});
 $$('[data-ailleurs]').forEach(b=>b.addEventListener('click',()=>toast('Seule « Découvrir » se joue dans cette maquette')));
-$('#b-maquette').addEventListener('click',()=>feuille(`<h2>Réglages de la maquette</h2><p class="chapo">Rien ne part : tout se joue dans cette page.</p>
+$('#b-maquette').addEventListener('click',()=>feuille(`<h2>Réglages de la maquette</h2><p class="chapo">Rien ne part : tout se joue dans cette page. Les petits personnages tiennent la place des figurines : dans l’appli, chacun a la sienne, et la pièce est celle de sa maison.</p>
   <p class="groupe">Voir Découvrir comme</p><div class="segments"><button class="chip" data-age="adulte" aria-pressed="${etat.age==='adulte'}">Un adulte</button><button class="chip" data-age="ado" aria-pressed="${etat.age==='ado'}">15-17 ans</button></div>
   <div class="reglage"><span>« Mes réactions peuvent apparaître dans les clips de mes proches »</span><button class="chip" id="r-clips" aria-pressed="${etat.clips}">${etat.clips?'Allumé':'Éteint'}</button></div>
   <button class="chip" id="r-recommencer">↺ Recommencer depuis « Tes passions »</button>`,f=>{
@@ -820,11 +873,11 @@ function montrer(v){
 $$('[data-retour]').forEach(b=>b.addEventListener('click',()=>montrer('accueil')));
 
 // ════════════════════════ MA TÉLÉ DU JOUR, DANS MA PIÈCE ════════════════════════
-const PLACES4=[{x:15,b:7,l:24},{x:38.5,b:7,l:24},{x:61.5,b:7,l:24},{x:85,b:7,l:24}];
+const PLACES4=[{x:19,b:36,l:17},{x:40,b:37.5,l:18},{x:61,b:37.5,l:17},{x:82,b:36,l:17}];
 const piece={liste:[],i:0,tele:null,mes:{},live:new Set(),cam:false,camOk:false,notes:0,assis:[],flag:new Set(),partages:{}};
 const scP=()=>$('#p-scene');
 function ouvrirPiece(){montrer('piece');piece.liste=videosDuJour();piece.i=0;piece.live.clear();
-  const sc=scP();sc.innerHTML=`<div class="decor">${decorSVG(DECORS.maison)}</div>${teleHTML()}<div class="bord" id="p-bord"></div><p class="seul" id="p-seul" hidden></p>`;
+  const sc=scP();sc.innerHTML=`<div class="decor">${fondIMG('maison')}</div>${teleHTML()}<div class="bord" id="p-bord"></div><p class="seul" id="p-seul" hidden></p>`;
   $('#p-wrap').style.background=fondWrap(DECORS.maison);
   piece.tele=new Tele($('.tele',sc),{tick:tickPiece,fin:finPiece});etat.grand=true;majTaille();
   chargerVideo(0);
@@ -1077,7 +1130,7 @@ function ouvrirClip(v,reactifs){
   nettoyer('clip');const gens=['moi',...reactifs].slice(0,4),pl=[{x:15,b:5,l:27},{x:38.5,b:4,l:28},{x:61.5,b:4,l:28},{x:85,b:5,l:27}];
   const o=[1,0,2,3];
   const voile=document.createElement('div');voile.className='clip-voile';voile.id='clip-voile';
-  voile.innerHTML=`<div class="clip" id="clip"><div class="clip-barre"><i></i></div><div class="clip-scene" id="clip-scene">${decorSVG(DECORS.maison)}<div class="clip-tele"><small>▶ ${esc(v.chaine)}</small><b>${esc(v.titre)}</b></div>${gens.map((id,k)=>figHTML(id,pl[o[k]])).join('')}</div><p class="clip-phrase">${esc(v.fort.phrase)}</p><div class="clip-logo"><b>ClikMe</b><small>clikme.fr</small></div></div>
+  voile.innerHTML=`<div class="clip" id="clip"><div class="clip-barre"><i></i></div><div class="clip-scene" id="clip-scene">${fondIMG('maison')}<div class="clip-tele"><small>▶ ${esc(v.chaine)}</small><b>${esc(v.titre)}</b></div>${gens.map((id,k)=>figHTML(id,pl[o[k]])).join('')}</div><p class="clip-phrase">${esc(v.fort.phrase)}</p><div class="clip-logo"><b>ClikMe</b><small>clikme.fr</small></div></div>
   <div class="clip-actions"><button class="btn" id="c-partager">📤 Partager</button><button class="chip" id="c-revoir">↺ Revoir</button><button class="chip" id="c-fermer">Fermer</button></div>
   <p class="clip-note">10 secondes, faites dans ta pièce, au moment le plus fort. Jamais les images de la vidéo : son titre et sa chaîne. N’y paraissent que les proches qui l’acceptent.</p>`;
   $('#app').appendChild(voile);
@@ -1090,7 +1143,7 @@ function ouvrirClip(v,reactifs){
 }
 
 // ════════════════════════ LES SALONS OUVERTS ════════════════════════
-const PLACES8=[{x:12,b:27,l:16},{x:31,b:27,l:16},{x:50,b:27,l:16},{x:69,b:27,l:16},{x:88,b:27,l:16},{x:25,b:2,l:19},{x:50,b:2,l:19},{x:75,b:2,l:19}];
+const PLACES8=[{x:13,b:36,l:15},{x:31,b:37,l:15},{x:50,b:37.5,l:15},{x:69,b:37,l:15},{x:87,b:36,l:15},{x:12,b:1,l:20},{x:50,b:-2,l:21},{x:88,b:1,l:20}];
 const MA_PLACE=6;
 const salon={id:null,tele:null,gens:[],cache:new Set(),conv:[],demandes:new Set(),i:0};
 const scS=()=>$('#s-scene');
@@ -1109,7 +1162,7 @@ function ouvrirSalon(id){
   $('#s-titre').textContent=potins?`🗞️ Les potins de ${VILLE}`:`${th.e} ${th.salon}${th.instance?' · '+th.instance:''}`;
   const sous=k=>`${k} ici · ${8-k?`${8-k} place${8-k>1?'s':''} libre${8-k>1?'s':''}`:'complet'} · 8 places${ado?' · 15-17 ans':''}`;
   $('#s-sous').textContent=sous(n);
-  const sc=scS();sc.innerHTML=`<div class="decor">${decorSVG(DECORS[id],{poufs:true})}</div>${teleHTML()}`;$('#s-wrap').style.background=fondWrap(DECORS[id]);etat.grand=true;majTaille();
+  const sc=scS();sc.innerHTML=`<div class="decor">${fondIMG(id)}</div>${teleHTML()}`;$('#s-wrap').style.background=fondWrap(DECORS[id]);etat.grand=true;majTaille();
   const places=PLACES8.map((_,k)=>k).filter(k=>k!==MA_PLACE);
   salon.gens.forEach((g,k)=>poser(sc,g,PLACES8[places[k]]));
   const v=videoDuSalon(th);

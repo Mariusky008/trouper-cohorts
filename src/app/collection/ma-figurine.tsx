@@ -33,7 +33,6 @@ import { EnvoyerAUnProche } from "./meme-pour";
 import {
   ATTESTATION_AGE,
   ATTITUDES,
-  REFUS_AGE,
   DUREE_MAX_MESSAGE,
   PRENOM_MAX,
   SENTIMENTS,
@@ -58,15 +57,13 @@ import type { Surprise } from "@/lib/direct/meme-surprise";
 import { createClient } from "@/lib/supabase/client";
 import { SONS_PABLITO } from "@/lib/direct/guide";
 import { ProtegerFigurine } from "./connaitre";
-import { demanderSonAge } from "./age";
 import { useMois } from "./figurine-du-mois";
 import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type PourAutour, type VersLeStudio } from "./vers-le-studio";
 import { oublierLeDepot, revenirAuDepot } from "./depot-autour";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 import { MesReactions } from "./mes-reactions";
-import { accordPublic } from "./fenetre";
 import { InviterAppli } from "./mon-telephone";
-import { nomVille, themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
+import { themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -237,18 +234,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   const [feuilleReagir, setFeuilleReagir] = useState(() => typeof window !== "undefined" && window.location.hash === "#reactions");
   const [feuille, setFeuille] = useState(false);
   const [copie, setCopie] = useState(false);
-  // (sa ville, pour « Poster sur le fil de Dax »)
-  const [villeJour, setVilleJour] = useState("");
-  useEffect(() => {
-    let fini = false;
-    void fetch("/api/direct/ma-figurine?jour=1", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j: { jour?: { ville?: string } } | null) => !fini && j?.jour?.ville && setVilleJour(j.jour.ville))
-      .catch(() => undefined);
-    return () => {
-      fini = true;
-    };
-  }, []);
   const champ = useRef<HTMLTextAreaElement>(null);
   // (tout est ouvert dès le départ, le lot 3 : ses visages, sa propre voix, le cadre doré)
   const or = true;
@@ -261,7 +246,8 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   const [surprise, setSurprise] = useState<Surprise | null>(null);
   const [surpriseCharge, setSurpriseCharge] = useState(false);
   const surprisesVues = useRef<string[]>([]);
-  // 🔥 LE MÈME DU JOUR : il y répond — le thème, ses idées ; `postee` : le mème posté (visible par sa ville)
+  // 🔥 LE MÈME DU JOUR : il y répond — le thème, ses idées (`postee` et `ville` : du temps du fil de sa ville, parti le
+  // 19 novembre 2026 avec l'ancien « Découvrir »)
   const [themeJour, setThemeJour] = useState<{ theme: Theme; ville: string; postee: string } | null>(null);
   // 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : il y répond « avec sa tête » ; son dépôt l'attend (`depot-autour.ts`)
   const [pourAutour, setPourAutour] = useState<PourAutour | null>(null);
@@ -771,47 +757,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
       /* il a fermé la feuille de partage */
     }
   }
-  /** 🔥 Sa réponse au mème du jour : postée, visible par les gens de sa ville (c'est écrit sur le bouton : son accord). */
-  async function posterAuJour() {
-    if (!envoye || !meme || !themeJour) return;
-    setErreur("");
-    const poster = () => demander({ action: "public", id: envoye.id, public: true, duJour: true });
-    try {
-      try {
-        await poster();
-      } catch (e) {
-        // 🔞 il n'a pas encore déclaré son âge : une fois, puis le geste repart
-        if (!(e as { age?: boolean }).age) throw e;
-        if (!(await demanderSonAge())) return setErreur(REFUS_AGE);
-        await poster();
-      }
-      setMeme((x) => (x ? { ...x, public: true } : x));
-      setThemeJour((t) => (t ? { ...t, postee: envoye.id } : t));
-    } catch (e) {
-      setErreur((e as Error).message);
-    }
-  }
-  /** 🌍 Le montrer dans « Découvrir », pour les gens de sa ville (son accord, demandé) — ou le retirer. */
-  async function basculerPublic() {
-    if (!envoye || !meme) return;
-    setErreur("");
-    if (!meme.public && !(await accordPublic())) return;
-    const basculer = () => demander({ action: "public", id: envoye.id, public: !meme.public }) as Promise<Reponse & { public?: boolean }>;
-    try {
-      let j: Reponse & { public?: boolean };
-      try {
-        j = await basculer();
-      } catch (e) {
-        // 🔞 il n'a pas encore déclaré son âge : une fois, puis le geste repart
-        if (!(e as { age?: boolean }).age) throw e;
-        if (!(await demanderSonAge())) return setErreur(REFUS_AGE);
-        j = await basculer();
-      }
-      setMeme((x) => (x ? { ...x, public: Boolean(j.public) } : x));
-    } catch (e) {
-      setErreur((e as Error).message);
-    }
-  }
   /** 🔗 Son lien, copié (pour le coller où il veut). */
   async function copierLien() {
     if (!envoye) return;
@@ -829,7 +774,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   // (son mème du moment : celui qu'il vient de faire avec CETTE phrase (ou cette voix), CE visage, CE look)
   const sonCourant = ecrit ? (texte.trim() ? `texte|${texte.trim()}` : "") : son && !son.texte && !enreg ? son.cle : "";
   const memeIci = meme && sonCourant && meme.cle === `${sonCourant}|${sentiment ?? ""}|${look}` ? meme : null;
-  const saVille = nomVille(themeJour?.ville || villeJour) || "ta ville";
   // (la bulle, en haut : ce qu'elle va dire, en direct)
   const bulle = ecrit ? texte.trim() || "Salut ! Fais-moi dire quelque chose, et partage-le 😊" : enreg ? "🎙️ Je t’écoute…" : son && !son.texte ? "🎙️ Ta voix est prête" : "🎙️ Dis-le avec ta voix : c’est elle qui parlera";
   // 🎲 « Pas d'idée ? » : le mème du jour à part, les phrases toutes prêtes ensemble ; choisir ferme la feuille
@@ -929,6 +873,9 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
               ))}
             </span>
           )}
+          {/* 🔔 (l'appli posée sur l'écran d'accueil, à sa première ouverture : la notification de 11 h 30 — elle était
+              sur la carte du mème du jour de l'ancien « Découvrir », partie le 19 novembre 2026) */}
+          <InviterAppli apres="jour" repondu={false} />
         </div>
       )}
       {/* 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : sa tête, sa phrase, puis il le dépose là-bas */}
@@ -1264,7 +1211,9 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
               </div>
               {/* 🎭 (la nouvelle interface, lot 4) l'envoyer à un proche, dans leur conversation */}
               {envoye && <EnvoyerAUnProche id={envoye.id} />}
-              {/* 📍 POUR « AUTOUR » : il le dépose là-bas ; 🔥 SA RÉPONSE AU MÈME DU JOUR ; 🌍 SINON, LE FIL DE SA VILLE */}
+              {/* 📍 POUR « AUTOUR » : il le dépose là-bas ; 🔥 SA RÉPONSE AU MÈME DU JOUR : l'appli et la notification de
+                  demain. (« 🌍 Poster sur le fil de ma ville » et « Voir celles de ta ville » sont partis le 19 novembre
+                  2026, avec le fil de l'ancien « Découvrir ».) */}
               {envoye && !meme.duo && pourAutour ? (
                 <button
                   type="button"
@@ -1278,28 +1227,8 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
                   📍 {pourAutour.reponse ? "Répondre avec ce mème" : "Le déposer"}
                   {pourAutour.nom ? ` · ${pourAutour.nom}` : ""} ›
                 </button>
-              ) : envoye && !meme.duo && themeJour && themeJour.postee === envoye.id ? (
-                <>
-                  <a className="tf-postee" href="#decouvrir" onClick={() => setFeuille(false)}>
-                    ✓ Ta réponse est postée ! Voir celles de {nomVille(themeJour.ville) || "ta ville"} →
-                  </a>
-                  {/* 🔔 le bon moment (le lot 3) : « Demain, un nouveau thème. Je te préviens vers 11 h 30 ? » */}
-                  <InviterAppli apres="postee" />
-                </>
-              ) : envoye && !meme.duo && themeJour ? (
-                <button type="button" className="tf-poster-jour" onClick={posterAuJour}>
-                  🔥 Poster ma réponse (visible par les gens de {nomVille(themeJour.ville) || "ta ville"})
-                </button>
               ) : (
-                envoye &&
-                !meme.duo && (
-                  <>
-                    <button type="button" className={`tf-public${meme.public ? " pris" : ""}`} aria-pressed={Boolean(meme.public)} onClick={basculerPublic}>
-                      {meme.public ? `✓ Sur le fil de ${saVille} · le retirer` : `🌍 Poster sur le fil de ${saVille}`}
-                    </button>
-                    {!meme.public && <small className="tf-public-dit">Les gens de {saVille} le verront dans « Découvrir ». Tu le retires quand tu veux.</small>}
-                  </>
-                )
+                envoye && !meme.duo && themeJour && <InviterAppli apres="postee" />
               )}
               <button type="button" className="tf-changer" onClick={changerLaPhrase}>
                 ✏️ Changer la phrase
@@ -2042,9 +1971,6 @@ export const STYLES_MA_FIGURINE =
 .tf-meme-partage{display:flex;align-items:center;gap:8px;width:100%}
 .tf-meme-partage .tf-wa{flex:1;min-width:0;padding:14px 10px;border:0;font:inherit;font-size:16px;font-weight:900;text-align:center;cursor:pointer}
 .tf-meme-partage .tf-copier,.tf-meme-partage .tf-sms{flex:none;display:grid;place-items:center;width:50px;height:50px;box-sizing:border-box;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:18px;text-decoration:none;cursor:pointer}
-.tf-public{width:100%;padding:14px 16px;border:0;border-radius:999px;background:rgba(242,196,107,.1);box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.6);color:#FFE7B8;font:inherit;font-size:15px;font-weight:900;cursor:pointer}
-.tf-public.pris{padding:11px 14px;background:rgba(61,226,166,.12);box-shadow:inset 0 0 0 1px rgba(61,226,166,.6);color:#9BF2CF;font-size:14px}
-.tf-public-dit{margin-top:-4px;font-size:12px;line-height:1.35;color:#A88E99;text-align:center}
 .tf-changer{min-height:40px;padding:0 10px;border:0;background:none;color:#D9C3CB;font:inherit;font-size:14px;font-weight:800;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.tf-feuille-corps,.tf-moi .tf-fig .fqp-fig,.tf-idee.tourne > span:first-child,.tf-danse,.tf-danse i,.tf-direct i,.tf-v-img,.tf-v-cours,.tf-clap,.tf-meme-cours b,.tf-meme-jauge i::after,.tf-meme-ecran.cours,.tf-meme-video,.tf-meme-pret .tf-meme-ecran::after{animation:none;transition:none}}
 @media (max-width:359px){.tf-compte{display:none}}

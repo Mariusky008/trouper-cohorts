@@ -1321,6 +1321,16 @@ refusé ; sans rien, l'ancien écran ; `?salon=1` retenu, l'adresse propre, la c
 même carte ouvre le salon — la pièce, les figurines, la bulle —, lue pour de bon, posé sur toute la page, le toucher
 marqué ; « ‹ » sans recharger ; la notification l'ouvre tout droit, le retour le referme sans recharger ; `?salon=0`).
 
+### 11.24 🔀 Allumé pour tous (19 novembre 2026)
+
+Le propriétaire, après une nouvelle inscription : « Messagerie : c'est l'ancienne version aussi ». **`SALON_DU_DUO =
+true`** : toutes les portes de l'appli ouvrent le salon du duo. Comme « Univers pour tous », **le serveur peut le
+freiner sans déployer** : `CLIKME_SALON_DU_DUO=0` (« 1 » l'allume ; `src/lib/direct/interrupteurs-serveur.ts`) — la page
+`/collection` passe la valeur du serveur à l'appli (`MaCollection`, `salon` ; `useSalonDuDuo(pourTous)`). Un téléphone
+garde sa porte de sortie : `?salon=0`. La CI et le serveur d'essai tournent freinés (les essais de l'ancien écran
+restent valables) ; `salon-bascule.mjs` essaie l'allumé sur une seconde app sans frein (« sans rien, la carte ouvre le
+salon », « `?salon=0` : l'ancien écran »). L'ancien écran de `proches.tsx` sera retiré quelques jours plus tard.
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

@@ -45,7 +45,7 @@ function sAbonner(f: () => void) {
 }
 
 /** 🛋️ Le salon est-il ouvert sur ce téléphone ? (`?salon=1` / `?salon=0` dans l'adresse : retenu, puis retiré d'elle) */
-export function useSalonDuDuo(): boolean {
+export function useSalonDuDuo(pourTous?: boolean): boolean {
   const choix = useSyncExternalStore(sAbonner, lire, () => null);
   useEffect(() => {
     const u = new URL(window.location.href);
@@ -64,7 +64,7 @@ export function useSalonDuDuo(): boolean {
     }
     for (const f of abonnes) f();
   }, []);
-  return salonOuvert(choix);
+  return salonOuvert(choix, pourTous);
 }
 
 /** ⚡ Les deux premières conversations (et le salon lui-même), préchargées dans un temps mort. */

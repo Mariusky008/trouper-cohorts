@@ -28,10 +28,20 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    a été jouée et ajustée avec le propriétaire (`decouvrir.md`, section 13 : partager le moment, sans défi ni score ; le
    grand écran) ; **D0 fait** (section 14 : « Tes passions », la sélection YouTube de chaque nuit, l'administration) — il
    attend la clé YouTube (`YOUTUBE_API_KEY`, dans Vercel) ; **D1 fait** (section 15 : ma télé du jour à l'adresse
-   d'essai `/univers/tele` — le grand écran, ma pièce et ma figurine, Suivante, Garder, Envoyer à un proche) ; ensuite
-   l'onglet Découvrir et le retrait de l'ancienne page, une fois la télé jouée par le propriétaire.
+   d'essai `/univers/tele` — le grand écran, ma pièce et ma figurine, Suivante, Garder, Envoyer à un proche) ; **D1b
+   fait** (section 16 : la télé dans l'onglet Découvrir ; l'ancienne page est partie — le fil des mèmes de la ville,
+   « Mon vœu », « Mes vœux », les tâches du soir ; `#jour` ouvre « Créer » sur le thème du jour ; trois bulles du tuto
+   à enregistrer par le propriétaire, `tuto-decouvrir-tele-1..3`) ; ensuite D2 (inviter des proches, la télé
+   synchronisée).
 
-**À savoir (19 novembre 2026)** : le projet Supabase de production est **bridé** — plan gratuit, 39 Go de données
+**Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
+l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les
+conversations s'ouvrent dans le salon). Freins sans déployer : `CLIKME_MA_MAISON=0`, `CLIKME_SALON_DU_DUO=0`
+(`interrupteurs-serveur.ts` ; `ma-maison.md` section 20, `salon-du-duo.md` 11.24). La CI tourne freinée. À enregistrer
+par le propriétaire : `tuto-univers-6b` (la dernière bulle de la bienvenue, « …puis tu choisis ta pièce… »).
+
+**À savoir (19 novembre 2026)** : (le soir même, le propriétaire a pris le plan Pro : Supabase répond de nouveau.) Le
+projet Supabase de production était **bridé** — plan gratuit, 39 Go de données
 sortantes pour 5 Go permis (cycle du 8 novembre au 8 décembre) : il répond 402 à tout, d'où les « Ton compte n'a pas pu
 être créé » de la création de la figurine. Le propriétaire décide (plan payant, ou attendre le 8 décembre). La
 consommation est montée d'un coup le 12 novembre (4 à 9 Go par jour), avec les lots « Univers ». Ce qui a été réduit le
@@ -439,7 +449,10 @@ Deux demandes du propriétaire, discutées puis validées (« oui pour les trois
   `docs/univers/maquettes/compagnon.html` ; le cahier : `docs/univers/compagnon.md`. **Pour la session de l'univers** ;
   le premier lot (C0) est un essai de fabrication des animations, avant tout le reste.
 
-## 0 bis. « Mon vœu » (11 novembre 2026)
+## 0 bis. « Mon vœu » (11 novembre 2026) — retiré le 19 novembre 2026
+
+*Retiré avec l'ancienne page de Découvrir (décision du propriétaire du 17 novembre ; `docs/univers/decouvrir.md`,
+sections 11 et 16). Ce qui suit est l'histoire.*
 
 « Réalise mon vœu » remplacera la question du jour : je dépose un vœu avec ma figurine, les autres l'encouragent avec
 leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est dans `docs/figurines.md`, 9.0 septvicies ✨ « Mon vœu »

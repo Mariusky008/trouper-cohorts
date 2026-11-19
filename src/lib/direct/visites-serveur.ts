@@ -29,7 +29,8 @@ import { completerMonde, lireFicheMonde } from "./fiches-serveur";
 import { cheminVisibiliteMaison, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vieDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { objetsDeMaMaison } from "./etagere-serveur";
 import { questionChezLui } from "./question-maison-serveur";
-import { MA_MAISON_CATALOGUE, objetsPlaces, placerChezMoi, type MaisonVisitee } from "./ma-maison";
+import { objetsPlaces, placerChezMoi, type MaisonVisitee } from "./ma-maison";
+import { maisonPourTous } from "./interrupteurs-serveur";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { VISIBILITES, type FicheMonde, type Visibilite } from "./monde";
@@ -89,7 +90,7 @@ async function peutEntrer(supabase: Supabase, visiteur: string | null, h: string
 async function maisonOuUnivers(supabase: Supabase, h: string): Promise<{ piece: true; visibilite: Visibilite } | { piece: false; f: FicheMonde } | null> {
   const [f, piece] = await Promise.all([lireFicheMonde(supabase, h).catch(() => null), lireSaPiece(supabase, h).catch(() => null)]);
   const univers = f?.references.decor ? f : null;
-  if (piece && (MA_MAISON_CATALOGUE || !univers)) return { piece: true, visibilite: await visibiliteDeLaMaison(supabase, h) };
+  if (piece && (maisonPourTous() || !univers)) return { piece: true, visibilite: await visibiliteDeLaMaison(supabase, h) };
   return univers ? { piece: false, f: univers } : null;
 }
 

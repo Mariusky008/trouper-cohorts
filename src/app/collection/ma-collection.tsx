@@ -6,8 +6,10 @@
  * « “où les gagner”, ce n'est pas clair du tout »). Une seule question pour chaque écran : est-ce qu'il aide à faire un
  * mème, ou donne une raison d'en envoyer un ? Le menu en bas, comme les applis de vidéos que tout le monde connaît
  * (l'étape 2, le même jour : « Découvrir » est arrivé) :
- *   🔥 DÉCOUVRIR — les mèmes du jour des commerçants de sa ville (`decouvrir.tsx`) ; depuis le 11 novembre 2026, « Mon vœu »
- *      et la mission du jour en tête (`voeu.tsx`) — l'appli s'ouvre là, une fois son premier mème fait ;
+ *   🔥 DÉCOUVRIR — « Ma télé du jour » depuis le 19 novembre 2026 (`tele-du-jour.tsx`, le lot D1b de
+ *      `docs/univers/decouvrir.md`) : les vidéos de ses passions, dans sa pièce ; avant, les mèmes du jour de sa ville en
+ *      plein écran (`decouvrir.tsx`) et « Mon vœu » (`voeu.tsx`), retirés de l'onglet — l'appli s'ouvre là, une fois son
+ *      premier mème fait ;
  *   📍 AUTOUR — les mèmes laissés dans la ville, sur une carte (`autour.tsx`) ; il a pris la place de 💬 RENCONTRES ;
  *   🎭 CRÉER, au milieu, en gros — sa figurine qui parle (`ma-figurine.tsx`) : ses looks, ses mèmes prêts, le duo ;
  *      depuis le 7 novembre 2026, « le studio et ses tiroirs » (sa figurine toujours en vue, deux onglets, son mème dans
@@ -39,10 +41,11 @@ import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
 import { ProtegerFigurine, STYLES_CONNAITRE } from "./connaitre";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
-import { Decouvrir, STYLES_DECOUVRIR } from "./decouvrir";
-import { STYLES_VOEU } from "./voeu";
+import { TeleDuJourEcran } from "./tele-du-jour";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
+import { themeDuJour } from "@/lib/direct/theme-du-jour";
+import { versLeStudio } from "./vers-le-studio";
 import { FeuilleInstaller, MonTelephone, STYLES_MON_TELEPHONE } from "./mon-telephone";
 import { Autour, STYLES_AUTOUR } from "./autour";
 import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
@@ -100,12 +103,13 @@ const ALIAS: Record<string, Vue> = {
   moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
-  // (🔥 le mème du jour, dans « Découvrir » : là où mène la notification de 11 h 30 — il a quitté « Créer » le 8 novembre 2026)
-  jour: "decouvrir",
-  // (✨ « Mon vœu » et la mission du jour : les premières pages de « Découvrir », 11 novembre 2026)
+  // (🔥 le mème du jour : là où mène la notification de 11 h 30. Depuis le 19 novembre 2026, l'ancienne page de
+  // « Découvrir » est partie : « Créer », ouvert sur le thème du jour — `lire`, plus bas)
+  jour: "figurine",
+  // (✨ « Mon vœu », sa mission et ses réponses du soir sont partis le 19 novembre 2026 : leurs anciens liens ouvrent
+  // « Découvrir », ma télé du jour)
   voeu: "decouvrir",
   mission: "decouvrir",
-  // (🌙 la notification de 19 h : ses réponses en grand)
   reponses: "decouvrir",
   // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
   reactions: "figurine",
@@ -128,7 +132,11 @@ const ALIAS: Record<string, Vue> = {
   presence: "personnage",
 };
 
-export function MaCollection({ villes = [], univers = false }: { villes?: { slug: string; nom: string }[]; univers?: boolean }) {
+/**
+ * (`maison` : « Ma maison » du catalogue, et l'inscription « Choisis ta pièce » ; `salon` : les conversations dans le salon
+ * du duo — les interrupteurs, tels que le serveur les donne, `interrupteurs-serveur.ts`)
+ */
+export function MaCollection({ villes = [], univers = false, maison = false, salon = false }: { villes?: { slug: string; nom: string }[]; univers?: boolean; maison?: boolean; salon?: boolean }) {
   const [etat, setEtat] = useState<EtatMaFigurine | null>(null);
   const [charge, setCharge] = useState(false);
   const [vue, setVue] = useState<Vue>("figurine");
@@ -260,6 +268,8 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
     const lire = () => {
       const h = decodeURIComponent(window.location.hash.slice(1));
       const v = ALIAS[h];
+      // (🔥 le mème du jour : le studio s'ouvre sur son thème ; l'adresse reste `#jour`)
+      if (h === "jour") versLeStudio({ theme: themeDuJour().cle }, { garderAdresse: true });
       if (v) aller(v, h, false);
       // 📲 la page s'est rechargée avec son jeton, juste avant d'installer (iPhone) : le geste à faire
       else if (h === "installer") ouvrirInstallation();
@@ -349,7 +359,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
         {ouverts.has("decouvrir") && (
           <section className="mc-onglet" id="o-decouvrir" hidden={vue !== "decouvrir"} aria-label="Découvrir">
             <OngletVisible.Provider value={vue === "decouvrir"}>
-              <Decouvrir allerA={allerA} />
+              <TeleDuJourEcran onglet />
             </OngletVisible.Provider>
           </section>
         )}
@@ -394,7 +404,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
         {univers && ouverts.has("maison") && (
           <section className="mc-onglet" id="o-maison" hidden={vue !== "maison"} aria-label="Ma maison">
             <OngletVisible.Provider value={vue === "maison"}>
-              <MaMaison actif={vue === "maison"} />
+              <MaMaison actif={vue === "maison"} catalogue={maison} />
             </OngletVisible.Provider>
           </section>
         )}
@@ -403,7 +413,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
         {ouverts.has("proches") && (
           <section className="mc-onglet" id="o-proches" hidden={vue !== "proches"} aria-label="Proches">
             <OngletVisible.Provider value={vue === "proches"}>
-              <Proches compte={compte} prete={prete} allerA={allerA} onNonLus={setNonLus} onNouveautes={setNouveautes} chezMoi={univers} />
+              <Proches compte={compte} prete={prete} allerA={allerA} onNonLus={setNonLus} onNouveautes={setNouveautes} chezMoi={univers} salonPourTous={salon} />
             </OngletVisible.Provider>
           </section>
         )}
@@ -454,7 +464,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
             if (univers) window.location.assign("/univers/figurine");
             else allerA("creer");
           };
-          return BIENVENUE_CHEZ_PABLITO ? <BienvenueSelonPablito onFini={finirBienvenue} onCreer={creer} /> : <BienvenueTuto onFini={finirBienvenue} onCreer={creer} />;
+          return BIENVENUE_CHEZ_PABLITO ? <BienvenueSelonPablito onFini={finirBienvenue} onCreer={creer} /> : <BienvenueTuto onFini={finirBienvenue} onCreer={creer} catalogue={maison} />;
         })()}
 
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;
@@ -482,7 +492,7 @@ export function MaCollection({ villes = [], univers = false }: { villes?: { slug
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_DECOUVRIR + STYLES_VOEU + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
+      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
     </main>
   );
 }

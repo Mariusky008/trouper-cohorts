@@ -2,10 +2,11 @@
 //
 // Chez Bergine (un restaurant de Dax) ouvre son comptoir par son lien pro, droit sur « Mon mème du jour »
 // (`?ouvrir=meme`) : « 🍽️ Le menu du jour » d'abord (son métier), ses mots, la musique (sans sa voix) ; le mème se
-// fabrique sous ses yeux, part au seau public, sur sa page `/meme/<id>` et dans « Découvrir » pour Dax. Nina, de Dax, le
-// voit dans « Découvrir » (cinq onglets en bas) ; une inconnue ouvre son lien : il joue tout de suite, « Voir sa page »
-// est compté, comme les vues et les partages, que Bergine retrouve à son comptoir. Un gros mot : refusé. Ailleurs (à
-// Vevey, sans mème) : ceux de Dax. La démonstration (sans lien pro) fabrique sans rien publier.
+// fabrique sous ses yeux, part au seau public et sur sa page `/meme/<id>`. (Le fil des mèmes de la ville, dans l'ancien
+// « Découvrir », est parti le 19 novembre 2026 : Nina, de Dax, y trouve sa télé du jour ; le serveur range toujours le
+// mème pour Dax, et pour Vevey, sans mème, ceux de Dax.) Une inconnue ouvre son lien : il joue tout de suite, « Voir sa
+// page » est compté, comme les vues et les partages, que Bergine retrouve à son comptoir. Un gros mot : refusé. La
+// démonstration (sans lien pro) fabrique sans rien publier.
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 import { SITES } from "./semer.mjs";
 
@@ -81,24 +82,16 @@ ok(essai.statut === 200 && /^[a-z0-9]{12}$/.test(essai.id), "une deuxième adres
 ok((await pro({ action: "publier", id: essai.id, annonce: "menu", texte: "Espèce de connard", videoType: "video/mp4" })).statut === 400, "un gros mot : refusé");
 ok((await pro({ action: "publier", id: essai.id, annonce: "menu", texte: "Le plat du jour", videoType: "video/mp4" })).error?.includes("pas arrivée"), "sans sa vidéo : rien ne se publie");
 
-// ═══ NINA, DE DAX : « DÉCOUVRIR » ═══
+// ═══ NINA, DE DAX : « DÉCOUVRIR », SA TÉLÉ DU JOUR ; LE MÈME RANGÉ POUR DAX ═══
 const nina = await tel(NINA);
 await nina.goto(`${BASE}/collection#decouvrir`, { waitUntil: "networkidle" });
-await nina.waitForSelector("#o-decouvrir .dv-carte", { timeout: 60000 });
 await fermerPablito(nina, "#o-decouvrir");
+await nina.waitForSelector("#o-decouvrir:not([hidden]) .tp, #o-decouvrir:not([hidden]) .td", { timeout: 60000 });
 const menu = await texte(nina, ".mc-nav");
 ok((await nina.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && (await nina.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), `le menu en bas : cinq onglets, « Créer » au milieu (${menu})`);
-const carte = await texte(nina, "#o-decouvrir .dv-carte");
-// (le lot 2 : la même carte que les gens — son nom, un toucher : sa page ; ni bandeau, ni gros bouton rose)
-ok(carte.includes("Chez Bergine") && carte.includes("aujourd’hui") && !carte.includes("Voir sa page") && (await nina.locator(`#o-decouvrir a.dv-nom[href="/meme/${id}/voir"]`).count()) === 1 && (await nina.locator("#o-decouvrir .dv-voir").count()) === 0, `son mème, dans « Découvrir » : la même carte que les gens, son nom mène à sa page (${carte.slice(0, 90)})`);
-ok((await nina.locator("#o-decouvrir .dv-carte.commerce .dv-reac").count()) === 3, "😂 ❤️ 🔥 sous son mème aussi");
-// (le mème du jour est au-dessus, maintenant : sa carte vient à l'écran, puis elle joue)
-await nina.locator("#o-decouvrir .dv-carte video").first().scrollIntoViewIfNeeded();
-await nina.waitForFunction(() => {
-  const v = document.querySelector("#o-decouvrir .dv-carte video");
-  return v && !v.paused && v.currentTime > 0.2;
-}, null, { timeout: 20000 }).catch(() => null);
-ok(await nina.evaluate(() => !document.querySelector("#o-decouvrir .dv-carte video")?.paused), "la vidéo joue toute seule, en silence, quand on la voit");
+ok((await nina.locator("#o-decouvrir .dv-carte").count()) === 0, "« Découvrir » : sa télé du jour (ses passions d'abord), plus le fil des mèmes de la ville");
+const pourDax = await nina.evaluate(async () => (await (await fetch("/api/direct/memes-commerces", { cache: "no-store" })).json()).memes ?? []);
+ok(pourDax.some((m) => m.id === id && m.nom === "Chez Bergine"), "le serveur range toujours son mème pour Dax");
 ok((await debordement(nina)) <= 0 && !/exemple/i.test(await texte(nina, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");
 await nina.screenshot({ path: `${D}/meme-commerce-4-decouvrir.png` });
 
@@ -136,9 +129,9 @@ ok(stats === 200, "(l'appli des clients répond)");
 
 // ═══ À VEVEY (aucun mème) : ceux d'ailleurs ═══
 const zoe = await tel(ZOE);
-await zoe.goto(`${BASE}/collection#decouvrir`, { waitUntil: "networkidle" });
-await zoe.waitForSelector("#o-decouvrir .dv-carte", { timeout: 60000 });
-ok((await texte(zoe, "#o-decouvrir")).includes("voici ceux d’ailleurs") && (await texte(zoe, "#o-decouvrir .dv-carte")).includes("Chez Bergine"), "à Vevey, rien encore : ceux de Dax");
+await zoe.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
+const pourVevey = await zoe.evaluate(async () => await (await fetch("/api/direct/memes-commerces", { cache: "no-store" })).json());
+ok((pourVevey.memes ?? []).some((m) => m.nom === "Chez Bergine"), "à Vevey, rien encore : le serveur donne ceux de Dax");
 
 // ═══ LA DÉMONSTRATION (sans lien pro) : il se fabrique, rien ne part ═══
 const demo = await tel(null);

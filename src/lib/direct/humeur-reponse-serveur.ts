@@ -15,22 +15,11 @@ import { reponseHumeur, reponseValide, type HistoriqueHumeurs, type ReponseHumeu
 type Supabase = ReturnType<typeof createAdminClient>;
 export const cheminHumeurs = (h: string) => `${h}/humeurs.json`;
 
-/** A-t-il un vœu en route (ou en pause) ? Sur une humeur douce, le geste devient alors « Écrire à un proche ». */
-async function aUnVoeu(supabase: Supabase, h: string): Promise<boolean> {
-  try {
-    const { data } = await supabase.from("clik_voeu").select("id").eq("habitant_id", h).in("statut", ["en_route", "pause"]).limit(1);
-    return Array.isArray(data) && data.length > 0;
-  } catch {
-    // (la table peut manquer : la migration se passe à la main)
-    return false;
-  }
-}
-
 /** 🗣️ Il vient de choisir son humeur : la réponse de sa figurine (gardée, avec son historique). */
 export async function repondreAHumeur(supabase: Supabase, h: string, humeur: Sentiment): Promise<ReponseHumeur> {
   const jour = jourParis();
-  const [hist, voeu] = await Promise.all([lireJson<HistoriqueHumeurs>(supabase, cheminHumeurs(h)), aUnVoeu(supabase, h)]);
-  const r = reponseHumeur(humeur, jour, hist, voeu);
+  const hist = await lireJson<HistoriqueHumeurs>(supabase, cheminHumeurs(h));
+  const r = reponseHumeur(humeur, jour, hist);
   // (pas gardée ? la réponse s'affiche quand même ; elle se recalculera la prochaine fois)
   if (r.hist !== hist) await ecrireJson(supabase, cheminHumeurs(h), r.hist);
   return r.reponse;

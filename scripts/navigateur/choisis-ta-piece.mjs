@@ -1,6 +1,9 @@
 // 🏠 « CHOISIS TA PIÈCE » — L'INSCRIPTION (`docs/univers/ma-maison.md`, section 3 ; le lot M3), sur un iPhone, contre le
-// faux Supabase (jamais la vraie base). L'interrupteur `MA_MAISON_CATALOGUE` éteint : l'administrateur l'essaie en le
-// demandant (`?piece=1`) ; sans, son parcours ne change pas.
+// faux Supabase (jamais la vraie base). L'interrupteur `MA_MAISON_CATALOGUE` (allumé le 19 novembre 2026), ici freiné
+// (`CLIKME_MA_MAISON=0`, comme toute la CI) : l'administrateur l'essaie en le demandant (`?piece=1`) ; sans, son
+// parcours ne change pas. 🔀 ALLUMÉ (une seconde app, sans frein) : Zoé, sa figurine validée, sans rien demander :
+// « 🏠 Choisis ta pièce » mène à l'onglet « Ma maison » ; la conversation avec Pablito y renvoie ; l'accueil aussi ;
+// l'onglet s'ouvre sur le choix de sa pièce.
 //
 // Léa vient de valider sa figurine (« C'est moi ! ») : plus de « Découvrir ton univers » (la conversation avec Pablito),
 // mais « 🏠 Choisis ta pièce » ; l'accueil `/univers` dit pareil (« Ta pièce t'attend »). On le touche : « Choisis ta
@@ -12,6 +15,7 @@
 import fs from "node:fs";
 import sharp from "sharp";
 import { BASE, D, F, lancer } from "./commun.mjs";
+import { lancerSecondeApp } from "../seconde-app.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -37,14 +41,15 @@ const session = {
 };
 const LEA = { id: "4a150a15-0000-4000-8000-00000000cc01", jeton: "jeton-choisis-ta-piece-0001", prenom: "Léa" };
 const MARC = { id: "4a150a15-0000-4000-8000-00000000cc02", jeton: "jeton-choisis-ta-piece-0002", prenom: "Marc" };
-await semer("human_habitants", [LEA, MARC].map((x) => ({ id: x.id, device_token: x.jeton, prenom: x.prenom, ville_slug: "dax" })));
+const ZOE = { id: "4a150a15-0000-4000-8000-00000000cc03", jeton: "jeton-choisis-ta-piece-0003", prenom: "Zoé" };
+await semer("human_habitants", [LEA, MARC, ZOE].map((x) => ({ id: x.id, device_token: x.jeton, prenom: x.prenom, ville_slug: "dax" })));
 const maintenant = new Date().toISOString();
 const assise = await sharp({ create: { width: 800, height: 1200, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
   .composite([{ input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect y="250" width="400" height="350" rx="60" fill="#7a3e2a"/><circle cx="200" cy="170" r="150" fill="#f0c8a0"/></svg>`), left: 200, top: 400 }])
   .png()
   .toBuffer();
 // (leur figurine du nouveau style, validée)
-for (const x of [LEA, MARC]) {
+for (const x of [LEA, MARC, ZOE]) {
   await deposer(`${x.id}/perso/v1/assise.png`, assise, "image/png");
   const fiche = { version: 1, style: "collection-1", creee_le: maintenant, validee_le: maintenant, references: { assise: { chemin: `${x.id}/perso/v1/assise.png` } }, historique: [{ version: 1, le: maintenant, raison: "« C’est moi ! »", style: "collection-1" }] };
   await json(`${x.id}/perso/v1/fiche.json`, fiche);
@@ -52,6 +57,7 @@ for (const x of [LEA, MARC]) {
 }
 await json(`${LEA.id}/majeur.json`, { le: maintenant, age: 16, adulte: false });
 await json(`${MARC.id}/majeur.json`, { le: maintenant, age: 40, adulte: true });
+await json(`${ZOE.id}/majeur.json`, { le: maintenant, age: 30, adulte: true });
 // (Marc : son univers fabriqué avant, par la conversation avec Pablito)
 const M1 = `${MARC.id}/monde/v1`;
 await deposer(`${M1}/decor.png`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
@@ -170,6 +176,34 @@ await q.reload({ waitUntil: "networkidle" });
 ok(await attendre(q, async () => (await q.locator(".mmc-fig img").count()) === 1 && (await q.locator("[data-carte-piece]").count()) === 0), "rechargé : sa pièce, plus de carte");
 await q.screenshot({ path: `${D}/choisis-ta-piece-5-sa-piece.png` });
 await propre(q, "sa pièce");
+
+// ═══ 🔀 L'INTERRUPTEUR ALLUMÉ (19 novembre 2026) : ZOÉ, SANS RIEN DEMANDER ═══
+// (une seconde app, comme en ligne : « Univers pour tous » et « Ma maison » allumés — `BASE_ALLUMEE` : celle qu'on a
+// lancée soi-même, en local)
+const { base: ALLUME, arreter } = process.env.BASE_ALLUMEE ? { base: process.env.BASE_ALLUMEE, arreter: () => {} } : await lancerSecondeApp({ env: { CLIKME_UNIVERS_POUR_TOUS: "1", CLIKME_MA_MAISON: "1" } });
+const ctxZ = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
+await ctxZ.addCookies([
+  { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: ALLUME },
+  { name: "clikme_habitant", value: ZOE.jeton, url: ALLUME },
+]);
+const z = await ctxZ.newPage();
+z.on("pageerror", (e) => erreurs.push(String(e)));
+await z.goto(`${ALLUME}/univers/figurine`, { waitUntil: "networkidle" });
+const suiteZ = z.locator('a[data-suite="piece"]');
+ok(await attendre(z, async () => (await suiteZ.count()) === 1), "allumé, sans « ?piece=1 » : après « C’est moi ! », « 🏠 Choisis ta pièce »");
+ok((await suiteZ.getAttribute("href")) === "/collection#maison" && (await z.locator('a[href="/univers/conversation"]').count()) === 0, `… qui mène à l’onglet « Ma maison » (${await suiteZ.getAttribute("href")}), plus à Pablito`);
+await z.goto(`${ALLUME}/univers/conversation`, { waitUntil: "networkidle" });
+ok(await attendre(z, async () => new URL(z.url()).pathname === "/collection" && new URL(z.url()).hash === "#maison"), `la conversation avec Pablito renvoie au choix de sa pièce (${z.url().replace(ALLUME, "")})`);
+// (ce téléphone d'essai n'a jamais vu la bienvenue de Pablito : on la passe, comme on l'a passée avant de faire sa figurine)
+if (await attendre(z, async () => (await z.locator(".bv .tu-passer").count()) === 1, 8000)) await z.locator(".bv .tu-passer").click();
+ok(await attendre(z, async () => (await z.locator("#o-maison .mmc-choix").count()) === 1, 30000), "l’onglet « Ma maison » s’ouvre sur « Choisis ta pièce »");
+await z.waitForTimeout(800);
+await z.screenshot({ path: `${D}/choisis-ta-piece-6-allume.png` });
+await z.goto(`${ALLUME}/univers`, { waitUntil: "networkidle" });
+ok(await attendre(z, async () => (await z.locator('section[data-suite="piece"] a[href="/collection#maison"]').count()) === 1), "l’accueil `/univers` : « Ta pièce t’attend », vers l’onglet");
+const creer = await z.evaluate(async () => (await fetch("/api/direct/univers", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "creer" }) })).status);
+ok(creer === 410, `Pablito ne fabrique plus d’univers (${creer})`);
+arreter();
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
 await b.close();

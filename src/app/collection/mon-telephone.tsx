@@ -132,8 +132,9 @@ function texteRefus(e: EtatNotif) {
 }
 
 /**
- * 🔔📲 L'INVITATION, AU BON MOMENT. `apres` : « jour » (sur la carte du mème du jour, dans « Découvrir », une fois sa
- * réponse postée, ou à la première ouverture de l'appli posée), « postee » (juste après avoir posté sa réponse). Une
+ * 🔔📲 L'INVITATION, AU BON MOMENT. `apres` : « jour » (dans « Créer », sur le mème du jour, à la première ouverture de
+ * l'appli posée — avant le 19 novembre 2026, sur sa carte dans « Découvrir »), « postee » (juste après avoir posté sa
+ * réponse). Une
  * seule chose à la fois :
  * l'appli sur iPhone d'abord (sans elle, pas de notification), sinon la notification.
  */

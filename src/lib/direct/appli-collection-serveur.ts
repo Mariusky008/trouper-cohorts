@@ -328,9 +328,9 @@ export type BilanDuJour = { jour: string; personnes: number; envoyes: number; mo
 
 /**
  * 🔥 LE MÈME DU JOUR, À CEUX QUI L'ONT DEMANDÉ. Une fois par jour (`notif/envois/<jour>.json`) ; `force` (les essais)
- * passe outre. Par paquets de vingt : une fonction a une minute, pas plus. `adapter` (« Mon vœu », 12 novembre 2026,
- * `annonceDeLaMission`) : la notification de chacun peut parler de sa mission du jour — même s'il a déjà répondu au mème
- * du jour (on lui passe alors `null`).
+ * passe outre. Par paquets de vingt : une fonction a une minute, pas plus. `adapter` : la notification de chacun peut
+ * être changée — même s'il a déjà répondu au mème du jour (on lui passe alors `null`) ; « Mon vœu » s'en servait pour
+ * sa mission du jour (du 12 au 19 novembre 2026), plus personne aujourd'hui.
  */
 export async function envoyerLeMemeDuJour(supabase: Supabase, o: { force?: boolean; adapter?: (h: string, n: Notif | null) => Promise<Notif | null> } = {}): Promise<BilanDuJour> {
   const jour = jourParis();

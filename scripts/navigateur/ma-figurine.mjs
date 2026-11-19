@@ -10,9 +10,10 @@
 // écrit un texte, le fait lire par une voix (la joie sur son visage), et en fait SON MÈME : une vidéo fabriquée dans
 // le téléphone, rangée au seau, partagée telle quelle. Une amie ouvre le lien sans compte : le mème joue tout de
 // suite, sans blabla, avec un seul bouton (« Crée ou réponds avec ton mème »). Un message sans vidéo : sa figurine
-// parle au premier toucher, la bouche bouge, une écoute est comptée. 🌍 Léa montre son mème dans « Découvrir » (son
-// accord, demandé) : Hugo, de Dax, le voit et peut lui répondre ; jamais un duo ; elle le retire quand elle veut.
-// L'amie le signale : il ne s'affiche plus, sa voix non plus, ni dans « Découvrir ». Rien ne déborde, jamais le mot interdit.
+// parle au premier toucher, la bouche bouge, une écoute est comptée. 🌍 Le fil des mèmes de sa ville (l'ancien
+// « Découvrir ») est parti le 19 novembre 2026 : plus de bouton pour y poster ; les règles du serveur restent (son âge,
+// jamais un duo, le retirer). L'amie le signale : il ne s'affiche plus, sa voix non plus. Rien ne déborde, jamais le mot
+// interdit.
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
@@ -384,8 +385,7 @@ const wa = partage ? "" : await lea.locator(".tf-meme-pret .tf-wa").getAttribute
 ok(partage === 1 || wa === `https://wa.me/?text=${encodeURIComponent(lien)}`, "sans texte ni blabla : le mème lui-même (la feuille de partage), sinon son lien seul");
 ok((await lea.locator(".tf-meme-pret a[download]").count()) === 1 && (await lea.locator(".tf-meme-pret .tf-adresse").count()) === 0, "« ⬇️ » : elle peut l'enregistrer (son lien se copie, sans s'afficher en entier)");
 ok((await texte(lea, ".tf-feuille.ouverte .tf-meme-titre")) === "Ton mème est prêt ✅", "son mème prêt monte dans une feuille, en bas de l'écran : « Ton mème est prêt ✅ »");
-const publicTexte = await texte(lea, ".tf-meme-pret .tf-public");
-ok(publicTexte === "🌍 Poster sur le fil de Dax" && (await texte(lea, ".tf-public-dit")).includes("dans « Découvrir »") && (await lea.locator(".tf-meme-pret .tf-public.pris").count()) === 0, `« ${publicTexte} » (dans « Découvrir ») : proposé, jamais fait sans elle`);
+ok((await lea.locator(".tf-meme-pret .tf-public, .tf-meme-pret .tf-poster-jour").count()) === 0, "plus de « 🌍 Poster sur le fil de Dax » : le fil de la ville est parti avec l'ancien « Découvrir »");
 const id = lien.split("/").pop();
 const [msg] = await lire("clik_figurine_message", `id=eq.${id}`);
 ok(msg && JSON.stringify(msg.commerces) === "[]" && msg.son === `${LEA.id}/m-${id}.wav` && msg.duree >= 4 && msg.duree <= 12, `le message : un mème écrit, sans voix (un silence de ${msg?.duree} s, le temps de lire ses mots)`);
@@ -590,39 +590,19 @@ await amieMemes.waitForSelector("#o-memes .mm-bloc .mm-carte", { timeout: 30000 
 ok((await texte(amieMemes, "#o-memes")).includes("Reçus") && (await amieMemes.locator(`#o-memes a.mm-repondre[href="/figurine/${id}/repondre"]`).count()) === 1, "sans compte : le mème reçu l'attend dans « Reçus », avec « Répondre »");
 await amieMemes.close();
 
-// ═══ 🌍 SON MÈME DANS « DÉCOUVRIR », SUR SON ACCORD (l'étape 3) ═══
+// ═══ 🌍 LE FIL DE SA VILLE (l'étape 3) : son écran est parti le 19 novembre 2026, avec l'ancien « Découvrir » ═══
+// (« Mes mèmes » ne propose plus « 🌍 Montrer dans Découvrir » ; les règles du serveur restent, essayées par l'API)
 const publicsDe = (p) => p.evaluate(async () => (await (await fetch("/api/direct/memes-commerces", { cache: "no-store" })).json()).publics ?? []);
+ok((await lea.locator("#o-memes .mm-public").count()) === 0, "« Mes mèmes » : plus de « 🌍 Montrer dans Découvrir »");
 ok((await publicsDe(hugo)).every((m) => m.id !== id), "par défaut, son mème reste entre elle et ceux à qui elle l'envoie");
-// (son mème écrit ; celui avec sa voix attend à côté)
-const bascule = lea.locator(`#o-memes .mm-bloc:not(.mm-reponses) .mm-carte:has(a.mm-image[href="/figurine/${id}"]) .mm-public`);
-ok((await bascule.count()) === 1 && (await bascule.innerText()).includes("Montrer dans Découvrir"), "« 🌍 Montrer dans Découvrir » : un geste à elle");
-// (son accord, dans une fenêtre de ClikMe : elle dit « Pas maintenant »)
-await bascule.click();
-const accord = await repondreFenetre(lea, false);
-await lea.waitForTimeout(500);
-ok(/visible par les gens de ta ville/.test(accord) && /retirer quand tu veux/.test(accord) && !(await fetch(`${STOCK}/figurines-clients/${LEA.id}/m-${id}.json`).then((r) => r.json())).public, "on lui demande d'abord son accord ; « Annuler » : rien ne bouge");
-// 🔞 elle avait sa figurine avant qu'on demande l'âge : la première fois, on le lui demande (puis le geste repart)
+// 🔞 elle avait sa figurine avant qu'on demande l'âge : sans lui, le serveur refuse
 await fetch(`${STOCK}/figurines-clients`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefixes: [`${LEA.id}/majeur.json`] }) });
 const refusAge = await api(lea, { action: "public", id, public: true });
-ok(refusAge.statut === 403 && refusAge.age === true, `sans son âge déclaré, pas de « Découvrir » (${refusAge.statut}, ${refusAge.error})`);
-await bascule.click();
-const questions = [await repondreFenetre(lea), await repondreFenetre(lea)];
-await lea.waitForSelector("#o-memes .mm-public.pris", { timeout: 15000 });
-ok(questions.length === 2 && /15 ans ou plus \?/.test(questions[1]) && (await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/majeur.json`)).json().catch(() => null))?.age === 15, `son accord, puis son âge, une fois (${questions[1]?.slice(0, 60)})`);
+ok(refusAge.statut === 403 && refusAge.age === true, `sans son âge déclaré, pas de fil (${refusAge.statut}, ${refusAge.error})`);
+await api(lea, { action: "majeur" });
+ok((await api(lea, { action: "public", id, public: true })).public === true, "son âge dit, le serveur l'accepte");
 const coteP = await (await fetch(`${STOCK}/figurines-clients/${LEA.id}/m-${id}.json`)).json().catch(() => ({}));
-ok(coteP.public?.ville === "dax" && (await fetch(`${STOCK}/figurines-clients/publics/dax/${coteP.public.jour}/${id}.json`)).status === 200, `« D'accord » : son mème va dans « Découvrir », pour les gens de Dax (${JSON.stringify(coteP.public)})`);
-ok((await texte(lea, "#o-memes .mm-public.pris")).includes("retirer"), "« 🌍 Dans Découvrir · retirer » : elle le retire quand elle veut");
-await lea.screenshot({ path: `${D}/ma-figurine-3d-public.png`, fullPage: true });
-// Hugo, de Dax, le voit dans « Découvrir » ; « Lui répondre » : en duo
-await hugo.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "networkidle" });
-await hugo.waitForSelector("#o-decouvrir .dv-carte.client", { timeout: 60000 });
-await fermerPablito(hugo, "#o-decouvrir");
-const carteLea = await texte(hugo, "#o-decouvrir .dv-carte.client");
-// (le lot 2 : ils ont fait un duo, ils sont « proches » — leurs mèmes passent d'abord)
-ok(carteLea.includes("Léa") && carteLea.includes("👯 Proche") && (await hugo.locator(`#o-decouvrir .dv-carte.client.ami a.dv-repondre[href="/figurine/${id}/repondre"]`).count()) === 1, `Hugo, de Dax, le voit dans « Découvrir », en proche (leur duo) : « ↩️ Répondre » (${carteLea.slice(0, 80)})`);
-ok((await hugo.locator("#o-decouvrir .dv-carte.client .dv-signaler").count()) === 1, "et « Signaler », s'il le faut");
-ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");
-await hugo.screenshot({ path: `${D}/ma-figurine-3e-decouvrir.png` });
+ok(coteP.public?.ville === "dax" && (await fetch(`${STOCK}/figurines-clients/publics/dax/${coteP.public.jour}/${id}.json`)).status === 200 && (await publicsDe(hugo)).some((m) => m.id === id), `rangé pour les gens de Dax (${JSON.stringify(coteP.public)})`);
 // jamais un duo (il montre aussi la figurine de Léa) ; jamais le mème d'un autre ; sans compte, rien des gens
 const duoPublic = await api(hugo, { action: "public", id: idDuo, public: true });
 ok(duoPublic.statut === 400 && /duo/.test(duoPublic.error ?? ""), `un duo ne va pas dans « Découvrir » (${duoPublic.error})`);

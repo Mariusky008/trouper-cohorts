@@ -8,8 +8,9 @@
  * l'étagère, la fenêtre, la table basse, les lampes, le coin du chat), qu'on touche. Elle se remplit avec ce qu'on
  * garde dans ses conversations (le lot M2 : `placerChezMoi`, `arriveeChezMoi`).
  *
- * Derrière l'interrupteur `MA_MAISON_CATALOGUE` (éteint) : l'onglet « Ma maison » garde l'univers d'aujourd'hui tant
- * qu'il l'est ; l'adresse d'essai `/univers/maison` (l'administrateur, sur son téléphone d'habitant) la montre déjà.
+ * Derrière l'interrupteur `MA_MAISON_CATALOGUE`, ALLUMÉ le 19 novembre 2026 (le serveur peut le freiner :
+ * `CLIKME_MA_MAISON=0`, `interrupteurs-serveur.ts`) ; éteint, l'onglet « Ma maison » gardait l'univers d'avant, et
+ * l'adresse d'essai `/univers/maison` (l'administrateur, sur son téléphone d'habitant) la montrait.
  *
  * FICHIER PARTAGÉ (l'écran et le serveur).
  */
@@ -17,8 +18,11 @@ import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type P
 import type { ImageSalon } from "./salon";
 import type { Visibilite } from "./monde";
 
-/** 🔀 L'interrupteur : ÉTEINT tant que le propriétaire ne l'a pas jouée sur son téléphone (`ma-maison.md`, section 10). */
-export const MA_MAISON_CATALOGUE = false;
+/**
+ * 🔀 L'interrupteur : ALLUMÉ le 19 novembre 2026 (le propriétaire, après une nouvelle inscription arrivée sur l'ancien
+ * univers ; `ma-maison.md`, section 20). Les écrans reçoivent la valeur du serveur (`maisonPourTous`, qui peut le freiner).
+ */
+export const MA_MAISON_CATALOGUE = true;
 
 /**
  * L'ordre des propositions (`ma-maison.md`, section 3) : l'âge range, il n'interdit pas — toutes sont proposées à tous.

@@ -170,13 +170,13 @@ ok((await texte(marc, '.um-visibilite button[aria-checked="true"]')).includes("T
 await marc.screenshot({ path: `${D}/visite-univers-2-chez-moi.png`, fullPage: true });
 ok((await debordement(marc)) <= 0 && (await sansMotInterdit(marc)), "chez lui : rien ne déborde, sans le mot interdit");
 
-// ═══ 🏡 « DÉCOUVRIR » : LES UNIVERS À VISITER (lot 7) ═══
+// ═══ 🏡 « DÉCOUVRIR » : LES MAISONS À VISITER (lot 7 ; sous la télé du jour depuis le 19 novembre 2026) ═══
 await ines.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "networkidle" });
 await fermerPablito(ines);
-await ines.waitForSelector(".dv-univers .dv-univers-carte", { timeout: 30000 }).catch(() => null);
+await ines.waitForSelector("#o-decouvrir .td-maisons .td-maison", { timeout: 30000 }).catch(() => null);
 ok(
-  (await texte(ines, ".dv-univers")).includes("Les univers à visiter") && (await ines.locator(".dv-univers-carte", { hasText: "Chez Marc" }).getAttribute("href")) === `/univers/chez/${MARC.cle}`,
-  "« Découvrir » : « 🏡 Les univers à visiter » — Chez Marc, un toucher pour y entrer",
+  (await texte(ines, "#o-decouvrir .td-maisons")).includes("Les maisons à visiter") && (await ines.locator("#o-decouvrir .td-maison", { hasText: "Chez Marc" }).getAttribute("href")) === `/univers/chez/${MARC.cle}`,
+  "« Découvrir » : « 🏡 Les maisons à visiter » — Chez Marc, un toucher pour y entrer",
 );
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ")})` : ""}`);
