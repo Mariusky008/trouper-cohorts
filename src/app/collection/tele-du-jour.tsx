@@ -19,7 +19,8 @@
  *
  * 🔥 L'ONGLET « DÉCOUVRIR » (le lot D1b, 19 novembre 2026) : c'est elle, à la place des mèmes en plein écran et des vœux
  * (`onglet` : sous la barre du haut, au-dessus du menu ; la note et la feuille « Envoyer à… » passent devant le menu).
- * Seule, à l'adresse d'essai `/univers/tele`, elle prend tout l'écran.
+ * Seule, à l'adresse d'essai `/univers/tele`, elle prend tout l'écran. Dessous, dans l'onglet : « 🏡 Les maisons à
+ * visiter » (celles ouvertes à tout le monde, le lot M4 ; elles étaient dans l'ancienne page).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PHRASES_TELE_DU_JOUR as P, duree, type TeleDuJour, type VideoTele } from "@/lib/direct/tele-du-jour";
@@ -27,6 +28,7 @@ import { themeDe } from "@/lib/direct/decouvrir";
 import { surYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
+import type { UniversPublic } from "@/lib/direct/visites";
 
 const ROUTE = "/api/direct/tele-du-jour";
 type Lecteur = {
@@ -64,10 +66,61 @@ export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
         <style>{STYLES}</style>
       </div>
     );
+  const maisons = onglet ? <MaisonsAVisiter /> : null;
   // (pas encore de passions : « Tes passions » d'abord, puis la télé)
-  if (!tele.passions.length) return <TesPassions onglet={onglet} onFini={() => void charger()} />;
-  return <Television tele={tele} cls={cls} />;
+  if (!tele.passions.length)
+    return (
+      <>
+        <TesPassions onglet={onglet} onFini={() => void charger()} />
+        {maisons}
+      </>
+    );
+  return (
+    <>
+      <Television tele={tele} cls={cls} />
+      {maisons}
+    </>
+  );
 }
+
+/** 🏡 Les maisons ouvertes à tout le monde (le lot M4 de Ma maison) : leur pièce, leur figurine ; un toucher, on y entre. */
+function MaisonsAVisiter() {
+  const [liste, setListe] = useState<UniversPublic[]>([]);
+  useEffect(() => {
+    let fini = false;
+    fetch("/api/direct/visites?publics=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { publics?: UniversPublic[] }) => !fini && setListe(Array.isArray(j.publics) ? j.publics : []))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, []);
+  if (!liste.length) return null;
+  return (
+    <section className="td-maisons" aria-label={P.maisons}>
+      <h2>{P.maisons}</h2>
+      <div className="td-maisons-liste">
+        {liste.map((u) => (
+          <a key={u.cle} href={`/univers/chez/${u.cle}`} className="td-maison">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={u.image} alt={`Chez ${u.prenom}`} loading="lazy" />
+            <small>Chez {u.prenom}</small>
+          </a>
+        ))}
+      </div>
+      <style>{STYLES_MAISONS}</style>
+    </section>
+  );
+}
+const STYLES_MAISONS = `
+.td-maisons{max-width:520px;margin:22px auto 0;padding:0 16px;color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif}
+.td-maisons h2{margin:0 0 10px;font-size:17px;font-weight:900}
+.td-maisons-liste{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.td-maison{flex:none;width:112px;display:flex;flex-direction:column;gap:4px;text-decoration:none;color:#FFF4E6}
+.td-maison img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:14px;box-shadow:0 10px 22px -10px rgba(0,0,0,.8);background:rgba(255,255,255,.06)}
+.td-maison small{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+`;
 
 function Television({ tele, cls }: { tele: TeleDuJour; cls: string }) {
   const videos = tele.videos;

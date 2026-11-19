@@ -531,6 +531,10 @@ de ta ville » et « 🔥 Poster ma réponse (visible par les gens de Dax) » da
 dans « Mes mèmes » (le serveur garde ses règles, `action: "public"`, mais aucun écran ne s'en sert).
 
 **Ce qui a changé de place** :
+- **« 🏡 Les maisons à visiter »** (celles ouvertes à tout le monde, le lot M4 de Ma maison ; « Les univers à visiter »
+  de l'ancienne page) : sous la télé, dans l'onglet — une rangée de vignettes, un toucher pour entrer.
+- **Les mèmes des commerçants** : le serveur les range toujours pour leur ville (`/api/direct/memes-commerces`), avec
+  leur page `/meme/<id>` ; aucun écran de l'appli ne les montre plus.
 - **Le mème du jour** : la notification de 11 h 30 (`#jour`) ouvre **« Créer » sur le thème du jour** (son titre, ses
   trois idées), l'adresse restant `#jour` (`versLeStudio(…, { garderAdresse: true })` — sans lui, l'adresse passait à
   `#figurine` et revenait à `#jour`, sans fin). L'appli posée sur l'écran d'accueil, à sa première ouverture : « 🔔
@@ -556,5 +560,5 @@ des vœux du mois (rien de neuf ne s'y ajoute) ; les mèmes eux-mêmes, envoyés
 
 **Les essais** : `tele-du-jour.mjs` (l'onglet : la télé en grand écran sous la barre du haut, la note au-dessus du
 menu) ; `meme-du-jour.mjs` réécrit (`#jour` ouvre « Créer » sur le thème, ses trois idées ; les anciens liens ouvrent
-Découvrir) ; `appli-notif.mjs`, `humeur-reponse.mjs`, `verifier-humeur.mjs`, `personnage.mjs`, `ma-figurine.mjs`
-adaptés.
+Découvrir) ; `appli-notif.mjs`, `humeur-reponse.mjs`, `verifier-humeur.mjs`, `personnage.mjs`, `ma-figurine.mjs`,
+`meme-commerce.mjs`, `visite-univers.mjs` (« Les maisons à visiter ») adaptés.

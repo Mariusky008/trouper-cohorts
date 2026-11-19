@@ -101,5 +101,6 @@ export const PHRASES_TELE_DU_JOUR = {
   demain: "Ta télé se remplit chaque nuit : reviens demain.",
   bientot: "Ta télé s’allume bientôt : les vidéos du jour arrivent chaque nuit.",
   passions: "Tes passions",
+  maisons: "🏡 Les maisons à visiter",
   annuler: "Annuler",
 } as const;
