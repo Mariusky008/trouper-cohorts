@@ -619,6 +619,9 @@ async function stockage(req, res, url) {
 
 /** Les e-mails « envoyés » par le faux Resend (les plus récents à la fin). */
 const courriels = [];
+// (🌧️ lot S7 : le faux Open-Meteo — le temps réglé par un essai, et combien de fois on l'a demandé)
+const meteoReglee = { code: 53, t: 9.4, jour: 1 };
+const meteoDemandes = { geo: 0, temps: 0 };
 /** Les notifications « envoyées » au faux service (les plus récentes à la fin). */
 const pushs = [];
 const videosEssai = new Map();
@@ -997,6 +1000,24 @@ http
         const point = (nom, rue, ville, lat, lng) => ({ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: { name: nom, street: rue, city: ville, osm_value: "station" } });
         return repondre(res, 200, { type: "FeatureCollection", features: /gare/.test(q) ? [point("Gare de Dax", "Avenue de la Gare", "Dax", 43.72085, -1.04861), point("Gare Saint-Jean", "Rue Charles Domercq", "Bordeaux", 44.82578, -0.55644)] : [] });
       }
+      // UN FAUX OPEN-METEO (`OPEN_METEO_URL=…/open-meteo/v1/forecast`, `OPEN_METEO_GEO_URL=…/open-meteo/geo/v1/search`,
+      // lot S7 du salon) : toute ville est trouvée (Dax) ; le temps qu'il fait est celui qu'un essai a réglé
+      // (`POST /open-meteo/regler { code, t, jour }` — la pluie fine, 9°, de jour, sinon) ; `/__meteo` : combien de
+      // fois on l'a demandé (le cache d'une heure par ville) — rien ne part chez Open-Meteo
+      if (url.pathname === "/open-meteo/regler" && req.method === "POST") {
+        Object.assign(meteoReglee, JSON.parse((await corps(req)).toString() || "{}"));
+        return repondre(res, 200, meteoReglee);
+      }
+      if (url.pathname === "/open-meteo/geo/v1/search") {
+        meteoDemandes.geo++;
+        const nom = url.searchParams.get("name") || "";
+        return repondre(res, 200, nom.trim() ? { results: [{ name: nom, latitude: 43.7102, longitude: -1.0538, country_code: "FR" }] } : {});
+      }
+      if (url.pathname === "/open-meteo/v1/forecast") {
+        meteoDemandes.temps++;
+        return repondre(res, 200, { current: { time: maintenant(), temperature_2m: meteoReglee.t, weather_code: meteoReglee.code, is_day: meteoReglee.jour ? 1 : 0 } });
+      }
+      if (url.pathname === "/__meteo") return repondre(res, 200, meteoDemandes);
       // UN FAUX RESEND (`RESEND_BASE_URL=…/resend`) : un e-mail « envoyé » est gardé ici (le code de « Ma figurine »,
       // que l'essai lit dans `/__courriels`) — rien ne part
       if (url.pathname === "/resend/emails" && req.method === "POST") {

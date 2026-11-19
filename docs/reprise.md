@@ -29,7 +29,10 @@ les réactions de la télé ; les PDF, 11.17, décidés par le propriétaire : s
 = le vocal joue tout de suite chez l'autre, la transcription après coup), **S5, première partie, faite** (les mèmes
 joués dans le salon, 11.19 : l'onglet 🎭, le projecteur, la bulle de BD, « ✍️ Le mien », en direct et à l'arrivée,
 « ▶ Revoir », 😂 ❤️ 🔥), **S5, deuxième partie, faite** (11.20 : 🎙️ Ma voix, « Je le range ? » et « Nos fous rires »,
-la vidéo 📤 pour WhatsApp dans le décor du salon), **ensuite S7** (la lumière et la météo), puis S8.
+la vidéo 📤 pour WhatsApp dans le décor du salon), **S7 fait** (11.21 : la nuit éclairée par les lampes et la télé, le ciel
+étoilé, la météo dans les carreaux — Open-Meteo par ville, une fois par heure —, la puce « Pluie fine · 9° »), **ensuite
+S8, la bascule** (essais sur vrais téléphones, l'avis du propriétaire, `SALON_DU_DUO` allumé, `proches.tsx` retiré, la
+notification de ce qui attend).
 
 ## 0 duodecies. Un catalogue de pièces, les figurines posées, « Ma maison » (16 novembre 2026, au soir)
 

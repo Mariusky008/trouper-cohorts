@@ -15,6 +15,9 @@
  *      d'abord (la sienne), celle du duo.
  * POST { action: "piece", cle, piece } → { piece } (la pièce change) ou { invitation } (l'autre est là : il est invité).
  * POST { action: "venir", cle, oui } → { piece } (« Venir ») ou { ok } (« Pas maintenant »).
+ * 🌦️ LA MÉTÉO (lot S7, section 4.11), pour celui qui regarde (le cookie d'habitant) :
+ * GET ?meteo=1 → { meteo } : le temps qu'il fait dans SA ville (Open-Meteo, relu au plus une fois par heure par ville ;
+ *      `null` si on ne sait pas) — demandée après l'ouverture, jamais pendant.
  */
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,12 +25,20 @@ import { habitantCourant } from "@/lib/direct/habitant";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { cataloguePieces, choisirPieceDuo, noterVitesse, poserEmplacementsSalon, repondreInvitation, statsVitesse } from "@/lib/direct/salon-serveur";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
+import { meteoDe } from "@/lib/direct/meteo-serveur";
 
 export const dynamic = "force-dynamic";
 
 const sansCache = { "cache-control": "private, no-store" };
 
 export async function GET(request: Request) {
+  // 🌦️ le temps qu'il fait chez celui qui regarde
+  if (new URL(request.url).searchParams.get("meteo")) {
+    const supabase = createAdminClient();
+    const moi = await habitantCourant(supabase);
+    if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine." }, { status: 403, headers: sansCache });
+    return NextResponse.json({ ok: true, meteo: await meteoDe(supabase, moi.villeSlug).catch(() => null) }, { headers: { "cache-control": "private, max-age=600" } });
+  }
   // 🚪 les pièces où s'installer (les deux proches)
   const pieces = new URL(request.url).searchParams.get("pieces");
   if (pieces) {
