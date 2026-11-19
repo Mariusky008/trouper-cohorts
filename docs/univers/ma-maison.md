@@ -282,7 +282,7 @@ une animation.
 | **M0 — Les images du catalogue** ✅ | la page de l'admin : les huit refaites en hauteur (2.2) ; la largeur faite d'après la hauteur ; la chambre musicale (2.3) ; les relevés (le centre, son échelle) — le code est fait (2.4) ; les images, le propriétaire les lance | univers | — |
 | **S1 — Les calques** (salon-du-duo.md, section 9, modifié) | les calques de chaque figurine (section 4) ; leur pose aux places et au centre ; `CalquesDuo` composé à l'ouverture | messages et bienvenue | S0 |
 | **M1 — La maison** ✅ | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce — fait (section 13), derrière l'interrupteur | univers | M0, S1 |
-| **M2 — La maison qui se remplit** | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
+| **M2 — La maison qui se remplit** (première partie ✅, section 15) | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
 | **M3 — L'inscription** ✅ | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers — fait (section 14), derrière l'interrupteur | messages et bienvenue | M0 |
 | **M4 — Découvrir** | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
 | **M5 — Les visites, la suite** | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
@@ -384,3 +384,43 @@ ans ; chez elle ; un ancien univers : la carte, « Plus tard » retenu, le lien,
 pièce, plus de carte). Toujours verts : `nouvelle-figurine.mjs`, `univers-monde.mjs`, `visite-univers.mjs`,
 `ma-maison-catalogue.mjs`, `tuto.mjs`.
 
+
+---
+
+## 15. Le lot M2, première partie : la maison montre ce qu'on a gardé (19 novembre 2026)
+
+Derrière l'interrupteur `MA_MAISON_CATALOGUE` (éteint) : à l'adresse d'essai `/univers/maison` (l'administrateur, sur son
+téléphone d'habitant), et dans l'onglet quand il sera allumé.
+
+- **Ce qui va chez moi** (`objetsDeMaMaison`, `etagere-serveur.ts`) : ce que j'ai déposé ou rangé « dans mon univers »
+  (ma propre étagère : les photos, les chansons, les vidéos de « 🖼️ La mettre dans mon univers ? », « 🎵 Le ranger dans
+  mon univers ? »), et, sur nos étagères partagées, **ce que j'ai gardé moi-même** (📌 Garder dans le salon, un duo de
+  mèmes rangé dans « Nos fous rires ») — avec le prénom du proche. **Ce que Léa garde va chez elle**, pas chez moi ; ce
+  que j'ai retiré de chez moi (`caches`) non plus. Rien n'est recopié : la maison lit les étagères.
+- **Où chaque chose se pose** (`placerChezMoi`, `ma-maison.ts`), dans l'ordre où je les ai gardées : une photo dans le
+  premier cadre libre, sinon à la place de la plus ancienne (qui reste dans « Mon étagère ») ; **la dernière chanson sur
+  la platine** (le disque tourne, sa pochette posée à côté) ; **la dernière vidéo à la télé** (son affiche, ▶) ; les
+  autres chansons et vidéos, les mots, les promesses, les mèmes **sur l'étagère** (les six derniers, en petites cartes
+  ou en pochettes). Un emplacement que la pièce n'a pas relevé : l'objet reste dans « Mon étagère ». Les images prennent
+  la teinte du moment (plus chaudes le soir, plus sombres la nuit).
+- **Un toucher sur un objet** : son titre, « Gardé avec Sam » (ou « Mis chez toi ») et ce qu'en dit l'étagère ;
+  « ▶ Écouter » ou « ▶ Regarder » (son lien, une page web seulement) ; une photo : « 🔍 La voir en grand ». Un emplacement
+  vide garde sa bulle du lot M1 (ce qu'il accueillera).
+- **✨ L'arrivée** (`arriveeChezMoi`) : ce que j'ai gardé avec mes proches depuis ma dernière visite, et qui est dans la
+  pièce — « ✨ 2 choses gardées avec Sam » (« avec Léa et Sam ») ; la caméra passe sur chacune (quatre au plus, l'objet
+  s'éclaire), puis revient sur ma figurine ; un toucher arrête la visite. Ensuite la visite est retenue
+  (`<habitant>/ma-piece/vu.json`, `POST /api/direct/ma-piece { action: "vu" }`) : en revenant, plus d'annonce. Rien de
+  nouveau : pas d'annonce. La phrase « Ta maison se remplit toute seule… » ne s'affiche plus dès qu'il y a quelque chose.
+- **La route** : `GET /api/direct/ma-piece` rend aussi `maison.contenu` (`{ cadres, platine, tele, etagere, total }`) et
+  `maison.vuLe`.
+
+**Ce qui reste du lot M2** (deuxième partie) : « ＋ Ajouter chez moi » (une photo du téléphone, un film, une chanson, un
+livre, une recette, un voyage, une fierté), l'appui long sur un objet (« Le ranger », « L'enlever »), et, dans le salon,
+« la garder » sur une photo reçue (aujourd'hui, seul celui qui l'a envoyée peut la mettre chez lui).
+
+**L'essai** : `scripts/navigateur/ma-maison-remplie.mjs` (iPhone, 27 contrôles : la route — les deux cadres, la plus
+ancienne photo remplacée, la platine et son lien, la télé, l'étagère gardée avec Sam, le mot de Sam absent ; l'écran — les
+six objets à leur place, la photo posée sur son cadre, « ✨ 2 choses gardées avec Sam » au milieu, la caméra sur chacune,
+la visite retenue, un cadre et « La voir en grand », la platine et « Écouter », le mot « Gardé avec Sam », un emplacement
+vide, revenir sans annonce). Toujours verts : `ma-maison-catalogue.mjs`, `essai-ma-maison-route.mjs`,
+`choisis-ta-piece.mjs`.

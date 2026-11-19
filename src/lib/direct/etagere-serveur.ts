@@ -49,6 +49,7 @@ import { EMOJI_IMAGE, PHRASES_RANGER, RANGER_UNIVERS, titreRange } from "./range
 import { iaBranchee, motPasse, parlePourLui } from "./rituel-serveur";
 import { texteLuDuMessage } from "./talkie";
 import { DUO_MS, titreDuDuo } from "./meme-salon";
+import type { ObjetMaison } from "./ma-maison";
 import { cheminReglages, dossierMessages, figurineVue, hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import {
   CATALOGUE,
@@ -1052,6 +1053,47 @@ export async function monEtagere(supabase: Supabase, moi: Habitant): Promise<Res
   const univers = Boolean(monde?.references.decor);
   const cle = univers ? await poserProfil(supabase, moi.id) : "";
   return { etagere: { image: mienne?.neutre ?? "", objets, montres: objets.filter((o) => o.montre).length, univers, ...(cle ? { cle } : {}), ...(aRanger.length ? { aRanger } : {}) } };
+}
+
+/**
+ * 🏠 (lot M2, « Ma maison » qui se remplit) CE QUE J'AI GARDÉ, POUR MA PIÈCE : ce que j'ai déposé ou rangé « dans mon
+ * univers » (la mienne) et, sur nos étagères partagées, ce que J'AI gardé moi-même (📌 Garder, « Nos fous rires ») — d'où
+ * ça vient (« gardé avec Léa »). Ce que Léa garde va chez elle ; ce que je ne garde plus chez moi (`caches`) non plus.
+ * L'étagère fermée : rien.
+ */
+export async function objetsDeMaMaison(supabase: Supabase, h: string): Promise<ObjetMaison[]> {
+  if (!etagereAllumee()) return [];
+  const jour = jourParis();
+  const moi8 = qui8(h);
+  const [perso0, etageres, prenomMoi] = await Promise.all([lirePerso(supabase, h), sesEtageres(supabase, h), prenomDe(supabase, h, "Toi")]);
+  const perso = await persoAJour(supabase, h, perso0);
+  const caches = new Set(perso.caches);
+  const enMaison = (o: ObjetVu): ObjetMaison => ({
+    id: o.id,
+    sorte: o.image?.sorte ?? "objet",
+    emoji: o.emoji,
+    titre: o.titre,
+    ...(o.detail ? { detail: o.detail } : {}),
+    ...(o.image ? { image: { src: o.image.src, l: o.image.l, h: o.image.h } } : {}),
+    ...(o.image?.lien ? { lien: o.image.lien } : {}),
+    ...(o.avec ? { avec: o.avec } : {}),
+    le: o.le,
+  });
+  const deLeurs = await Promise.all(
+    etageres.map(async ({ h: lui, f }) => {
+      const miens = vieillir(f.objets, jour).objets.filter((o) => visible(o) && o.garde?.par8 === moi8 && !caches.has(o.id));
+      if (!miens.length) return [];
+      const [prenom, cle] = await Promise.all([prenomDe(supabase, lui, "Ton proche"), poserProfil(supabase, lui)]);
+      return miens.map((o) => enMaison({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: prenom, aujourdhui: jour }), avec: { prenom, cle } }));
+    }),
+  );
+  const deposes = await Promise.all(
+    perso.objets.filter(visible).map(async (o) => {
+      const image = await imageVue(supabase, o.image);
+      return enMaison({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), ...(image ? { image } : {}) });
+    }),
+  );
+  return [...deposes, ...deLeurs.flat()].sort((a, b) => a.le.localeCompare(b.le)).slice(-120);
 }
 
 /**
