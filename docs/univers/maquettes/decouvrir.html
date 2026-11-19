@@ -186,6 +186,15 @@ h1{margin:0;font-weight:900;font-size:30px;letter-spacing:-.02em;line-height:1.1
 .tic{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px var(--nuit)}
 .tic.moi{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;box-shadow:0 0 0 2px var(--nuit),0 0 8px var(--c)}
 .commandes{display:flex;align-items:center;gap:7px;overflow-x:auto;scrollbar-width:none}
+.reagir{display:flex;align-items:center;gap:6px}
+.reagir>span{font-size:12.5px;font-weight:800;color:var(--ambre);white-space:nowrap}
+.reagir button{display:grid;place-items:center;width:38px;height:38px;flex:none;padding:0;border:1px solid rgba(242,196,107,.4);border-radius:50%;background:rgba(242,196,107,.12);font-family:var(--emoji);font-size:19px;transition:transform .15s}
+.reagir button:active{transform:scale(1.25)}
+.reagir small{min-width:0;font-size:11px;color:var(--sourd);line-height:1.2}
+.note-moi{position:absolute;transform:translate(-50%,-100%);padding:3px 9px;border-radius:999px;background:var(--ambre);color:#2a1424;font-size:11px;font-weight:900;white-space:nowrap;z-index:8;pointer-events:none;animation:noteMoi 1.8s ease-out forwards}
+@keyframes noteMoi{0%{opacity:0;transform:translate(-50%,-70%)}15%{opacity:1;transform:translate(-50%,-100%)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-150%)}}
+.bandeau{position:absolute;top:1.2%;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:94%;padding:5px 5px 5px 12px;border-radius:999px;background:rgba(242,196,107,.96);color:#2a1424;font-size:12px;font-weight:800;z-index:9}
+.bandeau button{flex:none;border:0;border-radius:999px;padding:5px 10px;background:#2a1424;color:#fff;font-size:11.5px;font-weight:800}
 .commandes::-webkit-scrollbar{display:none}
 .commandes .esp{flex:1}
 .lien-salon{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:9px 13px;border:1px solid rgba(242,196,107,.28);border-radius:14px;background:rgba(242,196,107,.09);font-size:13px;font-weight:700;text-align:left}
@@ -302,6 +311,7 @@ h1{margin:0;font-weight:900;font-size:30px;letter-spacing:-.02em;line-height:1.1
     <div class="scene-wrap" id="p-wrap"><div class="scene" id="p-scene"></div></div>
     <div class="sous-scene g">
       <div class="ligne-temps"><button class="rond petit-rond" id="p-arriere" aria-label="Revenir 5 secondes en arrière">↺</button><span id="p-t">0:00</span><div class="ligne" id="p-ligne"><div class="rempli"></div></div><span id="p-d">0:00</span></div>
+      <div class="reagir" id="p-reagir"><span>Réagis :</span><button type="button" data-r="rire" aria-label="Rire">😂</button><button type="button" data-r="coeur" aria-label="J’adore">❤️</button><button type="button" data-r="oh" aria-label="Oh !">😮</button><button type="button" data-r="surprise" aria-label="Surprise">😱</button><button type="button" data-r="bof" aria-label="Bof">😴</button><small>ou touche la pièce</small></div>
       <div class="commandes">
         <button class="rond" id="p-jouer" aria-label="Pause">❚❚</button>
         <button class="chip" id="p-suivante">Suivante ›</button>
@@ -645,7 +655,7 @@ const EMO={rire:'😂',sourire:'😊',coeur:'❤️',oh:'😮',surprise:'😱',b
 function reactionAuTexte(t){if(/(\bnul\b|\bbof\b|ennui|😴|🙄)/i.test(t))return 'bof';if(/(ha ?ha|hihi|mdr|ptdr|\blol\b|😂|🤣|😆)/i.test(t))return 'rire';if(/(❤|😍|🥰|j.?adore|trop beau|trop mignon)/i.test(t))return 'coeur';if(/(!|😱|waouh|\bwow\b|\boh\b|quoi)/i.test(t))return 'surprise';return 'sourire'}
 function figHTML(id,pl,x={}){
   const p=GENS[id];
-  return `<div class="fig${x.cls||''}" data-id="${id}" data-x="n" style="left:${pl.x}%;bottom:${pl.b}%;width:${pl.l}%;--d:${(-Math.random()*4).toFixed(2)}s">${figSVG(p)}<span class="nom"><span>${x.direct?'<i class="dot"></i>':''}${p.prenom}</span>${x.vu?`<em>${x.vu}</em>`:''}</span></div>`;
+  return `<div class="fig${x.cls||''}" data-id="${id}" data-x="n" style="left:${pl.x}%;bottom:${pl.b}%;width:${pl.l}%;--d:${(-Math.random()*4).toFixed(2)}s">${figSVG(p)}<span class="nom"><span>${x.direct?'<i class="dot"></i>':''}${x.nom||p.prenom}</span>${x.vu?`<em>${x.vu}</em>`:''}</span></div>`;
 }
 function poser(scene,id,pl,x={}){scene.insertAdjacentHTML('beforeend',figHTML(id,pl,x));return scene.lastElementChild}
 function entrer(scene,id,pl,x={}){const f=poser(scene,id,{...pl,x:112},x);requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.left=pl.x+'%'}));return f}
@@ -769,7 +779,7 @@ function ouvrirPiece(){montrer('piece');piece.liste=videosDuJour();piece.i=0;pie
   $('#p-wrap').style.background=fondWrap(DECORS.maison);
   piece.tele=new Tele($('.tele',sc),{tick:tickPiece,fin:finPiece});
   chargerVideo(0);
-  if(!piece.dejaVenu){piece.dejaVenu=true;plusTard('piece',()=>indice(sc,'Touche la pièce : ta figurine rit · deux fois : un ❤️ · appui long : « oh ! »',5200),900)}
+  if(!piece.dejaVenu){piece.dejaVenu=true;plusTard('piece',()=>indice(sc,'Pour réagir : 😂 ❤️ 😮 sous la télé, ou touche la pièce (deux fois : ❤️ · appui long : « oh ! »). Tes proches le verront à la même seconde.',7000),900)}
   majCam();
 }
 const courante=()=>piece.liste[piece.i];
@@ -779,15 +789,28 @@ function assisDe(v){
   const assis=[...piece.live,...vus].slice(0,3),petites=vus.filter(id=>!assis.includes(id));
   return {assis,petites};
 }
-function chargerVideo(i){
-  piece.i=i;const v=courante(),sc=scP();
-  $$('.fig,.bulle,.part-e,.indice',sc).forEach(x=>x.remove());
-  const {assis,petites}=assisDe(v);piece.assis=assis;
-  poser(sc,'moi',PLACES4[1]);
-  [0,2,3].forEach((k,j)=>{const id=assis[j];if(id)poser(sc,id,PLACES4[k],piece.live.has(id)?{direct:true}:{vu:'a vu '+v.vus[id]})});
+function chargerVideo(i,vueDe=null){
+  piece.i=i;piece.mode=vueDe;const v=courante(),sc=scP();
+  $$('.fig,.bulle,.part-e,.indice,.bandeau,.note-moi',sc).forEach(x=>x.remove());
+  let assis,petites;
+  if(vueDe){
+    // 👀 ce que verra ce proche : lui au centre, ta figurine à côté de lui, qui réagit à TES secondes
+    const autres=Object.keys(v.vus).filter(id=>id!==vueDe);assis=['moi',...autres.slice(0,2)];petites=autres.slice(2);
+    poser(sc,vueDe,PLACES4[1],{vu:'regarde'});poser(sc,'moi',PLACES4[0],{nom:'Alex',vu:'a vu à l’instant'});
+    autres.slice(0,2).forEach((id,j)=>poser(sc,id,PLACES4[[2,3][j]],{vu:'a vu '+v.vus[id]}));
+    piece.rejeu=[...v.reactions.filter(r=>r.q!==vueDe),...(piece.mes[v.id]||[]).map(r=>({q:'moi',t:r.t,s:r.source==='ecrit'?'texte':r.source==='voix'?'vocal':r.sorte,x:r.source==='voix'?'🎙️ ta voix':r.texte}))].sort((a,b)=>a.t-b.t);
+    sc.querySelector('.pastille-cam')?.remove();
+    sc.insertAdjacentHTML('beforeend',`<div class="bandeau">👀 Ce que ${GENS[vueDe].prenom} verra : « Alex », c’est toi<button type="button" id="b-retour-moi">Revenir</button></div>`);
+    $('#b-retour-moi').addEventListener('click',()=>{chargerVideo(piece.i);majCam()});
+  }else{
+    ({assis,petites}=assisDe(v));piece.rejeu=v.reactions;
+    poser(sc,'moi',PLACES4[1]);
+    [0,2,3].forEach((k,j)=>{const id=assis[j];if(id)poser(sc,id,PLACES4[k],piece.live.has(id)?{direct:true}:{vu:'a vu '+v.vus[id]})});
+  }
+  piece.assis=assis;
   $('#p-bord').innerHTML=petites.map(id=>`<span class="petite" data-id="${id}" title="${GENS[id].prenom}">${teteSVG(GENS[id])}</span>`).join('');
   const seul=$('#p-seul');seul.hidden=assis.length>0;seul.textContent='Tu l’ouvres en premier : tes réactions attendront tes proches.';
-  $('#p-sous').textContent=`${i+1} sur ${piece.liste.length} · ${THEME(v.theme).court}`;
+  $('#p-sous').textContent=vueDe?`Ce que ${GENS[vueDe].prenom} verra · ${THEME(v.theme).court}`:`${i+1} sur ${piece.liste.length} · ${THEME(v.theme).court}`;
   $('#p-d').textContent=mmss(v.duree);
   const th=THEME(v.theme);$('#p-salon-txt').textContent=`💬 ${th.salon} en parle · ${Math.max(2,th.n-2)} personnes`;
   piece.tele.charger(v);piece.tele.jouer();majJouer();tics();
@@ -796,33 +819,44 @@ function tics(){
   const v=courante(),l=$('#p-ligne');$$('.tic',l).forEach(x=>x.remove());
   const la=[...piece.assis,...$$('.petite',scP()).map(x=>x.dataset.id)];
   const ajout=(t,c,moi)=>{const d=document.createElement('i');d.className='tic'+(moi?' moi':'');d.style.left=(t/v.duree*100)+'%';d.style.setProperty('--c',c);l.appendChild(d)};
-  v.reactions.filter(r=>la.includes(r.q)&&!piece.live.has(r.q)).forEach(r=>ajout(r.t,GENS[r.q].c));
-  (piece.mes[v.id]||[]).forEach(r=>ajout(r.t,GENS.moi.c,true));
+  piece.rejeu.filter(r=>la.includes(r.q)&&!piece.live.has(r.q)).forEach(r=>ajout(r.t,GENS[r.q].c,r.q==='moi'));
+  if(!piece.mode)(piece.mes[v.id]||[]).forEach(r=>ajout(r.t,GENS.moi.c,true));
 }
 function tickPiece(t0,t1){
   const v=courante(),sc=scP();
   $('#p-t').textContent=mmss(t1);$('.rempli',$('#p-ligne')).style.width=(t1/v.duree*100)+'%';
-  for(const r of v.reactions)if(r.t>t0&&r.t<=t1&&!piece.live.has(r.q))reagir(sc,r.q,r.s,r.x);
-  for(const m of v.moments)if(m.t>t0&&m.t<=t1){
+  for(const r of piece.rejeu)if(r.t>t0&&r.t<=t1&&(piece.mode||!piece.live.has(r.q)))reagir(sc,r.q,r.s,r.x);
+  if(!piece.mode)for(const m of v.moments)if(m.t>t0&&m.t<=t1){
     piece.live.forEach(id=>plusTard('piece',()=>reagir(sc,id,m.s),hasard(150,600)));
     if(piece.cam)plusTard('piece',()=>{reagir(sc,'moi',m.s==='surprise'?'surprise':'rire');noter(m.s==='surprise'?'surprise':'rire','camera')},450);
   }
 }
+const PRENOMS_PROCHES=PROCHES.map(id=>GENS[id].prenom).slice(0,-1).join(', ')+' et '+GENS[PROCHES.at(-1)].prenom;
 function noter(sorte,source,texte){
-  const v=courante(),t=Math.round(piece.tele.t*10)/10;(piece.mes[v.id]||=[]).push({t,sorte,source,texte});tics();
-  const qui=Object.keys(v.vus).length?'tes proches le verront à cette seconde':'tes proches le verront quand ils la regarderont';
+  if(piece.mode)return;
+  const v=courante(),t=Math.round(piece.tele.t*10)/10,sc=scP();(piece.mes[v.id]||=[]).push({t,sorte,source,texte});tics();
+  const moi=figDe(sc,'moi');if(moi){sc.querySelectorAll('.note-moi').forEach(x=>x.remove());const n=document.createElement('span');n.className='note-moi';n.textContent=`${EMO[source==='ecrit'?'texte':source==='voix'?'vocal':sorte]} noté à ${mmss(t)}`;placerAuDessus(sc,moi,n,.62);setTimeout(()=>n.remove(),1900)}
   if(source==='camera'){if(!piece.camDit){piece.camDit=true;toast(`📷 Ton téléphone a vu que tu riais à ${mmss(t)}. Il ne garde que ça.`,{ms:3600})}return}
   if(source==='implicite')return;
-  if(piece.notes<2){piece.notes++;toast(`📝 ${mmss(t)} · ${EMO[sorte]} noté : ${qui}`,{ms:3000})}
+  if(piece.notes<3){piece.notes++;toast(`${EMO[sorte]} noté à ${mmss(t)} : ${PRENOMS_PROCHES} le verront à cette seconde`,{ms:3200})}
 }
 function finPiece(){
-  const v=courante(),sc=scP();reagir(sc,'moi','coeur');noter('coeur','implicite');majJouer();
+  const v=courante(),sc=scP();majJouer();
+  if(piece.mode){const f=document.createElement('div');f.className='tele-fin';f.innerHTML=`<p>Voilà ce que ${GENS[piece.mode].prenom} verra : ta figurine à côté, à tes secondes.</p><div><button class="chip" data-encore>↺ Revoir</button><button class="btn petit" data-moi>Revenir à ma télé</button></div>`;$('.tele',sc).appendChild(f);
+    f.addEventListener('click',e=>{if(e.target.closest('[data-encore]'))chargerVideo(piece.i,piece.mode);if(e.target.closest('[data-moi]')){chargerVideo(piece.i);majCam()}});return}
+  reagir(sc,'moi','coeur');noter('coeur','implicite');
   const reactifs=[...piece.assis.filter(id=>v.reactions.some(r=>r.q===id)||piece.live.has(id))];
   const dernier=piece.i===piece.liste.length-1;
   const f=document.createElement('div');f.className='tele-fin';
-  f.innerHTML=`<p>Regardée jusqu’au bout : un ❤️ noté à la fin</p><div>${reactifs.length?'<button class="btn petit" data-clip>🎬 Nos réactions</button>':''}${dernier?'<button class="chip" data-revoir>↺ Revoir la première</button><button class="chip" data-salons>Les salons ›</button>':'<button class="chip" data-suiv>Suivante ›</button>'}</div>`;
+  f.innerHTML=`<p>Regardée jusqu’au bout : un ❤️ noté à la fin</p><div><button class="btn petit ambre" data-sam>👀 Ce que Sam verra</button>${reactifs.length?'<button class="btn petit" data-clip>🎬 Nos réactions</button>':''}${dernier?'<button class="chip" data-revoir>↺ Revoir la première</button><button class="chip" data-salons>Les salons ›</button>':'<button class="chip" data-suiv>Suivante ›</button>'}</div>`;
   $('.tele',sc).appendChild(f);
-  f.addEventListener('click',e=>{if(e.target.closest('[data-clip]'))ouvrirClip(v,reactifs);if(e.target.closest('[data-suiv]'))chargerVideo(piece.i+1);if(e.target.closest('[data-revoir]'))chargerVideo(0);if(e.target.closest('[data-salons]'))montrer('accueil')});
+  f.addEventListener('click',e=>{if(e.target.closest('[data-sam]'))voirComme('sam');if(e.target.closest('[data-clip]'))ouvrirClip(v,reactifs);if(e.target.closest('[data-suiv]'))chargerVideo(piece.i+1);if(e.target.closest('[data-revoir]'))chargerVideo(0);if(e.target.closest('[data-salons]'))montrer('accueil')});
+}
+function voirComme(id){
+  const v=courante(),p=GENS[id];
+  const go=()=>{fermerFeuille();chargerVideo(piece.i,id)};
+  if(!v.vus[id])return go();
+  feuille(`<h2>${p.prenom} l’a déjà vue ${v.vus[id]}</h2><p class="chapo">Pour que ${p.prenom} sache que tu l’as regardée, ClikMe lui envoie :</p><div class="notif"><small>ClikMe · maintenant</small><b>🎬 Alex a regardé « ${esc(v.titre)} » : revois-la avec ses réactions</b><div><span>Revoir</span><span>Plus tard</span></div></div><p class="chapo">Si ${p.prenom} ne l’avait pas encore vue, ta figurine l’attendrait simplement à côté, au moment où la vidéo passe.</p><button class="btn" id="voir-comme">Voir comme ${p.prenom}</button>`,f=>$('#voir-comme',f).addEventListener('click',go));
 }
 function majJouer(){const j=piece.tele?.joue;$('#p-jouer').textContent=j?'❚❚':'▶';$('#p-jouer').setAttribute('aria-label',j?'Pause':'Lecture')}
 $('#p-jouer').addEventListener('click',()=>{const T=piece.tele;if(T.fini){T.aller(0);T.jouer()}else if(T.joue){T.pause();if(piece.live.size)toast('❚❚ En pause pour tout le monde')}else T.jouer();majJouer()});
@@ -843,10 +877,12 @@ function gestes(sc,action){
   sc.addEventListener('pointerup',fin);sc.addEventListener('pointercancel',()=>{clearTimeout(lp);lp=null});sc.addEventListener('pointerleave',()=>{clearTimeout(lp);lp=null});
   sc.addEventListener('contextmenu',e=>e.preventDefault());
 }
-gestes($('#p-scene'),s=>{if(!piece.tele)return;reagir(scP(),'moi',s);noter(s,'geste')});
+const enVisite=()=>{if(piece.mode){toast(`Ici, tu regardes comme ${GENS[piece.mode].prenom} : « Revenir » pour réagir`);return true}return false};
+gestes($('#p-scene'),s=>{if(!piece.tele||enVisite())return;reagir(scP(),'moi',s);noter(s,'geste')});
+$('#p-reagir').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b||!piece.tele||enVisite())return;reagir(scP(),'moi',b.dataset.r);noter(b.dataset.r,'bouton')});
 
 // ─── écrire, et dire avec sa vraie voix ───
-$('#p-ecrire').addEventListener('submit',e=>{e.preventDefault();const t=$('#p-champ').value.trim();if(!t)return;const r=refus(t);if(r)return toast(`🚫 Ce message ne part pas : ${r}.`,{refuse:true});
+$('#p-ecrire').addEventListener('submit',e=>{e.preventDefault();const t=$('#p-champ').value.trim();if(!t||enVisite())return;const r=refus(t);if(r)return toast(`🚫 Ce message ne part pas : ${r}.`,{refuse:true});
   $('#p-champ').value='';reagir(scP(),'moi','texte',t);noter(reactionAuTexte(t),'ecrit',t)});
 let micro=null;
 $('#p-micro').addEventListener('pointerdown',e=>{e.preventDefault();const sc=scP();micro={debut:performance.now()};const m=document.createElement('div');m.className='micro-on';m.id='micro-on';m.innerHTML='<span class="onde"><i></i><i></i><i></i><i></i><i></i></span> Ta voix… relâche pour l’envoyer';sc.appendChild(m)});

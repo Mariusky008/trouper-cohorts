@@ -129,7 +129,9 @@ laissé, `salon-du-duo.md` 11.9) : ici, on rejoue selon le temps de la vidéo, p
 
 **Comment savoir quand on a réagi, sans bouton** — trois niveaux :
 
-1. **Ce que l'appli comprend toute seule (pour tout le monde, dès le départ)** :
+1. **Ce que l'appli comprend toute seule (pour tout le monde, dès le départ)** — et, ajoutée après l'essai de la
+   maquette (19 novembre : sans elle, on ne trouve pas comment réagir), **une rangée de réactions sous la télé**
+   (😂 ❤️ 😮 😱 😴), notées à la seconde comme le reste :
    - **ce que je fais de la vidéo** : je la passe avant 15 s → « bof » à ce moment ; je reviens en arrière → « oh ! »
      au début du passage revu ; je la regarde jusqu'au bout → un ❤️ à la fin ;
    - **des gestes sans viser**, n'importe où sur la scène hors de la télé : un toucher → ma figurine rit ; deux
@@ -353,6 +355,13 @@ Ce qu'on y joue :
   seconde, 🎙️ ma voix ; ce que l'appli comprend seule (passer avant 15 s : « bof » ; revenir en arrière : « oh ! » ; aller
   au bout : ❤️). La troisième vidéo, que personne n'a vue : « Tu l'ouvres en premier : tes réactions attendront tes
   proches ».
+- **Réagir soi-même** (ajouté après le premier essai du propriétaire, le 19 novembre : « je ne saisis pas comment je
+  fais pour réagir moi-même ») : la rangée « Réagis : 😂 ❤️ 😮 😱 😴 » sous la télé, à côté des gestes sans viser ; sur
+  ma figurine, « 😂 noté à 0:07 » ; les premières fois, « Sam, Léa, Noé et Inès le verront à cette seconde ».
+- **👀 « Ce que Sam verra »** (à la fin de la vidéo) : la vidéo rejouée du côté de Sam — Sam au centre, ma figurine
+  (« Alex ») assise à côté, qui réagit à mes secondes. **Une proposition, à décider** : si Sam l'a déjà vue, une
+  notification « 🎬 Alex a regardé « … » : revois-la avec ses réactions » (sinon, mes réactions ne lui parviendraient
+  jamais) ; s'il ne l'a pas vue, ma figurine l'attend simplement à côté.
 - **📷 « Ta figurine fait ta tête »** : l'écran d'accord, la pastille, ma figurine qui refait ma tête aux moments forts
   (imitée dans la maquette).
 - **👥 Inviter** (4.3) : trois proches au plus ; ce qu'ils reçoivent ; ceux qui sont là entrent et s'assoient « en
