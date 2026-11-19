@@ -282,7 +282,7 @@ une animation.
 | **M0 — Les images du catalogue** ✅ | la page de l'admin : les huit refaites en hauteur (2.2) ; la largeur faite d'après la hauteur ; la chambre musicale (2.3) ; les relevés (le centre, son échelle) — le code est fait (2.4) ; les images, le propriétaire les lance | univers | — |
 | **S1 — Les calques** (salon-du-duo.md, section 9, modifié) | les calques de chaque figurine (section 4) ; leur pose aux places et au centre ; `CalquesDuo` composé à l'ouverture | messages et bienvenue | S0 |
 | **M1 — La maison** ✅ | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce — fait (section 13), derrière l'interrupteur | univers | M0, S1 |
-| **M2 — La maison qui se remplit** (première partie ✅, section 15) | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
+| **M2 — La maison qui se remplit** ✅ (sections 15 et 16) | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
 | **M3 — L'inscription** ✅ | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers — fait (section 14), derrière l'interrupteur | messages et bienvenue | M0 |
 | **M4 — Découvrir** | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
 | **M5 — Les visites, la suite** | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
@@ -414,9 +414,7 @@ téléphone d'habitant), et dans l'onglet quand il sera allumé.
 - **La route** : `GET /api/direct/ma-piece` rend aussi `maison.contenu` (`{ cadres, platine, tele, etagere, total }`) et
   `maison.vuLe`.
 
-**Ce qui reste du lot M2** (deuxième partie) : « ＋ Ajouter chez moi » (une photo du téléphone, un film, une chanson, un
-livre, une recette, un voyage, une fierté), l'appui long sur un objet (« Le ranger », « L'enlever »), et, dans le salon,
-« la garder » sur une photo reçue (aujourd'hui, seul celui qui l'a envoyée peut la mettre chez lui).
+**La deuxième partie du lot M2** : section 16.
 
 **L'essai** : `scripts/navigateur/ma-maison-remplie.mjs` (iPhone, 27 contrôles : la route — les deux cadres, la plus
 ancienne photo remplacée, la platine et son lien, la télé, l'étagère gardée avec Sam, le mot de Sam absent ; l'écran — les
@@ -424,3 +422,35 @@ six objets à leur place, la photo posée sur son cadre, « ✨ 2 choses gardée
 la visite retenue, un cadre et « La voir en grand », la platine et « Écouter », le mot « Gardé avec Sam », un emplacement
 vide, revenir sans annonce). Toujours verts : `ma-maison-catalogue.mjs`, `essai-ma-maison-route.mjs`,
 `choisis-ta-piece.mjs`.
+
+---
+
+## 16. Le lot M2, deuxième partie : « ＋ Ajouter chez moi », et l'enlever (19 novembre 2026)
+
+- **＋ en haut de la pièce** (à côté de ⚙️) : « Qu'est-ce que tu mets chez toi ? », neuf choix (`AJOUTS_MAISON`,
+  `ma-maison.ts`) — 🖼️ une photo, 🎬 un film, 📺 un clip, 🎵 une chanson, 📚 un livre, 🍲 une recette, ✈️ un voyage,
+  🏅 une fierté, ✨ autre chose ; « Rien d'obligatoire : une photo de temps en temps suffit à faire vivre la maison. »
+  - **Une photo** : choisie dans le téléphone, réduite dans le téléphone (1 600 pixels au plus), recopiée par le serveur
+    (900 pixels, WebP, `<habitant>/univers/objets/<id>.webp`) ; une légende si l'on veut. Elle va dans un cadre (le
+    premier libre, sinon à la place de la plus ancienne).
+  - **Un film, un clip, une chanson** : un nom, un lien si l'on veut (YouTube, Spotify…) — son titre (si l'on n'en a pas
+    écrit) et son image (l'affiche, la pochette) viennent de la page, recopiés chez nous ; sans image, il va quand même à
+    la télé ou sur la platine (un emoji à la place). Un mot si l'on veut.
+  - **Le reste** : un nom, un mot si l'on veut ; sur l'étagère.
+  - « Mettre chez moi » : la maison revient avec lui à sa place, « ✓ C'est chez toi, dans un cadre » (« à la télé »,
+    « sur la platine », « sur l'étagère »), et la caméra va le voir. Les mêmes limites qu'un dépôt sur son étagère (douze
+    par jour, quatre-vingts au plus) ; rien de grossier ni d'alcoolisé (`motPasse`).
+  - Le serveur : `ajouterChezMoi` (`etagere-serveur.ts`), `POST /api/direct/ma-piece { action: "ajouter", quoi, titre?,
+    lien?, mot?, image? }` → `{ maison, id }`. Tout est rangé sur **sa propre étagère** (« Mon étagère » le voit aussi).
+- **🗑️ Un appui long sur un objet** : « L'enlever de chez moi ». Ce qu'on a ajouté ou rangé soi-même disparaît (comme
+  « Retirer » sur son étagère, sa copie d'image avec lui : « Il disparaît de chez toi. ») ; ce qu'on a gardé dans une
+  conversation **reste sur l'étagère partagée** (« Il reste sur votre étagère, avec Sam. ») mais plus chez soi.
+  `enleverDeChezMoi`, `POST /api/direct/ma-piece { action: "enlever", id }` → `{ maison }`.
+- **Plus tard** : « Le ranger » (le sortir de la pièce sans l'enlever de son étagère) ; « la garder » sur une photo reçue
+  dans le salon (aujourd'hui, seul celui qui l'a envoyée peut la mettre chez lui).
+
+**L'essai** : `scripts/navigateur/ma-maison-remplie.mjs` (45 contrôles au total : en plus de la section 15 — ＋ et ses
+neuf choix ; sans photo, refusé ; une photo choisie, en aperçu, « dans un cadre », à la place de la plus ancienne ; une
+chanson sans nom ni lien refusée, puis avec son lien « sur la platine » ; un livre et son mot ; l'appui long sur le mot
+gardé avec Sam — enlevé de chez elle, toujours sur leur étagère ; sur le livre — parti de son étagère aussi ; la route
+refuse un choix inconnu, ne trouve pas un objet inconnu).

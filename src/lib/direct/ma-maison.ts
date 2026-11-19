@@ -145,6 +145,53 @@ export const PHRASES_MAISON = {
   voir: "🔍 La voir en grand",
   toutes: "📚 Toute mon étagère",
 } as const;
+
+/**
+ * ＋ (lot M2, deuxième partie) « AJOUTER CHEZ MOI » (`ma-maison.md`, section 6) : mettre soi-même ce qui compte, sans
+ * conversation — une photo de son téléphone (un cadre), un film ou un clip (la télé), une chanson (la platine), un livre,
+ * une recette, un voyage, une fierté ou autre chose (l'étagère). Rien d'obligatoire.
+ */
+export type QuoiAjout = "photo" | "film" | "clip" | "chanson" | "livre" | "recette" | "voyage" | "fierte" | "autre";
+export const AJOUTS_MAISON: readonly { cle: QuoiAjout; emoji: string; nom: string; sorte: SorteMaison; indice: string }[] = [
+  { cle: "photo", emoji: "🖼️", nom: "Une photo", sorte: "photo", indice: "Une légende, si tu veux" },
+  { cle: "film", emoji: "🎬", nom: "Un film", sorte: "video", indice: "Le Grand Bleu" },
+  { cle: "clip", emoji: "📺", nom: "Un clip", sorte: "video", indice: "Le clip de l’été" },
+  { cle: "chanson", emoji: "🎵", nom: "Une chanson", sorte: "musique", indice: "La chanson de notre mariage" },
+  { cle: "livre", emoji: "📚", nom: "Un livre", sorte: "objet", indice: "Le Petit Prince" },
+  { cle: "recette", emoji: "🍲", nom: "Une recette", sorte: "objet", indice: "Le gratin de mamie" },
+  { cle: "voyage", emoji: "✈️", nom: "Un voyage", sorte: "objet", indice: "Lisbonne, au printemps" },
+  { cle: "fierte", emoji: "🏅", nom: "Une fierté", sorte: "objet", indice: "Mon premier semi-marathon" },
+  { cle: "autre", emoji: "✨", nom: "Autre chose", sorte: "objet", indice: "Ce qui compte pour moi" },
+];
+export const ajoutDe = (x: unknown) => AJOUTS_MAISON.find((a) => a.cle === x) ?? null;
+/** Où il va, dit à celui qui l'ajoute. */
+export const OU_VA: Record<SorteMaison, string> = { photo: "dans un cadre", video: "à la télé", musique: "sur la platine", objet: "sur l’étagère" };
+export const AJOUT_TITRE_MAX = 28;
+export const AJOUT_MOT_MAX = 120;
+/** (la photo envoyée : 1 600 pixels au plus côté téléphone, 6 Mo au plus ; recopiée chez nous en 900 pixels) */
+export const AJOUT_PHOTO = { cote: 1600, octets: 6_000_000, largeur: 900 } as const;
+export const PHRASES_AJOUT = {
+  bouton: "＋",
+  titre: "Ajouter chez moi",
+  quoi: "Qu’est-ce que tu mets chez toi ?",
+  rien: "Rien d’obligatoire : une photo de temps en temps suffit à faire vivre la maison.",
+  nom: "Son nom",
+  lien: "Un lien (YouTube, Spotify…), si tu veux",
+  mot: "Un mot, si tu veux",
+  choisirPhoto: "📷 Choisir une photo",
+  autrePhoto: "Une autre photo",
+  mettre: "Mettre chez moi",
+  enCours: "Je l’installe…",
+  fait: (ou: string) => `✓ C’est chez toi, ${ou}`,
+  sansNom: "Donne-lui un nom.",
+  sansPhoto: "Choisis d’abord une photo.",
+  retour: "‹ Autre chose",
+  enlever: "🗑️ L’enlever de chez moi",
+  enleverMien: "Il disparaît de chez toi.",
+  enleverAvec: (prenom: string) => `Il reste sur votre étagère, avec ${prenom}.`,
+  annuler: "Annuler",
+  enleve: "C’est enlevé.",
+} as const;
 /** Une pièce proposée : son nom, et sa vignette si son panorama est fait (sinon, elle n'est pas encore prête). */
 export type PieceAuCatalogue = { cle: PieceDuo; nom: string; pour: string; emoji: string; vignette: ImageSalon | null };
 export type CatalogueMaison = { pieces: PieceAuCatalogue[]; piece: PieceDuo | null };

@@ -20,6 +20,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   EMPLACEMENTS_MAISON,
   MAISON_VIDE,
+  PHRASES_AJOUT,
   PHRASES_MAISON,
   arriveeChezMoi,
   ditDeLObjet,
@@ -30,6 +31,8 @@ import {
   type ObjetMaison,
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
+import { createPortal } from "react-dom";
+import { AjouterChezMoi, EnleverDeChezMoi } from "./ajouter-chez-moi";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 
 const ROUTE = "/api/direct/ma-piece";
@@ -66,8 +69,33 @@ const lienSur = (l?: string) => (l && /^https?:\/\//i.test(l) ? l : "");
 const place = (z: Zone) => ({ left: `${z[0] * 100}%`, top: `${z[1] * 100}%`, width: `${z[2] * 100}%`, height: `${z[3] * 100}%` });
 
 /** 🏠 (lot M2) Ce qu'il a gardé, posé à ses emplacements : un bouton chacun (`data-objet`). */
-function ObjetsDeLaMaison({ contenu, e, vise, onToucher }: { contenu: ContenuMaison; e: EmplacementsDuo | null; vise: string | null; onToucher: (o: ObjetMaison) => void }) {
+function ObjetsDeLaMaison({
+  contenu,
+  e,
+  vise,
+  onToucher,
+  onAppuiLong,
+}: {
+  contenu: ContenuMaison;
+  e: EmplacementsDuo | null;
+  vise: string | null;
+  onToucher: (o: ObjetMaison) => void;
+  onAppuiLong: (o: ObjetMaison) => void;
+}) {
+  // (🗑️ un appui long : « L'enlever de chez moi » — le toucher qui suit ne compte pas)
+  const appui = useRef<{ t: number; long: boolean }>({ t: 0, long: false });
   if (!e) return null;
+  const appuyer = (o: ObjetMaison) => {
+    window.clearTimeout(appui.current.t);
+    appui.current = {
+      long: false,
+      t: window.setTimeout(() => {
+        appui.current.long = true;
+        onAppuiLong(o);
+      }, 550),
+    };
+  };
+  const lacher = () => window.clearTimeout(appui.current.t);
   const bouton = (o: ObjetMaison, classe: string, style: React.CSSProperties | undefined, enfants: React.ReactNode, ou: string) => (
     <button
       key={`${ou}-${o.id}`}
@@ -77,8 +105,17 @@ function ObjetsDeLaMaison({ contenu, e, vise, onToucher }: { contenu: ContenuMai
       data-place={ou}
       style={style}
       aria-label={`${o.emoji} ${o.titre}`}
+      onPointerDown={() => appuyer(o)}
+      onPointerUp={lacher}
+      onPointerLeave={lacher}
+      onPointerCancel={lacher}
+      onContextMenu={(ev) => ev.preventDefault()}
       onClick={(ev) => {
         ev.stopPropagation();
+        if (appui.current.long) {
+          appui.current.long = false;
+          return;
+        }
         onToucher(o);
       }}
     >
@@ -126,7 +163,17 @@ function ObjetsDeLaMaison({ contenu, e, vise, onToucher }: { contenu: ContenuMai
 }
 
 /** 🛋️ La pièce, au doigt : le panorama, la figurine au centre, les emplacements. */
-function Piece({ maison, phrase, onReglages }: { maison: MaMaisonVue & { scene: NonNullable<MaMaisonVue["scene"]> }; phrase?: string; onReglages: () => void }) {
+function Piece({
+  maison,
+  phrase,
+  onReglages,
+  onMaison,
+}: {
+  maison: MaMaisonVue & { scene: NonNullable<MaMaisonVue["scene"]> };
+  phrase?: string;
+  onReglages: () => void;
+  onMaison: (m: MaMaisonVue) => void;
+}) {
   const { scene, figurine } = maison;
   const pano = scene.panorama;
   const ratio = pano.largeur / Math.max(1, pano.hauteur);
@@ -145,6 +192,24 @@ function Piece({ maison, phrase, onReglages }: { maison: MaMaisonVue & { scene: 
   const [vise, setVise] = useState<string | null>(null);
   const enVisite = useRef(false);
   const interrompre = useRef<() => void>(() => undefined);
+  // ＋🗑️ (lot M2, deuxième partie) ajouter chez moi ; l'objet à enlever (un appui long) ; ce qui vient d'être fait
+  const [ajout, setAjout] = useState(false);
+  const [aEnlever, setAEnlever] = useState<ObjetMaison | null>(null);
+  const [fait, setFait] = useState("");
+  /** (le nouvel objet : la caméra va le voir, il s'éclaire un instant) */
+  const montrer = (id: string) => {
+    window.requestAnimationFrame(() => {
+      const el = defile.current?.querySelector<HTMLElement>(`[data-objet="${id}"]`);
+      if (!el) return;
+      enVisite.current = true;
+      el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      setVise(id);
+      window.setTimeout(() => {
+        setVise(null);
+        enVisite.current = false;
+      }, 1800);
+    });
+  };
   // (la hauteur de la scène : la largeur du panorama, et la taille d'image à demander)
   useEffect(() => {
     const el = cadre.current;
@@ -290,6 +355,10 @@ function Piece({ maison, phrase, onReglages }: { maison: MaMaisonVue & { scene: 
                 setBulle(null);
                 setObjet(o);
               }}
+              onAppuiLong={(o) => {
+                setObjet(null);
+                setAEnlever(o);
+              }}
             />
           )}
           {/* 🪑 sa figurine, au centre : son ombre au sol, puis elle, dans son fauteuil */}
@@ -319,9 +388,25 @@ function Piece({ maison, phrase, onReglages }: { maison: MaMaisonVue & { scene: 
           {scene.emoji} {scene.nom}
           {moment && <small> · {moment.emoji}</small>}
         </span>
-        <button type="button" className="mmc-reglages" onClick={onReglages} aria-label="Changer de pièce" data-geste="reglages">
-          ⚙️
-        </button>
+        <span className="mmc-boutons">
+          <button
+            type="button"
+            className="mmc-reglages mmc-ajouter"
+            onClick={() => {
+              setIndice(false);
+              setObjet(null);
+              setBulle(null);
+              setAjout(true);
+            }}
+            aria-label="Ajouter chez moi"
+            data-geste="ajouter"
+          >
+            ＋
+          </button>
+          <button type="button" className="mmc-reglages" onClick={onReglages} aria-label="Changer de pièce" data-geste="reglages">
+            ⚙️
+          </button>
+        </span>
       </div>
       {arrivee && (
         <p className="mmc-arrivee" role="status" data-arrivee>
@@ -379,6 +464,41 @@ function Piece({ maison, phrase, onReglages }: { maison: MaMaisonVue & { scene: 
           </button>
         </div>
       )}
+      {fait && (
+        <p className="mmc-fait" role="status" data-fait>
+          {fait}
+        </p>
+      )}
+      {/* (posées sur la page entière : par-dessus la pièce et le menu, quoi qu'il arrive) */}
+      {ajout &&
+        createPortal(
+          <AjouterChezMoi
+            onFermer={() => setAjout(false)}
+            onAjoute={(r) => {
+              setAjout(false);
+              setIndice(false);
+              onMaison(r.maison);
+              setFait(PHRASES_AJOUT.fait(r.ou));
+              window.setTimeout(() => setFait(""), 2600);
+              montrer(r.id);
+            }}
+          />,
+          document.body,
+        )}
+      {aEnlever &&
+        createPortal(
+          <EnleverDeChezMoi
+            objet={aEnlever}
+            onFermer={() => setAEnlever(null)}
+            onEnleve={(m) => {
+              setAEnlever(null);
+              onMaison(m);
+              setFait(PHRASES_AJOUT.enleve);
+              window.setTimeout(() => setFait(""), 2200);
+            }}
+          />,
+          document.body,
+        )}
       {grand?.image && (
         <div className="mmc-grand" role="dialog" aria-modal="true" aria-label={grand.titre} data-photo-grand onClick={() => setGrand(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -522,7 +642,7 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
       ) : maison.scene ? (
         <>
           {/* (la phrase de l'arrivée : dans la pièce en plein écran, sous elle dans l'onglet) */}
-          <Piece maison={{ ...maison, scene: maison.scene }} phrase={plein && !maison.contenu?.total ? MAISON_VIDE : undefined} onReglages={() => setChoix(true)} />
+          <Piece maison={{ ...maison, scene: maison.scene }} phrase={plein && !maison.contenu?.total ? MAISON_VIDE : undefined} onReglages={() => setChoix(true)} onMaison={setMaison} />
           {!plein && !maison.contenu?.total && <p className="mmc-vide">{MAISON_VIDE}</p>}
         </>
       ) : null}
@@ -561,6 +681,11 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc.plein .mmc-haut{top:calc(10px + env(safe-area-inset-top))}
 .mmc-nom{padding:7px 13px;border-radius:999px;background:rgba(20,10,14,.62);font-weight:900;font-size:14.5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc-nom small{font-weight:700;opacity:.85}
+.mmc-boutons{display:flex;gap:8px}
+.mmc-ajouter{font-weight:900;color:#FFF4E6}
+.mmc-fait{position:absolute;left:50%;top:62px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(69,212,131,.92);color:#10261a;font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .3s ease-out}
+.mmc.plein .mmc-fait{top:calc(62px + env(safe-area-inset-top))}
+.mmc-objet{-webkit-touch-callout:none;user-select:none}
 .mmc-reglages{pointer-events:auto;width:40px;height:40px;border:0;border-radius:50%;background:rgba(20,10,14,.62);font-size:19px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc-indice{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100% - 32px);padding:9px 15px;border-radius:18px;background:rgba(20,10,14,.66);text-align:center;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc.plein .mmc-indice{bottom:calc(16px + env(safe-area-inset-bottom))}

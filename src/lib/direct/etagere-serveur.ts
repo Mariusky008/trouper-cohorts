@@ -49,7 +49,9 @@ import { EMOJI_IMAGE, PHRASES_RANGER, RANGER_UNIVERS, titreRange } from "./range
 import { iaBranchee, motPasse, parlePourLui } from "./rituel-serveur";
 import { texteLuDuMessage } from "./talkie";
 import { DUO_MS, titreDuDuo } from "./meme-salon";
-import type { ObjetMaison } from "./ma-maison";
+import { AJOUT_MOT_MAX, AJOUT_PHOTO, AJOUT_TITRE_MAX, ajoutDe, type ObjetMaison } from "./ma-maison";
+import { APERCU, apercuDuHtml, urlLisible } from "./ecrit";
+import { lireLeWeb } from "./ecrit-serveur";
 import { cheminReglages, dossierMessages, figurineVue, hDeCle, nomsDuFil, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import {
   CATALOGUE,
@@ -115,6 +117,7 @@ import {
   type EtagereVue,
   type GenreObjet,
   type ImageObjet,
+  type SorteImage,
   type ImageVue,
   type Issue,
   type LigneEtagere,
@@ -1068,17 +1071,23 @@ export async function objetsDeMaMaison(supabase: Supabase, h: string): Promise<O
   const [perso0, etageres, prenomMoi] = await Promise.all([lirePerso(supabase, h), sesEtageres(supabase, h), prenomDe(supabase, h, "Toi")]);
   const perso = await persoAJour(supabase, h, perso0);
   const caches = new Set(perso.caches);
-  const enMaison = (o: ObjetVu): ObjetMaison => ({
-    id: o.id,
-    sorte: o.image?.sorte ?? "objet",
-    emoji: o.emoji,
-    titre: o.titre,
-    ...(o.detail ? { detail: o.detail } : {}),
-    ...(o.image ? { image: { src: o.image.src, l: o.image.l, h: o.image.h } } : {}),
-    ...(o.image?.lien ? { lien: o.image.lien } : {}),
-    ...(o.avec ? { avec: o.avec } : {}),
-    le: o.le,
-  });
+  // (ajouté à la main, lot M2 : un film sans image va quand même à la télé ; son mot se dit sous son titre)
+  const enMaison = (o: ObjetVu, brut?: ObjetGarde): ObjetMaison => {
+    const lien = o.image?.lien ?? brut?.media?.lien;
+    const mot = brut?.message.startsWith("maison-") ? s(brut.citation) : "";
+    const detail = mot || o.detail;
+    return {
+      id: o.id,
+      sorte: o.image?.sorte ?? brut?.media?.sorte ?? "objet",
+      emoji: o.emoji,
+      titre: o.titre,
+      ...(detail ? { detail } : {}),
+      ...(o.image ? { image: { src: o.image.src, l: o.image.l, h: o.image.h } } : {}),
+      ...(lien ? { lien } : {}),
+      ...(o.avec ? { avec: o.avec } : {}),
+      le: o.le,
+    };
+  };
   const deLeurs = await Promise.all(
     etageres.map(async ({ h: lui, f }) => {
       const miens = vieillir(f.objets, jour).objets.filter((o) => visible(o) && o.garde?.par8 === moi8 && !caches.has(o.id));
@@ -1090,10 +1099,117 @@ export async function objetsDeMaMaison(supabase: Supabase, h: string): Promise<O
   const deposes = await Promise.all(
     perso.objets.filter(visible).map(async (o) => {
       const image = await imageVue(supabase, o.image);
-      return enMaison({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), ...(image ? { image } : {}) });
+      return enMaison({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), ...(image ? { image } : {}) }, o);
     }),
   );
   return [...deposes, ...deLeurs.flat()].sort((a, b) => a.le.localeCompare(b.le)).slice(-120);
+}
+
+/** (une image venue d'ailleurs, recopiée chez nous : 900 pixels de large au plus, en WebP) */
+async function recopierImage(supabase: Supabase, h: string, id: string, brut: Buffer, sorte: SorteImage, lien?: string): Promise<ImageObjet | null> {
+  const sortie = await sharp(brut, { limitInputPixels: 40_000_000, animated: false })
+    .rotate()
+    .resize({ width: AJOUT_PHOTO.largeur, withoutEnlargement: true })
+    .webp({ quality: 78 })
+    .toBuffer({ resolveWithObject: true })
+    .catch(() => null);
+  if (!sortie) return null;
+  const chemin = `${h}/univers/objets/${id}.webp`;
+  if (!(await deposer(supabase, chemin, sortie.data, "image/webp"))) return null;
+  return { chemin, l: sortie.info.width, h: sortie.info.height, sorte, ...(lien ? { lien } : {}) };
+}
+
+/**
+ * ＋ (lot M2 de « Ma maison », `ma-maison.md` section 6) AJOUTER CHEZ MOI, sans conversation : une photo de son téléphone
+ * (`image` : une image en base64, `titre` : sa légende) ; un film, un clip, une chanson (`titre`, `lien` facultatif — son
+ * titre et son image viennent de la page si on n'a rien écrit) ; un livre, une recette, un voyage, une fierté, autre
+ * chose (`titre`). `mot` : un mot, facultatif. Sur sa propre étagère, avec les mêmes limites qu'un dépôt (douze par jour,
+ * quatre-vingts au plus) ; il va chez lui à son emplacement (`placerChezMoi`).
+ */
+export async function ajouterChezMoi(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ok?: true; id?: string }>> {
+  if (!etagereAllumee()) return { error: "L’étagère n’est pas ouverte.", statut: 404 };
+  const a = ajoutDe(p.quoi);
+  if (!a) return { error: "Qu’est-ce que tu mets chez toi ?", statut: 400 };
+  const jour = jourParis();
+  const moi8 = qui8(moi.id);
+  const perso = await lirePerso(supabase, moi.id);
+  const depots = perso.depots?.jour === jour ? perso.depots.n : 0;
+  if (depots >= DEPOT.parJour) return { error: "Tu as déjà beaucoup ajouté aujourd’hui : la suite demain 🙂", statut: 429 };
+  if (perso.objets.filter(visible).length >= DEPOT.perso) return { error: "Ta maison est pleine : enlèves-en quelque chose d’abord.", statut: 409 };
+  const couper = (x: unknown, max: number) => {
+    const c = [...s(x).replace(/\s+/g, " ")];
+    return c.length > max ? `${c.slice(0, max - 1).join("").trimEnd()}…` : c.join("");
+  };
+  let titre = couper(p.titre, AJOUT_TITRE_MAX);
+  const mot = couper(p.mot, AJOUT_MOT_MAX);
+  // (rien de grossier, rien d'alcoolisé : `motPasse` dit vrai quand les mots passent)
+  const ecrits = [titre, mot].filter(Boolean).join(" ");
+  if (ecrits && !motPasse(ecrits)) return { error: "Ces mots ne passent pas.", statut: 400 };
+  const id = nouvelId();
+  let image: ImageObjet | undefined;
+  let media: ObjetGarde["media"];
+  if (a.sorte === "photo") {
+    const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(s(p.image));
+    const brut = m ? Buffer.from(m[2], "base64") : null;
+    if (!brut || !brut.length || brut.length > AJOUT_PHOTO.octets) return { error: "Choisis d’abord une photo.", statut: 400 };
+    image = (await recopierImage(supabase, moi.id, id, brut, "photo")) ?? undefined;
+    if (!image) return { error: "Cette photo ne s’ouvre pas : essaie une autre.", statut: 400 };
+    titre = titre || "Une photo";
+  } else if (a.sorte === "musique" || a.sorte === "video") {
+    const u = s(p.lien) ? urlLisible(s(p.lien).slice(0, 600)) : null;
+    if (s(p.lien) && !u) return { error: "Ce lien ne s’ouvre pas : une adresse qui commence par https://", statut: 400 };
+    const lien = u?.toString() ?? "";
+    // (un lien : le titre de la page si on n'en a pas écrit, et son image — l'affiche, la pochette)
+    if (lien) {
+      const page = await lireLeWeb(lien, { max: APERCU.page, types: /^(text\/html|application\/xhtml\+xml)/, couper: true }).catch(() => null);
+      const ap = page ? apercuDuHtml(page.corps.toString("utf8"), page.url) : null;
+      if (!titre && ap?.titre) titre = couper(ap.titre, AJOUT_TITRE_MAX);
+      if (ap?.image) {
+        const img = await lireLeWeb(ap.image, { max: APERCU.image, types: /^image\/(png|jpe?g|webp|gif|avif)/, couper: false }).catch(() => null);
+        if (img) image = (await recopierImage(supabase, moi.id, id, img.corps, a.sorte, lien)) ?? undefined;
+      }
+    }
+    if (!titre) return { error: "Donne-lui un nom.", statut: 400 };
+    if (!image) media = { sorte: a.sorte, ...(lien ? { lien } : {}) };
+  } else if (!titre) return { error: "Donne-lui un nom.", statut: 400 };
+  const o: ObjetGarde = {
+    id,
+    genre: "gout",
+    nuance: "aime",
+    emoji: a.emoji,
+    titre,
+    concerne: moi8,
+    citation: mot,
+    de8: moi8,
+    message: `maison-${id}`,
+    le: new Date().toISOString(),
+    etat: "actif",
+    depose: true,
+    ...(image ? { image } : {}),
+    ...(media ? { media } : {}),
+  };
+  if (!(await ecrirePerso(supabase, moi.id, { ...perso, objets: [...perso.objets, o].slice(-200), depots: { jour, n: depots + 1 } }))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  await noterStat(supabase, "deposes");
+  return { ok: true, id };
+}
+
+/**
+ * 🗑️ (lot M2) L'ENLEVER DE CHEZ MOI : ce que j'ai ajouté ou rangé moi-même disparaît (comme « Retirer » sur mon étagère,
+ * sa copie d'image avec lui) ; ce que j'ai gardé dans une conversation reste sur notre étagère partagée, mais plus chez
+ * moi (`caches`).
+ */
+export async function enleverDeChezMoi(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ ok?: true }>> {
+  if (!etagereAllumee()) return { error: "L’étagère n’est pas ouverte.", statut: 404 };
+  const cle = s(id);
+  if (!cle) return { error: "Quoi donc ?", statut: 400 };
+  const perso = await lirePerso(supabase, moi.id);
+  if (perso.objets.some((o) => o.id === cle && visible(o))) return agirSurMonEtagere(supabase, moi, { action: "retirer", id: cle, mien: true });
+  const moi8 = qui8(moi.id);
+  const etageres = await sesEtageres(supabase, moi.id);
+  if (!etageres.some(({ f }) => f.objets.some((o) => o.id === cle && o.garde?.par8 === moi8))) return { error: "Ce n’est plus chez toi.", statut: 404 };
+  return (await ecrirePerso(supabase, moi.id, { ...perso, caches: [...new Set([...perso.caches, cle])].slice(-300), montres: perso.montres.filter((x) => x !== cle) }))
+    ? { ok: true }
+    : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
 }
 
 /**

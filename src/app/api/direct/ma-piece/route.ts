@@ -6,6 +6,8 @@
 // GET ?catalogue=1          → { catalogue: { pieces, piece } } : les neuf, dans l'ordre de son âge, et leurs vignettes
 // POST { action: "choisir", piece } → { maison } : sa pièce (une pièce prête), ou en changer
 // POST { action: "vu" }     → { ok } : ✨ (lot M2) il est venu chez lui — ce qu'il a gardé jusqu'ici ne s'annonce plus
+// POST { action: "ajouter", quoi, titre?, lien?, mot?, image? } → { maison, id } : ＋ (lot M2) « Ajouter chez moi »
+// POST { action: "enlever", id } → { maison } : 🗑️ (lot M2) l'enlever de chez lui
 // (GET : `maison.contenu`, ce qu'il a gardé à ses emplacements — les cadres, la platine, la télé, l'étagère ; `maison.vuLe`)
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,6 +15,7 @@ import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
 import { catalogueDeLaMaison, choisirSaPiece, maMaison, maMaisonVue } from "@/lib/direct/ma-maison-serveur";
+import { ajouterChezMoi, enleverDeChezMoi } from "@/lib/direct/etagere-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +43,11 @@ export async function POST(request: Request) {
   if (p?.action === "vu") {
     await maMaisonVue(supabase, moi.id);
     return NextResponse.json({ ok: true }, { headers: sansCache });
+  }
+  if (p?.action === "ajouter" || p?.action === "enlever") {
+    const r = p.action === "ajouter" ? await ajouterChezMoi(supabase, moi, p) : await enleverDeChezMoi(supabase, moi, p.id);
+    if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, ...("id" in r && r.id ? { id: r.id } : {}), maison: await maMaison(supabase, moi.id) }, { headers: sansCache });
   }
   if (p?.action !== "choisir") return NextResponse.json({ error: "Action inconnue." }, { status: 400, headers: sansCache });
   const r = await choisirSaPiece(supabase, moi.id, p.piece);
