@@ -26,6 +26,11 @@ import {
   VISIBILITES_MAISON,
   arriveeChezMoi,
   ditDeLObjet,
+  objetsPlaces,
+  phraseAbsence,
+  phraseNouveautes,
+  PHRASES_CADEAU,
+  type CadeauMaison,
   type CatalogueMaison,
   type ContenuMaison,
   type EmplacementMaison,
@@ -35,7 +40,7 @@ import {
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
 import { createPortal } from "react-dom";
-import { AjouterChezMoi, EnleverDeChezMoi, QuiPeutEntrer } from "./ajouter-chez-moi";
+import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, QuiPeutEntrer } from "./ajouter-chez-moi";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 
 const ROUTE = "/api/direct/ma-piece";
@@ -178,7 +183,16 @@ function Piece({
   onReglages: () => void;
   onMaison: (m: MaMaisonVue) => void;
   /** 🚪 (lot M4) en visite chez quelqu'un : son prénom ; frapper à sa porte (rien d'autre ne s'y fait) */
-  visite?: { prenom: string; frappe: boolean; onFrapper: () => Promise<string | null> };
+  visite?: {
+    prenom: string;
+    frappe: boolean;
+    onFrapper: () => Promise<string | null>;
+    /** 🎁✨ (lot M5) un proche peut laisser une surprise ; les siennes qui attendent ; ce qui est nouveau aujourd'hui */
+    peutLaisser?: boolean;
+    mesCadeaux?: number;
+    nouveaux?: string[];
+    cle?: string;
+  };
 }) {
   const { scene, figurine } = maison;
   const pano = scene.panorama;
@@ -201,6 +215,11 @@ function Piece({
   // ＋🗑️ (lot M2, deuxième partie) ajouter chez moi ; l'objet à enlever (un appui long) ; ce qui vient d'être fait
   const [ajout, setAjout] = useState(false);
   const [qui, setQui] = useState(false);
+  // 🎁 (lot M5) le cadeau touché sur la table (et ouvert) ; la surprise à laisser, en visite ; les miennes qui attendent
+  const [cadeau, setCadeau] = useState<CadeauMaison | null>(null);
+  const [ouvert, setOuvert] = useState(false);
+  const [surprise, setSurprise] = useState(false);
+  const [mesCadeaux, setMesCadeaux] = useState(visite?.mesCadeaux ?? 0);
   const [frappe, setFrappe] = useState(Boolean(visite?.frappe));
   const [aEnlever, setAEnlever] = useState<ObjetMaison | null>(null);
   const [fait, setFait] = useState("");
@@ -240,15 +259,26 @@ function Piece({
   const pret = hauteur > 0;
   const enVisiteChez = Boolean(visite);
   useEffect(() => {
-    // (en visite : ni l'arrivée, ni la visite retenue — c'est sa maison à lui)
-    if (!pret || enVisiteChez) return;
-    // (la réponse est lue : sans quoi la requête resterait ouverte)
-    const dire = () =>
+    if (!pret) return;
+    // (la réponse est lue : sans quoi la requête resterait ouverte ; en visite, rien n'est retenu — c'est chez lui)
+    const dire = () => {
+      if (enVisiteChez) return;
       void fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "vu" }) })
         .then((r) => r.text())
         .catch(() => undefined);
-    const a = maison.contenu ? arriveeChezMoi(maison.contenu, maison.vuLe ?? 0) : null;
-    if (!a) {
+    };
+    // (chez moi : 🚪 qui a frappé pendant mon absence (lot M5), puis ✨ ce que j'ai gardé ; en visite chez un proche :
+    // ✨ ce qu'il a mis chez lui aujourd'hui)
+    const absence = visite ? null : phraseAbsence(maison.absence ?? []);
+    const neufs = visite?.nouveaux?.length ? objetsPlaces(maison.contenu ?? { cadres: [], platine: null, tele: null, etagere: [], total: 0 }).filter((o) => visite.nouveaux!.includes(o.id)) : [];
+    const a = visite
+      ? neufs.length
+        ? { phrase: phraseNouveautes(visite.prenom, neufs) ?? "", ids: neufs.slice(0, 4).map((o) => o.id) }
+        : null
+      : maison.contenu
+        ? arriveeChezMoi(maison.contenu, maison.vuLe ?? 0)
+        : null;
+    if (!a && !absence) {
       dire();
       return;
     }
@@ -279,19 +309,28 @@ function Piece({
       dire();
     };
     interrompre.current = finir;
-    void Promise.resolve().then(() => !fini && setArrivee(a.phrase));
-    let t = 900;
-    for (const id of a.ids) {
-      minuteries.push(window.setTimeout(() => viser(id), t));
-      t += 1900;
+    let t = 0;
+    if (absence) {
+      void Promise.resolve().then(() => !fini && setArrivee(absence));
+      t = 2800;
     }
-    minuteries.push(
-      window.setTimeout(() => {
-        setVise(null);
-        if (d) aller(Math.max(0, scene.centre.x * d.clientHeight * ratio - d.clientWidth / 2));
-      }, t),
-    );
-    minuteries.push(window.setTimeout(finir, t + 1100));
+    if (a) {
+      if (absence) minuteries.push(window.setTimeout(() => setArrivee(a.phrase), t));
+      else void Promise.resolve().then(() => !fini && setArrivee(a.phrase));
+      t += 900;
+      for (const id of a.ids) {
+        minuteries.push(window.setTimeout(() => viser(id), t));
+        t += 1900;
+      }
+      minuteries.push(
+        window.setTimeout(() => {
+          setVise(null);
+          if (d) aller(Math.max(0, scene.centre.x * d.clientHeight * ratio - d.clientWidth / 2));
+        }, t),
+      );
+      t += 1100;
+    }
+    minuteries.push(window.setTimeout(finir, t));
     return () => {
       // (sans retenir la visite : l'arrivée reprendra — un nouveau rendu, le mode strict)
       fini = true;
@@ -372,6 +411,31 @@ function Piece({
               }}
             />
           )}
+          {/* 🎁 (lot M5) sur la table basse : les cadeaux des proches — emballés tant qu'ils ne sont pas ouverts */}
+          {maison.table && maison.table.length > 0 && scene.emplacements?.table && (
+            <div className="mmc-table" style={place(scene.emplacements.table)}>
+              {maison.table.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  className={`mmc-cadeau${g.attente ? " emballe" : ""}`}
+                  data-cadeau={g.id}
+                  data-attente={g.attente ? "1" : undefined}
+                  aria-label={g.attente ? PHRASES_CADEAU.attente(g.de) : `${g.emoji} ${g.nom}`}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    setIndice(false);
+                    setBulle(null);
+                    setObjet(null);
+                    setOuvert(false);
+                    setCadeau(g);
+                  }}
+                >
+                  {g.attente ? "🎁" : g.emoji}
+                </button>
+              ))}
+            </div>
+          )}
           {/* 🪑 sa figurine, au centre : son ombre au sol, puis elle, dans son fauteuil */}
           <span className="mmc-ombre" style={{ left: `${c.x * 100}%`, top: `${c.y * 100}%`, width: `${c.hauteur * 0.62 * (100 / ratio)}%` }} aria-hidden="true" />
           {figurine && (
@@ -391,6 +455,12 @@ function Piece({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={figurine.src} srcSet={figurine.srcset} sizes={hauteur ? `${Math.round(hauteur * c.hauteur * (figurine.largeur / Math.max(1, figurine.hauteur)))}px` : "360px"} alt="" draggable={false} />
             </button>
+          )}
+          {/* 🙂 (lot M5) son humeur du jour, au-dessus de sa figurine */}
+          {maison.humeur && (
+            <span className="mmc-humeur" data-humeur style={{ left: `${c.x * 100}%`, bottom: `${(1 - c.y + c.hauteur) * 100}%` }}>
+              {maison.humeur.emoji} {maison.humeur.nom}
+            </span>
           )}
         </div>
       </div>
@@ -496,25 +566,119 @@ function Piece({
           </button>
         </div>
       )}
-      {visite && !frappe && !objet && !bulle && (
-        <button
-          type="button"
-          className="mmc-frapper"
-          data-geste="frapper"
-          onClick={async () => {
-            const e = await visite.onFrapper();
-            if (e) {
-              setFait(e);
-              return;
-            }
-            setFrappe(true);
-            setFait(PHRASES_VISITE.frappe(visite.prenom));
-            window.setTimeout(() => setFait(""), 2600);
-          }}
-        >
-          {PHRASES_VISITE.frapper}
-        </button>
+      {cadeau && (
+        <div className="mmc-bulle" role="status" data-bulle="cadeau" data-cadeau-bulle={cadeau.id}>
+          {cadeau.attente && !visite && !ouvert ? (
+            <>
+              <b>{PHRASES_CADEAU.attente(cadeau.de)}</b>
+              <span className="mmc-actions">
+                <a
+                  className="mmc-action"
+                  href="#"
+                  role="button"
+                  data-ouvrir-cadeau
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    setOuvert(true);
+                  }}
+                >
+                  {PHRASES_CADEAU.ouvrir}
+                </a>
+              </span>
+            </>
+          ) : (
+            <>
+              <b>
+                {cadeau.emoji} {cadeau.nom}
+              </b>
+              <span>
+                {PHRASES_CADEAU.de(cadeau.de)}
+                {cadeau.mot ? ` · « ${cadeau.mot} »` : ""}
+              </span>
+              {cadeau.attente && !visite && (
+                <span className="mmc-actions">
+                  {[true, false].map((oui) => (
+                    <a
+                      key={String(oui)}
+                      className="mmc-action"
+                      href="#"
+                      role="button"
+                      data-decider={oui ? "oui" : "non"}
+                      onClick={async (ev) => {
+                        ev.preventDefault();
+                        const g = cadeau;
+                        setCadeau(null);
+                        await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "decider", id: g.id, oui }) })
+                          .then((r) => r.text())
+                          .catch(() => undefined);
+                        const r = await fetch(ROUTE, { cache: "no-store" })
+                          .then((x) => x.json())
+                          .catch(() => null);
+                        if (r?.maison) onMaison(r.maison as MaMaisonVue);
+                      }}
+                    >
+                      {oui ? PHRASES_CADEAU.garder : PHRASES_CADEAU.nonMerci}
+                    </a>
+                  ))}
+                </span>
+              )}
+            </>
+          )}
+          <button type="button" onClick={() => setCadeau(null)} aria-label="Fermer">
+            ✕
+          </button>
+        </div>
       )}
+      {visite && (visite.peutLaisser || !frappe) && !objet && !bulle && !cadeau && (
+        <div className="mmc-actions-visite">
+          {!frappe && (
+            <button
+              type="button"
+              className="mmc-frapper"
+              data-geste="frapper"
+              onClick={async () => {
+                const e = await visite.onFrapper();
+                if (e) {
+                  setFait(e);
+                  return;
+                }
+                setFrappe(true);
+                setFait(PHRASES_VISITE.frappe(visite.prenom));
+                window.setTimeout(() => setFait(""), 2600);
+              }}
+            >
+              {PHRASES_VISITE.frapper}
+            </button>
+          )}
+          {visite.peutLaisser && (
+            <button type="button" className="mmc-frapper secondaire" data-geste="surprise" onClick={() => setSurprise(true)}>
+              {PHRASES_CADEAU.laisser}
+            </button>
+          )}
+          {mesCadeaux > 0 && (
+            <small className="mmc-mes-cadeaux" data-mes-cadeaux>
+              {PHRASES_CADEAU.dejaLa(mesCadeaux)}
+            </small>
+          )}
+        </div>
+      )}
+      {surprise &&
+        visite?.cle &&
+        createPortal(
+          <LaisserUneSurprise
+            cle={visite.cle}
+            prenom={visite.prenom}
+            onFermer={() => setSurprise(false)}
+            onPosee={() => {
+              setSurprise(false);
+              setFrappe(true);
+              setMesCadeaux((n) => n + 1);
+              setFait(PHRASES_CADEAU.posee(visite.prenom));
+              window.setTimeout(() => setFait(""), 2600);
+            }}
+          />,
+          document.body,
+        )}
       {qui &&
         createPortal(
           <QuiPeutEntrer
@@ -749,7 +913,11 @@ export function VisiteDeLaMaison({ cle }: { cle: string }) {
           maison={{ ...v.maison, scene: v.maison.scene }}
           onReglages={() => undefined}
           onMaison={() => undefined}
-          visite={v.chezSoi ? { prenom: v.prenom, frappe: true, onFrapper: frapper } : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper }}
+          visite={
+            v.chezSoi
+              ? { prenom: v.prenom, frappe: true, onFrapper: frapper, cle }
+              : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper, cle, peutLaisser: v.peutLaisser, mesCadeaux: v.mesCadeaux, nouveaux: v.nouveaux }
+          }
         />
       ) : (
         <div className="mmc-ferme">
@@ -799,7 +967,15 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-ferme{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;font-size:16px;line-height:1.5}
 .mmc-ferme a{color:#f2be6a;font-weight:800;text-decoration:none}
 .mmc-chez-soi{position:fixed;left:50%;top:calc(62px + env(safe-area-inset-top));transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(20,10,14,.72);font-size:13.5px;white-space:nowrap}
-.mmc-frapper{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);white-space:nowrap;padding:13px 22px;border:0;border-radius:999px;background:#ff2f8f;color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(255,47,143,.8)}
+.mmc-actions-visite{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;width:max-content;max-width:calc(100% - 32px)}
+.mmc-frapper.secondaire{background:rgba(20,10,14,.78);box-shadow:none;border:1px solid rgba(255,244,230,.35);font-size:15px;padding:11px 20px}
+.mmc-mes-cadeaux{padding:5px 12px;border-radius:999px;background:rgba(20,10,14,.7);font-size:13px}
+.mmc-table{position:absolute;display:flex;align-items:flex-end;justify-content:center;gap:6%;pointer-events:none}
+.mmc-cadeau{pointer-events:auto;padding:0;border:0;background:none;cursor:pointer;font-size:clamp(14px,5vh,40px);line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45));-webkit-tap-highlight-color:transparent}
+.mmc-cadeau.emballe{animation:mmc-paquet 2.6s ease-in-out infinite}
+@keyframes mmc-paquet{0%,80%,100%{transform:none}86%{transform:rotate(-8deg)}92%{transform:rotate(7deg)}}
+.mmc-humeur{position:absolute;transform:translate(-50%,-6px);padding:5px 11px;border-radius:999px;background:rgba(255,246,234,.94);color:#2a1424;font-weight:800;font-size:clamp(11px,1.7vh,14px);white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.35);pointer-events:none}
+.mmc-frapper{white-space:nowrap;padding:13px 22px;border:0;border-radius:999px;background:#ff2f8f;color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(255,47,143,.8)}
 .mmc-ajouter{font-weight:900;color:#FFF4E6}
 .mmc-fait{position:absolute;left:50%;top:62px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(69,212,131,.92);color:#10261a;font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .3s ease-out}
 .mmc.plein .mmc-fait{top:calc(62px + env(safe-area-inset-top))}
@@ -871,5 +1047,5 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-oui:disabled{opacity:.7;cursor:default}
 .mmc-non{background:rgba(255,255,255,.1);color:#FFF4E6}
 .mmc-erreur{color:#FFB4A9 !important}
-@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee{animation:none!important}.mmc-objet{transition:none}}
+@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe{animation:none!important}.mmc-objet{transition:none}}
 `;

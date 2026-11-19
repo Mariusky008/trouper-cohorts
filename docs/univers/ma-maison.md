@@ -285,7 +285,7 @@ une animation.
 | **M2 — La maison qui se remplit** ✅ (sections 15 et 16) | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
 | **M3 — L'inscription** ✅ | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers — fait (section 14), derrière l'interrupteur | messages et bienvenue | M0 |
 | **M4 — Découvrir** ✅ (section 17) | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
-| **M5 — Les visites, la suite** | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
+| **M5 — Les visites, la suite** (première partie ✅, section 18) | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
 
 Tout derrière un interrupteur (`MA_MAISON_CATALOGUE`, éteint) jusqu'à ce que le propriétaire l'ait jouée sur son
 téléphone. Chaque lot : ses essais (une route contre le faux Supabase, un essai navigateur au format téléphone), sa
@@ -484,3 +484,31 @@ pas d'univers fabriqué, ou quand on la demande (`?piece=1`, l'essai).
 Zoé : le livre seul, cadres vides, « Chez Léa », ni ＋ ni ⚙️, « Mis par Léa », la figurine de Léa, frapper et la visite
 notée ; Sam : les trois ; « 🔒 Moi seul » : fermée même pour Sam, sortie de « Découvrir », frapper refusé). Toujours
 verts : `ma-maison-remplie.mjs`, `ma-maison-catalogue.mjs`, `visite-univers.mjs`, `essai-visites-route.mjs`.
+
+---
+
+## 18. Le lot M5, première partie : la maison qui vit (19 novembre 2026)
+
+La section 7 (« ce qui fait revenir ») — **sans aucun compteur de visites**.
+
+- **🙂 L'humeur du jour** (celle du rituel, `<habitant>/humeur.json`, le jour même) : une étiquette au-dessus de sa
+  figurine (« 😂 Fou rire ») — chez soi, et chez lui pour ses proches seulement.
+- **🚪 « Pendant ton absence »** : à l'arrivée chez soi, qui a frappé depuis sa dernière visite — « 🚪 Sam a frappé à ta
+  porte pendant ton absence » (« Sam et Zoé ont frappé… », trois prénoms au plus, jamais un nombre) —, puis « ✨ 2 choses
+  gardées avec Sam » (la caméra passe dessus).
+- **🎁 La surprise posée** : en visite chez un proche, « 🎁 Laisser une surprise » — un objet (un bouquet, une tasse de
+  café, un livre, un ballon…) et un petit mot ; elle se pose **emballée sur sa table basse** (« 🎁 Léa la trouvera en
+  rentrant » ; « Ta surprise attend qu'on l'ouvre »). Chez soi : le paquet bouge doucement ; un toucher : « 🎁 Sam t'a
+  laissé un cadeau », « Ouvrir » — « 💐 Un bouquet », « De Sam · « Pour toi » » — « ✓ Le garder sur ma table » ou
+  « Non merci ». Gardé, il reste sur la table (quatre au plus) ; ses proches l'y voient. Ce sont les souvenirs du lot 6
+  des visites (`<habitant>/monde/souvenirs.json`, `laisserSouvenir`, `deciderSouvenir`) : « Chez moi » les découvre aussi
+  (`mesVisites` connaît désormais les maisons du catalogue).
+- **✨ Les nouveautés du jour** : en visite chez un proche, ce qu'il a mis chez lui aujourd'hui — « ✨ Nouveau chez Léa
+  aujourd'hui : Le Petit Prince » — et la caméra va le voir.
+- Le serveur : `vieDeLaMaison` (`ma-maison-serveur.ts`) ; `maMaison` rend `humeur`, `absence`, `table` ; `maisonVisitee`
+  rend aussi `peutLaisser`, `mesCadeaux`, `nouveaux`.
+
+**L'essai** : `scripts/navigateur/ma-maison-vie.mjs` (22 contrôles : chez Léa, Sam voit son humeur, « Nouveau chez Léa
+aujourd'hui » et la caméra, laisse un bouquet et un mot ; Léa rentre — « Sam a frappé à ta porte pendant ton absence »,
+sans nombre ; le paquet emballé ; « Ouvrir », « De Sam · « Pour toi » », « Le garder » ; son humeur chez elle ; Sam
+revient et voit son bouquet sur la table).

@@ -18,7 +18,11 @@
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFichePerso } from "./fiches-serveur";
-import { depotDans, ecrireJson, lireJson } from "./ma-figurine-serveur";
+import { depotDans, ecrireJson, lireJson, lireLigne } from "./ma-figurine-serveur";
+import { jourParis } from "@/lib/jour-paris";
+import { humeurDe } from "./rituel";
+import { objetDe } from "./visites";
+import type { Sentiment } from "./ma-figurine";
 import { objetsDeMaMaison } from "./etagere-serveur";
 import { poserProfil } from "./talkie-serveur";
 import { VISIBILITES, type Visibilite } from "./monde";
@@ -29,6 +33,8 @@ import {
   LARGEURS_VIGNETTE,
   piecesDansLOrdre,
   placerChezMoi,
+  TABLE_MAX,
+  type CadeauMaison,
   type CatalogueMaison,
   type MaMaisonVue,
   type ScenePiece,
@@ -141,6 +147,42 @@ export async function vignetteDeLaPiece(supabase: Supabase, p: PieceDuo): Promis
   return (await imageSalon(supabase, `${dossierLarge(p)}/${fichierLarge("panorama")}`, LARGEURS_VIGNETTE).catch(() => null))?.src ?? "";
 }
 
+/**
+ * 🙂🚪🎁 (lot M5) CE QUI VIT DANS SA MAISON : son humeur du jour (`<habitant>/humeur.json`, celle du rituel) ; qui a
+ * frappé depuis `depuis` (ms ; des prénoms, jamais un nombre) ; les cadeaux de ses proches sur la table basse (les
+ * souvenirs du lot 6 : `<habitant>/monde/souvenirs.json`) — à ouvrir d'abord, puis gardés. `visiteur` : seulement ce
+ * qui est posé (pas ce qui attend), et pas de « pendant ton absence ».
+ */
+export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table">> {
+  const [hum, visites, souvenirs] = await Promise.all([
+    lireJson<{ jour?: string; visage?: string }>(supabase, `${h}/humeur.json`).catch(() => ({}) as { jour?: string; visage?: string }),
+    o.visiteur ? Promise.resolve({} as { liste?: unknown }) : lireJson<{ liste?: unknown }>(supabase, `${h}/monde/visites.json`).catch(() => ({}) as { liste?: unknown }),
+    lireJson<{ liste?: unknown }>(supabase, `${h}/monde/souvenirs.json`).catch(() => ({}) as { liste?: unknown }),
+  ]);
+  const visage = hum.jour === jourParis() ? humeurDe(s(hum.visage) as Sentiment) : null;
+  type Brut = { id?: string; de?: string; objet?: string; mot?: string; le?: string; accepte_le?: string };
+  const l = (Array.isArray(souvenirs.liste) ? (souvenirs.liste as Brut[]) : []).filter((x) => s(x?.id) && s(x?.de) && objetDe(x.objet));
+  const attente = o.visiteur ? [] : l.filter((x) => !x.accepte_le).sort((a, b) => s(a.le).localeCompare(s(b.le)));
+  const poses = l.filter((x) => x.accepte_le).sort((a, b) => s(b.accepte_le).localeCompare(s(a.accepte_le)));
+  const surTable = [...attente, ...poses].slice(0, TABLE_MAX);
+  const passes = (Array.isArray(visites.liste) ? (visites.liste as { de?: string; le?: string }[]) : []).filter((v) => s(v?.de) && s(v.de) !== h && (Date.parse(s(v.le)) || 0) > (o.depuis ?? Date.now()));
+  const ids = [...new Set([...surTable.map((x) => s(x.de)), ...passes.map((v) => s(v.de))])];
+  const prenoms = new Map(await Promise.all(ids.map(async (id) => [id, s((await lireLigne(supabase, id)).ligne?.prenom) || "Quelqu’un"] as const)));
+  const absence = [...new Set(passes.reverse().map((v) => prenoms.get(s(v.de)) ?? "Quelqu’un"))].slice(0, 3);
+  return {
+    ...(visage ? { humeur: { emoji: visage.emoji, nom: visage.court } } : {}),
+    ...(absence.length ? { absence } : {}),
+    ...(surTable.length
+      ? {
+          table: surTable.map((x): CadeauMaison => {
+            const ob = objetDe(x.objet)!;
+            return { id: s(x.id), emoji: ob.emoji, nom: ob.nom, ...(x.mot ? { mot: s(x.mot) } : {}), de: prenoms.get(s(x.de)) ?? "Quelqu’un", le: s(x.accepte_le) || s(x.le), ...(x.accepte_le ? {} : { attente: true as const }) };
+          }),
+        }
+      : {}),
+  };
+}
+
 /** ✨ (lot M2) sa dernière visite chez lui (`<habitant>/ma-piece/vu.json`) : ce qui a été gardé depuis s'annonce à l'arrivée. */
 const cheminVu = (h: string) => `${dossierMaison(h)}/vu.json`;
 
@@ -160,7 +202,10 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
     poserProfil(supabase, h).catch(() => ""),
   ]);
   if (!scene) return { piece, scene, figurine };
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe: Number(vu.le) || 0, visibilite, adulte, ...(cle ? { cle } : {}) };
+  const vuLe = Number(vu.le) || 0;
+  // (🙂🚪🎁 lot M5 : son humeur, qui a frappé depuis sa dernière visite, les cadeaux sur la table)
+  const vie = await vieDeLaMaison(supabase, h, { depuis: vuLe || Date.now() }).catch(() => ({}));
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */

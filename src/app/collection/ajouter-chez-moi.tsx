@@ -11,6 +11,8 @@
  *   conversation reste sur l'étagère partagée.
  * - `QuiPeutEntrer` (🚪, le lot M4) : ses proches (d'office), tout le monde (18 ans ou plus), lui seul ; et sa maison vue
  *   comme ses visiteurs la voient.
+ * - `LaisserUneSurprise` (🎁, le lot M5) : en visite chez un proche, un objet (un bouquet, une tasse…) et un petit mot,
+ *   posés emballés sur sa table basse (les souvenirs du lot 6 des visites).
  */
 import { useRef, useState } from "react";
 import {
@@ -20,6 +22,7 @@ import {
   AJOUT_TITRE_MAX,
   OU_VA,
   PHRASES_AJOUT,
+  PHRASES_CADEAU,
   PHRASES_VISITE,
   VISIBILITES_MAISON,
   type MaMaisonVue,
@@ -27,6 +30,7 @@ import {
   type QuoiAjout,
 } from "@/lib/direct/ma-maison";
 import type { Visibilite } from "@/lib/direct/monde";
+import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR } from "@/lib/direct/visites";
 
 const ROUTE = "/api/direct/ma-piece";
 type Reponse = { ok?: boolean; id?: string; maison?: MaMaisonVue; error?: string };
@@ -281,6 +285,61 @@ export function QuiPeutEntrer({ maison, onFermer, onChoisi }: { maison: MaMaison
   );
 }
 
+export function LaisserUneSurprise({ cle, prenom, onFermer, onPosee }: { cle: string; prenom: string; onFermer: () => void; onPosee: () => void }) {
+  const [objet, setObjet] = useState<string>("");
+  const [mot, setMot] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
+  async function poser() {
+    if (!objet || enCours) return;
+    setEnCours(true);
+    setErreur("");
+    try {
+      const r = await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "souvenir", cle, objet, ...(mot.trim() ? { mot } : {}) }) });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      if (!r.ok) throw new Error(j.error || "Ça n’a pas marché : réessaie.");
+      onPosee();
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Ça n’a pas marché : réessaie.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+  return (
+    <div className="acm" role="dialog" aria-modal="true" aria-label={`${PHRASES_CADEAU.laisserTitre} ${prenom}`} data-surprise onClick={onFermer}>
+      <div className="acm-feuille" onClick={(e) => e.stopPropagation()}>
+        <div className="acm-tete">
+          <b>
+            🎁 {PHRASES_CADEAU.laisserTitre} {prenom}
+          </b>
+          <button type="button" className="acm-fermer" aria-label="Fermer" onClick={onFermer}>
+            ✕
+          </button>
+        </div>
+        <p className="acm-doux">{PHRASES_CADEAU.laisserDit}</p>
+        <div className="acm-choix">
+          {OBJETS_SOUVENIR.map((o) => (
+            <button key={o.cle} type="button" data-objet-surprise={o.cle} aria-pressed={objet === o.cle} className={objet === o.cle ? "choisi" : ""} onClick={() => setObjet(o.cle)}>
+              <span aria-hidden="true">{o.emoji}</span>
+              {o.nom}
+            </button>
+          ))}
+        </div>
+        <input className="acm-champ" data-champ="mot-surprise" maxLength={MOT_SOUVENIR_MAX} placeholder={PHRASES_CADEAU.motSurprise} value={mot} onChange={(e) => setMot(e.target.value)} />
+        {erreur && (
+          <p className="acm-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+        <button type="button" className="acm-principal" data-poser disabled={!objet || enCours} onClick={() => void poser()}>
+          {enCours ? "…" : PHRASES_CADEAU.poser}
+        </button>
+      </div>
+      <style>{STYLES_AJOUTER}</style>
+    </div>
+  );
+}
+
 const STYLES_AJOUTER = `
 .acm{position:fixed;inset:0;z-index:35;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,5,8,.55);animation:acm-voile .2s ease-out}
 .acm-feuille{width:100%;max-width:520px;max-height:88svh;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding:16px 16px calc(18px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;background:#2c1129;color:#FFF4E6;font-family:-apple-system,"SF Pro Rounded",system-ui,"Segoe UI",Roboto,sans-serif;animation:acm-monte .25s ease-out}
@@ -293,6 +352,7 @@ const STYLES_AJOUTER = `
 .acm-choix{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .acm-choix button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:1px solid #5a3352;border-radius:14px;background:rgba(255,255,255,.04);color:#FFF4E6;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
 .acm-choix button span{font-size:24px;line-height:1}
+.acm-choix button.choisi{border-color:#f2be6a;background:rgba(242,190,106,.14)}
 .acm-form{display:flex;flex-direction:column;gap:10px}
 .acm-quoi{font-size:16px}
 .acm-quoi small{font-weight:600;color:#c6a6bd}

@@ -63,7 +63,46 @@ export type MaMaisonVue = {
   visibilite?: Visibilite;
   adulte?: boolean;
   cle?: string;
+  /** 🙂 (lot M5) mon humeur du jour, que ma figurine montre (mes proches la voient aussi) */
+  humeur?: { emoji: string; nom: string };
+  /** 🚪 (lot M5) qui a frappé pendant mon absence (des prénoms, jamais un nombre de visites) */
+  absence?: string[];
+  /** 🎁 (lot M5) sur la table basse : les cadeaux de mes proches — à ouvrir (`attente`), ou gardés */
+  table?: CadeauMaison[];
 };
+
+/** 🎁 (lot M5) Un cadeau laissé par un proche (les souvenirs du lot 6 des visites), sur la table basse. */
+export type CadeauMaison = { id: string; emoji: string; nom: string; mot?: string; de: string; le: string; attente?: true };
+/** (la table basse montre quatre cadeaux au plus : ceux à ouvrir d'abord) */
+export const TABLE_MAX = 4;
+
+/** 🚪 (lot M5) « Pendant ton absence » : qui a frappé (sans compter les visites). `null` : personne. */
+export function phraseAbsence(prenoms: readonly string[]): string | null {
+  const l = [...new Set(prenoms)].slice(0, 3);
+  if (!l.length) return null;
+  const qui = l.length === 1 ? l[0] : `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}`;
+  return `🚪 ${qui} ${l.length === 1 ? "a" : "ont"} frappé à ta porte pendant ton absence`;
+}
+/** ✨ (lot M5) ce qui est nouveau chez lui aujourd'hui, dit au visiteur. `null` : rien. */
+export function phraseNouveautes(prenom: string, objets: readonly Pick<ObjetMaison, "titre">[]): string | null {
+  const l = objets.slice(0, 3).map((o) => o.titre);
+  if (!l.length) return null;
+  return `✨ Nouveau chez ${prenom} aujourd’hui : ${l.length === 1 ? l[0] : `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}`}`;
+}
+export const PHRASES_CADEAU = {
+  attente: (de: string) => `🎁 ${de} t’a laissé un cadeau`,
+  ouvrir: "Ouvrir",
+  garder: "✓ Le garder sur ma table",
+  nonMerci: "Non merci",
+  de: (de: string) => `De ${de}`,
+  laisser: "🎁 Laisser une surprise",
+  laisserTitre: "Une surprise pour",
+  laisserDit: "Elle attendra sur sa table basse, emballée, jusqu’à ce qu’on l’ouvre.",
+  motSurprise: "Un petit mot, si tu veux",
+  poser: "La poser sur sa table",
+  posee: (prenom: string) => `🎁 ${prenom} la trouvera en rentrant`,
+  dejaLa: (n: number) => (n > 1 ? `🎁 Tes ${n} surprises attendent qu’on les ouvre` : "🎁 Ta surprise attend qu’on l’ouvre"),
+} as const;
 
 /**
  * 🚪 (lot M4, `ma-maison.md` section 8) LA MAISON DE QUELQU'UN, EN VISITE : sa pièce, sa figurine au centre, ce qu'il a
@@ -72,7 +111,20 @@ export type MaMaisonVue = {
  */
 export type MaisonVisitee =
   | { etat: "ferme" | "reserve" | "absent"; prenom?: string }
-  | { etat: "ouvert"; prenom: string; cle: string; maison: MaMaisonVue; proche: boolean; chezSoi: boolean; frappe: boolean };
+  | {
+      etat: "ouvert";
+      prenom: string;
+      cle: string;
+      maison: MaMaisonVue;
+      proche: boolean;
+      chezSoi: boolean;
+      frappe: boolean;
+      /** 🎁 (lot M5) un proche peut lui laisser une surprise ; les siennes qui attendent d'être ouvertes */
+      peutLaisser?: boolean;
+      mesCadeaux?: number;
+      /** ✨ (lot M5) ce qu'il a ajouté ou gardé aujourd'hui (la caméra passe dessus à l'arrivée) */
+      nouveaux?: string[];
+    };
 export const PHRASES_VISITE = {
   chez: (prenom: string) => `Chez ${prenom}`,
   frapper: "🚪 Frapper à la porte",

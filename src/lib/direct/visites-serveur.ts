@@ -26,9 +26,9 @@ import { etagereVitrine } from "./etagere-serveur";
 import { mesPieces } from "./pieces-vivantes-serveur";
 import { decorVivant } from "./univers-vivant-serveur";
 import { completerMonde, lireFicheMonde } from "./fiches-serveur";
-import { cheminVisibiliteMaison, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
+import { cheminVisibiliteMaison, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vieDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { objetsDeMaMaison } from "./etagere-serveur";
-import { MA_MAISON_CATALOGUE, placerChezMoi, type MaisonVisitee } from "./ma-maison";
+import { MA_MAISON_CATALOGUE, objetsPlaces, placerChezMoi, type MaisonVisitee } from "./ma-maison";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { VISIBILITES, type FicheMonde, type Visibilite } from "./monde";
@@ -238,8 +238,10 @@ export async function signalerUnivers(supabase: Supabase, visiteur: Habitant, cl
  * la figurine de qui les a laissés) et ceux qui sont posés, qui peut entrer.
  */
 export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisites | null> {
-  const f = await lireFicheMonde(supabase, h);
-  if (!f) return null;
+  // (🏠 lot M5 de « Ma maison » : sa pièce du catalogue a ses visites aussi — sa visibilité est la sienne)
+  const m = await maisonOuUnivers(supabase, h);
+  const f = m && !m.piece ? m.f : await lireFicheMonde(supabase, h);
+  if (!f && !m?.piece) return null;
   const [visites, souvenirs, adulte, cle, vues] = await Promise.all([
     lireVisites(supabase, h),
     lireSouvenirs(supabase, h),
@@ -265,7 +267,7 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
   const prenomDe = (id: string) => qui.get(id)?.prenom ?? "Quelqu’un";
   const vuLe = s(vues.le);
   return {
-    visibilite: f.visibilite,
+    visibilite: m?.piece ? m.visibilite : (f?.visibilite ?? "proches"),
     adulte,
     cle,
     passes: recents.map((v) => {
@@ -404,23 +406,33 @@ export async function maisonVisitee(supabase: Supabase, visiteur: Habitant | nul
   const [visibilite, hote] = await Promise.all([visibiliteDeLaMaison(supabase, h), quiEst(supabase, h)]);
   const acces = await peutEntrer(supabase, visiteur?.id ?? null, h, { visibilite });
   if (!acces.ok) return { etat: visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
-  const [scene, figurine, objets, visites] = await Promise.all([
+  const chezSoi = visiteur?.id === h;
+  const [scene, figurine, objets, visites, vie, souvenirs] = await Promise.all([
     sceneDeLaMaison(supabase, piece),
     figurineDeLaMaison(supabase, h).catch(() => null),
     objetsDeMaMaison(supabase, h).catch(() => []),
     lireVisites(supabase, h),
+    // (🙂🎁 lot M5 : son humeur et les cadeaux posés sur sa table — à ses proches seulement)
+    acces.proche ? vieDeLaMaison(supabase, h, { visiteur: true }).catch(() => ({})) : Promise.resolve({}),
+    visiteur && acces.proche && !chezSoi ? lireSouvenirs(supabase, h) : Promise.resolve([] as Souvenir[]),
   ]);
   if (!scene) return { etat: "absent" };
   const montres = acces.proche ? objets : objets.filter((o) => o.aMoi);
   const jour = jourParis();
+  const contenu = placerChezMoi(montres, scene.emplacements?.cadres.length ?? 0);
+  // (✨ lot M5 : ce qu'il a mis chez lui aujourd'hui, dans la pièce — la caméra passe dessus à l'arrivée du visiteur)
+  const auj = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" });
+  const nouveaux = chezSoi ? [] : objetsPlaces(contenu).filter((o) => auj.format(new Date(o.le)) === jour).map((o) => o.id);
   return {
     etat: "ouvert",
     prenom: hote.prenom,
     cle: s(cle),
-    maison: { piece, scene, figurine, contenu: placerChezMoi(montres, scene.emplacements?.cadres.length ?? 0) },
+    maison: { piece, scene, figurine, contenu, ...vie },
     proche: acces.proche,
-    chezSoi: visiteur?.id === h,
+    chezSoi,
     frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && v.le.startsWith(jour))),
+    ...(visiteur && acces.proche && !chezSoi ? { peutLaisser: true, mesCadeaux: souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length } : {}),
+    ...(nouveaux.length ? { nouveaux } : {}),
   };
 }
 
