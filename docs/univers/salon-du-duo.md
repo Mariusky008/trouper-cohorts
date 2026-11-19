@@ -1183,9 +1183,8 @@ La section 4.7, sur le moteur, sauf la voix, le duo rangé et la vidéo à parta
   `genre: "meme"` (`meme: { tete, danse, pret }`) ; le pouls bat ; **après la réponse**, la notification « 🎭 Léa t'a
   envoyé un mème » et ce qu'il dit. Le fil donne `meme` (`MessageFil`).
 
-**Pas encore (deuxième partie du lot S5)** : 🎙️ Ma voix (le mème dit avec sa propre voix) ; la vignette de ma figurine
-sur la carte ; après un échange de mèmes, « Je le range ? » et le rayon « Nos fous rires » de l'étagère, « ▶ Le
-revoir » ; 📤 la vidéo pour WhatsApp (le même moteur dans une toile hors écran, `MediaRecorder`).
+**La deuxième partie** (🎙️ Ma voix, « Je le range ? », 📤 la vidéo) : section 11.20. **Pas encore** : la vignette de ma
+figurine sur la carte.
 
 **Les essais** : `scripts/essai-meme-salon-route.mjs` (les portes, pas entre deux inconnus ; un mème, sa tête, sa
 danse, d'où il vient, sans son ; chez Sam, « Chez moi », la notification, le pouls ; vide, plus de 120 signes, un mot
@@ -1193,6 +1192,46 @@ interdit : refusés ; une tête inconnue devient la joie ; la réaction 🔥, un
 projecteur, la bulle de BD mot à mot, tout s'éteint, la carte, « ▶ Revoir » ; « ✍️ Le mien » : la feuille, une idée,
 le compte, sa tête, la danse ; Sam qui en joue un, en direct, 😂 ❤️ 🔥 ; Sam qui en laisse un, rejoué à l'arrivée ; 💬 ;
 ＋ « 🎭 Un mème »).
+
+### 11.20 🎙️ Ma voix, 🎬 « Je le range ? », 📤 la vidéo (lot S5, deuxième partie — 19 novembre 2026)
+
+- **🎙️ Ma voix** (la puce de l'onglet 🎭, après « ✍️ Le mien » ; et « 🎙️ Le dire avec ma voix » dans la feuille « Ton
+  mème ») : le micro du talkie (`micro.tsx`), gardé appuyé, **20 secondes au plus** ; « 🎙️ Ta voix · 0:04 », « ▶
+  Écouter », 🗑️ ; **le texte devient facultatif** (« ce que tu dis s'écrira tout seul »). Ma figurine le joue **avec ma
+  voix** : elle passe par le lecteur unique du salon, la tête suit ses niveaux, les mots se répartissent sur elle ; sans
+  texte encore, la bulle de BD montre 🎙️ et la forme de ma voix, qui se colore ; pas de musique par-dessus. Le téléphone
+  refuse le son (sans toucher, à l'arrivée) : il se joue quand même, en silence. La carte : 😍 🎙️ « … », ou « Un mème,
+  avec ta voix / sa voix » tant qu'il n'est pas écrit.
+- **Le serveur** (`meme-salon-serveur.ts`) : `{ action: "meme-salon", …, son, duree, niveaux }` — sa voix rangée comme
+  celle d'un vocal (`fils/<paire>/s/`), `meme.voix` dans la fiche ; plus de 20 secondes, pas un son : 400. **Sans texte**,
+  après la réponse, sa voix est transcrite (les quarante du jour de « comprendre ») et devient ce que dit la figurine
+  (120 signes, coupé proprement) ; un mot interdit : pas de texte ; le pouls bat, les deux relisent. La notification :
+  « 🎙️ Avec sa voix ». « Chez moi » : « 🎭 🎙️ « … » ». Effacé : sa voix avec.
+- **🎬 « Je le range ? »** : après un échange de mèmes — **ses deux derniers messages sont deux mèmes, l'un de chacun, à
+  moins de 30 minutes** (proposé pendant 2 heures) —, ma figurine demande « 🎬 Je le range dans « Nos fous rires » ? »
+  (« 🎬 Oui » / « Non » ; « Non » : plus pour ce duo, sur ce téléphone). Oui : `POST /api/direct/etagere { action:
+  "ranger-duo", avec, messages: [id, id] }` — une **claquette 🎬** dans le rayon « Nos fous rires » (une blague, pour les
+  deux ; son titre : le début du premier mème ; « votre duo de mèmes »), avec les deux mèmes à rejouer (`duo` : de qui,
+  ce qu'il dit, sa tête, sa danse) ; elle s'envole vers l'étagère de la pièce ; le pouls bat (chez l'autre, la question
+  s'en va). Rangé une fois (le premier qui dit oui) ; pas un duo (deux mèmes du même, un écrit, trop loin) : 422. **Sa
+  fiche** (📚 l'étagère) : « ▶ Le revoir » — la feuille se ferme, les deux mèmes se rejouent, l'un après l'autre, chacun
+  par sa figurine (avec sa voix, s'il est encore dans le fil).
+- **📤 La vidéo pour WhatsApp** (sur la carte de **mes** mèmes, dans ma bulle et dans 💬) : `video-meme.ts` rejoue le mème
+  dans une toile (720 × 1280) **dans le décor du salon** — la plaque de la pièce, ma figurine en calques (le corps, la
+  tête qui dodeline et parle autour du cou) —, la caméra qui s'approche, le projecteur, « Action ! », la bulle de BD,
+  les emojis de sa tête, **ma voix** (ou, sans voix, la petite musique de danse), « Coupez ! », puis une seconde « Fais
+  ton mème avec ta figurine · clikme.fr » ; enregistrée par le téléphone (`MediaRecorder`, en MP4 quand il sait). La
+  feuille « 🎬 Ton mème en vidéo » la montre naître, puis « 📲 L'envoyer sur WhatsApp » (la feuille de partage du
+  téléphone) — sans partage de fichiers (un ordinateur) : « ⬇️ Enregistrer la vidéo ». Rien ne passe par le serveur.
+
+**Les essais** : `scripts/essai-meme-salon-route.mjs` (s'y ajoutent : un mème dit avec sa voix, sans texte — sa voix,
+sa durée, ses niveaux, chez Sam, « Chez moi », la notification, puis sa transcription et le pouls ; avec un texte, il
+reste ; plus de 20 s, pas un son ; le duo rangé par Sam, vu par Léa, une fois ; deux mèmes du même, un écrit, Max :
+refusés ; effacé avec sa voix) et `scripts/navigateur/salon-memes.mjs` (s'y ajoutent : « 🎙️ Ma voix » avec un faux micro
+— la feuille, le micro qui bat, la barre, « Ta voix · 0:02 », Action sans texte, la bulle 🎙️ et sa forme qui se colore,
+la carte puis sa transcription, chez Sam, « ▶ Revoir » avec ses mots ; Sam qui en joue un avec sa voix ; « Je le
+range ? », Oui, la claquette dans « Nos fous rires », la fiche, « ▶ Le revoir » ; 📤 : la vidéo fabriquée, un vrai
+fichier vidéo, « ⬇️ Enregistrer »).
 
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 

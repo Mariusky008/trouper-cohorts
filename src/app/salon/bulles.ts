@@ -27,7 +27,7 @@ export function texteDeBulle(m: MessageFil): string {
   if (m.genre === "video") return m.texte?.trim() ? `🎬 ${m.texte.trim()}` : "🎬 Une vidéo";
   if (m.genre === "fichier") return `📎 ${m.fichier?.nom ?? "Un PDF"}`;
   // 🎭 (lot S5) un mème du salon : « 🎭 « Ce que dit sa figurine » »
-  if (m.genre === "meme") return ligneMeme(m.texte);
+  if (m.genre === "meme") return ligneMeme(m.texte, m.meme?.voix === true);
   return `🎙️ Un vocal · ${dureeDite(m.duree)}`;
 }
 
@@ -172,7 +172,7 @@ export function aRejouer(messages: readonly MessageFil[], memes: readonly MemeFi
     .map((x): ARejouer => {
       const meme = x.meme;
       // (un mème : le temps qu'il se joue ; un message : le temps de le lire, 1,4 à 3 s)
-      if (meme) return { id: x.id, texte: x.texte, ms: dureeDuMeme({ texte: meme.texte ?? "", danse: meme.meme?.danse === true }) + 300, meme };
+      if (meme) return { id: x.id, texte: x.texte, ms: dureeDuMeme({ texte: meme.texte ?? "", danse: meme.meme?.danse === true, ...(meme.meme?.voix ? { voix: meme.duree } : {}) }) + 300, meme };
       return { id: x.id, texte: x.texte, ms: Math.max(1400, Math.min(3000, 1000 + x.texte.length * 30)) };
     });
   const gardes: ARejouer[] = [];

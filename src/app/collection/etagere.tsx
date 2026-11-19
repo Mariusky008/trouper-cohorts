@@ -734,6 +734,7 @@ export function FicheObjet({
   onMeme,
   mienne = false,
   onMontrer,
+  onRevoirDuo,
 }: {
   o: ObjetVu | null;
   prenom: string;
@@ -742,6 +743,8 @@ export function FicheObjet({
   onDate: (o: ObjetVu, quand: string) => Promise<void>;
   onFaire?: (o: ObjetVu, action: "reussi" | "tenue" | "annuler-tenue") => Promise<void>;
   onMeme?: (texte: string) => void;
+  /** 🎬 (le salon du duo, lot S5) un duo de mèmes : « ▶ Le revoir », rejoué dans le salon. */
+  onRevoirDuo?: (o: ObjetVu) => void;
   /** 🏡 (lot E4) sur « Mon étagère » : d'où il vient, « Montrer à mes visiteurs », « Ne plus le garder chez moi ». */
   mienne?: boolean;
   onMontrer?: (o: ObjetVu, oui: boolean) => Promise<void>;
@@ -833,7 +836,12 @@ export function FicheObjet({
           )}
           {o.genre === "gout" && !o.image && <p className="et-note-douce">🎁 Une idée de cadeau, quand le moment viendra.</p>}
           {o.etat === "fierte" && <p className="et-note-douce">🏆 Rangé tout en haut, avec vos fiertés.</p>}
-          {o.genre === "blague" && onMeme && (
+          {o.duo?.length && onRevoirDuo ? (
+            <button type="button" className="et-bouton or" data-revoir-duo={o.id} onClick={() => onRevoirDuo(o)}>
+              ▶ Le revoir
+            </button>
+          ) : null}
+          {o.genre === "blague" && onMeme && !o.duo?.length && (
             <button type="button" className="et-bouton" onClick={() => onMeme(memeDeLaBlague(o))}>
               🎭 En faire un mème
             </button>
@@ -873,7 +881,7 @@ export function FicheObjet({
  * 📚 « VOTRE ÉTAGÈRE » : « Léa et toi » ; les compteurs ; le meuble et ses trois rayons (« Nos fiertés », « À venir »,
  * « Ce qu'on aime ») ; les règles en clair ; la pause. Un toucher sur un souvenir : sa fiche.
  */
-export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; onFermer: () => void; onRetire?: (id: string) => void; onMeme?: (texte: string) => void }) {
+export function PageEtagere({ cle, onFermer, onRetire, onMeme, onRevoirDuo }: { cle: string; onFermer: () => void; onRetire?: (id: string) => void; onMeme?: (texte: string) => void; onRevoirDuo?: (o: ObjetVu) => void }) {
   const [vue, setVue] = useState<EtagereVue | null>(null);
   const [erreur, setErreur] = useState("");
   const [fiche, setFiche] = useState<ObjetVu | null>(null);
@@ -975,7 +983,7 @@ export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; 
             </div>
             <div>
               <b>{blague ? blague.emoji : "–"}</b>
-              <span>{blague ? "votre blague" : "pas de blague"}</span>
+              <span>{blague ? (blague.duo?.length ? "votre fou rire" : "votre blague") : "pas de blague"}</span>
             </div>
           </div>
           <div className={`et-meuble${vue.etat === "poussiere" ? " poussiere" : ""}`}>
@@ -1034,7 +1042,7 @@ export function PageEtagere({ cle, onFermer, onRetire, onMeme }: { cle: string; 
           </div>
         </>
       )}
-      <FicheObjet o={fiche} prenom={vue?.prenom ?? ""} onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} onFaire={faireSur} onMeme={onMeme} />
+      <FicheObjet o={fiche} prenom={vue?.prenom ?? ""} onFermer={() => setFiche(null)} onRetirer={retirer} onDate={dater} onFaire={faireSur} onMeme={onMeme} onRevoirDuo={onRevoirDuo} />
       <FeuilleDeposer
         ouverte={depot}
         avec={vue ? { cle, prenom: vue.prenom } : undefined}

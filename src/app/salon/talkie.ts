@@ -238,6 +238,31 @@ export function secouerTalkieTable(racine: HTMLElement, q: Qui): void {
 
 // ─── la lecture d'un vocal, dans la scène ───
 let enLecture: { id: string; arreter: () => void } | null = null;
+/** (chaque son mis dans le lecteur a son numéro : on n'arrête que le sien) */
+let numeroDuSon = 0;
+/**
+ * 🎙️ JOUER UN SON DANS LE LECTEUR UNIQUE (la voix d'un mème) : `null` si le téléphone ne l'a pas laissé partir (sans
+ * toucher). Le vocal en cours s'arrête.
+ */
+export async function jouerSon(url: string): Promise<{ a: HTMLAudioElement; arreter: () => void } | null> {
+  enLecture?.arreter();
+  const a = lecteur();
+  const n = ++numeroDuSon;
+  a.onended = null;
+  a.muted = false;
+  a.src = url;
+  try {
+    await a.play();
+  } catch {
+    return null;
+  }
+  return {
+    a,
+    arreter: () => {
+      if (numeroDuSon === n) a.pause();
+    },
+  };
+}
 /** Le vocal en cours de lecture (son identifiant). */
 export const vocalEnLecture = () => enLecture?.id ?? null;
 /** Arrêter la lecture en cours. */
@@ -259,6 +284,7 @@ export async function lireVocal(s: Scene, racine: HTMLElement, m: MessageFil, su
   const niveaux = niveauxDuVocal(m);
   const duree = Math.max(VOCAL.min, Number(m.duree) || 0);
   const a = lecteur();
+  numeroDuSon++;
   a.muted = false;
   a.src = m.son;
   try {

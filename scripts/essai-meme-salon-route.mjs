@@ -5,7 +5,12 @@
 // dit sa figurine, sa tête, sa danse, le mème prêt d'où il vient) : rangé dans leur fil (`genre: "meme"`) ; chez Sam,
 // « nouveau », sa ligne de « Chez moi » (« 🎭 « … » »), la notification « 🎭 Léa t'a envoyé un mème » ; le pouls bat.
 // CE QUI EST REFUSÉ : vide, plus de 120 signes, un mot interdit ; une tête inconnue devient la joie. 🔥 : Sam y réagit
-// (une réaction qui n'existe que sur un mème). EFFACER : Léa l'efface, il n'est plus là.
+// (une réaction qui n'existe que sur un mème). 🎙️ MA VOIX : un mème dit avec sa voix, sans texte (sa voix, sa durée, ses
+// niveaux ; chez Sam ; « 🎭 🎙️ » dans « Chez moi » ; la notification « 🎙️ Avec sa voix ») — puis ce qu'elle a dit devient
+// son texte (la fausse transcription), le pouls bat ; avec un texte : il reste tel quel ; plus de 20 secondes, pas un son :
+// refusés. 🎬 « JE LE RANGE ? » : Sam répond par un mème, le duo se range dans « Nos fous rires » (une claquette 🎬,
+// les deux mèmes à rejouer), chez les deux ; une fois ; deux mèmes du même, un écrit, Max : refusés. EFFACER : Léa
+// l'efface, il n'est plus là (sa voix avec).
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
@@ -64,6 +69,27 @@ const fil = async (q, avec) => (await voir(q, `proches?fil=${avec.cle}`)).fil;
 const pouls = (q, avec) => voir(q, `proches?pouls=${avec.cle}`);
 
 const meme = (q, avec, o) => poster(q, { action: "meme-salon", cle: avec.cle, ...o });
+/** Un vrai petit son (WAV) de `sec` secondes. */
+function wav(sec) {
+  const taux = 8000;
+  const n = Math.round(sec * taux);
+  const b = Buffer.alloc(44 + n * 2);
+  b.write("RIFF", 0);
+  b.writeUInt32LE(36 + n * 2, 4);
+  b.write("WAVEfmt ", 8);
+  b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20);
+  b.writeUInt16LE(1, 22);
+  b.writeUInt32LE(taux, 24);
+  b.writeUInt32LE(taux * 2, 28);
+  b.writeUInt16LE(2, 32);
+  b.writeUInt16LE(16, 34);
+  b.write("data", 36);
+  b.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.sin((i / taux) * 2 * Math.PI * 330) * 8000), 44 + i * 2);
+  return `data:audio/wav;base64,${b.toString("base64")}`;
+}
+const NIVEAUX = (sec) => Array.from({ length: Math.round((sec * 1000) / 60) }, (_, i) => Math.round(Math.abs(Math.sin(i / 3)) * 15).toString(16)).join("");
 
 // ═══ QUI PEUT ═══
 const sans = await poster(null, { action: "meme-salon", cle: SAM.cle, texte: "Coucou", tete: "joie" });
@@ -113,10 +139,64 @@ const vivant = (await voir(LEA, `proches?vivant=${SAM.cle}`)).vivant;
 ok(vivant?.gestes?.some((g) => g.type === "reaction" && g.cle === "feu" && g.message === m1?.id && !g.moi), "chez Léa : sa réaction 🔥, sur son mème");
 ok((await poster(SAM, { action: "geste", cle: LEA.cle, type: "reaction", quoi: "pas-une-reaction", message: m1?.id })).statut >= 400, "une réaction qui n'existe pas : refusée");
 
+// ═══ 🎙️ MA VOIX ═══
+const n2 = (await pouls(SAM, LEA)).n ?? 0;
+const ev = await meme(LEA, SAM, { texte: "", tete: "euphorie", son: wav(2.6), duree: 2.6, niveaux: NIVEAUX(2.6) });
+const mv = ev.message;
+ok(ev.statut === 200 && mv?.genre === "meme" && mv.meme?.voix === true && mv.meme.tete === "euphorie" && mv.texte === "" && mv.duree === 2.6 && mv.niveaux === NIVEAUX(2.6) && Boolean(mv.son), `🎙️ dit avec sa voix, sans texte : sa voix, sa durée (${mv?.duree} s), ses niveaux`);
+const sonV = await fetch(mv?.son ?? "");
+ok(sonV.status === 200 && (await sonV.arrayBuffer()).byteLength > 30_000, "sa voix se lit (adresse signée)");
+let vv = (await fil(SAM, LEA))?.messages?.find((m) => m.id === mv?.id);
+ok(vv?.meme?.voix === true && Boolean(vv.son) && vv.niveaux === mv?.niveaux && vv.nouveau === true, "chez Sam : le mème, avec sa voix et ses niveaux");
+const pLea2 = ((await voir(SAM, "proches")).proches ?? []).find((x) => x.cle === LEA.cle);
+ok(pLea2?.dernier?.meme === true && pLea2.dernier.texte.startsWith("🎭 🎙️"), `« Chez moi », chez Sam : « ${pLea2?.dernier?.texte} »`);
+let n3;
+for (let k = 0; k < 30 && !n3; k++) {
+  n3 = (await recus(telSam)).find((n) => n.title === "🎭 Léa t’a envoyé un mème" && n.body !== TEXTE && n.body !== "Bonne nuit !" && n.body !== "Hop");
+  if (!n3) await attendre(300);
+}
+ok(n3?.body === "🎙️ Avec sa voix", `la notification : « ${n3?.body} »`);
+// (après la réponse : sa voix transcrite devient son texte ; le pouls bat)
+let ecrit = "";
+for (let k = 0; k < 40 && !ecrit; k++) {
+  vv = (await fil(SAM, LEA))?.messages?.find((m) => m.id === mv?.id);
+  ecrit = vv?.texte ?? "";
+  if (!ecrit) await attendre(300);
+}
+ok(/ce soir/.test(ecrit) && [...ecrit].length <= 120 && vv?.meme?.voix === true, `ce qu'elle a dit devient son texte : « ${ecrit} »`);
+ok(((await pouls(SAM, LEA)).n ?? 0) > n2, "le pouls a battu");
+const avecTexte = await meme(LEA, SAM, { texte: "Coucou toi !", tete: "joie", son: wav(1.5), duree: 1.5, niveaux: NIVEAUX(1.5) });
+await attendre(1500);
+const vt = (await fil(SAM, LEA))?.messages?.find((m) => m.id === avecTexte.message?.id);
+ok(avecTexte.statut === 200 && vt?.texte === "Coucou toi !" && vt.meme?.voix === true, "avec un texte et sa voix : le texte reste tel quel");
+const tropLong = await meme(LEA, SAM, { texte: "", tete: "joie", son: wav(25), duree: 25, niveaux: NIVEAUX(25) });
+ok(tropLong.statut === 400, `plus de 20 secondes : 400 (« ${tropLong.error} »)`);
+ok((await meme(LEA, SAM, { texte: "", tete: "joie", son: `data:text/plain;base64,${Buffer.from("x".repeat(3000)).toString("base64")}`, duree: 2 })).statut === 400, "pas un son : 400");
+
+// ═══ 🎬 « JE LE RANGE ? » ═══
+const reponse = await meme(SAM, LEA, { texte: "Ha ha, trop bien !", tete: "rire" });
+const duo = [avecTexte.message?.id, reponse.message?.id];
+const etagere = (q, avec, corps) => fetch(`${BASE}/api/direct/etagere`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${q.jeton}` }, body: JSON.stringify({ avec: avec.cle, ...corps }) }).then(async (r) => ({ statut: r.status, ...(await r.json().catch(() => ({}))) }));
+const rg = await etagere(SAM, LEA, { action: "ranger-duo", messages: duo });
+const o = rg.souvenir;
+ok(rg.statut === 200 && o?.emoji === "🎬" && o.rayon === "rires" && o.genre === "blague" && o.deux === true && o.detail === "votre duo de mèmes", `Sam le range : une claquette 🎬 dans « Nos fous rires » (« ${o?.titre} », ${o?.detail})`);
+ok(o?.duo?.length === 2 && o.duo[0].de === "lui" && o.duo[0].texte === "Coucou toi !" && o.duo[1].de === "moi" && o.duo[1].tete === "rire", "… les deux mèmes, à rejouer (de qui, ce qu'ils disent, leur tête)");
+const chezLea = (await voir(LEA, `etagere?avec=${SAM.cle}`)).etagere;
+const vuLea = (chezLea?.objets ?? []).find((x) => x.id === o?.id);
+ok(vuLea?.duo?.[0]?.de === "moi" && vuLea.duo[1].de === "lui", "chez Léa aussi (le sien d'abord, puis celui de Sam)");
+const encore = await etagere(LEA, SAM, { action: "ranger-duo", messages: [...duo].reverse() });
+ok(encore.statut === 200 && encore.deja === true && encore.souvenir?.id === o?.id, "Léa dit oui aussi : il est déjà rangé (une fois)");
+ok((await etagere(LEA, SAM, { action: "ranger-duo", messages: [mv?.id, avecTexte.message?.id] })).statut === 422, "deux mèmes de Léa : pas un duo (422)");
+const ecritSam = await poster(SAM, { action: "ecrire", cle: LEA.cle, texte: "Et un mot écrit" });
+ok((await etagere(LEA, SAM, { action: "ranger-duo", messages: [avecTexte.message?.id, ecritSam.message?.id] })).statut === 422, "un mème et un écrit : pas un duo (422)");
+ok((await etagere(MAX, LEA, { action: "ranger-duo", messages: duo })).statut === 403, "Max : 403");
+
 // ═══ EFFACER ═══
 ok((await poster(LEA, { action: "effacer", cle: SAM.cle, id: m1?.id })).statut === 200, "Léa efface son mème");
 chezSam = await fil(SAM, LEA);
 ok(!chezSam?.messages?.some((m) => m.id === m1?.id), "chez Sam : il n'est plus là");
+const cheminV = new URL(vv?.son ?? "http://x/").pathname.replace(/^.*\/figurines-clients\//, "");
+ok((await poster(LEA, { action: "effacer", cle: SAM.cle, id: mv?.id })).statut === 200 && cheminV.includes("/s/") && (await fetch(`${STOCK}/figurines-clients/${cheminV}`)).status >= 400, "son mème dit avec sa voix : effacé, sa voix avec");
 
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTout est bon.");
 process.exit(echecs ? 1 : 0);
