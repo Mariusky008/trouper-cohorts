@@ -277,7 +277,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 
 | Lot | Contenu | Dépend de |
 |---|---|---|
-| **D0** | « Tes passions » (l'écran, `passions.json`) ; la sélection YouTube de chaque nuit ; la page d'administration de la sélection | la clé YouTube |
+| **D0** ✅ (section 14 ; attend la clé YouTube) | « Tes passions » (l'écran, `passions.json`) ; la sélection YouTube de chaque nuit ; la page d'administration de la sélection | la clé YouTube |
 | **D1** | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
 | **D2** | Le moteur à N places (le contrat `salon.ts`) ; inviter des proches ; la télé synchronisée | D1 |
 | **D2b ⭐** | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
@@ -420,3 +420,41 @@ vidéo plein écran, les figurines en petit sur le bas de l'image).
 **Dans les salons ouverts** (même retour du propriétaire : « je n'ai aucun moyen de réagir si ce n'est écrire ») : la
 rangée « Réagis : 😂 ❤️ 😮 😱 👏 », et un ou deux autres du salon réagissent avec moi ; et « 💬 La conversation du
 salon » montre tout ce qui s'est dit **avant mon arrivée** (gardé 48 heures), puis depuis que je suis là.
+
+## 14. Le lot D0 : ce qui est fait (19 novembre 2026)
+
+**« Tes passions »** — l'adresse d'essai `/univers/passions` (que la nouvelle page Découvrir ouvrira la première fois, au
+lot D1, et plus tard « Moi ») : les douze vignettes (onze avant 18 ans : le salon des jeunes parents est réservé aux
+adultes, d'après `<habitant>/majeur.json`), un toucher par passion, « 3 sur 5 », « 5 au plus : enlève-en une d'abord »,
+« C'est parti » (de 3 à 5) : « C'est noté ». Rangé dans `<habitant>/passions.json` = { passions, poids, le } ; les poids
+d'avant restent quand on change d'avis. `GET`/`POST /api/direct/passions`.
+
+**La sélection de la nuit** — `/api/cron/decouvrir-selection`, à 2 h 7 UTC (`vercel.json`), 280 secondes au plus :
+pour chaque thème, ses trois recherches YouTube (`search.list` : `regionCode=FR`, `relevanceLanguage=fr`,
+`videoEmbeddable=true`, publiées dans les sept derniers jours ; `safeSearch=strict` pour les 15-17 ans, `moderate`
+sinon), mêlées une à une, puis `videos.list` : on ne garde que les vidéos publiques, lisibles ailleurs, ni en direct ni à
+venir, entre 30 secondes et 20 minutes, dont le titre ne parle pas d'alcool ; quinze par thème. 12 thèmes pour les
+adultes, 11 pour les 15-17 ans : 69 recherches, environ 6 900 des 10 000 unités du jour. Rangé dans
+`decouvrir/selection/<jour>/<thème>[-jeunes].json`. Une panne de YouTube : la sélection d'avant reste, l'erreur est
+notée (et visible dans l'administration). Le serveur : `selection-serveur.ts` ; les thèmes et leurs recherches :
+`decouvrir.ts`.
+
+**L'administration** — `/admin/humain/decouvrir` (lien dans l'admin) : la sélection du jour par thème, « Adultes » /
+« 15-17 ans », chaque vidéo (sa vignette, son titre, sa chaîne, sa durée) ; **Retirer** (elle disparaît de toutes les
+télés du jour, et ne revient plus les nuits suivantes : `decouvrir/retirees.json`) ; **Ajouter** par son lien (en tête
+du thème, pour les deux variantes ; elle reste quand le thème est refait) ; **↻ Refaire** un thème, ou tous. Sans la
+clé, la page le dit.
+
+**Ce qui attend le propriétaire : la clé YouTube.** Dans Google Cloud : un projet, l'API « YouTube Data API v3 »
+activée, une clé d'API restreinte à cette API ; puis dans Vercel (Settings › Environment Variables) :
+`YOUTUBE_API_KEY`. Ensuite, la sélection se fait chaque nuit, ou tout de suite depuis l'administration (« ↻ Refaire tous
+les thèmes »). Jamais la clé dans la discussion.
+
+**Les essais** : `scripts/essai-decouvrir-route.mjs` (33 contrôles : les passions — sans compte, 15-17 ans, de 3 à 5,
+les jeunes parents ; la nuit — 23 sélections, 69 recherches et leurs filtres, quinze vidéos, ni bière, ni 45 minutes, ni
+vidéo qui ne se lit pas ailleurs ; l'administrateur — retirer, ajouter, refaire) et `scripts/navigateur/tes-passions.mjs`
+(19 contrôles : l'écran sur iPhone ; la page d'administration). Le faux YouTube est dans le faux Supabase
+(`YOUTUBE_API_BASE_URL`) : rien ne part chez Google.
+
+**Ensuite : D1** — ma télé du jour, seul, dans ma pièce (le lecteur officiel de YouTube dans la télé de Ma maison, en
+grand écran ; suivante, garder, envoyer à un proche), qui remplace l'ancienne page Découvrir (section 11).

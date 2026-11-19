@@ -100,6 +100,10 @@
     {
       "path": "/api/cron/direct-nettoyage",
       "schedule": "40 3 * * *"
+    },
+    {
+      "path": "/api/cron/decouvrir-selection",
+      "schedule": "7 2 * * *"
     }
   ]
 }

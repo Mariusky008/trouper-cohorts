@@ -20,14 +20,33 @@
  */
 import fs from "node:fs";
 import http from "node:http";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 const PORT = Number(process.argv[2] || 54321);
 const SEAUX_PRIVES = new Set(["salons-prives", "maison-privee", "figurines-clients"]);
 
 const tables = new Map();
 const fichiers = new Map(); // `${seau}/${chemin}` → { type, octets }
-const signes = new Map(); // jeton → { cle, expire }
+const signes = new Map(); // jeton → { cle, expire } (les adresses d'envoi)
+/**
+ * Les adresses signées de LECTURE : vérifiables sans mémoire, comme les vraies (un jeton signé) — le serveur de l'appli
+ * garde ses adresses d'un essai à l'autre (`signer`, `ma-figurine-serveur.ts`), alors que ce faux repart à neuf.
+ */
+const SECRET_SIGNE = "faux-supabase-signature";
+const jetonSigne = (cle, expire) => {
+  const charge = Buffer.from(JSON.stringify({ cle, expire })).toString("base64url");
+  return `${charge}.${createHash("sha256").update(`${SECRET_SIGNE}.${charge}`).digest("base64url").slice(0, 22)}`;
+};
+const lireJetonSigne = (jeton) => {
+  const [charge, sceau] = String(jeton).split(".");
+  if (!charge || !sceau) return null;
+  if (createHash("sha256").update(`${SECRET_SIGNE}.${charge}`).digest("base64url").slice(0, 22) !== sceau) return null;
+  try {
+    return JSON.parse(Buffer.from(charge, "base64url").toString());
+  } catch {
+    return null;
+  }
+};
 let suite = 1;
 const maintenant = () => new Date().toISOString();
 const hex = (n) => randomBytes(n).toString("hex");
@@ -560,11 +579,9 @@ async function stockage(req, res, url) {
     if (req.method === "POST") {
       if (!fichiers.has(cle)) return repondre(res, 400, { statusCode: "404", error: "not_found", message: "Object not found" });
       const { expiresIn = 60 } = JSON.parse((await corps(req)).toString() || "{}");
-      const jeton = hex(12);
-      signes.set(jeton, { cle, expire: Date.now() + expiresIn * 1000 });
-      return repondre(res, 200, { signedURL: `/object/sign/${cle}?token=${jeton}` });
+      return repondre(res, 200, { signedURL: `/object/sign/${cle}?token=${jetonSigne(cle, Date.now() + expiresIn * 1000)}` });
     }
-    const s = signes.get(url.searchParams.get("token") || "");
+    const s = lireJetonSigne(url.searchParams.get("token") || "");
     if (!s || s.cle !== cle || s.expire < Date.now()) return repondre(res, 400, { error: "InvalidJWT", message: "Signature invalide ou expirée" });
     const f = fichiers.get(cle);
     res.writeHead(200, { "content-type": f.type });
@@ -596,7 +613,7 @@ async function stockage(req, res, url) {
       .filter(([cle]) => cle.startsWith(debut) && !cle.slice(debut.length).includes("/") && (!cherche || cle.slice(debut.length).toLowerCase().includes(cherche)))
       .map(([cle, f]) => ({ name: cle.slice(debut.length), id: cle, created_at: f.cree ?? null, updated_at: f.cree ?? null, metadata: { size: f.octets.length, mimetype: f.type } }));
     if (sortBy?.column === "created_at") liste.sort((x, y) => String(x.created_at).localeCompare(String(y.created_at)) * (sortBy.order === "desc" ? -1 : 1));
-    else liste.sort((x, y) => x.name.localeCompare(y.name));
+    else liste.sort((x, y) => x.name.localeCompare(y.name) * (sortBy?.column === "name" && sortBy.order === "desc" ? -1 : 1));
     // (comme la vraie : ses sous-dossiers aussi, sans `id`, après ses fichiers)
     const dossiers = [...new Set([...fichiers.keys()].filter((cle) => cle.startsWith(debut) && cle.slice(debut.length).includes("/")).map((cle) => cle.slice(debut.length).split("/")[0]))]
       .filter((n) => !cherche || n.toLowerCase().includes(cherche))
@@ -622,6 +639,8 @@ const courriels = [];
 // (🌧️ lot S7 : le faux Open-Meteo — le temps réglé par un essai, et combien de fois on l'a demandé)
 const meteoReglee = { code: 53, t: 9.4, jour: 1 };
 const meteoDemandes = { geo: 0, temps: 0 };
+// 📺 (le lot D0 de Découvrir) ce que le faux YouTube a reçu : chaque recherche, avec son filtre
+const youtubeDemandes = [];
 /** Les notifications « envoyées » au faux service (les plus récentes à la fin). */
 const pushs = [];
 const videosEssai = new Map();
@@ -1018,6 +1037,32 @@ http
         return repondre(res, 200, { current: { time: maintenant(), temperature_2m: meteoReglee.t, weather_code: meteoReglee.code, is_day: meteoReglee.jour ? 1 : 0 } });
       }
       if (url.pathname === "/__meteo") return repondre(res, 200, meteoDemandes);
+      // UN FAUX YOUTUBE (`YOUTUBE_API_BASE_URL=…/youtube`, le lot D0 de Découvrir) : une recherche rend huit vidéos dont
+      // l'identifiant vient des mots cherchés (les mêmes mots, les mêmes vidéos) ; leur fiche (`/youtube/videos`) : la 4e
+      // de chaque recherche parle de bière, la 5e dure 45 minutes, la 7e ne se lit pas ailleurs (elles ne doivent pas
+      // passer) ; les autres durent 2 min 30. Une clé qui n'est pas « faux » : 403. `/__youtube` : les recherches reçues.
+      if (url.pathname === "/youtube/search" || url.pathname === "/youtube/videos") {
+        if (url.searchParams.get("key") !== "faux") return repondre(res, 403, { error: { message: "API key not valid" } });
+        if (url.pathname === "/youtube/search") {
+          const q = url.searchParams.get("q") || "";
+          youtubeDemandes.push({ q, safeSearch: url.searchParams.get("safeSearch"), regionCode: url.searchParams.get("regionCode"), relevanceLanguage: url.searchParams.get("relevanceLanguage"), videoEmbeddable: url.searchParams.get("videoEmbeddable"), publishedAfter: url.searchParams.get("publishedAfter") });
+          const racine = createHash("sha256").update(q).digest("base64url").slice(0, 9);
+          return repondre(res, 200, { items: Array.from({ length: 8 }, (_, k) => ({ id: { kind: "youtube#video", videoId: `${racine}${k}x` } })) });
+        }
+        const ids = (url.searchParams.get("id") || "").split(",").filter(Boolean);
+        return repondre(res, 200, {
+          items: ids.map((id) => {
+            const k = Number(id.at(-2)) || 0;
+            return {
+              id,
+              snippet: { title: k === 3 ? "Dégustation de bière entre amis" : `Vidéo d’essai ${id}`, channelTitle: "La chaîne d’essai", publishedAt: maintenant(), liveBroadcastContent: "none" },
+              contentDetails: { duration: k === 4 ? "PT45M" : "PT2M30S" },
+              status: { embeddable: k !== 6, privacyStatus: "public" },
+            };
+          }),
+        });
+      }
+      if (url.pathname === "/__youtube") return repondre(res, 200, youtubeDemandes);
       // UN FAUX RESEND (`RESEND_BASE_URL=…/resend`) : un e-mail « envoyé » est gardé ici (le code de « Ma figurine »,
       // que l'essai lit dans `/__courriels`) — rien ne part
       if (url.pathname === "/resend/emails" && req.method === "POST") {

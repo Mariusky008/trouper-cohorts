@@ -25,7 +25,28 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    salon avec `/collection?salon=1` sur ses deux téléphones, et la maison) ;
 3. **puis « Découvrir »** (`decouvrir.md`, re-imaginée le 17 novembre ; ses décisions reportées le 18) — **la maquette
    cliquable est faite** (19 novembre, `decouvrir.md` section 12 ; `docs/univers/maquettes/decouvrir.html`) : elle
-   attend l'avis du propriétaire, puis D0 (« Tes passions » et la sélection YouTube de chaque nuit).
+   a été jouée et ajustée avec le propriétaire (`decouvrir.md`, section 13 : partager le moment, sans défi ni score ; le
+   grand écran) ; **D0 fait** (section 14 : « Tes passions », la sélection YouTube de chaque nuit, l'administration) — il
+   attend la clé YouTube (`YOUTUBE_API_KEY`, dans Vercel) ; ensuite D1, ma télé du jour dans ma pièce.
+
+**À savoir (19 novembre 2026)** : le projet Supabase de production est **bridé** — plan gratuit, 39 Go de données
+sortantes pour 5 Go permis (cycle du 8 novembre au 8 décembre) : il répond 402 à tout, d'où les « Ton compte n'a pas pu
+être créé » de la création de la figurine. Le propriétaire décide (plan payant, ou attendre le 8 décembre). La
+consommation est montée d'un coup le 12 novembre (4 à 9 Go par jour), avec les lots « Univers ». Ce qui a été réduit le
+même jour :
+- **les adresses signées sont stables** (`signer`, `ma-figurine-serveur.ts`) : une adresse neuve à chaque demande faisait
+  retélécharger chaque image (la liste « Chez moi », relue toutes les 45 s, retéléchargeait la figurine de chaque
+  proche). Le serveur garde l'adresse de chaque fichier (24 h, resservie tant qu'il en reste la moitié) et l'oublie
+  quand le fichier est redéposé (`deposer`) ;
+- **les relectures régulières ne listent que les 100 derniers messages** d'un fil (`nomsRecents`, `talkie-serveur.ts`),
+  au lieu de mille noms : la liste « Chez moi » (45 s), « là maintenant » (60 s), la poussière de l'étagère.
+
+À regarder ensuite si la consommation reste haute : les vidéos des univers vivants (plusieurs Mo, relues à chaque
+ouverture par Safari), et les figurines en PNG pleine taille dans les petites vignettes. Le faux Supabase signe
+désormais ses adresses sans mémoire, comme le vrai (le serveur de l'appli les garde d'un essai à l'autre).
+
+Le même jour, la création de la figurine demande **« Ton prénom »** quand il n'est pas connu (`feuille-de-route.md`,
+section 5).
 
 **Où on en est (18 novembre 2026)** : **S3, première partie, faite** (`salon-du-duo.md`, 11.11) — la barre des gestes
 (💌 / 🛋️), neuf gestes mis en scène, les huit panneaux brandis, les six réactions avec le corps, la table (quatre
