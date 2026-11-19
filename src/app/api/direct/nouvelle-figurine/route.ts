@@ -46,16 +46,22 @@ export async function POST(request: Request) {
     NextResponse.json(r.error ? { error: r.error } : { ok: true, ...ok }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
 
   if (p?.action === "selfie") {
-    // 🏙️ (sans compte sur ce téléphone : sa ville, n'importe laquelle — elle le relie aux commerçants de la même ville)
-    const deja = await habitantCourant(supabase);
-    const ville = villeEcrite(p.ville);
-    if (!deja && (!ville || motInterdit(ville))) return NextResponse.json({ error: "Dis-nous ta ville." }, { status: 400 });
-    const moi = deja ?? (await assurerHabitant(supabase, villeSlug(ville)));
-    if (!moi) return NextResponse.json({ error: "Ça n’a pas marché. Réessaie." }, { status: 502 });
-    const r = await envoyerSelfie(supabase, moi, p.photo, p.moi, p.age);
-    const id = r.id;
-    if (id) after(() => fabriquerProposition(supabase, moi.id, id, avant));
-    return repondre(r, { id });
+    try {
+      // 🏙️ (sans compte sur ce téléphone : sa ville, n'importe laquelle — elle le relie aux commerçants de la même ville)
+      const deja = await habitantCourant(supabase);
+      const ville = villeEcrite(p.ville);
+      if (!deja && (!ville || motInterdit(ville))) return NextResponse.json({ error: "Dis-nous ta ville." }, { status: 400 });
+      const moi = deja ?? (await assurerHabitant(supabase, villeSlug(ville)));
+      if (!moi) return NextResponse.json({ error: "Ton compte n’a pas pu être créé sur ce téléphone. Réessaie dans un instant." }, { status: 502 });
+      const r = await envoyerSelfie(supabase, moi, p.photo, p.moi, p.age);
+      const id = r.id;
+      if (id) after(() => fabriquerProposition(supabase, moi.id, id, avant));
+      return repondre(r, { id });
+    } catch (e) {
+      // (une erreur imprévue : sa cause dans les journaux du serveur, et un message qui dit l'étape)
+      console.error("[nouvelle-figurine] selfie :", e instanceof Error ? e.stack || e.message : e);
+      return NextResponse.json({ error: "Ton selfie n’a pas pu être reçu. Réessaie dans un instant." }, { status: 500 });
+    }
   }
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ error: "Envoie d’abord ton selfie." }, { status: 400 });

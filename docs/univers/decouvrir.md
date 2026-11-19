@@ -411,6 +411,12 @@ Ce que la maquette joue maintenant :
    quelques secondes (des chiffres, jamais une image), rejoué par sa figurine (au but : la tête qui part en arrière, les
    bras levés, le fou rire). Il faut, pour l'appli, les expressions de chaque figurine (D2c).
 
+**📺 Le grand écran** (le propriétaire, 19 novembre : « l'écran de la télé ne va-t-il pas être trop petit pour voir les
+vidéos ? ») : par défaut, la télé prend **toute la largeur du téléphone** (la vidéo en 16/9, 390 points au lieu de 246),
+la pièce et les figurines juste dessous ; « 🛋️ Voir la pièce » la remet dans son meuble, « ⛶ Grand écran » l'agrandit
+(seulement pour ce moment : on revient toujours en grand écran). Pareil dans les salons ouverts. Plus grand encore, plus tard : le téléphone tourné en largeur (la
+vidéo plein écran, les figurines en petit sur le bas de l'image).
+
 **Dans les salons ouverts** (même retour du propriétaire : « je n'ai aucun moyen de réagir si ce n'est écrire ») : la
 rangée « Réagis : 😂 ❤️ 😮 😱 👏 », et un ou deux autres du salon réagissent avec moi ; et « 💬 La conversation du
 salon » montre tout ce qui s'est dit **avant mon arrivée** (gardé 48 heures), puis depuis que je suis là.

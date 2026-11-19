@@ -171,7 +171,8 @@ async function demanderProposition(supabase: Supabase, h: string, de: "selfie" |
   const p: Proposition = { id, etat: "en-cours", le: new Date().toISOString(), de, retouches };
   const jour = jourParis();
   const ok = await ecrireBrouillon(supabase, h, { ...b, propositions: [...l, p].slice(-PROPOSITIONS_GARDEES), jour, faites: faitesAujourdhui(b) + 1 });
-  return ok ? { id } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  if (!ok) console.error("[nouvelle-figurine] brouillon non écrit :", h);
+  return ok ? { id } : { error: "Ta demande n’a pas pu être rangée. Réessaie dans un instant.", statut: 502 };
 }
 
 /** 📸 Son selfie, et ses deux cases : sa première proposition est demandée. */
