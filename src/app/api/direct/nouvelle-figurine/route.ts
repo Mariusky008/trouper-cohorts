@@ -15,7 +15,8 @@
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
-import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
+import { assurerHabitant, causeHabitant, habitantCourant } from "@/lib/direct/habitant";
+import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { poserLePont } from "@/lib/direct/pont-univers-serveur";
 import { villeEcrite } from "@/lib/direct/nouvelle-figurine";
 import { motInterdit } from "@/lib/direct/mots-interdits";
@@ -52,7 +53,11 @@ export async function POST(request: Request) {
       const ville = villeEcrite(p.ville);
       if (!deja && (!ville || motInterdit(ville))) return NextResponse.json({ error: "Dis-nous ta ville." }, { status: 400 });
       const moi = deja ?? (await assurerHabitant(supabase, villeSlug(ville)));
-      if (!moi) return NextResponse.json({ error: "Ton compte n’a pas pu être créé sur ce téléphone. Réessaie dans un instant." }, { status: 502 });
+      if (!moi) {
+        // (l'administrateur voit la cause sur l'écran même ; les autres, le message seul)
+        const cause = (await isCurrentUserAdmin().catch(() => false)) ? ` (pour l’administrateur : ${causeHabitant() || "cause inconnue"})` : "";
+        return NextResponse.json({ error: `Ton compte n’a pas pu être créé sur ce téléphone. Réessaie dans un instant.${cause}` }, { status: 502 });
+      }
       const r = await envoyerSelfie(supabase, moi, p.photo, p.moi, p.age);
       const id = r.id;
       if (id) after(() => fabriquerProposition(supabase, moi.id, id, avant));

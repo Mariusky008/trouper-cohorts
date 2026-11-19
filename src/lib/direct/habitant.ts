@@ -78,13 +78,27 @@ export async function habitantCourant(supabase: Supabase): Promise<Habitant | nu
   const token = jar.get(COOKIE_HABITANT)?.value?.trim();
   if (!token) return null;
   try {
-    const { data } = await supabase.from("human_habitants").select(CHAMPS).eq("device_token", token).maybeSingle();
+    const { data, error } = await supabase.from("human_habitants").select(CHAMPS).eq("device_token", token).maybeSingle();
+    if (error) noterCause(`lecture : ${error.message}`);
     const r = data as Record<string, unknown> | null;
     return r ? lire(r) : null;
-  } catch {
+  } catch (e) {
+    noterCause(`lecture : ${e instanceof Error ? e.message : String(e)}`);
     return null;
   }
 }
+
+/**
+ * (le diagnostic, 19 novembre 2026 : « Ton compte n'a pas pu être créé sur ce téléphone » en production) la dernière
+ * cause d'un habitant qui n'a pas pu être lu ou créé — écrite dans les journaux du serveur, et montrée à
+ * l'administrateur sur l'écran qui échoue.
+ */
+let derniereCause = "";
+function noterCause(cause: string) {
+  derniereCause = cause.slice(0, 300);
+  console.error("[habitant]", derniereCause);
+}
+export const causeHabitant = () => derniereCause;
 
 /**
  * Le numéro déjà laissé par un habitant, s'il y en a un.
@@ -121,7 +135,10 @@ export async function assurerHabitant(supabase: Supabase, villeSlug: string): Pr
       .maybeSingle();
     if (error) throw new Error(error.message);
     const r = data as Record<string, unknown> | null;
-    if (!r) return null;
+    if (!r) {
+      noterCause("création : aucune ligne rendue");
+      return null;
+    }
     const h = lire(r);
     const jar = await cookies();
     jar.set(COOKIE_HABITANT, h.deviceToken, {
@@ -134,7 +151,7 @@ export async function assurerHabitant(supabase: Supabase, villeSlug: string): Pr
     return h;
   } catch (e) {
     // (la cause, dans les journaux du serveur : sans elle, « Ça n'a pas marché » ne dit rien — 19 novembre 2026)
-    console.error("[habitant] création impossible :", e instanceof Error ? e.message : e);
+    noterCause(`création : ${e instanceof Error ? e.message : String(e)}`);
     return null;
   }
 }
