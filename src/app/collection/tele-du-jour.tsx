@@ -64,6 +64,8 @@ function Television({ tele }: { tele: TeleDuJour }) {
   const [allumee, setAllumee] = useState(false);
   const [simple, setSimple] = useState(false);
   const [grand, setGrand] = useState(true);
+  // (le passage entre la pièce et le grand écran glisse ; pas le premier affichage)
+  const [glisse, setGlisse] = useState(false);
   const [note, setNote] = useState("");
   const [feuille, setFeuille] = useState(false);
   const [proches, setProches] = useState<Proche[] | null>(null);
@@ -255,7 +257,7 @@ function Television({ tele }: { tele: TeleDuJour }) {
           )}
         </div>
 
-        <div className="td-ecran" style={ecran}>
+        <div className={`td-ecran${glisse ? " glisse" : ""}`} style={ecran}>
           {fini ? (
             <div className="td-fini" data-fini>
               <b>{tele.vide ? P.bientot : P.fini}</b>
@@ -301,7 +303,15 @@ function Television({ tele }: { tele: TeleDuJour }) {
             </button>
           </div>
           {scene && zone && (
-            <button type="button" className="td-lien" data-bascule onClick={() => setGrand((g) => !g)}>
+            <button
+              type="button"
+              className="td-lien"
+              data-bascule
+              onClick={() => {
+                setGlisse(true);
+                setGrand((g) => !g);
+              }}
+            >
               {enPiece ? P.grandEcran : P.voirPiece}
             </button>
           )}
@@ -357,7 +367,8 @@ const STYLES = `
 .td-piece{position:absolute;left:0;right:0;overflow:hidden;background:linear-gradient(180deg,#4a2335,#24101b)}
 .td-pano{position:absolute;left:0;top:0;max-width:none;background-size:cover;object-fit:cover}
 .td-figurine{position:absolute;transform:translate(-50%,-100%);max-width:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45))}
-.td-ecran{position:absolute;overflow:hidden;background:#000;transition:left .35s ease,top .35s ease,width .35s ease,height .35s ease;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.td-ecran{position:absolute;overflow:hidden;background:#000;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.td-ecran.glisse{transition:left .35s ease,top .35s ease,width .35s ease,height .35s ease}
 .td-lecteur,.td-lecteur iframe{width:100%;height:100%;border:0;display:block}
 .td-vignette{width:100%;height:100%;object-fit:cover;opacity:.85}
 .td-allumer{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:0;border-radius:999px;padding:12px 20px;font:inherit;font-weight:900;font-size:16px;color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);box-shadow:0 10px 24px -10px rgba(255,46,154,.9);text-decoration:none;white-space:nowrap}

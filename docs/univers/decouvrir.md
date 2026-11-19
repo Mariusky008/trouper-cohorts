@@ -278,7 +278,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | Lot | Contenu | Dépend de |
 |---|---|---|
 | **D0** ✅ (section 14 ; attend la clé YouTube) | « Tes passions » (l'écran, `passions.json`) ; la sélection YouTube de chaque nuit ; la page d'administration de la sélection | la clé YouTube |
-| **D1** | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
+| **D1** ✅ (section 15 ; à l'adresse d'essai, l'onglet ensuite) | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
 | **D2** | Le moteur à N places (le contrat `salon.ts`) ; inviter des proches ; la télé synchronisée | D1 |
 | **D2b ⭐** | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
 | **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
@@ -458,3 +458,56 @@ vidéo qui ne se lit pas ailleurs ; l'administrateur — retirer, ajouter, refai
 
 **Ensuite : D1** — ma télé du jour, seul, dans ma pièce (le lecteur officiel de YouTube dans la télé de Ma maison, en
 grand écran ; suivante, garder, envoyer à un proche), qui remplace l'ancienne page Découvrir (section 11).
+
+## 15. Le lot D1 : ma télé du jour (19 novembre 2026)
+
+**L'adresse d'essai `/univers/tele`** (pensée pour le téléphone ; dans les essais, l'administrateur seul, comme les autres
+adresses d'essai de l'univers). L'onglet Découvrir l'ouvrira — avec le retrait de l'ancienne page (section 11) — une
+fois que le propriétaire l'aura jouée sur son téléphone.
+
+**Ce qu'on y fait** :
+- **Pas encore de passions** : « Tes passions » d'abord (l'écran du lot D0), puis la télé.
+- **La télé en grand écran** (section 13) : toute la largeur, en 16/9, avec le lecteur officiel de YouTube
+  (`youtube-nocookie.com`, chargé une fois : `chargerYouTube`, `tele-duo.tsx`). « ▶ Allumer la télé » est le geste qui
+  donne le son sur iPhone ; ensuite, les vidéos passent dans le même lecteur. Dessous, **ma pièce** (le panorama de Ma
+  maison, centré sur ma figurine) et **ma figurine assise** ; sans pièce choisie, ma figurine seule.
+- En haut : « 🎬 40 vidéos t'attendent », le thème de la vidéo (« ⚽ Foot et sport ») ; dessous : son titre, sa chaîne,
+  sa durée.
+- **⏭ Suivante** ; une vidéo finie : la suivante arrive toute seule. Une vidéo qui refuse d'être lue hors de YouTube :
+  « Celle-ci ne se lit pas ici : la suivante arrive ».
+- **📌 Garder** : elle va à la télé de ma maison (« Ajouter chez moi », un clip avec son lien YouTube et « Vu sur ma télé
+  du jour · la chaîne ») : « 📌 Gardée : elle est à la télé de ta maison », puis « Déjà chez toi ».
+- **📤 Envoyer à…** : la liste de mes proches (ceux qui m'ont ajouté aussi) ; un toucher : un message écrit dans notre
+  conversation (« 🎬 le titre » et son lien), **mis sur la télé de notre duo** (`mettreALaTele`), et la notification
+  habituelle (« 🔗 Léa t'a envoyé un lien ») : « 📤 Envoyée à Sam : elle passe sur votre télé ».
+- **🛋️ Voir la pièce** : la vidéo glisse dans la télé de ma pièce (sa zone relevée, `emplacements.tele`), le même
+  lecteur, sans s'arrêter ; **⛶ Grand écran** : elle en ressort. On arrive toujours en grand écran.
+- À la fin : « Tu as tout vu pour aujourd'hui. Ta télé se remplit chaque nuit : reviens demain. » ; avant la première
+  sélection : « Ta télé s'allume bientôt ».
+
+**Ce qui m'attend** (`tele-du-jour-serveur.ts`) : les sélections de la nuit de mes passions — celles des 15-17 ans si je
+n'ai pas déclaré mes 18 ans, jamais le salon des jeunes parents avant —, celles de la veille tant que la nuit n'est pas
+passée ; **mêlées** par un tourniquet pondéré (`melanger`, `tele-du-jour.ts`) : chaque thème avance de sa part (1 au
+départ, entre 0,3 et 3), celui qui est le plus en avance passe une vidéo ; les thèmes que je regarde le plus reviennent
+plus souvent, sans faire disparaître les autres. Sans doublon, sans ce que j'ai vu (les 400 dernières), 40 au plus.
+
+**Les poids** (dans `<habitant>/passions.json`, un simple compte, bornés de −5 à 12) : regardée jusqu'au bout, +1 ;
+gardée, +2 ; passée avant 15 secondes, −1 ; illisible : rien. Ce que j'ai vu : `<habitant>/tele-du-jour.json`.
+
+**La route** : `GET /api/direct/tele-du-jour` → `{ tele }` ; `POST { action: "vue", id, fin?, secondes?, illisible? }`,
+`{ action: "garder", id }`, `{ action: "envoyer", id, a }`. Une vidéo qui n'est pas à ma télé (aujourd'hui ou hier,
+dans mes passions) : 404 — on ne garde ni n'envoie autre chose.
+
+**Les essais** : `scripts/essai-tele-du-jour-route.mjs` (25 contrôles : sans compte, sans passions ; quarante vidéos de
+mes passions, mêlées dès les trois premières ; vue, passée, illisible ; le foot très regardé revient plus souvent ;
+garder, deux fois, une vidéo étrangère ; envoyer à Sam — le message, leur télé, Sam la voit — et à Max, qui n'est pas
+un proche ; Noé, 15 ans) et `scripts/navigateur/tele-du-jour.mjs` (29 contrôles, sur iPhone, avec un faux lecteur de
+YouTube : le grand écran en 16/9, la pièce et la figurine, allumer, suivante, finie, garder, envoyer, voir la pièce).
+
+**En ligne, il faut** : que Supabase soit de nouveau ouvert (bridé depuis le 19 novembre, `reprise.md`), la clé
+`YOUTUBE_API_KEY` rangée dans Vercel, et une première sélection (la nuit, ou « ↻ Refaire tous les thèmes » dans
+`/admin/humain/decouvrir`).
+
+**Ensuite** : l'onglet Découvrir (la carte « Ma télé du jour » en haut, la télé en plein écran au toucher) et le retrait
+de l'ancienne page (section 11), une fois la télé jouée par le propriétaire ; puis D2 (inviter des proches, la télé
+synchronisée).
