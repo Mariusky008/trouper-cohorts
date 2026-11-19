@@ -284,8 +284,8 @@ une animation.
 | **M1 — La maison** ✅ | l'écran « Ma maison » : la pièce en largeur au doigt, la figurine au centre, les emplacements, toucher les objets ; ⚙️ changer de pièce — fait (section 13), derrière l'interrupteur | univers | M0, S1 |
 | **M2 — La maison qui se remplit** ✅ (sections 15 et 16) | 📌 Garder → chez moi ; « La mettre dans mon univers » et la télé → chez moi ; « ✨ gardé avec … » à l'arrivée ; ＋ Ajouter chez moi | univers | M1, S6 |
 | **M3 — L'inscription** ✅ | « Choisis ta pièce » ; l'âge ; Pablito ne fabrique plus ; la carte pour les anciens univers — fait (section 14), derrière l'interrupteur | messages et bienvenue | M0 |
-| **M4 — Découvrir** | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
-| **M5 — Les visites, la suite** | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
+| **M4 — Découvrir** ✅ (section 17) | ce qu'une maison ouverte montre aux autres (section 8) | univers | M2 |
+| **M5 — Les visites, la suite** ✅ (sections 18 et 19 ; le défi à deux attend le propriétaire, 19.1) | nouveautés du jour, question, surprise, défi à deux, humeur, « Pendant ton absence » | univers | M2 |
 
 Tout derrière un interrupteur (`MA_MAISON_CATALOGUE`, éteint) jusqu'à ce que le propriétaire l'ait jouée sur son
 téléphone. Chaque lot : ses essais (une route contre le faux Supabase, un essai navigateur au format téléphone), sa
@@ -454,3 +454,92 @@ neuf choix ; sans photo, refusé ; une photo choisie, en aperçu, « dans un cad
 chanson sans nom ni lien refusée, puis avec son lien « sur la platine » ; un livre et son mot ; l'appui long sur le mot
 gardé avec Sam — enlevé de chez elle, toujours sur leur étagère ; sur le livre — parti de son étagère aussi ; la route
 refuse un choix inconnu, ne trouve pas un objet inconnu).
+
+---
+
+## 17. Le lot M4 : la maison en visite (19 novembre 2026)
+
+La section 8 (« Découvrir » : rien sans un geste). Derrière l'interrupteur `MA_MAISON_CATALOGUE` : allumé, la page de
+visite (`/univers/chez/<clé>`) montre la pièce du catalogue de celui qui en a une ; d'ici là, elle la montre à qui n'a
+pas d'univers fabriqué, ou quand on la demande (`?piece=1`, l'essai).
+
+- **🚪 Qui peut entrer** (en haut de sa pièce, à côté de ＋ et ⚙️ ; son emoji dit le choix) : **👯 Mes proches**
+  (d'office — ils voient tout ce qu'il a gardé), **🌍 Tout le monde** (« J'ai 18 ans ou plus » à cocher, une fois ; la
+  maison entre dans « 🏡 Les univers à visiter », avec la vignette de sa pièce), **🔒 Moi seul** (personne n'entre ; elle
+  quitte « Les univers à visiter »). « 👀 Voir ma maison comme mes visiteurs ». `<habitant>/ma-piece/visibilite.json` ;
+  `POST /api/direct/ma-piece { action: "visibilite", v, adulte? }` (`choisirVisibiliteMaison`, `visites-serveur.ts`).
+- **La maison en visite** (`maisonVisitee`, `GET /api/direct/ma-piece?chez=<clé>`, l'écran `VisiteDeLaMaison`) : sa
+  pièce en plein écran, « 🏠 Chez Léa », sa figurine au centre, ses objets à leur place. **Ses proches voient tout** ;
+  **les autres seulement ce qu'il a ajouté lui-même** (« ＋ Ajouter chez moi », un dépôt sur son étagère) — jamais ce qui
+  vient d'une conversation (les photos rangées, les mots gardés, les mèmes du duo) : un cadre garde alors son tableau.
+  Un objet touché : « Mis par Léa · … » ou « Gardé avec Sam ». Ni ＋, ni ⚙️, ni 🚪, ni l'appui long, ni l'arrivée chez
+  quelqu'un d'autre. Fermée : « La maison de Léa est ouverte à ses proches seulement. » / « Léa garde sa maison pour soi,
+  pour l'instant. »
+- **🚪 Frapper à la porte** : comme pour les univers (une visite notée par jour, Léa prévenue une fois par jour,
+  « ✓ Léa saura que tu as frappé ») — les visites (`chezQui`, `universOuvert`, `universPublics`) savent désormais entrer
+  dans une pièce du catalogue (`maisonOuUnivers`).
+
+**L'essai** : `scripts/navigateur/ma-maison-visite.mjs` (28 contrôles : Sam voit tout, Zoé trouve la maison réservée ; 🚪
+« 👯 » d'office, trois choix, « Tout le monde » refusé sans « 18 ans ou plus », puis 🌍 et « Les univers à visiter » ;
+Zoé : le livre seul, cadres vides, « Chez Léa », ni ＋ ni ⚙️, « Mis par Léa », la figurine de Léa, frapper et la visite
+notée ; Sam : les trois ; « 🔒 Moi seul » : fermée même pour Sam, sortie de « Découvrir », frapper refusé). Toujours
+verts : `ma-maison-remplie.mjs`, `ma-maison-catalogue.mjs`, `visite-univers.mjs`, `essai-visites-route.mjs`.
+
+---
+
+## 18. Le lot M5, première partie : la maison qui vit (19 novembre 2026)
+
+La section 7 (« ce qui fait revenir ») — **sans aucun compteur de visites**.
+
+- **🙂 L'humeur du jour** (celle du rituel, `<habitant>/humeur.json`, le jour même) : une étiquette au-dessus de sa
+  figurine (« 😂 Fou rire ») — chez soi, et chez lui pour ses proches seulement.
+- **🚪 « Pendant ton absence »** : à l'arrivée chez soi, qui a frappé depuis sa dernière visite — « 🚪 Sam a frappé à ta
+  porte pendant ton absence » (« Sam et Zoé ont frappé… », trois prénoms au plus, jamais un nombre) —, puis « ✨ 2 choses
+  gardées avec Sam » (la caméra passe dessus).
+- **🎁 La surprise posée** : en visite chez un proche, « 🎁 Laisser une surprise » — un objet (un bouquet, une tasse de
+  café, un livre, un ballon…) et un petit mot ; elle se pose **emballée sur sa table basse** (« 🎁 Léa la trouvera en
+  rentrant » ; « Ta surprise attend qu'on l'ouvre »). Chez soi : le paquet bouge doucement ; un toucher : « 🎁 Sam t'a
+  laissé un cadeau », « Ouvrir » — « 💐 Un bouquet », « De Sam · « Pour toi » » — « ✓ Le garder sur ma table » ou
+  « Non merci ». Gardé, il reste sur la table (quatre au plus) ; ses proches l'y voient. Ce sont les souvenirs du lot 6
+  des visites (`<habitant>/monde/souvenirs.json`, `laisserSouvenir`, `deciderSouvenir`) : « Chez moi » les découvre aussi
+  (`mesVisites` connaît désormais les maisons du catalogue).
+- **✨ Les nouveautés du jour** : en visite chez un proche, ce qu'il a mis chez lui aujourd'hui — « ✨ Nouveau chez Léa
+  aujourd'hui : Le Petit Prince » — et la caméra va le voir.
+- Le serveur : `vieDeLaMaison` (`ma-maison-serveur.ts`) ; `maMaison` rend `humeur`, `absence`, `table` ; `maisonVisitee`
+  rend aussi `peutLaisser`, `mesCadeaux`, `nouveaux`.
+
+**L'essai** : `scripts/navigateur/ma-maison-vie.mjs` (22 contrôles : chez Léa, Sam voit son humeur, « Nouveau chez Léa
+aujourd'hui » et la caméra, laisse un bouquet et un mot ; Léa rentre — « Sam a frappé à ta porte pendant ton absence »,
+sans nombre ; le paquet emballé ; « Ouvrir », « De Sam · « Pour toi » », « Le garder » ; son humeur chez elle ; Sam
+revient et voit son bouquet sur la table).
+
+## 19. Le lot M5, deuxième partie : la question du jour en visite (19 novembre 2026)
+
+Les maquettes : « la question du jour — sa réponse se découvre après la sienne ».
+
+- **Chez un proche qui a répondu ce matin à sa question du jour** (le lot 2a, `connaitre-serveur.ts`) : une pastille
+  « 💬 La question du jour de Léa ». Un toucher : la question, ses réponses à toucher (ou trois mots à écrire), « Réponds
+  d'abord : tu découvriras ensuite la réponse de Léa ». La sienne n'est **ni à l'écran ni envoyée** au téléphone tant
+  qu'on n'a pas répondu. « Répondre » : « Toi : 🏖️ Plage », « Léa : 🏔️ Montagne ». On revient : les deux y sont encore.
+  Pendant ce temps, frapper et la surprise s'effacent (une seule bulle à la fois).
+- **Chez soi** : à l'arrivée, après « Pendant ton absence », « 💬 Sam a répondu à ta question du jour » (trois prénoms au
+  plus, seulement ce qui est arrivé depuis sa dernière visite) ; la pastille « 💬 Ta question du jour » : la question et
+  ce que chacun y a répondu (les plus récents d'abord).
+- **Entre proches seulement** (un visiteur qui n'est pas un proche ne la voit pas, et la route le refuse) ; une réponse
+  par visiteur et par jour (la nouvelle remplace l'ancienne) ; les mêmes refus que la question du jour (les choix, la
+  longueur, pas de lien, les mots qui ne passent pas). Elle ne compte pas dans son journal : c'est celle de son hôte.
+- Le serveur : `question-maison-serveur.ts` (`questionChezLui`, `repondreChezLui`, `questionChezMoi`) ;
+  `<habitant>/ma-piece/reponses/<jour>.json` = { cle, reponses: [{ de, texte, le }] } ; `maMaison` et `maisonVisitee`
+  rendent `question` ; `POST /api/direct/ma-piece` { action: "repondre", chez, texte } rend la visite mise à jour.
+
+**L'essai** : `scripts/navigateur/ma-maison-question.mjs` (22 contrôles : chez Léa, Sam voit la pastille, la question et
+ses quatre choix, la réponse de Léa cachée — ni à l'écran ni dans ce que le serveur envoie ; « 🏖️ Plage », « Répondre »,
+« Toi » puis « Léa » ; une réponse hors des choix refusée ; ✕ ; il revient et les retrouve ; Zoé, qui n'est pas sa
+proche, refusée ; Léa rentre : « Sam a répondu à ta question du jour », « Sam : 🏖️ Plage » ; plus d'annonce ensuite).
+
+### 19.1 Ce qui attend le propriétaire : le défi à deux
+
+La section 7 et les maquettes parlent d'un « défi à deux qui devient un souvenir commun », sans dire lequel. Plutôt que de
+l'inventer, il attend la décision du propriétaire : quel défi (une photo à prendre chacun de son côté ? une question à
+deviner l'un sur l'autre ? un mème à faire à deux ?), et ce qu'il devient dans la maison (un cadre ? un objet sur
+l'étagère, « ✨ gardé avec … » ?).

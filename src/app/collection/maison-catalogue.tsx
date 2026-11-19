@@ -22,17 +22,27 @@ import {
   MAISON_VIDE,
   PHRASES_AJOUT,
   PHRASES_MAISON,
+  PHRASES_VISITE,
+  VISIBILITES_MAISON,
   arriveeChezMoi,
   ditDeLObjet,
+  objetsPlaces,
+  phraseAbsence,
+  phraseNouveautes,
+  PHRASES_CADEAU,
+  PHRASES_QUESTION,
+  type CadeauMaison,
+  type QuestionChezLui,
   type CatalogueMaison,
   type ContenuMaison,
   type EmplacementMaison,
   type MaMaisonVue,
+  type MaisonVisitee,
   type ObjetMaison,
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
 import { createPortal } from "react-dom";
-import { AjouterChezMoi, EnleverDeChezMoi } from "./ajouter-chez-moi";
+import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, QuiPeutEntrer } from "./ajouter-chez-moi";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 
 const ROUTE = "/api/direct/ma-piece";
@@ -168,11 +178,25 @@ function Piece({
   phrase,
   onReglages,
   onMaison,
+  visite,
 }: {
   maison: MaMaisonVue & { scene: NonNullable<MaMaisonVue["scene"]> };
   phrase?: string;
   onReglages: () => void;
   onMaison: (m: MaMaisonVue) => void;
+  /** 🚪 (lot M4) en visite chez quelqu'un : son prénom ; frapper à sa porte (rien d'autre ne s'y fait) */
+  visite?: {
+    prenom: string;
+    frappe: boolean;
+    onFrapper: () => Promise<string | null>;
+    /** 🎁✨ (lot M5) un proche peut laisser une surprise ; les siennes qui attendent ; ce qui est nouveau aujourd'hui */
+    peutLaisser?: boolean;
+    mesCadeaux?: number;
+    nouveaux?: string[];
+    cle?: string;
+    /** 💬 (lot M5) sa question du jour (à ses proches) */
+    question?: QuestionChezLui;
+  };
 }) {
   const { scene, figurine } = maison;
   const pano = scene.panorama;
@@ -194,6 +218,18 @@ function Piece({
   const interrompre = useRef<() => void>(() => undefined);
   // ＋🗑️ (lot M2, deuxième partie) ajouter chez moi ; l'objet à enlever (un appui long) ; ce qui vient d'être fait
   const [ajout, setAjout] = useState(false);
+  const [qui, setQui] = useState(false);
+  // 🎁 (lot M5) le cadeau touché sur la table (et ouvert) ; la surprise à laisser, en visite ; les miennes qui attendent
+  const [cadeau, setCadeau] = useState<CadeauMaison | null>(null);
+  const [ouvert, setOuvert] = useState(false);
+  const [surprise, setSurprise] = useState(false);
+  const [mesCadeaux, setMesCadeaux] = useState(visite?.mesCadeaux ?? 0);
+  // 💬 (lot M5) la question du jour : la bulle ouverte ; en visite, sa question (mise à jour quand on y répond)
+  const [questionOuverte, setQuestionOuverte] = useState(false);
+  const [question, setQuestion] = useState<QuestionChezLui | undefined>(visite?.question);
+  const [reponse, setReponse] = useState("");
+  const [erreurQ, setErreurQ] = useState("");
+  const [frappe, setFrappe] = useState(Boolean(visite?.frappe));
   const [aEnlever, setAEnlever] = useState<ObjetMaison | null>(null);
   const [fait, setFait] = useState("");
   /** (le nouvel objet : la caméra va le voir, il s'éclaire un instant) */
@@ -230,15 +266,31 @@ function Piece({
   // ✨ L'ARRIVÉE (lot M2) : ce qu'il a gardé depuis sa dernière visite — la phrase, puis la caméra passe sur chacun (un
   // toucher l'arrête) ; ensuite le serveur retient la visite (`vu`). Rien de nouveau : la visite est retenue tout de suite.
   const pret = hauteur > 0;
+  const enVisiteChez = Boolean(visite);
   useEffect(() => {
     if (!pret) return;
-    // (la réponse est lue : sans quoi la requête resterait ouverte)
-    const dire = () =>
+    // (la réponse est lue : sans quoi la requête resterait ouverte ; en visite, rien n'est retenu — c'est chez lui)
+    const dire = () => {
+      if (enVisiteChez) return;
       void fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "vu" }) })
         .then((r) => r.text())
         .catch(() => undefined);
-    const a = maison.contenu ? arriveeChezMoi(maison.contenu, maison.vuLe ?? 0) : null;
-    if (!a) {
+    };
+    // (chez moi : 🚪 qui a frappé pendant mon absence (lot M5), puis ✨ ce que j'ai gardé ; en visite chez un proche :
+    // ✨ ce qu'il a mis chez lui aujourd'hui)
+    // (💬 lot M5 : qui a répondu à ma question du jour depuis ma dernière visite)
+    const repondus = visite ? [] : [...new Set((maison.question?.reponses ?? []).filter((r) => (Date.parse(r.le) || 0) > (maison.vuLe ?? 0)).map((r) => r.de))];
+    const annonces = visite ? [] : [phraseAbsence(maison.absence ?? []), repondus.length ? PHRASES_QUESTION.arrivee(repondus) : null].filter((x): x is string => Boolean(x));
+    const absence = annonces[0] ?? null;
+    const neufs = visite?.nouveaux?.length ? objetsPlaces(maison.contenu ?? { cadres: [], platine: null, tele: null, etagere: [], total: 0 }).filter((o) => visite.nouveaux!.includes(o.id)) : [];
+    const a = visite
+      ? neufs.length
+        ? { phrase: phraseNouveautes(visite.prenom, neufs) ?? "", ids: neufs.slice(0, 4).map((o) => o.id) }
+        : null
+      : maison.contenu
+        ? arriveeChezMoi(maison.contenu, maison.vuLe ?? 0)
+        : null;
+    if (!a && !absence) {
       dire();
       return;
     }
@@ -269,19 +321,32 @@ function Piece({
       dire();
     };
     interrompre.current = finir;
-    void Promise.resolve().then(() => !fini && setArrivee(a.phrase));
-    let t = 900;
-    for (const id of a.ids) {
-      minuteries.push(window.setTimeout(() => viser(id), t));
-      t += 1900;
+    let t = 0;
+    if (absence) {
+      void Promise.resolve().then(() => !fini && setArrivee(absence));
+      t = 2800;
+      for (const autre of annonces.slice(1)) {
+        minuteries.push(window.setTimeout(() => setArrivee(autre), t));
+        t += 2800;
+      }
     }
-    minuteries.push(
-      window.setTimeout(() => {
-        setVise(null);
-        if (d) aller(Math.max(0, scene.centre.x * d.clientHeight * ratio - d.clientWidth / 2));
-      }, t),
-    );
-    minuteries.push(window.setTimeout(finir, t + 1100));
+    if (a) {
+      if (absence) minuteries.push(window.setTimeout(() => setArrivee(a.phrase), t));
+      else void Promise.resolve().then(() => !fini && setArrivee(a.phrase));
+      t += 900;
+      for (const id of a.ids) {
+        minuteries.push(window.setTimeout(() => viser(id), t));
+        t += 1900;
+      }
+      minuteries.push(
+        window.setTimeout(() => {
+          setVise(null);
+          if (d) aller(Math.max(0, scene.centre.x * d.clientHeight * ratio - d.clientWidth / 2));
+        }, t),
+      );
+      t += 1100;
+    }
+    minuteries.push(window.setTimeout(finir, t));
     return () => {
       // (sans retenir la visite : l'arrivée reprendra — un nouveau rendu, le mode strict)
       fini = true;
@@ -291,7 +356,7 @@ function Piece({
     };
     // (une fois la scène mesurée)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pret]);
+  }, [pret, enVisiteChez]);
   const zones = zonesDe(scene.emplacements);
   const dit = bulle ? EMPLACEMENTS_MAISON[bulle.cle] : null;
   const moment = MOMENTS_DUO.find((m) => m.cle === scene.moment);
@@ -356,10 +421,36 @@ function Piece({
                 setObjet(o);
               }}
               onAppuiLong={(o) => {
+                if (visite) return;
                 setObjet(null);
                 setAEnlever(o);
               }}
             />
+          )}
+          {/* 🎁 (lot M5) sur la table basse : les cadeaux des proches — emballés tant qu'ils ne sont pas ouverts */}
+          {maison.table && maison.table.length > 0 && scene.emplacements?.table && (
+            <div className="mmc-table" style={place(scene.emplacements.table)}>
+              {maison.table.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  className={`mmc-cadeau${g.attente ? " emballe" : ""}`}
+                  data-cadeau={g.id}
+                  data-attente={g.attente ? "1" : undefined}
+                  aria-label={g.attente ? PHRASES_CADEAU.attente(g.de) : `${g.emoji} ${g.nom}`}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    setIndice(false);
+                    setBulle(null);
+                    setObjet(null);
+                    setOuvert(false);
+                    setCadeau(g);
+                  }}
+                >
+                  {g.attente ? "🎁" : g.emoji}
+                </button>
+              ))}
+            </div>
           )}
           {/* 🪑 sa figurine, au centre : son ombre au sol, puis elle, dans son fauteuil */}
           <span className="mmc-ombre" style={{ left: `${c.x * 100}%`, top: `${c.y * 100}%`, width: `${c.hauteur * 0.62 * (100 / ratio)}%` }} aria-hidden="true" />
@@ -381,14 +472,40 @@ function Piece({
               <img src={figurine.src} srcSet={figurine.srcset} sizes={hauteur ? `${Math.round(hauteur * c.hauteur * (figurine.largeur / Math.max(1, figurine.hauteur)))}px` : "360px"} alt="" draggable={false} />
             </button>
           )}
+          {/* 🙂 (lot M5) son humeur du jour, au-dessus de sa figurine */}
+          {maison.humeur && (
+            <span className="mmc-humeur" data-humeur style={{ left: `${c.x * 100}%`, bottom: `${(1 - c.y + c.hauteur) * 100}%` }}>
+              {maison.humeur.emoji} {maison.humeur.nom}
+            </span>
+          )}
         </div>
       </div>
       <div className="mmc-haut">
+        {visite && (
+          <a className="mmc-reglages mmc-retour" href="/collection#proches" aria-label={PHRASES_VISITE.retour}>
+            ‹
+          </a>
+        )}
         <span className="mmc-nom">
-          {scene.emoji} {scene.nom}
+          {visite ? `🏠 ${PHRASES_VISITE.chez(visite.prenom)}` : `${scene.emoji} ${scene.nom}`}
           {moment && <small> · {moment.emoji}</small>}
         </span>
+        {!visite && (
         <span className="mmc-boutons">
+          <button
+            type="button"
+            className="mmc-reglages"
+            onClick={() => {
+              setIndice(false);
+              setObjet(null);
+              setBulle(null);
+              setQui(true);
+            }}
+            aria-label={PHRASES_VISITE.quiTitre}
+            data-geste="qui"
+          >
+            {VISIBILITES_MAISON.find((x) => x.v === (maison.visibilite ?? "proches"))?.titre.split(" ")[0] ?? "🚪"}
+          </button>
           <button
             type="button"
             className="mmc-reglages mmc-ajouter"
@@ -407,6 +524,7 @@ function Piece({
             ⚙️
           </button>
         </span>
+        )}
       </div>
       {arrivee && (
         <p className="mmc-arrivee" role="status" data-arrivee>
@@ -435,7 +553,7 @@ function Piece({
           <b>
             {objet.emoji} {objet.titre}
           </b>
-          <span>{ditDeLObjet(objet)}</span>
+          <span>{ditDeLObjet(objet, visite?.prenom)}</span>
           {(lienSur(objet.lien) || (objet.sorte === "photo" && objet.image)) && (
             <span className="mmc-actions">
               {lienSur(objet.lien) && (
@@ -464,6 +582,219 @@ function Piece({
           </button>
         </div>
       )}
+      {/* 💬 (lot M5) la question du jour : chez soi, ce qu'on y a répondu ; chez un proche, y répondre pour voir la sienne */}
+      {(visite ? question : maison.question) && !questionOuverte && !arrivee && !fait && (
+        <button
+          type="button"
+          className="mmc-qdj"
+          data-geste="question"
+          onClick={() => {
+            setIndice(false);
+            setBulle(null);
+            setObjet(null);
+            setCadeau(null);
+            setQuestionOuverte(true);
+          }}
+        >
+          {visite ? PHRASES_QUESTION.chezLui(visite.prenom) : PHRASES_QUESTION.chezMoi}
+        </button>
+      )}
+      {questionOuverte && (visite ? question : maison.question) && (
+        <div className="mmc-bulle" role="status" data-bulle="question">
+          <b>{(visite ? question : maison.question)!.q}</b>
+          {!visite ? (
+            <span className="mmc-reponses">
+              {maison.question!.reponses.map((r, i) => (
+                <span key={i} data-reponse>
+                  <strong>{r.de}</strong> : {r.texte}
+                </span>
+              ))}
+            </span>
+          ) : question?.maReponse ? (
+            <span className="mmc-reponses">
+              <span data-ma-reponse>
+                <strong>{PHRASES_QUESTION.toi}</strong> : {question.maReponse}
+              </span>
+              <span data-sa-reponse>
+                <strong>{visite.prenom}</strong> : {question.saReponse}
+              </span>
+            </span>
+          ) : (
+            <span className="mmc-repondre">
+              <small>{PHRASES_QUESTION.avant(visite.prenom)}</small>
+              {question?.choix ? (
+                <span className="mmc-actions">
+                  {question.choix.map((c) => (
+                    <a
+                      key={c}
+                      className="mmc-action"
+                      href="#"
+                      role="button"
+                      data-choix={c}
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        setReponse(c);
+                      }}
+                      aria-pressed={reponse === c}
+                    >
+                      {c}
+                    </a>
+                  ))}
+                </span>
+              ) : (
+                <input className="mmc-champ-reponse" data-champ="reponse" maxLength={120} placeholder={PHRASES_QUESTION.indice} value={reponse} onChange={(e) => setReponse(e.target.value)} />
+              )}
+              {erreurQ && <small className="mmc-erreur-q">{erreurQ}</small>}
+              <a
+                className="mmc-action"
+                href="#"
+                role="button"
+                data-repondre
+                onClick={async (ev) => {
+                  ev.preventDefault();
+                  if (!reponse.trim()) return;
+                  setErreurQ("");
+                  const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "repondre", chez: visite.cle, texte: reponse }) })
+                    .then(async (x) => ({ ok: x.ok, j: (await x.json().catch(() => ({}))) as { visite?: MaisonVisitee; error?: string } }))
+                    .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { visite?: MaisonVisitee; error?: string } }));
+                  if (!r.ok) return setErreurQ(r.j.error || "Ça n’a pas marché : réessaie.");
+                  if (r.j.visite?.etat === "ouvert" && r.j.visite.question) setQuestion(r.j.visite.question);
+                }}
+              >
+                {PHRASES_QUESTION.repondre}
+              </a>
+            </span>
+          )}
+          <button type="button" onClick={() => setQuestionOuverte(false)} aria-label="Fermer">
+            ✕
+          </button>
+        </div>
+      )}
+      {cadeau && (
+        <div className="mmc-bulle" role="status" data-bulle="cadeau" data-cadeau-bulle={cadeau.id}>
+          {cadeau.attente && !visite && !ouvert ? (
+            <>
+              <b>{PHRASES_CADEAU.attente(cadeau.de)}</b>
+              <span className="mmc-actions">
+                <a
+                  className="mmc-action"
+                  href="#"
+                  role="button"
+                  data-ouvrir-cadeau
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    setOuvert(true);
+                  }}
+                >
+                  {PHRASES_CADEAU.ouvrir}
+                </a>
+              </span>
+            </>
+          ) : (
+            <>
+              <b>
+                {cadeau.emoji} {cadeau.nom}
+              </b>
+              <span>
+                {PHRASES_CADEAU.de(cadeau.de)}
+                {cadeau.mot ? ` · « ${cadeau.mot} »` : ""}
+              </span>
+              {cadeau.attente && !visite && (
+                <span className="mmc-actions">
+                  {[true, false].map((oui) => (
+                    <a
+                      key={String(oui)}
+                      className="mmc-action"
+                      href="#"
+                      role="button"
+                      data-decider={oui ? "oui" : "non"}
+                      onClick={async (ev) => {
+                        ev.preventDefault();
+                        const g = cadeau;
+                        setCadeau(null);
+                        await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "decider", id: g.id, oui }) })
+                          .then((r) => r.text())
+                          .catch(() => undefined);
+                        const r = await fetch(ROUTE, { cache: "no-store" })
+                          .then((x) => x.json())
+                          .catch(() => null);
+                        if (r?.maison) onMaison(r.maison as MaMaisonVue);
+                      }}
+                    >
+                      {oui ? PHRASES_CADEAU.garder : PHRASES_CADEAU.nonMerci}
+                    </a>
+                  ))}
+                </span>
+              )}
+            </>
+          )}
+          <button type="button" onClick={() => setCadeau(null)} aria-label="Fermer">
+            ✕
+          </button>
+        </div>
+      )}
+      {visite && (visite.peutLaisser || !frappe) && !objet && !bulle && !cadeau && !questionOuverte && (
+        <div className="mmc-actions-visite">
+          {!frappe && (
+            <button
+              type="button"
+              className="mmc-frapper"
+              data-geste="frapper"
+              onClick={async () => {
+                const e = await visite.onFrapper();
+                if (e) {
+                  setFait(e);
+                  return;
+                }
+                setFrappe(true);
+                setFait(PHRASES_VISITE.frappe(visite.prenom));
+                window.setTimeout(() => setFait(""), 2600);
+              }}
+            >
+              {PHRASES_VISITE.frapper}
+            </button>
+          )}
+          {visite.peutLaisser && (
+            <button type="button" className="mmc-frapper secondaire" data-geste="surprise" onClick={() => setSurprise(true)}>
+              {PHRASES_CADEAU.laisser}
+            </button>
+          )}
+          {mesCadeaux > 0 && (
+            <small className="mmc-mes-cadeaux" data-mes-cadeaux>
+              {PHRASES_CADEAU.dejaLa(mesCadeaux)}
+            </small>
+          )}
+        </div>
+      )}
+      {surprise &&
+        visite?.cle &&
+        createPortal(
+          <LaisserUneSurprise
+            cle={visite.cle}
+            prenom={visite.prenom}
+            onFermer={() => setSurprise(false)}
+            onPosee={() => {
+              setSurprise(false);
+              setFrappe(true);
+              setMesCadeaux((n) => n + 1);
+              setFait(PHRASES_CADEAU.posee(visite.prenom));
+              window.setTimeout(() => setFait(""), 2600);
+            }}
+          />,
+          document.body,
+        )}
+      {qui &&
+        createPortal(
+          <QuiPeutEntrer
+            maison={maison}
+            onFermer={() => setQui(false)}
+            onChoisi={(m) => {
+              setQui(false);
+              onMaison(m);
+            }}
+          />,
+          document.body,
+        )}
       {fait && (
         <p className="mmc-fait" role="status" data-fait>
           {fait}
@@ -503,7 +834,7 @@ function Piece({
         <div className="mmc-grand" role="dialog" aria-modal="true" aria-label={grand.titre} data-photo-grand onClick={() => setGrand(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={grand.image.src} alt={grand.titre} />
-          <p>{ditDeLObjet(grand)}</p>
+          <p>{ditDeLObjet(grand, visite?.prenom)}</p>
           <button type="button" aria-label="Fermer">
             ✕
           </button>
@@ -652,6 +983,58 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
   );
 }
 
+/**
+ * 🚪 (lot M4) LA MAISON DE QUELQU'UN, EN VISITE (`/univers/chez/<clé>`) : sa pièce en plein écran, sa figurine au centre,
+ * ce qu'il montre (tout pour ses proches ; pour les autres, ce qu'il a ajouté lui-même) ; « 🚪 Frapper à la porte ».
+ */
+export function VisiteDeLaMaison({ cle }: { cle: string }) {
+  const [v, setV] = useState<MaisonVisitee | null>(null);
+  useEffect(() => {
+    let fini = false;
+    void fetch(`${ROUTE}?chez=${encodeURIComponent(cle)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { visite?: MaisonVisitee }) => !fini && setV(j.visite ?? { etat: "absent" }))
+      .catch(() => !fini && setV({ etat: "absent" }));
+    return () => {
+      fini = true;
+    };
+  }, [cle]);
+  const frapper = async (): Promise<string | null> => {
+    try {
+      const r = await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "frapper", cle }) });
+      const j = (await r.json().catch(() => ({}))) as { error?: string };
+      return r.ok ? null : j.error || "Ça n’a pas marché : réessaie.";
+    } catch {
+      return "Pas de réseau : réessaie dans un instant.";
+    }
+  };
+  return (
+    <main className="mmc plein mmc-visite" data-visite={v?.etat ?? "charge"}>
+      {!v ? (
+        <div className="mmc-scene attente" aria-hidden="true" />
+      ) : v.etat === "ouvert" && v.maison.scene ? (
+        <Piece
+          maison={{ ...v.maison, scene: v.maison.scene }}
+          onReglages={() => undefined}
+          onMaison={() => undefined}
+          visite={
+            v.chezSoi
+              ? { prenom: v.prenom, frappe: true, onFrapper: frapper, cle }
+              : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper, cle, peutLaisser: v.peutLaisser, mesCadeaux: v.mesCadeaux, nouveaux: v.nouveaux, question: v.question }
+          }
+        />
+      ) : (
+        <div className="mmc-ferme">
+          <p>{v.etat === "reserve" ? PHRASES_VISITE.reserve(v.prenom ?? "Cette personne") : v.etat === "ferme" ? PHRASES_VISITE.ferme(v.prenom ?? "Cette personne") : PHRASES_VISITE.absent}</p>
+          <a href="/collection#proches">{PHRASES_VISITE.retour}</a>
+        </div>
+      )}
+      {v?.etat === "ouvert" && v.chezSoi && <p className="mmc-chez-soi">{PHRASES_VISITE.chezToi}</p>}
+      <style>{STYLES_MAISON_CATALOGUE}</style>
+    </main>
+  );
+}
+
 const STYLES_MAISON_CATALOGUE = `
 .mmc{position:relative;display:flex;flex-direction:column;gap:10px;color:#FFF4E6}
 .mmc-scene{position:relative;height:min(68svh,620px);border-radius:22px;overflow:hidden;background:#1a0f14;box-shadow:0 18px 40px -20px rgba(0,0,0,.8)}
@@ -682,6 +1065,29 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-nom{padding:7px 13px;border-radius:999px;background:rgba(20,10,14,.62);font-weight:900;font-size:14.5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc-nom small{font-weight:700;opacity:.85}
 .mmc-boutons{display:flex;gap:8px}
+.mmc-qdj{position:absolute;left:10px;top:calc(60px + env(safe-area-inset-top));max-width:calc(100% - 20px);padding:7px 13px;border:0;border-radius:999px;background:rgba(255,246,234,.92);color:#2a1424;font-weight:800;font-size:13.5px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mmc-reponses,.mmc-repondre{grid-column:1;display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.mmc-reponses span{font-size:14px;color:#F3DCE6}
+.mmc-reponses strong{color:#FFF4E6}
+.mmc-repondre small{font-size:13px;color:#c6a6bd}
+.mmc-champ-reponse{padding:10px 12px;border:1px solid #5a3352;border-radius:12px;background:#1d0a1b;color:#FFF4E6;font:inherit;font-size:16px}
+.mmc-erreur-q{color:#ffb4a8!important}
+.mmc-bulle .mmc-action[aria-pressed="true"]{background:#f2be6a}
+.mmc-retour{display:grid;place-items:center;text-decoration:none;color:#FFF4E6;font-size:24px;line-height:1;margin-right:auto}
+.mmc-haut .mmc-retour + .mmc-nom{margin-right:auto;margin-left:8px}
+.mmc-visite{min-height:100svh;background:#1a0f14}
+.mmc-ferme{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;font-size:16px;line-height:1.5}
+.mmc-ferme a{color:#f2be6a;font-weight:800;text-decoration:none}
+.mmc-chez-soi{position:fixed;left:50%;top:calc(62px + env(safe-area-inset-top));transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(20,10,14,.72);font-size:13.5px;white-space:nowrap}
+.mmc-actions-visite{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;width:max-content;max-width:calc(100% - 32px)}
+.mmc-frapper.secondaire{background:rgba(20,10,14,.78);box-shadow:none;border:1px solid rgba(255,244,230,.35);font-size:15px;padding:11px 20px}
+.mmc-mes-cadeaux{padding:5px 12px;border-radius:999px;background:rgba(20,10,14,.7);font-size:13px}
+.mmc-table{position:absolute;display:flex;align-items:flex-end;justify-content:center;gap:6%;pointer-events:none}
+.mmc-cadeau{pointer-events:auto;padding:0;border:0;background:none;cursor:pointer;font-size:clamp(14px,5vh,40px);line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45));-webkit-tap-highlight-color:transparent}
+.mmc-cadeau.emballe{animation:mmc-paquet 2.6s ease-in-out infinite}
+@keyframes mmc-paquet{0%,80%,100%{transform:none}86%{transform:rotate(-8deg)}92%{transform:rotate(7deg)}}
+.mmc-humeur{position:absolute;transform:translate(-50%,-6px);padding:5px 11px;border-radius:999px;background:rgba(255,246,234,.94);color:#2a1424;font-weight:800;font-size:clamp(11px,1.7vh,14px);white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.35);pointer-events:none}
+.mmc-frapper{white-space:nowrap;padding:13px 22px;border:0;border-radius:999px;background:#ff2f8f;color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(255,47,143,.8)}
 .mmc-ajouter{font-weight:900;color:#FFF4E6}
 .mmc-fait{position:absolute;left:50%;top:62px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(69,212,131,.92);color:#10261a;font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .3s ease-out}
 .mmc.plein .mmc-fait{top:calc(62px + env(safe-area-inset-top))}
@@ -753,5 +1159,5 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-oui:disabled{opacity:.7;cursor:default}
 .mmc-non{background:rgba(255,255,255,.1);color:#FFF4E6}
 .mmc-erreur{color:#FFB4A9 !important}
-@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee{animation:none!important}.mmc-objet{transition:none}}
+@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe{animation:none!important}.mmc-objet{transition:none}}
 `;

@@ -26,6 +26,10 @@ import { etagereVitrine } from "./etagere-serveur";
 import { mesPieces } from "./pieces-vivantes-serveur";
 import { decorVivant } from "./univers-vivant-serveur";
 import { completerMonde, lireFicheMonde } from "./fiches-serveur";
+import { cheminVisibiliteMaison, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vieDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
+import { objetsDeMaMaison } from "./etagere-serveur";
+import { questionChezLui } from "./question-maison-serveur";
+import { MA_MAISON_CATALOGUE, objetsPlaces, placerChezMoi, type MaisonVisitee } from "./ma-maison";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { VISIBILITES, type FicheMonde, type Visibilite } from "./monde";
@@ -70,12 +74,23 @@ async function quiEst(supabase: Supabase, h: string): Promise<{ prenom: string; 
 }
 
 /** Peut-il entrer chez lui ? (« moi » : personne ; « proches » : ses proches ; « tous » : tout le monde). */
-async function peutEntrer(supabase: Supabase, visiteur: string | null, h: string, f: FicheMonde): Promise<{ ok: boolean; proche: boolean }> {
+async function peutEntrer(supabase: Supabase, visiteur: string | null, h: string, f: Pick<FicheMonde, "visibilite">): Promise<{ ok: boolean; proche: boolean }> {
   if (visiteur === h) return { ok: true, proche: true };
   const proche = visiteur ? await seParlent(supabase, visiteur, h) : false;
   if (f.visibilite === "moi") return { ok: false, proche };
   if (f.visibilite === "proches") return { ok: proche, proche };
   return { ok: true, proche };
+}
+
+/**
+ * 🏠 (lot M4) CHEZ QUI ENTRE-T-ON : sa pièce du catalogue (« Ma maison ») quand il en a une et que l'interrupteur est
+ * allumé — ou qu'il n'a pas d'univers fabriqué —, sinon son univers d'avant. `null` : rien à visiter.
+ */
+async function maisonOuUnivers(supabase: Supabase, h: string): Promise<{ piece: true; visibilite: Visibilite } | { piece: false; f: FicheMonde } | null> {
+  const [f, piece] = await Promise.all([lireFicheMonde(supabase, h).catch(() => null), lireSaPiece(supabase, h).catch(() => null)]);
+  const univers = f?.references.decor ? f : null;
+  if (piece && (MA_MAISON_CATALOGUE || !univers)) return { piece: true, visibilite: await visibiliteDeLaMaison(supabase, h) };
+  return univers ? { piece: false, f: univers } : null;
 }
 
 const souvenirVu = (x: Souvenir, prenom: string, qui?: { image?: string; cle?: string; univers?: boolean }): SouvenirVu => ({
@@ -156,15 +171,16 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
 
 // ─── frapper, laisser un souvenir, signaler ───────────────────────────────────────────────────────
 type Resultat = { ok?: true; error?: string; statut?: number };
-async function chezQui(supabase: Supabase, visiteur: Habitant, cle: unknown): Promise<{ h?: string; f?: FicheMonde; proche?: boolean; error?: string; statut?: number }> {
+async function chezQui(supabase: Supabase, visiteur: Habitant, cle: unknown): Promise<{ h?: string; proche?: boolean; error?: string; statut?: number }> {
   const h = await hDeCle(supabase, cle);
   if (!h) return { error: "Cet univers n’existe pas.", statut: 404 };
   if (h === visiteur.id) return { error: "C’est chez toi 🙂", statut: 400 };
-  const f = await lireFicheMonde(supabase, h);
-  if (!f?.references.decor) return { error: "Cet univers n’existe pas.", statut: 404 };
-  const acces = await peutEntrer(supabase, visiteur.id, h, f);
+  // (🏠 lot M4 : sa maison du catalogue, ou son univers d'avant)
+  const m = await maisonOuUnivers(supabase, h);
+  if (!m) return { error: "Cet univers n’existe pas.", statut: 404 };
+  const acces = await peutEntrer(supabase, visiteur.id, h, m.piece ? { visibilite: m.visibilite } : m.f);
   if (!acces.ok) return { error: "Cet univers est fermé.", statut: 403 };
-  return { h, f, proche: acces.proche };
+  return { h, proche: acces.proche };
 }
 
 /** Sa visite, notée chez lui (une par jour et par personne) : `true` si c'est la première d'aujourd'hui. */
@@ -223,8 +239,10 @@ export async function signalerUnivers(supabase: Supabase, visiteur: Habitant, cl
  * la figurine de qui les a laissés) et ceux qui sont posés, qui peut entrer.
  */
 export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisites | null> {
-  const f = await lireFicheMonde(supabase, h);
-  if (!f) return null;
+  // (🏠 lot M5 de « Ma maison » : sa pièce du catalogue a ses visites aussi — sa visibilité est la sienne)
+  const m = await maisonOuUnivers(supabase, h);
+  const f = m && !m.piece ? m.f : await lireFicheMonde(supabase, h);
+  if (!f && !m?.piece) return null;
   const [visites, souvenirs, adulte, cle, vues] = await Promise.all([
     lireVisites(supabase, h),
     lireSouvenirs(supabase, h),
@@ -250,7 +268,7 @@ export async function mesVisites(supabase: Supabase, h: string): Promise<MesVisi
   const prenomDe = (id: string) => qui.get(id)?.prenom ?? "Quelqu’un";
   const vuLe = s(vues.le);
   return {
-    visibilite: f.visibilite,
+    visibilite: m?.piece ? m.visibilite : (f?.visibilite ?? "proches"),
     adulte,
     cle,
     passes: recents.map((v) => {
@@ -338,11 +356,88 @@ export async function choisirVisibilite(supabase: Supabase, h: string, v: unknow
   }
   const r = await completerMonde(supabase, h, f.version, { visibilite: choix });
   if (!r.fiche) return { error: r.error ?? "Ça n’a pas marché.", statut: 502 };
-  // (🏡 « Découvrir » : il y entre quand il ouvre son univers à tous, il en sort sinon)
+  await publierDansDecouvrir(supabase, h, choix === "tous");
+  return { ok: true };
+}
+
+/**
+ * 🏠 (lot M4) La page de visite montre-t-elle sa maison du catalogue ? Il en a une, et l'interrupteur est allumé — ou il
+ * n'a pas d'univers fabriqué, ou l'essai la demande (`?piece=1`).
+ */
+export async function visiteDeSaMaison(supabase: Supabase, cle: unknown, essai = false): Promise<boolean> {
+  const h = await hDeCle(supabase, cle).catch(() => null);
+  if (!h || !(await lireSaPiece(supabase, h).catch(() => null))) return false;
+  return essai || (await maisonOuUnivers(supabase, h))?.piece === true;
+}
+
+/** (🏡 « Découvrir » : il y entre quand il ouvre sa maison ou son univers à tous, il en sort sinon) */
+async function publierDansDecouvrir(supabase: Supabase, h: string, oui: boolean): Promise<void> {
   const p = await lireJson<{ liste?: { h: string; le: string }[] }>(supabase, CHEMIN_PUBLICS);
   const sans = (Array.isArray(p.liste) ? p.liste : []).filter((x) => s(x?.h) && x.h !== h);
-  await ecrireJson(supabase, CHEMIN_PUBLICS, { liste: choix === "tous" ? [...sans, { h, le: new Date().toISOString() }].slice(-500) : sans });
+  await ecrireJson(supabase, CHEMIN_PUBLICS, { liste: oui ? [...sans, { h, le: new Date().toISOString() }].slice(-500) : sans });
+}
+
+/**
+ * 🚪 (lot M4, `ma-maison.md` section 8) QUI PEUT ENTRER DANS SA MAISON : ses proches (d'office), tout le monde (18 ans ou
+ * plus déclarés : elle entre alors dans « 🏡 Les univers à visiter »), lui seul.
+ */
+export async function choisirVisibiliteMaison(supabase: Supabase, h: string, v: unknown, adulte: unknown): Promise<Resultat> {
+  const choix = VISIBILITES.find((x) => x === v) as Visibilite | undefined;
+  if (!choix) return { error: "Qui peut entrer ?", statut: 400 };
+  if (!(await lireSaPiece(supabase, h))) return { error: "Choisis d’abord ta pièce.", statut: 400 };
+  if (choix === "tous" && !(await estAdulte(supabase, h))) {
+    if (adulte !== true) return { error: "Pour l’ouvrir à tous, il faut avoir 18 ans ou plus.", statut: 403 };
+    await ecrireJson(supabase, cheminAdulte(h), { le: new Date().toISOString() });
+  }
+  if (!(await ecrireJson(supabase, cheminVisibiliteMaison(h), { v: choix, le: new Date().toISOString() }))) return { error: "Ça n’a pas marché.", statut: 502 };
+  await publierDansDecouvrir(supabase, h, choix === "tous");
   return { ok: true };
+}
+
+/**
+ * 🏠 (lot M4) SA MAISON, EN VISITE (`MaisonVisitee`) : selon qui peut entrer ; ses proches voient tout ce qu'il a gardé,
+ * les autres seulement ce qu'il a ajouté lui-même (un cadre garde alors son tableau). Rien n'est noté : la visite se dit
+ * en frappant.
+ */
+export async function maisonVisitee(supabase: Supabase, visiteur: Habitant | null, cle: unknown): Promise<MaisonVisitee> {
+  const h = await hDeCle(supabase, cle);
+  if (!h) return { etat: "absent" };
+  const piece = await lireSaPiece(supabase, h);
+  if (!piece) return { etat: "absent" };
+  const [visibilite, hote] = await Promise.all([visibiliteDeLaMaison(supabase, h), quiEst(supabase, h)]);
+  const acces = await peutEntrer(supabase, visiteur?.id ?? null, h, { visibilite });
+  if (!acces.ok) return { etat: visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
+  const chezSoi = visiteur?.id === h;
+  const [scene, figurine, objets, visites, vie, souvenirs] = await Promise.all([
+    sceneDeLaMaison(supabase, piece),
+    figurineDeLaMaison(supabase, h).catch(() => null),
+    objetsDeMaMaison(supabase, h).catch(() => []),
+    lireVisites(supabase, h),
+    // (🙂🎁 lot M5 : son humeur et les cadeaux posés sur sa table — à ses proches seulement)
+    acces.proche ? vieDeLaMaison(supabase, h, { visiteur: true }).catch(() => ({})) : Promise.resolve({}),
+    visiteur && acces.proche && !chezSoi ? lireSouvenirs(supabase, h) : Promise.resolve([] as Souvenir[]),
+  ]);
+  // (💬 lot M5 : sa question du jour, à ses proches)
+  const question = visiteur && acces.proche && !chezSoi ? await questionChezLui(supabase, h, visiteur.id).catch(() => null) : null;
+  if (!scene) return { etat: "absent" };
+  const montres = acces.proche ? objets : objets.filter((o) => o.aMoi);
+  const jour = jourParis();
+  const contenu = placerChezMoi(montres, scene.emplacements?.cadres.length ?? 0);
+  // (✨ lot M5 : ce qu'il a mis chez lui aujourd'hui, dans la pièce — la caméra passe dessus à l'arrivée du visiteur)
+  const auj = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" });
+  const nouveaux = chezSoi ? [] : objetsPlaces(contenu).filter((o) => auj.format(new Date(o.le)) === jour).map((o) => o.id);
+  return {
+    etat: "ouvert",
+    prenom: hote.prenom,
+    cle: s(cle),
+    maison: { piece, scene, figurine, contenu, ...vie },
+    proche: acces.proche,
+    chezSoi,
+    frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && v.le.startsWith(jour))),
+    ...(visiteur && acces.proche && !chezSoi ? { peutLaisser: true, mesCadeaux: souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length } : {}),
+    ...(nouveaux.length ? { nouveaux } : {}),
+    ...(question ? { question } : {}),
+  };
 }
 
 /** 🏡 Les univers ouverts à tous, les plus récents d'abord (« Découvrir », lot 7) : sa figurine chez elle. */
@@ -351,6 +446,14 @@ export async function universPublics(supabase: Supabase, limite = 12): Promise<U
   const recents = (Array.isArray(p.liste) ? p.liste : []).filter((x) => s(x?.h)).slice(-limite * 2).reverse();
   const vus = await Promise.all(
     recents.map(async ({ h }): Promise<UniversPublic | null> => {
+      // (🏠 lot M4 : sa maison du catalogue, ouverte à tous — la vignette de sa pièce)
+      const m = await maisonOuUnivers(supabase, h).catch(() => null);
+      if (m?.piece) {
+        const p = await lireSaPiece(supabase, h);
+        if (!p || m.visibilite !== "tous") return null;
+        const [image, { prenom }, cle] = await Promise.all([vignetteDeLaPiece(supabase, p), quiEst(supabase, h), poserProfil(supabase, h)]);
+        return image ? { cle, prenom, image } : null;
+      }
       const f = await lireFicheMonde(supabase, h).catch(() => null);
       if (!f?.references.decor || f.visibilite !== "tous") return null;
       const [image, { prenom }, cle] = await Promise.all([signer(supabase, (f.references.vedette ?? f.references.decor).chemin, 3600), quiEst(supabase, h), poserProfil(supabase, h)]);
@@ -362,7 +465,7 @@ export async function universPublics(supabase: Supabase, limite = 12): Promise<U
 
 /** 🏡 Son univers est-il ouvert à ce proche ? (le bouton « Son univers » dans « Proches ») */
 export async function universOuvert(supabase: Supabase, visiteur: string, h: string): Promise<boolean> {
-  const f = await lireFicheMonde(supabase, h).catch(() => null);
-  if (!f?.references.decor) return false;
-  return (await peutEntrer(supabase, visiteur, h, f)).ok;
+  const m = await maisonOuUnivers(supabase, h).catch(() => null);
+  if (!m) return false;
+  return (await peutEntrer(supabase, visiteur, h, m.piece ? { visibilite: m.visibilite } : m.f)).ok;
 }

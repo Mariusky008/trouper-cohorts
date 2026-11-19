@@ -238,6 +238,8 @@ await ajouter.locator("[data-mettre]").click();
 ok(await attendreFait(/sur l’étagère/), "un livre : « sur l’étagère »");
 const livre = scene.locator('.mmc-objet[aria-label="📚 Le Petit Prince"]');
 ok(await attendre(async () => (await livre.count()) === 1), "… le voilà sur l’étagère");
+// (la caméra est allée le voir : on la laisse finir)
+await p.waitForTimeout(2200);
 await toucher('.mmc-objet[aria-label="📚 Le Petit Prince"]');
 ok(await attendre(async () => /Mis chez toi · Lu trois fois/.test(await bulle.innerText())), "un toucher : « Mis chez toi · Lu trois fois »");
 await bulle.locator("button[aria-label='Fermer']").click({ timeout: 2000 }).catch(() => undefined);

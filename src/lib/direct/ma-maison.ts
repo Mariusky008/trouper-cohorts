@@ -15,6 +15,7 @@
  */
 import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type PlaceDuo } from "./pieces-duo";
 import type { ImageSalon } from "./salon";
+import type { Visibilite } from "./monde";
 
 /** 🔀 L'interrupteur : ÉTEINT tant que le propriétaire ne l'a pas jouée sur son téléphone (`ma-maison.md`, section 10). */
 export const MA_MAISON_CATALOGUE = false;
@@ -58,7 +59,112 @@ export type MaMaisonVue = {
   /** 🏠 (lot M2) ce que j'ai gardé, à ses emplacements ; quand je suis venu la dernière fois (`vuLe`, ms ; 0 : jamais). */
   contenu?: ContenuMaison;
   vuLe?: number;
+  /** 🚪 (lot M4) qui peut entrer chez moi ; j'ai déclaré 18 ans ou plus (pour l'ouvrir à tous) ; ma clé (mon lien) */
+  visibilite?: Visibilite;
+  adulte?: boolean;
+  cle?: string;
+  /** 🙂 (lot M5) mon humeur du jour, que ma figurine montre (mes proches la voient aussi) */
+  humeur?: { emoji: string; nom: string };
+  /** 🚪 (lot M5) qui a frappé pendant mon absence (des prénoms, jamais un nombre de visites) */
+  absence?: string[];
+  /** 🎁 (lot M5) sur la table basse : les cadeaux de mes proches — à ouvrir (`attente`), ou gardés */
+  table?: CadeauMaison[];
+  /** 💬 (lot M5) ma question du jour, et ce que mes proches y ont répondu */
+  question?: QuestionChezMoi;
 };
+
+/** 💬 (lot M5) La question du jour, chez soi : ce que ses proches y ont répondu. */
+export type QuestionChezMoi = { q: string; reponses: { de: string; texte: string; le: string }[] };
+/** 💬 (lot M5) La question du jour d'un proche, en visite : sa réponse ne se découvre qu'après la sienne. */
+export type QuestionChezLui = { cle: string; q: string; choix?: string[]; maReponse?: string; saReponse?: string };
+export const PHRASES_QUESTION = {
+  chezLui: (prenom: string) => `💬 La question du jour de ${prenom}`,
+  chezMoi: "💬 Ta question du jour",
+  repondre: "Répondre",
+  indice: "Ta réponse, en quelques mots",
+  avant: (prenom: string) => `Réponds d’abord : tu découvriras ensuite la réponse de ${prenom}.`,
+  toi: "Toi",
+  arrivee: (prenoms: readonly string[]) =>
+    `💬 ${prenoms.length === 1 ? prenoms[0] : `${prenoms.slice(0, -1).join(", ")} et ${prenoms[prenoms.length - 1]}`} ${prenoms.length === 1 ? "a" : "ont"} répondu à ta question du jour`,
+} as const;
+
+/** 🎁 (lot M5) Un cadeau laissé par un proche (les souvenirs du lot 6 des visites), sur la table basse. */
+export type CadeauMaison = { id: string; emoji: string; nom: string; mot?: string; de: string; le: string; attente?: true };
+/** (la table basse montre quatre cadeaux au plus : ceux à ouvrir d'abord) */
+export const TABLE_MAX = 4;
+
+/** 🚪 (lot M5) « Pendant ton absence » : qui a frappé (sans compter les visites). `null` : personne. */
+export function phraseAbsence(prenoms: readonly string[]): string | null {
+  const l = [...new Set(prenoms)].slice(0, 3);
+  if (!l.length) return null;
+  const qui = l.length === 1 ? l[0] : `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}`;
+  return `🚪 ${qui} ${l.length === 1 ? "a" : "ont"} frappé à ta porte pendant ton absence`;
+}
+/** ✨ (lot M5) ce qui est nouveau chez lui aujourd'hui, dit au visiteur. `null` : rien. */
+export function phraseNouveautes(prenom: string, objets: readonly Pick<ObjetMaison, "titre">[]): string | null {
+  const l = objets.slice(0, 3).map((o) => o.titre);
+  if (!l.length) return null;
+  return `✨ Nouveau chez ${prenom} aujourd’hui : ${l.length === 1 ? l[0] : `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}`}`;
+}
+export const PHRASES_CADEAU = {
+  attente: (de: string) => `🎁 ${de} t’a laissé un cadeau`,
+  ouvrir: "Ouvrir",
+  garder: "✓ Le garder sur ma table",
+  nonMerci: "Non merci",
+  de: (de: string) => `De ${de}`,
+  laisser: "🎁 Laisser une surprise",
+  laisserTitre: "Une surprise pour",
+  laisserDit: "Elle attendra sur sa table basse, emballée, jusqu’à ce qu’on l’ouvre.",
+  motSurprise: "Un petit mot, si tu veux",
+  poser: "La poser sur sa table",
+  posee: (prenom: string) => `🎁 ${prenom} la trouvera en rentrant`,
+  dejaLa: (n: number) => (n > 1 ? `🎁 Tes ${n} surprises attendent qu’on les ouvre` : "🎁 Ta surprise attend qu’on l’ouvre"),
+} as const;
+
+/**
+ * 🚪 (lot M4, `ma-maison.md` section 8) LA MAISON DE QUELQU'UN, EN VISITE : sa pièce, sa figurine au centre, ce qu'il a
+ * gardé — tout, pour ses proches ; pour les autres (sa maison ouverte à tous), seulement ce qu'il a ajouté lui-même
+ * (un cadre garde son tableau). `frappe` : le visiteur a déjà frappé aujourd'hui.
+ */
+export type MaisonVisitee =
+  | { etat: "ferme" | "reserve" | "absent"; prenom?: string }
+  | {
+      etat: "ouvert";
+      prenom: string;
+      cle: string;
+      maison: MaMaisonVue;
+      proche: boolean;
+      chezSoi: boolean;
+      frappe: boolean;
+      /** 🎁 (lot M5) un proche peut lui laisser une surprise ; les siennes qui attendent d'être ouvertes */
+      peutLaisser?: boolean;
+      mesCadeaux?: number;
+      /** ✨ (lot M5) ce qu'il a ajouté ou gardé aujourd'hui (la caméra passe dessus à l'arrivée) */
+      nouveaux?: string[];
+      /** 💬 (lot M5) sa question du jour (à ses proches, s'il y a répondu) */
+      question?: QuestionChezLui;
+    };
+export const PHRASES_VISITE = {
+  chez: (prenom: string) => `Chez ${prenom}`,
+  frapper: "🚪 Frapper à la porte",
+  frappe: (prenom: string) => `✓ ${prenom} saura que tu as frappé`,
+  reserve: (prenom: string) => `La maison de ${prenom} est ouverte à ses proches seulement.`,
+  ferme: (prenom: string) => `${prenom} garde sa maison pour soi, pour l’instant.`,
+  absent: "Cette maison n’existe pas, ou plus.",
+  chezToi: "C’est chez toi, comme te voient tes visiteurs.",
+  quiTitre: "Qui peut entrer chez moi ?",
+  adulte: "J’ai 18 ans ou plus",
+  adulteDit: "Pour l’ouvrir à tout le monde, il faut avoir 18 ans ou plus.",
+  tousDit: "Tes proches voient tout ; les autres, seulement ce que tu as ajouté toi-même — jamais ce qui vient de tes conversations.",
+  commeEux: "👀 Voir ma maison comme mes visiteurs",
+  retour: "‹ Retour",
+} as const;
+/** 🚪 (lot M4) Les trois choix, pour sa maison. */
+export const VISIBILITES_MAISON: readonly { v: Visibilite; titre: string; dit: string }[] = [
+  { v: "proches", titre: "👯 Mes proches", dit: "Seuls tes proches entrent, et voient tout ce que tu as gardé." },
+  { v: "tous", titre: "🌍 Tout le monde", dit: "Ta maison apparaît dans « Les univers à visiter ». Tes proches voient tout ; les autres, seulement ce que tu as ajouté toi-même." },
+  { v: "moi", titre: "🔒 Moi seul", dit: "Personne n’entre chez toi." },
+];
 
 /**
  * 🏠 (lot M2) UN OBJET DE MA MAISON : ce que j'ai gardé (📌 Garder, « Nos fous rires », « La mettre dans mon univers »)
@@ -76,6 +182,8 @@ export type ObjetMaison = {
   lien?: string;
   avec?: { prenom: string; cle: string };
   le: string;
+  /** (lot M4) ajouté par lui-même, à la main — pas venu d'une conversation : ses visiteurs non proches le voient aussi */
+  aMoi?: true;
 };
 /** Ce que montre la pièce : un objet par cadre (ou rien), la platine, la télé, l'étagère (les plus récents d'abord). */
 export type ContenuMaison = { cadres: (ObjetMaison | null)[]; platine: ObjetMaison | null; tele: ObjetMaison | null; etagere: ObjetMaison[]; total: number };
@@ -135,8 +243,8 @@ export function arriveeChezMoi(c: ContenuMaison, vuLe: number): { phrase: string
 }
 
 /** Ce que dit un objet touché, sous son titre. */
-export function ditDeLObjet(o: ObjetMaison): string {
-  const avec = o.avec ? `Gardé avec ${o.avec.prenom}` : "Mis chez toi";
+export function ditDeLObjet(o: ObjetMaison, hote?: string): string {
+  const avec = o.avec ? `Gardé avec ${o.avec.prenom}` : hote ? `Mis par ${hote}` : "Mis chez toi";
   return o.detail ? `${avec} · ${o.detail}` : avec;
 }
 export const PHRASES_MAISON = {
