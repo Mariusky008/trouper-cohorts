@@ -361,7 +361,7 @@ Ce qu'on y joue :
 - **👀 « Ce que Sam verra »** (à la fin de la vidéo) : la vidéo rejouée du côté de Sam — Sam au centre, ma figurine
   (« Alex ») assise à côté, qui réagit à mes secondes. **Une proposition, à décider** : si Sam l'a déjà vue, une
   notification « 🎬 Alex a regardé « … » : revois-la avec ses réactions » (sinon, mes réactions ne lui parviendraient
-  jamais) ; s'il ne l'a pas vue, ma figurine l'attend simplement à côté.
+  jamais) ; si Sam ne l'a pas encore vue, ma figurine l'attend simplement à côté.
 - **📷 « Ta figurine fait ta tête »** : l'écran d'accord, la pastille, ma figurine qui refait ma tête aux moments forts
   (imitée dans la maquette).
 - **👥 Inviter** (4.3) : trois proches au plus ; ce qu'ils reçoivent ; ceux qui sont là entrent et s'assoient « en
