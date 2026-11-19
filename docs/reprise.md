@@ -25,7 +25,9 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    salon avec `/collection?salon=1` sur ses deux téléphones, et la maison) ;
 3. **puis « Découvrir »** (`decouvrir.md`, re-imaginée le 17 novembre ; ses décisions reportées le 18) — **la maquette
    cliquable est faite** (19 novembre, `decouvrir.md` section 12 ; `docs/univers/maquettes/decouvrir.html`) : elle
-   attend l'avis du propriétaire, puis D0 (« Tes passions » et la sélection YouTube de chaque nuit).
+   a été jouée et ajustée avec le propriétaire (`decouvrir.md`, section 13 : partager le moment, sans défi ni score ; le
+   grand écran) ; **D0 fait** (section 14 : « Tes passions », la sélection YouTube de chaque nuit, l'administration) — il
+   attend la clé YouTube (`YOUTUBE_API_KEY`, dans Vercel) ; ensuite D1, ma télé du jour dans ma pièce.
 
 **Où on en est (18 novembre 2026)** : **S3, première partie, faite** (`salon-du-duo.md`, 11.11) — la barre des gestes
 (💌 / 🛋️), neuf gestes mis en scène, les huit panneaux brandis, les six réactions avec le corps, la table (quatre

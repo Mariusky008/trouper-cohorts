@@ -20,7 +20,7 @@
  */
 import fs from "node:fs";
 import http from "node:http";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 const PORT = Number(process.argv[2] || 54321);
 const SEAUX_PRIVES = new Set(["salons-prives", "maison-privee", "figurines-clients"]);
@@ -622,6 +622,8 @@ const courriels = [];
 // (🌧️ lot S7 : le faux Open-Meteo — le temps réglé par un essai, et combien de fois on l'a demandé)
 const meteoReglee = { code: 53, t: 9.4, jour: 1 };
 const meteoDemandes = { geo: 0, temps: 0 };
+// 📺 (le lot D0 de Découvrir) ce que le faux YouTube a reçu : chaque recherche, avec son filtre
+const youtubeDemandes = [];
 /** Les notifications « envoyées » au faux service (les plus récentes à la fin). */
 const pushs = [];
 const videosEssai = new Map();
@@ -1018,6 +1020,32 @@ http
         return repondre(res, 200, { current: { time: maintenant(), temperature_2m: meteoReglee.t, weather_code: meteoReglee.code, is_day: meteoReglee.jour ? 1 : 0 } });
       }
       if (url.pathname === "/__meteo") return repondre(res, 200, meteoDemandes);
+      // UN FAUX YOUTUBE (`YOUTUBE_API_BASE_URL=…/youtube`, le lot D0 de Découvrir) : une recherche rend huit vidéos dont
+      // l'identifiant vient des mots cherchés (les mêmes mots, les mêmes vidéos) ; leur fiche (`/youtube/videos`) : la 4e
+      // de chaque recherche parle de bière, la 5e dure 45 minutes, la 7e ne se lit pas ailleurs (elles ne doivent pas
+      // passer) ; les autres durent 2 min 30. Une clé qui n'est pas « faux » : 403. `/__youtube` : les recherches reçues.
+      if (url.pathname === "/youtube/search" || url.pathname === "/youtube/videos") {
+        if (url.searchParams.get("key") !== "faux") return repondre(res, 403, { error: { message: "API key not valid" } });
+        if (url.pathname === "/youtube/search") {
+          const q = url.searchParams.get("q") || "";
+          youtubeDemandes.push({ q, safeSearch: url.searchParams.get("safeSearch"), regionCode: url.searchParams.get("regionCode"), relevanceLanguage: url.searchParams.get("relevanceLanguage"), videoEmbeddable: url.searchParams.get("videoEmbeddable"), publishedAfter: url.searchParams.get("publishedAfter") });
+          const racine = createHash("sha256").update(q).digest("base64url").slice(0, 9);
+          return repondre(res, 200, { items: Array.from({ length: 8 }, (_, k) => ({ id: { kind: "youtube#video", videoId: `${racine}${k}x` } })) });
+        }
+        const ids = (url.searchParams.get("id") || "").split(",").filter(Boolean);
+        return repondre(res, 200, {
+          items: ids.map((id) => {
+            const k = Number(id.at(-2)) || 0;
+            return {
+              id,
+              snippet: { title: k === 3 ? "Dégustation de bière entre amis" : `Vidéo d’essai ${id}`, channelTitle: "La chaîne d’essai", publishedAt: maintenant(), liveBroadcastContent: "none" },
+              contentDetails: { duration: k === 4 ? "PT45M" : "PT2M30S" },
+              status: { embeddable: k !== 6, privacyStatus: "public" },
+            };
+          }),
+        });
+      }
+      if (url.pathname === "/__youtube") return repondre(res, 200, youtubeDemandes);
       // UN FAUX RESEND (`RESEND_BASE_URL=…/resend`) : un e-mail « envoyé » est gardé ici (le code de « Ma figurine »,
       // que l'essai lit dans `/__courriels`) — rien ne part
       if (url.pathname === "/resend/emails" && req.method === "POST") {
