@@ -160,7 +160,7 @@ camera, ecrit, voix). Seuls **mes proches** les voient (et, dans un salon ouvert
 
 **Le rejouer** : à l'ouverture d'une vidéo, un seul appel rend les réactions de mes proches pour elle ; le lecteur
 (l'API IFrame de YouTube, `getCurrentTime`) déclenche chacune à sa seconde : la figurine rit, saute, sa bulle s'ouvre,
-sa voix se fait entendre. **Jusqu'à 3 proches assis à côté de moi** (les places de ma pièce, 4.3) — ceux qui ont le
+un vocal s'annonce, et on choisit de l'écouter (section 13). **Jusqu'à 3 proches assis à côté de moi** (les places de ma pièce, 4.3) — ceux qui ont le
 plus réagi ; les autres passent en petites têtes au bord de la télé. **Dans un salon ouvert** : les réactions de tous
 ceux qui ont vu la vidéo dans la journée, un stade — des dizaines de petites figurines qui sautent au but.
 
@@ -362,8 +362,9 @@ Ce qu'on y joue :
   (« Alex ») assise à côté, qui réagit à mes secondes. **Décidé par le propriétaire (19 novembre 2026)** : si Sam l'a
   déjà vue, une notification « 🎬 Alex a regardé « … » : revois-la avec ses réactions » (sinon, mes réactions ne lui
   parviendraient jamais) ; si Sam ne l'a pas encore vue, ma figurine l'attend simplement à côté.
-- **Rendre les réactions addictives** (le propriétaire, 19 novembre : « voir que untel a mis un smiley à 4 min 32 ne va
-  pas créer une émulation ») — trois leviers, jouables dans la maquette, **à choisir** (section 13).
+- **Partager le moment comme si on était ensemble** (section 13) : 🫶 « En même temps que Léa ! », ↩ répondre à la
+  réaction d'un proche en le touchant, 📌 garder le moment partagé, 💬 « Ce qui s'est dit » sur la vidéo, les vocaux
+  qu'on choisit d'écouter.
 - **📷 « Ta figurine fait ta tête »** : l'écran d'accord, la pastille, ma figurine qui refait ma tête aux moments forts
   (imitée dans la maquette).
 - **👥 Inviter** (4.3) : trois proches au plus ; ce qu'ils reçoivent ; ceux qui sont là entrent et s'assoient « en
@@ -383,26 +384,33 @@ Ce qu'on y joue :
 - **⚙︎ Les réglages de la maquette** : voir Découvrir comme un adulte ou à 15-17 ans (les salons à part, sans le salon
   des jeunes parents, les potins en lecture seule, les clips éteints par défaut) ; recommencer depuis « Tes passions ».
 
-## 13. Rendre les réactions addictives (proposé le 19 novembre 2026, à choisir)
+## 13. Partager le moment, comme si on était ensemble (19 novembre 2026)
 
-Le constat du propriétaire, après la maquette : un smiley à une seconde donnée ne crée ni envie ni émulation. Ce qui
-rend les vidéos de réaction (YouTube, TikTok) et les jeux entre amis addictifs : **un vrai visage** (le spectacle),
-**se comparer à ceux qu'on aime** (la relation), **un enjeu** (le jeu). Trois leviers, un par besoin — on peut tous
-les garder :
+Le constat du propriétaire, après la maquette : « voir que untel a mis un smiley à 4 min 32 ne va pas créer
+d'émulation ». Trois pistes ont été jouées ; **ses décisions** :
 
-1. **🎭 Sa vraie tête** (le spectacle). Avec « 📷 Ta figurine fait ta tête » allumée, on ne garde plus seulement « rire à
-   0:42 » mais **le mouvement de sa tête pendant quelques secondes** : des chiffres (le sourire, la bouche ouverte, les
-   sourcils, la tête qui part en arrière, dix fois par seconde), **jamais une image**. Sa figurine le rejoue : au but,
-   la tête de Sam part en arrière, les yeux s'écarquillent, les bras se lèvent, puis le fou rire. Une étiquette
-   « 📷 sa vraie tête » le signale. C'est la vidéo de réaction de son ami, sans caméra qui filme. (Dans la maquette :
-   Sam au but, Sam qui se plie de rire devant Pixel.) Il faut, pour l'appli, les expressions de chaque figurine (D2c)
-   et la tête sur ressort qui suit les mouvements.
-2. **🤝 Les synchros** (la relation). Réagir **au même moment** qu'un proche (à 1,8 s près) : « 🤝 Synchro avec Léa ! »,
-   les deux figurines se tapent dans la main. À la fin : « Synchros : Sam 2 · Léa 1 » ; « Avec qui tu ris le plus » :
-   « même humour » en pourcentage avec chaque proche, qui se retrouve aussi dans le salon du duo (« Vous riez des
-   mêmes choses : 78 % »). On regarde pour voir si l'on rit avec ceux qu'on aime ; on envoie des vidéos pour le savoir.
-3. **😤 Le défi « ne pas rire »** (le jeu). Sur les vidéos drôles : « Défi : ne pas rire. Sam a craqué à 0:12, Léa a
-   tenu. » — « Relever ». Les figurines de mes proches rient à côté de moi (c'est le piège) ; si je ris (😂, un toucher,
-   ou la caméra qui le voit) : « 😂 Craqué à 0:13 : Sam aussi, à 0:12 ». À la fin, le classement (« 🏆 Léa jusqu'au bout ·
-   Toi 0:13 · Sam 0:12 ») et « 😈 Défier un proche ». Sur l'accueil : « 😤 Sam te défie… ». Un format qui circule déjà
-   beaucoup sur les réseaux (le clip « J'ai tenu 0:26 » se partage).
+- **Pas de défi** (« ne pas rire ») : « trop enfantin ». **Pas de score** (« Avec qui tu ris le plus », « même humour à
+  78 % ») : « l'intérêt doit être plutôt le partage du moment, comme si on était ensemble ».
+
+Ce que la maquette joue maintenant :
+
+1. **🫶 Au même moment** : réagir à la même seconde qu'un proche (à 1,8 s près) : « 🫶 En même temps que Léa ! », les
+   deux figurines se tapent dans la main. Aucun compte. À la fin : « À 0:21, vous avez réagi ensemble : toi, Sam, Léa,
+   Noé et Inès » — **📌 Garder ce moment** : il va sur mon étagère (Ma maison) et dans nos salons du duo.
+2. **↩ Répondre à un proche, au moment même** : toucher sa figurine (« À 0:11 : « Il va tirer de là ?! » ») ; « 😂 Trop
+   drôle », « 😱 Grave ! », « 🙌 Pareil » ou trois mots ; ce proche verra ma réponse à cette seconde, juste après sa
+   réaction, et reçoit « Alex t'a répondu ». Une conversation à travers le temps, accrochée à la vidéo.
+3. **💬 Ce qui s'est dit** (en haut de « Ma télé » et à la fin) : toute la conversation de la vidéo, à ses secondes
+   (réactions, mots, réponses, vocaux) ; toucher une ligne revoit le moment ; ce qui vient plus loin reste caché
+   (« 🔒 3 réactions plus loin dans la vidéo »).
+4. **🎙️ Les vocaux (décidé par le propriétaire)** : **la vidéo ne s'arrête jamais toute seule** (« sinon elle s'arrête
+   tout le temps si quelqu'un est bavard ») : « 🎙️ Sam t'a laissé un vocal — ▶ Écouter » ; l'écouter met la vidéo en
+   pause le temps du message, puis elle reprend ; sinon, il attend dans « 💬 Ce qui s'est dit » (« ▶ Écouter »). **Quand
+   je laisse un vocal**, la vidéo se met en pause pendant que je parle et reprend quand je relâche.
+5. **🎭 Sa vraie tête** (proposé, sans avis encore) : avec « 📷 Ta figurine fait ta tête », le mouvement de sa tête
+   quelques secondes (des chiffres, jamais une image), rejoué par sa figurine (au but : la tête qui part en arrière, les
+   bras levés, le fou rire). Il faut, pour l'appli, les expressions de chaque figurine (D2c).
+
+**Dans les salons ouverts** (même retour du propriétaire : « je n'ai aucun moyen de réagir si ce n'est écrire ») : la
+rangée « Réagis : 😂 ❤️ 😮 😱 👏 », et un ou deux autres du salon réagissent avec moi ; et « 💬 La conversation du
+salon » montre tout ce qui s'est dit **avant mon arrivée** (gardé 48 heures), puis depuis que je suis là.
