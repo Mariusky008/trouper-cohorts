@@ -129,7 +129,9 @@ laissé, `salon-du-duo.md` 11.9) : ici, on rejoue selon le temps de la vidéo, p
 
 **Comment savoir quand on a réagi, sans bouton** — trois niveaux :
 
-1. **Ce que l'appli comprend toute seule (pour tout le monde, dès le départ)** :
+1. **Ce que l'appli comprend toute seule (pour tout le monde, dès le départ)** — et, ajoutée après l'essai de la
+   maquette (19 novembre : sans elle, on ne trouve pas comment réagir), **une rangée de réactions sous la télé**
+   (😂 ❤️ 😮 😱 😴), notées à la seconde comme le reste :
    - **ce que je fais de la vidéo** : je la passe avant 15 s → « bof » à ce moment ; je reviens en arrière → « oh ! »
      au début du passage revu ; je la regarde jusqu'au bout → un ❤️ à la fin ;
    - **des gestes sans viser**, n'importe où sur la scène hors de la télé : un toucher → ma figurine rit ; deux
@@ -158,7 +160,7 @@ camera, ecrit, voix). Seuls **mes proches** les voient (et, dans un salon ouvert
 
 **Le rejouer** : à l'ouverture d'une vidéo, un seul appel rend les réactions de mes proches pour elle ; le lecteur
 (l'API IFrame de YouTube, `getCurrentTime`) déclenche chacune à sa seconde : la figurine rit, saute, sa bulle s'ouvre,
-sa voix se fait entendre. **Jusqu'à 3 proches assis à côté de moi** (les places de ma pièce, 4.3) — ceux qui ont le
+un vocal s'annonce, et on choisit de l'écouter (section 13). **Jusqu'à 3 proches assis à côté de moi** (les places de ma pièce, 4.3) — ceux qui ont le
 plus réagi ; les autres passent en petites têtes au bord de la télé. **Dans un salon ouvert** : les réactions de tous
 ceux qui ont vu la vidéo dans la journée, un stade — des dizaines de petites figurines qui sautent au but.
 
@@ -286,8 +288,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
 
 Chaque lot : ses essais (route et navigateur, comme le salon du duo), sa section dans ce document, une PR vers `main`.
-Avant D0, une **maquette cliquable** (une page d'administration, comme la maquette de la pièce vivante) : la carte
-« ma télé du jour », ma pièce avec la télé, l'invitation, la liste des salons ouverts, un salon de 8 figurines.
+Avant D0, une **maquette cliquable** : faite le 19 novembre 2026 (section 12).
 
 ## 10. Les décisions (le propriétaire, 17 novembre 2026)
 
@@ -334,3 +335,82 @@ Ce qui reste :
   migration qui la supprime viendra un mois plus tard, une fois sûr que rien ne la lit plus) ;
 - **les mèmes** eux-mêmes : on les crée toujours (« Créer »), on les envoie à ses proches, on les joue dans les salons ;
   seul le défilement des mèmes d'inconnus disparaît.
+
+## 12. La maquette cliquable (19 novembre 2026)
+
+Une page privée du propriétaire : `https://claude.ai/artifact/9KcRDhzyFm1z4BNetdnf4y` ; sa source :
+`docs/univers/maquettes/decouvrir.html` (à ouvrir dans un navigateur, à la largeur d'un téléphone). Les figurines y
+sont dessinées (aucune vraie tête), les vidéos aussi (dans l'appli, c'est le lecteur officiel de YouTube) ; rien ne part.
+
+Ce qu'on y joue :
+
+- **« Tes passions »** (3.) : les douze vignettes, de 3 à 5, « 🗞️ Les potins de Dax : pour tout le monde, en plus ».
+- **L'accueil** : la carte « Ma télé du jour » (la pièce, la télé allumée, « 🎬 3 vidéos t'attendent », « Sam, Léa et 2
+  proches en ont déjà vu : ils regarderont avec toi »), la phrase de communication, les salons de mes passions, les
+  potins de ma ville, les autres salons.
+- **Ma télé du jour, dans ma pièce** (4.2, 4.5) : ma figurine au centre ; Sam, Léa et Noé assis, « a vu hier soir »,
+  qui réagissent **à la seconde** où ils ont réagi (le sourire, « Il va tirer de là ?! », le « oh ! », le saut au but,
+  « NOOON 😱 », la voix de Sam) ; Inès en petite tête au bord de la télé ; les réactions de chacun en points sur la
+  ligne du temps. Les gestes sans viser (un toucher : je ris ; deux : un ❤️ ; appui long : « oh ! »), écrire à la
+  seconde, 🎙️ ma voix ; ce que l'appli comprend seule (passer avant 15 s : « bof » ; revenir en arrière : « oh ! » ; aller
+  au bout : ❤️). La troisième vidéo, que personne n'a vue : « Tu l'ouvres en premier : tes réactions attendront tes
+  proches ».
+- **Réagir soi-même** (ajouté après le premier essai du propriétaire, le 19 novembre : « je ne saisis pas comment je
+  fais pour réagir moi-même ») : la rangée « Réagis : 😂 ❤️ 😮 😱 😴 » sous la télé, à côté des gestes sans viser ; sur
+  ma figurine, « 😂 noté à 0:07 » ; les premières fois, « Sam, Léa, Noé et Inès le verront à cette seconde ».
+- **👀 « Ce que Sam verra »** (à la fin de la vidéo) : la vidéo rejouée du côté de Sam — Sam au centre, ma figurine
+  (« Alex ») assise à côté, qui réagit à mes secondes. **Décidé par le propriétaire (19 novembre 2026)** : si Sam l'a
+  déjà vue, une notification « 🎬 Alex a regardé « … » : revois-la avec ses réactions » (sinon, mes réactions ne lui
+  parviendraient jamais) ; si Sam ne l'a pas encore vue, ma figurine l'attend simplement à côté.
+- **Partager le moment comme si on était ensemble** (section 13) : 🫶 « En même temps que Léa ! », ↩ répondre à la
+  réaction d'un proche en le touchant, 📌 garder le moment partagé, 💬 « Ce qui s'est dit » sur la vidéo, les vocaux
+  qu'on choisit d'écouter.
+- **📷 « Ta figurine fait ta tête »** : l'écran d'accord, la pastille, ma figurine qui refait ma tête aux moments forts
+  (imitée dans la maquette).
+- **👥 Inviter** (4.3) : trois proches au plus ; ce qu'ils reçoivent ; ceux qui sont là entrent et s'assoient « en
+  direct », les autres gardent l'invitation (et leurs réactions d'avant restent assises).
+- **🎬 « Nos réactions »** : le clip de 10 secondes (ma pièce, nos figurines au moment le plus fort, la phrase, le carton
+  titre et chaîne, ClikMe et clikme.fr), « Partager ».
+- **Un salon ouvert** (5.) : le salon du foot · 2 (le premier est complet), 8 places, ma figurine entre et s'assoit,
+  « Bienvenue 👋 », la conversation qui vit, les gestes entre figurines, la télé du thème à la même seconde pour tous,
+  **le stade** au but (« 🏟️ 214 l'ont vu aujourd'hui »). Toucher une figurine : son prénom, ses passions, 👋 👏 😂,
+  « 👯 Ajouter en proche », « 🏠 Voir sa maison » (ou « fermée aux visites »), « Ne plus voir », « Signaler ». Écrire :
+  un lien, un numéro, un réseau, un mot ou une question personnelle ne partent pas. 💬 la conversation (48 h), 🗄️
+  l'étagère du salon (📌 Garder : il va dans ma maison, et le fanion s'accroche à mon mur).
+- **🗞️ Les potins de Dax** (5.4) : la télé du salon passe la presse locale ; « 📰 Aujourd'hui » (la presse, les
+  soirées, les vidéos, les mèmes d'« Autour ») ; « 📅 À venir » (📌 Garder : mon prochain rendez-vous, « On y va ? » à un
+  proche) ; « J'ai vu… » et « Une soirée, un événement » (relus avant d'apparaître ; une soirée tournée vers l'alcool est
+  refusée).
+- **⚙︎ Les réglages de la maquette** : voir Découvrir comme un adulte ou à 15-17 ans (les salons à part, sans le salon
+  des jeunes parents, les potins en lecture seule, les clips éteints par défaut) ; recommencer depuis « Tes passions ».
+
+## 13. Partager le moment, comme si on était ensemble (19 novembre 2026)
+
+Le constat du propriétaire, après la maquette : « voir que untel a mis un smiley à 4 min 32 ne va pas créer
+d'émulation ». Trois pistes ont été jouées ; **ses décisions** :
+
+- **Pas de défi** (« ne pas rire ») : « trop enfantin ». **Pas de score** (« Avec qui tu ris le plus », « même humour à
+  78 % ») : « l'intérêt doit être plutôt le partage du moment, comme si on était ensemble ».
+
+Ce que la maquette joue maintenant :
+
+1. **🫶 Au même moment** : réagir à la même seconde qu'un proche (à 1,8 s près) : « 🫶 En même temps que Léa ! », les
+   deux figurines se tapent dans la main. Aucun compte. À la fin : « À 0:21, vous avez réagi ensemble : toi, Sam, Léa,
+   Noé et Inès » — **📌 Garder ce moment** : il va sur mon étagère (Ma maison) et dans nos salons du duo.
+2. **↩ Répondre à un proche, au moment même** : toucher sa figurine (« À 0:11 : « Il va tirer de là ?! » ») ; « 😂 Trop
+   drôle », « 😱 Grave ! », « 🙌 Pareil » ou trois mots ; ce proche verra ma réponse à cette seconde, juste après sa
+   réaction, et reçoit « Alex t'a répondu ». Une conversation à travers le temps, accrochée à la vidéo.
+3. **💬 Ce qui s'est dit** (en haut de « Ma télé » et à la fin) : toute la conversation de la vidéo, à ses secondes
+   (réactions, mots, réponses, vocaux) ; toucher une ligne revoit le moment ; ce qui vient plus loin reste caché
+   (« 🔒 3 réactions plus loin dans la vidéo »).
+4. **🎙️ Les vocaux (décidé par le propriétaire)** : **la vidéo ne s'arrête jamais toute seule** (« sinon elle s'arrête
+   tout le temps si quelqu'un est bavard ») : « 🎙️ Sam t'a laissé un vocal — ▶ Écouter » ; l'écouter met la vidéo en
+   pause le temps du message, puis elle reprend ; sinon, il attend dans « 💬 Ce qui s'est dit » (« ▶ Écouter »). **Quand
+   je laisse un vocal**, la vidéo se met en pause pendant que je parle et reprend quand je relâche.
+5. **🎭 Sa vraie tête** (proposé, sans avis encore) : avec « 📷 Ta figurine fait ta tête », le mouvement de sa tête
+   quelques secondes (des chiffres, jamais une image), rejoué par sa figurine (au but : la tête qui part en arrière, les
+   bras levés, le fou rire). Il faut, pour l'appli, les expressions de chaque figurine (D2c).
+
+**Dans les salons ouverts** (même retour du propriétaire : « je n'ai aucun moyen de réagir si ce n'est écrire ») : la
+rangée « Réagis : 😂 ❤️ 😮 😱 👏 », et un ou deux autres du salon réagissent avec moi ; et « 💬 La conversation du
+salon » montre tout ce qui s'est dit **avant mon arrivée** (gardé 48 heures), puis depuis que je suis là.

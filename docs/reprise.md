@@ -23,8 +23,9 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    emballée sur la table basse, les nouveautés du jour en visite, la question du jour dont on découvre la réponse après
    la sienne ; seul **le défi à deux attend le propriétaire**, 19.1) ; **le propriétaire teste maintenant tout** (le
    salon avec `/collection?salon=1` sur ses deux téléphones, et la maison) ;
-3. **puis « Découvrir »** (`decouvrir.md`, re-imaginée le 17 novembre ; ses décisions reportées le 18 : plus rien
-   n'attend le propriétaire avant la maquette et D0).
+3. **puis « Découvrir »** (`decouvrir.md`, re-imaginée le 17 novembre ; ses décisions reportées le 18) — **la maquette
+   cliquable est faite** (19 novembre, `decouvrir.md` section 12 ; `docs/univers/maquettes/decouvrir.html`) : elle
+   attend l'avis du propriétaire, puis D0 (« Tes passions » et la sélection YouTube de chaque nuit).
 
 **Où on en est (18 novembre 2026)** : **S3, première partie, faite** (`salon-du-duo.md`, 11.11) — la barre des gestes
 (💌 / 🛋️), neuf gestes mis en scène, les huit panneaux brandis, les six réactions avec le corps, la table (quatre
