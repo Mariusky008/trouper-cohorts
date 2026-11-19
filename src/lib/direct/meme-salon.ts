@@ -157,4 +157,7 @@ export const PHRASES_MEME = {
   duoRange: "🎬 Rangé dans « Nos fous rires »",
   duoPasRange: "Pas rangé : réessaie.",
   leRevoir: "▶ Le revoir",
+  // 📤 la vidéo pour WhatsApp
+  partager: "En faire une vidéo pour WhatsApp",
+  pasDeVideo: "Ce téléphone ne sait pas fabriquer de vidéo.",
 } as const;

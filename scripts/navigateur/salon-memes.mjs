@@ -13,7 +13,8 @@
 // qui se colore) ; la carte, puis ce que j'ai dit, écrit tout seul ; chez Sam, sa voix ; « ▶ Revoir », avec ses mots ;
 // Sam en joue un avec sa voix et un texte : sa figurine le dit chez Léa. 🎬 « JE LE RANGE ? » : après cet échange, ma
 // figurine le propose ; « Oui » : le duo s'envole dans « Nos fous rires » ; l'étagère, sa fiche, « ▶ Le revoir » : les
-// deux mèmes rejoués, l'un après l'autre.
+// deux mèmes rejoués, l'un après l'autre. 📤 EN VIDÉO : sur la carte de mon mème, la vidéo se fabrique dans le
+// téléphone (le décor du salon), puis « ⬇️ Enregistrer » (ou « 📲 L'envoyer sur WhatsApp » là où le partage existe).
 // Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
@@ -291,6 +292,24 @@ await p.locator(`.sd-feuille.vu .sd-msg [data-revoir="${memeSam.id}"]`).click();
 ok(await attendre(async () => (await p.locator(".sd-feuille.vu").count()) === 0, 2000), "« ▶ Revoir » : la feuille se ferme");
 ok(await attendre(async () => (await bd("autre")).length > 0, 3000), "… et sa figurine le rejoue");
 await eteint();
+
+// ═══ 📤 EN VIDÉO POUR WHATSAPP ═══
+await p.locator(".sd-bulle.moi.meme [data-partager-meme]").click();
+ok(await attendre(async () => (await p.locator("[data-video-meme]").count()) === 1, 4000), "📤 sur ma carte : la feuille « Ton mème en vidéo »");
+await p.waitForTimeout(2200);
+await p.screenshot({ path: `${D}/salon-memes-9-video.png` });
+ok(await attendre(async () => (await p.locator('[data-video-meme="prete"]').count()) === 1, 40000), `elle se fabrique sous mes yeux, puis elle est prête (${await p.locator("[data-video-meme]").getAttribute("data-video-meme")})`);
+const video = await p.evaluate(async () => {
+  const v = document.querySelector("[data-video-prete]");
+  if (!v) return null;
+  const b = await (await fetch(v.src)).blob();
+  return { taille: b.size, type: b.type };
+});
+ok((video?.taille ?? 0) > 20_000 && /^video\//.test(video?.type ?? ""), `une vraie vidéo (${Math.round((video?.taille ?? 0) / 1024)} Ko, ${video?.type})`);
+ok((await p.locator("[data-video-meme] [data-telecharger]").count()) + (await p.locator("[data-video-meme] [data-envoyer-video]:not([disabled])").count()) === 1, "« ⬇️ Enregistrer la vidéo » (ou « 📲 L’envoyer sur WhatsApp »)");
+await p.screenshot({ path: `${D}/salon-memes-10-video-prete.png` });
+await p.locator("[data-video-meme] .sd-poignee").click();
+ok(await attendre(async () => (await p.locator("[data-video-meme]").count()) === 0, 3000), "la feuille se ferme");
 
 // ═══ ＋ « 🎭 UN MÈME » ═══
 await p.locator(".sd-joindre").click();
