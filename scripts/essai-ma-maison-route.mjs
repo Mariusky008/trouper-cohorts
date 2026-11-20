@@ -3,16 +3,18 @@
 //
 // L'interrupteur est éteint : l'administrateur seul (l'adresse d'essai) ; sans figurine sur le téléphone : refusé. Léa
 // (15-17 ans) n'a pas de pièce : sa maison est vide, sa figurine détourée au plus près (une fois), à adresse stable. Le
-// catalogue : les neuf, les pièces des plus jeunes d'abord, une vignette pour les seules pièces prêtes (leur panorama
-// fait) ; un adulte : celles des adultes d'abord. Choisir une pièce pas prête, ou inconnue : refusé ; choisir le hangar :
-// sa scène — le panorama dans la lumière de l'heure de Paris (la sienne sinon), à adresse stable, en 1792 et 3584 points,
-// servi et gardé un an par le téléphone ; ses emplacements ; son centre posé à la main. Gardée : relue au retour. En
-// changer : le salon (sans centre posé : le centre par défaut). Sa figurine change : détourée à nouveau.
+// catalogue : les neuf, les pièces des plus jeunes d'abord, une vignette pour les seules pièces prêtes (leur image
+// faite) ; un adulte : celles des adultes d'abord. Choisir une pièce pas prête, ou inconnue : refusé ; choisir le hangar :
+// sa scène — l'image de la messagerie (en hauteur, depuis le 20 novembre 2026 : plus le panorama) dans la lumière de
+// l'heure de Paris (la sienne sinon), à adresse stable, en 768 et 1024 points, servie et gardée un an par le téléphone ;
+// ses emplacements ; son centre : la place de gauche du relevé. Gardée : relue au retour. En changer : le salon (sans
+// relevé : le centre par défaut). Sa figurine change : détourée à nouveau.
 //
 //   node scripts/faux-supabase.mjs
 //   (l'app sur :3821, avec les variables de la CI)
 //   node scripts/essai-ma-maison-route.mjs
 import sharp from "sharp";
+import { imagePiece, poserPiece } from "./piece-en-hauteur.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const BASE = process.env.ESSAI_BASE || "http://localhost:3821";
@@ -63,19 +65,25 @@ for (const x of [LEA, MAX]) {
 await json(`${LEA.id}/majeur.json`, { le: maintenant, age: 15, adulte: false });
 await json(`${MAX.id}/majeur.json`, { le: maintenant, age: 15, adulte: true });
 
-// (le catalogue : le hangar, prêt dans sa lumière (le soir) et la nuit, ses zones posées à la main ; le salon, prêt sans zones)
-const panorama = (fond) =>
-  sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="3584" height="1024"><rect width="3584" height="1024" fill="${fond}"/><rect y="700" width="3584" height="324" fill="#5a4030"/></svg>`))
-    .webp({ quality: 80 })
-    .toBuffer();
-await deposer("pieces-duo/hangar/large/panorama.webp", await panorama("#6a3a5a"), "image/webp");
-await deposer("pieces-duo/hangar/large/panorama-nuit.webp", await panorama("#1a1430"), "image/webp");
-await json("pieces-duo/hangar/large/releve.json", {
+// (le catalogue : le hangar, prêt dans sa lumière (le soir) et la nuit, son relevé (la place de gauche écrite en second) ;
+// le salon, prêt sans relevé)
+await poserPiece(deposer, "hangar", {
   le: maintenant,
-  ajuste: true,
-  emplacements: { tele: [0.44, 0.2, 0.12, 0.25], cadres: [[0.3, 0.12, 0.05, 0.2]], lampes: [[0.62, 0.3, 0.03, 0.3]], table: [0.53, 0.75, 0.06, 0.08], places: [{ x: 0.48, y: 0.92, hauteur: 0.5 }], chat: { x: 0.8, y: 0.9 } },
+  lumieres: false,
+  emplacements: {
+    tele: [0.3, 0.2, 0.4, 0.16],
+    cadres: [[0.08, 0.42, 0.12, 0.1]],
+    lampes: [[0.84, 0.44, 0.06, 0.2]],
+    table: [0.45, 0.78, 0.12, 0.05],
+    places: [
+      { x: 0.72, y: 0.86, hauteur: 0.28 },
+      { x: 0.3, y: 0.87, hauteur: 0.31 },
+    ],
+    chat: { x: 0.8, y: 0.9 },
+  },
 });
-await deposer("pieces-duo/salon/large/panorama.webp", await panorama("#2a4b5c"), "image/webp");
+await deposer("pieces-duo/hangar/lumiere-nuit.png", await imagePiece({ fond: "#1a1430" }), "image/png");
+await poserPiece(deposer, "salon", { fond: "#2a4b5c", lumieres: false, releve: false });
 
 const ROUTE = `${BASE}/api/direct/ma-piece`;
 const appeler = async (cookie, corps, q = "") => {
@@ -105,7 +113,7 @@ const c0 = await appeler(LEA_ADMIN, null, "?catalogue=1");
 const cles = c0.catalogue?.pieces?.map((p) => p.cle) ?? [];
 ok(c0.statut === 200 && cles.length === 9 && cles.slice(0, 4).join() === "hangar,newyork,rue,chambre-musicale" && c0.catalogue.piece === null, `les neuf, les pièces des plus jeunes d'abord (Léa a 15-17 ans) : ${cles.join(", ")}`);
 const pretes = c0.catalogue?.pieces?.filter((p) => p.vignette).map((p) => p.cle) ?? [];
-ok(pretes.join() === "hangar,salon" && /1440w/.test(c0.catalogue.pieces[0].vignette.srcset) && c0.catalogue.pieces.every((p) => p.nom && p.emoji && p.pour), "une vignette pour les seules pièces prêtes (le hangar, le salon), en 720 et 1440 points");
+ok(pretes.join() === "hangar,salon" && /360w/.test(c0.catalogue.pieces[0].vignette.srcset) && /720w/.test(c0.catalogue.pieces[0].vignette.srcset) && c0.catalogue.pieces[0].vignette.hauteur > c0.catalogue.pieces[0].vignette.largeur && c0.catalogue.pieces.every((p) => p.nom && p.emoji && p.pour), "une vignette pour les seules pièces prêtes (le hangar, le salon), en hauteur, en 360 et 720 points");
 const cMax = await appeler(MAX_ADMIN, null, "?catalogue=1");
 ok(cMax.catalogue?.pieces?.slice(0, 4).map((p) => p.cle).join() === "salon,terrasse,cuisine,chambre", "un adulte : les pièces des adultes d'abord (toutes proposées à tous)");
 
@@ -117,11 +125,11 @@ const heure = Number(new Intl.DateTimeFormat("fr-FR", { hour: "numeric", hour12:
 const voulu = heure >= 7 && heure < 17 ? "matin" : heure >= 17 && heure < 21 ? "soir" : "nuit";
 const attendu = voulu === "matin" ? "soir" : voulu;
 ok(ch.statut === 200 && ch.maison.piece === "hangar" && sc?.piece === "hangar" && sc.nom === "Le hangar" && sc.moment === attendu, `le hangar choisi : sa scène dans la lumière de l'heure de Paris (${voulu} : ${sc?.moment}${voulu === "matin" ? ", la sienne : le matin n'est pas fait" : ""})`);
-ok(/1792w/.test(sc?.panorama?.srcset ?? "") && /3584w/.test(sc.panorama.srcset) && sc.panorama.largeur === 3584 && sc.panorama.hauteur === 1024 && /^data:image\/webp/.test(sc.panorama.flou), "son panorama à adresse stable, en 1792 et 3584 points, sa vignette floue d'abord");
+ok(/768w/.test(sc?.panorama?.srcset ?? "") && /1024w/.test(sc.panorama.srcset) && sc.panorama.largeur === 1024 && sc.panorama.hauteur === 1536 && /^data:image\/webp/.test(sc.panorama.flou), "son image (celle de la messagerie, en hauteur) à adresse stable, en 768 et 1024 points, sa vignette floue d'abord");
 const pano = await fetch(`${BASE}${sc?.panorama?.src}`, { headers: { cookie: `clikme_habitant=${LEA.jeton}` } });
 const pm = await sharp(Buffer.from(await pano.arrayBuffer())).metadata();
-ok(pano.status === 200 && pm.width === 3584 && pm.height === 1024, "servi en grand (3584 × 1024)");
-ok(sc?.emplacements?.tele?.join() === "0.44,0.2,0.12,0.25" && sc.emplacements.lampes?.length === 1 && sc.emplacements.table && sc.centre?.x === 0.48 && sc.centre.hauteur === 0.5, "ses emplacements (la télé, un cadre, une lampe, la table basse, le chat) et son centre posé à la main");
+ok(pano.status === 200 && pm.width === 1024 && pm.height === 1536, "servie en grand (1024 × 1536)");
+ok(sc?.emplacements?.tele?.join() === "0.3,0.2,0.4,0.16" && sc.emplacements.lampes?.length === 1 && sc.emplacements.table && sc.centre?.x === 0.3 && sc.centre.y === 0.87 && sc.centre.hauteur === 0.31, "ses emplacements (la télé, un cadre, une lampe, la table basse, le chat) ; son centre : la place de gauche du relevé");
 ok(JSON.parse((await octets(`${LEA.id}/ma-piece/piece.json`))?.toString() || "{}").piece === "hangar", "rangée chez elle (ma-piece/piece.json)");
 const m1 = await appeler(LEA_ADMIN);
 ok(m1.maison?.piece === "hangar" && m1.maison.scene?.panorama?.src === sc?.panorama?.src && m1.maison.figurine?.src === fig?.src, "au retour : sa pièce, les mêmes adresses (rien n'est refait)");
@@ -129,7 +137,7 @@ ok((await appeler(LEA_ADMIN, null, "?catalogue=1")).catalogue?.piece === "hangar
 
 // ─── en changer ───
 const sa = await appeler(LEA_ADMIN, { action: "choisir", piece: "salon" });
-ok(sa.maison?.piece === "salon" && sa.maison.scene?.moment === "soir" && sa.maison.scene.emplacements === null && sa.maison.scene.centre?.x === 0.5, "en changer : le salon, dans sa lumière ; sans zones posées, le centre par défaut");
+ok(sa.maison?.piece === "salon" && sa.maison.scene?.moment === "soir" && sa.maison.scene.emplacements === null && sa.maison.scene.centre?.x === 0.33 && sa.maison.scene.centre.y === 0.86, "en changer : le salon, dans sa lumière ; sans relevé, le centre par défaut");
 
 // ─── sa figurine change : détourée à nouveau ───
 await deposer(`${LEA.id}/perso/v2/assise.png`, await assise("#3c8cc8"), "image/png");

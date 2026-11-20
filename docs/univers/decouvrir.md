@@ -474,8 +474,8 @@ adresses d'essai de l'univers). Depuis le lot D1b (section 16), c'est aussi l'on
 - **Pas encore de passions** : « Tes passions » d'abord (l'écran du lot D0), puis la télé.
 - **La télé en grand écran** (section 13) : toute la largeur, en 16/9, avec le lecteur officiel de YouTube
   (`youtube-nocookie.com`, chargé une fois : `chargerYouTube`, `tele-duo.tsx`). « ▶ Allumer la télé » est le geste qui
-  donne le son sur iPhone ; ensuite, les vidéos passent dans le même lecteur. Dessous, **ma pièce** (le panorama de Ma
-  maison, centré sur ma figurine) et **ma figurine assise** ; sans pièce choisie, ma figurine seule.
+  donne le son sur iPhone ; ensuite, les vidéos passent dans le même lecteur. Dessous, **ma pièce** (l'image de Ma
+  maison, celle de la messagerie depuis le 20 novembre 2026 : `ma-maison.md`, section 22) et **ma figurine assise** ; sans pièce choisie, ma figurine seule.
 - En haut : « 🎬 40 vidéos t'attendent », le thème de la vidéo (« ⚽ Foot et sport ») ; dessous : son titre, sa chaîne,
   sa durée.
 - **⏭ Suivante** ; une vidéo finie : la suivante arrive toute seule. Une vidéo qui refuse d'être lue hors de YouTube :

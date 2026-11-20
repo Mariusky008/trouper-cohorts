@@ -341,9 +341,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const lTele = Math.min(L, 680);
   const H = Math.round(Math.min(Math.max(L * 0.82, 260), 400));
   const decor = o.decor;
+  // (l'image de la pièce — celle de la messagerie, en hauteur, le 20 novembre 2026 — couvre la bande, posée sur son sol)
   const ratio = decor ? decor.panorama.largeur / Math.max(1, decor.panorama.hauteur) : 1;
-  const lPano = H * ratio;
+  const lPano = Math.max(L, H * ratio);
+  const hPano = lPano / Math.max(ratio, 0.01);
   const tx = decor ? Math.min(0, Math.max(L - lPano, L / 2 - decor.centre.x * lPano)) : 0;
+  const ty = Math.min(0, H - hPano);
   const ici = [...presents].sort((a, b) => a.arrive - b.arrive);
   // (deux arrivés en même temps sur la même place : le second prend la suivante libre)
   const places = new Map<string, number>();
@@ -394,7 +397,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         <div className="so-piece" style={{ height: H }} data-decor={decor?.piece ?? ""}>
           {decor && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="so-pano" src={decor.panorama.src} srcSet={decor.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: H, transform: `translateX(${tx}px)`, backgroundImage: `url(${decor.panorama.flou})` }} />
+            <img className="so-pano" src={decor.panorama.src} srcSet={decor.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPano, transform: `translate(${tx}px, ${ty}px)`, backgroundImage: `url(${decor.panorama.flou})` }} />
           )}
           {L > 0 &&
             ici.map((p) => {

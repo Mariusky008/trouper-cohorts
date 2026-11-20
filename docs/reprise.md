@@ -49,6 +49,13 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    puis D9 (✨ ma passion à moi, une par personne) — fait le 20 novembre (section 26) —, puis D6 (TikTok et Instagram par le partage, en
    portrait)**.
 
+**Une seule image, celle de la messagerie (20 novembre 2026, au soir ; `ma-maison.md`, section 22)** : le panorama de Ma
+maison (trois images qui se chevauchaient) n'est plus servi. Ma maison, la télé du jour, la séance chez moi et les salons
+ouverts montrent l'image en hauteur de la messagerie (`pieces-duo/<pièce>/decor.png`, ses lumières, son relevé), centrée
+comme la messagerie, sa figurine à la place de gauche du relevé. Les essais posent la pièce avec
+`scripts/piece-en-hauteur.mjs`. **Ensuite** : les décors en gradin des salons ouverts (accepté par le propriétaire : « ok
+pour le gradin, fais les décors »).
+
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les
 conversations s'ouvrent dans le salon). Freins sans déployer : `CLIKME_MA_MAISON=0`, `CLIKME_SALON_DU_DUO=0`

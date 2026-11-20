@@ -172,10 +172,11 @@ function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; 
   const restent = tele.videos.length;
   const themes = [...new Set(tele.videos.map((v) => themeDe(v.theme)?.court).filter(Boolean))].slice(0, 4);
   const sc = tele.scene;
-  const zone = sc?.emplacements?.tele;
-  // (la vignette : ma pièce, cadrée sur la télé et ma figurine)
-  const cx = sc ? (zone ? (zone[0] + zone[2] / 2 + sc.centre.x) / 2 : sc.centre.x) : 0.5;
+  // (la vignette, au format de la maquette (390 × 300) : l'image de ma pièce sur toute sa largeur, ma figurine assise en
+  // bas — en % de la carte)
   const ratio = sc ? sc.panorama.largeur / Math.max(1, sc.panorama.hauteur) : 1;
+  const hImg = (100 / Math.max(ratio, 0.01)) * (390 / 300);
+  const haut = sc ? Math.min(0, Math.max(100 - hImg, 92 - sc.centre.y * hImg)) : 0;
   return (
     <section className="td-accueil" data-accueil-decouvrir>
       <div className="td-accueil-haut">
@@ -185,14 +186,14 @@ function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; 
         </button>
       </div>
       <button type="button" className="td-carte" data-carte-tele onClick={onRegarder} aria-label="Regarder ma télé du jour">
-        <div className="td-carte-vig" style={sc ? ({ "--cx": cx } as React.CSSProperties) : undefined}>
+        <div className="td-carte-vig">
           {sc ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="td-carte-pano" src={sc.panorama.src} srcSet={sc.panorama.srcset} sizes="900px" alt="" style={{ backgroundImage: `url(${sc.panorama.flou})` }} />
+              <img className="td-carte-pano" src={sc.panorama.src} srcSet={sc.panorama.srcset} sizes="600px" alt="" style={{ top: `${haut}%`, height: `${hImg}%`, backgroundImage: `url(${sc.panorama.flou})` }} />
               {tele.figurine && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img className="td-carte-fig" src={tele.figurine.src} srcSet={tele.figurine.srcset} sizes="160px" alt="" style={{ height: `${sc.centre.hauteur * 100}%`, top: `${sc.centre.y * 100}%`, left: `calc(50% + ${((sc.centre.x - cx) * ratio * 100).toFixed(2)}cqh)` }} />
+                <img className="td-carte-fig" src={tele.figurine.src} srcSet={tele.figurine.srcset} sizes="160px" alt="" style={{ height: `${sc.centre.hauteur * hImg}%`, top: `${haut + sc.centre.y * hImg}%`, left: `${sc.centre.x * 100}%` }} />
               )}
             </>
           ) : (
@@ -950,19 +951,22 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
   const zone = scene?.emplacements?.tele;
   const enPiece = !grand && Boolean(zone) && Boolean(scene);
   const hEcran = Math.round((L * 9) / 16);
-  const hPiece = Math.round(L * (enPiece ? 1.1 : 0.62));
+  // (l'image de la pièce — celle de la messagerie, en hauteur — couvre la bande sous la télé, cadrée sur ma figurine ;
+  // « 🛋️ Voir la pièce » la montre entière, la vidéo dans sa télé)
   const ratio = scene ? scene.panorama.largeur / Math.max(1, scene.panorama.hauteur) : 1;
-  const lPano = hPiece * ratio;
-  const borne = (x: number) => Math.min(0, Math.max(L - lPano, x));
-  const tx = scene ? borne(L / 2 - (enPiece && zone ? zone[0] + zone[2] / 2 : scene.centre.x) * lPano) : 0;
+  const hPiece = Math.round(enPiece ? Math.min(L / Math.max(ratio, 0.3), L * 1.6) : L * 0.62);
+  const lPano = Math.max(L, hPiece * ratio);
+  const hPano = lPano / Math.max(ratio, 0.01);
+  const tx = scene ? Math.min(0, Math.max(L - lPano, L / 2 - (enPiece && zone ? zone[0] + zone[2] / 2 : scene.centre.x) * lPano)) : 0;
+  const ty = scene && !enPiece ? Math.min(0, Math.max(hPiece - hPano, hPiece * 0.93 - scene.centre.y * hPano)) : 0;
   const ecran =
     enPiece && zone
-      ? { left: tx + zone[0] * lPano, top: zone[1] * hPiece, width: zone[2] * lPano, height: zone[3] * hPiece }
+      ? { left: tx + zone[0] * lPano, top: ty + zone[1] * hPano, width: zone[2] * lPano, height: zone[3] * hPano }
       : { left: 0, top: 0, width: L, height: hEcran };
   const theme = v ? themeDe(v.theme) : undefined;
   const fini = !v;
   // (ma figurine, et à côté d'elle les trois proches qui s'assoient : à gauche, à droite, un peu au fond)
-  const mienne = scene ? { x: tx + scene.centre.x * lPano, y: scene.centre.y * hPiece, h: scene.centre.hauteur * hPiece } : { x: L / 2, y: hPiece * 0.96, h: hPiece * 0.82 };
+  const mienne = scene ? { x: tx + scene.centre.x * lPano, y: ty + scene.centre.y * hPano, h: scene.centre.hauteur * hPano } : { x: L / 2, y: hPiece * 0.96, h: hPiece * 0.82 };
   const { assis, bord } = placerLesProches(devant);
   const AUTOUR = [
     { dx: -0.3, dy: 0, k: 0.94 },
@@ -1049,7 +1053,7 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
         <div className="td-piece" style={{ top: enPiece ? 0 : hEcran, height: hPiece }} data-piece={scene?.piece ?? ""} data-gestes={peutReagir ? "1" : undefined} {...gestes}>
           {scene && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="td-pano" src={scene.panorama.src} srcSet={scene.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPiece, transform: `translateX(${tx}px)`, backgroundImage: `url(${scene.panorama.flou})` }} />
+            <img className="td-pano" src={scene.panorama.src} srcSet={scene.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPano, transform: `translate(${tx}px, ${ty}px)`, backgroundImage: `url(${scene.panorama.flou})` }} />
           )}
           {/* (⭐ mes proches qui l'ont vue : assis à côté de moi, ils réagissent à leur seconde) */}
           {L > 0 &&
@@ -1546,8 +1550,8 @@ const STYLES = `
 .td-accueil-haut h1{margin:0;font-size:24px;font-weight:900}
 .td-chip{border:0;border-radius:999px;padding:8px 13px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
 .td-carte{display:block;width:100%;padding:0;border:0;border-radius:22px;overflow:hidden;background:#24101b;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;box-shadow:0 18px 40px -20px rgba(0,0,0,.9)}
-.td-carte-vig{position:relative;aspect-ratio:16/9;overflow:hidden;container-type:size;background:linear-gradient(180deg,#4a2335,#24101b)}
-.td-carte-pano{position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(calc(-1 * var(--cx) * 100%));background-size:cover}
+.td-carte-vig{position:relative;aspect-ratio:390/300;overflow:hidden;container-type:size;background:linear-gradient(180deg,#4a2335,#24101b)}
+.td-carte-pano{position:absolute;left:0;width:100%;max-width:none;background-size:cover}
 .td-carte-fig{position:absolute;transform:translate(-50%,-100%);max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
 .td-carte-fig.seule{left:50%;top:96%;height:80%}
 .td-allume{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12.5px;font-weight:800}

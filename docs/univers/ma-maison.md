@@ -102,7 +102,8 @@ cadre »), chacun à part, et la pièce ne contient personne.
 - **En hauteur (le salon du duo)** : 1024 × 1536 (2 : 3), **les proportions et le cadrage de la maquette du salon** : la
   pièce entière, les deux places en bas au milieu, la télé, l'étagère et les cadres au mur, la fenêtre sur le côté, la
   table basse entre les places. On refait les huit, avec ces éléments.
-- **En largeur (la maison)** : **un panorama de 3584 × 1024** (3,5 pour 1 — plus large que le 21 : 9 prévu : le moteur
+- **En largeur (la maison)** — *abandonné le 20 novembre 2026 au soir : la maison montre l'image en hauteur (section
+  22)* : **un panorama de 3584 × 1024** (3,5 pour 1 — plus large que le 21 : 9 prévu : le moteur
   ne fait pas plus de 1536 × 1024 d'un coup, on reprend donc la machinerie de la maison en panorama,
   `pieces-serveur.ts`). Trois images du moteur : **le centre** (1536 × 1024), **fait à partir de l'image en hauteur**
   (la même pièce, vue plus large), une place libre au milieu, la télé au mur du fond, les trois cadres, la table basse ;
@@ -584,3 +585,37 @@ en mode téléphone » ; « le mode panorama n'est pas bon : ça reprend le mêm
 
 **Les essais** : `ma-maison-remplie.mjs` (la télé touchée : le film joue sur son écran, à la place de l'écran ; « ⏹
 Éteindre la télé » ; aucun lien vers YouTube).
+
+## 22. Une seule image, celle de la messagerie (20 novembre 2026, au soir)
+
+Le propriétaire : « le problème, c'est que le panorama, si tu regardes bien, les images se chevauchent : ça ne fait pas
+un panorama normal, parce qu'on voit des bouts de la droite deux fois au centre, et à gauche pareil […] peut-être
+qu'au lieu d'avoir un panorama, on pourrait tout avoir sur une seule image, comme celle de la messagerie. » Puis
+« oui ».
+
+- **Partout, l'image en hauteur** (1024 × 1536, `pieces-duo/<pièce>/decor.png`), **la même que la messagerie** : dans
+  Ma maison, dans la télé du jour (« 🏠 Ma télé »), dans la séance chez moi et dans les salons ouverts, et pour les
+  vignettes de « Choisis ta pièce » et des « Univers à visiter ». Ses lumières : `lumiere-<moment>.png` (celle de
+  l'heure de Paris, la sienne sinon) ; ses emplacements : son relevé, `pieces-duo/<pièce>/releve.json` (en fractions de
+  l'image, celui de la messagerie). **Le panorama n'est plus servi** ; ses fichiers (`large/`) et son atelier sur la page
+  de l'admin restent, sans usage (à enlever plus tard, si le propriétaire le veut).
+- **Une pièce est prête** quand son image en hauteur est faite (`decor.png`) : les neuf de la messagerie le sont déjà ;
+  rien à refaire.
+- **Sa figurine** : à la place de gauche du relevé (celle du duo), de la tête au sol ; une pièce sans relevé : à 33 %
+  de la largeur, le sol à 86 % de la hauteur, un tiers de la hauteur (`CENTRE_PAR_DEFAUT`).
+- **Le cadrage, comme la messagerie** : l'image couvre l'écran (toute sa hauteur), **centrée** — sans jamais couper sa
+  figurine (le cadrage glisse juste assez pour la montrer entière). Sur un iPhone en plein écran (390 × 844 points),
+  l'image fait 563 points de large : il reste un léger glissement au doigt, mais il n'y a plus de « tour » à faire.
+- **L'indice** : « Touche les objets de ta pièce » (au lieu de « ← Glisse pour faire le tour → ») ; il s'en va au
+  premier toucher. L'aperçu de « Choisis ta pièce » montre l'image comme la messagerie (elle couvre l'écran, centrée,
+  sans défiler) ; sa phrase : « Là où ta figurine s'installe. Tu pourras en changer quand tu veux. » (plus « tout autour
+  de toi »).
+- **La télé du jour et les salons ouverts** : l'image couvre la scène (toute sa largeur sur un téléphone) ; en mode
+  « grand écran », elle est calée pour que sa figurine reste assise au bas de la pièce visible. Les tailles servies :
+  768 et 1024 points (`LARGEURS_PANORAMA`), les vignettes en 360 et 720 (`LARGEURS_VIGNETTE`).
+
+**Les essais** : ils posent tous la pièce comme la messagerie (`scripts/piece-en-hauteur.mjs` : l'image en hauteur,
+ses lumières, son relevé — des rectangles de couleur qui dessinent ce que dit le relevé) ; `essai-ma-maison-route.mjs`
+(l'image en 768 et 1024 points, servie en 1024 × 1536 ; le centre : la place de gauche, même écrite en second ; sans
+relevé, le centre par défaut) ; `ma-maison-catalogue.mjs` (une seule image, en hauteur, toute la hauteur de l'écran ;
+sa figurine à sa place, entière ; « Touche les objets de ta pièce », parti au premier toucher ; plus de « Glisse »).

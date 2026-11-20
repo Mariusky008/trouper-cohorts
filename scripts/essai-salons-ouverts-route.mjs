@@ -10,6 +10,7 @@
 // on revient dans le plus rempli. Trois signalements de trois personnes en une heure : 24 h dehors (le même qui signale
 // deux fois compte une fois). L'administrateur voit tout, réintègre, exclut.
 import sharp from "sharp";
+import { poserPiece } from "./piece-en-hauteur.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const FAUX = F.replace("/rest/v1", "");
@@ -56,11 +57,7 @@ for (const x of [LEA, SAM, TOM, ...AUTRES]) await json(`${x.id}/majeur.json`, { 
 await json(`${NOE.id}/majeur.json`, { age: 15, adulte: false, le: maintenant });
 await json(`${LEA.id}/passions.json`, { passions: ["cuisine", "foot", "animaux"], poids: {}, le: maintenant });
 // (le décor du salon du foot : le salon du catalogue, son panorama et sa télé)
-const panorama = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="3072" height="1024"><rect width="3072" height="1024" fill="#20506a"/><rect y="700" width="3072" height="324" fill="#5a4030"/><rect x="1330" y="200" width="420" height="250" fill="#111"/></svg>`))
-  .webp({ quality: 70 })
-  .toBuffer();
-for (const m of ["", "-matin", "-nuit"]) await deposer(`pieces-duo/salon/large/panorama${m}.webp`, panorama, "image/webp");
-await json("pieces-duo/salon/large/releve.json", { le: maintenant, ajuste: true, emplacements: { tele: [0.433, 0.195, 0.137, 0.244], cadres: [], places: [{ x: 0.5, y: 0.94, hauteur: 0.5 }] } });
+await poserPiece(deposer, "salon", { le: maintenant });
 // (la nuit passe : la sélection du jour)
 const nuit = await (await fetch(`${BASE}/api/cron/decouvrir-selection`)).json();
 ok(nuit.faites?.length === 23, "la nuit est passée");
