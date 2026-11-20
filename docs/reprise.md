@@ -63,8 +63,11 @@ ligne** : « Tout fabriquer », regarder chaque décor, valider.
 **📷 Ta figurine, c'est ton visage (20 novembre 2026, au soir ; `decouvrir.md`, section 28)** : le « détail » que
 cherchait le propriétaire — la caméra lit le visage sur le téléphone, la figurine fait sa tête à la seconde, en direct
 et en différé, sur toutes les vidéos. Les cinq expressions (la tête seulement) se font dès « C'est moi ! », avec un
-rattrapage. **Ensuite** : le lot V0 (l'essai sur la figurine du propriétaire), puis V1 à V4. Accepté aussi : 🎁 la vidéo
-offerte (une par jour et par proche).
+rattrapage. **Le lot V0 est fait** (section 28.5) : l'atelier `/admin/humain/visage` (jusqu'à six personnes, leur
+figurine, leurs cinq expressions) et le salon d'essai `/univers/visage` (la vidéo, les amis qui réagissent, sa figurine
+qui fait sa tête, « Revoir avec mes réactions »). **À faire par le propriétaire, en ligne** : ajouter ses amis (avec leur
+accord) et lui-même, « Tout fabriquer », ouvrir le salon d'essai sur son téléphone. **Ensuite**, selon son avis : V1 à
+V4. Accepté aussi : 🎁 la vidéo offerte (une par jour et par proche).
 
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les

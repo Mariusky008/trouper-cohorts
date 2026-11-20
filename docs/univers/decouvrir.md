@@ -1163,3 +1163,50 @@ bouche, tu fais la grimace, tu tournes la tête vers ton voisin — elle aussi. 
 Avec **🎁 « la vidéo offerte »** (chaque jour, chacun de mes proches peut m'offrir une vidéo, une seule ; acceptée par le
 propriétaire le même soir), à écrire dans sa propre section quand on la fera.
 
+### 28.5 Le lot V0 : l'essai (20 novembre 2026, au soir) — fait
+
+Le propriétaire : « je peux te donner 4 ou 5 visages d'amis […] pour les mettre dans une maquette d'un salon où il y
+aurait une vidéo YouTube ? comme ça je vois si ça marche bien, l'effet wow » ; puis, plutôt que de confier une clé :
+« peut-être puis-je le faire de l'admin ». Tout se fait donc en ligne, avec la clé du moteur déjà rangée dans Vercel.
+
+**L'atelier** (`/admin/humain/visage`, lien « 📷 L'essai du visage » sur la page de l'administrateur) :
+- jusqu'à **six personnes** : un prénom, une photo de face (réduite sur le téléphone), **son accord** (case à cocher,
+  obligatoire), « c'est moi » (une seule à la fois : sa figurine fera ta tête) ;
+- **« 🛠️ Fabriquer »**, une étape par passage (une minute environ chacune) : sa figurine assise (la consigne des
+  figurines, `consigneSculptee`, d'après sa photo — **la photo s'efface aussitôt**), sa découpe (le corps et la tête, les
+  calques du lot S1, sans moteur), puis ses **cinq expressions** : chacune faite sur la figurine entière (« la tête
+  exactement à la même place, de la même taille, sous le même angle : seul le visage change »), puis **sa tête découpée
+  au pixel près au même endroit** que la tête habituelle (`decouperFigurine` rend maintenant où il a découpé le corps et la
+  tête) ; « 🛠️ Tout fabriquer » enchaîne tout le monde ; ses expressions posées à côté de sa figurine ; « ↺ Refaire les
+  expressions » ; « 🗑️ Effacer » (tout) ;
+- rangé à part de tout habitant : `essais-visage/<id>/`.
+
+**Le salon d'essai** (`/univers/visage`, l'administrateur seulement, pensé pour le téléphone) :
+- en haut, **la vidéo** (le lecteur officiel de YouTube ; pour commencer, la première vidéo de l'humour du jour ; un lien
+  collé en change) ; dessous, **le gradin** (la salle de cinéma s'il est validé, sinon un autre gradin validé, sinon un
+  fond sombre et les huit tapis du plan) ; sa figurine au premier rang, au milieu (« Toi »), les amis autour ;
+- chaque figurine est son corps et sa tête posée dessus ; ses cinq expressions sont des têtes chargées d'avance :
+  **changer d'expression est instantané** ; un émoji saute au-dessus de la tête à chaque réaction ;
+- **les amis** suivent une piste tirée au sort pour l'essai (un rire, un sourire, une surprise, une grimace, un bof, toutes
+  les 6 à 16 secondes, parfois la tête tournée vers son voisin ; environ toutes les 30 secondes, **un fou rire de tout le
+  salon**, aux mêmes secondes) — leurs vraies réactions viendront avec le lot V2 ; la page le dit ;
+- **« 📷 Ma figurine fait ma tête »** : la caméra de devant, un petit miroir rond pour savoir qu'elle tourne, « Je vois :
+  😂 » ; la lecture du visage de Google (MediaPipe 0.10.14, chargée au premier allumage, sur le téléphone : **rien ne
+  part**) ; l'expression tenue un instant pour ne pas clignoter (0,2 s pour changer, 0,5 s au moins), la tête penchée (12°
+  au plus : au-delà, la tête d'origine dépasse dessous) et tournée, comme dans un miroir ; plus de visage depuis une
+  seconde : le visage habituel ;
+- ses réactions sont **notées à la seconde de la vidéo** pendant qu'elle passe ; **« ▶ Revoir avec mes réactions »** : la
+  vidéo repart du début, sa figurine rejoue ses vraies réactions, la caméra ne compte plus — « comme tes proches la
+  verront ».
+
+**À faire par le propriétaire, en ligne** : sur `/admin/humain/visage`, ajouter 4 ou 5 amis (avec leur accord) et
+soi-même (« c'est moi »), « 🛠️ Tout fabriquer » (sept étapes par personne), puis « ▶ Ouvrir le salon d'essai » sur son
+téléphone.
+
+**Les essais** : `essai-visage-essai-route.mjs` (l'administrateur seul ; l'accord, la photo, le prénom ; six au plus ; la
+figurine — la photo effacée —, la découpe, les cinq expressions, la tête découpée de la même taille ; le salon : les
+figurines prêtes seulement, « moi » d'abord, une vidéo pour commencer ; « c'est moi », refaire, effacer) ;
+`visage-essai.mjs` (sur un iPhone, une fausse caméra, une fausse lecture du visage : les amis réagissent et rient
+ensemble ; un sourire, un rire, la tête penchée ; le visage habituel ; « Revoir avec mes réactions » rejoue le rire à la
+bonne seconde ; la page de l'administrateur).
+
