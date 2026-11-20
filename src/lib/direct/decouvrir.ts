@@ -72,6 +72,8 @@ export type VideoDuJour = {
   /** en secondes */
   duree: number;
   publiee: string;
+  /** l'identifiant de sa chaîne (`UC…` ; « 📺 Suivre cette chaîne », le lot D8) */
+  chaineId?: string;
   /** ajoutée à la main par l'administrateur */
   ajoutee?: true;
 };

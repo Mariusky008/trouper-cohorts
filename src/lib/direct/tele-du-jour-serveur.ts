@@ -20,6 +20,7 @@ import { sesDixHuitAns } from "./majorite-serveur";
 import { themeDe, themesPour, type IdTheme, type VideoDuJour } from "./decouvrir";
 import { lireSelection } from "./selection-serveur";
 import { changerPoids, lirePassions } from "./passions-serveur";
+import { mesChaines, videosDeMesChaines } from "./chaines-serveur";
 import { figurineDeLaMaison, lireSaPiece, sceneDeLaMaison } from "./ma-maison-serveur";
 import { ajouterChezMoi } from "./etagere-serveur";
 import { ecrireMessage, type ApresEcrit } from "./ecrit-serveur";
@@ -58,26 +59,36 @@ async function lireFiche(supabase: Supabase, h: string): Promise<FicheTeleDuJour
 
 /** 📺 Ma télé du jour : ce qui m'attend, ma pièce, ma figurine. */
 export async function maTeleDuJour(supabase: Supabase, h: string): Promise<TeleDuJour> {
-  const [{ passions, poids, listes }, fiche, piece, figurine] = await Promise.all([
+  const [{ passions, poids, listes }, fiche, piece, figurine, chaines] = await Promise.all([
     sesSelections(supabase, h),
     lireFiche(supabase, h),
     lireSaPiece(supabase, h).catch(() => null),
     figurineDeLaMaison(supabase, h).catch(() => null),
+    mesChaines(supabase, h).catch(() => []),
   ]);
   const scene = piece ? await sceneDeLaMaison(supabase, piece).catch(() => null) : null;
-  const videos = melanger(listes, poids, new Set(fiche.vues ?? []));
-  const rien = listes.every((l) => !l.videos.length);
+  const vues = new Set(fiche.vues ?? []);
+  // (📺 le lot D8 : les nouvelles vidéos de mes chaînes d'abord, puis la sélection de mes passions)
+  const deMesChaines = (await videosDeMesChaines(supabase, h, chaines).catch(() => [])).filter((v) => !vues.has(v.id)).slice(0, TELE_DU_JOUR.max);
+  const pris = new Set(deMesChaines.map((v) => v.id));
+  const videos = [...deMesChaines, ...melanger(listes, poids, vues).filter((v) => !pris.has(v.id))].slice(0, TELE_DU_JOUR.max);
+  const rien = listes.every((l) => !l.videos.length) && !deMesChaines.length;
   return {
     passions,
     videos,
     vuesAujourdhui: fiche.jour === jourParis() ? Number(fiche.aujourdhui) || 0 : 0,
     scene,
     figurine,
+    chaines,
+    nouvelles: deMesChaines.length,
     ...(passions.length && rien ? { vide: true as const } : {}),
   };
 }
 
-/** Une vidéo de ma télé (aujourd'hui ou hier, dans mes passions) ; sinon `null` — on n'envoie, ne garde ni ne réagit à autre chose. */
+/**
+ * Une vidéo de ma télé (aujourd'hui ou hier, dans mes passions ; ou la nouvelle vidéo d'une de mes chaînes) ; sinon
+ * `null` — on n'envoie, ne garde ni ne réagit à autre chose.
+ */
 export async function maVideo(supabase: Supabase, h: string, id: unknown): Promise<VideoTele | null> {
   const i = s(id);
   if (!ID_VIDEO.test(i)) return null;
@@ -86,7 +97,7 @@ export async function maVideo(supabase: Supabase, h: string, id: unknown): Promi
     const v = l.videos.find((x) => x.id === i);
     if (v) return { ...v, theme: l.theme };
   }
-  return null;
+  return (await videosDeMesChaines(supabase, h).catch(() => [])).find((v) => v.id === i) ?? null;
 }
 
 /** Je l'ai déjà vue (elle est dans mes vues) : « 💬 Ce qui s'est dit » montre tout (le lot D2b, deuxième partie). */
@@ -108,8 +119,9 @@ export async function noterVue(supabase: Supabase, h: string, id: unknown, o: { 
   const aujourdhui = (fiche.jour === jour ? Number(fiche.aujourdhui) || 0 : 0) + (deja ? 0 : 1);
   if (!(await ecrireJson(supabase, cheminTeleDuJour(h), { ...fiche, vues, jour, aujourdhui } satisfies FicheTeleDuJour))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   if (o.illisible !== true && !deja) {
-    if (o.fin === true) await changerPoids(supabase, h, v.theme, "fin");
-    else if (Number(o.secondes) >= 0 && Number(o.secondes) < TELE_DU_JOUR.passeeAvant) await changerPoids(supabase, h, v.theme, "passee");
+    // (une vidéo d'une de mes chaînes n'a pas de thème : rien ne bouge)
+    if (v.theme && o.fin === true) await changerPoids(supabase, h, v.theme, "fin");
+    else if (v.theme && Number(o.secondes) >= 0 && Number(o.secondes) < TELE_DU_JOUR.passeeAvant) await changerPoids(supabase, h, v.theme, "passee");
   }
   return { ok: true };
 }
@@ -123,7 +135,7 @@ export async function garderVideo(supabase: Supabase, moi: Habitant, id: unknown
   const r = await ajouterChezMoi(supabase, moi, { quoi: "clip", titre: v.titre, lien: surYouTube(v.id), mot: `Vu sur ma télé du jour · ${v.chaine}` });
   if (r.error) return { error: r.error, statut: r.statut };
   await ecrireJson(supabase, cheminTeleDuJour(moi.id), { ...fiche, gardees: [...(fiche.gardees ?? []), v.id].slice(-TELE_DU_JOUR.vuesGardees) } satisfies FicheTeleDuJour);
-  await changerPoids(supabase, moi.id, v.theme, "garde");
+  if (v.theme) await changerPoids(supabase, moi.id, v.theme, "garde");
   return { ok: true };
 }
 

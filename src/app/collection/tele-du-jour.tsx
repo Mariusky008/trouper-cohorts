@@ -28,6 +28,10 @@
  * sa réaction ; « 💬 Ce qui s'est dit » (toucher une ligne revoit le moment ; ce qui vient plus loin reste caché) ; une
  * notification (« revois-la avec ses réactions », « Léa t'a répondu ») ouvre sa vidéo, même déjà vue (`?tele=<id>&t=`).
  *
+ * 📺 MES CHAÎNES (le lot D8, section 23.1) : les nouvelles vidéos des chaînes que je suis arrivent en premier (« 🆕 Squeezie
+ * · il y a 2 h », à la place du thème) ; devant une autre vidéo, « 📺 Suivre cette chaîne » ; sur la carte de l'accueil,
+ * « 🆕 2 nouvelles vidéos de tes chaînes ».
+ *
  * 🔥 L'ONGLET « DÉCOUVRIR » (le lot D1b, 19 novembre 2026) : c'est elle, à la place des mèmes en plein écran et des vœux
  * (`onglet` : sous la barre du haut, au-dessus du menu ; la note et la feuille « Envoyer à… » passent devant le menu).
  * Seule, à l'adresse d'essai `/univers/tele`, elle prend tout l'écran. Dessous, dans l'onglet : « 🏡 Les maisons à
@@ -36,6 +40,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { PHRASES_TELE_DU_JOUR as P, duree, type TeleDuJour, type VideoTele } from "@/lib/direct/tele-du-jour";
 import { themeDe } from "@/lib/direct/decouvrir";
+import { PHRASES_CHAINES as PC, ilYa } from "@/lib/direct/chaines";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
@@ -205,6 +210,11 @@ function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; 
         <div className="td-carte-txt">
           <p className="td-sur">Ma télé du jour</p>
           <h2>{tele.vide ? P.bientot : `🎬 ${restent} vidéo${restent > 1 ? "s" : ""} t’attend${restent > 1 ? "ent" : ""}`}</h2>
+          {tele.nouvelles > 0 && (
+            <p className="td-nouvelles" data-nouvelles>
+              {PC.nouvelles(tele.nouvelles)}
+            </p>
+          )}
           {themes.length > 0 && <p className="td-themes">{themes.join(" · ")}</p>}
           <span className="td-regarder">▶ Regarder</span>
         </div>
@@ -407,6 +417,8 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
   const [proches, setProches] = useState<Proche[] | null>(null);
   const [gardees, setGardees] = useState<string[]>([]);
   const [occupe, setOccupe] = useState(false);
+  // (📺 les chaînes que je suis : « Suivre cette chaîne » disparaît pour elles)
+  const [suivies, setSuivies] = useState<string[]>(() => (tele.chaines ?? []).map((c) => c.id));
   const hote = useRef<HTMLDivElement>(null);
   const lecteur = useRef<Lecteur | null>(null);
   const boite = useRef<HTMLDivElement>(null);
@@ -568,6 +580,19 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
     if (!r.ok) return dire(r.j.error || "Ça n’a pas marché. Réessaie.");
     setGardees((g) => [...g, v.id]);
     dire(r.j.deja ? P.dejaGardee : P.gardee);
+  }
+  /** 📺 Suivre la chaîne de cette vidéo : ses nouvelles vidéos arriveront en premier. */
+  async function suivreLaChaine() {
+    if (!v) return;
+    setOccupe(true);
+    const r = await fetch("/api/direct/chaines", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "suivre", video: v.id }) })
+      .then(async (x) => ({ ok: x.ok, j: (await x.json().catch(() => ({}))) as { chaine?: { id: string; nom: string }; deja?: boolean; error?: string } }))
+      .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { chaine?: { id: string; nom: string }; deja?: boolean; error?: string } }));
+    setOccupe(false);
+    if (!r.ok || !r.j.chaine) return dire(r.j.error || "Ça n’a pas marché. Réessaie.");
+    const c = r.j.chaine;
+    setSuivies((l) => [...new Set([...l, c.id])]);
+    dire(r.j.deja ? PC.dejaSuivie(c.nom) : PC.suivie(c.nom));
   }
   async function ouvrirFeuille() {
     setFeuille(true);
@@ -840,10 +865,16 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
             {tele.vide ? P.bientot : P.attendent(Math.max(0, videos.length - i))}
           </p>
         </div>
-        {theme && (
-          <span className="td-theme" data-theme={theme.id}>
-            {theme.e} {theme.nom}
+        {v?.suivie ? (
+          <span className="td-theme td-nouvelle" data-nouvelle={v.suivie.id}>
+            {PC.nouvelle(v.suivie.nom, ilYa(v.publiee))}
           </span>
+        ) : (
+          theme && (
+            <span className="td-theme" data-theme={theme.id}>
+              {theme.e} {theme.nom}
+            </span>
+          )
         )}
       </header>
 
@@ -939,6 +970,11 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
           </p>
           <p className="td-chaine">
             {v.chaine} · {duree(v.duree)}
+            {!v.suivie && !(v.chaineId && suivies.includes(v.chaineId)) && (
+              <button type="button" className="td-suivre" data-suivre-chaine disabled={occupe} onClick={() => void suivreLaChaine()}>
+                {PC.suivre}
+              </button>
+            )}
           </p>
           <div className="td-ligne-avec">
             {devant.length > 0 && (
@@ -1190,7 +1226,11 @@ const STYLES = `
 .td-fini span{color:#ead3df;font-size:14px}
 .td-bas{display:flex;flex-direction:column;gap:8px;padding:0 16px}
 .td-titre{margin:0;font-size:17px;font-weight:800;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.td-chaine{margin:0;color:#a88a9b;font-size:13.5px}
+.td-chaine{margin:0;color:#a88a9b;font-size:13.5px;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}
+.td-suivre{border:0;border-radius:999px;padding:5px 11px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-weight:800;font-size:12.5px;cursor:pointer}
+.td-suivre:disabled{opacity:.5}
+.td-nouvelle{max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,46,154,.22)}
+.td-nouvelles{margin:0;font-size:14px;font-weight:800;color:#ff8fca}
 .td-gestes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
 .td-gestes button{min-height:46px;border:0;border-radius:14px;padding:8px 6px;font:inherit;font-weight:800;font-size:14px;color:#FFF4E6;background:rgba(255,255,255,.1)}
 .td-gestes button[data-garder]{background:rgba(242,196,107,.18)}

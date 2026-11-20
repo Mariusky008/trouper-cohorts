@@ -287,7 +287,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; reste : les mèmes dans un salon ouvert | D1c |
 | **D5** ✅ (section 20) | L'étagère des salons (❤️, trois cœurs, « 📌 Garder »), « Mes salons » dans ma maison (des fanions), « 👯 Ajouter en proche » et « 🏠 Voir sa maison » depuis une figurine | D3 |
 | **D6** (élargi, section 23.3) | TikTok et Instagram : partager une vidéo vers ClikMe (le menu « Partager » sur Android, coller le lien sur iPhone), lue par le lecteur officiel, en portrait | D1 |
-| **D8** (section 23.1) | 📺 Mes chaînes YouTube : suivre jusqu'à 10 chaînes, leurs nouvelles vidéos en premier dans ma télé du jour | D1 |
+| **D8** ✅ (sections 23.1 et 24) | 📺 Mes chaînes YouTube : suivre jusqu'à 10 chaînes, leurs nouvelles vidéos en premier dans ma télé du jour | D1 |
 | **D9** (section 23.2) | ✨ Ma passion à moi : une passion écrite librement, une par personne, cherchée sur YouTube dans un budget par nuit | D0 |
 | **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
 
@@ -842,10 +842,11 @@ automatiquement un compte TikTok ou Instagram n'est pas possible (23.3).
   ou non). Sur la carte de l'accueil : « 🆕 2 nouvelles vidéos de tes chaînes ». Pas de notification au départ
   (YouTube prévient déjà ; on pourra en ajouter une, coupable, si le propriétaire la veut).
 - **Les aller chercher coûte presque rien** : chaque nuit (la même tâche que la sélection, et tout de suite quand on
-  ajoute une chaîne), pour chaque chaîne suivie par au moins une personne, ses dernières vidéos par le **flux public de
-  la chaîne** (`youtube.com/feeds/videos.xml?channel_id=…` : 0 unité ; s'il ne répond pas, `playlistItems.list` sur la
-  liste « mises en ligne » de la chaîne : 1 unité) ; puis `videos.list` (1 unité pour 50 vidéos) pour la durée, le droit
-  d'être lue ailleurs, le direct. Mille chaînes suivies : au plus mille unités sur 10 000.
+  ajoute une chaîne), pour chaque chaîne suivie par au moins une personne, ses dernières vidéos par la liste « mises en
+  ligne » de la chaîne (`playlistItems.list` : 1 unité) ; puis `videos.list` (1 unité pour 50 vidéos) pour la durée, le
+  droit d'être lue ailleurs, le direct. Mille chaînes suivies : au plus deux mille unités sur 10 000. (Le flux public
+  de la chaîne, gratuit, `youtube.com/feeds/videos.xml?channel_id=…`, reste en réserve si le quota venait à manquer :
+  il ne passe pas par la clé, et répond moins sûrement à un serveur.)
 - **Les mêmes filtres que la sélection**, sauf la durée : lisible ailleurs, ni en direct ni à venir, pas réservée aux
   adultes (YouTube le dit : jamais montrée, à personne), pas d'alcool dans le titre ; **de 60 s à 60 min** (on a choisi
   ce créateur : ses longues vidéos aussi). Les vidéos de moins de 60 s sont souvent des Shorts, en portrait : elles
@@ -905,3 +906,38 @@ automatiquement un compte TikTok ou Instagram n'est pas possible (23.3).
 - Toujours le lecteur officiel : jamais une vidéo téléchargée (section 2).
 
 **L'ordre** : D8 (mes chaînes) d'abord — le plus utile et le plus sûr —, puis D9 (ma passion à moi), puis D6.
+
+## 24. Le lot D8 : mes chaînes YouTube (20 novembre 2026)
+
+Le propriétaire, le 20 novembre 2026 : « oui, fusionne et commence D8 ». Ce qui est fait (le détail en 23.1) :
+
+- **📺 Suivre une chaîne** :
+  - dans « ✎ Tes passions » (`tes-passions.tsx`), la partie « 📺 Tes chaînes · 2 sur 10 » : coller un lien (`@nom`,
+    `/channel/UC…`, le lien d'une de ses vidéos) ou taper un `@nom`, « Suivre » ; ✕ pour ne plus suivre ;
+  - devant une vidéo de ma télé du jour, sous son titre, **« 📺 Suivre cette chaîne »** (« ✓ Tu suis … : ses nouvelles
+    vidéos arriveront en premier » ; le bouton s'en va).
+  - Refusés : ce qui n'est pas une chaîne YouTube (400), une chaîne introuvable (404), la onzième (« 10 au plus :
+    enlève-en une d'abord »), une chaîne retirée par l'administrateur (403). Le même `@nom` autrement écrit : déjà suivie.
+- **🆕 Dans ma télé du jour**, les nouvelles vidéos de mes chaînes passent **avant** la sélection de mes passions, les
+  plus récentes d'abord ; en haut, à la place du thème : « 🆕 Lesbonsplans · il y a 1 h » ; elles n'ont pas de thème
+  (vues jusqu'au bout, passées ou gardées, les poids de mes passions ne bougent pas). Sur la carte de l'accueil :
+  « 🆕 3 nouvelles vidéos de tes chaînes ». Réagir, écrire, répondre, garder, envoyer, `?video=` : comme les autres.
+- **Les filtres** : de 60 s à 60 min, publiées dans les sept derniers jours, lisibles ailleurs, ni en direct ni à venir,
+  pas d'alcool dans le titre, **jamais une vidéo réservée aux adultes** (`contentRating.ytRating`, pour la sélection
+  aussi désormais).
+- **La nuit** (`/api/cron/decouvrir-selection`) : après la sélection des thèmes, les chaînes suivies par au moins une
+  personne, cinq à la fois, avec le temps qui reste (`{ chaines: { faites, erreurs } }`).
+- **L'administration** (`/admin/humain/decouvrir`, en bas) : « 📺 Les chaînes suivies », les plus suivies d'abord (leurs
+  abonnés, leurs vidéos, une panne de YouTube) ; **Retirer**.
+- **Le code** : `src/lib/direct/chaines.ts` (partagé : `chaineDuLien`, `ilYa`, les phrases), `chaines-serveur.ts`, la
+  route `/api/direct/chaines` (`GET` ; `POST suivre { lien | video }`, `ne-plus-suivre { id }`) ; `selection-serveur.ts`
+  prête `appeler` et `details` (avec ses durées) ; une vidéo de la sélection garde l'identifiant de sa chaîne
+  (`chaineId`).
+- **Les essais** : `scripts/essai-chaines-route.mjs` (suivre par un lien, par un @nom autrement écrit, depuis une vidéo ;
+  les refus ; les vidéos en tête, dans l'ordre, et les filtres ; Sam qui suit la même chaîne s'assoit chez Léa ; les
+  poids qui ne bougent pas ; dix au plus ; ne plus suivre ; un 15-17 ans ; la nuit ; l'administrateur qui retire ; aucun
+  identifiant de compte) et `scripts/navigateur/mes-chaines.mjs` (sur un iPhone : « Suivre cette chaîne », « Tes
+  chaînes », la télé qui s'ouvre sur « 🆕 Lesbonsplans · il y a 1 h », la carte de l'accueil). Le faux YouTube connaît
+  les chaînes (`/youtube/channels`, `/youtube/playlistItems`, `/__youtube-chaines`).
+
+**Ensuite** : D9 (✨ ma passion à moi), puis D6 (TikTok et Instagram par le partage, en portrait).
