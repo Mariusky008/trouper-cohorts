@@ -60,6 +60,12 @@ lieux pour les douze passions), huit emplacements sur deux marches, fabriqués e
 `/admin/humain/salons` ; seul un gradin validé va dans les salons (sinon, la pièce). **À faire par le propriétaire, en
 ligne** : « Tout fabriquer », regarder chaque décor, valider.
 
+**📷 Ta figurine, c'est ton visage (20 novembre 2026, au soir ; `decouvrir.md`, section 28)** : le « détail » que
+cherchait le propriétaire — la caméra lit le visage sur le téléphone, la figurine fait sa tête à la seconde, en direct
+et en différé, sur toutes les vidéos. Les cinq expressions (la tête seulement) se font dès « C'est moi ! », avec un
+rattrapage. **Ensuite** : le lot V0 (l'essai sur la figurine du propriétaire), puis V1 à V4. Accepté aussi : 🎁 la vidéo
+offerte (une par jour et par proche).
+
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les
 conversations s'ouvrent dans le salon). Freins sans déployer : `CLIKME_MA_MAISON=0`, `CLIKME_SALON_DU_DUO=0`
