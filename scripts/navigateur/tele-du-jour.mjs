@@ -129,7 +129,8 @@ const lea = await telephone(LEA);
 await lea.goto(`${BASE}/univers/tele`, { waitUntil: "domcontentloaded" });
 const main = lea.locator(".td");
 ok(await attendre(lea, async () => Boolean(await main.getAttribute("data-video"))), "sa télé du jour s'ouvre");
-ok(/40 vidéos t’attendent/.test(await texte(lea.locator("[data-compte]"))), `« ${await texte(lea.locator("[data-compte]"))} »`);
+ok(/^1 sur 40 · /.test(await texte(lea.locator("[data-compte]"))) && /🏠 Ma télé/.test(await texte(lea.locator(".td-barre"))), `la barre comme la maquette : « 🏠 Ma télé », « ${await texte(lea.locator("[data-compte]"))} »`);
+ok((await lea.locator(".td-barre [data-dit]").count()) === 1 && (await texte(lea.locator(".td-barre [data-chez-moi]"))) === "👥 Inviter", "… 💬 et « 👥 Inviter »");
 const enGrand = async () => {
   const e = await lea.locator(".td-ecran").boundingBox();
   return Boolean(e && Math.abs(e.width - 390) < 2 && Math.abs(e.height - (390 * 9) / 16) < 2);
@@ -140,7 +141,9 @@ ok(ecran && Math.abs(ecran.width - 390) < 2, `en grand écran : toute la largeur
 ok((await lea.locator(".td-piece[data-piece='hangar'] .td-pano").count()) === 1 && (await lea.locator(".td-piece .td-figurine").count()) === 1, "dessous, sa pièce (le hangar) et sa figurine");
 ok(await attendre(lea, async () => (await lea.locator(".td-piece .td-figurine").evaluate((i) => i.complete && i.naturalWidth > 0)) === true), "… sa figurine est là");
 const premiere = await main.getAttribute("data-video");
-ok((await texte(lea.locator("[data-titre]"))).length > 3 && /\d+:\d\d/.test(await texte(lea.locator(".td-chaine"))) && (await lea.locator("[data-theme]").count()) === 1, "le titre, la chaîne, la durée, le thème");
+ok((await texte(lea.locator("[data-titre]"))).length > 3 && /\d+:\d\d/.test(await texte(lea.locator(".td-chaine"))) && (await lea.locator("[data-theme]").count()) === 1, "sur la télé éteinte : le titre, la chaîne, la durée ; le thème dans la barre");
+ok((await lea.locator("[data-ligne-temps]").count()) === 1 && (await lea.locator("[data-commandes] [data-suivante]").count()) === 1 && /ou touche la pièce/.test(await texte(lea.locator("[data-rangee]"))), "dessous, comme la maquette : la ligne du temps, « Réagis … ou touche la pièce », les commandes");
+ok(/en parle/.test(await texte(lea.locator("[data-lien-salon]"))) && (await lea.locator("[data-ecrire] [data-micro]").count()) === 1, `« ${await texte(lea.locator("[data-lien-salon]"))} » ; la saisie et son 🎙️`);
 ok((await lea.locator("[data-allumer]").count()) === 1, "« ▶ Allumer la télé »");
 await lea.screenshot({ path: `${D}/tele-du-jour-1.png` });
 
@@ -157,7 +160,7 @@ const themeDeuxieme = await lea.locator("[data-theme]").getAttribute("data-theme
 await lea.evaluate(() => window.__lecteur.o.events.onStateChange({ data: 0 }));
 ok(await attendre(lea, async () => (await main.getAttribute("data-video")) !== deuxieme), "finie : la suivante arrive toute seule");
 ok(await attendre(lea, async () => (await poids(LEA))[themeDeuxieme] === 1 || (themeDeuxieme === themePremiere && (await poids(LEA))[themeDeuxieme] === 0)), `… son thème monte (${themeDeuxieme})`);
-ok(/38 vidéos t’attendent/.test(await texte(lea.locator("[data-compte]"))), `« ${await texte(lea.locator("[data-compte]"))} »`);
+ok(/^3 sur 40 · /.test(await texte(lea.locator("[data-compte]"))), `« ${await texte(lea.locator("[data-compte]"))} »`);
 
 // ═══ 📌 GARDER ═══
 await lea.locator("[data-garder]").click();

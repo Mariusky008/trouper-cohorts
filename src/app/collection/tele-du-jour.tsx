@@ -449,8 +449,6 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
   const [voixDispo, setVoixDispo] = useState<{ cle: string; prenom: string; voix: VoixVideo; n: number } | null>(null);
   const [surLaTele, setSurLaTele] = useState<{ quoi: string; sous: string } | null>(null);
   const [salons, setSalons] = useState<Record<string, number>>({});
-  // (« 👥 2 proches l'ont vue » : quelques secondes à l'ouverture de la vidéo, ou tant que la télé est éteinte)
-  const [annonce, setAnnonce] = useState(false);
   const tTexte = useRef<HTMLSpanElement>(null);
   const rempli = useRef<HTMLDivElement>(null);
   const micro = useRef<{ t: number; jouait: boolean } | null>(null);
@@ -491,10 +489,6 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
         setMiennes(j?.miennes ?? []);
         setDejaVue(j?.vue === true);
         setVoixDispo(null);
-        if (j?.proches?.length) {
-          setAnnonce(true);
-          window.setTimeout(() => !fini && setAnnonce(false), 6000);
-        }
       })
       .catch(() => undefined);
     return () => {
@@ -1094,15 +1088,15 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
             </div>
           )}
           {/* (au-dessus de la pièce : qui l'a vue, ou « tu l'ouvres en premier » ; un vocal à écouter) */}
-          {v && devant.length > 0 && (annonce || !allumee) && (
-            <p className="td-seul" data-avec>
-              👥 {PR.avecToi(devant.length)}
-            </p>
-          )}
           {v && !devant.length && <p className="td-seul" data-seul>{PR.seul}</p>}
           {voixDispo && (
             <button type="button" className="td-voix-dispo" data-voix-dispo={voixDispo.cle} {...sansGeste} onClick={() => ecouterVoix(voixDispo.prenom, voixDispo.voix)}>
               {PR.vocalDispo(voixDispo.prenom)} <b>{PR.ecouter}</b>
+            </button>
+          )}
+          {v && !v.suivie && !(v.chaineId && suivies.includes(v.chaineId)) && (
+            <button type="button" className="td-bascule droite" data-suivre-chaine disabled={occupe} {...sansGeste} onClick={() => void suivreLaChaine()}>
+              {PC.suivre}
             </button>
           )}
           {scene && zone && (
@@ -1150,6 +1144,11 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
               <button type="button" className="td-allumer" data-allumer onClick={() => setAllumee(true)}>
                 {P.allumer}
               </button>
+              {devant.length > 0 && (
+                <p className="td-avec-tele" data-avec>
+                  👥 {PR.avecToi(devant.length)}
+                </p>
+              )}
             </>
           )}
           {/* (🎙️ je parle, ou j'écoute un vocal : la vidéo m'attend) */}
@@ -1203,16 +1202,11 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
           </div>
           <div className="td-commandes" data-commandes>
             <button type="button" className="td-rond" data-jouer aria-label={joue ? PR.pause : PR.lecture} disabled={!lit} onClick={jouerOuPause}>
-              {joue ? "❚❚" : "▶"}
+              {joue ? "❚❚" : "▶\uFE0E"}
             </button>
             <button type="button" className="td-chip2" data-suivante disabled={occupe} onClick={() => suivante()}>
               {PR.suivante}
             </button>
-            {!v.suivie && !(v.chaineId && suivies.includes(v.chaineId)) && (
-              <button type="button" className="td-chip2" data-suivre-chaine disabled={occupe} onClick={() => void suivreLaChaine()}>
-                {PC.suivre}
-              </button>
-            )}
             <span className="td-esp" />
             <button type="button" className="td-chip2" data-garder disabled={occupe || gardees.includes(v.id)} onClick={() => void garder()}>
               {gardees.includes(v.id) ? P.dejaGardee : PR.garder}
@@ -1389,6 +1383,9 @@ const STYLES = `
 .td-voix-dispo{position:absolute;left:50%;top:22%;z-index:9;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:94%;padding:7px 8px 7px 13px;border:0;border-radius:999px;background:rgba(255,226,241,.97);color:#2a1424;font:inherit;font-size:12.5px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.45);cursor:pointer}
 .td-voix-dispo b{padding:5px 11px;border-radius:999px;background:#FF2E9A;color:#fff;font-size:12px}
 .td-bascule{position:absolute;left:8px;bottom:8px;z-index:4;border:0;border-radius:8px;padding:4px 9px;background:rgba(0,0,0,.6);color:#fff;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
+.td-bascule.droite{left:auto;right:8px}
+.td-bascule:disabled{opacity:.5}
+.td-avec-tele{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);margin:0;width:max-content;max-width:92%;padding:5px 11px;border-radius:999px;background:rgba(0,0,0,.62);color:#F2C46B;font-size:12px;font-weight:800;pointer-events:none}
 .td-tele-titre{position:absolute;inset:0 0 auto;display:flex;flex-direction:column;gap:1px;padding:8px 11px 22px;background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0));pointer-events:none}
 .td-tele-titre b{font-size:13px;font-weight:800;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .td-tele-titre small{font-size:11px;font-weight:600;color:#ddd}
@@ -1404,10 +1401,10 @@ const STYLES = `
 .td-rempli{position:absolute;inset:0 auto 0 0;width:0;border-radius:3px;background:linear-gradient(90deg,#FF2E9A,#F2C46B)}
 .td-tic{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c,#F2C46B);box-shadow:0 0 0 2px #160711}
 .td-tic.moi{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;background:#FFF4E6;box-shadow:0 0 0 2px #160711,0 0 8px #FFF4E6}
-.td-sous .td-reagir{gap:6px;margin:0}
+.td-sous .td-reagir{gap:5px;margin:0}
 .td-sous .td-reagir>span{font-size:12.5px;font-weight:800;color:#F2C46B;white-space:nowrap;margin:0}
-.td-sous .td-reagir button{width:38px;height:38px;border:1px solid rgba(242,196,107,.4);background:rgba(242,196,107,.12);font-size:19px}
-.td-sous .td-reagir small{font-size:11.5px;color:#a88a9b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.td-sous .td-reagir button{width:36px;height:36px;border:1px solid rgba(242,196,107,.4);background:rgba(242,196,107,.12);font-size:19px}
+.td-sous .td-reagir small{font-size:11px;line-height:1.15;color:#a88a9b;min-width:0;max-width:64px}
 .td-commandes{display:flex;align-items:center;gap:7px;overflow-x:auto;scrollbar-width:none}
 .td-commandes::-webkit-scrollbar{display:none}
 .td-esp{flex:1;min-width:2px}
@@ -1523,7 +1520,7 @@ const STYLES = `
 .td-invitation .td-venir{color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a)}
 .td-attente-note{margin:0;font-size:13.5px;opacity:.85}
 .td-lien{align-self:center;border:0;background:none;color:#ead3df;font:inherit;font-size:14.5px;font-weight:700;text-decoration:underline;padding:6px}
-.td-note{position:fixed;left:16px;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
+.td-note{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
 .td-voile{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:6}
 .td.onglet .td-note{bottom:calc(96px + env(safe-area-inset-bottom));z-index:25}
 .td.onglet .td-voile{z-index:40}

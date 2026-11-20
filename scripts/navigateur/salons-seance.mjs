@@ -121,7 +121,7 @@ await fermerPablito(lea, "#o-decouvrir");
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-carte-tele]").count()) === 1, 45000), "Découvrir : la carte « Ma télé du jour »");
 await lea.locator("#o-decouvrir [data-carte-tele]").click();
 const chezMoi = lea.locator("#o-decouvrir [data-chez-moi]");
-ok(await attendre(lea, async () => /Regarder avec mes proches/.test(await texte(chezMoi))), "« 👥 Regarder avec mes proches », sous sa télé du jour");
+ok(await attendre(lea, async () => /👥 Inviter/.test(await texte(chezMoi))), "« 👥 Inviter », dans la barre de sa télé du jour (comme la maquette)");
 await chezMoi.click();
 await lea.waitForURL(/\/univers\/salons\?chez=moi/);
 const seance = lea.locator(".so[data-salon]");

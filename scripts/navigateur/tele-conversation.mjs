@@ -3,7 +3,7 @@
 // YouTube qu'on avance à la main (rien ne part chez Google).
 //
 // Sam a vu la vidéo : 😂 à 5 s, il a écrit « Il va tirer de là ?! » à 8 s, ❤️ à 30 s. Léa ouvre sa télé du jour :
-// « 💬 Ce qui s'est dit · 3 » — la télé éteinte, tout est encore caché (« 🔒 3 réactions plus loin dans la vidéo »). Elle
+// 💬 « 3 » dans la barre (« Ce qui s'est dit ») — la télé éteinte, tout est encore caché (« 🔒 3 réactions plus loin dans la vidéo »). Elle
 // allume : à 5 s Sam rit ; à 8 s, sa bulle « Il va tirer de là ?! ». Elle touche Sam : « ↩ Répondre à Sam, à 0:08 »,
 // « 😱 Grave ! » — sa réponse est notée juste après (8,6 s), sa figurine le dit. Elle écrit « haha trop bien » (commencé
 // à 12 s, envoyé à 13 s) : noté à 12 s, en 😂, « Sam le lira à cette seconde ». « 💬 Ce qui s'est dit » à 13 s : quatre
@@ -95,7 +95,8 @@ window.YT = { Player: function (el, o) {
   self.loadVideoById = function (id) { d.dataset.yt = id; self.t = 0; };
   self.getCurrentTime = function () { return self.t; };
   self.seekTo = function (s) { self.t = s; };
-  self.playVideo = function () { d.dataset.joue = "1"; };
+  self.playVideo = function () { d.dataset.joue = "1"; o.events && o.events.onStateChange && o.events.onStateChange({ data: 1 }); };
+  self.pauseVideo = function () { d.dataset.joue = "0"; o.events && o.events.onStateChange && o.events.onStateChange({ data: 2 }); };
   self.unloadModule = function () {};
   self.destroy = function () { d.remove(); };
   window.__lecteur = self;
@@ -105,10 +106,10 @@ setTimeout(function () { window.onYouTubeIframeAPIReady && window.onYouTubeIfram
 `;
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
-const b = await lancer();
+const b = await lancer({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required"] });
 const erreurs = [];
 const ouvrir = async (x) => {
-  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true, permissions: ["microphone"] });
   await ctx.addCookies([{ name: "clikme_habitant", value: x.jeton, url: BASE }, { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE }]);
   await ctx.route("https://www.youtube.com/iframe_api", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: FAUX_YT }));
   await ctx.route(/^https:\/\/i\.ytimg\.com\//, (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
@@ -133,7 +134,7 @@ const reactionsDeLea = async () => ((await fichier(LEA))?.reactions ?? []).map((
 // ═══ LÉA OUVRE SA TÉLÉ : « 💬 CE QUI S'EST DIT », TOUT EST ENCORE CACHÉ ═══
 await p.goto(`${BASE}/univers/tele`, { waitUntil: "domcontentloaded" });
 ok(await attendre(async () => (await p.locator(".td").getAttribute("data-video")) === V.id, 15000), "sa télé du jour s'ouvre sur la vidéo");
-ok(await attendre(async () => (await texte("[data-dit]")) === "💬 Ce qui s’est dit · 3"), `« ${await texte("[data-dit]")} »`);
+ok(await attendre(async () => (await texte("[data-dit] .td-pastille")) === "3"), `💬 dans la barre, avec « ${await texte("[data-dit] .td-pastille")} » (ce qui s'est dit)`);
 await p.locator("[data-dit]").click();
 ok(await attendre(async () => (await p.locator("[data-feuille-dit]").count()) === 1), "la feuille s'ouvre");
 ok((await p.locator("[data-feuille-dit] [data-ligne]").count()) === 0 && /🔒 3 réactions plus loin dans la vidéo/.test(await texte("[data-plus-loin]")), `la télé éteinte, rien n'est montré d'avance : « ${await texte("[data-plus-loin]")} »`);
@@ -198,6 +199,24 @@ await seconde(4.6);
 await p.waitForTimeout(400);
 await seconde(5.2);
 ok(await attendre(async () => (await sam.locator("img.td-proche.a-rit").count()) === 1, 2000), "… et à 5 s, Sam rit de nouveau");
+// ═══ 🎙️ ELLE LAISSE UN VOCAL À 20 S : LA VIDÉO L'ATTEND PENDANT QU'ELLE PARLE ═══
+await p.waitForTimeout(500);
+await seconde(20);
+await p.waitForTimeout(300);
+const joue = async (page = p) => page.evaluate(() => document.querySelector(".faux-yt")?.dataset.joue ?? "");
+ok((await joue()) === "1" && /❚❚/.test(await texte("[data-jouer]")), "la vidéo joue (❚❚)");
+await p.addStyleTag({ content: "nextjs-portal{display:none!important}" });
+const m = await p.locator("[data-ecrire] [data-micro]").boundingBox();
+await p.mouse.move(m.x + m.width / 2, m.y + m.height / 2);
+await p.mouse.down();
+ok(await attendre(async () => /🎙️ Tu parles/.test(await texte("[data-sur-la-tele]")) && (await p.locator("[data-ecrire] [data-enreg]").count()) === 1, 2000), `appuyé : « ${await texte("[data-sur-la-tele]")} », la barre d'enregistrement`);
+ok((await joue()) === "0", "… la vidéo se met en pause pendant qu'elle parle");
+await p.screenshot({ path: `${D}/tele-conversation-4-micro.png` });
+await p.waitForTimeout(1800);
+await p.mouse.up();
+ok(await attendre(async () => (await joue()) === "1" && (await p.locator("[data-sur-la-tele]").count()) === 0, 2000), "relâché : elle reprend");
+ok(await attendre(async () => (await reactionsDeLea()).some((r) => r.startsWith("20:coeur")), 6000), `sa voix est notée à 20 s (${(await reactionsDeLea()).join(" | ")})`);
+ok(await attendre(async () => /🎙️ Ta voix, à 0:20 : Sam l’écoutera à cette seconde/.test(await texte("[data-note]")), 3000), `« ${await texte("[data-note]")} »`);
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "Léa : rien ne déborde");
 ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "Léa : jamais le mot interdit");
 await poster(LEA, { action: "vue", id: V.id, fin: true, secondes: V.duree });
@@ -210,12 +229,25 @@ ok((await s.locator("[data-allumer]").count()) === 1, "la télé attend qu'il l'
 ok(!(await s.evaluate(() => window.location.search)), "l'adresse se nettoie");
 await s.locator("[data-allumer]").click();
 ok(await attendre(async () => (await s.evaluate(() => window.__lecteur?.o?.playerVars?.start)) === 6, 4000), "allumée : elle repart à 0:06");
-ok(await attendre(async () => (await texte("[data-dit]", s)) === "💬 Ce qui s’est dit · 5"), `« ${await texte("[data-dit]", s)} »`);
+ok(await attendre(async () => (await texte("[data-dit] .td-pastille", s)) === "6"), `💬 · « ${await texte("[data-dit] .td-pastille", s)} »`);
 await s.locator("[data-dit]").click();
-ok(await attendre(async () => (await s.locator("[data-feuille-dit] [data-ligne]").count()) === 5), "il l'a vue : tout est montré");
+ok(await attendre(async () => (await s.locator("[data-feuille-dit] [data-ligne]").count()) === 6), "il l'a vue : tout est montré (les cinq d'avant, et le vocal de Léa)");
 ok((await s.locator("[data-plus-loin]").count()) === 0, "… rien de caché");
 ok(/0:08 Léa ↩ à toi : « Grave ! »/.test((await s.locator("[data-feuille-dit] .pour-moi").first().innerText()).replace(/\s+/g, " ")), "« ↩ à toi : « Grave ! » », en couleur");
 ok(!/exemple/i.test(await s.evaluate(() => document.body.innerText)), "Sam : jamais le mot interdit");
+ok(/0:20 Léa 🎙️ un vocal/.test((await s.locator("[data-feuille-dit] li").allInnerTexts()).map((x) => x.replace(/\s+/g, " ")).join(" | ")) && (await s.locator("[data-feuille-dit] [data-ecouter]").count()) === 1, "« 0:20 Léa 🎙️ un vocal », et « ▶ Écouter »");
+await s.locator("[data-feuille-dit] .td-lien").click();
+
+// ═══ 🎙️ CHEZ SAM, À 20 S : « LÉA T'A LAISSÉ UN VOCAL » — RIEN NE S'ARRÊTE TOUT SEUL ═══
+await seconde(19.6, s);
+await s.waitForTimeout(400);
+await seconde(20.2, s);
+ok(await attendre(async () => /🎙️ Léa t’a laissé un vocal\s*▶ Écouter/.test(await texte("[data-voix-dispo]", s)), 2500), `« ${await texte("[data-voix-dispo]", s)} »`);
+ok((await joue(s)) === "1", "… la vidéo continue (elle ne s'arrête jamais toute seule)");
+await s.screenshot({ path: `${D}/tele-conversation-5-vocal.png` });
+await s.locator("[data-voix-dispo]").click();
+ok(await attendre(async () => /🎙️ Léa/.test(await texte("[data-sur-la-tele]", s)) && (await joue(s)) === "0", 2000), "▶ Écouter : la vidéo se met en pause le temps du vocal");
+ok(await attendre(async () => (await s.locator("[data-sur-la-tele]").count()) === 0 && (await joue(s)) === "1", 8000), "… puis elle reprend");
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
 await b.close();
