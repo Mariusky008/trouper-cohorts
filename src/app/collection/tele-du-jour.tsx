@@ -28,6 +28,10 @@
  * sa réaction ; « 💬 Ce qui s'est dit » (toucher une ligne revoit le moment ; ce qui vient plus loin reste caché) ; une
  * notification (« revois-la avec ses réactions », « Léa t'a répondu ») ouvre sa vidéo, même déjà vue (`?tele=<id>&t=`).
  *
+ * 📺 MES CHAÎNES (le lot D8, section 23.1) : les nouvelles vidéos des chaînes que je suis arrivent en premier (« 🆕 Squeezie
+ * · il y a 2 h », à la place du thème) ; devant une autre vidéo, « 📺 Suivre cette chaîne » ; sur la carte de l'accueil,
+ * « 🆕 2 nouvelles vidéos de tes chaînes ».
+ *
  * 🔥 L'ONGLET « DÉCOUVRIR » (le lot D1b, 19 novembre 2026) : c'est elle, à la place des mèmes en plein écran et des vœux
  * (`onglet` : sous la barre du haut, au-dessus du menu ; la note et la feuille « Envoyer à… » passent devant le menu).
  * Seule, à l'adresse d'essai `/univers/tele`, elle prend tout l'écran. Dessous, dans l'onglet : « 🏡 Les maisons à
@@ -36,10 +40,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { PHRASES_TELE_DU_JOUR as P, duree, type TeleDuJour, type VideoTele } from "@/lib/direct/tele-du-jour";
 import { themeDe } from "@/lib/direct/decouvrir";
+import { PHRASES_CHAINES as PC, ilYa } from "@/lib/direct/chaines";
+import { BoutonMicro, type FinMicro } from "@/app/salon/micro";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
-import { PHRASES_SALONS as PS, type CarteSalon, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
+import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 import {
   ANIMATION_VIDEO,
@@ -50,6 +56,7 @@ import {
   aJouer,
   auMemeMoment,
   ceQuiSestDit,
+  type VoixVideo,
   placerLesProches,
   quandVu,
   seconde,
@@ -69,6 +76,7 @@ type Lecteur = {
   loadVideoById?: (id: string) => void;
   getCurrentTime?: () => number;
   seekTo?: (s: number, allowSeekAhead: boolean) => void;
+  pauseVideo?: () => void;
   unloadModule?: (m: string) => void;
 };
 type Proche = { cle: string; prenom: string; image?: string; lien?: string };
@@ -148,12 +156,7 @@ export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
     );
   return (
     <>
-      {onglet && (
-        <button type="button" className="td-revenir" data-accueil onClick={() => setVue("accueil")}>
-          ‹ Découvrir
-        </button>
-      )}
-      <Television key={enTete?.video.id ?? "tele"} tele={teleVue} cls={cls} allumer={onglet && !enTete} depart={enTete?.t} />
+      <Television key={enTete?.video.id ?? "tele"} tele={teleVue} cls={cls} allumer={onglet && !enTete} depart={enTete?.t} onRetour={onglet ? () => setVue("accueil") : undefined} />
       {maisons}
     </>
   );
@@ -205,6 +208,11 @@ function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; 
         <div className="td-carte-txt">
           <p className="td-sur">Ma télé du jour</p>
           <h2>{tele.vide ? P.bientot : `🎬 ${restent} vidéo${restent > 1 ? "s" : ""} t’attend${restent > 1 ? "ent" : ""}`}</h2>
+          {tele.nouvelles > 0 && (
+            <p className="td-nouvelles" data-nouvelles>
+              {PC.nouvelles(tele.nouvelles)}
+            </p>
+          )}
           {themes.length > 0 && <p className="td-themes">{themes.join(" · ")}</p>}
           <span className="td-regarder">▶ Regarder</span>
         </div>
@@ -393,7 +401,10 @@ const STYLES_MAISONS = `
 .td-maison small{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 `;
 
-function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDuJour; cls: string; allumer?: boolean; depart?: number }) {
+/** (les couleurs des points de chacun sur la ligne du temps) */
+const COULEURS = ["#FF2E9A", "#F2C46B", "#45d483", "#7fb2ff", "#c38bff", "#ff8a5c"];
+
+function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { tele: TeleDuJour; cls: string; allumer?: boolean; depart?: number; onRetour?: () => void }) {
   const videos = tele.videos;
   const [i, setI] = useState(0);
   // (ouverte depuis la carte « ▶ Regarder » de l'accueil : ce toucher allume la télé)
@@ -407,6 +418,8 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
   const [proches, setProches] = useState<Proche[] | null>(null);
   const [gardees, setGardees] = useState<string[]>([]);
   const [occupe, setOccupe] = useState(false);
+  // (📺 les chaînes que je suis : « Suivre cette chaîne » disparaît pour elles)
+  const [suivies, setSuivies] = useState<string[]>(() => (tele.chaines ?? []).map((c) => c.id));
   const hote = useRef<HTMLDivElement>(null);
   const lecteur = useRef<Lecteur | null>(null);
   const boite = useRef<HTMLDivElement>(null);
@@ -431,6 +444,26 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
   const loin = useRef(0);
   const derniere = useRef<Record<string, ReactionVideo>>({});
   const departRef = useRef(depart);
+  // (l'écran comme la maquette : la lecture, la ligne du temps, les vocaux, le salon du thème)
+  const [joue, setJoue] = useState(false);
+  const [voixDispo, setVoixDispo] = useState<{ cle: string; prenom: string; voix: VoixVideo; n: number } | null>(null);
+  const [surLaTele, setSurLaTele] = useState<{ quoi: string; sous: string } | null>(null);
+  const [salons, setSalons] = useState<Record<string, number>>({});
+  const tTexte = useRef<HTMLSpanElement>(null);
+  const rempli = useRef<HTMLDivElement>(null);
+  const micro = useRef<{ t: number; jouait: boolean } | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    let fini = false;
+    fetch("/api/direct/salons-ouverts?accueil=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { cartes?: CarteSalon[] } | null) => !fini && setSalons(Object.fromEntries((j?.cartes ?? []).map((c) => [c.theme, c.presents]))))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+      audio.current?.pause();
+    };
+  }, []);
   const [ensemble, setEnsemble] = useState("");
   const devantRef = useRef<ProcheDevantVideo[]>([]);
   const temps = useRef({ avant: -1, retour: -100 });
@@ -455,6 +488,7 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
         setDevant(j?.proches ?? []);
         setMiennes(j?.miennes ?? []);
         setDejaVue(j?.vue === true);
+        setVoixDispo(null);
       })
       .catch(() => undefined);
     return () => {
@@ -530,9 +564,12 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
                 /* (le bouton de YouTube reste là) */
               }
             },
-            // (0 : finie — la suivante arrive)
+            // (0 : finie — la suivante arrive ; 1 : elle joue ; 2 : en pause)
             onStateChange: (e: { data?: number }) => {
-              if (!fini && e.data === 0) suivante({ fin: true });
+              if (fini) return;
+              if (e.data === 1) setJoue(true);
+              else if (e.data === 2 || e.data === 0) setJoue(false);
+              if (e.data === 0) suivante({ fin: true });
             },
             // (101, 150 : elle refuse d'être lue hors de YouTube ; 100 : partie ; 2, 5 : illisible ici)
             onError: () => {
@@ -568,6 +605,19 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
     if (!r.ok) return dire(r.j.error || "Ça n’a pas marché. Réessaie.");
     setGardees((g) => [...g, v.id]);
     dire(r.j.deja ? P.dejaGardee : P.gardee);
+  }
+  /** 📺 Suivre la chaîne de cette vidéo : ses nouvelles vidéos arriveront en premier. */
+  async function suivreLaChaine() {
+    if (!v) return;
+    setOccupe(true);
+    const r = await fetch("/api/direct/chaines", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "suivre", video: v.id }) })
+      .then(async (x) => ({ ok: x.ok, j: (await x.json().catch(() => ({}))) as { chaine?: { id: string; nom: string }; deja?: boolean; error?: string } }))
+      .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { chaine?: { id: string; nom: string }; deja?: boolean; error?: string } }));
+    setOccupe(false);
+    if (!r.ok || !r.j.chaine) return dire(r.j.error || "Ça n’a pas marché. Réessaie.");
+    const c = r.j.chaine;
+    setSuivies((l) => [...new Set([...l, c.id])]);
+    dire(r.j.deja ? PC.dejaSuivie(c.nom) : PC.suivie(c.nom));
   }
   async function ouvrirFeuille() {
     setFeuille(true);
@@ -683,6 +733,109 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
     dire(PR.repondu(x.prenom));
   }
 
+  /** ❚❚ / ▶ : la pause, la lecture. */
+  function jouerOuPause() {
+    const l = lecteur.current;
+    if (!l) return;
+    try {
+      if (joue) l.pauseVideo?.();
+      else l.playVideo?.();
+    } catch {
+      /* (le lecteur ne suit pas) */
+    }
+    setJoue(!joue);
+  }
+  /** ↺ cinq secondes en arrière (ce saut voulu n'est pas « revenir en arrière » compris comme un 😮). */
+  function arriere() {
+    const l = lecteur.current;
+    const t = lireT();
+    if (!l?.seekTo || !(t >= 0)) return;
+    temps.current.avant = -1;
+    try {
+      l.seekTo(Math.max(0, t - 5), true);
+    } catch {
+      /* (le lecteur ne suit pas) */
+    }
+  }
+
+  // 🎙️ LES VOCAUX : je garde le micro appuyé et je parle — la vidéo se met en pause pendant que je parle, et reprend
+  // quand je relâche ; ma voix part à la seconde où j'ai commencé.
+  function debutMicro() {
+    const t = lireT();
+    micro.current = { t, jouait: joue };
+    if (joue) {
+      try {
+        lecteur.current?.pauseVideo?.();
+      } catch {
+        /* (rien) */
+      }
+    }
+    setSurLaTele({ quoi: PR.tuParles, sous: PR.laVideoTAttend });
+  }
+  async function finMicro(f: FinMicro) {
+    const m = micro.current;
+    micro.current = null;
+    setSurLaTele(null);
+    const reprendre = () => {
+      if (!m?.jouait) return;
+      try {
+        lecteur.current?.playVideo?.();
+      } catch {
+        /* (rien) */
+      }
+    };
+    if (!("vocal" in f)) {
+      reprendre();
+      if ("court" in f) dire(PR.court);
+      else if ("erreur" in f) dire(f.erreur);
+      return;
+    }
+    reprendre();
+    const actuelle = ref.current.v;
+    const t = m && m.t >= 0 ? m.t : lireT();
+    if (!actuelle || !(t >= 0)) return dire(PR.pasIci);
+    jouer("moi", "coeur", PR.unVocal);
+    const son = await new Promise<string>((ok) => {
+      const lecteurFichier = new FileReader();
+      lecteurFichier.onload = () => ok(String(lecteurFichier.result));
+      lecteurFichier.onerror = () => ok("");
+      lecteurFichier.readAsDataURL(f.vocal.blob);
+    });
+    const r = await poster({ action: "vocal", id: actuelle.id, t, son, duree: f.vocal.duree });
+    if (!r.ok) return dire(r.j.error || "Ton vocal n’est pas parti. Réessaie dans un instant.");
+    if (ref.current.v?.id === actuelle.id) garderLaMienne(r.j.reaction);
+    dire(PR.vocalNote(t, devantRef.current.map((x) => x.prenom)));
+  }
+  /** ▶ Écouter un vocal : la vidéo se met en pause le temps du message, puis elle reprend (jamais toute seule avant). */
+  function ecouterVoix(prenom: string, voix: VoixVideo) {
+    if (!voix.url) return;
+    setVoixDispo(null);
+    const jouait = joue;
+    try {
+      if (jouait) lecteur.current?.pauseVideo?.();
+    } catch {
+      /* (rien) */
+    }
+    audio.current?.pause();
+    const a = new Audio(voix.url);
+    audio.current = a;
+    setSurLaTele({ quoi: `🎙️ ${prenom}`, sous: PR.reprendApres });
+    const fin = () => {
+      if (audio.current !== a) return;
+      audio.current = null;
+      setSurLaTele(null);
+      if (!jouait) return;
+      try {
+        lecteur.current?.playVideo?.();
+      } catch {
+        /* (rien) */
+      }
+    };
+    a.onended = fin;
+    a.onerror = fin;
+    void a.play().catch(fin);
+  }
+
   /** 💬 Toucher une ligne de « Ce qui s'est dit » : on revoit le moment (deux secondes avant). */
   function revoir(t: number) {
     setDit(null);
@@ -726,9 +879,20 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
       const k = temps.current;
       loin.current = Math.max(loin.current, t);
       for (const { cle, r } of aJouer(devantRef.current, k.avant, t)) {
-        jouerRef.current(cle, r.sorte, r.texte ? (r.a ? `↩ ${r.texte}` : r.texte) : undefined);
+        jouerRef.current(cle, r.sorte, r.voix ? PR.unVocal : r.texte ? (r.a ? `↩ ${r.texte}` : r.texte) : undefined);
         if (r.source !== "implicite") derniere.current[cle] = r;
+        // (🎙️ un vocal : rien ne s'arrête ; « ▶ Écouter » apparaît, on choisit)
+        const p = r.voix ? devantRef.current.find((x) => x.cle === cle) : undefined;
+        if (p && r.voix) {
+          const n = ++compte.current;
+          setVoixDispo({ cle, prenom: p.prenom, voix: r.voix, n });
+          window.setTimeout(() => setVoixDispo((x) => (x?.n === n ? null : x)), 9000);
+        }
       }
+      // (la ligne du temps, sans tout redessiner)
+      const d = ref.current.v?.duree || 0;
+      if (tTexte.current) tTexte.current.textContent = seconde(t);
+      if (rempli.current && d > 0) rempli.current.style.width = `${Math.min(100, (t / d) * 100)}%`;
       if (k.avant >= 0 && t < k.avant - REACTIONS_VIDEO.retour && t - k.retour > REACTIONS_VIDEO.retourEcart) {
         k.retour = t;
         void reagirRef.current("oh", "implicite", t);
@@ -833,18 +997,44 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
 
   return (
     <div className={cls} data-video={v?.id ?? ""} data-mode={enPiece ? "piece" : "grand"}>
-      <header className="td-haut">
-        <div>
-          <p className="td-sur">📺 {P.titre}</p>
-          <p className="td-compte" data-compte>
-            {tele.vide ? P.bientot : P.attendent(Math.max(0, videos.length - i))}
-          </p>
-        </div>
-        {theme && (
-          <span className="td-theme" data-theme={theme.id}>
-            {theme.e} {theme.nom}
-          </span>
+      {/* (la barre du haut, comme la maquette : ‹, « 🏠 Ma télé », où j'en suis, 💬 ce qui s'est dit, 👥 inviter) */}
+      <header className="td-barre">
+        {onRetour && (
+          <button type="button" className="td-rond" data-accueil aria-label="Revenir à Découvrir" onClick={onRetour}>
+            ‹
+          </button>
         )}
+        <div className="td-barre-titre">
+          <b>{PR.maTele}</b>
+          <small data-compte>
+            {tele.vide ? P.bientot : v ? PR.surN(i + 1, videos.length) : P.fini}
+            {v?.suivie ? (
+              <>
+                {" · "}
+                <span className="td-nouvelle" data-nouvelle={v.suivie.id}>
+                  {PC.nouvelle(v.suivie.nom, ilYa(v.publiee))}
+                </span>
+              </>
+            ) : (
+              theme && (
+                <>
+                  {" · "}
+                  <span data-theme={theme.id}>
+                    {theme.e} {theme.nom}
+                  </span>
+                </>
+              )
+            )}
+          </small>
+        </div>
+        <button type="button" className="td-rond" data-dit aria-label={PR.dit} disabled={!v} onClick={() => setDit({ jusqua: dejaVue ? null : Math.max(loin.current, lireT(), 0) })}>
+          💬
+          {dits > 0 && <i className="td-pastille">{dits}</i>}
+        </button>
+        {/* (🎬 lot D2 : la séance chez moi — mes proches devant ma télé, la même seconde pour tous) */}
+        <a className="td-chip-barre" href="/univers/salons?chez=moi" data-chez-moi>
+          {PR.inviter}
+        </a>
       </header>
 
       <div className="td-scene" ref={boite} style={{ height: (enPiece ? 0 : hEcran) + hPiece }}>
@@ -897,10 +1087,31 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
               ))}
             </div>
           )}
-          {v && v.duree > 0 && devant.some((p) => p.reactions.length) && (
-            <div className="td-fil" aria-hidden="true" data-fil>
-              {devant.flatMap((p) => p.reactions.map((r, k) => <span key={`${p.cle}-${k}`} style={{ left: `${Math.min(100, (r.t / v.duree) * 100)}%` }}>{sorteVideo(r.sorte)?.e}</span>))}
-            </div>
+          {/* (au-dessus de la pièce : qui l'a vue, ou « tu l'ouvres en premier » ; un vocal à écouter) */}
+          {v && !devant.length && <p className="td-seul" data-seul>{PR.seul}</p>}
+          {voixDispo && (
+            <button type="button" className="td-voix-dispo" data-voix-dispo={voixDispo.cle} {...sansGeste} onClick={() => ecouterVoix(voixDispo.prenom, voixDispo.voix)}>
+              {PR.vocalDispo(voixDispo.prenom)} <b>{PR.ecouter}</b>
+            </button>
+          )}
+          {v && !v.suivie && !(v.chaineId && suivies.includes(v.chaineId)) && (
+            <button type="button" className="td-bascule droite" data-suivre-chaine disabled={occupe} {...sansGeste} onClick={() => void suivreLaChaine()}>
+              {PC.suivre}
+            </button>
+          )}
+          {scene && zone && (
+            <button
+              type="button"
+              className="td-bascule"
+              data-bascule
+              {...sansGeste}
+              onClick={() => {
+                setGlisse(true);
+                setGrand((g) => !g);
+              }}
+            >
+              {enPiece ? PR.grandEcran : PR.voirPiece}
+            </button>
           )}
         </div>
         {ensemble && (
@@ -924,31 +1135,61 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="td-vignette" src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" />
+              <div className="td-tele-titre">
+                <b data-titre>{v.titre}</b>
+                <small className="td-chaine">
+                  {v.chaine} · {duree(v.duree)}
+                </small>
+              </div>
               <button type="button" className="td-allumer" data-allumer onClick={() => setAllumee(true)}>
                 {P.allumer}
               </button>
+              {devant.length > 0 && (
+                <p className="td-avec-tele" data-avec>
+                  👥 {PR.avecToi(devant.length)}
+                </p>
+              )}
             </>
+          )}
+          {/* (🎙️ je parle, ou j'écoute un vocal : la vidéo m'attend) */}
+          {surLaTele && (
+            <div className="td-tele-voix" data-sur-la-tele>
+              <span className="td-onde" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+              </span>
+              {surLaTele.quoi}
+              <small>{surLaTele.sous}</small>
+            </div>
           )}
         </div>
       </div>
 
       {v && (
-        <section className="td-bas">
-          <p className="td-titre" data-titre>
-            {v.titre}
-          </p>
-          <p className="td-chaine">
-            {v.chaine} · {duree(v.duree)}
-          </p>
-          <div className="td-ligne-avec">
-            {devant.length > 0 && (
-              <p className="td-avec" data-avec>
-                👥 {PR.avecToi(devant.length)}
-              </p>
-            )}
-            <button type="button" className="td-chip td-dit-bouton" data-dit onClick={() => setDit({ jusqua: dejaVue ? null : Math.max(loin.current, lireT(), 0) })}>
-              {PR.ditN(dits)}
+        <section className="td-sous" data-sous>
+          {/* (la ligne du temps : où j'en suis, et les réactions de chacun, en points) */}
+          <div className="td-temps" data-ligne-temps>
+            <button type="button" className="td-rond petit" data-arriere aria-label={PR.arriere} disabled={!lit} onClick={arriere}>
+              ↺
             </button>
+            <span ref={tTexte}>0:00</span>
+            <div className="td-ligne">
+              <div className="td-rempli" ref={rempli} />
+              {v.duree > 0 &&
+                devant.flatMap((p, kp) =>
+                  p.reactions
+                    .filter((r) => r.source !== "implicite")
+                    .map((r, k) => <i key={`${p.cle}-${k}`} className="td-tic" style={{ left: `${Math.min(100, (r.t / v.duree) * 100)}%`, ["--c" as string]: COULEURS[kp % COULEURS.length] }} />),
+                )}
+              {v.duree > 0 &&
+                miennes
+                  .filter((r) => r.source !== "implicite")
+                  .map((r, k) => <i key={`moi-${k}`} className="td-tic moi" style={{ left: `${Math.min(100, (r.t / v.duree) * 100)}%` }} />)}
+            </div>
+            <span>{duree(v.duree)}</span>
           </div>
           <div className="td-reagir" data-rangee>
             <span>{PR.reagis}</span>
@@ -957,7 +1198,29 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
                 {x.e}
               </button>
             ))}
+            <small>{PR.ouTouche}</small>
           </div>
+          <div className="td-commandes" data-commandes>
+            <button type="button" className="td-rond" data-jouer aria-label={joue ? PR.pause : PR.lecture} disabled={!lit} onClick={jouerOuPause}>
+              {joue ? "❚❚" : "▶\uFE0E"}
+            </button>
+            <button type="button" className="td-chip2" data-suivante disabled={occupe} onClick={() => suivante()}>
+              {PR.suivante}
+            </button>
+            <span className="td-esp" />
+            <button type="button" className="td-chip2" data-garder disabled={occupe || gardees.includes(v.id)} onClick={() => void garder()}>
+              {gardees.includes(v.id) ? P.dejaGardee : PR.garder}
+            </button>
+            <button type="button" className="td-chip2" data-envoyer disabled={occupe} onClick={() => void ouvrirFeuille()}>
+              {PR.envoyer2}
+            </button>
+          </div>
+          {theme && (
+            <a className="td-lien-salon" href={`/univers/salons?theme=${theme.id}`} data-lien-salon={theme.id}>
+              <span>{PR.enParle(nomDuSalon(theme.id).replace(/^\S+\s/, ""), salons[theme.id] ?? 0)}</span>
+              <i>›</i>
+            </a>
+          )}
           <form className="td-ecrire" data-ecrire onSubmit={(e) => void ecrire(e)}>
             <input
               value={mots}
@@ -968,47 +1231,18 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
                 if (tEcrit.current === null) tEcrit.current = lireT();
                 setMots(e.target.value);
               }}
-              placeholder={`✍️ ${PR.ecrire}`}
+              placeholder={PR.ecrire}
               aria-label={PR.ecrire}
               maxLength={REACTIONS_VIDEO.texte}
               enterKeyHint="send"
               disabled={!peutReagir}
               data-mots
             />
-            <button type="submit" disabled={!peutReagir || !mots.trim()}>
+            <BoutonMicro prenom="tes proches" desactive={!peutReagir} onDebut={debutMicro} onNiveau={() => undefined} onFin={(f) => void finMicro(f)} />
+            <button type="submit" className="td-envoyer" disabled={!peutReagir || !mots.trim()}>
               {PR.envoyer}
             </button>
           </form>
-          {peutReagir && <p className="td-astuce">{PR.gestes}</p>}
-          {peutReagir && devant.some((p) => p.reactions.length) && <p className="td-astuce">↩ {PR.toucheUnProche}</p>}
-          <div className="td-gestes">
-            <button type="button" data-suivante disabled={occupe} onClick={() => suivante()}>
-              {P.suivante}
-            </button>
-            <button type="button" data-garder disabled={occupe || gardees.includes(v.id)} onClick={() => void garder()}>
-              {gardees.includes(v.id) ? P.dejaGardee : P.garder}
-            </button>
-            <button type="button" data-envoyer disabled={occupe} onClick={() => void ouvrirFeuille()}>
-              {P.envoyer}
-            </button>
-          </div>
-          {/* (🎬 lot D2 : la séance chez moi — mes proches devant ma télé, la même seconde pour tous) */}
-          <a className="td-chez-moi" href="/univers/salons?chez=moi" data-chez-moi>
-            {PS.chezMoi}
-          </a>
-          {scene && zone && (
-            <button
-              type="button"
-              className="td-lien"
-              data-bascule
-              onClick={() => {
-                setGlisse(true);
-                setGrand((g) => !g);
-              }}
-            >
-              {enPiece ? P.grandEcran : P.voirPiece}
-            </button>
-          )}
         </section>
       )}
 
@@ -1065,9 +1299,23 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
                         <b>{l.prenom}</b>
                         <span className="td-dit-quoi">
                           {l.aQui !== undefined ? `↩ ${l.pourMoi ? PR.aToi : l.aQui} : ` : ""}
-                          {l.texte ? `« ${l.texte} »` : l.e}
+                          {l.voix ? PR.unVocal : l.texte ? `« ${l.texte} »` : l.e}
                         </span>
                       </button>
+                      {l.voix?.url && (
+                        <button
+                          type="button"
+                          className="td-ecoute"
+                          data-ecouter={l.t}
+                          onClick={() => {
+                            const vx = l.voix;
+                            setDit(null);
+                            if (vx) ecouterVoix(l.prenom, vx);
+                          }}
+                        >
+                          {PR.ecouter}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -1119,6 +1367,64 @@ function Television({ tele, cls, allumer: tout = false, depart }: { tele: TeleDu
 }
 
 const STYLES = `
+/* ─── l'écran de ma télé, comme la maquette (« Découvrir ClikMe ») ─── */
+.td-barre{display:flex;align-items:center;gap:8px;padding:0 16px}
+.td-barre-titre{display:flex;flex-direction:column;flex:1;min-width:0}
+.td-barre-titre b{font-size:15.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-barre-titre small{font-size:12px;color:#a88a9b;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-barre-titre small .td-nouvelle{color:#ff8fca;font-weight:800}
+.td-rond{position:relative;display:grid;place-items:center;width:40px;height:40px;flex:none;padding:0;border:1px solid rgba(255,255,255,.1);border-radius:50%;background:rgba(20,8,16,.55);color:#FFF4E6;font:inherit;font-size:17px;font-family:var(--font-clikme),Poppins,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;cursor:pointer}
+.td-rond.petit{width:30px;height:30px;font-size:14px}
+.td-rond:disabled{opacity:.45}
+.td-pastille{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:#FF2E9A;color:#fff;font-style:normal;font-size:10.5px;font-weight:900;line-height:17px;text-align:center}
+.td-chip-barre,.td-chip2{display:inline-flex;align-items:center;gap:5px;flex:none;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 12px;background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-weight:700;font-size:13px;white-space:nowrap;text-decoration:none;cursor:pointer}
+.td-chip2:disabled{opacity:.5}
+.td-seul{position:absolute;left:50%;top:6%;z-index:3;transform:translateX(-50%);margin:0;width:max-content;max-width:86%;padding:6px 12px;border-radius:14px;background:rgba(14,6,12,.7);font-size:12.5px;font-weight:700;text-align:center;pointer-events:none}
+.td-voix-dispo{position:absolute;left:50%;top:22%;z-index:9;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:94%;padding:7px 8px 7px 13px;border:0;border-radius:999px;background:rgba(255,226,241,.97);color:#2a1424;font:inherit;font-size:12.5px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.45);cursor:pointer}
+.td-voix-dispo b{padding:5px 11px;border-radius:999px;background:#FF2E9A;color:#fff;font-size:12px}
+.td-bascule{position:absolute;left:8px;bottom:8px;z-index:4;border:0;border-radius:8px;padding:4px 9px;background:rgba(0,0,0,.6);color:#fff;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
+.td-bascule.droite{left:auto;right:8px}
+.td-bascule:disabled{opacity:.5}
+.td-avec-tele{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);margin:0;width:max-content;max-width:92%;padding:5px 11px;border-radius:999px;background:rgba(0,0,0,.62);color:#F2C46B;font-size:12px;font-weight:800;pointer-events:none}
+.td-tele-titre{position:absolute;inset:0 0 auto;display:flex;flex-direction:column;gap:1px;padding:8px 11px 22px;background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0));pointer-events:none}
+.td-tele-titre b{font-size:13px;font-weight:800;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.td-tele-titre small{font-size:11px;font-weight:600;color:#ddd}
+.td-tele-voix{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(10,4,9,.74);font-size:14px;font-weight:900;text-align:center;pointer-events:none}
+.td-tele-voix small{font-weight:600;font-size:11px;opacity:.85}
+.td-onde{display:flex;align-items:center;gap:3px;height:22px}
+.td-onde i{width:4px;border-radius:2px;background:#FF2E9A;animation:td-onde .5s ease-in-out infinite alternate}
+.td-onde i:nth-child(1){height:7px}.td-onde i:nth-child(2){height:15px;animation-delay:-.2s}.td-onde i:nth-child(3){height:22px;animation-delay:-.35s}.td-onde i:nth-child(4){height:12px;animation-delay:-.1s}.td-onde i:nth-child(5){height:8px;animation-delay:-.3s}
+@keyframes td-onde{to{transform:scaleY(.45)}}
+.td-sous{display:flex;flex-direction:column;gap:9px;padding:2px 16px 0}
+.td-temps{display:flex;align-items:center;gap:9px;font-size:11.5px;font-weight:700;color:#ead3df;font-variant-numeric:tabular-nums}
+.td-ligne{position:relative;flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.14)}
+.td-rempli{position:absolute;inset:0 auto 0 0;width:0;border-radius:3px;background:linear-gradient(90deg,#FF2E9A,#F2C46B)}
+.td-tic{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c,#F2C46B);box-shadow:0 0 0 2px #160711}
+.td-tic.moi{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;background:#FFF4E6;box-shadow:0 0 0 2px #160711,0 0 8px #FFF4E6}
+.td-sous .td-reagir{gap:5px;margin:0}
+.td-sous .td-reagir>span{font-size:12.5px;font-weight:800;color:#F2C46B;white-space:nowrap;margin:0}
+.td-sous .td-reagir button{width:36px;height:36px;border:1px solid rgba(242,196,107,.4);background:rgba(242,196,107,.12);font-size:19px}
+.td-sous .td-reagir small{font-size:11px;line-height:1.15;color:#a88a9b;min-width:0;max-width:64px}
+.td-commandes{display:flex;align-items:center;gap:7px;overflow-x:auto;scrollbar-width:none}
+.td-commandes::-webkit-scrollbar{display:none}
+.td-esp{flex:1;min-width:2px}
+.td-lien-salon{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 13px;border:1px solid rgba(242,196,107,.28);border-radius:14px;background:rgba(242,196,107,.09);color:#FFF4E6;font-size:13px;font-weight:700;text-decoration:none}
+.td-lien-salon i{font-style:normal;color:#F2C46B}
+.td-sous .td-ecrire{position:relative;align-items:center;gap:7px;margin:0}
+.td-sous .td-ecrire input{padding:11px 14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.07)}
+.td-sous .td-ecrire .td-envoyer{padding:9px 14px;align-self:stretch}
+.td-sous .td-ecrire .sd-micro{width:42px;height:42px;padding:0;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);border-radius:50%;background:rgba(20,8,16,.55);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .15s ease,background .15s ease,box-shadow .15s ease}
+.td-sous .td-ecrire .sd-micro svg{width:20px;height:20px}
+.td-sous .td-ecrire .sd-micro.actif{transform:scale(1.28);background:#ff3b5c;box-shadow:0 0 0 9px rgba(255,59,92,.2),0 6px 18px rgba(255,59,92,.45)}
+.td-sous .td-ecrire .sd-micro.rappel{animation:td-rappel .9s ease 2}
+@keyframes td-rappel{50%{transform:scale(1.25)}}
+.td-sous .sd-enreg{position:absolute;left:0;right:150px;top:50%;margin-top:-22px;height:44px;box-sizing:border-box;border-radius:22px;background:#170816;display:flex;align-items:center;gap:9px;padding:0 14px;box-shadow:inset 0 0 0 1.5px rgba(255,90,110,.7);transform:translateX(var(--dx,0px));z-index:2}
+.td-sous .sd-pt-rouge{width:10px;height:10px;border-radius:50%;background:#ff3b5c;flex:none;animation:td-clignote 1s steps(2) infinite}
+@keyframes td-clignote{50%{opacity:.2}}
+.td-sous .sd-enreg b{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;flex:none}
+.td-sous .sd-enreg canvas{flex:1;min-width:0;height:26px}
+.td-sous .sd-glisse{font-weight:600;font-size:11px;color:#c08fb0;flex:none;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.td-onde i,.td-sous .sd-pt-rouge,.td-sous .sd-micro.rappel{animation:none}}
 .td{min-height:100dvh;max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 0 calc(24px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;gap:12px;overflow-x:hidden}
 .td-centre{align-items:center;justify-content:center;color:#ead3df}
 .td.onglet{min-height:0;padding:4px 0 0;background:none}
@@ -1170,6 +1476,8 @@ const STYLES = `
 .td-rapides{display:flex;flex-wrap:wrap;gap:8px}
 .td-rapides button{border:0;border-radius:999px;padding:9px 14px;background:rgba(255,255,255,.12);color:#FFF4E6;font:inherit;font-weight:800;font-size:14.5px;cursor:pointer}
 .td-dit{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.td-dit li{display:flex;align-items:center;gap:6px}
+.td-ecoute{flex:none;padding:6px 11px!important;width:auto!important;border-radius:999px!important;background:#FF2E9A!important;color:#fff!important;font-size:12px!important;font-weight:800}
 .td-dit button{width:100%;display:flex;align-items:baseline;gap:8px;border:0;border-radius:12px;padding:8px 10px;background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:14.5px;text-align:left;cursor:pointer}
 .td-dit button.pour-moi{background:rgba(255,46,154,.18)}
 .td-dit-t{flex:none;min-width:36px;font-variant-numeric:tabular-nums;font-weight:800;color:#F2C46B}
@@ -1190,7 +1498,11 @@ const STYLES = `
 .td-fini span{color:#ead3df;font-size:14px}
 .td-bas{display:flex;flex-direction:column;gap:8px;padding:0 16px}
 .td-titre{margin:0;font-size:17px;font-weight:800;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.td-chaine{margin:0;color:#a88a9b;font-size:13.5px}
+.td-chaine{margin:0;color:#a88a9b;font-size:13.5px;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}
+.td-suivre{border:0;border-radius:999px;padding:5px 11px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-weight:800;font-size:12.5px;cursor:pointer}
+.td-suivre:disabled{opacity:.5}
+.td-nouvelle{max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,46,154,.22)}
+.td-nouvelles{margin:0;font-size:14px;font-weight:800;color:#ff8fca}
 .td-gestes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
 .td-gestes button{min-height:46px;border:0;border-radius:14px;padding:8px 6px;font:inherit;font-weight:800;font-size:14px;color:#FFF4E6;background:rgba(255,255,255,.1)}
 .td-gestes button[data-garder]{background:rgba(242,196,107,.18)}
@@ -1208,9 +1520,9 @@ const STYLES = `
 .td-invitation .td-venir{color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a)}
 .td-attente-note{margin:0;font-size:13.5px;opacity:.85}
 .td-lien{align-self:center;border:0;background:none;color:#ead3df;font:inherit;font-size:14.5px;font-weight:700;text-decoration:underline;padding:6px}
-.td-note{position:fixed;left:16px;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
+.td-note{position:fixed;left:16px;right:16px;top:calc(64px + env(safe-area-inset-top));pointer-events:none;margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
 .td-voile{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:6}
-.td.onglet .td-note{bottom:calc(96px + env(safe-area-inset-bottom));z-index:25}
+.td.onglet .td-note{top:calc(118px + env(safe-area-inset-top));z-index:25}
 .td.onglet .td-voile{z-index:40}
 .td-feuille{width:100%;max-width:520px;max-height:70dvh;overflow:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:#21101a;display:flex;flex-direction:column;gap:10px}
 .td-feuille-titre{margin:0;font-weight:900;font-size:17px}

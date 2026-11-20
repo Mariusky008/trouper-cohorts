@@ -129,7 +129,7 @@ ok(await attendre(async () => (await p.locator("[data-proche-assis]").count()) =
 ok(/2 proches l’ont vue : ils regardent avec toi/.test(await texte("[data-avec]")), `« ${await texte("[data-avec]")} »`);
 const sam = p.locator(`[data-proche-assis="${SAM.cle}"]`);
 ok((await sam.locator("img.td-proche").count()) === 1 && /Sam\s*a vu à l’instant/.test(await sam.locator(".td-qui").innerText()), "la figurine de Sam, son prénom, « a vu à l'instant »");
-ok((await p.locator("[data-fil] span").count()) === 3, "la frise : ses trois réactions");
+ok((await p.locator("[data-ligne-temps] .td-tic").count()) === 3, "la ligne du temps : ses trois réactions, en points");
 ok((await p.locator(".td-piece .td-figurine").count()) === 1, "et la sienne, au milieu");
 ok(await p.locator('[data-reagir="rire"]').isDisabled(), "« Réagis » attend que la télé s'allume");
 

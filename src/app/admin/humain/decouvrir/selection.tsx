@@ -5,7 +5,8 @@ import { THEMES_DECOUVRIR, type IdTheme, type SelectionDuJour } from "@/lib/dire
 import { surYouTube, vignetteYouTube } from "@/lib/direct/tele";
 
 const ROUTE = "/api/admin/direct/decouvrir";
-type Etat = { branche: boolean; jour: string; themes: { theme: IdTheme; adultes: SelectionDuJour | null; jeunes: SelectionDuJour | null }[] };
+type ChaineAdmin = { id: string; nom: string; image?: string; abonnes: number; videos: number; le: string; erreur?: string; retiree?: true };
+type Etat = { branche: boolean; jour: string; themes: { theme: IdTheme; adultes: SelectionDuJour | null; jeunes: SelectionDuJour | null }[]; chaines?: ChaineAdmin[] };
 const minutes = (s: number) => `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")}`;
 
 export function SelectionDecouvrir() {
@@ -128,6 +129,40 @@ export function SelectionDecouvrir() {
           </section>
         );
       })}
+      {/* (📺 le lot D8 : les chaînes que les gens suivent — leurs nouvelles vidéos arrivent en tête de leur télé) */}
+      <section data-chaines style={{ border: "1px solid #e3e3e3", borderRadius: 14, padding: 12 }}>
+        <h2 style={{ margin: "0 0 4px", fontSize: 18 }}>📺 Les chaînes suivies</h2>
+        <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>
+          Chacun peut suivre jusqu’à 10 chaînes YouTube : leurs nouvelles vidéos (de 60 s à 60 min, de moins de sept jours) arrivent en tête de sa télé. Une
+          chaîne retirée ne peut plus être suivie, et ses vidéos disparaissent de toutes les télés.
+        </p>
+        {!etat.chaines?.length ? (
+          <p style={{ margin: 0, color: "#666" }}>Personne ne suit encore de chaîne.</p>
+        ) : (
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            {etat.chaines.map((c) => (
+              <li key={c.id} data-chaine={c.id} style={{ display: "flex", alignItems: "center", gap: 10, opacity: c.retiree ? 0.5 : 1 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {c.image ? <img src={c.image} alt="" width={32} height={32} style={{ borderRadius: "50%" }} /> : <span style={{ width: 32 }} />}
+                <a href={`https://www.youtube.com/channel/${c.id}`} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 0 }}>
+                  {c.nom}
+                </a>
+                <small style={{ color: "#666" }}>
+                  {c.abonnes} abonné{c.abonnes > 1 ? "s" : ""} · {c.videos} vidéo{c.videos > 1 ? "s" : ""}
+                  {c.erreur ? " · ⚠️ YouTube n’a pas répondu" : ""}
+                </small>
+                {c.retiree ? (
+                  <small>Retirée</small>
+                ) : (
+                  <button type="button" data-retirer-chaine disabled={!!occupe} onClick={() => agir({ action: "retirer-chaine", id: c.id }, c.id, "Chaîne retirée de toutes les télés.")}>
+                    Retirer
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

@@ -204,5 +204,40 @@ ok((await poster(INES, { action: "repondre", id: V.id, a: LEA.cle, repond: 6.6, 
 const tout = JSON.stringify([d, dSam, dInes, rouvre]);
 ok(!GENS.some((x) => tout.includes(x.id)), "aucun identifiant de compte n'en sort");
 
+// ═══ 🎙️ UN VOCAL À LA SECONDE (sa vraie voix) ═══
+/** Un vrai petit son (WAV), comme un vocal : `sec` secondes. */
+function wav(sec) {
+  const taux = 8000;
+  const n = Math.round(sec * taux);
+  const b = Buffer.alloc(44 + n * 2);
+  b.write("RIFF", 0);
+  b.writeUInt32LE(36 + n * 2, 4);
+  b.write("WAVEfmt ", 8);
+  b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20);
+  b.writeUInt16LE(1, 22);
+  b.writeUInt32LE(taux, 24);
+  b.writeUInt32LE(taux * 2, 28);
+  b.writeUInt16LE(2, 32);
+  b.writeUInt16LE(16, 34);
+  b.write("data", 36);
+  b.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.sin((i / taux) * 2 * Math.PI * 330) * 9000), 44 + i * 2);
+  return `data:audio/wav;base64,${b.toString("base64")}`;
+}
+const voc = await poster(SAM, { action: "vocal", id: V.id, t: 22.04, son: wav(1.4), duree: 1.4 });
+ok(voc.statut === 200 && voc.reaction?.t === 22 && /^[a-z0-9]{12}$/.test(voc.reaction?.voix?.id ?? "") && voc.reaction.voix.ext === "wav" && voc.reaction.voix.duree === 1.4 && Boolean(voc.reaction.voix.url), `Sam laisse un vocal à 22 s (${JSON.stringify(voc.reaction?.voix && { ...voc.reaction.voix, url: "…" })})`);
+ok((await poster(SAM, { action: "vocal", id: V.id, t: 24, son: wav(1.4), duree: 0.3 })).statut === 400, "trop court : 400");
+ok((await poster(SAM, { action: "vocal", id: V.id, t: 24, son: "data:text/plain;base64,AAAA", duree: 2 })).statut === 400, "pas un son : 400");
+ok((await poster(SAM, { action: "vocal", id: "AAAAAAAAAAA", t: 24, son: wav(1.4), duree: 1.4 })).statut === 404, "une vidéo qui n'est pas à sa télé : 404");
+const dVoix = await voir(LEA, `?reactions=${V.id}`);
+const saVoix = dVoix.proches?.find((p) => p.cle === SAM.cle)?.reactions?.find((r) => r.voix);
+ok(saVoix?.t === 22 && saVoix.sorte === "coeur" && Boolean(saVoix.voix?.url), "chez Léa : le vocal de Sam à 22 s, avec son lien");
+const ecoute = saVoix?.voix?.url ? await fetch(saVoix.voix.url.startsWith("http") ? saVoix.voix.url : `${BASE}${saVoix.voix.url}`) : null;
+const octets = ecoute ? Buffer.from(await ecoute.arrayBuffer()) : Buffer.alloc(0);
+ok(ecoute?.status === 200 && octets.subarray(0, 4).toString() === "RIFF", `… Léa l'écoute : sa vraie voix (${ecoute?.status}, ${octets.length} octets)`);
+ok(!JSON.stringify((await voir(INES, `?reactions=${V.id}`)).proches ?? []).includes(saVoix?.voix?.id ?? "?"), "Inès ne l'entend pas (Sam et elle ne sont pas proches)");
+ok(!JSON.stringify(await fichier(SAM)).includes("url"), "son fichier ne garde pas de lien (il est signé à chaque fois)");
+
 console.log(echecs ? `\n${echecs} échec(s)` : "\nune conversation à travers le temps (les routes) : tout est bon");
 process.exit(echecs ? 1 : 0);

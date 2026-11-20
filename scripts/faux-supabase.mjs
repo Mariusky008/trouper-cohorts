@@ -641,6 +641,10 @@ const meteoReglee = { code: 53, t: 9.4, jour: 1 };
 const meteoDemandes = { geo: 0, temps: 0 };
 // 📺 (le lot D0 de Découvrir) ce que le faux YouTube a reçu : chaque recherche, avec son filtre
 const youtubeDemandes = [];
+// (📺 le lot D8 : les chaînes que le faux YouTube connaît, et les appels « chaînes » reçus — à part des recherches)
+const chainesConnues = new Map();
+const racinesDeChaines = new Map();
+const youtubeChaines = [];
 /** Les notifications « envoyées » au faux service (les plus récentes à la fin). */
 const pushs = [];
 const videosEssai = new Map();
@@ -1041,6 +1045,34 @@ http
       // l'identifiant vient des mots cherchés (les mêmes mots, les mêmes vidéos) ; leur fiche (`/youtube/videos`) : la 4e
       // de chaque recherche parle de bière, la 5e dure 45 minutes, la 7e ne se lit pas ailleurs (elles ne doivent pas
       // passer) ; les autres durent 2 min 30. Une clé qui n'est pas « faux » : 403. `/__youtube` : les recherches reçues.
+      // 📺 LES CHAÎNES (le lot D8) : `/youtube/channels` (par `forHandle` — « @introuvable » n'existe pas — ou par `id`) ;
+      // `/youtube/playlistItems` (la liste « mises en ligne » `UU…` : huit vidéos `<racine><k>c`). Dans leur fiche, la 3e
+      // est réservée aux adultes, la 6e dure 40 s, la 8e a dix jours (elles ne doivent pas passer) ; la 5e dure 45 min
+      // (elle passe pour une chaîne suivie, pas dans la sélection). `/__youtube-chaines` : les appels reçus.
+      if (url.pathname === "/youtube/channels" || url.pathname === "/youtube/playlistItems") {
+        if (url.searchParams.get("key") !== "faux") return repondre(res, 403, { error: { message: "API key not valid" } });
+        youtubeChaines.push({ chemin: url.pathname.slice(9), forHandle: url.searchParams.get("forHandle"), id: url.searchParams.get("id"), playlistId: url.searchParams.get("playlistId") });
+        const vignette = (id) => `https://yt3.essai.test/${id}.jpg`;
+        if (url.pathname === "/youtube/channels") {
+          const poignee = url.searchParams.get("forHandle");
+          if (poignee) {
+            if (/^@introuvable$/i.test(poignee)) return repondre(res, 200, { items: [] });
+            const id = `UC${createHash("sha256").update(poignee.toLowerCase()).digest("base64url").slice(0, 22)}`;
+            const nom = poignee.slice(1, 2).toUpperCase() + poignee.slice(2);
+            chainesConnues.set(id, nom);
+            return repondre(res, 200, { items: [{ id, snippet: { title: nom, thumbnails: { default: { url: vignette(id) } } } }] });
+          }
+          const id = url.searchParams.get("id") || "";
+          if (!/^UC[\w-]{22}$/.test(id)) return repondre(res, 200, { items: [] });
+          return repondre(res, 200, { items: [{ id, snippet: { title: chainesConnues.get(id) || "La chaîne d’essai", thumbnails: { default: { url: vignette(id) } } } }] });
+        }
+        const liste = url.searchParams.get("playlistId") || "";
+        const chaine = `UC${liste.slice(2)}`;
+        const racine = createHash("sha256").update(chaine).digest("base64url").slice(0, 9);
+        racinesDeChaines.set(racine, chaine);
+        return repondre(res, 200, { items: Array.from({ length: 8 }, (_, k) => ({ contentDetails: { videoId: `${racine}${k}c` } })) });
+      }
+      if (url.pathname === "/__youtube-chaines") return repondre(res, 200, youtubeChaines);
       if (url.pathname === "/youtube/search" || url.pathname === "/youtube/videos") {
         if (url.searchParams.get("key") !== "faux") return repondre(res, 403, { error: { message: "API key not valid" } });
         if (url.pathname === "/youtube/search") {
@@ -1053,10 +1085,14 @@ http
         return repondre(res, 200, {
           items: ids.map((id) => {
             const k = Number(id.at(-2)) || 0;
+            // (une vidéo d'une chaîne suivie : `<racine><k>c` ; celles de la sélection, une chaîne par recherche)
+            const deChaine = id.endsWith("c") ? racinesDeChaines.get(id.slice(0, 9)) : null;
+            const channelId = deChaine || `UC${createHash("sha256").update(`chaine:${id.slice(0, 9)}`).digest("base64url").slice(0, 22)}`;
+            const publishedAt = deChaine && k === 7 ? new Date(Date.now() - 10 * 86400_000).toISOString() : deChaine ? new Date(Date.now() - (k + 1) * 3600_000).toISOString() : maintenant();
             return {
               id,
-              snippet: { title: k === 3 ? "Dégustation de bière entre amis" : `Vidéo d’essai ${id}`, channelTitle: "La chaîne d’essai", publishedAt: maintenant(), liveBroadcastContent: "none" },
-              contentDetails: { duration: k === 4 ? "PT45M" : "PT2M30S" },
+              snippet: { title: k === 3 ? "Dégustation de bière entre amis" : `Vidéo d’essai ${id}`, channelTitle: deChaine ? chainesConnues.get(deChaine) || "La chaîne d’essai" : "La chaîne d’essai", channelId, publishedAt, liveBroadcastContent: "none" },
+              contentDetails: { duration: k === 4 ? "PT45M" : deChaine && k === 5 ? "PT40S" : "PT2M30S", ...(deChaine && k === 2 ? { contentRating: { ytRating: "ytAgeRestricted" } } : {}) },
               status: { embeddable: k !== 6, privacyStatus: "public" },
             };
           }),

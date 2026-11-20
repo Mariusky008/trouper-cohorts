@@ -11,9 +11,13 @@
 import type { IdTheme, VideoDuJour } from "./decouvrir";
 import type { ImageSalon } from "./salon";
 import type { ScenePiece } from "./ma-maison";
+import type { ChaineSuivie } from "./chaines";
 
-/** Une vidéo de ma télé du jour : celle de la sélection, et son thème. */
-export type VideoTele = VideoDuJour & { theme: IdTheme };
+/**
+ * Une vidéo de ma télé du jour : celle de la sélection, et son thème — ou (le lot D8) la nouvelle vidéo d'une chaîne
+ * que je suis (`suivie` ; pas de thème : son poids ne bouge pas).
+ */
+export type VideoTele = VideoDuJour & { theme: IdTheme | null; suivie?: ChaineSuivie };
 
 /** Ce que l'écran reçoit. */
 export type TeleDuJour = {
@@ -26,6 +30,9 @@ export type TeleDuJour = {
   /** ma pièce (Ma maison), si je l'ai choisie ; ma figurine assise */
   scene: ScenePiece | null;
   figurine: ImageSalon | null;
+  /** 📺 les chaînes que je suis (le lot D8), et combien de leurs nouvelles vidéos m'attendent (en tête de `videos`) */
+  chaines: ChaineSuivie[];
+  nouvelles: number;
   /** la sélection n'est pas encore faite (pas de clé YouTube, ou la première nuit n'est pas passée) */
   vide?: true;
 };

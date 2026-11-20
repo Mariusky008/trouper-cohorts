@@ -36,7 +36,8 @@ const CHEMIN_RETIREES = "decouvrir/retirees.json";
 /** (les variantes d'un thème : les adultes, et les 15-17 ans — sauf le salon des jeunes parents) */
 const variantes = (theme: IdTheme) => (themeDe(theme)?.adultes ? [false] : [false, true]);
 
-async function appeler<T>(chemin: string, params: Record<string, string>): Promise<T> {
+/** Un appel à l'API de YouTube (les chaînes suivies s'en servent aussi : `chaines-serveur.ts`). */
+export async function appeler<T>(chemin: string, params: Record<string, string>): Promise<T> {
   const u = new URL(`${base()}/${chemin}`);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   u.searchParams.set("key", cle());
@@ -61,20 +62,32 @@ async function chercher(q: string, jeunes: boolean, depuis: string): Promise<str
   return (j.items ?? []).map((i) => s(i.id?.videoId)).filter((id) => /^[\w-]{11}$/.test(id));
 }
 
-/** Les vidéos qui passent : lisibles ailleurs, ni en direct ni à venir, de la bonne durée, sans rien d'alcoolisé. */
-async function details(ids: string[]): Promise<VideoDuJour[]> {
+/**
+ * Les vidéos qui passent : lisibles ailleurs, ni en direct ni à venir, pas réservées aux adultes, de la bonne durée (de
+ * 30 s à 20 min ; les chaînes suivies : `min` et `max`), sans rien d'alcoolisé.
+ */
+export async function details(ids: string[], o: { min?: number; max?: number } = {}): Promise<VideoDuJour[]> {
+  const min = o.min ?? DUREE_MIN;
+  const max = o.max ?? DUREE_MAX;
   const l: VideoDuJour[] = [];
   for (let i = 0; i < ids.length; i += 50) {
     const j = await appeler<{
-      items?: { id?: string; snippet?: { title?: string; channelTitle?: string; publishedAt?: string; liveBroadcastContent?: string }; contentDetails?: { duration?: string }; status?: { embeddable?: boolean; privacyStatus?: string } }[];
+      items?: {
+        id?: string;
+        snippet?: { title?: string; channelTitle?: string; channelId?: string; publishedAt?: string; liveBroadcastContent?: string };
+        contentDetails?: { duration?: string; contentRating?: { ytRating?: string } };
+        status?: { embeddable?: boolean; privacyStatus?: string };
+      }[];
     }>("videos", { part: "snippet,contentDetails,status", id: ids.slice(i, i + 50).join(",") });
     for (const v of j.items ?? []) {
       const titre = s(v.snippet?.title);
       const duree = dureeIso(v.contentDetails?.duration);
       if (!v.id || v.status?.embeddable === false || (v.status?.privacyStatus && v.status.privacyStatus !== "public")) continue;
       if (v.snippet?.liveBroadcastContent && v.snippet.liveBroadcastContent !== "none") continue;
-      if (duree < DUREE_MIN || duree > DUREE_MAX || !titre || MOTS_EXCLUS.test(titre)) continue;
-      l.push({ id: v.id, titre: titre.slice(0, 140), chaine: s(v.snippet?.channelTitle).slice(0, 80), duree, publiee: s(v.snippet?.publishedAt) });
+      if (v.contentDetails?.contentRating?.ytRating === "ytAgeRestricted") continue;
+      if (duree < min || duree > max || !titre || MOTS_EXCLUS.test(titre)) continue;
+      const chaineId = s(v.snippet?.channelId);
+      l.push({ id: v.id, titre: titre.slice(0, 140), chaine: s(v.snippet?.channelTitle).slice(0, 80), duree, publiee: s(v.snippet?.publishedAt), ...(/^UC[\w-]{22}$/.test(chaineId) ? { chaineId } : {}) });
     }
   }
   return l;
