@@ -1,7 +1,8 @@
 /**
- * ⭐ JAMAIS SEUL DEVANT UNE VIDÉO — ce qui ne dépend pas de l'écran (`docs/univers/decouvrir.md`, sections 4.5 et 13 ; le
- * lot D2b, première partie) : les réactions à une vidéo de ma télé du jour, notées à la seconde ; celles de mes proches,
- * rejouées à la même seconde par leurs figurines assises à côté de moi ; « 🫶 Au même moment ».
+ * ⭐ JAMAIS SEUL DEVANT UNE VIDÉO — ce qui ne dépend pas de l'écran (`docs/univers/decouvrir.md`, sections 4.5, 13, 21
+ * et 22 ; le lot D2b) : les réactions à une vidéo de ma télé du jour, notées à la seconde ; celles de mes proches,
+ * rejouées à la même seconde par leurs figurines assises à côté de moi ; « 🫶 Au même moment ». Deuxième partie : ce
+ * qu'on écrit à la seconde, la réponse à un proche au moment même, « 💬 Ce qui s'est dit ».
  *
  * Partagé (l'écran, le serveur, les essais).
  */
@@ -19,8 +20,12 @@ export type SorteVideo = (typeof SORTES_VIDEO)[number]["cle"];
 /** D'où elle vient : la rangée, un geste sans viser sur la pièce, ou ce que l'appli comprend seule (passer, revoir, finir). */
 export const SOURCES_VIDEO = ["rangee", "geste", "implicite"] as const;
 export type SourceVideo = (typeof SOURCES_VIDEO)[number];
-/** Une réaction : sa seconde dans la vidéo (au dixième), sa sorte, d'où elle vient, quand. */
-export type ReactionVideo = { t: number; sorte: SorteVideo; source: SourceVideo; le: number };
+/**
+ * Une réaction : sa seconde dans la vidéo (au dixième), sa sorte, d'où elle vient, quand. Écrite (deuxième partie) :
+ * `texte` (sa sorte se déduit des mots) ; une réponse à un proche : `a` (sa clé) et `repond` (la seconde de sa
+ * réaction ; la réponse se place juste après).
+ */
+export type ReactionVideo = { t: number; sorte: SorteVideo; source: SourceVideo; le: number; texte?: string; a?: string; repond?: number };
 /** Un proche qui a vu cette vidéo : sa clé, son prénom, sa figurine assise (les trois premiers), quand il l'a vue, ses réactions. */
 export type ProcheDevantVideo = { cle: string; prenom: string; figurine: ImageSalon | null; vu: number; reactions: ReactionVideo[] };
 
@@ -42,12 +47,44 @@ export const REACTIONS_VIDEO = {
   /** revenir en arrière de plus de 3 s : « oh ! » au début du passage revu, une fois toutes les 10 s au plus */
   retour: 3,
   retourEcart: 10,
+  /** ce qu'on écrit à la seconde : 90 caractères au plus */
+  texte: 90,
+  /** une réponse se place 0,6 s après la réaction à laquelle elle répond */
+  apres: 0.6,
 } as const;
+
+/** ↩ Les trois réponses toutes prêtes (section 13), ou trois mots. */
+export const REPONSES_RAPIDES = [
+  { e: "😂", texte: "Trop drôle", sorte: "rire" },
+  { e: "😱", texte: "Grave !", sorte: "peur" },
+  { e: "🙌", texte: "Pareil", sorte: "coeur" },
+] as const satisfies readonly { e: string; texte: string; sorte: SorteVideo }[];
+
+/** Ce qu'on écrit : sans espaces en trop, 90 caractères au plus ; vide → `null`. */
+export function texteValide(x: unknown): string | null {
+  if (typeof x !== "string") return null;
+  const t = x.replace(/\s+/g, " ").trim();
+  return t ? [...t].slice(0, REACTIONS_VIDEO.texte).join("") : null;
+}
+
+/** La sorte d'une bulle écrite, déduite des mots (comme `reactionAuTexte` du salon) : « haha » → 😂, « c'est nul » → 😴… */
+export function sorteDuTexte(t: string): SorteVideo {
+  if (/😂|🤣|haha|hihi|mdr|ptdr|lol|drôle|drole/i.test(t)) return "rire";
+  if (/❤|😍|🥰|😘|j.adore|trop beau|magnifique|aime/i.test(t)) return "coeur";
+  if (/😱|😨|peur|no+n+ ?!|oh non|flipp/i.test(t)) return "peur";
+  if (/😴|🥱|\bnul\b|bof|ennui|chiant|trop long|c.est long/i.test(t)) return "bof";
+  return "oh";
+}
+
+const CLE_PROFIL = /^[0-9a-f]{16}$/;
 
 export const sorteVideo = (x: unknown) => SORTES_VIDEO.find((s) => s.cle === x);
 
 /** Une réaction reçue (du téléphone) ou relue (d'un fichier) : sa seconde, sa sorte ; sinon `null`. */
-export function reactionValide(x: { t?: unknown; sorte?: unknown; source?: unknown; le?: unknown } | null | undefined, le = Date.now()): ReactionVideo | null {
+export function reactionValide(
+  x: { t?: unknown; sorte?: unknown; source?: unknown; le?: unknown; texte?: unknown; a?: unknown; repond?: unknown } | null | undefined,
+  le = Date.now(),
+): ReactionVideo | null {
   if (!x) return null;
   const t = Number(x.t);
   if (!Number.isFinite(t) || t < 0 || t > REACTIONS_VIDEO.dureeMax) return null;
@@ -55,14 +92,52 @@ export function reactionValide(x: { t?: unknown; sorte?: unknown; source?: unkno
   if (!s) return null;
   const source = (SOURCES_VIDEO as readonly string[]).includes(String(x.source)) ? (x.source as SourceVideo) : "rangee";
   const quand = Number(x.le);
-  return { t: Math.round(t * 10) / 10, sorte: s.cle, source, le: Number.isFinite(quand) && quand > 0 ? quand : le };
+  const r: ReactionVideo = { t: Math.round(t * 10) / 10, sorte: s.cle, source, le: Number.isFinite(quand) && quand > 0 ? quand : le };
+  const texte = texteValide(x.texte);
+  if (texte) r.texte = texte;
+  const repond = Number(x.repond);
+  if (texte && typeof x.a === "string" && CLE_PROFIL.test(x.a) && Number.isFinite(repond) && repond >= 0) {
+    r.a = x.a;
+    r.repond = Math.round(repond * 10) / 10;
+  }
+  return r;
 }
 
-/** Ajoute une réaction (rangées par seconde) ; `null` : une rafale de la même sorte, ou déjà 80. */
+/**
+ * Ajoute une réaction (rangées par seconde) ; `null` : une rafale de la même sorte (un doigt qui insiste), les mêmes
+ * mots envoyés deux fois, ou déjà 80. Des mots différents à la même seconde comptent chacun.
+ */
 export function ajouterReaction(liste: readonly ReactionVideo[], r: ReactionVideo): ReactionVideo[] | null {
   if (liste.length >= REACTIONS_VIDEO.max) return null;
-  if (liste.some((x) => x.sorte === r.sorte && Math.abs(x.t - r.t) < REACTIONS_VIDEO.rafale)) return null;
+  const proche = (x: ReactionVideo) => Math.abs(x.t - r.t) < REACTIONS_VIDEO.rafale;
+  if (r.texte ? liste.some((x) => x.texte === r.texte && proche(x)) : liste.some((x) => !x.texte && x.sorte === r.sorte && proche(x))) return null;
   return [...liste, r].sort((a, b) => a.t - b.t);
+}
+
+/**
+ * 💬 Ce qui s'est dit sur cette vidéo (section 13) : les réactions de mes proches et les miennes, à leurs secondes (ce
+ * que l'appli a compris seule n'y est pas). Une réponse n'est montrée qu'à celui à qui elle répond (le serveur ne rend
+ * que celles qui sont pour moi) : celle d'un proche est donc « à toi ». Ce qui vient après `jusqua` reste caché
+ * (« 🔒 3 réactions plus loin dans la vidéo ») ; `null` : tout (une vidéo que j'ai déjà vue).
+ */
+export type LigneDite = { t: number; cle: string; prenom: string; e: string; texte?: string; aQui?: string; pourMoi?: boolean };
+export function ceQuiSestDit(proches: readonly ProcheDevantVideo[], miennes: readonly ReactionVideo[], o: { moi: string; jusqua: number | null }): { lignes: LigneDite[]; cachees: number } {
+  const noms = new Map(proches.map((p) => [p.cle, p.prenom]));
+  const ligne = (cle: string, prenom: string, r: ReactionVideo): LigneDite => ({
+    t: r.t,
+    cle,
+    prenom,
+    e: sorteVideo(r.sorte)?.e ?? "",
+    ...(r.texte ? { texte: r.texte } : {}),
+    ...(r.a ? (cle === "moi" ? { aQui: noms.get(r.a) ?? "" } : { aQui: o.moi, pourMoi: true }) : {}),
+  });
+  const toutes = [
+    ...proches.flatMap((p) => p.reactions.filter((r) => r.source !== "implicite").map((r) => ligne(p.cle, p.prenom, r))),
+    ...miennes.filter((r) => r.source !== "implicite").map((r) => ligne("moi", o.moi, r)),
+  ].sort((a, b) => a.t - b.t);
+  if (o.jusqua === null) return { lignes: toutes, cachees: 0 };
+  const lim = o.jusqua;
+  return { lignes: toutes.filter((l) => l.t <= lim), cachees: toutes.filter((l) => l.t > lim).length };
 }
 
 /** 🫶 Au même moment : le proche qui a réagi le plus près de cette seconde (à 1,8 s près) ; sinon `null`. */
@@ -130,4 +205,33 @@ export const PHRASES_REACTIONS = {
   avecToi: (n: number) => (n === 1 ? "1 proche l’a vue : il regarde avec toi" : `${n} proches l’ont vue : ils regardent avec toi`),
   gestes: "Un toucher sur la pièce : tu ris · deux : ❤️ · appui long : 😮",
   pasIci: "Ici, ta télé ne sait pas à quelle seconde tu en es : réagis depuis le lecteur de YouTube.",
+  // (deuxième partie : écrire, répondre, ce qui s'est dit, les notifications)
+  ecrire: "Écris à cette seconde…",
+  envoyer: "Envoyer",
+  ecrit: (t: number, qui: string[]) => `✍️ Écrit à ${seconde(t)} : ${qui.length === 1 ? `${qui[0]} le lira` : qui.length ? `${qui.slice(0, 2).join(" et ")} le liront` : "tes proches le liront"} à cette seconde`,
+  repondreA: (prenom: string, t: number) => `↩ Répondre à ${prenom}, à ${seconde(t)}`,
+  ilADit: (e: string, texte?: string) => (texte ? `« ${texte} »` : e),
+  ouTroisMots: "ou trois mots…",
+  repondu: (prenom: string) => `↩ ${prenom} verra ta réponse à cette seconde`,
+  toucheUnProche: "Touche un proche quand il réagit : tu lui réponds",
+  sansReagir: (prenom: string) => `${prenom} l’a vue sans réagir`,
+  dit: "💬 Ce qui s’est dit",
+  ditN: (n: number) => (n ? `💬 Ce qui s’est dit · ${n}` : "💬 Ce qui s’est dit"),
+  plusLoin: (n: number) => `🔒 ${n} réaction${n > 1 ? "s" : ""} plus loin dans la vidéo`,
+  rienDit: "Rien encore : tes réactions attendront tes proches.",
+  revoir: "Touche une ligne : tu revois le moment.",
+  toi: "Toi",
+  aToi: "à toi",
+  fermer: "Fermer",
+  // (les notifications)
+  tARepondu: (prenom: string) => `↩ ${prenom} t’a répondu`,
+  reponseCorps: (t: number, titre: string, texte: string) => `À ${seconde(t)} de « ${titre} » : « ${texte} »`,
+  aRegarde: (prenom: string, titre: string) => `🎬 ${prenom} a regardé « ${titre} »`,
+  revoisLa: "Revois-la avec ses réactions, à la seconde.",
+};
+
+/** Un titre de vidéo raccourci pour une notification (40 caractères). */
+export const titreCourt = (t: string) => {
+  const l = [...t.trim()];
+  return l.length > 40 ? `${l.slice(0, 39).join("").trimEnd()}…` : l.join("");
 };

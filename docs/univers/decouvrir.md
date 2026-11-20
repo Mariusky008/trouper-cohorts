@@ -282,7 +282,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D1b** ✅ (section 16) | Ma télé du jour dans l'onglet Découvrir ; le retrait de l'ancienne page (section 11) | D1 |
 | **D1c** ✅ (section 18) | L'accueil de Découvrir comme la maquette : la carte « Ma télé du jour », la phrase, les salons ouverts | D1b |
 | **D2** ✅ (section 19) | La séance chez moi : ma pièce, quatre places, inviter trois proches, la télé synchronisée menée par l'hôte (sur le moteur des salons ouverts) ; restent les vocaux et les mèmes entre proches dans la séance | D1, D3 |
-| **D2b ⭐** (1re partie ✅, section 21) | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
+| **D2b ⭐** (1re partie ✅, section 21 ; 2e partie ✅, section 22) | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
 | **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
 | **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; reste : les mèmes dans un salon ouvert | D1c |
 | **D5** ✅ (section 20) | L'étagère des salons (❤️, trois cœurs, « 📌 Garder »), « Mes salons » dans ma maison (des fanions), « 👯 Ajouter en proche » et « 🏠 Voir sa maison » depuis une figurine | D3 |
@@ -756,3 +756,64 @@ rejoue rien ; revenir en arrière ; « 🫶 En même temps que Sam ! » ; « not
 **Restent** (D2b) : écrire et parler à la seconde, répondre à un proche au moment même, « 💬 Ce qui s'est dit », garder le
 moment partagé, la notification « 🎬 Léa a regardé « … » : revois-la avec ses réactions » (deuxième partie) ; « 📷 Ta
 figurine fait ta tête » (troisième) ; le clip « 🎬 Nos réactions » (quatrième) ; puis D2c, les expressions du visage.
+
+## 22. Le lot D2b, deuxième partie : une conversation à travers le temps (20 novembre 2026)
+
+Le propriétaire, le 20 novembre 2026 : « oui, enchaîne sur la 2e partie de D2b ». La première partie faisait réagir ; celle-ci
+fait **parler, à la seconde** (section 13) : écrire, répondre à un proche au moment même, relire « 💬 Ce qui s'est dit »,
+et la notification qui ramène devant la vidéo. Les vocaux et « 📌 Garder ce moment » viendront ensemble (deuxième partie,
+suite) : ils touchent l'un au talkie, l'autre à l'étagère.
+
+- **✍️ Écrire à la seconde** (sous « Réagis ») : « Écris à cette seconde… » — la seconde est celle où j'ai **commencé** à
+  écrire (le doigt dans le champ), pas celle où j'envoie ; 90 caractères au plus. Ma figurine le dit en bulle ; sa sorte se
+  déduit des mots (« haha », « mdr » → 😂 ; « j'adore » → ❤️ ; « oh non » → 😱 ; « c'est nul », « bof » → 😴 ; sinon 😮),
+  pour son animation. Les premières fois : « ✍️ Écrit à 0:12 : Sam le lira à cette seconde ». Chez mes proches, ma figurine
+  le dit en bulle à cette seconde. Les mêmes mots envoyés deux fois (à 1,2 s près) ne comptent qu'une fois ; des mots
+  différents à la même seconde comptent chacun. Entre proches, rien n'est filtré (comme dans le salon du duo).
+- **↩ Répondre à un proche, au moment même** : toucher sa figurine assise (ou sa petite tête au bord de la télé) ouvre
+  « ↩ Répondre à Sam, à 0:08 » avec ce qu'il a fait (« « Il va tirer de là ?! » », ou son emoji) : « 😂 Trop drôle »,
+  « 😱 Grave ! », « 🙌 Pareil » ou trois mots. On répond à sa réaction **qui vient de jouer** (sinon, la dernière avant
+  cette seconde) ; toucher un proche ne compte pas comme un rire sur la pièce. Ma réponse est notée **0,6 s après** sa
+  réaction : il la verra juste après la sienne, en bulle « ↩ Grave ! ». « ↩ Sam verra ta réponse à cette seconde ». Une
+  réponse **n'est montrée qu'à celui à qui elle répond** (les autres proches ne voient pas nos échanges) ; il peut répondre
+  à ma réponse : la conversation continue.
+- **💬 Ce qui s'est dit** (à côté de « 👥 2 proches l'ont vue », avec le nombre) : toute la conversation de la vidéo, à ses
+  secondes — les réactions et les mots de mes proches, les miens, les réponses (« 0:08 Toi ↩ Sam : « Grave ! » », « 0:08
+  Léa ↩ à toi : « Grave ! » », en couleur) ; ce que l'appli a compris seule n'y est pas. **Ce qui vient plus loin que là où
+  j'en suis reste caché** : « 🔒 3 réactions plus loin dans la vidéo » (la télé éteinte : tout) ; une vidéo **que j'ai déjà
+  vue** montre tout. Toucher une ligne revoit le moment (deux secondes avant ; le lecteur y saute, sans que ce saut compte
+  comme « revenir en arrière ») ; la télé éteinte, elle s'allume là.
+- **🔔 « ↩ Léa t'a répondu »** : à la première réponse de Léa sur une vidéo, Sam reçoit « ↩ Léa t'a répondu » — « À 0:06 de
+  « … » : « Trop drôle » » ; un toucher ouvre la vidéo trois secondes avant. **Une fois par proche et par vidéo** (les
+  réponses suivantes l'attendent devant la vidéo).
+- **🔔 « 🎬 Léa a regardé « … » »** (décidé par le propriétaire le 19 novembre, section 12) : quand Léa a vu une vidéo et y a
+  **réagi** (pas seulement ce que l'appli a compris seule), ceux de ses proches qui l'avaient vue avant elle reçoivent
+  « 🎬 Léa a regardé « … » — Revois-la avec ses réactions, à la seconde. » (sinon ses réactions ne leur parviendraient
+  jamais). Une fois par proche et par vidéo ; pas à celui à qui elle vient de répondre (il a eu « t'a répondu ») ; celui qui
+  ne l'a pas encore vue n'a rien : elle l'attend simplement à côté de lui. Sur le téléphone, une notification par vidéo
+  (la suivante remplace la précédente).
+- **Ouvrir une vidéo déjà vue** : la notification ouvre `/collection?tele=<id>&t=<s>#decouvrir` — Découvrir s'ouvre sur ma
+  télé, **cette vidéo en premier** (même déjà vue : elle ne revient pas d'elle-même dans ma télé du jour), la télé attend
+  que je l'allume (le geste qui donne le son), puis elle repart à cette seconde. L'adresse se nettoie. Il faut qu'elle soit
+  encore dans ma télé (aujourd'hui ou hier).
+
+**Le rangement** : la même fiche `decouvrir/reactions/<vidéo>/<q>.json`, des réactions qui gagnent `texte` (ce qu'on a
+écrit), `a` et `repond` (une réponse : la clé du proche, la seconde de sa réaction) ; et `prevenus` / `repondus` (les clés
+des proches déjà prévenus — jamais un compte).
+
+**La route** (`/api/direct/tele-du-jour`) : `GET ?reactions=<id>` rend aussi `miennes` et `vue` (déjà vue) ; une réponse d'un
+proche n'y est que si elle est pour moi. `GET ?video=<id>` → `{ video }` (même déjà vue ; 404 si elle n'est plus à ma
+télé). `POST { action: "ecrire", id, t, texte }` ; `POST { action: "repondre", id, a, repond, texte, sorte? }` (404 : ce
+proche n'est pas des deux côtés, ne l'a pas vue, ou n'a rien fait à cette seconde ; 400 : sans mots) → `{ reaction }` ou
+`{ ignoree }`. Les notifications partent après la réponse (`prevenirUnHabitantAppli`, celle de Découvrir).
+
+**Les essais** : `scripts/essai-conversation-video-route.mjs` (écrire, la sorte déduite des mots, les doublons, les 90
+caractères ; personne de prévenu tant que personne ne l'a vue avant ; répondre et « ↩ Léa t'a répondu » une seule fois ;
+les refus ; « 🎬 Léa a regardé… » à Inès, pas à Sam ni à Max, une seule fois ; les réponses montrées à leur destinataire
+seulement ; rouvrir une vidéo déjà vue ; répondre à une réponse ; aucun identifiant de compte) et
+`scripts/navigateur/tele-conversation.mjs` (sur un iPhone : « 💬 Ce qui s'est dit · 3 » tout caché, la bulle de Sam à sa
+seconde, lui répondre « 😱 Grave ! », écrire « haha trop bien » à la seconde où on a commencé, les quatre lignes et le ❤️
+caché, revoir le moment ; Sam qui ouvre la vidéo déjà vue depuis la notification, à 0:06, et lit « ↩ à toi »).
+
+**Restent** (D2b) : les vocaux à la seconde et « 📌 Garder ce moment » (deuxième partie, suite) ; « 📷 Ta figurine fait ta
+tête » (troisième) ; le clip « 🎬 Nos réactions » (quatrième) ; puis D2c, les expressions du visage.

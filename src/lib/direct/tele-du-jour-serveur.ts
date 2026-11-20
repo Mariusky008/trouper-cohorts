@@ -89,6 +89,11 @@ export async function maVideo(supabase: Supabase, h: string, id: unknown): Promi
   return null;
 }
 
+/** Je l'ai déjà vue (elle est dans mes vues) : « 💬 Ce qui s'est dit » montre tout (le lot D2b, deuxième partie). */
+export async function dejaVue(supabase: Supabase, h: string, id: string): Promise<boolean> {
+  return ((await lireFiche(supabase, h)).vues ?? []).includes(id);
+}
+
 /**
  * 👀 Une vidéo vue : elle ne revient plus ; jusqu'au bout, son thème monte ; passée avant 15 secondes, il descend
  * (une vidéo qui ne se lit pas ici ne compte pas : `illisible`).

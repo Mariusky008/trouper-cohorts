@@ -39,8 +39,10 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    fanions dans ma maison, « 👯 Ajouter en proche », « 🏠 Voir sa maison ») ; **D2b, première partie, faite le 20 novembre**
    (section 21 : jamais seul devant une vidéo — « Réagis : 😂 ❤️ 😮 😱 😴 », les gestes sans viser, ce que l'appli comprend
    seule, notés à la seconde ; mes proches qui l'ont vue assis à côté de moi, qui réagissent à leur seconde ; « 🫶 En même
-   temps que Sam ! ») ; restent la suite de D2b (écrire et parler à la seconde, répondre, « 💬 Ce qui s'est dit », la
-   notification « revois-la avec ses réactions », « 📷 Ta figurine fait ta tête », le clip « 🎬 Nos réactions »), D2c (les
+   temps que Sam ! ») ; **D2b, deuxième partie, faite le 20 novembre** (section 22 : écrire à la seconde, répondre à un
+   proche au moment même, « 💬 Ce qui s'est dit », les notifications « ↩ Léa t'a répondu » et « 🎬 Léa a regardé « … » :
+   revois-la avec ses réactions ») ; restent la suite de D2b (les vocaux à la seconde, « 📌 Garder ce moment », « 📷 Ta
+   figurine fait ta tête », le clip « 🎬 Nos réactions »), D2c (les
    expressions du visage), les mèmes dans un salon ouvert, les vocaux et les mèmes dans la séance, D6 (les liens TikTok et
    Instagram) et D7 (les potins de ma ville).
 
