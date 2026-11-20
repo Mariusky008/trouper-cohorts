@@ -282,7 +282,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D1b** ✅ (section 16) | Ma télé du jour dans l'onglet Découvrir ; le retrait de l'ancienne page (section 11) | D1 |
 | **D1c** ✅ (section 18) | L'accueil de Découvrir comme la maquette : la carte « Ma télé du jour », la phrase, les salons ouverts | D1b |
 | **D2** ✅ (section 19) | La séance chez moi : ma pièce, quatre places, inviter trois proches, la télé synchronisée menée par l'hôte (sur le moteur des salons ouverts) ; restent les vocaux et les mèmes entre proches dans la séance | D1, D3 |
-| **D2b ⭐** | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
+| **D2b ⭐** (1re partie ✅, section 21) | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
 | **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
 | **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; reste : les mèmes dans un salon ouvert | D1c |
 | **D5** ✅ (section 20) | L'étagère des salons (❤️, trois cœurs, « 📌 Garder »), « Mes salons » dans ma maison (des fanions), « 👯 Ajouter en proche » et « 🏠 Voir sa maison » depuis une figurine | D3 |
@@ -704,3 +704,55 @@ seulement, trois au plus —, l'invitation, venir, la télé menée par l'hôte,
 « Mes salons », la demande, l'accepter, les demandes croisées, la limite du jour) et `scripts/navigateur/salons-seance.mjs`
 (sur des iPhone : « 👥 Regarder avec mes proches », inviter Sam, sa carte « Venir », la pause et la suivante qui passent
 chez lui, un lien entre proches ; ❤️ sur une bulle, l'étagère, garder, la fiche d'Ana, la demande acceptée, le fanion).
+
+## 21. Le lot D2b, première partie : jamais seul devant une vidéo (20 novembre 2026)
+
+Le propriétaire, le 20 novembre 2026 : « on peut faire le premier de ta liste, D2b ». **La fonction phare** (4.5, 12 et 13) :
+mes proches qui ont vu la vidéo avant moi sont assis à côté de moi et réagissent à la seconde où ils ont réagi. Cette
+première partie fait **les réactions** ; viennent ensuite écrire et parler à la seconde, répondre à un proche, « 💬 Ce
+qui s'est dit », la notification « revois-la avec ses réactions » (deuxième partie), « 📷 Ta figurine fait ta tête »
+(troisième), le clip « 🎬 Nos réactions » (quatrième).
+
+- **Réagir** (sous la télé du jour, `tele-du-jour.tsx`) : « Réagis : 😂 ❤️ 😮 😱 😴 » — un toucher, la réaction à la seconde
+  où en est le lecteur (`getCurrentTime`) ; ma figurine la joue (rire : la tête qui sautille ; ❤️ : elle bat ; 😮 😱 : un
+  sursaut ; 😴 : elle somnole) et l'emoji jaillit. Les deux premières fois : « 😂 noté à 0:42 : Sam et Léa le verront à
+  cette seconde ». La rangée attend que la télé soit allumée ; avec le lecteur tout simple (YouTube ne répond pas), la
+  seconde n'est pas connue : on ne note rien.
+- **Les gestes sans viser**, sur la pièce (sous la télé) : un toucher → 😂 ; deux (à 0,32 s près) → ❤️ ; un appui long
+  (0,52 s) → 😮. « Un toucher sur la pièce : tu ris · deux : ❤️ · appui long : 😮 » rappelle comment.
+- **Ce que l'appli comprend seule** (`implicite`) : passée avant 15 s → 😴 à ce moment ; revenir en arrière de plus de 3 s →
+  😮 au début du passage revu (une fois toutes les 10 s au plus) ; vue jusqu'au bout → ❤️ à la fin. La réaction part
+  avant « vue », pour que les deux ne s'effacent pas.
+- **Mes proches devant ma télé** : à l'ouverture d'une vidéo, un seul appel (`GET ?reactions=<id>`) rend ceux de mes
+  proches **des deux côtés** qui l'ont vue — leurs réactions à la seconde, quand ils l'ont vue. **Les trois qui ont le plus
+  réagi s'assoient à côté de moi** (à gauche, à droite, un peu au fond ; leur figurine assise de Ma maison, leur prénom,
+  « a vu hier soir ») ; les suivants (six au plus) passent en petites têtes au bord de la télé. Celui qui l'a vue sans
+  réagir s'assoit quand même, silencieux. Au-dessus du titre : « 👥 2 proches l'ont vue : ils regardent avec toi » ; en
+  haut de la pièce, la frise de leurs réactions.
+- **Le rejouer** : toutes les 250 ms, la seconde du lecteur ; les réactions entre la seconde d'avant et celle-ci sont
+  jouées par la figurine de leur auteur (`aJouer`). Un saut (en avant de plus de 1,5 s, ou en arrière) ne rejoue rien.
+- **🫶 Au même moment** : je réagis à 1,8 s près d'une réaction d'un proche → « 🫶 En même temps que Sam ! » (une fois par
+  proche et par vidéo). Aucun compte, aucun score (section 13).
+- **Je l'ai vue** : à « vue » (jusqu'au bout, ou passée), elle est notée pour mes proches, même sans réaction.
+
+**Le rangement** : `decouvrir/reactions/<vidéo>/<q>.json` = `{ vu, reactions: [{ t, sorte, source, le }] }` — `<q>` :
+l'identifiant court de chacun (jamais son compte) ; chacun n'écrit que son fichier ; 80 réactions au plus par vidéo ; la
+même sorte à moins de 1,2 s de la précédente ne compte qu'une fois (un doigt qui insiste). Seul le serveur les lit, pour
+les proches des deux côtés.
+
+**La route** (`/api/direct/tele-du-jour`) : `GET ?reactions=<id>` → `{ proches: [{ cle, prenom, figurine, vu, reactions }] }`
+(la figurine des trois qui s'assoient) ; `POST { action: "reagir", id, t, sorte, source? }` → `{ reaction }` ou
+`{ ignoree }` ; une vidéo qui n'est pas à ma télé : 404 ; une sorte inconnue, une seconde négative ou au-delà de la fin :
+400. « vue » note aussi qu'on l'a vue (après la réponse). Ce qui est commun : `src/lib/direct/reactions-video.ts` ; le
+serveur : `reactions-video-serveur.ts`.
+
+**Les essais** : `scripts/essai-reactions-video-route.mjs` (la même vidéo à quatre télés ; les réactions de Sam à la
+seconde, la rafale, les refus ; Inès qui la voit sans réagir ; Max, qui n'est pas proche des deux côtés, jamais montré ;
+l'ordre ; aucun identifiant de compte ; la réaction implicite ; chacun son fichier) et `scripts/navigateur/tele-ensemble.mjs`
+(sur un iPhone, un faux lecteur qu'on avance à la main : Sam et Inès assis, la frise ; Sam qui rit à 5 s ; un saut qui ne
+rejoue rien ; revenir en arrière ; « 🫶 En même temps que Sam ! » ; « noté à 0:40 » ; les trois gestes sans viser ;
+⏭ Suivante à 3 s).
+
+**Restent** (D2b) : écrire et parler à la seconde, répondre à un proche au moment même, « 💬 Ce qui s'est dit », garder le
+moment partagé, la notification « 🎬 Léa a regardé « … » : revois-la avec ses réactions » (deuxième partie) ; « 📷 Ta
+figurine fait ta tête » (troisième) ; le clip « 🎬 Nos réactions » (quatrième) ; puis D2c, les expressions du visage.

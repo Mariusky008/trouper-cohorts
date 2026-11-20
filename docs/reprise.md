@@ -36,8 +36,13 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    avec leur modération, `/univers/salons?theme=…`, l'administration `/admin/humain/salons`, le frein
    `CLIKME_SALONS_OUVERTS=0`) ; **D2 et D5 faits le 20 novembre** (sections 19 et 20 : la séance chez moi —
    `/univers/salons?chez=moi`, trois proches invités, la télé menée par l'hôte ; l'étagère des salons, « Mes salons » en
-   fanions dans ma maison, « 👯 Ajouter en proche », « 🏠 Voir sa maison ») ; restent les mèmes dans un salon ouvert, les
-   vocaux et les mèmes dans la séance, D2b (jamais seul devant une vidéo) et D7 (les potins de ma ville).
+   fanions dans ma maison, « 👯 Ajouter en proche », « 🏠 Voir sa maison ») ; **D2b, première partie, faite le 20 novembre**
+   (section 21 : jamais seul devant une vidéo — « Réagis : 😂 ❤️ 😮 😱 😴 », les gestes sans viser, ce que l'appli comprend
+   seule, notés à la seconde ; mes proches qui l'ont vue assis à côté de moi, qui réagissent à leur seconde ; « 🫶 En même
+   temps que Sam ! ») ; restent la suite de D2b (écrire et parler à la seconde, répondre, « 💬 Ce qui s'est dit », la
+   notification « revois-la avec ses réactions », « 📷 Ta figurine fait ta tête », le clip « 🎬 Nos réactions »), D2c (les
+   expressions du visage), les mèmes dans un salon ouvert, les vocaux et les mèmes dans la séance, D6 (les liens TikTok et
+   Instagram) et D7 (les potins de ma ville).
 
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les

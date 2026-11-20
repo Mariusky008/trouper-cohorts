@@ -724,7 +724,7 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
                     {p.prenom}
                     <em>{quandVu(p.vu)}</em>
                   </span>
-                  {pop(p.cle, o.x + o.h * 0.18, o.y - o.h * 0.9)}
+                  {pop(p.cle, o.x + o.h * 0.36, o.y - o.h * 0.62)}
                 </span>
               );
             })}
@@ -739,7 +739,7 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
               style={{ height: mienne.h, left: mienne.x, top: mienne.y, zIndex: 3 }}
             />
           )}
-          {pop("moi", mienne.x + mienne.h * 0.18, mienne.y - mienne.h * 0.9)}
+          {pop("moi", mienne.x + mienne.h * 0.36, mienne.y - mienne.h * 0.62)}
           {bord.length > 0 && (
             <div className="td-bord" data-bord>
               {bord.map((p) => (
