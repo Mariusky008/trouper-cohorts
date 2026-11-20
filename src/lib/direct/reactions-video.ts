@@ -25,7 +25,12 @@ export type SourceVideo = (typeof SOURCES_VIDEO)[number];
  * `texte` (sa sorte se déduit des mots) ; une réponse à un proche : `a` (sa clé) et `repond` (la seconde de sa
  * réaction ; la réponse se place juste après).
  */
-export type ReactionVideo = { t: number; sorte: SorteVideo; source: SourceVideo; le: number; texte?: string; a?: string; repond?: number };
+export type ReactionVideo = { t: number; sorte: SorteVideo; source: SourceVideo; le: number; texte?: string; a?: string; repond?: number; voix?: VoixVideo };
+/**
+ * 🎙️ Un vocal laissé à cette seconde (sa vraie voix, jamais une voix de synthèse) : son identifiant, sa durée, le type
+ * du fichier ; `url` (lien signé, une heure) seulement dans ce que le serveur rend.
+ */
+export type VoixVideo = { id: string; duree: number; ext: string; url?: string };
 /** Un proche qui a vu cette vidéo : sa clé, son prénom, sa figurine assise (les trois premiers), quand il l'a vue, ses réactions. */
 export type ProcheDevantVideo = { cle: string; prenom: string; figurine: ImageSalon | null; vu: number; reactions: ReactionVideo[] };
 
@@ -51,6 +56,8 @@ export const REACTIONS_VIDEO = {
   texte: 90,
   /** une réponse se place 0,6 s après la réaction à laquelle elle répond */
   apres: 0.6,
+  /** 🎙️ des vocaux : 20 au plus par vidéo et par personne */
+  vocaux: 20,
 } as const;
 
 /** ↩ Les trois réponses toutes prêtes (section 13), ou trois mots. */
@@ -82,7 +89,7 @@ export const sorteVideo = (x: unknown) => SORTES_VIDEO.find((s) => s.cle === x);
 
 /** Une réaction reçue (du téléphone) ou relue (d'un fichier) : sa seconde, sa sorte ; sinon `null`. */
 export function reactionValide(
-  x: { t?: unknown; sorte?: unknown; source?: unknown; le?: unknown; texte?: unknown; a?: unknown; repond?: unknown } | null | undefined,
+  x: { t?: unknown; sorte?: unknown; source?: unknown; le?: unknown; texte?: unknown; a?: unknown; repond?: unknown; voix?: unknown } | null | undefined,
   le = Date.now(),
 ): ReactionVideo | null {
   if (!x) return null;
@@ -100,6 +107,9 @@ export function reactionValide(
     r.a = x.a;
     r.repond = Math.round(repond * 10) / 10;
   }
+  const vx = x.voix as Partial<VoixVideo> | null | undefined;
+  const duree = Number(vx?.duree);
+  if (vx && typeof vx.id === "string" && /^[a-z0-9]{12}$/.test(vx.id) && Number.isFinite(duree) && duree > 0 && duree <= 61 && /^(webm|ogg|mp4|mp3|m4a|wav)$/.test(String(vx.ext))) r.voix = { id: vx.id, duree: Math.round(duree * 10) / 10, ext: String(vx.ext) };
   return r;
 }
 
@@ -110,7 +120,8 @@ export function reactionValide(
 export function ajouterReaction(liste: readonly ReactionVideo[], r: ReactionVideo): ReactionVideo[] | null {
   if (liste.length >= REACTIONS_VIDEO.max) return null;
   const proche = (x: ReactionVideo) => Math.abs(x.t - r.t) < REACTIONS_VIDEO.rafale;
-  if (r.texte ? liste.some((x) => x.texte === r.texte && proche(x)) : liste.some((x) => !x.texte && x.sorte === r.sorte && proche(x))) return null;
+  if (r.voix) return liste.filter((x) => x.voix).length >= REACTIONS_VIDEO.vocaux ? null : [...liste, r].sort((a, b) => a.t - b.t);
+  if (r.texte ? liste.some((x) => x.texte === r.texte && proche(x)) : liste.some((x) => !x.texte && !x.voix && x.sorte === r.sorte && proche(x))) return null;
   return [...liste, r].sort((a, b) => a.t - b.t);
 }
 
@@ -120,15 +131,16 @@ export function ajouterReaction(liste: readonly ReactionVideo[], r: ReactionVide
  * que celles qui sont pour moi) : celle d'un proche est donc « à toi ». Ce qui vient après `jusqua` reste caché
  * (« 🔒 3 réactions plus loin dans la vidéo ») ; `null` : tout (une vidéo que j'ai déjà vue).
  */
-export type LigneDite = { t: number; cle: string; prenom: string; e: string; texte?: string; aQui?: string; pourMoi?: boolean };
+export type LigneDite = { t: number; cle: string; prenom: string; e: string; texte?: string; aQui?: string; pourMoi?: boolean; voix?: VoixVideo };
 export function ceQuiSestDit(proches: readonly ProcheDevantVideo[], miennes: readonly ReactionVideo[], o: { moi: string; jusqua: number | null }): { lignes: LigneDite[]; cachees: number } {
   const noms = new Map(proches.map((p) => [p.cle, p.prenom]));
   const ligne = (cle: string, prenom: string, r: ReactionVideo): LigneDite => ({
     t: r.t,
     cle,
     prenom,
-    e: sorteVideo(r.sorte)?.e ?? "",
+    e: r.voix ? "🎙️" : (sorteVideo(r.sorte)?.e ?? ""),
     ...(r.texte ? { texte: r.texte } : {}),
+    ...(r.voix ? { voix: r.voix } : {}),
     ...(r.a ? (cle === "moi" ? { aQui: noms.get(r.a) ?? "" } : { aQui: o.moi, pourMoi: true }) : {}),
   });
   const toutes = [
@@ -221,6 +233,31 @@ export const PHRASES_REACTIONS = {
   rienDit: "Rien encore : tes réactions attendront tes proches.",
   revoir: "Touche une ligne : tu revois le moment.",
   toi: "Toi",
+  // (🎙️ les vocaux)
+  micro: "Garde le doigt appuyé et parle",
+  tuParles: "🎙️ Tu parles",
+  laVideoTAttend: "la vidéo t’attend",
+  vocalNote: (t: number, qui: string[]) => `🎙️ Ta voix, à ${seconde(t)} : ${qui.length === 1 ? `${qui[0]} l’écoutera` : qui.length ? `${qui.slice(0, 2).join(" et ")} l’écouteront` : "tes proches l’écouteront"} à cette seconde`,
+  unVocal: "🎙️ un vocal",
+  vocalDispo: (prenom: string) => `🎙️ ${prenom} t’a laissé un vocal`,
+  ecouter: "▶ Écouter",
+  reprendApres: "la vidéo reprend après",
+  court: "Garde le micro appuyé pendant que tu parles.",
+  // (l'écran comme la maquette)
+  maTele: "🏠 Ma télé",
+  surN: (k: number, n: number) => `${k} sur ${n}`,
+  inviter: "👥 Inviter",
+  ouTouche: "ou touche la pièce",
+  suivante: "Suivante ›",
+  garder: "📌 Garder",
+  envoyer2: "📤 Envoyer",
+  enParle: (salon: string, n: number) => `💬 ${salon} en parle${n > 1 ? ` · ${n} personnes` : n === 1 ? " · 1 personne" : ""}`,
+  seul: "Tu l’ouvres en premier : tes réactions attendront tes proches.",
+  arriere: "Revenir 5 secondes en arrière",
+  pause: "Pause",
+  lecture: "Lecture",
+  voirPiece: "🛋️ Voir la pièce",
+  grandEcran: "⛶ Grand écran",
   aToi: "à toi",
   fermer: "Fermer",
   // (les notifications)

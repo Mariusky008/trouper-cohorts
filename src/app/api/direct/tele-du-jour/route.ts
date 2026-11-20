@@ -23,6 +23,8 @@
 //                                               caractères ; sa sorte se déduit des mots)
 // POST { action: "repondre", id, a, repond, texte, sorte? } → { ok, reaction?, ignoree? } : ↩ à la réaction d'un proche
 //                                               (sa clé, sa seconde), juste après ; « Léa t'a répondu » (après la réponse)
+// POST { action: "vocal", id, t, son, duree } → { ok, reaction?, ignoree? } : 🎙️ sa vraie voix à cette seconde (une minute
+//                                               au plus ; `son` : le fichier en data: URL) ; ses proches l'écoutent
 // Une vidéo vue, s'il a réagi : ceux de ses proches qui l'avaient vue reçoivent « 🎬 Léa a regardé « … » : revois-la
 // avec ses réactions » (après la réponse ; une fois par proche et par vidéo).
 // 404 : une vidéo qui n'est pas à sa télé (on n'envoie, ne garde ni ne réagit à autre chose).
@@ -31,7 +33,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { apresEcrit } from "@/lib/direct/ecrit-serveur";
 import { envoyerVideo, garderVideo, maTeleDuJour, maVideo, noterVue } from "@/lib/direct/tele-du-jour-serveur";
-import { apresLaVue, noterReaction, prevenir, reactionsDesProches } from "@/lib/direct/reactions-video-serveur";
+import { apresLaVue, noterReaction, noterVocal, prevenir, reactionsDesProches } from "@/lib/direct/reactions-video-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +75,10 @@ export async function POST(request: Request) {
     const r = await noterReaction(supabase, moi, p.id, x);
     const pr = r.prevenir;
     if (pr) after(() => prevenir(supabase, pr).catch(() => undefined));
+    return repondre(r, r.ignoree ? { ignoree: true } : r.reaction ? { reaction: r.reaction } : {});
+  }
+  if (p?.action === "vocal") {
+    const r = await noterVocal(supabase, moi, p.id, { t: p.t, son: p.son, duree: p.duree });
     return repondre(r, r.ignoree ? { ignoree: true } : r.reaction ? { reaction: r.reaction } : {});
   }
   if (p?.action === "garder") {

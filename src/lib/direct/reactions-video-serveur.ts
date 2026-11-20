@@ -11,6 +11,9 @@
  *   - les réactions de mes proches pour une vidéo : ceux qui se sont ajoutés des deux côtés, et qui l'ont vue ; une
  *     réponse n'est rendue qu'à celui à qui elle répond.
  *
+ *   - 🎙️ un vocal laissé à la seconde (sa vraie voix, une minute au plus, 20 par vidéo) : rangé à part
+ *     (`decouvrir/vocaux/<vidéo>/<q>-<id>.<ext>`) ; ses proches le reçoivent par un lien signé (une heure).
+ *
  * `decouvrir/reactions/<vidéo>/<q>.json` = { vu, reactions, prevenus?, repondus? } — `<q>` : l'identifiant court de
  * chacun ; chacun n'écrit que son fichier. Seuls ses proches le lisent (le serveur, jamais le téléphone). `prevenus` /
  * `repondus` : les clés des proches déjà prévenus (« revois-la », « t'a répondu »).
@@ -19,7 +22,10 @@
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
-import { ecrireJson, lireJson, prenomDe, prochesDe } from "./ma-figurine-serveur";
+import { randomUUID } from "node:crypto";
+import { deposer, ecrireJson, lireJson, prenomDe, prochesDe, signer } from "./ma-figurine-serveur";
+import { sonDe } from "./talkie-serveur";
+import { dureeVocal } from "./vocal";
 import { qui8 } from "./talkie-serveur";
 import { cleProfil } from "./autour-serveur";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
@@ -45,6 +51,11 @@ type Notif = { titre: string; corps: string; url: string; tag: string };
 
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 export const cheminReactions = (video: string, h: string) => `decouvrir/reactions/${video}/${qui8(h)}.json`;
+const cheminVoix = (video: string, h: string, v: { id: string; ext: string }) => `decouvrir/vocaux/${video}/${qui8(h)}-${v.id}.${v.ext}`;
+/** Les liens signés (une heure) des vocaux d'une liste de réactions. */
+async function avecVoix(supabase: Supabase, video: string, h: string, l: ReactionVideo[]): Promise<ReactionVideo[]> {
+  return Promise.all(l.map(async (r) => (r.voix ? { ...r, voix: { ...r.voix, url: await signer(supabase, cheminVoix(video, h, r.voix), 3600).catch(() => "") } } : r)));
+}
 const lesReactions = (f: Partial<FicheReactions>): ReactionVideo[] =>
   (Array.isArray(f.reactions) ? f.reactions : [])
     .map((x) => reactionValide(x as Record<string, unknown>))
@@ -126,6 +137,31 @@ export async function noterReaction(
   };
 }
 
+/**
+ * 🎙️ Un vocal à cette seconde : sa vraie voix (une minute au plus), rangée à part ; la réaction le dit (sa figurine bat,
+ * « 🎙️ Léa t'a laissé un vocal — ▶ Écouter » chez ses proches). 20 par vidéo au plus.
+ */
+export async function noterVocal(supabase: Supabase, moi: Habitant, id: unknown, x: { t?: unknown; son?: unknown; duree?: unknown }): Promise<Resultat<{ ok?: true; reaction?: ReactionVideo; ignoree?: true }>> {
+  const v = await maVideo(supabase, moi.id, id);
+  if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
+  const son = sonDe(x.son);
+  const duree = dureeVocal(x.duree);
+  const t = Number(x.t);
+  if (!son || duree == null) return { error: "Ton vocal n’est pas parti : réenregistre-le (une minute au plus).", statut: 400 };
+  if (!Number.isFinite(t) || t < 0 || (v.duree > 0 && t > v.duree + 2)) return { error: "Cette réaction n’existe pas.", statut: 400 };
+  const chemin = cheminReactions(v.id, moi.id);
+  const f = await lireFiche(supabase, chemin);
+  const voix = { id: randomUUID().replace(/-/g, "").slice(0, 12), duree, ext: son.ext };
+  const r = reactionValide({ t, sorte: "coeur", source: "rangee", voix });
+  if (!r) return { error: "Cette réaction n’existe pas.", statut: 400 };
+  const liste = ajouterReaction(lesReactions(f), r);
+  if (!liste) return { ok: true, ignoree: true };
+  if (!(await deposer(supabase, cheminVoix(v.id, moi.id, voix), son.octets, son.type))) return { error: "Ton vocal n’est pas parti. Réessaie dans un instant.", statut: 502 };
+  if (!(await ecrireJson(supabase, chemin, { ...f, vu: Date.now(), reactions: liste } satisfies FicheReactions))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  const [avec] = await avecVoix(supabase, v.id, moi.id, [r]);
+  return { ok: true, reaction: avec };
+}
+
 /** 🔔 Envoyer une notification préparée (après la réponse). */
 export async function prevenir(supabase: Supabase, p: { h: string; notif: Notif }): Promise<void> {
   await prevenirUnHabitantAppli(supabase, p.h, p.notif).catch(() => "rien");
@@ -168,10 +204,10 @@ export async function reactionsDesProches(supabase: Supabase, moi: Habitant, id:
   const maCle = cleProfil(moi.id);
   const [mutuels, mienne, vue] = await Promise.all([prochesQuiLontVue(supabase, moi.id, v.id), lireFiche(supabase, cheminReactions(v.id, moi.id)), dejaVue(supabase, moi.id, v.id)]);
   const sans = await Promise.all(
-    mutuels.map(async (x): Promise<ProcheDevantVideo> => ({ cle: cleProfil(x.h), prenom: await prenomDuProche(supabase, x.h), figurine: null, vu: x.vu, reactions: x.reactions.filter((r) => !r.a || r.a === maCle) })),
+    mutuels.map(async (x): Promise<ProcheDevantVideo> => ({ cle: cleProfil(x.h), prenom: await prenomDuProche(supabase, x.h), figurine: null, vu: x.vu, reactions: await avecVoix(supabase, v.id, x.h, x.reactions.filter((r) => !r.a || r.a === maCle)) })),
   );
   const { assis, bord } = placerLesProches(sans);
   const deQui = new Map(mutuels.map((x) => [cleProfil(x.h), x.h]));
   const avecFigurines = await Promise.all(assis.map(async (p) => ({ ...p, figurine: await figurineDeLaMaison(supabase, deQui.get(p.cle) ?? "").catch(() => null) })));
-  return { proches: [...avecFigurines, ...bord], miennes: lesReactions(mienne), vue };
+  return { proches: [...avecFigurines, ...bord], miennes: await avecVoix(supabase, v.id, moi.id, lesReactions(mienne)), vue };
 }
