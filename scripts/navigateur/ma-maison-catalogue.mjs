@@ -98,6 +98,12 @@ await apercu.locator('[data-geste="installer"]').click();
 const scene = p.locator('.mmc-scene[data-piece="hangar"]');
 ok(await attendre(async () => (await scene.count()) === 1 && (await p.locator(".mmc-choix").count()) === 0), "« Je m'installe ici » : on est chez soi, dans le hangar");
 ok(await attendre(async () => (await scene.locator(".mmc-fond").evaluate((i) => i.complete && i.naturalWidth > 0)) && (await scene.locator(".mmc-fig img").evaluate((i) => i.complete && i.naturalWidth > 0))), "le panorama et sa figurine, chargés");
+// (la pièce se centre sur sa figurine juste après le chargement : sur une machine lente, un instant plus tard)
+const auMilieu = async () => {
+  const f = await scene.locator(".mmc-fig").boundingBox();
+  return Boolean(f) && Math.abs(f.x + f.width / 2 - 195) < 25;
+};
+await attendre(auMilieu, 4000);
 const fig = await scene.locator(".mmc-fig").boundingBox();
 const vue = await scene.boundingBox();
 ok(fig && Math.abs(fig.x + fig.width / 2 - 195) < 25 && fig.height > vue.height * 0.4 && fig.y + fig.height <= vue.height + 2, `sa figurine au milieu de l'écran, assez grande (${Math.round(fig?.x + fig?.width / 2)} pt, ${Math.round(fig?.height)} pt de haut)`);
