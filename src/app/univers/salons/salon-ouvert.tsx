@@ -347,6 +347,15 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const hPano = lPano / Math.max(ratio, 0.01);
   const tx = decor ? Math.min(0, Math.max(L - lPano, L / 2 - decor.centre.x * lPano)) : 0;
   const ty = Math.min(0, H - hPano);
+  // 🎭 (section 27) LE GRADIN DE SA PASSION, s'il est validé : l'image carrée couvre la bande, posée sur son sol, assez
+  // petite pour que toutes les têtes se voient (sur un ordinateur, les côtés : sa vignette floue) ; ses huit emplacements
+  const gradin = prive ? null : o.gradin;
+  const rG = gradin ? gradin.image.largeur / Math.max(1, gradin.image.hauteur) : 1;
+  const hautG = gradin ? Math.max(0, Math.min(...gradin.places.map((p) => p.y - p.hauteur)) - 0.05) : 0;
+  const hG = gradin ? Math.min(Math.max(L / rG, H), H / Math.max(0.3, 1 - hautG)) : 0;
+  const lG = hG * rG;
+  const gx = (L - lG) / 2;
+  const gy = H - hG;
   const ici = [...presents].sort((a, b) => a.arrive - b.arrive);
   // (deux arrivés en même temps sur la même place : le second prend la suivante libre)
   const places = new Map<string, number>();
@@ -357,11 +366,22 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     prises.add(k);
     places.set(p.q, k);
   }
+  // (🎭 dans un gradin, chacun se voit toujours devant, au milieu : sa place et la première s'échangent, pour lui seul)
+  const kMoi = places.get(o.moi);
+  const vue = (k: number) => (gradin && kMoi !== undefined ? (k === kMoi ? 0 : k === 0 ? kMoi : k) : k);
   const ou = (q: string) => {
     const k = places.get(q);
-    const pl = k === undefined ? null : PLACES_DU_SALON[k];
+    if (k === undefined) return null;
+    if (gradin) {
+      const g = gradin.places[vue(k)];
+      return g ? { x: gx + g.x * lG, y: gy + g.y * hG, h: g.hauteur * hG } : null;
+    }
+    const pl = PLACES_DU_SALON[k];
     return pl ? { x: pl.x * L, y: pl.y * H, h: pl.h * H } : null;
   };
+  // (🎭 les places libres du gradin : elles brillent doucement)
+  const vues = new Set([...places.values()].map(vue));
+  const libres = gradin ? gradin.places.map((g, k) => ({ g, k })).filter((x) => !vues.has(x.k)) : [];
 
   return (
     <main className={`so${prive ? " so-seance" : ""}`} data-salon={salon.id} data-maison={salon.maison} data-presents={ici.length} data-hote={seance?.hote ? "1" : undefined}>
@@ -394,10 +414,22 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         ) : (
           <TeleDuSalon videos={o.tele.videos} decalage={decalage} largeur={lTele} />
         )}
-        <div className="so-piece" style={{ height: H }} data-decor={decor?.piece ?? ""}>
-          {decor && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="so-pano" src={decor.panorama.src} srcSet={decor.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPano, transform: `translate(${tx}px, ${ty}px)`, backgroundImage: `url(${decor.panorama.flou})` }} />
+        <div className="so-piece" style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-decor={gradin ? "" : (decor?.piece ?? "")} data-gradin={gradin?.id}>
+          {gradin ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="so-pano so-gradin" src={gradin.image.src} srcSet={gradin.image.srcset} sizes={`${Math.round(lG)}px`} alt="" style={{ width: lG, height: hG, transform: `translate(${gx}px, ${gy}px)`, backgroundImage: `url(${gradin.image.flou})` }} />
+              <span className="so-gradin-voile" aria-hidden="true" />
+              {L > 0 &&
+                libres.map(({ g, k }) => (
+                  <span key={k} className="so-libre" data-libre={k} aria-hidden="true" style={{ left: gx + g.x * lG, top: gy + g.y * hG, width: g.hauteur * hG * 0.78, height: g.hauteur * hG * 0.22 }} />
+                ))}
+            </>
+          ) : (
+            decor && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="so-pano" src={decor.panorama.src} srcSet={decor.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPano, transform: `translate(${tx}px, ${ty}px)`, backgroundImage: `url(${decor.panorama.flou})` }} />
+            )
           )}
           {L > 0 &&
             ici.map((p) => {
@@ -466,6 +498,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               );
             })}
           {indice && ici.length > 1 && <p className="so-indice">{P.indice}</p>}
+          {gradin && ici.length === 1 && (
+            <p className="so-indice" data-seul-salon>
+              {P.seulSalon}
+            </p>
+          )}
         </div>
       </div>
 
@@ -1104,6 +1141,12 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-bulle::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff;border-bottom:0}
 .so-pop{position:absolute;transform:translateX(-50%);font-size:30px;z-index:901;animation:so-pop 2.1s ease-out forwards;pointer-events:none}
 .so-vol{position:absolute;transform:translateX(-50%);font-size:28px;z-index:902;animation:so-vol 1.4s ease-in-out forwards;pointer-events:none}
+.so-piece[data-gradin]{background-size:cover;background-position:center bottom}
+.so-gradin-voile{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 100%,rgba(20,8,14,0) 45%,rgba(20,8,14,.42) 100%)}
+.so-libre{position:absolute;z-index:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,226,160,.75),rgba(255,190,110,.32) 55%,rgba(255,170,90,0));box-shadow:0 0 18px 4px rgba(255,200,120,.28);animation:so-libre 2.8s ease-in-out infinite}
+@keyframes so-libre{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.so-libre{animation:none;opacity:.8}}
+.so-indice[data-seul-salon]{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px}
 .so-indice{position:absolute;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12.5px;white-space:nowrap;z-index:950}
 @keyframes so-entre{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes so-pop{0%{opacity:0;transform:translate(-50%,8px) scale(.5)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px) scale(1)}}

@@ -25,6 +25,8 @@ import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe } from ".
 import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
 import { cheminMesSalons, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, visibiliteDeLaMaison } from "./ma-maison-serveur";
+import { gradinDuSalon } from "./salons-gradins-serveur";
+import { gradinDuTheme, type GradinScene, type IdGradin } from "./salons-gradins";
 import { ajouterChezMoi } from "./etagere-serveur";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
 import { maTeleDuJour } from "./tele-du-jour-serveur";
@@ -179,6 +181,8 @@ export type OuvertureSalonOuvert = {
   messages: MessageSalon[];
   caches: string[];
   decor: ScenePiece | null;
+  /** 🎭 le gradin de sa passion, validé par le propriétaire (sinon `null` : la pièce du décor) ; jamais dans la séance */
+  gradin: GradinScene | null;
   tele: { videos: VideoSalon[]; maintenant: number; seance?: TeleSeance | null };
 };
 
@@ -194,15 +198,17 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   if (t.adultes && m !== "adultes") return { error: "Le salon des jeunes parents est réservé aux adultes.", statut: 403 };
   const q = qui8(moi.id);
   if (await exclusion(supabase, q)) return { error: PHRASES_SALONS.exclu, statut: 403, exclu: true };
-  const [figurine, prenom, salons, caches, decor, videos, profil] = await Promise.all([
+  const [figurine, prenom, salons, caches, gradin, videos, profil] = await Promise.all([
     figurineDeLaMaison(supabase, moi.id).catch(() => null),
     prenomDe(supabase, moi).catch(() => ""),
     salonsDuTheme(supabase, m, t.id),
     mesCaches(supabase, moi.id),
-    decorDuSalon(supabase, t.id),
+    gradinDuSalon(supabase, t.id).catch(() => null),
     videosDuSalon(supabase, t.id, m),
     sonProfilDeSalon(supabase, moi.id),
   ]);
+  // (🎭 son gradin validé ; sinon la pièce de son décor)
+  const decor = gradin ? null : await decorDuSalon(supabase, t.id);
   if (!figurine) return { error: PHRASES_SALONS.sansFigurine, statut: 409, figurine: true };
   // (celui où il est déjà ; sinon le plus rempli qui a une place ; sinon un nouveau)
   const ou = salons.find((x) => x.presents.some((p) => p.nom === q)) ?? [...salons].filter((x) => x.presents.length < PLACES_SALON).sort((a, b) => b.presents.length - a.presents.length || a.n - b.n)[0];
@@ -228,6 +234,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
       messages,
       caches,
       decor,
+      gradin,
       tele: { videos, maintenant },
     },
   };
@@ -452,13 +459,19 @@ export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promi
   const [passions, parTheme] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), comptesDesSalons(supabase, m)]);
   const miens = new Set(passions?.passions ?? []);
   const decorsVus = new Map<PieceDuo, Promise<ScenePiece | null>>();
+  const gradinsVus = new Map<IdGradin, Promise<GradinScene | null>>();
   const cartes = await Promise.all(
     themes.map(async (t): Promise<CarteSalon> => {
+      // (🎭 son gradin validé d'abord ; sinon la pièce de son décor)
+      const g = gradinDuTheme(t.id);
+      if (!gradinsVus.has(g)) gradinsVus.set(g, gradinDuSalon(supabase, t.id).catch(() => null));
+      const gradin = await gradinsVus.get(g)!;
       const piece = SALONS[t.id].decor;
-      if (!decorsVus.has(piece)) decorsVus.set(piece, decorDuSalon(supabase, t.id));
-      const scene = await decorsVus.get(piece)!;
+      if (!gradin && !decorsVus.has(piece)) decorsVus.set(piece, decorDuSalon(supabase, t.id));
+      const scene = gradin ? null : await decorsVus.get(piece)!;
+      const image = gradin?.image ?? scene?.panorama;
       const c = parTheme.get(t.id) ?? { presents: 0, salons: 0 };
-      return { theme: t.id, e: t.e, nom: SALONS[t.id].nom, presents: c.presents, salons: c.salons, mien: miens.has(t.id), decor: scene ? { src: scene.panorama.src, flou: scene.panorama.flou } : null };
+      return { theme: t.id, e: t.e, nom: SALONS[t.id].nom, presents: c.presents, salons: c.salons, mien: miens.has(t.id), decor: image ? { src: image.src, flou: image.flou } : null };
     }),
   );
   return { maison: m, cartes: [...cartes.filter((c) => c.mien), ...cartes.filter((c) => !c.mien)], ...enPlus };
@@ -595,6 +608,7 @@ export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknow
       messages,
       caches: [],
       decor,
+      gradin: null,
       tele: { videos, maintenant, seance },
     },
   };

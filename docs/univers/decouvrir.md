@@ -1031,3 +1031,67 @@ Le propriétaire, le 20 novembre 2026 : « fais D9 ». Ce qui est fait (le déta
 
 **Ensuite** : D6 (TikTok et Instagram par le partage, en portrait) ; « 📌 Garder ce moment » ; « 📷 Ta figurine fait ta
 tête ».
+
+## 27. Les gradins des salons ouverts (20 novembre 2026, au soir)
+
+Le propriétaire, devant le salon ouvert : « fais-moi une proposition de décor où on peut accueillir les figurines, parce
+que même la table, je ne suis pas vraiment fan […] essaie autre chose, qui ira mieux avec le style des figurines, et
+mieux au niveau UX ». Sur les trois pistes proposées (le gradin, le grand canapé en arc, les poufs sur un tapis) : « ok
+pour le gradin, fais les décors ».
+
+**Le gradin** : un décor par lieu, **huit emplacements face à toi, sur deux marches** — quatre devant, au sol, en bas ;
+quatre derrière, sur une marche plus haute. Personne ne cache personne, chaque prénom se lit. Chaque figurine arrive
+assise dans son propre fauteuil : un emplacement est donc **un petit tapis rond, vide**, dans le style du lieu (pas un
+siège, qui ferait double emploi avec son fauteuil).
+
+| Le lieu | Les passions |
+|---|---|
+| 🎬 La petite salle de cinéma (velours rouge) | Séries et films, Télé-réalité et people |
+| ⚽ La tribune du stade | Foot et sport |
+| 🎵 La petite salle de concert | Musique |
+| 🎮 La salle d'arcade | Jeux vidéo |
+| 🍳 Le comptoir de la cuisine | Cuisine |
+| 👗 Le premier rang du défilé | Mode et beauté |
+| 😂 Le café-théâtre | Humour |
+| 🐾 Le jardin | Animaux |
+| 🍥 Le club manga | Manga et anime |
+| 📚 La bibliothèque | Révisions et études |
+| 👶 Le grand salon cosy | Jeunes parents |
+
+**Fabriqué une fois, validé par le propriétaire** (`/admin/humain/salons`, « 🎭 Les gradins des salons ouverts ») :
+- **« Fabriquer »** : le décor, une image carrée (1024 × 1024), dans le style des pièces (`STYLE_PIECES_DUO`), **dessiné
+  d'après le plan des huit emplacements** (`PLAN_GRADIN` : IMAGE 1, des tapis gris sur deux marches et, sur chacun, la
+  silhouette en pointillé d'une figurine assise, pour l'échelle). L'arrière-plan est doux et un peu plus sombre, pour que
+  les figurines ressortent. Rien d'alcoolisé, pas de texte, personne.
+- **Encore « Fabriquer »** : le relevé de ses huit emplacements, par un modèle qui voit (exactement huit, chacun dans
+  l'image ; rangés dans l'ordre des places : devant, du milieu vers les bords, puis derrière). Sans modèle qui voit, ou
+  s'il n'en trouve pas huit : **le plan** (le décor a été dessiné dessus), et la page dit pourquoi.
+- La page montre chaque décor avec, sur chaque emplacement, la silhouette numérotée d'une figurine à sa taille : on juge
+  d'un coup d'œil. **« ✓ Valider »** : il va dans les salons de ses passions. « Retirer des salons », « ↺ Refaire le
+  décor », « ↺ Refaire le relevé », « 📐 Prendre le plan » : il quitte les salons jusqu'à ce qu'on le revalide. « 🛠️
+  Tout fabriquer » enchaîne les passages, lieu après lieu (onze décors, puis onze relevés).
+- **Seul un gradin validé va dans les salons** ; sinon, le salon garde sa pièce (section 18, image de la messagerie
+  depuis le 20 novembre). La carte du salon, sur l'accueil de Découvrir, montre son gradin. La séance chez moi garde
+  toujours ma pièce.
+- Rangement : `salons-gradins/<lieu>/decor.png`, `releve.json` ({ le, places, source : regard, plan ou main, erreur? }),
+  `valide.json` ({ le }). **À faire par le propriétaire, sur le site en ligne** (la clé du moteur d'image n'existe qu'en
+  ligne) : « Tout fabriquer », regarder, valider.
+
+**À l'écran** (`salon-ouvert.tsx`) :
+- L'image carrée couvre la bande sous la télé, posée sur son sol, **assez petite pour que toutes les têtes se voient**
+  (sur un iPhone : 390 points de large, le haut de l'image coupé ; sur un ordinateur : l'image entière en hauteur, ses
+  côtés dans sa vignette floue).
+- **Tu te vois toujours devant, au milieu (« Toi »)** : ta place et la première s'échangent, pour toi seul — chacun se
+  voit au centre du premier rang, les autres autour.
+- **Les places libres brillent doucement** (une lueur sur leur tapis, qui respire ; immobile si le téléphone demande
+  moins d'animations) : on voit le salon se remplir.
+- **Seul** : « Tu ouvres le salon : les places qui brillent attendent les suivants. »
+
+**Les essais** : `essai-salons-gradins-route.mjs` (l'administrateur seul ; onze lieux pour douze passions ; le décor
+d'après le plan, carré ; le relevé — sans modèle qui voit, le plan et pourquoi ; pas validé : la pièce ; validé : les
+séries ET la télé-réalité dans la salle de cinéma, l'image à adresse stable, les huit places dans l'ordre ; les cartes
+de l'accueil ; jamais dans la séance ; refaire le relevé, le plan, des places qui ne tiennent pas, des places dans le
+désordre, retirer, refaire le décor) ; `salons-gradins.mjs` (sur un iPhone : la tribune, toutes les têtes visibles, «
+Toi » devant au milieu, sept places qui brillent, la phrase quand on est seul ; Sam entre : six places, et sur son
+téléphone c'est lui qui est au milieu ; sur un ordinateur ; la page de l'administrateur).
+
