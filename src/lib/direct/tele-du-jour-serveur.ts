@@ -17,7 +17,7 @@ import { jourAvant, jourParis } from "@/lib/jour-paris";
 import type { Habitant } from "./habitant";
 import { ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
-import { themeDe, themesPour, type IdTheme, type VideoDuJour } from "./decouvrir";
+import { themeDe, themesPour, type IdTheme } from "./decouvrir";
 import { lireSelection } from "./selection-serveur";
 import { changerPoids, lirePassions } from "./passions-serveur";
 import { mesChaines, videosDeMesChaines } from "./chaines-serveur";
@@ -26,7 +26,8 @@ import { ajouterChezMoi } from "./etagere-serveur";
 import { ecrireMessage, type ApresEcrit } from "./ecrit-serveur";
 import { mettreALaTele } from "./tele-serveur";
 import { surYouTube } from "./tele";
-import { TELE_DU_JOUR, melanger, type TeleDuJour, type VideoTele } from "./tele-du-jour";
+import { TELE_DU_JOUR, clePoids, melanger, type ListeTele, type TeleDuJour, type VideoTele } from "./tele-du-jour";
+import { videosDeMaPassion } from "./passion-perso-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Resultat<T> = T & { error?: string; statut?: number };
@@ -37,7 +38,7 @@ type FicheTeleDuJour = { vues?: string[]; jour?: string; aujourdhui?: number; ga
 const ID_VIDEO = /^[A-Za-z0-9_-]{11}$/;
 
 /** Les sélections de mes passions : celles d'aujourd'hui, sinon celles d'hier (la nuit n'est pas encore passée). */
-async function sesSelections(supabase: Supabase, h: string): Promise<{ passions: IdTheme[]; poids: Record<string, number>; listes: { theme: IdTheme; videos: VideoDuJour[] }[] }> {
+async function sesSelections(supabase: Supabase, h: string): Promise<{ passions: IdTheme[]; poids: Record<string, number>; listes: ListeTele[] }> {
   const [p, adulte] = await Promise.all([lirePassions(supabase, h), sesDixHuitAns(supabase, h)]);
   const permis = new Set(themesPour(adulte).map((t) => t.id as string));
   const passions = (p?.passions ?? []).filter((id) => permis.has(id)) as IdTheme[];
@@ -47,9 +48,12 @@ async function sesSelections(supabase: Supabase, h: string): Promise<{ passions:
       // (les 15-17 ans ont leur sélection, au filtre strict de YouTube ; le salon des jeunes parents n'en a qu'une)
       const jeunes = adulte !== true && !themeDe(theme)?.adultes;
       const sel = (await lireSelection(supabase, jour, theme, jeunes)) ?? (await lireSelection(supabase, jourAvant(jour, 1), theme, jeunes));
-      return { theme, videos: sel?.videos ?? [] };
+      return { theme, videos: sel?.videos ?? [] } as ListeTele;
     }),
   );
+  // (✨ le lot D9 : sa passion à soi, mêlée aux autres avec son propre poids)
+  const perso = passions.length ? await videosDeMaPassion(supabase, h, adulte).catch(() => null) : null;
+  if (perso?.videos.length) listes.push({ theme: null, perso: perso.mots, videos: perso.videos });
   return { passions, poids: p?.poids ?? {}, listes };
 }
 
@@ -95,7 +99,7 @@ export async function maVideo(supabase: Supabase, h: string, id: unknown): Promi
   const { listes } = await sesSelections(supabase, h);
   for (const l of listes) {
     const v = l.videos.find((x) => x.id === i);
-    if (v) return { ...v, theme: l.theme };
+    if (v) return { ...v, theme: l.theme, ...(l.perso ? { perso: l.perso } : {}) };
   }
   return (await videosDeMesChaines(supabase, h).catch(() => [])).find((v) => v.id === i) ?? null;
 }
@@ -119,9 +123,10 @@ export async function noterVue(supabase: Supabase, h: string, id: unknown, o: { 
   const aujourdhui = (fiche.jour === jour ? Number(fiche.aujourdhui) || 0 : 0) + (deja ? 0 : 1);
   if (!(await ecrireJson(supabase, cheminTeleDuJour(h), { ...fiche, vues, jour, aujourdhui } satisfies FicheTeleDuJour))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   if (o.illisible !== true && !deja) {
-    // (une vidéo d'une de mes chaînes n'a pas de thème : rien ne bouge)
-    if (v.theme && o.fin === true) await changerPoids(supabase, h, v.theme, "fin");
-    else if (v.theme && Number(o.secondes) >= 0 && Number(o.secondes) < TELE_DU_JOUR.passeeAvant) await changerPoids(supabase, h, v.theme, "passee");
+    // (une vidéo d'une de mes chaînes n'a pas de thème : rien ne bouge ; celle de ma passion à soi : son poids « perso »)
+    const k = clePoids(v);
+    if (k && o.fin === true) await changerPoids(supabase, h, k, "fin");
+    else if (k && Number(o.secondes) >= 0 && Number(o.secondes) < TELE_DU_JOUR.passeeAvant) await changerPoids(supabase, h, k, "passee");
   }
   return { ok: true };
 }
@@ -135,7 +140,7 @@ export async function garderVideo(supabase: Supabase, moi: Habitant, id: unknown
   const r = await ajouterChezMoi(supabase, moi, { quoi: "clip", titre: v.titre, lien: surYouTube(v.id), mot: `Vu sur ma télé du jour · ${v.chaine}` });
   if (r.error) return { error: r.error, statut: r.statut };
   await ecrireJson(supabase, cheminTeleDuJour(moi.id), { ...fiche, gardees: [...(fiche.gardees ?? []), v.id].slice(-TELE_DU_JOUR.vuesGardees) } satisfies FicheTeleDuJour);
-  if (v.theme) await changerPoids(supabase, moi.id, v.theme, "garde");
+  if (clePoids(v)) await changerPoids(supabase, moi.id, clePoids(v), "garde");
   return { ok: true };
 }
 

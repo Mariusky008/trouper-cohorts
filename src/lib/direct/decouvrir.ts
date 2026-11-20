@@ -49,7 +49,8 @@ export const themesPour = (adulte: boolean | null): ThemeDecouvrir[] => THEMES_D
 
 export const PASSIONS_MIN = 3;
 export const PASSIONS_MAX = 5;
-export type Passions = { passions: IdTheme[]; poids: Record<string, number>; le: string };
+/** Ses passions ; `perso` (le lot D9) : sa passion à soi, écrite librement (ses vidéos ont leur poids, « perso »). */
+export type Passions = { passions: IdTheme[]; poids: Record<string, number>; le: string; perso?: { mots: string; cle: string } };
 
 /** Ses passions choisies (de 3 à 5, sans double, parmi celles qu'il peut choisir) — sinon ce qui ne va pas. */
 export function passionsValides(ids: unknown, adulte: boolean | null): { passions: IdTheme[] } | { error: string } {

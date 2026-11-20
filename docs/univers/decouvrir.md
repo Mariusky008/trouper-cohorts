@@ -288,7 +288,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D5** ✅ (section 20) | L'étagère des salons (❤️, trois cœurs, « 📌 Garder »), « Mes salons » dans ma maison (des fanions), « 👯 Ajouter en proche » et « 🏠 Voir sa maison » depuis une figurine | D3 |
 | **D6** (élargi, section 23.3) | TikTok et Instagram : partager une vidéo vers ClikMe (le menu « Partager » sur Android, coller le lien sur iPhone), lue par le lecteur officiel, en portrait | D1 |
 | **D8** ✅ (sections 23.1 et 24) | 📺 Mes chaînes YouTube : suivre jusqu'à 10 chaînes, leurs nouvelles vidéos en premier dans ma télé du jour | D1 |
-| **D9** (section 23.2) | ✨ Ma passion à moi : une passion écrite librement, une par personne, cherchée sur YouTube dans un budget par nuit | D0 |
+| **D9** ✅ (sections 23.2 et 26) | ✨ Ma passion à moi : une passion écrite librement, une par personne, cherchée sur YouTube dans un budget par nuit | D0 |
 | **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
 
 Chaque lot : ses essais (route et navigateur, comme le salon du duo), sa section dans ce document, une PR vers `main`.
@@ -989,3 +989,45 @@ ma vraie figurine :
 
 **Restent** : « 📌 Garder ce moment » ; « 📷 Ta figurine fait ta tête » (D2b, troisième partie) ; le clip « 🎬 Nos
 réactions » ; D2c ; D9 (✨ ma passion à moi) ; D6.
+
+## 26. Le lot D9 : ma passion à moi (20 novembre 2026)
+
+Le propriétaire, le 20 novembre 2026 : « fais D9 ». Ce qui est fait (le détail en 23.2) :
+
+- **« ✨ Ta passion à toi »**, dans « ✎ Tes passions », sous les vignettes : un champ (« La pêche, la K-pop… »), « Garder »
+  — puis la voilà (« ✨ La pêche à la mouche », ✕ pour l'enlever ; « Garder » devient « Changer »). **Une par personne**,
+  en plus des 3 à 5 passions ; il faut d'abord ses passions. « ✨ « La pêche à la mouche » : ses vidéos arrivent dans ta
+  télé. » (et « elles arrivent bientôt » si le budget du jour est passé).
+- **Relue avant d'être gardée** : la relecture des salons ouverts (lien, numéro, adresse, réseau, question personnelle,
+  gros mot, alcool) et les mots de l'alcool de la sélection ; de 3 à 40 lettres ; sinon « Choisis une autre passion. ».
+- **La même clé pour les mêmes mots** : minuscules, sans accents, sans « le, la, les, l', un, une, des, du, de, d' » —
+  « La pêche à la mouche » et « pêche à la mouche » donnent `peche-a-mouche` ; une seule recherche pour tous.
+- **La recherche** : ses mots, en France, en français, lisibles ailleurs, **des trente derniers jours** (une passion rare a
+  peu de vidéos chaque semaine), `safeSearch=strict` pour les 15-17 ans (qui ont leur fichier, `.jeunes`) ; puis les
+  filtres de la sélection (30 s à 20 min, jamais réservée aux adultes, rien d'alcoolisé) ; quinze vidéos au plus.
+- **Le budget** : **10 recherches dans la journée** (tout de suite, quand quelqu'un choisit une passion qui n'a pas encore
+  de vidéos ou dont les vidéos ont plus de trois jours) et **20 la nuit** (tous les trois jours, les passions suivies par le
+  plus de monde d'abord) — avec les 6 900 unités de la sélection, 9 900 sur 10 000. L'administration montre le budget du
+  jour ; s'il est souvent plein, le propriétaire demande à Google plus de quota (un formulaire, gratuit).
+- **Dans ma télé du jour** : ses vidéos se mêlent à celles de mes passions, avec **son propre poids** (« perso » : il
+  monte quand je la regarde jusqu'au bout ou la garde, descend quand je la passe) ; dans la barre, à la place du thème :
+  « ✨ La pêche à la mouche » ; pas de salon ouvert. Réagir, écrire, garder, envoyer, `?video=` : comme les autres. Changer
+  ses passions ne l'enlève pas.
+- **L'administration** (`/admin/humain/decouvrir`, en bas) : « ✨ Les passions à soi » (les mots, 15-17 ans ou non, combien
+  de personnes, leurs vidéos, la dernière recherche, une panne de YouTube) ; **Refuser** (ces mots disparaissent pour tout
+  le monde : chez celui qui l'avait, « Cette passion n'est plus cherchée : choisis-en une autre »).
+- **Le code** : `src/lib/direct/passion-perso.ts` (partagé : `clePassion`, `passionValide`, les phrases),
+  `passion-perso-serveur.ts` ; `/api/direct/passions` (`GET` rend `perso` ; `POST { action: "perso", mots }`, des mots
+  vides l'enlèvent) ; la nuit (`{ perso: { faites, erreurs, attendent } }`) ; `melanger` mêle des listes sans thème
+  (`ListeTele`, `clePoids`).
+- **Le rangement** : `<h>/passions.json` gagne `perso: { mots, cle }` (gardé quand il change ses passions) ;
+  `decouvrir/perso/<clé>[.jeunes].json` = `{ mots, videos, le, cherche, gens }` (`gens` : des identifiants courts) ;
+  `decouvrir/perso-budget.json` ; `decouvrir/perso-refusees.json`.
+- **Les essais** : `scripts/essai-passion-perso-route.mjs` (gardée et cherchée tout de suite ; les refus ; la même clé
+  sans nouvelle recherche ; mêlée à la télé, son poids ; elle reste quand on change ses passions ; les 15-17 ans ; le budget
+  de la journée et la nuit ; l'administrateur qui refuse ; l'enlever ; aucun identifiant de compte) et
+  `scripts/navigateur/ma-passion.mjs` (sur un iPhone : « la bière » refusée, « La pêche à la mouche » gardée, sa vidéo dans
+  la télé avec « ✨ La pêche à la mouche » dans la barre, ✕).
+
+**Ensuite** : D6 (TikTok et Instagram par le partage, en portrait) ; « 📌 Garder ce moment » ; « 📷 Ta figurine fait ta
+tête ».
