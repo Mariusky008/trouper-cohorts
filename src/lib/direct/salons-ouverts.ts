@@ -96,8 +96,31 @@ export const gesteDe = (x: unknown) => GESTES_SALON.find((g) => g.cle === x);
 
 export const MOTIFS_SIGNALEMENT = ["Des insultes ou des moqueries", "Demande des choses personnelles", "Ce qu’on montre ou dit est choquant", "Autre chose"] as const;
 
-/** Quelqu'un dans le salon (`q` : son identifiant court, jamais son compte). */
-export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number };
+/**
+ * Quelqu'un dans le salon (`q` : son identifiant court, jamais son compte) ; (lot D5) ses passions, et la clé de sa
+ * maison si elle est ouverte à tous (« 🏠 Voir sa maison »).
+ */
+export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string };
+
+// ─── 🛋️ D2 : la séance chez moi (ma pièce, ma télé, jusqu'à trois proches) ───
+export const PLACES_SEANCE = 4;
+export const INVITES_MAX = PLACES_SEANCE - 1;
+/** Une invitation tient six heures. */
+export const INVITATION_MS = 6 * 3600_000;
+/** La télé de la séance : celle que l'hôte mène — la vidéo, l'heure où elle a commencé, sa pause (en secondes), `n`. */
+export type TeleSeance = { video: VideoSalon; depart: number; pause?: number; n: number };
+/** Où en est la vidéo de la séance à cet instant (en secondes). */
+export const positionSeance = (t: TeleSeance, ms: number): number => Math.max(0, Math.min(t.video.duree || 1e6, t.pause ?? (ms - t.depart) / 1000));
+/** Une invitation reçue (« 🎬 Léa t'invite devant sa télé »). */
+export type InvitationTele = { cle: string; prenom: string; le: number };
+/** 👯 (lot D5) une demande de proche reçue dans un salon ouvert. */
+export type DemandeProche = { q: string; prenom: string; salon: string; le: number };
+/** 🗄️ (lot D5) un moment de l'étagère d'un salon : un message aimé par trois personnes au moins. */
+export type MomentSalon = { id: string; texte: string; prenom: string; le: number; n: number };
+export const AIMES_POUR_ETAGERE = 3;
+export const DEMANDES_PAR_JOUR = 10;
+/** 🏠 (lot D5) « Mes salons » : les salons que je fréquente, en fanions dans ma pièce. */
+export type MonSalon = { theme: IdTheme; e: string; nom: string };
 /** Un message du salon : un texte (une bulle), une réaction, ou un geste à quelqu'un (`a`). */
 export type MessageSalon = { id: string; de: string; prenom: string; le: number; sorte: "texte" | "reaction" | "geste"; texte?: string; cle?: string; a?: string };
 /** Un salon, sur l'accueil de Découvrir. */
@@ -213,8 +236,52 @@ export const PHRASES_SALONS = {
   signale: "🚩 Merci, c’est signalé. Au troisième signalement en une heure, la personne quitte les salons ouverts pendant 24 h.",
   exclu: "Tu ne peux plus entrer dans les salons ouverts pour l’instant (des signalements). Reviens demain.",
   sortir: "‹",
-  places: (n: number) => `${n} ici · ${PLACES_SALON - n ? `${PLACES_SALON - n} place${PLACES_SALON - n > 1 ? "s" : ""} libre${PLACES_SALON - n > 1 ? "s" : ""}` : "complet"} · ${PLACES_SALON} places`,
+  places: (n: number, total: number = PLACES_SALON) => `${n} ici · ${total - n > 0 ? `${total - n} place${total - n > 1 ? "s" : ""} libre${total - n > 1 ? "s" : ""}` : "complet"} · ${total} places`,
   indice: "Touche une figurine : son prénom, un coucou, un bravo…",
   reagis: "Réagis :",
   ouTouche: "ou touche une figurine",
+  // 🛋️ D2 : la séance chez moi
+  chezMoi: "👥 Regarder avec mes proches",
+  chez: (p: string) => `🏠 Chez ${p}`,
+  inviter: "👥 Inviter",
+  inviterTitre: "Inviter à regarder avec toi",
+  inviterChapo: `Jusqu’à ${INVITES_MAX} proches. Tu mènes la télé : tout le monde voit la même seconde.`,
+  inviterEnvoyer: "Inviter",
+  sansProches: "Pas encore de proches à inviter : ajoute-les depuis « Proches ».",
+  invites: (n: number) => (n > 1 ? `Invitations envoyées à ${n} proches : chacun arrive en touchant « Venir »` : "Invitation envoyée : ton proche arrive en touchant « Venir »"),
+  choisir: "📺 Choisir",
+  choisirTitre: "Ta télé du jour",
+  sansVideos: "Ta télé du jour est vide : choisis d’abord tes passions dans Découvrir.",
+  seuls: "Invite tes proches : ils s’assoient à côté de toi.",
+  aime: "❤️ Aimé",
+  surEtagere: "🗄️ Aimé par 3 personnes : il monte sur l’étagère du salon !",
+  dejaProches: "Vous êtes déjà proches 🙂",
+  invitationsTitre: "🎬 On t’attend devant la télé",
+  demandesTitre: "👯 On veut t’ajouter en proche",
+  accepte: (p: string) => `🎉 ${p} et toi êtes proches : votre conversation est ouverte dans « Proches »`,
+  invitation: (p: string) => `🎬 ${p} t’invite devant sa télé`,
+  venir: "Venir",
+  pasMaintenant: "Pas maintenant",
+  hote: "Tu mènes la télé : tout le monde voit la même seconde.",
+  invite: (p: string) => `C’est ${p} qui mène la télé.`,
+  pause: "❚❚ Pause",
+  reprendre: "▶ Reprendre",
+  suivante: "⏭ Suivante",
+  pasInvite: "Cette séance est réservée à ceux qui y sont invités.",
+  // 🗄️ D5 : l'étagère du salon, ajouter en proche
+  etagere: "🗄️ L’étagère du salon",
+  etagereChapo: `Les moments que ${AIMES_POUR_ETAGERE} personnes ou plus ont aimés, sans limite de temps. « 📌 Garder » : il va dans ta maison.`,
+  etagereVide: "Rien encore : touche une bulle pour l’aimer ❤️",
+  garder: "📌 Garder",
+  garde: "📌 Gardé : il est chez toi",
+  proche: "👯 Ajouter en proche",
+  procheEnvoye: (p: string) => `👯 Demande envoyée : si ${p} t’ajoute aussi, votre conversation s’ouvre dans « Proches »`,
+  procheFait: (p: string) => `🎉 ${p} et toi êtes proches : votre conversation est ouverte`,
+  demandeProche: (p: string, salon: string) => `👯 ${p} (${salon}) veut t’ajouter en proche`,
+  accepter: "Accepter",
+  refuser: "Non merci",
+  voirMaison: "🏠 Voir sa maison",
+  maisonFermee: "🏠 Sa maison est fermée aux visites",
+  sesPassions: "Ses passions",
+  mesSalons: "Mes salons",
 } as const;

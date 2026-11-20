@@ -43,6 +43,8 @@ import {
 import { emplacementsValides, fichierLarge, momentDuoDe, pieceDuoDe, pieceDuoValide, type MomentDuo, type PieceDuo } from "./pieces-duo";
 import { imageSalon } from "./salon-fichiers-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
+import { themeDe } from "./decouvrir";
+import type { MonSalon } from "./salons-ouverts";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -191,6 +193,19 @@ const cheminVu = (h: string) => `${dossierMaison(h)}/vu.json`;
  * 🏠 Sa maison : sa pièce, sa scène à cette heure, sa figurine ; (lot M2) ce qu'il a gardé, à ses emplacements
  * (`placerChezMoi`), et sa dernière visite (`vuLe`).
  */
+/** 🏠 (lot D5 de Découvrir) « Mes salons » : les salons ouverts où il va (écrit à chaque entrée, une fois par heure). */
+export const cheminMesSalons = (h: string) => `${h}/mes-salons.json`;
+/** 🏠 « Mes salons » : les six plus récents, en fanions dans ma pièce. */
+export async function mesSalons(supabase: Supabase, h: string): Promise<MonSalon[]> {
+  const f = await lireJson<{ themes?: Record<string, { dernier?: number }> }>(supabase, cheminMesSalons(h)).catch(() => ({}) as { themes?: Record<string, { dernier?: number }> });
+  return Object.entries(f.themes ?? {})
+    .map(([t, v]) => ({ t: themeDe(t), dernier: Number(v?.dernier) || 0 }))
+    .filter((x): x is { t: NonNullable<ReturnType<typeof themeDe>>; dernier: number } => Boolean(x.t))
+    .sort((a, b) => b.dernier - a.dernier)
+    .slice(0, 6)
+    .map((x) => ({ theme: x.t.id, e: x.t.e, nom: x.t.nom }));
+}
+
 export async function maMaison(supabase: Supabase, h: string, maintenant = new Date()): Promise<MaMaisonVue> {
   const piece = await lireSaPiece(supabase, h);
   const [scene, figurine, objets, vu, visibilite, adulte, cle] = await Promise.all([
@@ -205,12 +220,14 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
   if (!scene) return { piece, scene, figurine };
   const vuLe = Number(vu.le) || 0;
   // (🙂🚪🎁 lot M5 : son humeur, qui a frappé depuis sa dernière visite, les cadeaux sur la table)
-  const [vie, question] = await Promise.all([
+  const [vie, question, salons] = await Promise.all([
     vieDeLaMaison(supabase, h, { depuis: vuLe || Date.now() }).catch(() => ({})),
     // (💬 lot M5 : ce que mes proches ont répondu à ma question du jour)
     questionChezMoi(supabase, h).catch(() => null),
+    // (🏠 lot D5 : mes salons, en fanions)
+    mesSalons(supabase, h).catch(() => []),
   ]);
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}) };
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}) };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */

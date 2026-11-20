@@ -281,11 +281,11 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D1** ✅ (section 15) | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
 | **D1b** ✅ (section 16) | Ma télé du jour dans l'onglet Découvrir ; le retrait de l'ancienne page (section 11) | D1 |
 | **D1c** ✅ (section 18) | L'accueil de Découvrir comme la maquette : la carte « Ma télé du jour », la phrase, les salons ouverts | D1b |
-| **D2** | Le moteur à N places (le contrat `salon.ts`) ; inviter des proches ; la télé synchronisée | D1 |
+| **D2** ✅ (section 19) | La séance chez moi : ma pièce, quatre places, inviter trois proches, la télé synchronisée menée par l'hôte (sur le moteur des salons ouverts) ; restent les vocaux et les mèmes entre proches dans la séance | D1, D3 |
 | **D2b ⭐** | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
 | **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
-| **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; restent : les mèmes dans un salon ouvert, l'étagère du salon (D5) | D1c |
-| **D5** | L'étagère des salons, « Mes salons » dans ma maison, « Ajouter en proche » depuis un salon | D3 |
+| **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; reste : les mèmes dans un salon ouvert | D1c |
+| **D5** ✅ (section 20) | L'étagère des salons (❤️, trois cœurs, « 📌 Garder »), « Mes salons » dans ma maison (des fanions), « 👯 Ajouter en proche » et « 🏠 Voir sa maison » depuis une figurine | D3 |
 | **D6** | Les liens TikTok et Instagram collés sur la télé | D1 |
 | **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
 
@@ -633,9 +633,9 @@ autre) : `decouvrir/salons/<maison>/<thème>-<n>/presents/<q>.json`, `…/messag
 `decouvrir/signalements/<q>/…`, `decouvrir/exclus/<q>.json`. `<q>` : l'identifiant court de chacun ; son compte n'est
 jamais montré.
 
-**Restent** : les mèmes joués dans un salon ouvert ; l'étagère du salon, « Mes salons » dans ma maison, « 👯 Ajouter en
-proche » et « 🏠 Voir sa maison » depuis une figurine (D5) ; les potins de ma ville (D7) ; D2 (inviter des proches devant
-ma télé, la télé synchronisée du duo).
+**Restaient** : les mèmes joués dans un salon ouvert ; l'étagère du salon, « Mes salons » dans ma maison, « 👯 Ajouter en
+proche » et « 🏠 Voir sa maison » depuis une figurine (D5, fait : section 20) ; les potins de ma ville (D7) ; D2 (inviter
+des proches devant ma télé, fait : section 19).
 
 **Les essais** : `scripts/essai-salons-ouverts-route.mjs` (57 contrôles : l'accueil et l'âge ; entrer, les deux maisons
 séparées ; écrire, huit refus ; réagir, un geste, « doucement » ; ne plus voir ; plein à huit, le deuxième salon, la place
@@ -643,3 +643,64 @@ libérée ; trois signalements ; l'administrateur ; les messages de plus de 48 h
 (sur un iPhone puis un ordinateur : l'accueil, l'âge, les 15-17 ans, entrer, la télé, Sam qui entre et écrit, un refus,
 une bulle, une réaction, la fiche, un geste, signaler, la conversation, ne plus voir) ; `tele-du-jour.mjs` passe par la
 carte de l'accueil.
+
+## 19. Le lot D2 : la séance chez moi (20 novembre 2026)
+
+Le propriétaire, le 20 novembre 2026 : « D2 et D5 ». **La séance passe par le moteur des salons ouverts** (section 18),
+pas par le moteur du duo (`salon.ts`) : la même scène simple — chacun dans son fauteuil, sa figurine assise — dans **ma
+pièce** de Ma maison, à **quatre places** (moi et trois proches). Le moteur du duo garde ce qui lui est propre (le
+talkie, les mèmes joués, les cadres) ; les apporter dans la séance reste à faire.
+
+- **Y aller** : « 👥 Regarder avec mes proches », sous ma télé du jour (Découvrir) → `/univers/salons?chez=moi`. Ma
+  pièce (sinon le salon du catalogue), « 🏠 Chez Léa », moi à la place du milieu. **Ma télé est prête** : la première
+  vidéo de ma télé du jour passe (si rien ne passait depuis six heures).
+- **👥 Inviter** (en haut, l'hôte seulement) : mes proches **des deux côtés** (`seParlent`), **trois au plus**. Chacun
+  reçoit une notification (« 🎬 Léa t'invite devant sa télé », une par proche toutes les dix minutes au plus) et, **tout
+  en haut de Découvrir**, la carte « Venir » / « Pas maintenant ». L'invitation tient **six heures** ; sans elle, on
+  n'entre pas (ni la page, ni le pouls).
+- **La télé menée par l'hôte** : sous la télé, ❚❚ Pause / ▶ Reprendre, ⏭ Suivante, 📺 Choisir (sa télé du jour). Chez
+  l'hôte, tout de suite (sans attendre le serveur) ; chez ses proches, au pouls suivant (4 s au plus). L'état :
+  `tele.json` `{ video, depart, pause?, n }` — chacun calcule la seconde (`positionSeance`, l'heure du serveur), se recale
+  au-delà de **deux secondes** d'écart, et repart s'il s'est arrêté sans que l'hôte l'ait voulu. Chez les invités, le
+  lecteur n'a pas de commandes : « C'est Léa qui mène la télé. » Finie : chez l'hôte, la suivante.
+- **Entre proches** : les bulles, 😂 ❤️ 😮 😱 👏, les gestes — **rien n'est relu** (comme leur conversation : pas vide,
+  90 signes), **rien ne se signale**, pas de « Ne plus voir ». La conversation (💬) reste à ceux qui sont invités.
+- **Les salons ouverts fermés** (`CLIKME_SALONS_OUVERTS=0`) : la séance reste possible, l'accueil montre encore les
+  invitations.
+
+**Le rangement** : `decouvrir/salons/prives/chez-<q de l'hôte>/` — `presents/`, `messages/` (comme un salon ouvert),
+`invites/<q>.json` (qui peut entrer, et depuis quand), `tele.json` ; chez l'invité, `<habitant>/invitations-tele/<q>.json`.
+(La section 4.3 prévoyait `salons-prives/<h>/tele.json` : le dossier suit celui des salons ouverts.)
+
+**La route** (`/api/direct/salons-ouverts`) : `entrer-chez` (`chez` : « moi » ou la clé de l'hôte), `tele` (`quoi` :
+video, suivante, pause, jouer), `inviter` (`cles`), `pas-maintenant` (`cle`) ; le pouls d'une séance rend aussi `seance`.
+
+**Restent** : les vocaux et les mèmes entre proches dans la séance ; D2b (jamais seul devant une vidéo, 4.5).
+
+## 20. Le lot D5 : l'étagère des salons, « Mes salons », ajouter en proche (20 novembre 2026)
+
+- **❤️ Aimer** : dans un salon ouvert, toucher la bulle de quelqu'un (🤍 → ❤️), ou le cœur d'une ligne de 💬. Un cœur par
+  personne et par message (`…/<salon>/aimes/<message>-<q>.json`) ; ses propres mots ne s'aiment pas.
+- **🗄️ L'étagère du salon** (en haut) : un message **aimé par trois personnes** y monte, **sans limite de temps**
+  (`decouvrir/salons/<maison>/etageres/<thème>/<message>.json` — une étagère par thème, dans chaque maison : les 15-17
+  ans ont la leur). « 📌 Garder » : il va **dans ma maison**, sur mon étagère (« « Quel but ! » », Le salon du foot · Ana ;
+  les douze ajouts du jour comptent).
+- **🏠 Mes salons** : chaque entrée dans un salon ouvert le note (`<habitant>/mes-salons.json`, une fois par heure) ; ma
+  maison montre **les six plus récents en fanions** (en haut à gauche, chez moi seulement — pas en visite), un toucher
+  ramène au salon.
+- **La fiche d'une figurine** (salon ouvert) : **ses passions** ; « **👯 Ajouter en proche** » ; « **🏠 Voir sa maison** »
+  si elle est ouverte à tous (sinon « Sa maison est fermée aux visites ») ; puis « Ne plus voir », « Signaler ».
+- **👯 Ajouter en proche** : la demande part (`decouvrir/demandes/<habitant>/<q>.json`), avec une notification ; elle
+  attend **tout en haut de Découvrir** (« 👯 Ben (Le salon du foot) veut t'ajouter en proche » — « Accepter » / « Non
+  merci ») sept jours. Accepter : **proches des deux côtés**, leur conversation s'ouvre dans « Proches ». Deux demandes
+  croisées : proches tout de suite. **Dix demandes par jour** au plus.
+
+**La route** : `aimer` (`salon`, `message`), `GET ?etagere=<salon>`, `garder` (`salon`, `moment`), `proche` (`salon`, `q`),
+`repondre-proche` (`q`, `oui`) ; l'accueil rend `invitations` et `demandes`. **Ma maison** (`/api/direct/ma-piece`) rend
+`salons`.
+
+**Les essais** : `scripts/essai-salons-seance-route.mjs` (47 contrôles : la séance, ses portes fermées, inviter — proches
+seulement, trois au plus —, l'invitation, venir, la télé menée par l'hôte, entre proches ; l'étagère, garder, la fiche,
+« Mes salons », la demande, l'accepter, les demandes croisées, la limite du jour) et `scripts/navigateur/salons-seance.mjs`
+(sur des iPhone : « 👥 Regarder avec mes proches », inviter Sam, sa carte « Venir », la pause et la suivante qui passent
+chez lui, un lien entre proches ; ❤️ sur une bulle, l'étagère, garder, la fiche d'Ana, la demande acceptée, le fanion).
