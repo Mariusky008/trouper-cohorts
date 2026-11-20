@@ -286,7 +286,9 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
 | **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; reste : les mèmes dans un salon ouvert | D1c |
 | **D5** ✅ (section 20) | L'étagère des salons (❤️, trois cœurs, « 📌 Garder »), « Mes salons » dans ma maison (des fanions), « 👯 Ajouter en proche » et « 🏠 Voir sa maison » depuis une figurine | D3 |
-| **D6** | Les liens TikTok et Instagram collés sur la télé | D1 |
+| **D6** (élargi, section 23.3) | TikTok et Instagram : partager une vidéo vers ClikMe (le menu « Partager » sur Android, coller le lien sur iPhone), lue par le lecteur officiel, en portrait | D1 |
+| **D8** (section 23.1) | 📺 Mes chaînes YouTube : suivre jusqu'à 10 chaînes, leurs nouvelles vidéos en premier dans ma télé du jour | D1 |
+| **D9** (section 23.2) | ✨ Ma passion à moi : une passion écrite librement, une par personne, cherchée sur YouTube dans un budget par nuit | D0 |
 | **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
 
 Chaque lot : ses essais (route et navigateur, comme le salon du duo), sa section dans ce document, une PR vers `main`.
@@ -817,3 +819,89 @@ caché, revoir le moment ; Sam qui ouvre la vidéo déjà vue depuis la notifica
 
 **Restent** (D2b) : les vocaux à la seconde et « 📌 Garder ce moment » (deuxième partie, suite) ; « 📷 Ta figurine fait ta
 tête » (troisième) ; le clip « 🎬 Nos réactions » (quatrième) ; puis D2c, les expressions du visage.
+
+## 23. Ne rien rater : mes chaînes, ma passion à moi, TikTok et Instagram (20 novembre 2026)
+
+La question du propriétaire, le 20 novembre 2026 : « Est-ce qu'on pourrait pas mettre le thème qui n'existe pas dans les
+choix de départ, ou encore les youtubeurs, instagrameurs ou tiktokeurs que l'on suit, pour être certain de ne pas rater
+leurs vidéos ? » **Ses décisions** (même jour) : oui aux trois, dans cet ordre — **mes chaînes YouTube** (D8, jusqu'à 10),
+**ma passion à moi** (D9, une par personne), puis **TikTok et Instagram par le partage** (D6, élargi) ; suivre
+automatiquement un compte TikTok ou Instagram n'est pas possible (23.3).
+
+### 23.1 📺 Mes chaînes YouTube (lot D8)
+
+- **Suivre une chaîne**, de deux façons :
+  - dans « ✎ Tes passions », une deuxième partie « 📺 Tes chaînes » : coller le lien d'une chaîne (`youtube.com/@nom`,
+    `youtube.com/channel/UC…`), le lien d'une de ses vidéos (on prend sa chaîne), ou taper `@nom` ;
+  - **devant une vidéo de ma télé du jour, « 📺 Suivre cette chaîne »** : un toucher — c'est comme ça qu'on découvre
+    les créateurs qu'on aimera.
+- **10 chaînes au plus** (décision du propriétaire) ; « 10 au plus : enlève-en une d'abord » ; ✕ pour arrêter de suivre.
+  Le serveur retrouve la chaîne (`channels.list`, avec `forHandle` ou `id` : 1 unité) et range son nom et son image.
+- **Leurs nouvelles vidéos arrivent en premier dans ma télé du jour**, avant la sélection de mes passions, les plus
+  récentes d'abord : « 🆕 Nouvelle vidéo de Squeezie · il y a 2 h ». On les garde 7 jours (puis elles s'en vont, vues
+  ou non). Sur la carte de l'accueil : « 🆕 2 nouvelles vidéos de tes chaînes ». Pas de notification au départ
+  (YouTube prévient déjà ; on pourra en ajouter une, coupable, si le propriétaire la veut).
+- **Les aller chercher coûte presque rien** : chaque nuit (la même tâche que la sélection, et tout de suite quand on
+  ajoute une chaîne), pour chaque chaîne suivie par au moins une personne, ses dernières vidéos par le **flux public de
+  la chaîne** (`youtube.com/feeds/videos.xml?channel_id=…` : 0 unité ; s'il ne répond pas, `playlistItems.list` sur la
+  liste « mises en ligne » de la chaîne : 1 unité) ; puis `videos.list` (1 unité pour 50 vidéos) pour la durée, le droit
+  d'être lue ailleurs, le direct. Mille chaînes suivies : au plus mille unités sur 10 000.
+- **Les mêmes filtres que la sélection**, sauf la durée : lisible ailleurs, ni en direct ni à venir, pas réservée aux
+  adultes (YouTube le dit : jamais montrée, à personne), pas d'alcool dans le titre ; **de 60 s à 60 min** (on a choisi
+  ce créateur : ses longues vidéos aussi). Les vidéos de moins de 60 s sont souvent des Shorts, en portrait : elles
+  viendront avec le portrait (23.3).
+- **Les 15-17 ans** suivent qui ils veulent (comme sur YouTube), avec les mêmes filtres.
+- **⭐ Jamais seul** marche pareil : mes proches qui suivent la même chaîne et ont vu la vidéo s'assoient à côté de moi.
+  Réagir, écrire, garder, envoyer : comme une vidéo de la sélection (`maVideo` les accepte).
+- **Le rangement** : `<h>/chaines.json` = `{ chaines: [{ id, nom, image }], le }` ; `decouvrir/chaines/<id>.json` =
+  `{ nom, image, videos: [...], le }` (partagé par tous ceux qui la suivent).
+- **L'administration** (`/admin/humain/decouvrir`) : les chaînes les plus suivies ; **retirer une chaîne** (elle ne peut
+  plus être suivie, ses vidéos disparaissent de toutes les télés : `decouvrir/chaines-retirees.json`).
+
+### 23.2 ✨ Ma passion à moi (lot D9)
+
+- Dans « ✎ Tes passions », sous les douze vignettes : **« ✨ Ta passion à toi »** — un champ (« la pêche à la mouche »,
+  « la K-pop », « les trains »). **Une par personne** (décision du propriétaire), **en plus** de mes 3 à 5 passions ; on
+  la change quand on veut.
+- **Relue avant d'être gardée** (les filtres des salons ouverts : gros mots, alcool, contenu adulte, un lien, un
+  numéro) ; de 3 à 40 caractères ; refusée : « Choisis une autre passion ».
+- **Ceux qui écrivent la même chose la partagent** : « La pêche », « la peche » et « pêche » donnent la même clé
+  (minuscules, sans accents, sans « le, la, les, l' ») — une seule recherche pour tous.
+- **La recherche coûte cher** (100 unités ; la sélection des thèmes en prend déjà 6 900 sur 10 000 chaque nuit) :
+  - une recherche **tout de suite** quand quelqu'un la choisit (s'il reste de quoi dans la journée), pour qu'elle ne
+    soit pas vide ;
+  - puis **refaite tous les trois jours**, dans un **budget de 25 recherches par nuit** (2 500 unités) — les passions
+    suivies par le plus de monde d'abord, les autres attendent leur tour ;
+  - si le budget est souvent plein, l'administration le dit : le propriétaire demande à Google plus de quota (un
+    formulaire, gratuit).
+- **Les mêmes filtres que la sélection** (30 s à 20 min, lisible ailleurs, pas d'alcool ; `safeSearch=strict` pour les
+  15-17 ans, qui ont leur propre recherche).
+- **Dans ma télé du jour**, ses vidéos se mêlent à celles de mes passions, avec son propre poids (qui monte et descend
+  pareil) ; l'étiquette : « ✨ La pêche à la mouche ». Elle n'a **pas de salon ouvert** (on y serait trop peu) ; si
+  beaucoup de monde la partage un jour, elle pourra devenir un thème.
+- **Le rangement** : `<h>/passions.json` gagne `perso: { mots, cle }` ; `decouvrir/perso/<cle>[-jeunes].json` =
+  `{ mots, videos, le, gens }`.
+- **L'administration** : les passions à soi (les mots, combien de personnes, la dernière recherche) ; **refuser des mots**
+  (ils disparaissent pour tout le monde, la personne choisit autre chose).
+
+### 23.3 📱 TikTok et Instagram : par le partage (lot D6, élargi)
+
+- **Suivre un compte TikTok ou Instagram n'est pas possible** : ni l'un ni l'autre ne laisse une appli lire les
+  dernières vidéos d'un créateur sans que ce créateur se connecte lui-même ; les contourner est interdit par leurs
+  règles, et casserait souvent. On ne le fait pas.
+- **Ce qu'on fait : partager une vidéo vers ClikMe.**
+  - **Sur Android**, l'appli installée apparaît dans le menu « Partager » de TikTok et d'Instagram (le « share target »
+    du manifeste de l'appli) : « 📺 Mettre sur ma télé » ou « 📤 Envoyer à un proche ».
+  - **Sur iPhone**, Apple ne le permet pas aux applis web : « Copier le lien » dans TikTok ou Instagram, puis dans ma
+    télé « 📋 Coller un lien ».
+  - La vidéo partagée arrive **en premier dans ma télé du jour** (48 heures), et mes proches la voient s'ils la partagent
+    aussi (ou si je la leur envoie).
+- **Le lecteur officiel, en portrait** (le constat du propriétaire : « les jeunes regardent davantage les vidéos
+  Instagram et TikTok en mode portrait ») : pour ces vidéos, la télé passe en hauteur (toute la hauteur de l'écran, ma
+  pièce et les figurines en bas). TikTok : son lecteur intégré, qui dit à quelle seconde on en est (les réactions à la
+  seconde marchent) ; Instagram : l'intégration de Meta (avec le jeton de l'application Meta ; sinon une carte qui ouvre
+  Instagram), qui ne le dit pas (on réagit sans seconde, comme avec le lecteur tout simple). Les Shorts de YouTube
+  passeront aussi en portrait.
+- Toujours le lecteur officiel : jamais une vidéo téléchargée (section 2).
+
+**L'ordre** : D8 (mes chaînes) d'abord — le plus utile et le plus sûr —, puis D9 (ma passion à moi), puis D6.
