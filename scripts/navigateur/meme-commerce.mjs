@@ -86,7 +86,7 @@ ok((await pro({ action: "publier", id: essai.id, annonce: "menu", texte: "Le pla
 const nina = await tel(NINA);
 await nina.goto(`${BASE}/collection#decouvrir`, { waitUntil: "networkidle" });
 await fermerPablito(nina, "#o-decouvrir");
-await nina.waitForSelector("#o-decouvrir:not([hidden]) .tp, #o-decouvrir:not([hidden]) .td", { timeout: 60000 });
+await nina.waitForSelector("#o-decouvrir:not([hidden]) .tp, #o-decouvrir:not([hidden]) .td, #o-decouvrir:not([hidden]) .td-accueil", { timeout: 60000 });
 const menu = await texte(nina, ".mc-nav");
 ok((await nina.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && (await nina.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), `le menu en bas : cinq onglets, « Créer » au milieu (${menu})`);
 ok((await nina.locator("#o-decouvrir .dv-carte").count()) === 0, "« Découvrir » : sa télé du jour (ses passions d'abord), plus le fil des mèmes de la ville");

@@ -107,7 +107,7 @@ ok((await hugo.locator("#o-figurine #theme-du-jour").count()) === 0, "« ✕ » 
 for (const ancre of ["voeu", "mission", "reponses", "decouvrir"]) {
   await hugo.goto(`${BASE}/collection?v=${Date.now()}#${ancre}`, { waitUntil: "networkidle" });
   await fermerPablito(hugo, "#o-decouvrir");
-  const vu = await hugo.waitForSelector("#o-decouvrir:not([hidden]) .tp, #o-decouvrir:not([hidden]) .td", { timeout: 60000 }).then(() => true).catch(() => false);
+  const vu = await hugo.waitForSelector("#o-decouvrir:not([hidden]) .tp, #o-decouvrir:not([hidden]) .td, #o-decouvrir:not([hidden]) .td-accueil", { timeout: 60000 }).then(() => true).catch(() => false);
   ok(vu && (await hugo.locator("#o-decouvrir .dv-fil, #o-decouvrir .dv-jour, #o-decouvrir #voeu, #o-decouvrir .vx-accueil").count()) === 0, `#${ancre} : « Découvrir », sa télé du jour (ses passions d'abord) — plus de fil ni de vœu`);
 }
 ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");

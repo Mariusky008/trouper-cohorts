@@ -29,6 +29,7 @@ import { themeDe } from "@/lib/direct/decouvrir";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
+import { PHRASES_SALONS as PS, type CarteSalon } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 
 const ROUTE = "/api/direct/tele-du-jour";
@@ -60,6 +61,8 @@ export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
     void Promise.resolve().then(charger);
   }, [charger]);
   const cls = `td${onglet ? " onglet" : ""}`;
+  // (🧭 l'accueil de l'onglet : la carte de ma télé, les salons ouverts ; ma télé s'ouvre d'un toucher)
+  const [vue, setVue] = useState<"accueil" | "tele" | "passions">("accueil");
   if (!tele)
     return (
       <div className={`${cls} td-centre`}>
@@ -69,18 +72,164 @@ export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
     );
   const maisons = onglet ? <MaisonsAVisiter /> : null;
   // (pas encore de passions : « Tes passions » d'abord, puis la télé)
-  if (!tele.passions.length)
+  if (!tele.passions.length || vue === "passions")
     return (
       <>
-        <TesPassions onglet={onglet} onFini={() => void charger()} />
+        <TesPassions
+          onglet={onglet}
+          onFini={() => {
+            setVue("accueil");
+            void charger();
+          }}
+        />
         {maisons}
+      </>
+    );
+  if (onglet && vue === "accueil")
+    return (
+      <>
+        <AccueilDecouvrir tele={tele} onRegarder={() => setVue("tele")} onPassions={() => setVue("passions")} />
+        {maisons}
+        <style>{STYLES}</style>
       </>
     );
   return (
     <>
-      <Television tele={tele} cls={cls} />
+      {onglet && (
+        <button type="button" className="td-revenir" data-accueil onClick={() => setVue("accueil")}>
+          ‹ Découvrir
+        </button>
+      )}
+      <Television tele={tele} cls={cls} allumer={onglet} />
       {maisons}
     </>
+  );
+}
+
+/**
+ * 🧭 L'ACCUEIL DE DÉCOUVRIR (le lot D1c, 20 novembre 2026 ; la maquette, section 12) : la carte « Ma télé du jour » (ma
+ * pièce, ma figurine, ce qui m'attend, « ▶ Regarder »), la phrase de ClikMe, puis les salons ouverts — ceux de mes
+ * passions d'abord, puis les autres (les lots D3 et D4).
+ */
+function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; onRegarder: () => void; onPassions: () => void }) {
+  const restent = tele.videos.length;
+  const themes = [...new Set(tele.videos.map((v) => themeDe(v.theme)?.court).filter(Boolean))].slice(0, 4);
+  const sc = tele.scene;
+  const zone = sc?.emplacements?.tele;
+  // (la vignette : ma pièce, cadrée sur la télé et ma figurine)
+  const cx = sc ? (zone ? (zone[0] + zone[2] / 2 + sc.centre.x) / 2 : sc.centre.x) : 0.5;
+  const ratio = sc ? sc.panorama.largeur / Math.max(1, sc.panorama.hauteur) : 1;
+  return (
+    <section className="td-accueil" data-accueil-decouvrir>
+      <div className="td-accueil-haut">
+        <h1>Découvrir</h1>
+        <button type="button" className="td-chip" data-mes-passions onClick={onPassions}>
+          ✎ Tes passions
+        </button>
+      </div>
+      <button type="button" className="td-carte" data-carte-tele onClick={onRegarder} aria-label="Regarder ma télé du jour">
+        <div className="td-carte-vig" style={sc ? ({ "--cx": cx } as React.CSSProperties) : undefined}>
+          {sc ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="td-carte-pano" src={sc.panorama.src} srcSet={sc.panorama.srcset} sizes="900px" alt="" style={{ backgroundImage: `url(${sc.panorama.flou})` }} />
+              {tele.figurine && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="td-carte-fig" src={tele.figurine.src} srcSet={tele.figurine.srcset} sizes="160px" alt="" style={{ height: `${sc.centre.hauteur * 100}%`, top: `${sc.centre.y * 100}%`, left: `calc(50% + ${((sc.centre.x - cx) * ratio * 100).toFixed(2)}cqh)` }} />
+              )}
+            </>
+          ) : (
+            tele.figurine && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="td-carte-fig seule" src={tele.figurine.src} srcSet={tele.figurine.srcset} sizes="160px" alt="" />
+            )
+          )}
+          <span className="td-allume">
+            <i />
+            Ta télé est allumée
+          </span>
+        </div>
+        <div className="td-carte-txt">
+          <p className="td-sur">Ma télé du jour</p>
+          <h2>{tele.vide ? P.bientot : `🎬 ${restent} vidéo${restent > 1 ? "s" : ""} t’attend${restent > 1 ? "ent" : ""}`}</h2>
+          {themes.length > 0 && <p className="td-themes">{themes.join(" · ")}</p>}
+          <span className="td-regarder">▶ Regarder</span>
+        </div>
+      </button>
+      <p className="td-slogan">{PS.slogan}</p>
+      <SalonsOuverts />
+    </section>
+  );
+}
+
+/** 🛋️ Les salons ouverts (lots D3 et D4) : une carte par passion — les miennes d'abord, avec ceux qui y sont. */
+function SalonsOuverts() {
+  const [a, setA] = useState<{ cartes: CarteSalon[]; age?: boolean; maison?: string } | null>(null);
+  const charger = useCallback(async () => {
+    const r = await fetch("/api/direct/salons-ouverts?accueil=1", { cache: "no-store" }).catch(() => null);
+    if (!r?.ok) return setA({ cartes: [] });
+    const j = (await r.json().catch(() => ({}))) as { cartes?: CarteSalon[]; age?: boolean; maison?: string };
+    setA({ cartes: j.cartes ?? [], age: j.age, maison: j.maison });
+  }, []);
+  useEffect(() => {
+    void Promise.resolve().then(charger);
+  }, [charger]);
+  if (!a) return null;
+  const dire = async (adulte: boolean) => {
+    await fetch("/api/direct/salons-ouverts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "age", adulte }) }).catch(() => null);
+    void charger();
+  };
+  if (a.age)
+    return (
+      <section className="td-salons" data-salons-age>
+        <h3>
+          {PS.titre} <small>{PS.sousTitre}</small>
+        </h3>
+        <p className="td-salons-chapo">{PS.age}</p>
+        <div className="td-age">
+          <button type="button" data-adulte onClick={() => void dire(true)}>
+            {PS.adulte}
+          </button>
+          <button type="button" data-jeune onClick={() => void dire(false)}>
+            {PS.jeune}
+          </button>
+        </div>
+      </section>
+    );
+  if (!a.cartes.length) return null;
+  const miens = a.cartes.filter((c) => c.mien);
+  const autres = a.cartes.filter((c) => !c.mien);
+  const carte = (c: CarteSalon) => (
+    <a key={c.theme} className="td-salon" href={`/univers/salons?theme=${c.theme}`} data-salon={c.theme}>
+      <span className="td-salon-vig" style={c.decor ? { backgroundImage: `url(${c.decor.src}), url(${c.decor.flou})` } : undefined}>
+        <span className={`td-ici${c.presents ? " vif" : ""}`}>
+          <i />
+          {PS.ici(c.presents)}
+        </span>
+      </span>
+      <b>
+        {c.e} {c.nom}
+      </b>
+      <small>{PS.entrer} ›</small>
+    </a>
+  );
+  return (
+    <section className="td-salons" data-salons>
+      <h3>
+        {PS.titre} <small>{PS.sousTitre}</small>
+      </h3>
+      <p className="td-salons-chapo">
+        {a.maison === "jeunes" ? PS.chapoJeunes : ""}
+        {PS.chapo}
+      </p>
+      {miens.length > 0 && <div className="td-grille">{miens.map(carte)}</div>}
+      {autres.length > 0 && (
+        <>
+          <h3 className="td-autres">{PS.autres}</h3>
+          <div className="td-grille">{autres.map(carte)}</div>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -123,10 +272,11 @@ const STYLES_MAISONS = `
 .td-maison small{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 `;
 
-function Television({ tele, cls }: { tele: TeleDuJour; cls: string }) {
+function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cls: string; allumer?: boolean }) {
   const videos = tele.videos;
   const [i, setI] = useState(0);
-  const [allumee, setAllumee] = useState(false);
+  // (ouverte depuis la carte « ▶ Regarder » de l'accueil : ce toucher allume la télé)
+  const [allumee, setAllumee] = useState(tout);
   const [simple, setSimple] = useState(false);
   const [grand, setGrand] = useState(true);
   // (le passage entre la pièce et le grand écran glisse ; pas le premier affichage)
@@ -457,4 +607,39 @@ const STYLES = `
 .td-feuille li button{width:100%;display:flex;align-items:center;gap:12px;border:0;border-radius:14px;padding:8px 12px;background:rgba(255,255,255,.08);color:#FFF4E6;font:inherit;font-weight:800;font-size:16px;text-align:left}
 .td-feuille img,.td-rond{width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:top;background:rgba(255,255,255,.12)}
 .td-doux{margin:0;color:#ead3df}
+
+.td-revenir{align-self:flex-start;margin:0 0 6px 12px;border:0;border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.td-accueil{max-width:560px;margin:0 auto;padding:6px 16px 0;color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;gap:14px}
+.td-accueil-haut{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.td-accueil-haut h1{margin:0;font-size:24px;font-weight:900}
+.td-chip{border:0;border-radius:999px;padding:8px 13px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
+.td-carte{display:block;width:100%;padding:0;border:0;border-radius:22px;overflow:hidden;background:#24101b;color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;box-shadow:0 18px 40px -20px rgba(0,0,0,.9)}
+.td-carte-vig{position:relative;aspect-ratio:16/9;overflow:hidden;container-type:size;background:linear-gradient(180deg,#4a2335,#24101b)}
+.td-carte-pano{position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(calc(-1 * var(--cx) * 100%));background-size:cover}
+.td-carte-fig{position:absolute;transform:translate(-50%,-100%);max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
+.td-carte-fig.seule{left:50%;top:96%;height:80%}
+.td-allume{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12.5px;font-weight:800}
+.td-allume i,.td-ici i{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80}
+.td-carte-txt{padding:12px 16px 16px;display:flex;flex-direction:column;gap:4px}
+.td-carte-txt .td-sur{margin:0}
+.td-carte-txt h2{margin:0;font-size:20px;font-weight:900}
+.td-themes{margin:0;font-size:13.5px;opacity:.75}
+.td-regarder{align-self:flex-start;margin-top:8px;border-radius:999px;padding:10px 18px;font-weight:900;font-size:15px;color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a)}
+.td-slogan{margin:0;text-align:center;font-size:14.5px;font-weight:700;opacity:.85}
+.td-salons{display:flex;flex-direction:column;gap:10px}
+.td-salons h3{margin:6px 0 0;font-size:18px;font-weight:900}
+.td-salons h3 small{font-size:13px;font-weight:700;opacity:.6}
+.td-salons-chapo{margin:0;font-size:13.5px;opacity:.75}
+.td-age{display:flex;flex-direction:column;gap:8px}
+.td-age button{border:0;border-radius:999px;padding:11px 16px;font:inherit;font-weight:900;font-size:14.5px;background:rgba(255,255,255,.12);color:#FFF4E6;cursor:pointer}
+.td-age button:first-child{background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);color:#2a0f1f}
+.td-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.td-salon{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:#FFF4E6}
+.td-salon-vig{position:relative;aspect-ratio:4/3;border-radius:16px;background:#3a1a2a center/cover no-repeat;box-shadow:0 10px 22px -12px rgba(0,0,0,.8)}
+.td-ici{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.6);font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-ici:not(.vif) i{background:#9a8a90;box-shadow:none}
+.td-salon b{font-size:14px;font-weight:900;line-height:1.2}
+.td-salon small{font-size:12px;opacity:.65}
+.td-autres{opacity:.85}
+@media (min-width:760px){.td-grille{grid-template-columns:repeat(3,minmax(0,1fr))}}
 `;

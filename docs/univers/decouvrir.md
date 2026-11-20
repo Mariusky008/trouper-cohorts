@@ -280,10 +280,11 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D0** ✅ (section 14 ; attend la clé YouTube) | « Tes passions » (l'écran, `passions.json`) ; la sélection YouTube de chaque nuit ; la page d'administration de la sélection | la clé YouTube |
 | **D1** ✅ (section 15) | Ma télé du jour, seul, dans ma pièce : regarder, suivante, garder (la vidéothèque de ma maison), envoyer à un proche | D0, Ma maison |
 | **D1b** ✅ (section 16) | Ma télé du jour dans l'onglet Découvrir ; le retrait de l'ancienne page (section 11) | D1 |
+| **D1c** ✅ (section 18) | L'accueil de Découvrir comme la maquette : la carte « Ma télé du jour », la phrase, les salons ouverts | D1b |
 | **D2** | Le moteur à N places (le contrat `salon.ts`) ; inviter des proches ; la télé synchronisée | D1 |
 | **D2b ⭐** | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
 | **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
-| **D3 + D4** | Les salons ouverts (instances de 8, présence, écrire, gestes, mèmes, la télé du thème) **avec** la modération et la sécurité | D2 |
+| **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; restent : les mèmes dans un salon ouvert, l'étagère du salon (D5) | D1c |
 | **D5** | L'étagère des salons, « Mes salons » dans ma maison, « Ajouter en proche » depuis un salon | D3 |
 | **D6** | Les liens TikTok et Instagram collés sur la télé | D1 |
 | **D7** | 🗞️ Les potins de ma ville : la presse locale, OpenAgenda, YouTube ; le salon par ville ou par département ; « J'ai vu… » et « Une soirée, un événement » ; les événements gardés comme rendez-vous | D3 + D4, la clé OpenAgenda |
@@ -577,3 +578,68 @@ avec eux.
 
 **Les essais** : `tele-du-jour.mjs` (YouTube bloqué : « le lecteur tout simple, dans l'écran », « jamais un lien qui
 part sur YouTube »).
+
+## 18. Les lots D1c, D3 et D4 : l'accueil, et les salons ouverts (20 novembre 2026)
+
+Le propriétaire, le 20 novembre 2026 : « ça n'a pas du tout le design de la maquette, aucun salon n'apparaît », puis
+« fais la page d'accueil de Découvrir avec la télé du jour, puis les salons, et D3 et D4 aussi ». **D3 et D4 passent donc
+avant D2** (le moteur à N places du duo) : un salon ouvert a sa propre scène, plus simple — chacun dans son fauteuil (sa
+figurine assise de Ma maison), à l'une des huit places.
+
+**D1c, l'accueil** (`tele-du-jour.tsx`, `AccueilDecouvrir`) — l'onglet Découvrir s'ouvre comme la maquette :
+- « Découvrir », « ✎ Tes passions » ;
+- **la carte « Ma télé du jour »** : ma pièce cadrée sur la télé et ma figurine, « ● Ta télé est allumée », « 🎬 N vidéos
+  t'attendent », les thèmes, « ▶ Regarder » — un toucher ouvre ma télé (et l'allume : ce toucher donne le son) ;
+  « ‹ Découvrir » y revient ;
+- la phrase : « Regarde tes vidéos avec ceux que tu aimes, même quand ils sont loin. » ;
+- **« Les salons ouverts · par passion »** : une carte par salon (son décor, « ● N ici » ou « Personne pour l'instant »),
+  les miennes d'abord, puis « Les autres salons » ; sans son âge dit : « as-tu 18 ans ou plus ? » d'abord ;
+- dessous, « 🏡 Les maisons à visiter », comme avant.
+Les potins de ma ville (5.4) restent pour D7 : ils ne s'affichent pas encore (rien de faux à l'écran).
+
+**D3 + D4, les salons ouverts** (`salons-ouverts.ts` : les règles ; `salons-ouverts-serveur.ts` ; la route
+`/api/direct/salons-ouverts` ; l'écran `/univers/salons?theme=foot`, `salon-ouvert.tsx`) :
+- **Entrer** : le salon le plus rempli du thème qui a une place (celui où l'on est déjà, si on revient) ; huit places ;
+  plein : « Le salon du foot · 2 ». Sa figurine s'assoit sur la première place libre (devant, du milieu vers les bords ;
+  puis au fond). Présent : vu depuis moins de 2 min 30 ; le téléphone le redit toutes les 30 s ; partir libère la place.
+- **Deux maisons** : `adultes` et `jeunes` (`sesDixHuitAns`) — **elles ne se croisent jamais**, le serveur choisit la
+  maison, jamais le téléphone. Le salon des jeunes parents : adultes seulement.
+- **Le décor** : une pièce du catalogue par thème (`SALONS` ; le salon pour le foot, la chambre musicale pour la musique,
+  la cuisine pour la cuisine…), sinon la première prête. **La télé du salon** : la sélection du jour du thème, en boucle
+  depuis minuit (heure de Paris), **à la même seconde pour tous** (`positionTele`, l'heure du serveur) ; « ▶ Allumer la
+  télé du salon » ; si le lecteur de YouTube ne répond pas, le lecteur tout simple dans l'écran.
+- **L'écran** : la télé en grand (16/9, 680 points au plus), la pièce dessous et ses huit places ; le prénom de chacun
+  sous sa figurine (« Toi » pour soi) ; les bulles au-dessus des têtes (6 s), les réactions qui sautent, les gestes qui
+  volent d'une figurine à l'autre. Sur un ordinateur : la scène à gauche, réagir et écrire à droite.
+- **Écrire** (90 signes), **réagir** (😂 ❤️ 😮 😱 👏), **un geste** à quelqu'un qui est là (👋 👏 😂, en touchant sa
+  figurine). Doucement : un message toutes les secondes et demie, douze par minute. **Pas de vocal, pas de photo.**
+- **La modération, avant que ça parte** (`refusDuMessage`, le téléphone prévient, le serveur refuse quoi qu'il arrive) :
+  ni lien, ni adresse, ni numéro, ni réseau social (snap, insta, tiktok, @…), ni question personnelle (âge, ville,
+  « tu habites où », « en privé », « envoie une photo »…), ni gros mot, rien d'alcoolisé — « 🚫 Ce message ne part pas :
+  … ». Rien de refusé n'est rangé.
+- **Toucher une figurine** : son prénom, « Dans ce salon · prénom et figurine seulement », 👋 👏 😂, « 🙈 Ne plus voir »
+  (ses bulles disparaissent, partout ; `<habitant>/salons-caches.json`), « 🚩 Signaler » (quatre motifs).
+- **Signaler** : trois personnes différentes en une heure (la même qui signale deux fois compte une fois) : la personne
+  quitte les salons ouverts pendant 24 heures — son pouls le lui dit, sa place se libère, elle ne rentre plus.
+- **💬 La conversation du salon** : les 48 dernières heures, « Avant ton arrivée », « Depuis que tu es là » ; les
+  messages plus vieux s'effacent.
+- **L'administration** : `/admin/humain/salons` (lien dans l'admin) — les salons en cours (qui y est, les messages des
+  dernières 24 h), les signalements de la semaine (le message en cause), les exclusions ; « 🚫 Exclure 24 h »,
+  « ↩ Réintégrer ».
+- **Fermer sans déployer** : `CLIKME_SALONS_OUVERTS=0` (les cartes disparaissent, on n'entre plus).
+
+**Le rangement** (aucune table : le seau, un fichier par personne et par message — personne n'écrit le fichier d'un
+autre) : `decouvrir/salons/<maison>/<thème>-<n>/presents/<q>.json`, `…/messages/<ms>-<q>-<x>.json`,
+`decouvrir/signalements/<q>/…`, `decouvrir/exclus/<q>.json`. `<q>` : l'identifiant court de chacun ; son compte n'est
+jamais montré.
+
+**Restent** : les mèmes joués dans un salon ouvert ; l'étagère du salon, « Mes salons » dans ma maison, « 👯 Ajouter en
+proche » et « 🏠 Voir sa maison » depuis une figurine (D5) ; les potins de ma ville (D7) ; D2 (inviter des proches devant
+ma télé, la télé synchronisée du duo).
+
+**Les essais** : `scripts/essai-salons-ouverts-route.mjs` (57 contrôles : l'accueil et l'âge ; entrer, les deux maisons
+séparées ; écrire, huit refus ; réagir, un geste, « doucement » ; ne plus voir ; plein à huit, le deuxième salon, la place
+libérée ; trois signalements ; l'administrateur ; les messages de plus de 48 h) et `scripts/navigateur/salons-ouverts.mjs`
+(sur un iPhone puis un ordinateur : l'accueil, l'âge, les 15-17 ans, entrer, la télé, Sam qui entre et écrit, un refus,
+une bulle, une réaction, la fiche, un geste, signaler, la conversation, ne plus voir) ; `tele-du-jour.mjs` passe par la
+carte de l'accueil.

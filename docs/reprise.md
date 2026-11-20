@@ -31,8 +31,11 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    d'essai `/univers/tele` — le grand écran, ma pièce et ma figurine, Suivante, Garder, Envoyer à un proche) ; **D1b
    fait** (section 16 : la télé dans l'onglet Découvrir ; l'ancienne page est partie — le fil des mèmes de la ville,
    « Mon vœu », « Mes vœux », les tâches du soir ; `#jour` ouvre « Créer » sur le thème du jour ; trois bulles du tuto
-   à enregistrer par le propriétaire, `tuto-decouvrir-tele-1..3`) ; ensuite D2 (inviter des proches, la télé
-   synchronisée).
+   à enregistrer par le propriétaire, `tuto-decouvrir-tele-1..3`) ; **D1c, D3 et D4 faits le 20 novembre** (section
+   18 : l'accueil comme la maquette — la carte « Ma télé du jour », les salons ouverts par passion ; les salons ouverts
+   avec leur modération, `/univers/salons?theme=…`, l'administration `/admin/humain/salons`, le frein
+   `CLIKME_SALONS_OUVERTS=0`) ; restent les mèmes dans un salon ouvert, D5 (l'étagère des salons, « Ajouter en
+   proche »), D7 (les potins de ma ville) et D2 (inviter des proches, la télé synchronisée).
 
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les
