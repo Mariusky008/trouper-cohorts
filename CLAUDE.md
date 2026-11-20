@@ -25,6 +25,9 @@ pièce », la maison qui se remplit avec ce qu'on garde), lisez d'abord `docs/un
 **Si vous travaillez sur « Découvrir »** (ma télé du jour dans ma pièce, les passions, les salons ouverts par thème),
 lisez d'abord `docs/univers/decouvrir.md`.
 
+**Si vous travaillez sur la démo de départ** (l'accueil des nouveaux inscrits, « Bienvenue chez Pablito »), lisez
+d'abord `docs/univers/demo-depart.md`.
+
 Règles communes :
 
 - On travaille en français.

@@ -35,7 +35,12 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    18 : l'accueil comme la maquette — la carte « Ma télé du jour », les salons ouverts par passion ; les salons ouverts
    avec leur modération, `/univers/salons?theme=…`, l'administration `/admin/humain/salons`, le frein
    `CLIKME_SALONS_OUVERTS=0`) ; restent les mèmes dans un salon ouvert, D5 (l'étagère des salons, « Ajouter en
-   proche »), D7 (les potins de ma ville) et D2 (inviter des proches, la télé synchronisée).
+   proche »), D7 (les potins de ma ville), D2 (inviter des proches, la télé synchronisée), **D2b ⭐ « Jamais seul
+   devant une vidéo »** (la fonction phare et l'argument de communication : les réactions des proches rejouées à la
+   seconde, « Ta figurine fait ta tête », le clip « Nos réactions » — `decouvrir.md` 4.5 et 13), D2c (les expressions
+   des figurines) et D6 (les liens TikTok et Instagram) ;
+4. **la nouvelle démo de départ** (`docs/univers/demo-depart.md`, 20 novembre) : « Bienvenue chez Pablito » en sept
+   moments, la maquette cliquable est faite ; à jouer et valider par le propriétaire, puis à coder.
 
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les

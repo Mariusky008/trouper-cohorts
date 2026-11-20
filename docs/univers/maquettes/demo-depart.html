@@ -1,0 +1,560 @@
+<title>Bienvenue chez Pablito</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Poppins:wght@500;600;700;800;900&display=swap">
+<style>
+/* La démo de départ, dans une colonne de téléphone : en haut les 7 moments, au milieu la scène (une pièce, les
+   figurines), en bas ce que dit Pablito et ce qu'on touche. L'ambiance de ClikMe : la nuit brune, le rose pour ce qu'on
+   touche, l'ambre pour ce qui s'allume. Une seule ambiance, sombre, choisie exprès. */
+:root{
+  --nuit:#160711; --nuit2:#22101e; --carte:#2b1327; --carte2:#3a1a35; --trait:rgba(255,255,255,.1);
+  --texte:#FFF4E6; --doux:#ead3df; --sourd:#a88a9b; --rose:#FF2E9A; --ambre:#F2C46B; --vert:#45d483;
+  --papier:#fff6ea; --encre:#2a1424; --wa:#25D366;
+  --f-ui:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-main:'Caveat','Segoe Print','Comic Sans MS',cursive;
+  --emoji:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:#0b0309;color:var(--texte);font-family:var(--f-ui);-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--ambre);outline-offset:2px}
+.app{position:relative;height:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,var(--nuit) 62%);overflow:hidden}
+.g{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ─── en haut : où on en est ─── */
+.haut{display:flex;align-items:center;gap:10px;padding-block:10px 8px}
+.haut-titre{display:flex;flex-direction:column;flex:1;min-width:0}
+.haut-titre small{font-size:11px;color:var(--sourd);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.haut-titre b{font-size:15px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.points-etapes{display:flex;gap:5px}
+.points-etapes button{width:9px;height:9px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.18)}
+.points-etapes button.fait{background:var(--ambre)}
+.points-etapes button.ici{background:var(--rose);box-shadow:0 0 0 3px rgba(255,46,154,.25)}
+.lien{border:0;background:none;padding:6px 4px;font-size:13px;font-weight:800;color:var(--doux)}
+.rond{display:grid;place-items:center;width:34px;height:34px;flex:none;border:1px solid var(--trait);border-radius:50%;background:rgba(20,8,16,.55);font-size:15px;font-family:var(--f-ui),var(--emoji)}
+
+/* ─── la scène ─── */
+.scene-wrap{position:relative;flex:1;min-height:0;container-type:size;display:grid;place-items:center}
+.scene{position:relative;width:min(100cqw,75cqh);height:min(100cqh,133.333cqw);overflow:hidden;border-radius:22px;container-type:size;background:#120810;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;pointer-events:none;transition:opacity .5s}
+.fond.cache{opacity:0}
+.voile-scene{position:absolute;inset:0;background:rgba(14,6,12,.55);pointer-events:none}
+.etiquette{position:absolute;top:2.4%;left:3%;display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:rgba(14,6,12,.72);font-size:clamp(11px,3.2cqw,13.5px);font-weight:800;z-index:6;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.etiquette.droite{left:auto;right:3%}
+.etiquette.rdv{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+
+/* les figurines (dans l'appli : ta vraie figurine et celle de chacun ; ici, des personnages de démonstration) */
+.fig{position:absolute;transform:translateX(-50%);transition:left 1.2s cubic-bezier(.3,.8,.3,1),opacity .4s;z-index:3}
+.perso{position:relative}
+.perso .tete{position:relative;transform-origin:50% 92%;animation:vit 4.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+.perso img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45))}
+.perso .p-c,.perso .p-s{position:absolute;inset:0;opacity:0}
+.perso .p-c{animation:clin 5.3s infinite;animation-delay:var(--d,0s)}
+@keyframes clin{0%,95%{opacity:0}96%,98%{opacity:1}99%,100%{opacity:0}}
+.fig.coucou .p-s{opacity:1;animation:none}
+.fig.coucou .p-c{display:none}
+.perso .p-x{position:absolute;right:-10%;top:-4%;font-style:normal;font-size:clamp(16px,7cqw,30px);line-height:1;opacity:0;transform:scale(.3);transition:opacity .15s,transform .25s cubic-bezier(.2,1.6,.4,1);font-family:var(--emoji);filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.fig[data-x] .p-x{opacity:1;transform:scale(1)}
+.fig[data-x="rire"] .p-x::before{content:"😂"}.fig[data-x="oh"] .p-x::before{content:"😮"}.fig[data-x="coeur"] .p-x::before{content:"😍"}.fig[data-x="joie"] .p-x::before{content:"😊"}
+@keyframes vit{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+.fig.rit .tete{animation:rit .42s ease-in-out 3}
+@keyframes rit{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-7px) rotate(-8deg)}50%{transform:translateY(-1px)}75%{transform:translateY(-7px) rotate(8deg)}}
+.fig.saute{animation:saute .46s ease-out 2}
+@keyframes saute{0%,100%{transform:translate(-50%,0)}40%{transform:translate(-50%,-14%)}}
+.fig.penche .tete{animation:penche 1.4s ease-in-out}
+@keyframes penche{0%,100%{transform:rotate(0)}25%,75%{transform:rotate(-13deg) translateY(2px)}}
+.fig.pulse .tete{animation:battre .5s ease-in-out 3}
+@keyframes battre{50%{transform:scale(1.08)}}
+.nom{position:absolute;left:50%;top:100%;transform:translate(-50%,-40%);display:flex;flex-direction:column;align-items:center;white-space:nowrap;padding:2px 8px;border-radius:999px;background:rgba(14,6,12,.74);font-size:clamp(9px,2.7cqw,12px);font-weight:800;line-height:1.25;pointer-events:none}
+.nom em{font-style:normal;font-weight:600;color:var(--doux);font-size:.84em}
+.place-libre{position:absolute;transform:translateX(-50%);display:grid;place-items:center;aspect-ratio:534/780;border:2px dashed rgba(255,244,230,.55);border-radius:46% 46% 18% 18%;background:rgba(255,255,255,.06);z-index:3;animation:respire 2.2s ease-in-out infinite}
+.place-libre b{font-size:clamp(22px,9cqw,40px);font-weight:900;color:var(--ambre)}
+.place-libre span{position:absolute;top:100%;margin-top:4px;padding:2px 8px;border-radius:999px;background:rgba(14,6,12,.74);font-size:clamp(9px,2.7cqw,12px);font-weight:800;white-space:nowrap}
+@keyframes respire{50%{transform:translateX(-50%) scale(1.04)}}
+.chat-moustache{position:absolute;font-size:clamp(20px,8cqw,36px);font-family:var(--emoji);z-index:4;transform-origin:50% 90%;animation:queue 3s ease-in-out infinite;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.chat-moustache small{position:absolute;left:50%;top:100%;transform:translateX(-50%);font-family:var(--f-ui);font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;background:rgba(14,6,12,.7);white-space:nowrap}
+@keyframes queue{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}
+
+/* les bulles, les gestes qui volent */
+.bulle{position:absolute;transform:translate(-50%,-100%);max-width:52%;width:max-content;padding:8px 12px;border-radius:16px;background:var(--papier);color:var(--encre);font-size:clamp(11.5px,3.6cqw,15px);font-weight:700;line-height:1.3;text-align:center;z-index:7;box-shadow:0 8px 20px rgba(0,0,0,.35);animation:bulle .35s cubic-bezier(.2,1.5,.4,1)}
+.bulle::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
+.bulle.moi{background:#ffe2f1}
+.bulle.range{background:#fff0c8}
+@keyframes bulle{from{opacity:0;transform:translate(-50%,-80%) scale(.6)}}
+.ecrit{display:inline-flex;gap:4px;align-items:center;height:12px}
+.ecrit i{width:7px;height:7px;border-radius:50%;background:#8b6b7e;animation:point 1s infinite}
+.ecrit i:nth-child(2){animation-delay:.15s}.ecrit i:nth-child(3){animation-delay:.3s}
+@keyframes point{50%{transform:translateY(-4px);opacity:.5}}
+.vol{position:absolute;z-index:8;font-size:clamp(24px,9cqw,40px);font-family:var(--emoji);transform:translate(-50%,-50%);transition:left .75s cubic-bezier(.4,0,.2,1),top .75s cubic-bezier(.3,-.6,.6,1);pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+.jaillit{position:absolute;z-index:8;font-family:var(--emoji);font-size:clamp(18px,6cqw,28px);transform:translate(-50%,-50%);animation:jaillit 1.3s ease-out forwards;pointer-events:none}
+@keyframes jaillit{to{transform:translate(calc(-50% + var(--dx,0px)),-260%);opacity:0}}
+.indice{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);width:max-content;max-width:92%;padding:8px 13px;border-radius:16px;background:rgba(14,6,12,.82);font-size:clamp(11px,3.3cqw,13px);font-weight:700;text-align:center;line-height:1.35;pointer-events:none;z-index:8;animation:monte .3s ease-out}
+@keyframes monte{from{opacity:0;transform:translate(-50%,8px)}}
+.synchro{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:9px 18px;border-radius:999px;background:linear-gradient(135deg,#fff0c8,var(--ambre));color:var(--encre);font-weight:900;font-size:clamp(13px,4.2cqw,16px);white-space:nowrap;z-index:9;pointer-events:none;box-shadow:0 10px 30px rgba(242,196,107,.55);animation:synchro 2.4s ease-out forwards}
+@keyframes synchro{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}14%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}24%{transform:translate(-50%,-50%) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%)}}
+
+/* 🎟️ l'étagère de ma maison */
+.etagere{position:absolute;right:4%;top:14%;width:34%;display:flex;flex-direction:column;gap:10%;z-index:4}
+.planche{position:relative;height:clamp(40px,15cqw,62px);display:flex;align-items:flex-end;justify-content:center;gap:8%;border-bottom:7px solid #6b4430;box-shadow:0 6px 10px -4px rgba(0,0,0,.5);font-family:var(--emoji);font-size:clamp(20px,8cqw,34px);line-height:1}
+.planche button{border:0;background:none;padding:0;font-size:inherit;font-family:var(--emoji);line-height:1}
+.ticket{animation:atterrit .9s cubic-bezier(.3,1.4,.5,1)}
+@keyframes atterrit{from{transform:translate(-160%,-260%) rotate(-30deg) scale(1.6);opacity:0}}
+.garde-avec{position:absolute;left:50%;top:calc(100% + 9px);transform:translateX(-50%);padding:2px 8px;border-radius:999px;background:rgba(255,226,241,.95);color:var(--encre);font-family:var(--f-ui);font-size:clamp(8.5px,2.5cqw,11px);font-weight:800;white-space:nowrap}
+
+/* 📺 la télé du jour, en portrait (une vidéo debout, comme TikTok ou les Shorts) */
+.ecran{position:absolute;left:50%;top:2.5%;width:50%;aspect-ratio:9/16;transform:translateX(-50%);border-radius:14px;overflow:hidden;background:#05060c;box-shadow:0 0 0 4px #120810,0 0 40px rgba(255,200,140,.35);z-index:2}
+.ecran canvas{display:block;width:100%;height:100%}
+.ecran .badge{position:absolute;right:6px;top:6px;padding:2px 7px;border-radius:5px;background:rgba(0,0,0,.6);font-size:clamp(8px,2.4cqw,10px);font-weight:800}
+.ecran .badge b{color:#ff3b3b}
+.ecran .chaine{position:absolute;left:8px;bottom:14px;right:8px;font-size:clamp(8.5px,2.6cqw,11px);font-weight:800;text-shadow:0 1px 3px #000;pointer-events:none}
+.ecran .fil{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.25)}
+.ecran .fil i{position:absolute;inset:0 auto 0 0;width:0;background:var(--rose)}
+.ecran .fil s{position:absolute;top:-4px;width:7px;height:7px;margin-left:-3px;border-radius:50%;background:var(--ambre);box-shadow:0 0 0 2px #120810}
+.ecran .lancer{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:0;background:rgba(10,4,9,.55);font-size:clamp(11px,3.4cqw,14px);font-weight:800;text-align:center;padding:10px}
+.ecran .lancer b{display:grid;place-items:center;width:clamp(44px,15cqw,62px);height:clamp(44px,15cqw,62px);border-radius:50%;background:var(--rose);font-size:clamp(18px,6cqw,26px);box-shadow:0 8px 24px rgba(255,46,154,.6)}
+
+/* 🛋️ les salons ouverts */
+.salons{position:absolute;inset:7% 4% 4%;display:grid;grid-template-columns:1fr 1fr;gap:3.5%;z-index:4;align-content:start}
+.carte-salon{position:relative;display:flex;flex-direction:column;gap:4px;padding:0 0 8px;border:1px solid var(--trait);border-radius:16px;overflow:hidden;background:var(--carte);text-align:left;animation:monte2 .45s ease-out both;animation-delay:var(--i)}
+@keyframes monte2{from{opacity:0;transform:translateY(14px)}}
+.carte-salon .vig{position:relative;aspect-ratio:4/3;overflow:hidden}
+.carte-salon .vig img.f{width:100%;height:100%;object-fit:cover;object-position:50% 34%}
+.carte-salon .vig img.t{position:absolute;bottom:4%;height:58%;transform:translateX(-50%);filter:drop-shadow(0 3px 5px rgba(0,0,0,.5))}
+.carte-salon b{padding:0 9px;font-size:clamp(10.5px,3.3cqw,13.5px);font-weight:800;line-height:1.2}
+.carte-salon small{padding:0 9px;font-size:clamp(9.5px,2.9cqw,12px);font-weight:700;color:var(--doux)}
+.carte-salon small i{display:inline-block;width:7px;height:7px;margin-right:4px;border-radius:50%;background:var(--vert)}
+.carte-salon.touche{outline:2px solid var(--rose)}
+
+/* la carte de fin */
+.fin{position:absolute;left:6%;right:6%;top:9%;display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 16px;border-radius:20px;background:rgba(34,16,30,.92);text-align:center;z-index:9;animation:monte2 .5s ease-out;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.fin h2{margin:0;font-family:var(--f-main);font-size:clamp(30px,10cqw,40px);line-height:1;color:var(--ambre)}
+.fin p{margin:0;font-size:clamp(12px,3.6cqw,14px);color:var(--doux);line-height:1.45}
+.fin .onglets{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+
+/* ─── en bas : Pablito parle, et ce qu'on touche ─── */
+.bas{display:flex;flex-direction:column;gap:10px;padding-block:10px max(14px,env(safe-area-inset-bottom,0px))}
+.ligne{display:flex;gap:10px;align-items:flex-start;min-height:52px}
+.ligne .av{flex:none;width:42px;height:42px;border-radius:50%;overflow:hidden;background:var(--carte2);border:2px solid var(--ambre)}
+.ligne .av img{width:100%;height:160%;object-fit:cover;object-position:50% 8%}
+.ligne .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ligne .txt small{font-size:11.5px;font-weight:800;color:var(--ambre)}
+.ligne .txt small span{color:var(--sourd);font-weight:700}
+.ligne .txt p{margin:0;font-size:15px;font-weight:700;line-height:1.38;animation:monte3 .35s ease-out}
+.ligne.indice-bas .txt p{font-weight:600;color:var(--doux);font-size:14px}
+.ligne.indice-bas .av{border-color:var(--trait)}
+@keyframes monte3{from{opacity:0;transform:translateY(6px)}}
+.actions{display:flex;flex-wrap:wrap;gap:8px;min-height:44px;align-items:center}
+.actions .lbl{font-size:13px;font-weight:800;color:var(--doux)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;padding:12px 20px;font-weight:800;font-size:15px;color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,var(--rose) 55%,#ff5a7a);box-shadow:0 10px 24px -10px rgba(255,46,154,.9),inset 0 1px 0 rgba(255,255,255,.35);font-family:var(--f-ui),var(--emoji)}
+.btn.ambre{background:linear-gradient(135deg,#ffe0a0,var(--ambre));box-shadow:0 10px 24px -12px rgba(242,196,107,.9)}
+.btn.wa{background:var(--wa);color:#06290f;box-shadow:none}
+.btn.large{flex:1}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--trait);border-radius:999px;padding:10px 14px;background:rgba(255,255,255,.08);font-weight:700;font-size:14px;white-space:nowrap;font-family:var(--f-ui),var(--emoji)}
+.chip:active,.btn:active{transform:scale(.96)}
+.reac{width:50px;height:50px;padding:0;border:1px solid var(--trait);border-radius:50%;background:rgba(255,255,255,.08);font-size:24px;font-family:var(--emoji)}
+.reac:disabled{opacity:.35}
+.suite{margin-left:auto}
+
+/* les feuilles et les messages furtifs */
+.voile{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;background:rgba(8,2,6,.6);animation:fondu .2s}
+@keyframes fondu{from{opacity:0}}
+.feuille{width:100%;max-height:82%;overflow-y:auto;box-sizing:border-box;padding:10px max(18px,env(safe-area-inset-left,0px)) max(20px,env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:var(--nuit2);box-shadow:0 -12px 40px rgba(0,0,0,.5);animation:feuille .3s cubic-bezier(.2,.9,.3,1)}
+@keyframes feuille{from{transform:translateY(100%)}}
+.poignee{width:40px;height:5px;margin:0 auto 12px;border-radius:3px;background:#5d3a54}
+.feuille h3{margin:0 0 6px;font-size:18px;font-weight:900}
+.feuille p{margin:0 0 10px;font-size:14px;color:var(--doux);line-height:1.45}
+.feuille ol{margin:0 0 12px;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.feuille li{font-size:14px;line-height:1.4}
+.feuille li code{font-size:11.5px;color:var(--sourd)}
+.souvenir{display:flex;gap:12px;align-items:center;padding:12px;border-radius:16px;background:var(--carte);margin-bottom:12px}
+.souvenir span{font-size:38px;font-family:var(--emoji)}
+.souvenir b{display:block;font-size:16px}
+.souvenir small{color:var(--doux);font-size:12.5px}
+.wa-fil{padding:14px;border-radius:16px;background:#0b141a;margin-bottom:12px}
+.wa-fil header{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;font-weight:800;color:#d1d7db}
+.wa-fil header i{width:28px;height:28px;border-radius:50%;background:#2a3942;display:grid;place-items:center;font-style:normal;font-family:var(--emoji)}
+.wa-msg{margin-left:auto;max-width:86%;padding:8px 10px;border-radius:10px 10px 2px 10px;background:#005c4b;color:#e9edef;font-size:14px;line-height:1.4}
+.wa-msg u{color:#53bdeb;text-decoration:none}
+.toasts{position:absolute;left:0;right:0;top:56px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:40;pointer-events:none}
+.toast{max-width:88%;padding:9px 14px;border-radius:14px;background:rgba(255,246,234,.97);color:var(--encre);font-size:13px;font-weight:800;text-align:center;box-shadow:0 10px 26px rgba(0,0,0,.4);animation:monte3 .25s ease-out}
+.toast.sort{opacity:0;transition:opacity .3s}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="haut g">
+    <div class="haut-titre"><small id="h-etape">Bienvenue</small><b id="h-titre">Ta figurine est prête</b></div>
+    <nav class="points-etapes" id="points" aria-label="Les sept moments de la démo"></nav>
+    <button class="rond" id="b-phrases" type="button" aria-label="Les phrases de Pablito à enregistrer">📝</button>
+    <button class="lien" id="b-passer" type="button">Passer ›</button>
+  </header>
+  <div class="scene-wrap g"><div class="scene" id="scene"></div></div>
+  <section class="bas g" aria-live="polite">
+    <div class="ligne" id="ligne"></div>
+    <div class="actions" id="actions"></div>
+  </section>
+  <div class="toasts" id="toasts"></div>
+</div>
+
+<script>
+// ═══════════ LES DONNÉES ═══════════
+// (les images : les pièces rendues et les petits personnages de la démo, `public/direct/ensemble` ; dans l'appli, ce sont
+// la vraie figurine du nouveau venu et celle de Pablito)
+const IMG=location.protocol==='file:'?'../../../public/direct/ensemble/':'ensemble/';
+const PERSOS={moi:'soleil',pablito:'curieux',sam:'denim',lea:'fleuri'};
+const NOMS={moi:'Toi',pablito:'Pablito',sam:'Sam',lea:'Léa'};
+const img=(id,k)=>`${IMG}${PERSOS[id]}-${k}.webp`;
+const PIECE={salon:'scene-chalet.webp',maison:'scene-verriere.webp',foot:'scene-terrasse.webp',series:'scene-bibliotheque.webp',manga:'scene-ocean.webp',potins:'scene-canape-vert.webp'};
+
+// 🎙️ ce que dit Pablito : sept phrases, enregistrées par le propriétaire (jamais de voix de synthèse)
+const LIGNES=[
+  {id:'demo-depart-1',t:'Salut ! Ici, on ne s’écrit pas des messages : on se retrouve.'},
+  {id:'demo-depart-2',t:'Tu vois ? Ce qu’on se dit, nos figurines le vivent.'},
+  {id:'demo-depart-3',t:'Ici, rien ne se perd : tout ce que vous vous promettez se range.'},
+  {id:'demo-depart-4',t:'Et ça, c’est chez toi. Ce que tu gardes s’y installe, et tes proches peuvent venir voir.'},
+  {id:'demo-depart-5',t:'Ta télé du jour. Tes proches la regardent avec toi… même s’ils l’ont vue hier.'},
+  {id:'demo-depart-6',t:'Et pour parler foot, séries ou mangas avec d’autres, les salons sont ouverts.'},
+  {id:'demo-depart-7',t:'Ici, tout est mieux à deux. Invite quelqu’un que tu aimes.'},
+];
+const MOMENTS=['Entrer chez Pablito','La messagerie','La mémoire','Ma maison','Jamais seul devant une vidéo','Les salons ouverts','Ton premier proche'];
+
+// ═══════════ LES PETITS OUTILS ═══════════
+const $=s=>document.querySelector(s);
+const scene=$('#scene');
+let minuteries=[],raf=0;
+const plusTard=(f,ms)=>{minuteries.push(setTimeout(f,ms))};
+function nettoyer(){minuteries.forEach(clearTimeout);minuteries=[];cancelAnimationFrame(raf);raf=0}
+const etat={moment:-1,fait:-1,ticket:true};
+
+function toast(msg,ms=2600){
+  const z=$('#toasts');z.replaceChildren();
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;z.appendChild(t);
+  setTimeout(()=>{t.classList.add('sort');setTimeout(()=>t.remove(),320)},ms);
+}
+function feuille(html,monter){
+  fermerFeuille();
+  const v=document.createElement('div');v.className='voile';v.id='voile';
+  v.innerHTML=`<div class="feuille" role="dialog" aria-modal="true"><div class="poignee"></div>${html}</div>`;
+  v.addEventListener('click',e=>{if(e.target===v)fermerFeuille()});
+  $('#app').appendChild(v);monter&&monter(v);
+}
+function fermerFeuille(){$('#voile')?.remove()}
+
+// ce que dit Pablito (avec 🎙️ : sa voix enregistrée) ou une indication (sans voix)
+function dire(n){
+  const l=LIGNES[n];
+  $('#ligne').className='ligne';
+  $('#ligne').innerHTML=`<div class="av"><img src="${img('pablito','assis')}" alt=""></div><div class="txt"><small>Pablito <span>· 🎙️ sa voix</span></small><p>${l.t}</p></div>`;
+}
+function indiquer(t){
+  $('#ligne').className='ligne indice-bas';
+  $('#ligne').innerHTML=`<div class="av"><img src="${img('moi','assis')}" alt=""></div><div class="txt"><small style="color:var(--sourd)">À toi</small><p>${t}</p></div>`;
+}
+function actions(html,brancher){$('#actions').innerHTML=html;brancher&&brancher($('#actions'))}
+function suite(libelle='Continuer ›'){
+  const b=document.createElement('button');b.type='button';b.className='btn suite';b.textContent=libelle;
+  b.addEventListener('click',()=>aller(etat.moment+1));
+  $('#actions').appendChild(b);b.focus({preventScroll:true});
+}
+
+// la scène : une pièce, des figurines
+function piece(nom,pos='50% 30%',voile=false){
+  scene.replaceChildren();scene.onclick=null;
+  const f=document.createElement('img');f.className='fond cache';f.alt='';f.src=IMG+PIECE[nom];f.style.objectPosition=pos;
+  f.onload=()=>f.classList.remove('cache');scene.appendChild(f);
+  if(voile){const v=document.createElement('div');v.className='voile-scene';scene.appendChild(v)}
+}
+function poser(id,pl,o={}){
+  const d=document.createElement('div');d.className='fig';d.dataset.id=id;
+  d.style.cssText=`left:${o.depuis??pl.x}%;bottom:${pl.b}%;width:${pl.l}%;--d:${(-Math.random()*4).toFixed(2)}s`;
+  d.innerHTML=`<div class="perso"><div class="tete"><img class="p-a" src="${img(id,'assis')}" alt="" draggable="false"><img class="p-c" src="${img(id,'cligne')}" alt="" draggable="false"><img class="p-s" src="${img(id,'salue')}" alt="" draggable="false"><i class="p-x"></i></div></div><span class="nom">${o.nom||NOMS[id]}${o.vu?`<em>${o.vu}</em>`:''}</span>`;
+  scene.appendChild(d);
+  if(o.depuis!==undefined)requestAnimationFrame(()=>requestAnimationFrame(()=>{d.style.left=pl.x+'%'}));
+  return d;
+}
+const fig=id=>scene.querySelector(`.fig[data-id="${id}"]`);
+function animer(f,a,ms=1400){if(!f)return;f.classList.remove('rit','saute','penche','pulse','coucou');void f.offsetWidth;f.classList.add(a);clearTimeout(f._a);f._a=setTimeout(()=>f.classList.remove(a),ms)}
+function visage(f,x,ms=2200){if(!f)return;f.dataset.x=x;clearTimeout(f._x);f._x=setTimeout(()=>delete f.dataset.x,ms)}
+function haut(f){return {x:f.offsetLeft,y:f.offsetTop+f.offsetHeight*.06}}
+function bulle(f,html,o={}){
+  if(!f)return;f._b?.remove();
+  const b=document.createElement('div');b.className='bulle'+(o.cls?' '+o.cls:'');b.innerHTML=html;
+  const p=haut(f),W=scene.clientWidth;
+  b.style.left=Math.max(W*.2,Math.min(W*.8,p.x))+'px';b.style.top=(p.y-6)+'px';
+  scene.appendChild(b);f._b=b;
+  if(o.ms!==0)setTimeout(()=>{if(f._b===b){b.remove();f._b=null}},o.ms||3400);
+  return b;
+}
+const ecrit='<span class="ecrit"><i></i><i></i><i></i></span>';
+function jaillir(f,e){
+  const s=document.createElement('span');s.className='jaillit';s.textContent=e;const p=haut(f);
+  s.style.left=p.x+'px';s.style.top=p.y+'px';s.style.setProperty('--dx',(Math.random()*40-20).toFixed(0)+'px');
+  scene.appendChild(s);setTimeout(()=>s.remove(),1400);
+}
+function voler(a,b,e,fin){
+  const s=document.createElement('span');s.className='vol';s.textContent=e;
+  const pa={x:a.offsetLeft,y:a.offsetTop+a.offsetHeight*.4},pb={x:b.offsetLeft,y:b.offsetTop+b.offsetHeight*.4};
+  s.style.left=pa.x+'px';s.style.top=pa.y+'px';scene.appendChild(s);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{s.style.left=pb.x+'px';s.style.top=pb.y+'px'}));
+  setTimeout(()=>{s.remove();fin&&fin()},800);
+}
+function indice(t,ms=4200){scene.querySelector('.indice')?.remove();const p=document.createElement('p');p.className='indice';p.textContent=t;scene.appendChild(p);setTimeout(()=>p.remove(),ms)}
+function etiquette(html,cls=''){const e=document.createElement('div');e.className='etiquette '+cls;e.innerHTML=html;scene.appendChild(e);return e}
+function moustache(x,b){const c=document.createElement('div');c.className='chat-moustache';c.style.left=x+'%';c.style.bottom=b+'%';c.innerHTML='🐈<small>Moustache</small>';scene.appendChild(c);return c}
+
+// la place de chacun dans la pièce (en % de la scène : le centre, le bas, la largeur)
+const P={gauche:{x:31,b:35,l:24},droite:{x:69,b:35,l:24},centre:{x:50,b:35,l:25},
+  g3:{x:22,b:35,l:22},c3:{x:50,b:35.5,l:22},d3:{x:78,b:35,l:22}};
+
+// ═══════════ LES MOMENTS ═══════════
+function majHaut(){
+  const m=etat.moment;
+  $('#h-etape').textContent=m<0?'Bienvenue':m>=7?'Fin de la démo':`Moment ${m+1} sur 7`;
+  $('#h-titre').textContent=m<0?'Ta figurine est prête':m>=7?'C’est parti':MOMENTS[m];
+  const pts=$('#points');pts.replaceChildren();
+  MOMENTS.forEach((nom,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-label',`${i+1}. ${nom}`);
+    if(i===m)b.className='ici';else if(i<=etat.fait||i<m)b.className='fait';b.addEventListener('click',()=>aller(i));pts.appendChild(b)});
+  $('#b-passer').hidden=m>=7;
+}
+function aller(m){
+  nettoyer();fermerFeuille();etat.moment=m;etat.fait=Math.max(etat.fait,m-1);majHaut();
+  $('#actions').replaceChildren();
+  (m<0?accueil:m>=7?fin:[entrer,messagerie,memoire,maison,tele,salons,premierProche][m])();
+}
+
+// 0. ta figurine est prête
+function accueil(){
+  piece('salon','50% 30%',true);
+  poser('moi',{x:50,b:24,l:42},{nom:'Toi'});
+  plusTard(()=>animer(fig('moi'),'coucou',1900),500);
+  indiquer('Une minute pour tout comprendre : on se parle, on garde ce qu’on se dit, on regarde ensemble. Tu fais tout toi-même.');
+  actions('<button class="btn large" type="button" id="a-entrer">🚪 Entrer chez Pablito</button>',z=>z.querySelector('#a-entrer').onclick=()=>aller(0));
+}
+
+// 1. entrer chez Pablito
+function entrer(){
+  piece('salon');
+  const pab=poser('pablito',P.droite);moustache(84,33);
+  const moi=poser('moi',P.gauche,{depuis:-25});
+  plusTard(()=>{animer(pab,'coucou',1900);visage(pab,'joie')},900);
+  plusTard(()=>dire(0),300);
+  plusTard(()=>actions('<button class="btn" type="button" id="a-coucou">👋 Lui faire coucou</button>',z=>z.querySelector('#a-coucou').onclick=()=>{
+    animer(moi,'coucou',1900);jaillir(moi,'👋');
+    plusTard(()=>{animer(pab,'saute',1000);visage(pab,'joie')},500);
+    actions('');plusTard(()=>{indice('Ta figurine est assise en face de la sienne : c’est votre salon.');suite()},1300);
+  }),1500);
+}
+
+// 2. la messagerie : une bulle, une réponse, un geste
+function messagerie(){
+  piece('salon');
+  const pab=poser('pablito',P.droite),moi=poser('moi',P.gauche);moustache(84,33);
+  indiquer('Pablito t’écrit…');
+  plusTard(()=>bulle(pab,ecrit,{ms:0}),500);
+  plusTard(()=>{bulle(pab,'T’as vu ce qui s’est passé hier ?!',{ms:0});animer(pab,'penche');
+    indiquer('Choisis ta réponse : ta figurine la dit tout de suite.');
+    const R=[['Non, raconte !','saute','oh'],['Grave 😂','rit','rire'],['Quoi ??','penche','oh']];
+    actions(R.map((r,i)=>`<button class="chip" type="button" data-i="${i}">${r[0]}</button>`).join(''),z=>z.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{
+      const r=R[b.dataset.i];actions('');pab._b?.remove();
+      bulle(moi,r[0],{cls:'moi',ms:2600});animer(moi,'pulse',900);
+      plusTard(()=>{animer(pab,r[1]);visage(pab,r[2])},450);
+      plusTard(()=>{bulle(pab,'Tiens, pour toi 🤜',{ms:1800});voler(pab,moi,'🤜',()=>{animer(moi,'saute',900);visage(moi,'joie')})},2100);
+      plusTard(()=>{indiquer('Renvoie-lui un geste :');
+        const G=[['🤜','Check'],['😘','Bisou'],['👏','Bravo']];
+        actions(G.map((g,i)=>`<button class="chip" type="button" data-g="${i}">${g[0]} ${g[1]}</button>`).join(''),z2=>z2.querySelectorAll('[data-g]').forEach(c=>c.onclick=()=>{
+          const g=G[c.dataset.g];actions('');
+          voler(moi,pab,g[0],()=>{animer(pab,g[0]==='😘'?'pulse':'rit');visage(pab,g[0]==='😘'?'coeur':'rire')});
+          plusTard(()=>{dire(1);suite()},1200);
+        }));
+      },3400);
+    }));
+  },1600);
+}
+
+// 3. la mémoire : « Je le range ? »
+function memoire(){
+  piece('salon');
+  const pab=poser('pablito',P.droite),moi=poser('moi',P.gauche);moustache(84,33);
+  etiquette('📚 <span id="nb">0</span>','droite');
+  plusTard(()=>bulle(pab,ecrit,{ms:0}),400);
+  plusTard(()=>{bulle(pab,'On se fait un ciné samedi ? 🍿',{ms:0});
+    indiquer('Réponds-lui :');
+    actions('<button class="chip" type="button" data-r="Carrément !">Carrément !</button><button class="chip" type="button" data-r="Avec plaisir 😍">Avec plaisir 😍</button>',z=>z.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{
+      actions('');pab._b?.remove();bulle(moi,b.dataset.r,{cls:'moi',ms:2200});
+      plusTard(()=>{animer(pab,'pulse');visage(pab,'coeur')},450);
+      plusTard(()=>{bulle(moi,'🎟️ Un ciné samedi… Je le range ?',{cls:'range',ms:0});
+        indiquer('Ta figurine demande avant de ranger quoi que ce soit.');
+        actions('<button class="btn ambre" type="button" id="a-oui">📌 Oui, range-le</button><button class="chip" type="button" id="a-non">Non merci</button>',z2=>{
+          z2.querySelector('#a-oui').onclick=()=>{
+            etat.ticket=true;actions('');moi._b?.remove();
+            const cible=scene.querySelector('.etiquette.droite');
+            const s=document.createElement('span');s.className='vol';s.textContent='🎟️';const p=haut(moi);
+            s.style.left=p.x+'px';s.style.top=p.y+'px';scene.appendChild(s);
+            requestAnimationFrame(()=>requestAnimationFrame(()=>{s.style.left=(cible.offsetLeft+cible.offsetWidth/2)+'px';s.style.top=(cible.offsetTop+cible.offsetHeight/2)+'px'}));
+            setTimeout(()=>{s.remove();$('#nb').textContent='1';animer(cible,'pulse');etiquette('📅 Ciné · samedi','rdv')},800);
+            plusTard(()=>{dire(2);suite()},1500);
+          };
+          z2.querySelector('#a-non').onclick=()=>{
+            etat.ticket=false;actions('');moi._b?.remove();
+            toast('Rien ne se range sans toi : c’est toi qui décides.');
+            plusTard(()=>{dire(2);suite()},900);
+          };
+        });
+      },1500);
+    }));
+  },1500);
+}
+
+// 4. ma maison : ce qu'on garde s'y installe
+function maison(){
+  piece('maison');
+  etiquette('🏠 Chez toi');
+  const moi=poser('moi',{x:36,b:35,l:25});
+  const e=document.createElement('div');e.className='etagere';
+  e.innerHTML=`<div class="planche"><span>🪴</span><span>📚</span></div><div class="planche" id="pl2">${etat.ticket?'':'<span>🕯️</span>'}</div>`;
+  scene.appendChild(e);
+  indiquer(etat.ticket?'Regarde ton étagère…':'Ta maison attend ce que tu garderas.');
+  if(etat.ticket){
+    plusTard(()=>{
+      $('#pl2').innerHTML='<button type="button" class="ticket" id="ticket" aria-label="Le ticket du ciné, gardé avec Pablito">🎟️<span class="garde-avec">✨ gardé avec Pablito</span></button>';
+      visage(moi,'joie');animer(moi,'saute',900);
+      plusTard(()=>dire(3),700);
+      const ouvrir=()=>{feuille(`<div class="souvenir"><span>🎟️</span><div><b>Ciné · samedi</b><small>Gardé avec Pablito · « On se fait un ciné samedi ? 🍿 »</small></div></div><p>Il est aussi dans votre salon, en 📅 en haut de la scène : vous ne l’oublierez pas.</p><button class="btn large" type="button" id="f-ok" style="width:100%">D’accord</button>`,v=>v.querySelector('#f-ok').onclick=()=>{fermerFeuille();if(!$('#actions .suite'))suite()})};
+      $('#ticket').onclick=ouvrir;
+      plusTard(()=>actions('<button class="chip" type="button" id="a-ticket">🎟️ Toucher le ticket</button>',z=>z.querySelector('#a-ticket').onclick=ouvrir),1200);
+      plusTard(()=>{if(!$('#actions .suite'))suite()},5200);
+    },700);
+  }else{plusTard(()=>{dire(3);suite()},800)}
+}
+
+// 5. jamais seul devant une vidéo (en portrait)
+const VIDEO={duree:8,fort:4.3,reactions:[
+  {q:'sam',t:3.9,s:'oh'},{q:'pablito',t:4.3,s:'rire',b:'😂😂😂'},{q:'lea',t:4.5,s:'rire',b:'PIXEL 😭😂'},{q:'sam',t:4.8,s:'rire'},{q:'lea',t:7.2,s:'coeur'}]};
+function tele(){
+  piece('maison','50% 72%');
+  const W=[poser('sam',{x:13,b:4,l:19},{vu:'a vu hier soir'}),poser('moi',{x:37,b:4,l:19}),poser('pablito',{x:63,b:4,l:19},{vu:'a vu ce matin'}),poser('lea',{x:87,b:4,l:19},{vu:'a vu ce midi'})];
+  const e=document.createElement('div');e.className='ecran';
+  e.innerHTML=`<canvas width="270" height="480"></canvas><span class="badge"><b>▶</b> Shorts</span><span class="chaine">Les bêtises de Pixel</span><div class="fil"><i></i>${VIDEO.reactions.slice(0,3).map(r=>`<s style="left:${r.t/VIDEO.duree*100}%"></s>`).join('')}</div><button class="lancer" type="button" id="lancer"><b>▶</b>Pablito, Sam et Léa l’ont déjà vue</button>`;
+  scene.appendChild(e);
+  const c=e.querySelector('canvas').getContext('2d');dessiner(c,0);
+  indiquer('Lance la vidéo : ils réagiront à la seconde où ils ont réagi. Quand ça te fait rire, touche 😂.');
+  actions('<span class="lbl">Réagis :</span><button class="reac" type="button" data-s="rire" disabled aria-label="Rire">😂</button><button class="reac" type="button" data-s="coeur" disabled aria-label="J’adore">❤️</button><button class="reac" type="button" data-s="oh" disabled aria-label="Oh !">😮</button>');
+  let t0=0,joue=false,vu=false,synchro=false,suivantes=[];
+  const moi=W[1];
+  const reagirMoi=s=>{
+    if(!joue)return;const t=(performance.now()-t0)/1000;
+    visage(moi,s);animer(moi,s==='rire'?'rit':s==='coeur'?'pulse':'penche');
+    if(s==='rire'&&!synchro&&Math.abs(t-VIDEO.fort)<=1.8){synchro=true;
+      const d=document.createElement('div');d.className='synchro';d.textContent='🫶 En même temps que Pablito !';scene.appendChild(d);setTimeout(()=>d.remove(),2500);
+      voler(moi,fig('pablito'),'🙌');
+    }else indice(`${s==='rire'?'😂':s==='coeur'?'❤️':'😮'} noté à 0:0${Math.floor(t)} : Pablito, Sam et Léa le verront à cette seconde.`,3000);
+  };
+  $('#actions').querySelectorAll('.reac').forEach(b=>b.onclick=()=>reagirMoi(b.dataset.s));
+  scene.onclick=ev=>{if(ev.target.closest('.ecran'))return;reagirMoi('rire')};
+  const lancer=()=>{
+    e.querySelector('#lancer')?.remove();joue=true;t0=performance.now();synchro=synchro&&false;
+    $('#actions').querySelectorAll('.reac').forEach(b=>b.disabled=false);
+    suivantes=VIDEO.reactions.map(r=>({...r,fait:false}));
+    const fil=e.querySelector('.fil i');
+    const pas=()=>{
+      const t=(performance.now()-t0)/1000;dessiner(c,Math.min(t,VIDEO.duree));fil.style.width=Math.min(100,t/VIDEO.duree*100)+'%';
+      for(const r of suivantes)if(!r.fait&&t>=r.t){r.fait=true;const f=fig(r.q);visage(f,r.s,2000);animer(f,r.s==='rire'?'rit':r.s==='oh'?'penche':'pulse');if(r.b)bulle(f,r.b,{ms:2000})}
+      if(t<VIDEO.duree){raf=requestAnimationFrame(pas);return}
+      joue=false;$('#actions').querySelectorAll('.reac').forEach(b=>b.disabled=true);
+      const r=document.createElement('button');r.type='button';r.className='lancer';r.id='lancer';r.innerHTML='<b>↻</b>Revoir';r.onclick=lancer;e.appendChild(r);
+      if(!vu){vu=true;dire(4);suite()}
+    };
+    raf=requestAnimationFrame(pas);
+  };
+  e.querySelector('#lancer').onclick=lancer;
+}
+// ce qui passe à la télé : dessiné (dans l'appli, c'est le lecteur officiel de YouTube, ici un Short en portrait)
+const EF='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+function emoji(c,e,x,y,taille,{miroir=false,rot=0}={}){c.save();c.translate(x,y);c.rotate(rot);if(miroir)c.scale(-1,1);c.font=`${taille}px ${EF}`;c.textAlign='center';c.textBaseline='middle';c.fillText(e,0,0);c.restore()}
+function dessiner(c,t){
+  const W=270,H=480;
+  const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#f7dcc0');g.addColorStop(.78,'#ecc39e');g.addColorStop(.78,'#a8714a');g.addColorStop(1,'#8a5a3a');
+  c.fillStyle=g;c.fillRect(0,0,W,H);
+  c.fillStyle='rgba(255,255,255,.35)';c.fillRect(18,120,64,90);c.strokeStyle='#c99a72';c.lineWidth=3;c.strokeRect(18,120,64,90);
+  // l'étagère et ses livres
+  c.fillStyle='#7a4a2c';c.fillRect(150,196,110,10);
+  const livreTombe=t>5.1;
+  [['#c0392b',156,30],['#2e86c1',172,36],['#f1c40f',190,26],['#27ae60',210,34]].forEach(([col,x,h],i)=>{if(i===0&&livreTombe)return;c.fillStyle=col;c.fillRect(x,196-h,14,h)});
+  if(livreTombe){const u=Math.min(1,(t-5.1)/.55);c.save();c.translate(166,180+u*188);c.rotate(u*2.6);c.fillStyle='#c0392b';c.fillRect(-7,-15,14,30);c.restore()}
+  // la légende, comme sur TikTok
+  c.fillStyle='rgba(255,255,255,.93)';c.beginPath();if(c.roundRect)c.roundRect(20,22,230,54,12);else c.rect(20,22,230,54);c.fill();
+  c.fillStyle='#1d0f18';c.font='800 16px Poppins, system-ui, sans-serif';c.textAlign='center';c.textBaseline='middle';
+  c.fillText('Quand Pixel croit',135,41);c.fillText('qu’il sait voler 😹',135,61);
+  // Pixel : il se prépare, saute, rate l'étagère, tombe
+  let x=70,y=372,rot=0,miroir=true,taille=66;
+  if(t<2.3){y=372+Math.sin(t*5)*1.5}
+  else if(t<2.8){const u=(t-2.3)/.5;y=372+u*8;taille=66-u*6}
+  else if(t<3.9){const u=(t-2.8)/1.1;x=70+u*100;y=380-Math.sin(u*Math.PI*.92)*230-u*10;rot=-.4+u*.5}
+  else if(t<4.25){x=172;y=212+Math.sin((t-3.9)*40)*3;rot=Math.sin((t-3.9)*30)*.35}
+  else if(t<4.85){const u=(t-4.25)/.6;x=172-u*22;y=212+u*u*160;rot=u*3.2}
+  else{x=150;y=372;rot=0;miroir=false}
+  emoji(c,'🐈',x,y,taille,{miroir,rot});
+  if(t>=4.85&&t<6){const u=(t-4.85)/1.15;c.globalAlpha=1-u*.8;emoji(c,'💥',150,345,48+u*20);c.globalAlpha=1;c.fillStyle='#ff2e9a';c.font='900 26px Poppins, sans-serif';c.textAlign='center';c.fillText('BOING',150,300-u*14)}
+  if(t>=6)emoji(c,'❓',178,318,26);
+}
+
+// 6. les salons ouverts
+function salons(){
+  piece('foot','50% 34%',true);
+  const S=[{e:'⚽',nom:'Le salon du foot',n:12,f:'foot',t:['rebelle','melomane','denim']},{e:'🎬',nom:'Séries et films',n:8,f:'series',t:['artiste','lecteur']},
+    {e:'🎌',nom:'Manga et anime',n:5,f:'manga',t:['melomane','rebelle']},{e:'🗞️',nom:'Les potins de ta ville',n:6,f:'potins',t:['lecteur','artiste','fleuri']}];
+  const z=document.createElement('div');z.className='salons';
+  z.innerHTML=S.map((s,i)=>`<button type="button" class="carte-salon" style="--i:${i*.12}s"><div class="vig"><img class="f" src="${IMG+PIECE[s.f]}" alt="">${s.t.map((p,k)=>`<img class="t" src="${IMG}${p}-assis.webp" alt="" style="left:${(100/(s.t.length+1))*(k+1)}%">`).join('')}</div><b>${s.e} ${s.nom}</b><small><i></i>${s.n} ici</small></button>`).join('');
+  scene.appendChild(z);
+  z.querySelectorAll('.carte-salon').forEach(b=>b.onclick=()=>{z.querySelectorAll('.touche').forEach(x=>x.classList.remove('touche'));b.classList.add('touche');toast('Tu y entres quand tu veux, depuis 🧭 Découvrir.')});
+  plusTard(()=>{dire(5);suite()},700);
+}
+
+// 7. ton premier proche
+function premierProche(){
+  piece('salon');
+  const moi=poser('moi',P.g3),pab=poser('pablito',P.c3);moustache(90,14);
+  const l=document.createElement('div');l.className='place-libre';l.style.cssText=`left:${P.d3.x}%;bottom:${P.d3.b}%;width:${P.d3.l*.86}%`;l.innerHTML='<b>＋</b><span>Place libre</span>';scene.appendChild(l);
+  plusTard(()=>{bulle(pab,'Il manque quelqu’un sur ce canapé…',{ms:3600});animer(pab,'penche')},500);
+  plusTard(()=>{dire(6);
+    actions('<button class="btn large" type="button" id="a-inviter">👯 Inviter mon premier proche</button><button class="lien" type="button" id="a-plus-tard">Plus tard</button>',z=>{
+      z.querySelector('#a-inviter').onclick=()=>feuille(`<h3>Invite quelqu’un que tu aimes</h3><p>Le lien s’ouvre dans WhatsApp, déjà écrit. Ton proche fait sa figurine et s’assoit sur ton canapé.</p>
+        <div class="wa-fil"><header><i>👤</i>Ton proche</header><div class="wa-msg">Viens, on se retrouve sur ClikMe 🛋️ Ma figurine t’attend sur le canapé : <u>clikme.fr/parler/…</u></div></div>
+        <button class="btn wa large" type="button" id="f-wa" style="width:100%">Envoyer sur WhatsApp</button>`,v=>v.querySelector('#f-wa').onclick=()=>{
+          fermerFeuille();toast('Dans l’appli, WhatsApp s’ouvre avec ce message.');
+          l.innerHTML='<b>⏳</b><span>Invitation envoyée</span>';animer(pab,'saute');visage(pab,'joie');visage(moi,'joie');
+          plusTard(()=>aller(7),1800);
+        });
+      z.querySelector('#a-plus-tard').onclick=()=>aller(7);
+    });
+  },2200);
+}
+
+// fin
+function fin(){
+  piece('salon');
+  const moi=poser('moi',P.gauche),pab=poser('pablito',P.droite);moustache(84,33);
+  plusTard(()=>{animer(moi,'coucou',1900);animer(pab,'coucou',1900)},400);
+  const f=document.createElement('div');f.className='fin';
+  f.innerHTML='<h2>C’est parti !</h2><p>Tout est là, en bas de l’appli :</p><div class="onglets"><span class="chip">💬 Messages</span><span class="chip">🏠 Ma maison</span><span class="chip">🧭 Découvrir</span></div>';
+  scene.appendChild(f);
+  indiquer('Fin de la démo. Dans l’appli, on arrive ensuite sur 💬 Messages.');
+  actions('<button class="btn" type="button" id="a-rejouer">↻ Rejouer la démo</button><button class="chip" type="button" id="a-phr">📝 Les phrases de Pablito</button>',z=>{z.querySelector('#a-rejouer').onclick=()=>aller(-1);z.querySelector('#a-phr').onclick=phrases});
+}
+
+function phrases(){
+  feuille(`<h3>📝 Ce que dit Pablito</h3><p>Sept phrases, environ 40 secondes en tout, à enregistrer avec ta voix (jamais de voix de synthèse). Le reste de la démo se lit à l’écran.</p>
+  <ol>${LIGNES.map((l,i)=>`<li><b>${MOMENTS[i]}</b> : « ${l.t} » <code>${l.id}</code></li>`).join('')}</ol>
+  <p>Cette maquette ne fait rien partir : pas de message, pas de WhatsApp. Les figurines sont des personnages de démonstration ; dans l’appli, c’est ta vraie figurine, et la vraie figurine de Pablito.</p>
+  <button class="btn large" type="button" id="f-ok" style="width:100%">Fermer</button>`,v=>v.querySelector('#f-ok').onclick=fermerFeuille);
+}
+
+$('#b-phrases').onclick=phrases;
+$('#b-passer').onclick=()=>aller(7);
+window.addEventListener('resize',()=>scene.querySelectorAll('.bulle').forEach(b=>b.remove()));
+aller(-1);
+</script>
