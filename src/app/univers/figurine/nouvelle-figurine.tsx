@@ -3,8 +3,8 @@
 /**
  * 🧸 LA NOUVELLE FIGURINE, À L'ÉCRAN — chantier « Univers », lot 2 (`lib/direct/nouvelle-figurine.ts` : le parcours).
  *
- *   · LE SELFIE : « Créons ta figurine ! », sa photo (réduite dans le téléphone), son prénom s'il n'est pas encore
- *     connu, sa ville sans compte sur ce téléphone, « C'est bien moi », « J'ai 15 ans ou plus » ;
+ *   · LE SELFIE : « Créons ta figurine ! », sa photo (réduite dans le téléphone), son prénom (toujours demandé, rempli
+ *     d'avance s'il est connu), sa ville sans compte sur ce téléphone, « C'est bien moi », « J'ai 15 ans ou plus » ;
  *   · L'ATELIER : Pablito essaie des têtes en sculptant, ce qu'il fait s'écrit, une barre avance (une minute environ) ;
  *   · LA DÉCOUVERTE : sa figurine, assise dans son fauteuil, sous une lumière chaude (« Film, chaleureux ») — elle
  *     apparaît ; « C'est moi ! », « Retoucher » (avec ses mots, ou une idée toute prête), « Elle ne me ressemble pas » ;
@@ -111,7 +111,7 @@ export function NouvelleFigurine({ piece = "" }: { piece?: string }) {
           branche={etat.branche}
           photoDAvant={etat.photoDAvant}
           villeADonner={etat.villeADonner}
-          prenomADonner={etat.prenomADonner}
+          prenomConnu={etat.prenom}
           onEnvoyer={(photo, ville, prenom) => faire({ action: "selfie", photo, moi: true, age: true, ...(ville ? { ville } : {}), ...(prenom ? { prenom } : {}) })}
         />
       ) : etape === "fabrication" ? (
@@ -137,19 +137,20 @@ function Selfie({
   branche,
   photoDAvant,
   villeADonner,
-  prenomADonner,
+  prenomConnu,
   onEnvoyer,
 }: {
   occupe: boolean;
   branche: boolean;
   photoDAvant?: string;
   villeADonner?: { suggestions: { slug: string; nom: string }[] };
-  prenomADonner?: boolean;
+  /** (son prénom déjà connu : le champ est rempli d'avance, il le corrige s'il veut) */
+  prenomConnu?: string;
   onEnvoyer: (photo: string, ville?: string, prenom?: string) => void;
 }) {
   const [photo, setPhoto] = useState("");
-  // ✍️ son prénom (pas encore connu) : ses proches le verront partout
-  const [prenom, setPrenom] = useState("");
+  // ✍️ son prénom, toujours demandé (20 novembre 2026) : ses proches le verront partout ; connu, il est déjà écrit
+  const [prenom, setPrenom] = useState(prenomConnu ?? "");
   // 🏙️ sa ville (pas encore de compte sur ce téléphone) : n'importe laquelle
   const [ville, setVille] = useState("");
   // 🖼️ sa photo d'avant (celle de sa figurine d'aujourd'hui) : reprise telle quelle, sans nouveau selfie
@@ -168,7 +169,7 @@ function Selfie({
     }
   }
   const villeOk = !villeADonner || villeEcrite(ville) !== "";
-  const prenomOk = !prenomADonner || prenomValide(prenom) !== "";
+  const prenomOk = prenomValide(prenom) !== "";
   const pret = (Boolean(photo) || dAvant) && moi && age && villeOk && prenomOk && !occupe && branche;
   const montree = dAvant ? photoDAvant : photo;
   return (
@@ -186,21 +187,19 @@ function Selfie({
         </button>
       )}
       {lecture && <p className="nf-erreur">{lecture}</p>}
-      {prenomADonner && (
-        <label className="nf-champ">
-          <span>Ton prénom</span>
-          <input
-            type="text"
-            name="prenom"
-            value={prenom}
-            maxLength={PRENOM_MAX}
-            autoComplete="given-name"
-            autoCapitalize="words"
-            placeholder="Celui que tes proches connaissent"
-            onChange={(e) => setPrenom(e.target.value)}
-          />
-        </label>
-      )}
+      <label className="nf-champ">
+        <span>Ton prénom</span>
+        <input
+          type="text"
+          name="prenom"
+          value={prenom}
+          maxLength={PRENOM_MAX}
+          autoComplete="given-name"
+          autoCapitalize="words"
+          placeholder="Celui que tes proches connaissent"
+          onChange={(e) => setPrenom(e.target.value)}
+        />
+      </label>
       {villeADonner && (
         <label className="nf-champ">
           <span>Ta ville</span>
@@ -227,7 +226,7 @@ function Selfie({
       <label className="nf-case">
         <input type="checkbox" name="age" checked={age} onChange={(e) => setAge(e.target.checked)} /> J’ai 15 ans ou plus
       </label>
-      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined, prenomADonner ? prenomValide(prenom) : undefined)}>
+      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined, prenomValide(prenom) || undefined)}>
         {occupe ? "…" : "Créer ma figurine"}
       </button>
       {!branche && <p className="nf-doux">Le moteur d’image n’est pas branché ici.</p>}

@@ -39,12 +39,17 @@ export async function GET() {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   const etat = await etatNouvelleFigurine(supabase, moi?.id ?? null);
-  // (✍️ son prénom, demandé avec le selfie s'il n'est pas encore connu — et « Refaire ma figurine » repasse par le selfie)
-  if ((etat.etape === "selfie" || etat.etape === "validee") && !(await prenomConnu(moi))) etat.prenomADonner = true;
+  // (✍️ son prénom, toujours demandé avec le selfie — rempli d'avance s'il est connu, on le corrige ; « Refaire ma
+  // figurine » repasse par le selfie)
+  if (etat.etape === "selfie" || etat.etape === "validee") {
+    const connu = await prenomConnu(moi);
+    if (connu) etat.prenom = connu;
+    else etat.prenomADonner = true;
+  }
   return NextResponse.json({ ok: true, ...etat }, { headers: sansCache });
 }
 
-const prenomConnu = async (moi: Habitant | null) => Boolean(moi && (await prenomDe(createAdminClient(), moi).catch(() => "")));
+const prenomConnu = async (moi: Habitant | null) => (moi ? await prenomDe(createAdminClient(), moi).catch(() => "") : "");
 
 export async function POST(request: Request) {
   if (!(await universPermis())) return NextResponse.json(REFUS, { status: 403 });
@@ -73,8 +78,8 @@ export async function POST(request: Request) {
         const cause = (await isCurrentUserAdmin().catch(() => false)) ? ` (pour l’administrateur : ${causeHabitant() || "cause inconnue"})` : "";
         return NextResponse.json({ error: `Ton compte n’a pas pu être créé sur ce téléphone. Réessaie dans un instant.${cause}` }, { status: 502 });
       }
-      // (rangé sur son compte : ses proches le verront partout ; un prénom déjà connu ne change pas)
-      if (prenom && !moi.prenom) {
+      // (rangé sur son compte : ses proches le verront partout ; corrigé, il change — c'est le sien)
+      if (prenom && prenom !== moi.prenom) {
         const { error } = await supabase.from("human_habitants").update({ prenom }).eq("id", moi.id);
         if (error) console.error("[nouvelle-figurine] prénom non rangé :", error.message);
       }
