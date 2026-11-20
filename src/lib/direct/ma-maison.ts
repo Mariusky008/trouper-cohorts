@@ -254,6 +254,8 @@ export function ditDeLObjet(o: ObjetMaison, hote?: string): string {
 export const PHRASES_MAISON = {
   ecouter: "▶ Écouter",
   regarder: "▶ Regarder",
+  /** (📺 la vidéo joue sur la télé de la pièce : l'éteindre) */
+  eteindre: "⏹ Éteindre la télé",
   voir: "🔍 La voir en grand",
   toutes: "📚 Toute mon étagère",
 } as const;

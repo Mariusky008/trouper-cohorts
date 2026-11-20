@@ -14,8 +14,9 @@
  *   · Une vidéo qui refuse d'être lue hors de YouTube : la suivante arrive, sans rien compter.
  *   · Pas encore de passions : « Tes passions » d'abord (`tes-passions.tsx`).
  *
- * Le lecteur de YouTube est chargé une fois (`chargerYouTube`, `tele-duo.tsx`) ; s'il ne répond pas, la vignette et
- * « ▶ La regarder sur YouTube ».
+ * Le lecteur de YouTube est chargé une fois (`chargerYouTube`, `tele-duo.tsx`) ; s'il ne répond pas (un bloqueur, un
+ * réseau lent), le lecteur tout simple dans l'écran (`lecteurYouTube`) : on reste dans la scène, jamais un lien vers
+ * YouTube (retours du propriétaire, 20 novembre 2026).
  *
  * 🔥 L'ONGLET « DÉCOUVRIR » (le lot D1b, 19 novembre 2026) : c'est elle, à la place des mèmes en plein écran et des vœux
  * (`onglet` : sous la barre du haut, au-dessus du menu ; la note et la feuille « Envoyer à… » passent devant le menu).
@@ -25,7 +26,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PHRASES_TELE_DU_JOUR as P, duree, type TeleDuJour, type VideoTele } from "@/lib/direct/tele-du-jour";
 import { themeDe } from "@/lib/direct/decouvrir";
-import { surYouTube, vignetteYouTube } from "@/lib/direct/tele";
+import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
 import type { UniversPublic } from "@/lib/direct/visites";
@@ -327,21 +328,18 @@ function Television({ tele, cls }: { tele: TeleDuJour; cls: string }) {
               <b>{tele.vide ? P.bientot : P.fini}</b>
               {!tele.vide && <span>{P.demain}</span>}
             </div>
-          ) : allumee && !simple ? (
+          ) : allumee && simple ? (
+            // (le lecteur de YouTube ne répond pas : le lecteur tout simple, dans l'écran — on reste dans la scène)
+            <iframe key={v.id} className="td-lecteur" data-simple title={v.titre} src={lecteurYouTube(v.id)} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+          ) : allumee ? (
             <div ref={hote} className="td-lecteur" />
           ) : (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="td-vignette" src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" />
-              {simple ? (
-                <a className="td-allumer" href={surYouTube(v.id)} target="_blank" rel="noreferrer">
-                  {P.surYouTube}
-                </a>
-              ) : (
-                <button type="button" className="td-allumer" data-allumer onClick={() => setAllumee(true)}>
-                  {P.allumer}
-                </button>
-              )}
+              <button type="button" className="td-allumer" data-allumer onClick={() => setAllumee(true)}>
+                {P.allumer}
+              </button>
             </>
           )}
         </div>

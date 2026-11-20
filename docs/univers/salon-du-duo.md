@@ -1331,6 +1331,22 @@ garde sa porte de sortie : `?salon=0`. La CI et le serveur d'essai tournent frei
 restent valables) ; `salon-bascule.mjs` essaie l'allumé sur une seconde app sans frein (« sans rien, la carte ouvre le
 salon », « `?salon=0` : l'ancien écran »). L'ancien écran de `proches.tsx` sera retiré quelques jours plus tard.
 
+### 11.25 🛠️ Les retours du 20 novembre 2026
+
+Le propriétaire, dans sa conversation avec un proche : « je n'apparais pas dans la scène » ; et, sur ordinateur, en
+grand : « le chat […] n'est pas totalement détouré ».
+
+- **Chaque figurine la sienne.** La scène ne posait les figurines que si les deux étaient découpées (lot S1) : celle d'un
+  proche à l'ancien style (sans figurine assise), ou pas encore découpée, faisait disparaître les deux. Désormais
+  `calquesPoses` pose celle qui est prête (`calques: { a?, b? }`) ; l'autre place reste vide jusqu'à ce que la sienne
+  soit découpée (après la réponse, comme avant). Le moteur savait déjà jouer une seule figurine.
+- **Le chat, détouré en grand** (`salon/chat.ts`) : sa toile suit la taille où on la voit (jusqu'à celle de la vidéo,
+  960 points de haut) — agrandie, son bord devenait flou et vert ; le vert du fond est aussi retiré dans l'ombre (la part
+  du vert dans la couleur, même sombre) ; l'ombre grise n'est gardée que sous ses pattes ; le bord de l'image s'efface.
+
+**Les essais** : `salon-ouvrir.mjs` (« sa figurine pas découpée, de l'ancien style : la mienne est là quand même,
+seule »).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

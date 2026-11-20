@@ -68,7 +68,8 @@ export type SceneSalon = {
   plaque: ImageSalon;
   places: PlaceDuo[];
   emplacements: EmplacementsDuo | null;
-  calques?: { a: CalqueFigurine; b: CalqueFigurine };
+  /** (chacune la sienne : une figurine pas encore découpée — ou de l'ancien style — manque seule, l'autre est là) */
+  calques?: { a?: CalqueFigurine; b?: CalqueFigurine };
   /** (lot S2) le duo a choisi sa pièce (sinon : celle qu'on lui propose, et « Où vous installez-vous ? ») */
   choisie?: boolean;
   /** (lot S2) qui l'a installée là (« ✨ Léa vous a installés sur la terrasse ») */

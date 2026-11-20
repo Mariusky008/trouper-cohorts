@@ -9,7 +9,9 @@
  * LE VERT RETIRÉ PAR LA CARTE GRAPHIQUE (section 7.3) : chaque image de la vidéo devient une texture, un petit programme
  * de la carte graphique (WebGL) rend le fond transparent — la même règle que l'essai C0 (`univers/compagnon-vivant.tsx` :
  * la couleur du fond mesurée sur le bord, les points à demi « démêlés », l'ombre gardée grise, le reflet vert éteint, le
- * bord resserré d'un point), sans rien demander au processeur. Sans WebGL (ou une vidéo qu'on ne peut pas lire) : pas de
+ * bord resserré d'un point), sans rien demander au processeur. (Retours du 20 novembre 2026, le chat « pas totalement
+ * détouré » en grand sur un ordinateur : la toile suit la taille où on la voit ; le vert du fond retiré aussi dans
+ * l'ombre ; l'ombre grise gardée seulement sous ses pattes ; le bord de l'image effacé.) Sans WebGL (ou une vidéo qu'on ne peut pas lire) : pas de
  * chat — il n'est qu'un plus.
  *
  * Une vidéo par boucle, créée à la première fois qu'elle sert, gardée dans la page (un iPhone ne décode pas une vidéo
@@ -26,7 +28,7 @@ const PIED = 0.17;
 /** Le temps qu'il marche d'une place à l'autre. */
 const MARCHE_MS = 1700;
 /** La toile : assez fine pour un animal de la taille d'une figurine, assez légère pour un téléphone. */
-const TOILE = { l: 270, h: 480 } as const;
+const TOILE = { l: 270, h: 480, max: 960 } as const;
 const FOND_PAR_DEFAUT = [20 / 255, 180 / 255, 60 / 255] as const;
 const hasard = (a: number, b: number) => a + Math.random() * (b - a);
 
@@ -43,9 +45,10 @@ export type ChatDuSalon = {
 // ─── le vert retiré par la carte graphique ───
 const SOMMETS = `attribute vec2 p;varying vec2 uv;void main(){uv=vec2((p.x+1.)*.5,(1.-p.y)*.5);gl_Position=vec4(p,0.,1.);}`;
 const PIXELS = `precision mediump float;
-uniform sampler2D t;uniform vec3 fond;uniform float vf;uniform vec2 px;varying vec2 uv;
+uniform sampler2D t;uniform vec3 fond;uniform float vf;uniform float vt;uniform vec2 px;varying vec2 uv;
 float partDe(vec3 c){return (c.g-(c.r+c.b)*.5)/vf;}
-float alphaDe(vec3 c){return 1.-clamp((partDe(c)-.16)/.34,0.,1.);}
+float teinteDe(vec3 c){return smoothstep(.12,.28,c.g)*(c.g-max(c.r,c.b))/max(c.g,.001)/vt;}
+float alphaDe(vec3 c){return 1.-clamp((max(partDe(c),teinteDe(c))-.16)/.34,0.,1.);}
 void main(){
   vec4 c=texture2D(t,uv);
   float part=partDe(c.rgb);
@@ -59,9 +62,10 @@ void main(){
   else{
     float f=max(1.-clamp((part-.16)/.34,0.,1.),.001);
     vec3 d=(c.rgb-(1.-f)*fond)/f;
-    if(d.g<0.){float n=min(c.r,c.b)*.5;col=vec3(n,n*.95,n*.9);}
+    if(d.g<0.){float n=min(c.r,c.b)*.5;col=vec3(n,n*.95,n*.9);a*=mix(.2,1.,smoothstep(.6,.8,uv.y));}
     else{col=vec3(d.r,min(d.g,max(d.r,d.b)),d.b);}
   }
+  a*=smoothstep(0.,.035,uv.x)*smoothstep(0.,.035,1.-uv.x)*smoothstep(0.,.02,uv.y)*smoothstep(0.,.02,1.-uv.y);
   col=clamp(col,0.,1.);
   gl_FragColor=vec4(col*a,a);
 }`;
@@ -98,6 +102,7 @@ function rendu(toile: HTMLCanvasElement): Rendu | null {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   const uFond = gl.getUniformLocation(prog, "fond");
   const uVf = gl.getUniformLocation(prog, "vf");
+  const uVt = gl.getUniformLocation(prog, "vt");
   const uPx = gl.getUniformLocation(prog, "px");
   gl.viewport(0, 0, toile.width, toile.height);
   gl.clearColor(0, 0, 0, 0);
@@ -110,7 +115,15 @@ function rendu(toile: HTMLCanvasElement): Rendu | null {
         return false;
       }
       gl.uniform3f(uFond, fond[0], fond[1], fond[2]);
+      // (la toile à la taille où on la voit — jusqu'à celle de la vidéo : agrandie, le bord du chat devenait flou et vert)
+      const voulue = Math.round(Math.min(v.videoHeight || TOILE.h, TOILE.max, Math.max(TOILE.h, (toile.clientHeight || 0) * (window.devicePixelRatio || 1))));
+      if (Math.abs(voulue - toile.height) > 24) {
+        toile.height = voulue;
+        toile.width = Math.round((voulue * TOILE.l) / TOILE.h);
+        gl.viewport(0, 0, toile.width, toile.height);
+      }
       gl.uniform1f(uVf, Math.max(0.05, fond[1] - (fond[0] + fond[2]) / 2));
+      gl.uniform1f(uVt, Math.max(0.2, (fond[1] - Math.max(fond[0], fond[2])) / Math.max(0.05, fond[1])));
       gl.uniform2f(uPx, 1 / (v.videoWidth || TOILE.l), 1 / (v.videoHeight || TOILE.h));
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 6);

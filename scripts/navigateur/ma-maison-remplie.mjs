@@ -88,7 +88,7 @@ const ranges = [
   range("photo00002", "photo", "Le gâteau", "#d53a7b", 200),
   range("photo00003", "photo", "Le concert", "#7bd53a", 100),
   range("chanson001", "musique", "Notre chanson", "#d5a03a", 90, "https://www.essai.invalid/chanson"),
-  range("video00001", "video", "Le film du dimanche", "#3ad5c0", 80, "https://www.essai.invalid/film"),
+  range("video00001", "video", "Le film du dimanche", "#3ad5c0", 80, "https://www.youtube.com/watch?v=FilmDimanch"),
 ];
 for (const r of ranges) await deposer(r.image.chemin, await image(r.couleur), "image/jpeg");
 await json(`${LEA.id}/etagere-perso.json`, { v: 1, objets: ranges.map((r) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== "couleur"))), montres: [], caches: [] });
@@ -129,6 +129,8 @@ await ctx.addCookies([
   { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE },
   { name: "clikme_habitant", value: LEA.jeton, url: BASE },
 ]);
+// (📺 le lecteur de YouTube tout simple : rien ne part chez YouTube)
+await ctx.route(/^https:\/\/www\.youtube-nocookie\.com\//, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>lecteur</title>" }));
 const p = await ctx.newPage();
 p.on("pageerror", (e) => erreurs.push(String(e)));
 p.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && erreurs.push(m.text()));
@@ -189,6 +191,21 @@ ok((await p.locator("[data-photo-grand]").count()) === 0, "un toucher la referme
 await toucher(".mmc-platine");
 ok(await attendre(async () => /Notre chanson/.test(await bulle.innerText()) && (await bulle.locator("[data-ouvrir]").getAttribute("href")) === "https://www.essai.invalid/chanson" && /Écouter/.test(await bulle.locator("[data-ouvrir]").innerText())), "la platine : « Notre chanson », « ▶ Écouter » (son lien)");
 await p.screenshot({ path: `${D}/ma-maison-remplie-3-platine.png` });
+// (📺 retours du 20 novembre 2026 : le film mis sur la télé joue DANS la télé de la pièce — jamais un départ vers YouTube)
+await toucher(".mmc-tele");
+ok(
+  await attendre(async () => (await scene.locator(".mmc-ecran[data-tele-joue] iframe").getAttribute("src"))?.startsWith("https://www.youtube-nocookie.com/embed/FilmDimanch?")),
+  "la télé touchée : le film joue sur son écran, dans la scène",
+);
+const ecranTele = await scene.locator(".mmc-ecran").boundingBox();
+const boiteTele = await scene.locator(".mmc-tele").boundingBox();
+ok(ecranTele && boiteTele && Math.abs(ecranTele.x - boiteTele.x) < 2 && Math.abs(ecranTele.width - boiteTele.width) < 2, "… à la place de l'écran de la télé");
+ok(await attendre(async () => /Le film du dimanche/.test(await bulle.innerText()) && /Éteindre la télé/.test(await bulle.locator('[data-tele="joue"]').innerText())), "… sa bulle : « ⏹ Éteindre la télé »");
+ok((await scene.locator('a[href*="youtube.com"]').count()) === 0, "… aucun lien vers YouTube");
+await p.screenshot({ path: `${D}/ma-maison-remplie-3b-tele.png` });
+// (un clic du programme : en local, le petit bouton du serveur de développement peut couvrir le bas de l'écran)
+await bulle.locator('[data-tele="joue"]').evaluate((x) => x.click());
+ok(await attendre(async () => (await scene.locator(".mmc-ecran").count()) === 0 && /Regarder/.test(await bulle.locator('[data-tele="eteinte"]').innerText())), "« ⏹ Éteindre la télé » : elle s'éteint ; « ▶ Regarder » la rallume");
 await toucher('.mmc-objet[data-objet="motlea0001"]');
 ok(await attendre(async () => /On ira à Lisbonne/.test(await bulle.innerText()) && /Gardé avec Sam/.test(await bulle.innerText())), "le mot sur l'étagère : « Gardé avec Sam »");
 await bulle.locator("button[aria-label='Fermer']").click();

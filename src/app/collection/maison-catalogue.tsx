@@ -44,6 +44,7 @@ import {
 import { createPortal } from "react-dom";
 import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, QuiPeutEntrer } from "./ajouter-chez-moi";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
+import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
 const ROUTE = "/api/direct/ma-piece";
 
@@ -76,6 +77,8 @@ function zonesDe(e: EmplacementsDuo | null): ZoneTouchee[] {
 
 /** (un lien qu'on peut ouvrir : une page web, jamais autre chose) */
 const lienSur = (l?: string) => (l && /^https?:\/\//i.test(l) ? l : "");
+/** 📺 (retours du 20 novembre 2026) une vidéo YouTube : elle joue sur la télé de la pièce, on reste dans la scène */
+const videoDe = (o: ObjetMaison | null) => (o && o.sorte !== "musique" && lienSur(o.lien) ? videoYouTube(lienSur(o.lien)) : null);
 const place = (z: Zone) => ({ left: `${z[0] * 100}%`, top: `${z[1] * 100}%`, width: `${z[2] * 100}%`, height: `${z[3] * 100}%` });
 
 /** 🏠 (lot M2) Ce qu'il a gardé, posé à ses emplacements : un bouton chacun (`data-objet`). */
@@ -83,12 +86,15 @@ function ObjetsDeLaMaison({
   contenu,
   e,
   vise,
+  enTele,
   onToucher,
   onAppuiLong,
 }: {
   contenu: ContenuMaison;
   e: EmplacementsDuo | null;
   vise: string | null;
+  /** (📺 la télé joue : son ▶ s'efface) */
+  enTele?: boolean;
   onToucher: (o: ObjetMaison) => void;
   onAppuiLong: (o: ObjetMaison) => void;
 }) {
@@ -157,9 +163,11 @@ function ObjetsDeLaMaison({
           place(e.tele),
           <>
             {image(contenu.tele)}
-            <i className="mmc-play" aria-hidden="true">
-              ▶
-            </i>
+            {!enTele && (
+              <i className="mmc-play" aria-hidden="true">
+                ▶
+              </i>
+            )}
           </>,
           "tele",
         )}
@@ -212,6 +220,8 @@ function Piece({
   // 🏠 (lot M2) l'objet touché, la photo en grand ; ✨ l'arrivée (sa phrase, l'objet que la caméra regarde)
   const [objet, setObjet] = useState<ObjetMaison | null>(null);
   const [grand, setGrand] = useState<ObjetMaison | null>(null);
+  // 📺 (retours du 20 novembre 2026) la vidéo qui passe sur la télé de la pièce : on reste dans la scène
+  const [enTele, setEnTele] = useState<{ id: string; debut?: number; objet: string } | null>(null);
   const [arrivee, setArrivee] = useState("");
   const [vise, setVise] = useState<string | null>(null);
   const enVisite = useRef(false);
@@ -233,6 +243,20 @@ function Piece({
   const [aEnlever, setAEnlever] = useState<ObjetMaison | null>(null);
   const [fait, setFait] = useState("");
   /** (le nouvel objet : la caméra va le voir, il s'éclaire un instant) */
+  /** 📺 Sa vidéo sur la télé de la pièce (la caméra y va) ; `false` : pas une vidéo YouTube, ou pas de télé ici. */
+  const jouerALaTele = (o: ObjetMaison) => {
+    const v = videoDe(o);
+    if (!v || !scene.emplacements?.tele) return false;
+    setEnTele({ ...v, objet: o.id });
+    window.requestAnimationFrame(() => {
+      const el = defile.current?.querySelector<HTMLElement>("[data-tele-joue]");
+      if (!el) return;
+      enVisite.current = true;
+      el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      window.setTimeout(() => (enVisite.current = false), 1200);
+    });
+    return true;
+  };
   const montrer = (id: string) => {
     window.requestAnimationFrame(() => {
       const el = defile.current?.querySelector<HTMLElement>(`[data-objet="${id}"]`);
@@ -257,11 +281,26 @@ function Piece({
     return () => ro.disconnect();
   }, []);
   // (à l'arrivée, et quand la pièce change : la figurine au milieu de l'écran)
-  useLayoutEffect(() => {
+  // (la largeur du panorama est posée avant que l'image arrive — sans quoi, sur un téléphone, le défilement restait
+  // collé à gauche, la figurine hors de l'écran ; on recentre encore à l'image suivante, tant qu'on n'a pas bougé)
+  const touche = useRef(false);
+  const centrer = () => {
     const d = defile.current;
-    if (!d || !hauteur) return;
+    if (!d || !hauteur || touche.current || enVisite.current) return;
+    const voulu = Math.max(0, Math.min(d.scrollWidth - d.clientWidth, scene.centre.x * hauteur * ratio - d.clientWidth / 2));
+    if (Math.abs(d.scrollLeft - voulu) < 1) return;
     auto.current = true;
-    d.scrollLeft = Math.max(0, scene.centre.x * hauteur * ratio - d.clientWidth / 2);
+    d.scrollLeft = voulu;
+  };
+  const centrerRef = useRef(centrer);
+  useEffect(() => {
+    centrerRef.current = centrer;
+  });
+  useLayoutEffect(() => {
+    touche.current = false;
+    centrerRef.current();
+    const r = window.requestAnimationFrame(() => centrerRef.current());
+    return () => window.cancelAnimationFrame(r);
   }, [hauteur, ratio, scene.piece, scene.centre.x]);
   // ✨ L'ARRIVÉE (lot M2) : ce qu'il a gardé depuis sa dernière visite — la phrase, puis la caméra passe sur chacun (un
   // toucher l'arrête) ; ensuite le serveur retient la visite (`vu`). Rien de nouveau : la visite est retenue tout de suite.
@@ -372,13 +411,14 @@ function Piece({
             return;
           }
           if (enVisite.current) return;
+          touche.current = true;
           setIndice(false);
           setBulle(null);
           setObjet(null);
         }}
         onPointerDown={() => interrompre.current()}
       >
-        <div className="mmc-pano" style={{ backgroundImage: `url(${pano.flou})` }}>
+        <div className="mmc-pano" style={{ backgroundImage: `url(${pano.flou})`, ...(hauteur ? { width: Math.round(hauteur * ratio) } : {}) }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="mmc-fond"
@@ -415,10 +455,13 @@ function Piece({
               contenu={maison.contenu}
               e={scene.emplacements}
               vise={vise}
+              enTele={Boolean(enTele)}
               onToucher={(o) => {
                 setIndice(false);
                 setBulle(null);
                 setObjet(o);
+                // (📺 la télé touchée : sa vidéo passe sur son écran, tout de suite)
+                if (o.id === maison.contenu?.tele?.id) jouerALaTele(o);
               }}
               onAppuiLong={(o) => {
                 if (visite) return;
@@ -426,6 +469,12 @@ function Piece({
                 setAEnlever(o);
               }}
             />
+          )}
+          {/* 📺 la vidéo, sur l'écran de la télé de la pièce (le lecteur de YouTube tout simple, sans cookie) */}
+          {enTele && scene.emplacements?.tele && (
+            <div className="mmc-ecran" style={place(scene.emplacements.tele)} data-tele-joue={enTele.id}>
+              <iframe key={enTele.id} title="La télé" src={lecteurYouTube(enTele.id, { debut: enTele.debut })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+            </div>
           )}
           {/* 🎁 (lot M5) sur la table basse : les cadeaux des proches — emballés tant qu'ils ne sont pas ouverts */}
           {maison.table && maison.table.length > 0 && scene.emplacements?.table && (
@@ -556,10 +605,17 @@ function Piece({
           <span>{ditDeLObjet(objet, visite?.prenom)}</span>
           {(lienSur(objet.lien) || (objet.sorte === "photo" && objet.image)) && (
             <span className="mmc-actions">
-              {lienSur(objet.lien) && (
-                <a className="mmc-action" href={lienSur(objet.lien)} target="_blank" rel="noopener noreferrer" data-ouvrir>
-                  {objet.sorte === "musique" ? PHRASES_MAISON.ecouter : PHRASES_MAISON.regarder}
-                </a>
+              {videoDe(objet) && scene.emplacements?.tele ? (
+                // (📺 une vidéo YouTube : elle passe sur la télé de la pièce — jamais un départ vers YouTube)
+                <button type="button" className="mmc-action" data-tele={enTele?.objet === objet.id ? "joue" : "eteinte"} onClick={() => (enTele?.objet === objet.id ? setEnTele(null) : jouerALaTele(objet))}>
+                  {enTele?.objet === objet.id ? PHRASES_MAISON.eteindre : PHRASES_MAISON.regarder}
+                </button>
+              ) : (
+                lienSur(objet.lien) && (
+                  <a className="mmc-action" href={lienSur(objet.lien)} target="_blank" rel="noopener noreferrer" data-ouvrir>
+                    {objet.sorte === "musique" ? PHRASES_MAISON.ecouter : PHRASES_MAISON.regarder}
+                  </a>
+                )
               )}
               {objet.sorte === "photo" && objet.image && (
                 <a
@@ -1111,6 +1167,8 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-objet.vise{transform:scale(1.1);filter:drop-shadow(0 0 12px rgba(255,214,150,.95));z-index:2}
 .mmc-photo img{position:absolute;left:9%;top:9%;width:82%;height:82%;object-fit:cover;border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.5)}
 .mmc-tele img{position:absolute;left:6%;top:7%;width:88%;height:86%;object-fit:cover;border-radius:3px;opacity:.93}
+.mmc-ecran{position:absolute;z-index:3;background:#000;border-radius:3px;overflow:hidden;box-shadow:0 0 18px rgba(140,190,255,.35)}
+.mmc-ecran iframe{width:100%;height:100%;border:0;display:block}
 .mmc-tele .mmc-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30%;aspect-ratio:1;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;font-style:normal;font-size:clamp(9px,2.4vh,18px)}
 .mmc-platine .mmc-disque{position:absolute;left:8%;top:6%;width:62%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#e8a33c 0 11%,#151012 12% 30%,#231a1d 31% 33%,#151012 34% 100%);box-shadow:0 2px 6px rgba(0,0,0,.5);animation:mmc-tourne 3.2s linear infinite}
 .mmc-platine img,.mmc-platine .mmc-emoji{position:absolute;right:2%;bottom:4%;width:44%;aspect-ratio:1;object-fit:cover;border-radius:2px;box-shadow:0 2px 6px rgba(0,0,0,.55)}

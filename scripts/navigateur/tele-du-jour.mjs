@@ -206,6 +206,26 @@ const auDessus = await lea.evaluate(() => {
 ok(auDessus, "la note passe au-dessus du menu du bas");
 await lea.screenshot({ path: `${D}/tele-du-jour-4-onglet.png` });
 
+// ═══ 📺 LE LECTEUR DE YOUTUBE NE RÉPOND PAS (un bloqueur) : LA VIDÉO RESTE DANS L'ÉCRAN (retours du 20 novembre 2026) ═══
+{
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, userAgent: IPHONE, isMobile: true, hasTouch: true });
+  await ctx.addCookies([{ name: "clikme_habitant", value: LEA.jeton, url: BASE }, { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE }]);
+  await ctx.route("https://www.youtube.com/iframe_api", (r) => r.abort());
+  await ctx.route(/^https:\/\/www\.youtube-nocookie\.com\//, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>lecteur</title>" }));
+  await ctx.route(/^https:\/\/i\.ytimg\.com\//, (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+  const bloque = await ctx.newPage();
+  await bloque.goto(`${BASE}/univers/tele`, { waitUntil: "domcontentloaded" });
+  ok(await attendre(bloque, async () => (await bloque.locator("[data-allumer]").count()) === 1), "(YouTube bloqué) « ▶ Allumer la télé »");
+  const id = await bloque.locator(".td").getAttribute("data-video");
+  await bloque.locator("[data-allumer]").click();
+  ok(
+    await attendre(bloque, async () => (await bloque.locator(".td-ecran iframe.td-lecteur[data-simple]").getAttribute("src"))?.startsWith(`https://www.youtube-nocookie.com/embed/${id}?`)),
+    "… le lecteur tout simple, dans l'écran : on reste dans la scène",
+  );
+  ok((await bloque.locator('a[href*="youtube.com/watch"]').count()) === 0, "… jamais un lien qui part sur YouTube");
+  await ctx.close();
+}
+
 ok(!(await lea.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1)), "rien ne déborde");
 ok(!/exemple/i.test(await lea.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
 ok(!erreurs.length, `aucune erreur${erreurs.length ? ` : ${erreurs.slice(0, 3).join(" | ")}` : ""}`);

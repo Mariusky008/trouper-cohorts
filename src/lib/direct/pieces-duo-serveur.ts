@@ -171,9 +171,12 @@ export function consigneLargeCote(p: PieceDuo, c: "gauche" | "droite"): string {
     `IMAGE 1 is part of a wide panorama of a room: its ${c === "gauche" ? "right" : "left"} part is already painted, the rest is empty and must be painted.`,
     `Extend the room to the ${c === "gauche" ? "LEFT" : "RIGHT"}, continuing the same walls, floor, rug, light and perspective seamlessly from the painted part, which stays exactly as it is.`,
     `On this new part, BIG and clearly visible, each one on its own: ${surLeCote(p, c)}`,
+    // (retours du propriétaire, 20 novembre 2026 : le côté recopiait la télé et son meuble — le panorama la montrait deux fois)
+    `This new part is ANOTHER part of the room — the ${c === "gauche" ? "left" : "right"} wall and corner, seen in perspective —, NEVER a copy or a mirror of the painted part.`,
+    "The TV, its TV stand or sideboard, the picture frames, the coffee table and the empty spot for the armchair are ALREADY in the painted part, ONCE: this new part has NO TV, NO screen, NO TV stand or sideboard, NO picture frame, NO coffee table and NO armchair.",
     UN_SEUL,
-    `IMAGE 2 is the same room in a vertical frame: keep EXACTLY its style, colours, materials and objects.${depuisImage(p) ? "" : ` (The room: ${pieceDuoDe(p).lieu}.)`}`,
-    `The far edge simply continues the scene (${BORDS}). The shelf is EMPTY, the TV screen is off.`,
+    `IMAGE 2 is the same room in a vertical frame: use it ONLY for the style, colours and materials (and the objects listed above) — NOT for its layout: do not copy its TV, its frames or its furniture arrangement.${depuisImage(p) ? "" : ` (The room: ${pieceDuoDe(p).lieu}.)`}`,
+    `The far edge simply continues the scene (${BORDS}). The shelf is EMPTY.`,
     SANS,
   ].join("\n");
 }

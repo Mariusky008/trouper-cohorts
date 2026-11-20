@@ -91,6 +91,13 @@ function dejaVue(cle: string): boolean {
   }
 }
 
+/** Les figurines en calques de la scène (ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la
+ * gauche) — chacune la sienne : celle qui n'est pas encore découpée manque seule. */
+const figurinesDe = (c: SceneSalon["calques"]) => ({
+  ...(c?.a ? { moi: { calque: c.a, sens: 1 as const } } : {}),
+  ...(c?.b ? { autre: { calque: c.b, sens: -1 as const } } : {}),
+});
+
 /** 🚪 Ouvrir une conversation : la requête, la vignette floue dès qu'elle arrive, puis la pièce et les calques décodés. */
 export async function chargerSalon(cle: string, surFlou: (flou: string) => void): Promise<ChargementSalon> {
   const o = await ouvrir(cle);
@@ -109,9 +116,9 @@ export async function chargerSalon(cle: string, surFlou: (flou: string) => void)
     ouverture: o,
     flou: sc.plaque.flou,
     deja: dejaVue(cle),
-    calques: !!c,
+    calques: !!(c?.a || c?.b),
     // (ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche)
-    pret: { plaque: sc.plaque.src, largeur: sc.plaque.largeur, hauteur: sc.plaque.hauteur, figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {} },
+    pret: { plaque: sc.plaque.src, largeur: sc.plaque.largeur, hauteur: sc.plaque.hauteur, figurines: figurinesDe(c) },
   };
 }
 
@@ -562,7 +569,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       largeur: sceneVue.plaque.largeur,
       hauteur: sceneVue.plaque.hauteur,
       // (ma figurine à gauche, tournée vers la droite ; la sienne à droite, tournée vers la gauche ; la teinte du moment)
-      figurines: c ? { moi: { calque: c.a, sens: 1 }, autre: { calque: c.b, sens: -1 } } : {},
+      figurines: figurinesDe(c),
       moment: momentEssai ?? sceneVue.moment,
       // (🌷 la table basse relevée : les objets s'y posent ; on les touche)
       ...(sceneVue.emplacements?.table ? { table: sceneVue.emplacements.table } : {}),
@@ -2322,7 +2329,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         <FeuilleVideo
           ctx={videoMeme.ctx}
           plaque={sceneVue.plaque.src}
-          {...(sceneVue.calques ? { figurine: sceneVue.calques.a } : {})}
+          {...(sceneVue.calques?.a ? { figurine: sceneVue.calques.a } : {})}
           meme={{
             texte: videoMeme.m.texte ?? "",
             tete: teteMeme(videoMeme.m.meme?.tete) ?? "joie",
