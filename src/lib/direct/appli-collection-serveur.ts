@@ -324,6 +324,25 @@ export async function prevenirUneFoisParJour(supabase: Supabase, pour: string, g
   return issues.includes("ok") ? "envoye" : "rien";
 }
 
+/**
+ * 🔔 UNE NOTIFICATION À UN HABITANT (Découvrir, lots D2 et D5 : une invitation devant ma télé, une demande de proche) —
+ * s'il a les notifications ; l'appelant en limite le nombre. Ses téléphones qui ne répondent plus s'effacent.
+ */
+export async function prevenirUnHabitantAppli(supabase: Supabase, pour: string, notif: Notif): Promise<"envoye" | "rien"> {
+  if (!pour || !vapid()) return "rien";
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(pour));
+  const abs = sesAbonnements(f);
+  if (!abs.length) return "rien";
+  const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
+  const morts = abs.filter((_, i) => issues[i] === "mort");
+  if (morts.length) {
+    const reste = abs.filter((_, i) => issues[i] !== "mort");
+    if (reste.length) await ecrireJson(supabase, cheminAbonne(pour), { ...f, abonnements: reste });
+    else await supabase.storage.from(SEAU_FIGURINES).remove([cheminAbonne(pour)]);
+  }
+  return issues.includes("ok") ? "envoye" : "rien";
+}
+
 export type BilanDuJour = { jour: string; personnes: number; envoyes: number; morts: number; dejaRepondu: number; deja?: boolean; sansCles?: boolean };
 
 /**

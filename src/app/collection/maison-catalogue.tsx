@@ -575,6 +575,17 @@ function Piece({
         </span>
         )}
       </div>
+      {/* 🏠 (lot D5 de Découvrir) « Mes salons » : les salons ouverts où je vais, en fanions — chez moi seulement */}
+      {!visite && maison.salons?.length ? (
+        <nav className="mmc-fanions" aria-label="Mes salons" data-fanions={maison.salons.length}>
+          {maison.salons.map((x) => (
+            <a key={x.theme} href={`/univers/salons?theme=${x.theme}`} data-fanion={x.theme} title={x.nom}>
+              <span aria-hidden="true">{x.e}</span>
+              <small>{x.nom}</small>
+            </a>
+          ))}
+        </nav>
+      ) : null}
       {arrivee && (
         <p className="mmc-arrivee" role="status" data-arrivee>
           {arrivee}
@@ -1120,6 +1131,14 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc.plein .mmc-haut{top:calc(10px + env(safe-area-inset-top))}
 .mmc-nom{padding:7px 13px;border-radius:999px;background:rgba(20,10,14,.62);font-weight:900;font-size:14.5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc-nom small{font-weight:700;opacity:.85}
+.mmc-fanions{position:absolute;left:10px;top:58px;display:flex;gap:6px;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none;z-index:5}
+.mmc-fanions a{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 7px 11px;min-width:42px;color:#2a1424;text-decoration:none;background:linear-gradient(180deg,#ffe3a8,#f2c46b);clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);box-shadow:0 4px 10px rgba(0,0,0,.3);transform-origin:top center;animation:mmc-fanion 4s ease-in-out infinite}
+.mmc-fanions a:nth-child(2n){animation-delay:-1.3s;background:linear-gradient(180deg,#ffc2df,#ff8fc8)}
+.mmc-fanions a:nth-child(3n){animation-delay:-2.6s;background:linear-gradient(180deg,#c9e6ff,#8cc4f2)}
+.mmc-fanions span{font-size:17px;line-height:1}
+.mmc-fanions small{font-size:9.5px;font-weight:900;max-width:64px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes mmc-fanion{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+@media (prefers-reduced-motion: reduce){.mmc-fanions a{animation:none}}
 .mmc-boutons{display:flex;gap:8px}
 .mmc-qdj{position:absolute;left:10px;top:calc(60px + env(safe-area-inset-top));max-width:calc(100% - 20px);padding:7px 13px;border:0;border-radius:999px;background:rgba(255,246,234,.92);color:#2a1424;font-weight:800;font-size:13.5px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mmc-reponses,.mmc-repondre{grid-column:1;display:flex;flex-direction:column;gap:6px;margin-top:4px}

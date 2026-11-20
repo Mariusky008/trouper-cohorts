@@ -29,7 +29,7 @@ import { themeDe } from "@/lib/direct/decouvrir";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
-import { PHRASES_SALONS as PS, type CarteSalon } from "@/lib/direct/salons-ouverts";
+import { PHRASES_SALONS as PS, type CarteSalon, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 
 const ROUTE = "/api/direct/tele-du-jour";
@@ -162,14 +162,18 @@ function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; 
   );
 }
 
-/** 🛋️ Les salons ouverts (lots D3 et D4) : une carte par passion — les miennes d'abord, avec ceux qui y sont. */
+/**
+ * 🛋️ Les salons ouverts (lots D3 et D4) : une carte par passion — les miennes d'abord, avec ceux qui y sont. Au-dessus :
+ * 🎬 les invitations devant la télé d'un proche (lot D2) et 👯 les demandes de proche reçues dans un salon (lot D5).
+ */
+type AccueilSalons = { cartes: CarteSalon[]; age?: boolean; maison?: string; invitations?: InvitationTele[]; demandes?: DemandeProche[] };
 function SalonsOuverts() {
-  const [a, setA] = useState<{ cartes: CarteSalon[]; age?: boolean; maison?: string } | null>(null);
+  const [a, setA] = useState<AccueilSalons | null>(null);
   const charger = useCallback(async () => {
     const r = await fetch("/api/direct/salons-ouverts?accueil=1", { cache: "no-store" }).catch(() => null);
     if (!r?.ok) return setA({ cartes: [] });
-    const j = (await r.json().catch(() => ({}))) as { cartes?: CarteSalon[]; age?: boolean; maison?: string };
-    setA({ cartes: j.cartes ?? [], age: j.age, maison: j.maison });
+    const j = (await r.json().catch(() => ({}))) as AccueilSalons;
+    setA({ cartes: j.cartes ?? [], age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes });
   }, []);
   useEffect(() => {
     void Promise.resolve().then(charger);
@@ -179,8 +183,11 @@ function SalonsOuverts() {
     await fetch("/api/direct/salons-ouverts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "age", adulte }) }).catch(() => null);
     void charger();
   };
+  const attente = <EnAttente invitations={a.invitations ?? []} demandes={a.demandes ?? []} onFait={() => void charger()} />;
   if (a.age)
     return (
+      <>
+      {attente}
       <section className="td-salons" data-salons-age>
         <h3>
           {PS.titre} <small>{PS.sousTitre}</small>
@@ -195,8 +202,9 @@ function SalonsOuverts() {
           </button>
         </div>
       </section>
+      </>
     );
-  if (!a.cartes.length) return null;
+  if (!a.cartes.length) return attente;
   const miens = a.cartes.filter((c) => c.mien);
   const autres = a.cartes.filter((c) => !c.mien);
   const carte = (c: CarteSalon) => (
@@ -214,6 +222,8 @@ function SalonsOuverts() {
     </a>
   );
   return (
+    <>
+    {attente}
     <section className="td-salons" data-salons>
       <h3>
         {PS.titre} <small>{PS.sousTitre}</small>
@@ -228,6 +238,64 @@ function SalonsOuverts() {
           <h3 className="td-autres">{PS.autres}</h3>
           <div className="td-grille">{autres.map(carte)}</div>
         </>
+      )}
+    </section>
+    </>
+  );
+}
+
+/** 🎬 « Venir » / « Pas maintenant » (lot D2) ; 👯 « Accepter » / « Non merci » (lot D5). */
+function EnAttente({ invitations, demandes, onFait }: { invitations: InvitationTele[]; demandes: DemandeProche[]; onFait: () => void }) {
+  const [note, setNote] = useState("");
+  const poster = (corps: Record<string, unknown>) =>
+    fetch("/api/direct/salons-ouverts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) })
+      .then(async (r) => ({ ok: r.ok, j: (await r.json().catch(() => ({}))) as { error?: string; proches?: boolean } }))
+      .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { error?: string; proches?: boolean } }));
+  if (!invitations.length && !demandes.length && !note) return null;
+  return (
+    <section className="td-attente" data-attente>
+      {invitations.length > 0 && <h3>{PS.invitationsTitre}</h3>}
+      {invitations.map((i) => (
+        <div key={i.cle} className="td-invitation" data-invitation={i.cle}>
+          <p>{PS.invitation(i.prenom)}</p>
+          <div>
+            <a className="td-venir" href={`/univers/salons?chez=${encodeURIComponent(i.cle)}`} data-venir>
+              {PS.venir}
+            </a>
+            <button type="button" data-pas-maintenant onClick={() => void poster({ action: "pas-maintenant", cle: i.cle }).then(onFait)}>
+              {PS.pasMaintenant}
+            </button>
+          </div>
+        </div>
+      ))}
+      {demandes.length > 0 && <h3>{PS.demandesTitre}</h3>}
+      {demandes.map((d) => (
+        <div key={d.q} className="td-invitation" data-demande={d.q}>
+          <p>{PS.demandeProche(d.prenom, d.salon)}</p>
+          <div>
+            <button
+              type="button"
+              className="td-venir"
+              data-accepter
+              onClick={() =>
+                void poster({ action: "repondre-proche", q: d.q, oui: true }).then((r) => {
+                  setNote(r.ok ? PS.accepte(d.prenom) : r.j.error || "Ça n’a pas marché. Réessaie.");
+                  onFait();
+                })
+              }
+            >
+              {PS.accepter}
+            </button>
+            <button type="button" data-refuser onClick={() => void poster({ action: "repondre-proche", q: d.q, oui: false }).then(onFait)}>
+              {PS.refuser}
+            </button>
+          </div>
+        </div>
+      ))}
+      {note && (
+        <p className="td-attente-note" role="status" data-note-attente>
+          {note}
+        </p>
       )}
     </section>
   );
@@ -514,6 +582,10 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
               {P.envoyer}
             </button>
           </div>
+          {/* (🎬 lot D2 : la séance chez moi — mes proches devant ma télé, la même seconde pour tous) */}
+          <a className="td-chez-moi" href="/univers/salons?chez=moi" data-chez-moi>
+            {PS.chezMoi}
+          </a>
           {scene && zone && (
             <button
               type="button"
@@ -596,6 +668,17 @@ const STYLES = `
 .td-gestes button[data-garder]{background:rgba(242,196,107,.18)}
 .td-gestes button[data-envoyer]{color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a)}
 .td-gestes button:disabled{opacity:.55}
+.td-chez-moi{display:block;margin-top:8px;border-radius:14px;padding:12px;text-align:center;text-decoration:none;font-weight:900;font-size:14.5px;color:#FFF4E6;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1.5px rgba(255,111,189,.6)}
+.td-attente{margin:0;display:flex;flex-direction:column;gap:8px}
+.td-accueil>.td-accueil-haut{order:-2}
+.td-accueil>.td-attente{order:-1}
+.td-attente h3{margin:6px 0 0;font-size:16px;font-weight:900}
+.td-invitation{border-radius:16px;padding:12px;background:linear-gradient(135deg,rgba(255,46,154,.22),rgba(255,255,255,.06));display:flex;flex-direction:column;gap:8px}
+.td-invitation p{margin:0;font-weight:800;font-size:14.5px;line-height:1.3}
+.td-invitation div{display:flex;gap:8px}
+.td-invitation button,.td-venir{border:0;border-radius:999px;padding:9px 14px;font:inherit;font-weight:800;font-size:14px;background:rgba(255,255,255,.12);color:#FFF4E6;cursor:pointer;text-decoration:none}
+.td-invitation .td-venir{color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a)}
+.td-attente-note{margin:0;font-size:13.5px;opacity:.85}
 .td-lien{align-self:center;border:0;background:none;color:#ead3df;font:inherit;font-size:14.5px;font-weight:700;text-decoration:underline;padding:6px}
 .td-note{position:fixed;left:16px;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
 .td-voile{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:6}

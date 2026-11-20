@@ -17,6 +17,7 @@
 import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type PlaceDuo } from "./pieces-duo";
 import type { ImageSalon } from "./salon";
 import type { Visibilite } from "./monde";
+import type { MonSalon } from "./salons-ouverts";
 
 /**
  * 🔀 L'interrupteur : ALLUMÉ le 19 novembre 2026 (le propriétaire, après une nouvelle inscription arrivée sur l'ancien
@@ -75,6 +76,8 @@ export type MaMaisonVue = {
   table?: CadeauMaison[];
   /** 💬 (lot M5) ma question du jour, et ce que mes proches y ont répondu */
   question?: QuestionChezMoi;
+  /** 🏠 (lot D5 de Découvrir) « Mes salons » : les salons ouverts où je vais, en fanions (chez moi seulement) */
+  salons?: MonSalon[];
 };
 
 /** 💬 (lot M5) La question du jour, chez soi : ce que ses proches y ont répondu. */

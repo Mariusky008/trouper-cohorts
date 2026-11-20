@@ -21,17 +21,25 @@ import { randomBytes } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
-import { SEAU_FIGURINES, ecrireJson, lireJson, prenomDe } from "./ma-figurine-serveur";
-import { qui8 } from "./talkie-serveur";
+import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe } from "./ma-figurine-serveur";
+import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
-import { figurineDeLaMaison, sceneDeLaMaison } from "./ma-maison-serveur";
+import { cheminMesSalons, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, visibiliteDeLaMaison } from "./ma-maison-serveur";
+import { ajouterChezMoi } from "./etagere-serveur";
+import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
+import { maTeleDuJour } from "./tele-du-jour-serveur";
 import { lireSelection } from "./selection-serveur";
 import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
 import {
+  AIMES_POUR_ETAGERE,
   CONSERVE_MS,
+  DEMANDES_PAR_JOUR,
+  INVITATION_MS,
+  INVITES_MAX,
+  PLACES_SEANCE,
   EXCLUSION_MS,
   MOTIFS_SIGNALEMENT,
   PHRASES_SALONS,
@@ -51,7 +59,11 @@ import {
   salonDe,
   themesDesSalons,
   type CarteSalon,
+  type DemandeProche,
+  type InvitationTele,
   type MaisonSalons,
+  type MomentSalon,
+  type TeleSeance,
   type MessageSalon,
   type PresentSalon,
   type VideoSalon,
@@ -62,10 +74,12 @@ type Resultat<T = object> = T & { error?: string; statut?: number };
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
 // ─── les chemins ───
-const base = (m: MaisonSalons) => `decouvrir/salons/${m}`;
-const dossierSalon = (m: MaisonSalons, id: string) => `${base(m)}/${id}`;
-const dossierPresents = (m: MaisonSalons, id: string) => `${dossierSalon(m, id)}/presents`;
-const dossierMessages = (m: MaisonSalons, id: string) => `${dossierSalon(m, id)}/messages`;
+/** Une maison de salons ouverts, ou « prives » : les séances chez quelqu'un (lot D2). */
+type Lieu = MaisonSalons | "prives";
+const base = (m: Lieu) => `decouvrir/salons/${m}`;
+const dossierSalon = (m: Lieu, id: string) => `${base(m)}/${id}`;
+const dossierPresents = (m: Lieu, id: string) => `${dossierSalon(m, id)}/presents`;
+const dossierMessages = (m: Lieu, id: string) => `${dossierSalon(m, id)}/messages`;
 const dossierSignalements = (q: string) => `decouvrir/signalements/${q}`;
 const cheminExclu = (q: string) => `decouvrir/exclus/${q}.json`;
 const cheminCaches = (h: string) => `${h}/salons-caches.json`;
@@ -85,7 +99,7 @@ async function lister(supabase: Supabase, dossier: string, o: { limite?: number;
 const effacer = (supabase: Supabase, chemins: string[]) => (chemins.length ? supabase.storage.from(SEAU_FIGURINES).remove(chemins).then(() => undefined, () => undefined) : Promise.resolve());
 
 /** Les présents d'un salon (vus depuis moins de 2 min 30) : leur `q` et quand on les a vus. */
-async function presentsFrais(supabase: Supabase, m: MaisonSalons, id: string, maintenant = Date.now()): Promise<Entree[]> {
+async function presentsFrais(supabase: Supabase, m: Lieu, id: string, maintenant = Date.now()): Promise<Entree[]> {
   const l = await lister(supabase, dossierPresents(m, id));
   const frais = l.filter((e) => e.nom.endsWith(".json") && maintenant - e.ms < PRESENCE_MS);
   // (les fiches de ceux partis depuis plus d'un jour : effacées en passant)
@@ -93,8 +107,22 @@ async function presentsFrais(supabase: Supabase, m: MaisonSalons, id: string, ma
   if (vieux.length) void effacer(supabase, vieux);
   return frais.map((e) => ({ nom: e.nom.replace(/\.json$/, ""), ms: e.ms }));
 }
-const lirePresent = (supabase: Supabase, m: MaisonSalons, id: string, q: string) => lireJson<Partial<FichePresent>>(supabase, `${dossierPresents(m, id)}/${q}.json`);
-const publicDe = (f: Partial<FichePresent>): PresentSalon => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", figurine: f.figurine ?? null, place: Number(f.place) || 0, arrive: Number(f.arrive) || 0 });
+const lirePresent = (supabase: Supabase, m: Lieu, id: string, q: string) => lireJson<Partial<FichePresent>>(supabase, `${dossierPresents(m, id)}/${q}.json`);
+const publicDe = (f: Partial<FichePresent>): PresentSalon => ({
+  q: s(f.q),
+  prenom: s(f.prenom) || "Quelqu’un",
+  figurine: f.figurine ?? null,
+  place: Number(f.place) || 0,
+  arrive: Number(f.arrive) || 0,
+  ...(Array.isArray(f.passions) && f.passions.length ? { passions: f.passions.map(s).slice(0, 5) } : {}),
+  ...(s(f.maison) ? { maison: s(f.maison) } : {}),
+});
+/** (lot D5) ce que sa fiche montre en plus : ses passions, sa maison si elle est ouverte à tous. */
+async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passions?: string[]; maison?: string }> {
+  const [p, v] = await Promise.all([lirePassions(supabase, h).catch(() => null), visibiliteDeLaMaison(supabase, h).catch(() => "proches")]);
+  const maison = v === "tous" ? await poserProfil(supabase, h).catch(() => "") : "";
+  return { ...(p?.passions?.length ? { passions: p.passions.slice(0, 5) } : {}), ...(maison ? { maison } : {}) };
+}
 const messagePublic = (f: Partial<FicheMessage>): MessageSalon => {
   const { h: _h, ...m } = f as FicheMessage;
   void _h;
@@ -144,13 +172,13 @@ async function salonsDuTheme(supabase: Supabase, m: MaisonSalons, theme: IdTheme
 }
 
 export type OuvertureSalonOuvert = {
-  salon: { id: string; theme: IdTheme; n: number; nom: string; maison: MaisonSalons; plein?: boolean };
+  salon: { id: string; theme?: IdTheme; n: number; nom: string; maison: Lieu; plein?: boolean; seance?: { hote: boolean; prenom: string; cle: string } };
   moi: string;
   presents: PresentSalon[];
   messages: MessageSalon[];
   caches: string[];
   decor: ScenePiece | null;
-  tele: { videos: VideoSalon[]; maintenant: number };
+  tele: { videos: VideoSalon[]; maintenant: number; seance?: TeleSeance | null };
 };
 
 /**
@@ -165,13 +193,14 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   if (t.adultes && m !== "adultes") return { error: "Le salon des jeunes parents est réservé aux adultes.", statut: 403 };
   const q = qui8(moi.id);
   if (await exclusion(supabase, q)) return { error: PHRASES_SALONS.exclu, statut: 403, exclu: true };
-  const [figurine, prenom, salons, caches, decor, videos] = await Promise.all([
+  const [figurine, prenom, salons, caches, decor, videos, profil] = await Promise.all([
     figurineDeLaMaison(supabase, moi.id).catch(() => null),
     prenomDe(supabase, moi).catch(() => ""),
     salonsDuTheme(supabase, m, t.id),
     mesCaches(supabase, moi.id),
     decorDuSalon(supabase, t.id),
     videosDuSalon(supabase, t.id, m),
+    sonProfilDeSalon(supabase, moi.id),
   ]);
   if (!figurine) return { error: PHRASES_SALONS.sansFigurine, statut: 409, figurine: true };
   // (celui où il est déjà ; sinon le plus rempli qui a une place ; sinon un nouveau)
@@ -184,10 +213,11 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   const prises = new Set(fiches.map((f) => Number(f.place)));
   const place = ancienne && !prises.has(Number(ancienne.place)) ? Number(ancienne.place) : [...Array(PLACES_SALON).keys()].find((k) => !prises.has(k)) ?? 0;
   const maintenant = Date.now();
-  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [] };
+  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [], ...profil };
   if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
-  // (en passant : les messages de plus de 48 h s'effacent)
+  // (en passant : les messages de plus de 48 h s'effacent ; 🏠 « Mes salons » retient celui-ci)
   void nettoyerMessages(supabase, m, id, maintenant);
+  void noterMonSalon(supabase, moi.id, t.id, maintenant);
   const messages = await derniersMessages(supabase, m, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches });
   return {
     ouverture: {
@@ -202,14 +232,14 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   };
 }
 
-async function nettoyerMessages(supabase: Supabase, m: MaisonSalons, id: string, maintenant: number): Promise<void> {
+async function nettoyerMessages(supabase: Supabase, m: Lieu, id: string, maintenant: number): Promise<void> {
   const l = await lister(supabase, dossierMessages(m, id), { limite: 60 }).catch(() => [] as Entree[]);
   const vieux = l.filter((e) => maintenant - (Number(e.nom.split("-")[0]) || 0) > CONSERVE_MS).map((e) => `${dossierMessages(m, id)}/${e.nom}`);
   await effacer(supabase, vieux);
 }
 
 /** Les messages d'un salon après `depuis` (ms), les plus récents (`limite`), sans ceux de qui il ne veut plus voir. */
-async function derniersMessages(supabase: Supabase, m: MaisonSalons, id: string, o: { depuis: number; limite: number; caches: string[] }): Promise<MessageSalon[]> {
+async function derniersMessages(supabase: Supabase, m: Lieu, id: string, o: { depuis: number; limite: number; caches: string[] }): Promise<MessageSalon[]> {
   const l = await lister(supabase, dossierMessages(m, id), { limite: o.limite, recents: true });
   const caches = new Set(o.caches);
   const noms = l.filter((e) => {
@@ -223,8 +253,17 @@ async function derniersMessages(supabase: Supabase, m: MaisonSalons, id: string,
     .sort((a, b) => a.le - b.le);
 }
 
-/** Le salon où il dit être (son identifiant), dans sa maison à lui. */
-async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ m?: MaisonSalons; id?: string }>> {
+/**
+ * Le salon où il dit être (son identifiant) : un salon ouvert, dans sa maison à lui ; ou (lot D2) une séance chez
+ * quelqu'un (« chez-<q> »), s'il en est l'hôte ou s'il y est invité.
+ */
+async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ m?: Lieu; id?: string; seance?: { qHote: string; hote: boolean } }>> {
+  const qHote = seanceDe(id);
+  if (qHote) {
+    const hote = qHote === qui8(moi.id);
+    if (!hote && !(await invite(supabase, qHote, qui8(moi.id)))) return { error: PHRASES_SALONS.pasInvite, statut: 403 };
+    return { m: "prives", id: idSeance(qHote), seance: { qHote, hote } };
+  }
   const x = salonDe(id);
   if (!x) return { error: "Ce salon n’existe pas.", statut: 404 };
   const m = await maisonDeMoi(supabase, moi.id);
@@ -233,7 +272,7 @@ async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise
 }
 
 // ─── 💓 le pouls : qui est là, ce qui s'est dit depuis ───
-export type PoulsSalonOuvert = { ici: string[]; nouveaux: PresentSalon[]; messages: MessageSalon[]; maintenant: number; exclu?: true; dehors?: true };
+export type PoulsSalonOuvert = { ici: string[]; nouveaux: PresentSalon[]; messages: MessageSalon[]; maintenant: number; exclu?: true; dehors?: true; seance?: TeleSeance | null };
 /**
  * 💓 Le pouls (toutes les quelques secondes) : les présents (`ici`, et le détail de ceux qu'il ne connaît pas encore),
  * les messages après `depuis` ; il redit qu'il est là (toutes les 30 s au plus).
@@ -261,11 +300,12 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
   }
   const deja = new Set(s(connus).split(",").filter(Boolean));
   const inconnus = presents.filter((p) => !deja.has(p.nom));
-  const [nouveaux, messages] = await Promise.all([
+  const [nouveaux, messages, seance] = await Promise.all([
     Promise.all(inconnus.map((p) => lirePresent(supabase, m, sid, p.nom))),
     derniersMessages(supabase, m, sid, { depuis: Math.max(Number(depuis) || 0, maintenant - CONSERVE_MS), limite: 30, caches }),
+    r.seance ? lireTeleSeance(supabase, r.seance.qHote) : Promise.resolve(undefined),
   ]);
-  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant } };
+  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}) } };
 }
 
 // ─── ✍️ écrire, réagir, un geste ───
@@ -286,7 +326,8 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   let corps: Pick<MessageSalon, "sorte" | "texte" | "cle" | "a">;
   if (sorte === "texte") {
     const texte = s(p.texte).replace(/\s+/g, " ");
-    const refus = refusDuMessage(texte);
+    // (dans une séance, entre proches : comme leur conversation — seulement pas vide, 90 signes au plus)
+    const refus = r.seance ? (texte ? null : "il est vide") : refusDuMessage(texte);
     if (refus) return { error: PHRASES_SALONS.refus(refus), statut: 400, refus };
     corps = { sorte, texte: [...texte].slice(0, TEXTE_SALON_MAX).join("") };
   } else if (sorte === "reaction") {
@@ -344,6 +385,7 @@ export async function nePlusVoir(supabase: Supabase, moi: Habitant, q: unknown, 
 export async function signalerAuSalon(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ exclu?: boolean }>> {
   const r = await sonSalon(supabase, moi, p.salon);
   if (r.error || !r.m || !r.id) return { error: r.error, statut: r.statut };
+  if (r.seance || r.m === "prives") return { error: "Entre proches, on se parle.", statut: 400 };
   const { m } = r;
   const sid = r.id;
   const auteur = qui8(moi.id);
@@ -399,9 +441,12 @@ async function comptesDesSalons(supabase: Supabase, m: MaisonSalons): Promise<Ma
 }
 
 /** 🧭 Les cartes des salons (ses passions d'abord) ; `age` : il doit d'abord dire s'il a 18 ans. */
-export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promise<{ age?: true; maison?: MaisonSalons; cartes: CarteSalon[] }> {
+export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promise<{ age?: true; maison?: MaisonSalons; cartes: CarteSalon[]; invitations?: InvitationTele[]; demandes?: DemandeProche[] }> {
+  // (🎬 lot D2 : les invitations devant la télé d'un proche ; 👯 lot D5 : les demandes de proche reçues dans un salon)
+  const [invitations, demandes] = await Promise.all([mesInvitations(supabase, moi).catch(() => []), mesDemandes(supabase, moi).catch(() => [])]);
+  const enPlus = { ...(invitations.length ? { invitations } : {}), ...(demandes.length ? { demandes } : {}) };
   const m = await maisonDeMoi(supabase, moi.id);
-  if (!m) return { age: true, cartes: [] };
+  if (!m) return { age: true, cartes: [], ...enPlus };
   const themes = themesDesSalons(m);
   const [passions, parTheme] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), comptesDesSalons(supabase, m)]);
   const miens = new Set(passions?.passions ?? []);
@@ -415,7 +460,7 @@ export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promi
       return { theme: t.id, e: t.e, nom: SALONS[t.id].nom, presents: c.presents, salons: c.salons, mien: miens.has(t.id), decor: scene ? { src: scene.panorama.src, flou: scene.panorama.flou } : null };
     }),
   );
-  return { maison: m, cartes: [...cartes.filter((c) => c.mien), ...cartes.filter((c) => !c.mien)] };
+  return { maison: m, cartes: [...cartes.filter((c) => c.mien), ...cartes.filter((c) => !c.mien)], ...enPlus };
 }
 
 // ─── 🛡️ l'administration (`/admin/humain/salons`) ───
@@ -475,4 +520,276 @@ export async function exclusionParAdministrateur(supabase: Supabase, p: Record<s
   const prenom = ici?.presents.find((y) => y.q === q)?.prenom ?? salons.signalements.find((x) => x.q === q)?.prenom ?? "";
   await exclureDesSalons(supabase, { q, h: "", prenom, ...(ici ? { salon: ici.id, maison: ici.maison } : {}), par: "administrateur", ms: heures * 3600_000 });
   return {};
+}
+
+
+// ═══ 🛋️ LE LOT D2 : LA SÉANCE CHEZ MOI — ma pièce, ma télé, jusqu'à trois proches ═══════════════════════════════════
+// `decouvrir/salons/prives/chez-<q de l'hôte>/` : `presents/`, `messages/` (comme un salon ouvert), `invites/<q>.json`
+// (qui peut entrer), `tele.json` (la télé que l'hôte mène). Chez l'invité : `<habitant>/invitations-tele/<q>.json`.
+const idSeance = (qHote: string) => `chez-${qHote}`;
+const seanceDe = (id: unknown): string | null => /^chez-([A-Za-z0-9_-]{4,16})$/.exec(String(id ?? ""))?.[1] ?? null;
+const cheminInvite = (qHote: string, q: string) => `${dossierSalon("prives", idSeance(qHote))}/invites/${q}.json`;
+const cheminTeleSeance = (qHote: string) => `${dossierSalon("prives", idSeance(qHote))}/tele.json`;
+const dossierInvitations = (h: string) => `${h}/invitations-tele`;
+
+async function invite(supabase: Supabase, qHote: string, q: string): Promise<boolean> {
+  const f = await lireJson<{ le?: number }>(supabase, cheminInvite(qHote, q)).catch(() => ({}) as { le?: number });
+  return Date.now() - (Number(f.le) || 0) < INVITATION_MS;
+}
+async function lireTeleSeance(supabase: Supabase, qHote: string): Promise<TeleSeance | null> {
+  const t = await lireJson<TeleSeance>(supabase, cheminTeleSeance(qHote)).catch(() => ({}) as Partial<TeleSeance>);
+  return t.video?.id && Number.isFinite(t.depart) ? (t as TeleSeance) : null;
+}
+
+/**
+ * 🚪 Entrer dans une séance : chez moi (`chez` = « moi ») ou chez un proche qui m'a invité (sa clé). Quatre places ; sa
+ * pièce de Ma maison (sinon le salon du catalogue) ; la télé qu'il mène — l'hôte, en arrivant, la trouve prête (la
+ * première vidéo de sa télé du jour).
+ */
+export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; figurine?: true }>> {
+  const hHote = chez === "moi" ? moi.id : await hDeCle(supabase, chez).catch(() => null);
+  if (!hHote) return { error: "Cette maison n’existe pas.", statut: 404 };
+  const qHote = qui8(hHote);
+  const q = qui8(moi.id);
+  const hote = hHote === moi.id;
+  if (!hote && !(await invite(supabase, qHote, q))) return { error: PHRASES_SALONS.pasInvite, statut: 403 };
+  const m: Lieu = "prives";
+  const id = idSeance(qHote);
+  const [figurine, prenom, prenomHote, presents, piece, cle, teleDuJour, deja] = await Promise.all([
+    figurineDeLaMaison(supabase, moi.id).catch(() => null),
+    prenomDe(supabase, moi).catch(() => ""),
+    hote ? Promise.resolve("") : prenomDuCompte(supabase, hHote),
+    presentsFrais(supabase, m, id),
+    lireSaPiece(supabase, hHote).catch(() => null),
+    poserProfil(supabase, hHote).catch(() => ""),
+    hote ? maTeleDuJour(supabase, moi.id).catch(() => null) : Promise.resolve(null),
+    lireTeleSeance(supabase, qHote),
+  ]);
+  if (!figurine) return { error: PHRASES_SALONS.sansFigurine, statut: 409, figurine: true };
+  const autres = presents.filter((p) => p.nom !== q);
+  if (autres.length >= PLACES_SEANCE) return { error: "Toutes les places sont prises.", statut: 409 };
+  const fiches = await Promise.all(autres.map((p) => lirePresent(supabase, m, id, p.nom)));
+  const prises = new Set(fiches.map((f) => Number(f.place)));
+  // (l'hôte au milieu, devant ; ses proches à côté)
+  const place = hote && !prises.has(0) ? 0 : [...Array(PLACES_SEANCE).keys()].find((k) => !prises.has(k)) ?? 0;
+  const maintenant = Date.now();
+  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: maintenant, ecrits: [] };
+  if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  void nettoyerMessages(supabase, m, id, maintenant);
+  // (l'hôte arrive : sa télé est prête — la première vidéo de sa télé du jour, si rien ne passe depuis six heures)
+  const videos: VideoSalon[] = (teleDuJour?.videos ?? []).map((v) => ({ id: v.id, titre: v.titre, chaine: v.chaine, duree: v.duree }));
+  let seance = deja && maintenant - deja.depart < INVITATION_MS ? deja : null;
+  if (hote && !seance && videos.length) {
+    seance = { video: videos[0], depart: maintenant, n: (deja?.n ?? 0) + 1 };
+    await ecrireJson(supabase, cheminTeleSeance(qHote), seance);
+  }
+  const decor = (piece ? await sceneDeLaMaison(supabase, piece).catch(() => null) : null) ?? (await decorDuSalon(supabase, "series"));
+  const messages = await derniersMessages(supabase, m, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches: [] });
+  const nomHote = hote ? prenom : prenomHote;
+  return {
+    ouverture: {
+      salon: { id, n: 1, nom: PHRASES_SALONS.chez(nomHote || "toi"), maison: m, seance: { hote, prenom: nomHote, cle } },
+      moi: q,
+      presents: [...fiches.filter((f) => f.q).map(publicDe), publicDe(fiche)],
+      messages,
+      caches: [],
+      decor,
+      tele: { videos, maintenant, seance },
+    },
+  };
+}
+/** Le prénom de l'hôte (son compte, sinon sa fiche de figurine). */
+async function prenomDuCompte(supabase: Supabase, h: string): Promise<string> {
+  const { data } = await supabase.from("human_habitants").select("prenom").eq("id", h).maybeSingle();
+  const p = s((data as { prenom?: string } | null)?.prenom) || (await prenomDe(supabase, { id: h } as Habitant).catch(() => ""));
+  return p || "Ton proche";
+}
+
+/** 📺 L'hôte mène la télé : une vidéo de sa télé du jour, « Suivante », la pause, la reprise. */
+export async function teleDeLaSeance(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ seance?: TeleSeance }>> {
+  const qHote = qui8(moi.id);
+  if (seanceDe(p.salon) !== qHote) return { error: "C’est l’hôte qui mène la télé.", statut: 403 };
+  const t = await lireTeleSeance(supabase, qHote);
+  const maintenant = Date.now();
+  let seance: TeleSeance | null = null;
+  if (p.quoi === "pause" && t) seance = { ...t, pause: (maintenant - t.depart) / 1000, n: t.n + 1 };
+  else if (p.quoi === "jouer" && t) seance = { ...t, depart: maintenant - (t.pause ?? 0) * 1000, pause: undefined, n: t.n + 1 };
+  else if (p.quoi === "video" || p.quoi === "suivante") {
+    const videos = (await maTeleDuJour(supabase, moi.id).catch(() => null))?.videos ?? [];
+    const k = p.quoi === "suivante" ? videos.findIndex((v) => v.id === t?.video.id) + 1 : videos.findIndex((v) => v.id === s(p.id));
+    const v = videos[k] ?? (p.quoi === "suivante" ? videos[0] : undefined);
+    if (!v) return { error: "Cette vidéo n’est pas à ta télé.", statut: 404 };
+    seance = { video: { id: v.id, titre: v.titre, chaine: v.chaine, duree: v.duree }, depart: maintenant, n: (t?.n ?? 0) + 1 };
+  }
+  if (!seance) return { error: "Demande incomplète.", statut: 400 };
+  const { pause, ...reste } = seance;
+  const ecrit = pause === undefined ? reste : seance;
+  if (!(await ecrireJson(supabase, cheminTeleSeance(qHote), ecrit))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  return { seance: ecrit as TeleSeance };
+}
+
+/**
+ * 👥 Inviter jusqu'à trois proches (des deux côtés) devant ma télé : chacun voit l'invitation dans Découvrir (« Venir »
+ * / « Pas maintenant ») et reçoit une notification ; elle tient six heures.
+ */
+export async function inviterChezMoi(supabase: Supabase, moi: Habitant, cles: unknown): Promise<Resultat<{ invites?: string[] }>> {
+  const l = (Array.isArray(cles) ? cles : []).map(s).filter(Boolean);
+  if (!l.length) return { error: "Qui invites-tu ?", statut: 400 };
+  if (l.length > INVITES_MAX) return { error: `${INVITES_MAX} proches au plus.`, statut: 400 };
+  const [prenom, maCle] = await Promise.all([prenomDe(supabase, moi).catch(() => ""), poserProfil(supabase, moi.id)]);
+  const qMoi = qui8(moi.id);
+  const maintenant = Date.now();
+  const invites: string[] = [];
+  for (const cle of l) {
+    const h = await hDeCle(supabase, cle).catch(() => null);
+    if (!h || h === moi.id || !(await seParlent(supabase, moi.id, h).catch(() => false))) continue;
+    const q = qui8(h);
+    // (une invitation par proche toutes les dix minutes : pas de pluie de notifications)
+    const avant = await lireJson<{ le?: number }>(supabase, cheminInvite(qMoi, q)).catch(() => ({}) as { le?: number });
+    const recente = maintenant - (Number(avant.le) || 0) < 10 * 60_000;
+    await ecrireJson(supabase, cheminInvite(qMoi, q), { h, le: maintenant });
+    await ecrireJson(supabase, `${dossierInvitations(h)}/${qMoi}.json`, { cle: maCle, prenom: prenom || "Ton proche", le: maintenant });
+    if (!recente) await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.invitation(prenom || "Ton proche"), corps: "Viens t’asseoir : on regarde la même vidéo, en même temps.", url: `/univers/salons?chez=${maCle}`, tag: `tele-${qMoi}` }).catch(() => "rien");
+    invites.push(cle);
+  }
+  if (!invites.length) return { error: "Ces personnes ne sont pas tes proches.", statut: 403 };
+  return { invites };
+}
+
+/** 🎬 Mes invitations (de moins de six heures). */
+export async function mesInvitations(supabase: Supabase, moi: Habitant): Promise<InvitationTele[]> {
+  const l = await lister(supabase, dossierInvitations(moi.id), { limite: 20, recents: true });
+  const lus = await Promise.all(l.map((e) => lireJson<Partial<InvitationTele>>(supabase, `${dossierInvitations(moi.id)}/${e.nom}`)));
+  return lus.filter((x) => s(x.cle) && Date.now() - (Number(x.le) || 0) < INVITATION_MS).map((x) => ({ cle: s(x.cle), prenom: s(x.prenom), le: Number(x.le) }));
+}
+/** « Pas maintenant » : l'invitation s'en va (celle de cet hôte). */
+export async function refuserInvitation(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat> {
+  const h = await hDeCle(supabase, cle).catch(() => null);
+  if (!h) return { error: "Qui ?", statut: 400 };
+  await effacer(supabase, [`${dossierInvitations(moi.id)}/${qui8(h)}.json`]);
+  return {};
+}
+
+// ═══ 🗄️ LE LOT D5 : L'ÉTAGÈRE DES SALONS, « MES SALONS », AJOUTER EN PROCHE ═══════════════════════════════════════
+// ❤️ `…/<salon>/aimes/<message>-<q>.json` (un fichier par cœur) ; 🗄️ `decouvrir/salons/<maison>/etageres/<thème>/<message>.json`
+// (sans limite de temps) ; 🏠 `<habitant>/mes-salons.json` ; 👯 `decouvrir/demandes/<habitant>/<q>.json`.
+const dossierEtagere = (m: MaisonSalons, theme: IdTheme) => `${base(m)}/etageres/${theme}`;
+const dossierDemandes = (h: string) => `decouvrir/demandes/${h}`;
+const ID_MESSAGE = /^\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}$/;
+
+/** ❤️ Aimer un message d'un salon ouvert : aimé par trois personnes, il monte sur l'étagère du salon. */
+export async function aimerMessage(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ aimes?: number; etagere?: boolean }>> {
+  const r = await sonSalon(supabase, moi, p.salon);
+  if (r.error || !r.m || !r.id) return { error: r.error, statut: r.statut };
+  if (r.seance || r.m === "prives") return { error: "L’étagère, c’est dans les salons ouverts.", statut: 400 };
+  const x = salonDe(r.id)!;
+  const idm = s(p.message);
+  if (!ID_MESSAGE.test(idm)) return { error: "Quel message ?", statut: 400 };
+  const msg = await lireJson<Partial<FicheMessage>>(supabase, `${dossierMessages(r.m, r.id)}/${idm}.json`);
+  if (msg.sorte !== "texte" || !msg.texte) return { error: "Ce message n’est plus là.", statut: 404 };
+  const q = qui8(moi.id);
+  if (msg.de === q) return { error: "Tes propres mots, d’autres les aimeront 🙂", statut: 400 };
+  const dossierAimes = `${dossierSalon(r.m, r.id)}/aimes`;
+  await ecrireJson(supabase, `${dossierAimes}/${idm}-${q}.json`, { le: Date.now() });
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossierAimes, { limit: 100, search: idm });
+  const aimes = new Set(((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => s(f.name)).filter((n) => n.startsWith(`${idm}-`))).size;
+  const etagere = aimes >= AIMES_POUR_ETAGERE;
+  if (etagere) {
+    const moment: MomentSalon = { id: idm, texte: s(msg.texte), prenom: s(msg.prenom), le: Number(msg.le) || Date.now(), n: aimes };
+    await ecrireJson(supabase, `${dossierEtagere(r.m, x.theme)}/${idm}.json`, moment);
+  }
+  return { aimes, etagere };
+}
+
+/** 🗄️ L'étagère d'un salon (de son thème) : les moments aimés, les plus récents d'abord. */
+export async function etagereDuSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ moments?: MomentSalon[] }>> {
+  const r = await sonSalon(supabase, moi, id);
+  if (r.error || !r.m || !r.id) return { error: r.error, statut: r.statut };
+  if (r.seance || r.m === "prives") return { moments: [] };
+  const x = salonDe(r.id)!;
+  const l = await lister(supabase, dossierEtagere(r.m, x.theme), { limite: 40, recents: true });
+  const lus = await Promise.all(l.map((e) => lireJson<Partial<MomentSalon>>(supabase, `${dossierEtagere(r.m as MaisonSalons, x.theme)}/${e.nom}`)));
+  return { moments: lus.filter((m) => m.id && m.texte).map((m) => m as MomentSalon).sort((a, b) => b.le - a.le) };
+}
+
+/** 📌 Garder un moment de l'étagère : il va dans ma maison (sur mon étagère), avec le nom du salon. */
+export async function garderMoment(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ id?: string }>> {
+  const r = await sonSalon(supabase, moi, p.salon);
+  if (r.error || !r.m || !r.id || r.m === "prives") return { error: r.error ?? "Quel salon ?", statut: r.statut ?? 400 };
+  const x = salonDe(r.id)!;
+  const idm = s(p.moment);
+  if (!ID_MESSAGE.test(idm)) return { error: "Quel moment ?", statut: 400 };
+  const moment = await lireJson<Partial<MomentSalon>>(supabase, `${dossierEtagere(r.m, x.theme)}/${idm}.json`);
+  if (!moment.texte) return { error: "Ce moment n’est plus sur l’étagère.", statut: 404 };
+  const nom = nomDuSalon(x.theme).replace(/^\S+\s/, "");
+  const g = await ajouterChezMoi(supabase, moi, { quoi: "autre", titre: `« ${s(moment.texte)} »`, mot: `${nom} · ${s(moment.prenom)}` });
+  if (g.error) return { error: g.error, statut: g.statut };
+  return { id: g.id };
+}
+
+/** 🏠 « Mes salons » : il est entré dans celui-ci (une fois par heure au plus, pour l'ordre des fanions). */
+async function noterMonSalon(supabase: Supabase, h: string, theme: IdTheme, maintenant: number): Promise<void> {
+  const f = await lireJson<{ themes?: Record<string, { n?: number; dernier?: number }> }>(supabase, cheminMesSalons(h)).catch(() => ({}) as { themes?: Record<string, { n?: number; dernier?: number }> });
+  const themes = f.themes ?? {};
+  const avant = themes[theme];
+  if (avant && maintenant - (Number(avant.dernier) || 0) < 3600_000) return;
+  themes[theme] = { n: (Number(avant?.n) || 0) + 1, dernier: maintenant };
+  await ecrireJson(supabase, cheminMesSalons(h), { themes });
+}
+/**
+ * 👯 Ajouter en proche quelqu'un d'un salon ouvert : s'il m'avait déjà demandé, nous voilà proches (la conversation
+ * s'ouvre) ; sinon, il reçoit ma demande (dans Découvrir, et une notification). Dix par jour au plus.
+ */
+export async function demanderProche(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ proches?: boolean; envoyee?: boolean }>> {
+  const r = await sonSalon(supabase, moi, p.salon);
+  if (r.error || !r.m || !r.id) return { error: r.error, statut: r.statut };
+  if (r.seance || r.m === "prives") return { error: "Vous êtes déjà proches.", statut: 400 };
+  const cible = s(p.q);
+  const qMoi = qui8(moi.id);
+  if (!/^[A-Za-z0-9_-]{4,16}$/.test(cible) || cible === qMoi) return { error: "Qui ?", statut: 400 };
+  const f = await lirePresent(supabase, r.m, r.id, cible);
+  const h = s(f.h);
+  if (!h) return { error: "Cette personne n’est plus là.", statut: 404 };
+  const prenom = await prenomDe(supabase, moi).catch(() => "");
+  if (await seParlent(supabase, moi.id, h).catch(() => false)) return { proches: true };
+  // (il m'avait demandé : nous voilà proches, des deux côtés)
+  const sienne = await lireJson<{ le?: number }>(supabase, `${dossierDemandes(moi.id)}/${cible}.json`).catch(() => ({}) as { le?: number });
+  if (Number(sienne.le)) {
+    await Promise.all([ajouterProche(supabase, moi.id, h), ajouterProche(supabase, h, moi.id)]);
+    await effacer(supabase, [`${dossierDemandes(moi.id)}/${cible}.json`, `${dossierDemandes(h)}/${qMoi}.json`]);
+    await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.procheFait(prenom || "Ton nouveau proche"), corps: "Votre conversation est ouverte dans « Proches ».", url: "/collection#proches", tag: `proche-${qMoi}` }).catch(() => "rien");
+    return { proches: true };
+  }
+  const jour = jourParis();
+  const compte = await lireJson<{ jour?: string; n?: number }>(supabase, `${moi.id}/demandes-proche.json`).catch(() => ({}) as { jour?: string; n?: number });
+  const n = compte.jour === jour ? Number(compte.n) || 0 : 0;
+  if (n >= DEMANDES_PAR_JOUR) return { error: "Assez de demandes pour aujourd’hui : la suite demain 🙂", statut: 429 };
+  const x = salonDe(r.id);
+  const nomSalon = x ? nomDuSalon(x.theme, x.n).replace(/^\S+\s/, "") : "un salon";
+  const deja = await lireJson<{ le?: number }>(supabase, `${dossierDemandes(h)}/${qMoi}.json`).catch(() => ({}) as { le?: number });
+  await ecrireJson(supabase, `${dossierDemandes(h)}/${qMoi}.json`, { de: moi.id, q: qMoi, prenom: prenom || "Quelqu’un", salon: nomSalon, le: Date.now() });
+  await ecrireJson(supabase, `${moi.id}/demandes-proche.json`, { jour, n: n + 1 });
+  if (!Number(deja.le)) await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.demandeProche(prenom || "Quelqu’un", nomSalon), corps: "Accepte-la dans Découvrir : votre conversation s’ouvrira.", url: "/collection#decouvrir", tag: `demande-${qMoi}` }).catch(() => "rien");
+  return { envoyee: true };
+}
+
+/** 👯 Les demandes de proche que j'ai reçues (de moins de sept jours). */
+export async function mesDemandes(supabase: Supabase, moi: Habitant): Promise<DemandeProche[]> {
+  const l = await lister(supabase, dossierDemandes(moi.id), { limite: 20, recents: true });
+  const lus = await Promise.all(l.map((e) => lireJson<Record<string, unknown>>(supabase, `${dossierDemandes(moi.id)}/${e.nom}`)));
+  return lus.filter((x) => s(x.q) && Date.now() - (Number(x.le) || 0) < 7 * 24 * 3600_000).map((x) => ({ q: s(x.q), prenom: s(x.prenom), salon: s(x.salon), le: Number(x.le) }));
+}
+/** 👯 Accepter (nous voilà proches) ou refuser une demande reçue. */
+export async function repondreDemande(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ proches?: boolean }>> {
+  const q = s(p.q);
+  if (!/^[A-Za-z0-9_-]{4,16}$/.test(q)) return { error: "Qui ?", statut: 400 };
+  const d = await lireJson<Record<string, unknown>>(supabase, `${dossierDemandes(moi.id)}/${q}.json`);
+  const h = s(d.de);
+  if (!h) return { error: "Cette demande n’est plus là.", statut: 404 };
+  await effacer(supabase, [`${dossierDemandes(moi.id)}/${q}.json`]);
+  if (p.oui !== true) return { proches: false };
+  await Promise.all([ajouterProche(supabase, moi.id, h), ajouterProche(supabase, h, moi.id)]);
+  const prenom = await prenomDe(supabase, moi).catch(() => "");
+  await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.procheFait(prenom || "Ton nouveau proche"), corps: "Votre conversation est ouverte dans « Proches ».", url: "/collection#proches", tag: `proche-${qui8(moi.id)}` }).catch(() => "rien");
+  return { proches: true };
 }
