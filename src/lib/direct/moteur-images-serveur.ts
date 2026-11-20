@@ -14,10 +14,11 @@ import { dejaTransparente, detourerSurFondUni, rogner } from "./figurine-pro-ser
 import { moteurRefuse, moteursDImage, noterRefus } from "./moteur-image";
 
 /**
- * (`taille` : en hauteur par défaut, `1024x1536` ; en largeur, `1536x1024` — les pièces en panorama, `pieces-serveur.ts`.
+ * (`taille` : en hauteur par défaut, `1024x1536` ; en largeur, `1536x1024` — les pièces en panorama, `pieces-serveur.ts` ;
+ * carrée, `1024x1024` — les gradins des salons ouverts, `salons-gradins-serveur.ts`.
  * `masque` : une image où ce qui est transparent est à peindre, le reste gardé — la première image prolongée.)
  */
-export type DemandeImage = { images: Buffer[]; consigne: string; transparent: boolean; fidelite: "high" | "low"; avant: number; cle: string; base: string; qualite: string; taille?: "1024x1536" | "1536x1024"; masque?: Buffer };
+export type DemandeImage = { images: Buffer[]; consigne: string; transparent: boolean; fidelite: "high" | "low"; avant: number; cle: string; base: string; qualite: string; taille?: "1024x1536" | "1536x1024" | "1024x1024"; masque?: Buffer };
 /** L'image rendue (PNG), le modèle qui l'a faite, ses réglages (pour sa signature), ses jetons. */
 export type ImageRendue = { png: Buffer; modele: string; reglages: Record<string, string>; jetons?: number };
 

@@ -238,6 +238,8 @@ export const PHRASES_SALONS = {
   sortir: "‹",
   places: (n: number, total: number = PLACES_SALON) => `${n} ici · ${total - n > 0 ? `${total - n} place${total - n > 1 ? "s" : ""} libre${total - n > 1 ? "s" : ""}` : "complet"} · ${total} places`,
   indice: "Touche une figurine : son prénom, un coucou, un bravo…",
+  // 🎭 (section 27) seul dans un gradin
+  seulSalon: "Tu ouvres le salon : les places qui brillent attendent les suivants.",
   reagis: "Réagis :",
   ouTouche: "ou touche une figurine",
   // 🛋️ D2 : la séance chez moi

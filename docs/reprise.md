@@ -53,8 +53,12 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
 maison (trois images qui se chevauchaient) n'est plus servi. Ma maison, la télé du jour, la séance chez moi et les salons
 ouverts montrent l'image en hauteur de la messagerie (`pieces-duo/<pièce>/decor.png`, ses lumières, son relevé), centrée
 comme la messagerie, sa figurine à la place de gauche du relevé. Les essais posent la pièce avec
-`scripts/piece-en-hauteur.mjs`. **Ensuite** : les décors en gradin des salons ouverts (accepté par le propriétaire : « ok
-pour le gradin, fais les décors »).
+`scripts/piece-en-hauteur.mjs`.
+
+**🎭 Les gradins des salons ouverts (20 novembre 2026, au soir ; `decouvrir.md`, section 27)** : un décor par lieu (onze
+lieux pour les douze passions), huit emplacements sur deux marches, fabriqués et validés par le propriétaire sur
+`/admin/humain/salons` ; seul un gradin validé va dans les salons (sinon, la pièce). **À faire par le propriétaire, en
+ligne** : « Tout fabriquer », regarder chaque décor, valider.
 
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les
