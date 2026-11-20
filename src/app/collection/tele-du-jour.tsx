@@ -1520,9 +1520,9 @@ const STYLES = `
 .td-invitation .td-venir{color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a)}
 .td-attente-note{margin:0;font-size:13.5px;opacity:.85}
 .td-lien{align-self:center;border:0;background:none;color:#ead3df;font:inherit;font-size:14.5px;font-weight:700;text-decoration:underline;padding:6px}
-.td-note{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));pointer-events:none;margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
+.td-note{position:fixed;left:16px;right:16px;top:calc(64px + env(safe-area-inset-top));pointer-events:none;margin:0 auto;max-width:488px;padding:11px 14px;border-radius:14px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14.5px;font-weight:700;text-align:center;z-index:5}
 .td-voile{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:6}
-.td.onglet .td-note{bottom:calc(96px + env(safe-area-inset-bottom));z-index:25}
+.td.onglet .td-note{top:calc(118px + env(safe-area-inset-top));z-index:25}
 .td.onglet .td-voile{z-index:40}
 .td-feuille{width:100%;max-width:520px;max-height:70dvh;overflow:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:#21101a;display:flex;flex-direction:column;gap:10px}
 .td-feuille-titre{margin:0;font-weight:900;font-size:17px}
