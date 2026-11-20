@@ -188,6 +188,14 @@ ok(await attendre(lea, async () => (await main.getAttribute("data-mode")) === "g
 // ═══ 🔥 L'ONGLET « DÉCOUVRIR » DE L'APPLI (le lot D1b) : SA TÉLÉ DU JOUR ═══
 await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
 await fermerPablito(lea, "#o-decouvrir");
+// (🧭 le lot D1c : l'onglet s'ouvre sur l'accueil — la carte « Ma télé du jour », les salons ouverts)
+const carte = lea.locator("#o-decouvrir [data-carte-tele]");
+ok(await attendre(lea, async () => (await carte.count()) === 1 && /vidéos t’attendent/.test(await texte(carte)) && /Ta télé est allumée/.test(await texte(carte))), `l'accueil de Découvrir : la carte « Ma télé du jour » (${await texte(carte)})`);
+ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir .td-carte-pano").evaluate((i) => i.complete && i.naturalWidth > 0)) === true && (await lea.locator("#o-decouvrir .td-carte-fig").count()) === 1), "… sa pièce et sa figurine dans la vignette");
+ok(/Regarde tes vidéos avec ceux que tu aimes/.test(await texte(lea.locator("#o-decouvrir .td-slogan"))), "la phrase de ClikMe");
+ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-salon]").count()) === 12), "les salons ouverts : douze, ses passions d'abord");
+await lea.screenshot({ path: `${D}/tele-du-jour-4a-accueil.png` });
+await carte.click();
 const onglet = lea.locator("#o-decouvrir .td.onglet");
 ok(await attendre(lea, async () => Boolean(await onglet.getAttribute("data-video").catch(() => ""))), "l'onglet « Découvrir » : sa télé du jour");
 const tailles = await lea.evaluate(() => {

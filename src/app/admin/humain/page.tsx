@@ -87,6 +87,7 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/figurines-clients", label: "Les figurines des clients" },
         { href: "/admin/humain/univers-essais", label: "Univers : les essais du lot 0" },
         { href: "/admin/humain/decouvrir", label: "📺 Découvrir : la sélection YouTube du jour" },
+        { href: "/admin/humain/salons", label: "🛋️ Découvrir : les salons ouverts (modération)" },
         { href: "/admin/humain/remise-a-zero", label: "🧹 Remettre l’appli à zéro (effacer tous les comptes de l’appli)" },
         { href: "/univers", label: "Univers : « Mon univers », l’accueil (essai — mène à l’étape où j’en suis)" },
         { href: "/univers/figurine", label: "Univers : la nouvelle figurine (essai)" },

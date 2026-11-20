@@ -24,3 +24,9 @@ export const maisonPourTous = (): boolean => lu("CLIKME_MA_MAISON", MA_MAISON_CA
 
 /** 🛋️ Les conversations dans le salon du duo, pour tout le monde ? (un téléphone peut toujours choisir : `?salon=0/1`) */
 export const salonPourTous = (): boolean => lu("CLIKME_SALON_DU_DUO", SALON_DU_DUO);
+
+/**
+ * 🛋️ Les salons ouverts de Découvrir (lots D3 et D4, 20 novembre 2026) : allumés ; `CLIKME_SALONS_OUVERTS=0` les ferme
+ * sans déployer (les cartes disparaissent de l'accueil, on ne peut plus y entrer).
+ */
+export const salonsOuverts = (): boolean => lu("CLIKME_SALONS_OUVERTS", true);
