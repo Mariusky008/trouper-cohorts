@@ -941,3 +941,51 @@ Le propriétaire, le 20 novembre 2026 : « oui, fusionne et commence D8 ». Ce q
   les chaînes (`/youtube/channels`, `/youtube/playlistItems`, `/__youtube-chaines`).
 
 **Ensuite** : D9 (✨ ma passion à moi), puis D6 (TikTok et Instagram par le partage, en portrait).
+
+## 25. La télé du jour comme la maquette, et les vocaux à la seconde (20 novembre 2026)
+
+Le propriétaire, le 20 novembre 2026, captures à l'appui (la vraie télé du jour, puis la maquette « avec les amis » et
+« avec des inconnus ») : « ce n'est pas du tout pareil : il manque la possibilité de laisser des voices avec le micro, le
+design du salon n'a rien à voir » — et la maquette elle-même (« Découvrir ClikMe », l'archive). La télé du jour reprend
+donc **l'écran « Ma télé » de la maquette** (section 12), avec **ma pièce de Ma maison** (sa décision du 18 novembre) et
+ma vraie figurine :
+
+- **La barre du haut** : « ‹ » (dans l'onglet : revenir à l'accueil de Découvrir), **« 🏠 Ma télé »** et, dessous, « 1 sur
+  40 · ⚽ Foot et sport » (ou « 🆕 Lesbonsplans · il y a 1 h ») ; **💬** (« Ce qui s'est dit », le nombre en pastille) ;
+  **« 👥 Inviter »** (la séance chez moi, lot D2).
+- **La télé** en grand écran, ma pièce dessous. Télé éteinte : le titre, la chaîne et la durée en haut de la vignette,
+  « ▶ Allumer la télé », et en bas « 👥 2 proches l'ont vue : ils regardent avec toi ». Dans la pièce : « Tu l'ouvres en
+  premier : tes réactions attendront tes proches » (personne ne l'a vue), « 🛋️ Voir la pièce » (ou « ⛶ Grand écran ») en
+  bas à gauche, « 📺 Suivre cette chaîne » en bas à droite.
+- **Dessous, comme la maquette** :
+  - la **ligne du temps** : « ↺ » (cinq secondes en arrière, sans que ce saut compte comme un 😮), le temps, la barre
+    qui se remplit, **un point par réaction** (une couleur par proche ; les miennes en blanc), la durée ;
+  - **« Réagis : 😂 ❤️ 😮 😱 😴 — ou touche la pièce »** ;
+  - **les commandes sur une ligne** : « ❚❚ » / « ▶ » (la pause, la lecture), « Suivante › », puis « 📌 Garder »,
+    « 📤 Envoyer » ;
+  - **« 💬 Le salon du foot en parle · 2 personnes › »** : le salon ouvert du thème (pas pour une vidéo d'une chaîne) ;
+  - **« Écris, à cette seconde… » · 🎙️ · « Envoyer »**.
+- **🎙️ Les vocaux à la seconde** (section 13.4, décidé par le propriétaire) — sa **vraie voix**, jamais une voix de
+  synthèse :
+  - **je garde 🎙️ appuyé et je parle** (le micro du salon du duo : la barre ● rouge, le temps, la forme de la voix,
+    « ‹ glisse pour effacer » ; une minute au plus) : **la vidéo se met en pause pendant que je parle** (« 🎙️ Tu parles —
+    la vidéo t'attend ») et **reprend quand je relâche** ; ma voix part **à la seconde où j'ai commencé** ; « 🎙️ Ta voix,
+    à 0:20 : Sam l'écoutera à cette seconde » ;
+  - **chez mes proches, à cette seconde**, ma figurine bat (« 🎙️ un vocal ») et « 🎙️ Léa t'a laissé un vocal — ▶ Écouter »
+    apparaît : **la vidéo ne s'arrête jamais toute seule** ; s'il écoute, elle se met en pause le temps du message
+    (« 🎙️ Léa — la vidéo reprend après »), puis reprend ; sinon, le vocal l'attend dans « 💬 Ce qui s'est dit »
+    (« 0:20 Léa 🎙️ un vocal — ▶ Écouter ») ;
+  - **le rangement** : la voix dans `decouvrir/vocaux/<vidéo>/<q>-<id>.<ext>` ; la réaction gagne `voix: { id, duree, ext }` ;
+    ses proches (des deux côtés) la reçoivent par un lien signé d'une heure (`voix.url`, jamais gardé) ; 20 vocaux par vidéo
+    et par personne au plus ;
+  - **la route** : `POST { action: "vocal", id, t, son, duree }` (`son` : le fichier en `data:` URL, comme le talkie) →
+    `{ reaction }` ; trop court, pas un son : 400 ; une vidéo qui n'est pas à ma télé : 404.
+- **Les essais** : `tele-conversation.mjs` (sur un iPhone, un faux micro de Chromium : garder 🎙️ appuyé à 20 s, la vidéo en
+  pause pendant qu'elle parle, relâché elle reprend ; chez Sam, « 🎙️ Léa t'a laissé un vocal — ▶ Écouter », la vidéo qui
+  continue, ▶ Écouter qui la met en pause puis la relance ; la ligne dans « Ce qui s'est dit ») ;
+  `essai-conversation-video-route.mjs` (le vocal de Sam, ses refus, Léa qui l'écoute, Inès qui ne l'entend pas, aucun lien
+  gardé) ; `tele-du-jour.mjs`, `tele-ensemble.mjs` et `salons-seance.mjs` suivent le nouvel écran (la barre, la ligne du
+  temps, « 👥 Inviter »).
+
+**Restent** : « 📌 Garder ce moment » ; « 📷 Ta figurine fait ta tête » (D2b, troisième partie) ; le clip « 🎬 Nos
+réactions » ; D2c ; D9 (✨ ma passion à moi) ; D6.

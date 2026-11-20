@@ -44,8 +44,9 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    revois-la avec ses réactions ») ; restent la suite de D2b (les vocaux à la seconde, « 📌 Garder ce moment », « 📷 Ta
    figurine fait ta tête », le clip « 🎬 Nos réactions »), D2c (les
    expressions du visage), les mèmes dans un salon ouvert, les vocaux et les mèmes dans la séance, D7 (les potins de ma
-   ville) ; et, décidés le 20 novembre (section 23), **D8 (📺 mes chaînes YouTube, 10 au plus) — fait le 20 novembre
-   (section 24) —, puis D9 (✨ ma passion à moi, une par personne), puis D6 (TikTok et Instagram par le partage, en
+   ville) ; **la télé du jour refaite comme la maquette, avec 🎙️ les vocaux à la seconde** (20 novembre, section 25) ; et,
+   décidés le 20 novembre (section 23), **D8 (📺 mes chaînes YouTube, 10 au plus) — fait le 20 novembre (section 24) —,
+   puis D9 (✨ ma passion à moi, une par personne), puis D6 (TikTok et Instagram par le partage, en
    portrait)**.
 
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
