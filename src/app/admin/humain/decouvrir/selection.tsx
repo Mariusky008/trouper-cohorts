@@ -6,7 +6,14 @@ import { surYouTube, vignetteYouTube } from "@/lib/direct/tele";
 
 const ROUTE = "/api/admin/direct/decouvrir";
 type ChaineAdmin = { id: string; nom: string; image?: string; abonnes: number; videos: number; le: string; erreur?: string; retiree?: true };
-type Etat = { branche: boolean; jour: string; themes: { theme: IdTheme; adultes: SelectionDuJour | null; jeunes: SelectionDuJour | null }[]; chaines?: ChaineAdmin[] };
+type PassionAdmin = { cle: string; jeunes: boolean; mots: string; gens: number; videos: number; cherche: string; erreur?: string; refusee?: true };
+type Etat = {
+  branche: boolean;
+  jour: string;
+  themes: { theme: IdTheme; adultes: SelectionDuJour | null; jeunes: SelectionDuJour | null }[];
+  chaines?: ChaineAdmin[];
+  perso?: { passions: PassionAdmin[]; budget: { jour: string; nuit: number; journee: number } } | null;
+};
 const minutes = (s: number) => `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")}`;
 
 export function SelectionDecouvrir() {
@@ -156,6 +163,42 @@ export function SelectionDecouvrir() {
                 ) : (
                   <button type="button" data-retirer-chaine disabled={!!occupe} onClick={() => agir({ action: "retirer-chaine", id: c.id }, c.id, "Chaîne retirée de toutes les télés.")}>
                     Retirer
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      {/* (✨ le lot D9 : les passions écrites librement — une par personne, cherchées dans un budget) */}
+      <section data-passions-perso style={{ border: "1px solid #e3e3e3", borderRadius: 14, padding: 12 }}>
+        <h2 style={{ margin: "0 0 4px", fontSize: 18 }}>✨ Les passions à soi</h2>
+        <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>
+          Chacun peut écrire une passion qui n’est pas dans la liste. Ceux qui écrivent la même chose la partagent. Elle est cherchée sur YouTube tout de
+          suite (10 recherches par jour), puis tous les trois jours la nuit (20 par nuit, les plus suivies d’abord). Aujourd’hui :{" "}
+          <b data-budget>
+            {etat.perso?.budget.nuit ?? 0}/20 la nuit, {etat.perso?.budget.journee ?? 0}/10 dans la journée
+          </b>
+          . Si c’est souvent plein, il faut demander à Google plus de quota (un formulaire, gratuit). Des mots refusés disparaissent pour tout le monde.
+        </p>
+        {!etat.perso?.passions.length ? (
+          <p style={{ margin: 0, color: "#666" }}>Personne n’a encore écrit sa passion.</p>
+        ) : (
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            {etat.perso.passions.map((x) => (
+              <li key={`${x.cle}-${x.jeunes}`} data-passion-perso={x.cle} style={{ display: "flex", alignItems: "center", gap: 10, opacity: x.refusee ? 0.5 : 1 }}>
+                <b style={{ flex: 1, minWidth: 0 }}>
+                  {x.mots} {x.jeunes && <small style={{ color: "#666" }}>(15-17 ans)</small>}
+                </b>
+                <small style={{ color: "#666" }}>
+                  {x.gens} personne{x.gens > 1 ? "s" : ""} · {x.videos} vidéo{x.videos > 1 ? "s" : ""} · {x.cherche ? `cherchée le ${new Date(x.cherche).toLocaleDateString("fr-FR")}` : "pas encore cherchée"}
+                  {x.erreur ? " · ⚠️ YouTube n’a pas répondu" : ""}
+                </small>
+                {x.refusee ? (
+                  <small>Refusée</small>
+                ) : (
+                  <button type="button" data-refuser-passion disabled={!!occupe} onClick={() => agir({ action: "refuser-passion", cle: x.cle }, x.cle, "Passion refusée : elle disparaît pour tout le monde.")}>
+                    Refuser
                   </button>
                 )}
               </li>

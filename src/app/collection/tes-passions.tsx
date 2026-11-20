@@ -5,12 +5,16 @@
  * fois qu'il ouvre Découvrir (et plus tard depuis Moi). Douze vignettes (onze avant ses 18 ans : le salon des jeunes
  * parents est réservé aux adultes), un toucher par passion, de 3 à 5 ; « C'est parti » les range.
  *
+ * ✨ Sous les vignettes, « Ta passion à toi » (le lot D9, section 23.2) : une passion écrite librement, une seule, en plus
+ * des autres ; « Garder » la range (relue), ✕ l'enlève.
+ *
  * 📺 Dessous, « Tes chaînes » (le lot D8, `decouvrir.md` section 23.1) : les chaînes YouTube que je suis (10 au plus) —
  * coller un lien ou un @nom les ajoute tout de suite, ✕ les enlève ; leurs nouvelles vidéos arrivent en premier.
  */
 import { useEffect, useState } from "react";
 import { PASSIONS_MAX, PASSIONS_MIN, PHRASES_PASSIONS, type ThemeDecouvrir } from "@/lib/direct/decouvrir";
 import { CHAINES, PHRASES_CHAINES as PC, type ChaineSuivie } from "@/lib/direct/chaines";
+import { PASSION_PERSO, PHRASES_PASSION_PERSO as PP } from "@/lib/direct/passion-perso";
 
 const ROUTE = "/api/direct/passions";
 /** (la couleur de chaque vignette : celle de son salon) */
@@ -35,16 +39,18 @@ export function TesPassions({ onFini, onglet = false }: { onFini?: (passions: st
   const [erreur, setErreur] = useState("");
   const [note, setNote] = useState("");
   const [occupe, setOccupe] = useState(false);
+  const [perso, setPerso] = useState<{ mots: string; refusee?: true } | null>(null);
 
   useEffect(() => {
     let fini = false;
     fetch(ROUTE, { cache: "no-store" })
-      .then(async (r) => ({ ok: r.ok, j: (await r.json().catch(() => ({}))) as { themes?: ThemeDecouvrir[]; passions?: string[]; error?: string } }))
+      .then(async (r) => ({ ok: r.ok, j: (await r.json().catch(() => ({}))) as { themes?: ThemeDecouvrir[]; passions?: string[]; perso?: { mots: string; refusee?: true } | null; error?: string } }))
       .then(({ ok, j }) => {
         if (fini) return;
         if (!ok) return setErreur(j.error || "Ça n’a pas marché. Réessaie.");
         setThemes(j.themes ?? []);
         setChoix(j.passions ?? []);
+        setPerso(j.perso ?? null);
       })
       .catch(() => !fini && setErreur("Pas de réseau : réessaie dans un instant."));
     return () => {
@@ -107,6 +113,7 @@ export function TesPassions({ onFini, onglet = false }: { onFini?: (passions: st
       ) : (
         !erreur && <p className="tp-intro">…</p>
       )}
+      {themes && <MaPassion perso={perso} peut={choix.length >= PASSIONS_MIN} onChange={setPerso} />}
       <p className="tp-potins">{PHRASES_PASSIONS.potins}</p>
       {themes && <MesChaines />}
       {(erreur || note) && (
@@ -142,6 +149,68 @@ export function TesPassions({ onFini, onglet = false }: { onFini?: (passions: st
 .tp-bas span{font-weight:800;color:#ead3df}
 .tp-go{border:0;border-radius:999px;padding:12px 22px;font:inherit;font-weight:800;font-size:15px;color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);box-shadow:0 10px 24px -10px rgba(255,46,154,.9);cursor:pointer}
 .tp-go:disabled{opacity:.4;box-shadow:none;cursor:default}
+`}</style>
+    </section>
+  );
+}
+
+/** ✨ Ta passion à toi (le lot D9) : un champ ; « Garder » (relue) ; ✕ pour l'enlever. Il faut d'abord ses passions. */
+function MaPassion({ perso, peut, onChange }: { perso: { mots: string; refusee?: true } | null; peut: boolean; onChange: (p: { mots: string } | null) => void }) {
+  const [mots, setMots] = useState("");
+  const [note, setNote] = useState<{ t: string; erreur?: boolean } | null>(null);
+  const [occupe, setOccupe] = useState(false);
+  const envoyer = async (texte: string) => {
+    setOccupe(true);
+    setNote(null);
+    const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "perso", mots: texte }) })
+      .then(async (x) => ({ ok: x.ok, j: (await x.json().catch(() => ({}))) as { perso?: { mots: string } | null; bientot?: boolean; error?: string } }))
+      .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { perso?: { mots: string } | null; bientot?: boolean; error?: string } }));
+    setOccupe(false);
+    if (!r.ok) return setNote({ t: r.j.error || "Ça n’a pas marché. Réessaie.", erreur: true });
+    onChange(r.j.perso ?? null);
+    setMots("");
+    setNote({ t: r.j.perso ? `${PP.gardee(r.j.perso.mots)}${r.j.bientot ? ` ${PP.bientot}` : ""}` : PP.enlevee });
+  };
+  return (
+    <section className="tp-perso" data-ma-passion aria-label={PP.titre}>
+      <h2>{PP.titre}</h2>
+      {perso && !perso.refusee ? (
+        <div className="tp-perso-la" data-passion-perso>
+          <b>{PP.etiquette(perso.mots)}</b>
+          <button type="button" aria-label={PP.enlever} data-enlever-passion disabled={occupe} onClick={() => void envoyer("")}>
+            ✕
+          </button>
+        </div>
+      ) : (
+        <p className="tp-intro">{perso?.refusee ? PP.retiree : PP.intro}</p>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (mots.trim()) void envoyer(mots.trim());
+        }}
+      >
+        <input value={mots} onChange={(e) => setMots(e.target.value)} placeholder={PP.champ} aria-label={PP.titre} maxLength={PASSION_PERSO.max} disabled={!peut} data-mots-passion />
+        <button type="submit" disabled={occupe || !peut || !mots.trim()} data-garder-passion>
+          {perso && !perso.refusee ? PP.changer : PP.garder}
+        </button>
+      </form>
+      {note && (
+        <p className={`tp-note${note.erreur ? " tp-erreur" : ""}`} role="status" data-note-passion>
+          {note.t}
+        </p>
+      )}
+      <style>{`
+.tp-perso{display:flex;flex-direction:column;gap:8px;margin-top:4px;padding:14px;border-radius:20px;background:linear-gradient(135deg,rgba(242,196,107,.14),rgba(255,255,255,.05))}
+.tp-perso h2{margin:0;font-size:18px;font-weight:900}
+.tp-perso-la{display:flex;align-items:center;gap:10px}
+.tp-perso-la b{flex:1;min-width:0;font-size:16px;color:#F2C46B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-perso-la button{flex:none;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-weight:900;cursor:pointer}
+.tp-perso form{display:flex;gap:8px}
+.tp-perso input{flex:1;min-width:0;border:0;border-radius:999px;padding:10px 14px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:16px}
+.tp-perso input::placeholder{color:#b99aab}
+.tp-perso form button{flex:none;border:0;border-radius:999px;padding:0 16px;font:inherit;font-weight:900;font-size:14px;color:#2a0f1f;background:linear-gradient(135deg,#ffe0a0,#F2C46B);cursor:pointer}
+.tp-perso form button:disabled,.tp-perso input:disabled{opacity:.4}
 `}</style>
     </section>
   );

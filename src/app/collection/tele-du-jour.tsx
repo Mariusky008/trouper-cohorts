@@ -41,6 +41,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { PHRASES_TELE_DU_JOUR as P, duree, type TeleDuJour, type VideoTele } from "@/lib/direct/tele-du-jour";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { PHRASES_CHAINES as PC, ilYa } from "@/lib/direct/chaines";
+import { PHRASES_PASSION_PERSO as PP } from "@/lib/direct/passion-perso";
 import { BoutonMicro, type FinMicro } from "@/app/salon/micro";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
@@ -1015,6 +1016,13 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
                   {PC.nouvelle(v.suivie.nom, ilYa(v.publiee))}
                 </span>
               </>
+            ) : v?.perso ? (
+              <>
+                {" · "}
+                <span className="td-perso" data-perso>
+                  {PP.etiquette(v.perso)}
+                </span>
+              </>
             ) : (
               theme && (
                 <>
@@ -1373,6 +1381,7 @@ const STYLES = `
 .td-barre-titre b{font-size:15.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .td-barre-titre small{font-size:12px;color:#a88a9b;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .td-barre-titre small .td-nouvelle{color:#ff8fca;font-weight:800}
+.td-barre-titre small .td-perso{color:#F2C46B;font-weight:800}
 .td-rond{position:relative;display:grid;place-items:center;width:40px;height:40px;flex:none;padding:0;border:1px solid rgba(255,255,255,.1);border-radius:50%;background:rgba(20,8,16,.55);color:#FFF4E6;font:inherit;font-size:17px;font-family:var(--font-clikme),Poppins,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;cursor:pointer}
 .td-rond.petit{width:30px;height:30px;font-size:14px}
 .td-rond:disabled{opacity:.45}

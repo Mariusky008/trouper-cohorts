@@ -7,6 +7,8 @@
 // POST { action: "ajouter", theme, lien } → { video } : en tête du thème (adultes et 15-17 ans)
 // (le lot D8) GET rend aussi { chaines } : les chaînes suivies, les plus suivies d'abord ;
 // POST { action: "retirer-chaine", id } → elle ne peut plus être suivie ; ses vidéos disparaissent de toutes les télés
+// (le lot D9) GET rend aussi { perso } : les passions à soi et le budget de recherches du jour ;
+// POST { action: "refuser-passion", cle } → ces mots disparaissent pour tout le monde
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
@@ -14,6 +16,7 @@ import { jourParis } from "@/lib/jour-paris";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { ajouterVideo, faireLaSelection, retirerVideo, selectionsDuJour, youtubeBranche } from "@/lib/direct/selection-serveur";
 import { chainesSuivies, retirerChaine } from "@/lib/direct/chaines-serveur";
+import { passionsPerso, refuserPassion } from "@/lib/direct/passion-perso-serveur";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -25,8 +28,8 @@ export async function GET() {
   if (!(await isCurrentUserAdmin())) return NextResponse.json(REFUS, { status: 403 });
   const jour = jourParis();
   const supabase = createAdminClient();
-  const [themes, chaines] = await Promise.all([selectionsDuJour(supabase, jour), chainesSuivies(supabase).catch(() => [])]);
-  return NextResponse.json({ ok: true, branche: youtubeBranche(), jour, themes, chaines }, { headers: sansCache });
+  const [themes, chaines, perso] = await Promise.all([selectionsDuJour(supabase, jour), chainesSuivies(supabase).catch(() => []), passionsPerso(supabase).catch(() => null)]);
+  return NextResponse.json({ ok: true, branche: youtubeBranche(), jour, themes, chaines, perso }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
@@ -44,6 +47,7 @@ export async function POST(request: Request) {
   }
   if (p?.action === "retirer") return repondre(await retirerVideo(supabase, jour, p.theme, p.id));
   if (p?.action === "retirer-chaine") return repondre(await retirerChaine(supabase, p.id));
+  if (p?.action === "refuser-passion") return repondre(await refuserPassion(supabase, p.cle));
   if (p?.action === "ajouter") {
     const r = await ajouterVideo(supabase, jour, p.theme, p.lien);
     return repondre(r, { video: r.video });

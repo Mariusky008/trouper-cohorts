@@ -17,7 +17,11 @@ import type { ChaineSuivie } from "./chaines";
  * Une vidéo de ma télé du jour : celle de la sélection, et son thème — ou (le lot D8) la nouvelle vidéo d'une chaîne
  * que je suis (`suivie` ; pas de thème : son poids ne bouge pas).
  */
-export type VideoTele = VideoDuJour & { theme: IdTheme | null; suivie?: ChaineSuivie };
+export type VideoTele = VideoDuJour & { theme: IdTheme | null; suivie?: ChaineSuivie; perso?: string };
+/** Une liste à mêler : un thème, ou (le lot D9) sa passion à soi (`theme: null`, `perso` : ses mots ; son poids : « perso »). */
+export type ListeTele = { theme: IdTheme | null; perso?: string; videos: VideoDuJour[] };
+/** La clé de son poids : le thème, ou « perso ». */
+export const clePoids = (l: { theme: IdTheme | null; perso?: string }) => l.theme ?? (l.perso ? "perso" : "");
 
 /** Ce que l'écran reçoit. */
 export type TeleDuJour = {
@@ -57,8 +61,8 @@ export const partDuTheme = (poids: number | undefined) => Math.min(3, Math.max(0
  * avance passe une vidéo, et recule du total). Les thèmes que je regarde le plus reviennent plus souvent, sans jamais
  * faire disparaître les autres ; le même ordre pour les mêmes poids. Sans doublon, sans ce que j'ai vu.
  */
-export function melanger(listes: { theme: IdTheme; videos: VideoDuJour[] }[], poids: Record<string, number>, vues: ReadonlySet<string>, max: number = TELE_DU_JOUR.max): VideoTele[] {
-  const restes = listes.map((l) => ({ theme: l.theme, part: partDuTheme(poids[l.theme]), file: l.videos.filter((v) => !vues.has(v.id)), avance: 0 }));
+export function melanger(listes: ListeTele[], poids: Record<string, number>, vues: ReadonlySet<string>, max: number = TELE_DU_JOUR.max): VideoTele[] {
+  const restes = listes.map((l) => ({ theme: l.theme, perso: l.perso, part: partDuTheme(poids[clePoids(l)]), file: l.videos.filter((v) => !vues.has(v.id)), avance: 0 }));
   const total = restes.reduce((a, r) => a + r.part, 0);
   const pris = new Set<string>();
   const sortie: VideoTele[] = [];
@@ -71,7 +75,7 @@ export function melanger(listes: { theme: IdTheme; videos: VideoDuJour[] }[], po
     const v = r.file.shift()!;
     if (pris.has(v.id)) continue;
     pris.add(v.id);
-    sortie.push({ ...v, theme: r.theme });
+    sortie.push({ ...v, theme: r.theme, ...(r.perso ? { perso: r.perso } : {}) });
   }
   return sortie;
 }
