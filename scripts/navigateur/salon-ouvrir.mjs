@@ -221,6 +221,20 @@ const a0 = await angle();
 await p5.waitForTimeout(1500);
 ok((await angle()) !== a0, "la tête de ma figurine bouge seule (sa respiration)");
 await p5.close();
+// (retours du 20 novembre 2026 : la figurine de l'autre n'est pas découpée — ancienne, ou pas encore : la mienne est là
+// quand même, seule ; avant, aucune ne s'affichait)
+const deSam = await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: `${SAM.id}/calques`, limit: 100 }) }).then((r) => r.json());
+await fetch(`${STOCK}/figurines-clients`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefixes: deSam.map((f) => `${SAM.id}/calques/${f.name}`) }) });
+await json(`${SAM.id}/perso/fiche.json`, { ...fiche(SAM.id), style: "ancien" });
+await json(`${SAM.id}/perso/v1/fiche.json`, { ...fiche(SAM.id), style: "ancien" });
+const p6 = await ctx.newPage();
+surveiller(p6);
+await p6.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "networkidle" });
+ok(
+  await attendre(async () => (await p6.locator('[data-calques="poses"]').count()) === 1 && (await p6.locator('.sd-scene[data-pret] .sc-fig[data-figurine="moi"]').count()) === 1 && (await p6.locator(".sc-fig").count()) === 1, 8000, p6),
+  "sa figurine pas découpée (de l'ancien style) : la mienne est là quand même, seule",
+);
+await p6.close();
 
 // ═══ 🎭 « LES CALQUES DE TA FIGURINE » ═══
 await p.getByRole("button", { name: "Retour" }).click();

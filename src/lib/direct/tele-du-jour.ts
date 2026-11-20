@@ -95,7 +95,6 @@ export const PHRASES_TELE_DU_JOUR = {
   pasDeProche: "Ajoute d’abord un proche : vous pourrez vous envoyer des vidéos.",
   voirPiece: "🛋️ Voir la pièce",
   grandEcran: "⛶ Grand écran",
-  surYouTube: "▶ La regarder sur YouTube",
   illisible: "Celle-ci ne se lit pas ici : la suivante arrive.",
   fini: "Tu as tout vu pour aujourd’hui.",
   demain: "Ta télé se remplit chaque nuit : reviens demain.",

@@ -142,6 +142,14 @@ export function plateformeDe(adresse: string): Plateforme | null {
 /** L'image d'une vidéo YouTube (servie par YouTube), quand le message n'a pas d'aperçu à lui. */
 export const vignetteYouTube = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
+/**
+ * 📺 Le lecteur de YouTube tout simple, dans un cadre (sans son API) : il joue DANS la scène, quand l'API ne répond pas
+ * (un bloqueur, un réseau lent) — jamais un lien qui fait quitter l'appli. Sans cookie, en ligne (pas en plein écran
+ * forcé), sans vidéos proposées d'autres chaînes à la fin.
+ */
+export const lecteurYouTube = (id: string, o: { debut?: number; auto?: boolean } = {}) =>
+  `https://www.youtube-nocookie.com/embed/${id}?${o.auto === false ? "" : "autoplay=1&"}playsinline=1&rel=0&iv_load_policy=3&modestbranding=1${o.debut ? `&start=${o.debut}` : ""}`;
+
 /** Le lien pour la regarder sur YouTube (au début donné). */
 export const surYouTube = (id: string, debut?: number) => `https://www.youtube.com/watch?v=${id}${debut ? `&t=${debut}s` : ""}`;
 

@@ -160,7 +160,8 @@ await json("pieces-duo/salon/releve.json", { le: maintenant, emplacements: { cad
 ok((await lister(`${SAM.id}/calques`)).length === 0, "Sam n'a pas encore ses calques");
 r = await ouvrir(LEA, SAM.cle);
 const sc0 = r.corps?.ouverture?.scene;
-ok(r.statut === 200 && sc0?.plaque && sc0.calques === undefined, `Léa ouvre sa conversation avec Sam : la pièce, pas encore les figurines (${r.statut})`);
+// (retours du 20 novembre 2026 : chacune la sienne — celle de Léa est prête, elle est posée ; celle de Sam viendra)
+ok(r.statut === 200 && sc0?.plaque && sc0.calques?.a?.corps?.fichier === c?.corps?.fichier && sc0.calques.b === undefined, `Léa ouvre sa conversation avec Sam : la pièce et sa figurine à elle, pas encore celle de Sam (${r.statut})`);
 let n = 0;
 for (let i = 0; i < 40 && n < 3; i++) {
   await pause(250);

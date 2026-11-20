@@ -562,3 +562,18 @@ des vœux du mois (rien de neuf ne s'y ajoute) ; les mèmes eux-mêmes, envoyés
 menu) ; `meme-du-jour.mjs` réécrit (`#jour` ouvre « Créer » sur le thème, ses trois idées ; les anciens liens ouvrent
 Découvrir) ; `appli-notif.mjs`, `humeur-reponse.mjs`, `verifier-humeur.mjs`, `personnage.mjs`, `ma-figurine.mjs`,
 `meme-commerce.mjs`, `visite-univers.mjs` (« Les maisons à visiter ») adaptés.
+
+## 17. Les retours du 20 novembre 2026
+
+Le propriétaire : « quand je clique sur la vidéo, ça m'amène sur YouTube ». Quand le lecteur de YouTube (son API) ne
+répond pas — un bloqueur, un réseau lent —, la télé du jour affichait « ▶ La regarder sur YouTube ». Désormais, le
+lecteur tout simple de YouTube (un cadre, sans cookie : `lecteurYouTube`) joue la vidéo **dans l'écran**, comme la
+télé du salon : on reste dans la scène ; jamais un lien qui part sur YouTube.
+
+Et : « ça n'a pas du tout le design de la maquette, aucun salon n'apparaît ». C'est vrai : D1 et D1b ne font que **ma
+télé du jour** (section 9). Les salons ouverts sont les lots **D3 + D4** (avec la modération, jamais sans) ; la page
+d'accueil de la maquette (la carte « Ma télé du jour », puis « Les salons ouverts » par passion, les potins) viendra
+avec eux.
+
+**Les essais** : `tele-du-jour.mjs` (YouTube bloqué : « le lecteur tout simple, dans l'écran », « jamais un lien qui
+part sur YouTube »).

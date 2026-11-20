@@ -563,3 +563,24 @@ suis encore sur l'ancien concept d'univers où Pablito me pose des questions ».
 et le serveur d'essai tournent freinés ; `choisis-ta-piece.mjs` essaie l'allumé sur une seconde app (« Univers pour
 tous » et « Ma maison » allumés, comme en ligne).
 
+## 21. Les retours du 20 novembre 2026
+
+Le propriétaire : « quand j'ai mis un film sur ma télé et que j'appuie sur lecture, ça ne marche pas ; il faut que
+j'appuie sur "Regarder" et ça m'amène sur YouTube au lieu de rester dans la scène » ; « je n'apparais pas dans la scène
+en mode téléphone » ; « le mode panorama n'est pas bon : ça reprend le même plan et ça le double ».
+
+- **📺 La télé joue dans la pièce.** Toucher la télé (son ▶) : la vidéo YouTube qu'on y a mise passe sur son écran, à sa
+  place dans le panorama (le lecteur tout simple de YouTube, sans cookie : `lecteurYouTube`, `lib/direct/tele.ts`) ; la
+  bulle dit « ⏹ Éteindre la télé ». « ▶ Regarder » fait de même pour toute vidéo YouTube de la maison. Un lien qui n'est
+  pas YouTube (une autre plateforme) s'ouvre toujours à part : on ne peut pas le jouer dans la scène.
+- **Ma figurine au milieu, sur un téléphone.** La largeur du panorama est posée avant que son image arrive : sans elle,
+  le défilement restait collé à gauche et la figurine hors de l'écran. On recentre encore à l'image suivante, tant qu'on
+  n'a pas bougé.
+- **Le panorama doublé.** Le côté recopiait la télé et son meuble (la pièce en hauteur, sa référence, les montre) : la
+  consigne du côté (`consigneLargeCote`) dit maintenant qu'il est une autre partie de la pièce, sans télé, sans meuble
+  de télé, sans cadre, sans table basse ni fauteuil, et que la pièce en hauteur ne sert que pour le style. **À faire par
+  le propriétaire** : sur `/admin/humain/univers-essais`, la chambre musicale, « Refaire la droite » (et la gauche si
+  elle double aussi) — ses lumières et le panorama se refont avec.
+
+**Les essais** : `ma-maison-remplie.mjs` (la télé touchée : le film joue sur son écran, à la place de l'écran ; « ⏹
+Éteindre la télé » ; aucun lien vers YouTube).

@@ -77,7 +77,7 @@ export function imagesDe(o: OuvertureSalon): Pick<ImageSalon, "src">[] {
   const sc = o.scene;
   if (!sc) return [];
   const c = sc.calques;
-  return [sc.plaque, ...(c ? [c.a.corps, c.a.tete, c.b.corps, c.b.tete].map((x) => ({ src: x.fichier })) : [])];
+  return [sc.plaque, ...[c?.a, c?.b].flatMap((f) => (f ? [f.corps, f.tete] : [])).map((x) => ({ src: x.fichier }))];
 }
 
 /** Précharger une conversation (sa requête, ses images) ; jamais d'erreur. */

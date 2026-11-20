@@ -100,7 +100,7 @@ export async function ouvrirSalon(
   ]);
   if (!f.fil) return { error: f.error, statut: f.statut };
   // (posées aux deux places ; celles qui manquent sont découpées après la réponse)
-  const calques = scene && mienne && sienne ? calquesPoses(scene, mienne, sienne) : null;
+  const calques = scene ? calquesPoses(scene, mienne, sienne) : null;
   const aDecouper = [...(mienne ? [] : [moi.id]), ...(sienne || !h ? [] : [h])];
   const choisie = Boolean(scene && fiche.piece === scene.piece);
   const installe = choisie && fiche.par8 ? { installePar: fiche.par8 === qui8(moi.id) ? ("moi" as const) : ("autre" as const) } : {};
@@ -189,7 +189,7 @@ export async function cataloguePieces(supabase: Supabase, moi: Habitant, cle: un
   scenes.forEach((sc, i) => {
     if (!sc) return;
     const p = PIECES_DUO.find((x) => x.cle === cles[i])!;
-    const calques = mienne && sa ? calquesPoses(sc, mienne, sa) : null;
+    const calques = calquesPoses(sc, mienne, sa);
     pieces.push({ cle: p.cle, nom: p.nom, emoji: p.emoji, scene: { ...sc, ...(calques ? { calques } : {}), choisie: true } });
   });
   return { catalogue: { pieces, proposee, piece: pieceDuoValide(fiche.piece) ? fiche.piece : null } };
@@ -239,11 +239,16 @@ export async function repondreInvitation(supabase: Supabase, moi: Habitant, cle:
  * 🪑 Les deux figurines posées aux deux places de la pièce, à la même taille (`hauteurDuo`) : `a`, la mienne, à gauche ;
  * `b`, la sienne, à droite. (Les places de la scène sont des points d'assise.)
  */
-export function calquesPoses(scene: Pick<SceneSalon, "places" | "plaque">, mienne: FigurineLocale, sienne: FigurineLocale): { a: CalqueFigurine; b: CalqueFigurine } {
+export function calquesPoses(scene: Pick<SceneSalon, "places" | "plaque">, mienne: FigurineLocale | null, sienne: FigurineLocale | null): { a?: CalqueFigurine; b?: CalqueFigurine } | null {
+  if (!mienne && !sienne) return null;
   const [gauche, droite] = [...scene.places].sort((p, q) => p.x - q.x);
   const piece = { largeur: scene.plaque.largeur, hauteur: scene.plaque.hauteur };
   const taille = hauteurDuo(scene.places);
-  return { a: poserFigurine(mienne, gauche, piece, { tracee: false, taille }), b: poserFigurine(sienne, droite, piece, { tracee: false, taille }) };
+  // (chacune la sienne : si l'une n'est pas encore découpée — ou de l'ancien style —, l'autre est quand même là)
+  return {
+    ...(mienne ? { a: poserFigurine(mienne, gauche, piece, { tracee: false, taille }) } : {}),
+    ...(sienne ? { b: poserFigurine(sienne, droite, piece, { tracee: false, taille }) } : {}),
+  };
 }
 
 // ─── ⚡ LA VITESSE DU SALON (section 7.6) ─────────────────────────────────────────────────────────────────────────────
