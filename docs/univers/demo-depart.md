@@ -5,9 +5,16 @@ l'accueil des nouveaux inscrits, « Entre chez Pablito » (`src/lib/direct/bienv
 univers), est à refaire. Ce document décrit la nouvelle démo, telle que la maquette la joue. Rien n'est codé.
 
 **La maquette cliquable** (une page privée du propriétaire) : `https://claude.ai/artifact/8eVaDbarjbPgFyNRKH7Apv` ; sa
-source : `docs/univers/maquettes/demo-depart.html` (à ouvrir dans un navigateur, à la largeur d'un téléphone ; les
-images viennent de `public/direct/ensemble`). Les figurines y sont des personnages de démonstration ; dans l'appli, ce
-sont la vraie figurine du nouveau venu et celle de Pablito. Rien ne part (ni message, ni WhatsApp).
+source : `docs/univers/maquettes/demo-depart.html`. **Elle est faite sur les vrais écrans de l'appli** (le propriétaire,
+le 20 novembre : une première version avec les anciens fantômes « très loin de ce que la messagerie propose ») : le
+salon du duo (l'en-tête, la pièce, les deux figurines découpées — le corps, la tête sur son ressort —, Moustache, les
+puces, les onglets, les gestes, la saisie : les mesures de la maquette de la messagerie,
+`https://claude.ai/artifact/NaRVjbvPi2PGJmG3poai7n`, et de `src/app/salon/salon.tsx`), « Ma maison » (l'en-tête, les
+onglets de la pièce, « Aujourd'hui, si tu veux », « Pendant ton absence », « Ajouter chez moi », « Comme la voient tes
+proches ») et Découvrir (ma télé du jour en grand écran, l'accueil et les salons ouverts). **Ses images** (la pièce du
+duo, les figurines découpées, les avatars) viennent de la maquette de la messagerie : elles sont publiées avec la page
+(dossier `demo/`), pas rangées dans le dépôt ; les décors des salons ouverts viennent de `public/direct/ensemble`. En
+attendant la figurine de Pablito, celle de Camille tient sa place. Rien ne part (ni message, ni WhatsApp).
 
 ## Le principe
 
