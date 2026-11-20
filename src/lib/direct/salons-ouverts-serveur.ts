@@ -145,7 +145,8 @@ export async function mesCaches(supabase: Supabase, h: string): Promise<string[]
 // ─── 🖼️ le décor et la télé d'un salon ───
 /**
  * Le décor d'un salon : sa pièce préférée du catalogue si elle est prête, sinon la première prête (relu à chaque fois :
- * un panorama refait se voit tout de suite ; ses images, publiées une fois, ont une adresse stable).
+ * une image refaite se voit tout de suite ; ses images, publiées une fois, ont une adresse stable). Depuis le 20 novembre
+ * 2026, l'image de la pièce est celle de la messagerie (en hauteur), plus le panorama.
  */
 export async function decorDuSalon(supabase: Supabase, theme: IdTheme): Promise<ScenePiece | null> {
   const ordre: PieceDuo[] = [SALONS[theme].decor, ...PIECES_DUO.map((p) => p.cle as PieceDuo).filter((p) => p !== SALONS[theme].decor)];

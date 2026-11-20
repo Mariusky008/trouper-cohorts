@@ -3,8 +3,8 @@
 /**
  * 🏠 « MA MAISON » — LA PIÈCE DE CHACUN (`lib/direct/ma-maison.ts`, `docs/univers/ma-maison.md` ; le lot M1).
  *
- * Sa pièce du catalogue, « tout autour » : le panorama (le lot M0) qu'on fait glisser au doigt, dans la lumière de
- * l'heure ; sa figurine posée au centre, dans son fauteuil (une ombre au sol, la teinte du moment) ; ses emplacements,
+ * Sa pièce du catalogue : son image, celle de la messagerie (en hauteur, depuis le 20 novembre 2026 : plus le panorama),
+ * dans la lumière de l'heure, centrée comme la messagerie ; sa figurine posée à sa place, dans son fauteuil (une ombre au sol, la teinte du moment) ; ses emplacements,
  * qu'on touche (ce que chacun accueillera ; une lampe s'allume) ; ⚙️ « Changer de pièce ». Sans pièce : « Choisis ta
  * pièce » (les neuf, dans l'ordre de son âge ; un toucher la montre en grand ; « Je m'installe ici »).
  *
@@ -180,7 +180,7 @@ function ObjetsDeLaMaison({
   );
 }
 
-/** 🛋️ La pièce, au doigt : le panorama, la figurine au centre, les emplacements. */
+/** 🛋️ La pièce, au doigt : l'image de la pièce (celle de la messagerie), sa figurine à sa place, les emplacements. */
 function Piece({
   maison,
   phrase,
@@ -212,6 +212,7 @@ function Piece({
   const cadre = useRef<HTMLDivElement>(null);
   const defile = useRef<HTMLDivElement>(null);
   const [hauteur, setHauteur] = useState(0);
+  // (l'indice, « Touche les objets de ta pièce » : il s'en va au premier toucher)
   const [indice, setIndice] = useState(true);
   const [bulle, setBulle] = useState<{ cle: EmplacementMaison; k: number } | null>(null);
   const [allumees, setAllumees] = useState<number[]>([]);
@@ -285,12 +286,20 @@ function Piece({
   // (la largeur du panorama est posée avant que l'image arrive — sans quoi, sur un téléphone, le défilement restait
   // collé à gauche, la figurine hors de l'écran ; on recentre encore à l'image suivante, tant qu'on n'a pas bougé)
   const touche = useRef(false);
+  // (le cadrage, comme la messagerie : l'image au milieu de l'écran — sans jamais couper sa figurine)
+  const rFig = figurine ? figurine.largeur / Math.max(1, figurine.hauteur) : 0.7;
+  const cadrage = (h: number, l: number) => {
+    const w = h * ratio;
+    const fx = scene.centre.x * w;
+    const demi = (scene.centre.hauteur * h * rFig) / 2 + 8;
+    return Math.max(0, Math.min(w - l, Math.min(fx - demi, Math.max(fx + demi - l, w / 2 - l / 2))));
+  };
   // (vrai : c'est fait — ou il n'y a plus rien à faire ; faux : le défilement n'a pas encore pris, on réessaiera)
   const centrer = () => {
     const d = defile.current;
     if (!d || touche.current || enVisite.current) return true;
     if (!hauteur || d.scrollWidth <= d.clientWidth) return false;
-    const voulu = Math.max(0, Math.min(d.scrollWidth - d.clientWidth, scene.centre.x * hauteur * ratio - d.clientWidth / 2));
+    const voulu = Math.min(d.scrollWidth - d.clientWidth, cadrage(hauteur, d.clientWidth));
     if (Math.abs(d.scrollLeft - voulu) < 1) return true;
     cible.current = voulu;
     d.scrollLeft = voulu;
@@ -312,7 +321,7 @@ function Piece({
     };
     encore();
     return () => window.cancelAnimationFrame(r);
-  }, [hauteur, ratio, scene.piece, scene.centre.x]);
+  }, [hauteur, ratio, scene.piece, scene.centre.x, scene.centre.hauteur, rFig]);
   // ✨ L'ARRIVÉE (lot M2) : ce qu'il a gardé depuis sa dernière visite — la phrase, puis la caméra passe sur chacun (un
   // toucher l'arrête) ; ensuite le serveur retient la visite (`vu`). Rien de nouveau : la visite est retenue tout de suite.
   const pret = hauteur > 0;
@@ -391,7 +400,7 @@ function Piece({
       minuteries.push(
         window.setTimeout(() => {
           setVise(null);
-          if (d) aller(Math.max(0, scene.centre.x * d.clientHeight * ratio - d.clientWidth / 2));
+          if (d) aller(cadrage(d.clientHeight, d.clientWidth));
         }, t),
       );
       t += 1100;
@@ -426,7 +435,10 @@ function Piece({
           setBulle(null);
           setObjet(null);
         }}
-        onPointerDown={() => interrompre.current()}
+        onPointerDown={() => {
+          interrompre.current();
+          setIndice(false);
+        }}
       >
         <div className="mmc-pano" style={{ backgroundImage: `url(${pano.flou})`, ...(hauteur ? { width: Math.round(hauteur * ratio) } : {}) }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -437,7 +449,7 @@ function Piece({
             sizes={hauteur ? `${Math.round(hauteur * ratio)}px` : "2400px"}
             width={pano.largeur}
             height={pano.hauteur}
-            alt={`${scene.nom}, tout autour`}
+            alt={scene.nom}
             draggable={false}
             decoding="async"
           />
@@ -604,7 +616,7 @@ function Piece({
       {indice && !arrivee && !objet && (
         <div className="mmc-indice">
           {phrase && <span>{phrase}</span>}
-          <b aria-hidden="true">← Glisse pour faire le tour →</b>
+          <b aria-hidden="true">Touche les objets de ta pièce</b>
         </div>
       )}
       {dit && bulle && (
@@ -927,11 +939,6 @@ function Choix({ catalogue, actuelle, onChoisir, onFermer }: { catalogue: Catalo
   const [envoi, setEnvoi] = useState(false);
   const [dit, setDit] = useState("");
   const pretes = catalogue?.pieces.filter((p) => p.vignette) ?? [];
-  const defile = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const d = defile.current;
-    if (d) d.scrollLeft = (d.scrollWidth - d.clientWidth) / 2;
-  }, [apercu]);
   return (
     <div className="mmc-choix" role="dialog" aria-label={actuelle ? "Changer de pièce" : "Choisis ta pièce"}>
       <header>
@@ -942,7 +949,7 @@ function Choix({ catalogue, actuelle, onChoisir, onFermer }: { catalogue: Catalo
           </button>
         )}
       </header>
-      <p className="mmc-sous">{actuelle ? "Tout ce qui est chez toi te suit, à sa place." : "Ta pièce, tout autour de toi. Tu pourras en changer quand tu veux."}</p>
+      <p className="mmc-sous">{actuelle ? "Tout ce qui est chez toi te suit, à sa place." : "Là où ta figurine s’installe. Tu pourras en changer quand tu veux."}</p>
       {catalogue === null ? (
         <div className="mmc-grille">{[0, 1, 2, 3].map((k) => <span key={k} className="mmc-carte attente" aria-hidden="true" />)}</div>
       ) : pretes.length ? (
@@ -965,15 +972,14 @@ function Choix({ catalogue, actuelle, onChoisir, onFermer }: { catalogue: Catalo
       )}
       {apercu && (
         <div className="mmc-apercu" role="dialog" aria-label={apercu.nom}>
-          <div className="mmc-apercu-defile" ref={defile}>
+          <div className="mmc-apercu-image">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={apercu.vignette!.src} srcSet={apercu.vignette!.srcset} sizes="2000px" width={apercu.vignette!.largeur} height={apercu.vignette!.hauteur} alt={`${apercu.nom}, tout autour`} draggable={false} />
+            <img src={apercu.vignette!.src} srcSet={apercu.vignette!.srcset} sizes="2000px" width={apercu.vignette!.largeur} height={apercu.vignette!.hauteur} alt={apercu.nom} draggable={false} />
           </div>
           <div className="mmc-apercu-bas">
             <b>
               {apercu.emoji} {apercu.nom}
             </b>
-            <small>← Glisse pour faire le tour →</small>
             {dit && <small className="mmc-erreur">{dit}</small>}
             <span className="mmc-gestes">
               <button
@@ -1118,9 +1124,9 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc.plein .mmc-scene{height:100svh;border-radius:0;box-shadow:none}
 .mmc-scene.attente{background:linear-gradient(110deg,#1a0f14 30%,#2a1820 50%,#1a0f14 70%);background-size:200% 100%;animation:mmc-attente 1.4s linear infinite}
 @keyframes mmc-attente{to{background-position:-200% 0}}
-.mmc-defile{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mmc-defile{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;text-align:center}
 .mmc-defile::-webkit-scrollbar{display:none}
-.mmc-pano{position:relative;display:inline-block;vertical-align:top;height:100%;background-size:cover;background-position:center}
+.mmc-pano{position:relative;display:inline-block;vertical-align:top;height:100%;background-size:cover;background-position:center;text-align:left}
 .mmc-fond{display:block;height:100%;width:auto;max-width:none;user-select:none;-webkit-user-drag:none}
 .mmc-zone{position:absolute;padding:0;border:0;border-radius:10px;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mmc-zone::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 2px rgba(255,244,230,.0);transition:box-shadow .25s ease}
@@ -1231,12 +1237,11 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-carte.sienne{box-shadow:0 0 0 2px #FF2E9A}
 .mmc-carte b{padding:0 12px;font-size:16px}
 .mmc-carte small{padding:0 12px;color:#CDB4C0;font-size:13px}
-.mmc-vignette{position:relative;display:block;aspect-ratio:16/9;margin-bottom:6px;background-size:cover;background-position:center}
+.mmc-vignette{position:relative;display:block;aspect-ratio:3/4;margin-bottom:6px;background-size:cover;background-position:center}
 .mmc-vignette img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mmc-apercu{position:fixed;inset:0;z-index:61;display:flex;flex-direction:column;background:#0d070a}
-.mmc-apercu-defile{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none}
-.mmc-apercu-defile::-webkit-scrollbar{display:none}
-.mmc-apercu-defile img{display:block;height:100%;width:auto;max-width:none;user-select:none;-webkit-user-drag:none}
+.mmc-apercu-image{position:relative;flex:1;min-height:0;overflow:hidden}
+.mmc-apercu-image img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;user-select:none;-webkit-user-drag:none}
 .mmc-apercu-bas{display:flex;flex-direction:column;gap:6px;padding:14px 16px calc(16px + env(safe-area-inset-bottom));background:#140b10}
 .mmc-apercu-bas b{font-size:18px}
 .mmc-apercu-bas small{color:#CDB4C0;font-size:13.5px}

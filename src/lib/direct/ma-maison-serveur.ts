@@ -1,11 +1,13 @@
 /**
  * 🏠 « MA MAISON » — LE SERVEUR (`ma-maison.ts`, `docs/univers/ma-maison.md` ; le lot M1).
  *
- * - **Sa pièce** : `<habitant>/ma-piece/piece.json` ({ piece, le }). On ne choisit qu'une pièce prête (son panorama fait,
+ * - **Sa pièce** : `<habitant>/ma-piece/piece.json` ({ piece, le }). On ne choisit qu'une pièce prête (son image faite,
  *   le lot M0) ; on en change quand on veut (⚙️ « Changer de pièce »).
- * - **Sa scène** : le panorama de la pièce dans la lumière de l'heure de Paris (la sienne si cette lumière n'est pas
- *   faite), à adresse stable et en deux largeurs (`imageSalon`, `LARGEURS_PANORAMA`) ; ses emplacements posés à la main
- *   (`pieces-duo/<pièce>/large/releve.json`) ; son centre (la place de la figurine).
+ * - **Sa scène** (le propriétaire, 20 novembre 2026 : « le panorama, les images se chevauchent […] on pourrait tout avoir
+ *   sur une seule image comme celle de la messagerie ») : L'IMAGE DE LA PIÈCE, CELLE DE LA MESSAGERIE (en hauteur,
+ *   `pieces-duo/<pièce>/decor.png`), dans la lumière de l'heure de Paris (`lumiere-<moment>.png` ; la sienne si cette
+ *   lumière n'est pas faite), à adresse stable ; ses emplacements (`pieces-duo/<pièce>/releve.json`) ; son centre : la
+ *   place de gauche du duo (sa figurine dans son fauteuil, de la tête au sol). Le panorama n'est plus servi.
  * - **Sa figurine** : sa figurine assise dans son fauteuil (sa fiche, `references.assise`), détourée au plus près une
  *   fois (`<habitant>/ma-piece/figurine.png`, refaite si sa figurine change), à adresse stable. En attendant les calques
  *   de la figurine (le lot S1, la session des messages), elle est posée entière.
@@ -40,7 +42,7 @@ import {
   type MaMaisonVue,
   type ScenePiece,
 } from "./ma-maison";
-import { emplacementsValides, fichierLarge, momentDuoDe, pieceDuoDe, pieceDuoValide, type MomentDuo, type PieceDuo } from "./pieces-duo";
+import { emplacementsValides, momentDuoDe, pieceDuoDe, pieceDuoValide, type MomentDuo, type PieceDuo } from "./pieces-duo";
 import { imageSalon } from "./salon-fichiers-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
 import { themeDe } from "./decouvrir";
@@ -56,7 +58,8 @@ const json = (b: Buffer | null) => {
   }
 };
 const dossierMaison = (h: string) => `${h}/ma-piece`;
-const dossierLarge = (p: PieceDuo) => `pieces-duo/${p}/large`;
+const dossierPiece = (p: PieceDuo) => `pieces-duo/${p}`;
+const nomLumiere = (m: MomentDuo) => `lumiere-${m}.png`;
 /** L'heure de Paris (0 à 23). */
 const heureDeParis = (d: Date) => Number(new Intl.DateTimeFormat("fr-FR", { hour: "numeric", hour12: false, timeZone: "Europe/Paris" }).format(d)) % 24;
 
@@ -68,9 +71,9 @@ export async function lireSaPiece(supabase: Supabase, h: string): Promise<PieceD
   return pieceDuoValide(p) ? p : null;
 }
 
-/** La pièce est prête : son panorama est fait (dans sa lumière à elle). */
+/** La pièce est prête : son image est faite (celle de la messagerie, dans sa lumière à elle). */
 async function estPrete(supabase: Supabase, p: PieceDuo): Promise<boolean> {
-  return (await depotDans(supabase, dossierLarge(p)).lister().catch(() => [] as string[])).includes(fichierLarge("panorama"));
+  return (await depotDans(supabase, dossierPiece(p)).lister().catch(() => [] as string[])).includes("decor.png");
 }
 
 /** 🛋️ Choisir sa pièce (ou en changer) : une pièce du catalogue, prête. */
@@ -82,26 +85,27 @@ export async function choisirSaPiece(supabase: Supabase, h: string, p: unknown):
 }
 
 /**
- * 🛋️ La scène d'une pièce, à cette heure : son panorama dans la lumière de l'heure (sinon dans la sienne), ses
- * emplacements, son centre. `null` si son panorama n'est pas fait.
+ * 🛋️ La scène d'une pièce, à cette heure : son image (celle de la messagerie) dans la lumière de l'heure (sinon dans la
+ * sienne), ses emplacements, son centre (la place de gauche du duo ; sans relevé, `CENTRE_PAR_DEFAUT`). `null` si son
+ * image n'est pas faite. (`panorama` garde son nom : c'est l'image de la pièce, en hauteur désormais.)
  */
 export async function sceneDeLaMaison(supabase: Supabase, p: PieceDuo, maintenant = new Date()): Promise<ScenePiece | null> {
-  const dl = depotDans(supabase, dossierLarge(p));
-  const noms = await dl.lister().catch(() => [] as string[]);
+  const d = depotDans(supabase, dossierPiece(p));
+  const noms = await d.lister().catch(() => [] as string[]);
+  if (!noms.includes("decor.png")) return null;
   const x = pieceDuoDe(p);
   const voulu = momentDuoDe(heureDeParis(maintenant));
-  const nomDe = (m: MomentDuo) => fichierLarge(m === x.moment ? "panorama" : `panorama-${m}`);
-  const moment: MomentDuo = noms.includes(nomDe(voulu)) ? voulu : x.moment;
-  if (!noms.includes(nomDe(moment))) return null;
+  const moment: MomentDuo = voulu !== x.moment && noms.includes(nomLumiere(voulu)) ? voulu : x.moment;
   const [panorama, releve] = await Promise.all([
-    imageSalon(supabase, `${dossierLarge(p)}/${nomDe(moment)}`, LARGEURS_PANORAMA),
-    noms.includes("releve.json") ? dl.lire("releve.json").catch(() => null) : Promise.resolve(null),
+    imageSalon(supabase, `${dossierPiece(p)}/${moment === x.moment ? "decor.png" : nomLumiere(moment)}`, LARGEURS_PANORAMA),
+    noms.includes("releve.json") ? d.lire("releve.json").catch(() => null) : Promise.resolve(null),
   ]);
   if (!panorama) return null;
   const r = json(releve);
   const emplacements = r.emplacements ? emplacementsValides(r.emplacements) : null;
-  // (le centre posé à la main : la boîte de la figurine dans son fauteuil, de la tête au sol)
-  const centre = r.ajuste === true && emplacements?.places[0] ? emplacements.places[0] : CENTRE_PAR_DEFAUT;
+  // (sa figurine, dans son fauteuil : la place de gauche des deux places du duo — de la tête au sol)
+  const gauche = emplacements?.places.length ? [...emplacements.places].sort((a, b) => a.x - b.x)[0] : null;
+  const centre = gauche ?? CENTRE_PAR_DEFAUT;
   return { piece: p, nom: x.nom, emoji: x.emoji, moment, panorama, emplacements, centre };
 }
 
@@ -147,7 +151,7 @@ export async function visibiliteDeLaMaison(supabase: Supabase, h: string): Promi
 const aDitSesDixHuitAns = async (supabase: Supabase, h: string) => Boolean(s((await lireJson<{ le?: string }>(supabase, `${h}/adulte.json`).catch(() => ({}) as { le?: string })).le));
 /** 🏡 (lot M4) la vignette de sa pièce, pour « Les univers à visiter ». */
 export async function vignetteDeLaPiece(supabase: Supabase, p: PieceDuo): Promise<string> {
-  return (await imageSalon(supabase, `${dossierLarge(p)}/${fichierLarge("panorama")}`, LARGEURS_VIGNETTE).catch(() => null))?.src ?? "";
+  return (await imageSalon(supabase, `${dossierPiece(p)}/decor.png`, LARGEURS_VIGNETTE).catch(() => null))?.src ?? "";
 }
 
 /**
@@ -244,7 +248,7 @@ export async function catalogueDeLaMaison(supabase: Supabase, h: string): Promis
       nom: p.nom,
       pour: p.pour,
       emoji: p.emoji,
-      vignette: (await estPrete(supabase, p.cle)) ? await imageSalon(supabase, `${dossierLarge(p.cle)}/${fichierLarge("panorama")}`, LARGEURS_VIGNETTE).catch(() => null) : null,
+      vignette: (await estPrete(supabase, p.cle)) ? await imageSalon(supabase, `${dossierPiece(p.cle)}/decor.png`, LARGEURS_VIGNETTE).catch(() => null) : null,
     })),
   );
   return { pieces, piece };

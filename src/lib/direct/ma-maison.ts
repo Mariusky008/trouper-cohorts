@@ -34,15 +34,15 @@ export const ORDRE_ADULTES: readonly PieceDuo[] = ["salon", "terrasse", "cuisine
 export const ordreDuCatalogue = (adulte: boolean | null): readonly PieceDuo[] => (adulte === false ? ORDRE_JEUNES : ORDRE_ADULTES);
 
 /**
- * La figurine au centre, si la pièce n'a pas encore son centre posé à la main : la boîte de la figurine assise dans son
- * fauteuil (comme on la trace, `pieces-duo.ts`, `LargeVue`) — `x` son milieu, `y` le sol sous le fauteuil, `hauteur` de
- * la tête au sol, en fractions du panorama.
+ * La figurine à sa place, si la pièce n'a pas de relevé : la boîte de la figurine assise dans son fauteuil (comme on la
+ * trace, `pieces-duo.ts`) — `x` son milieu, `y` le sol sous le fauteuil, `hauteur` de la tête au sol, en fractions de
+ * l'image de la pièce (celle de la messagerie, en hauteur : la place de gauche, à côté de la table basse).
  */
-export const CENTRE_PAR_DEFAUT: PlaceDuo = { x: 0.5, y: 0.93, hauteur: 0.52 };
-/** (le panorama : 3584 × 1024 ; ses deux largeurs, le téléphone et l'ordinateur) */
-export const LARGEURS_PANORAMA = [1792, 3584] as const;
-/** (une vignette du catalogue : le panorama réduit) */
-export const LARGEURS_VIGNETTE = [720, 1440] as const;
+export const CENTRE_PAR_DEFAUT: PlaceDuo = { x: 0.33, y: 0.86, hauteur: 0.3 };
+/** (l'image de la pièce, celle de la messagerie : 1024 × 1536 ; ses deux largeurs) */
+export const LARGEURS_PANORAMA = [768, 1024] as const;
+/** (une vignette du catalogue : l'image réduite) */
+export const LARGEURS_VIGNETTE = [360, 720] as const;
 /** (la figurine posée : petite, moins de 80 Ko, `ma-maison.md`, section 9) */
 export const LARGEURS_FIGURINE = [360, 720] as const;
 

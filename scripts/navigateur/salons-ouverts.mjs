@@ -12,6 +12,7 @@
 // erreur.
 import crypto from "node:crypto";
 import sharp from "sharp";
+import { poserPiece } from "../piece-en-hauteur.mjs";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -56,11 +57,7 @@ for (const x of [LEA, SAM]) await json(`${x.id}/majeur.json`, { age: 30, adulte:
 await json(`${NOE.id}/majeur.json`, { age: 15, adulte: false, le: maintenant });
 for (const x of GENS) await json(`${x.id}/passions.json`, { passions: ["foot", "cuisine", "animaux"], poids: {}, le: maintenant });
 // (le décor du salon du foot : le salon du catalogue)
-const panorama = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="3072" height="1024"><rect width="3072" height="1024" fill="#20506a"/><rect y="700" width="3072" height="324" fill="#5a4030"/><rect x="1330" y="200" width="420" height="250" fill="#111"/></svg>`))
-  .webp({ quality: 70 })
-  .toBuffer();
-for (const m of ["", "-matin", "-nuit"]) await deposer(`pieces-duo/salon/large/panorama${m}.webp`, panorama, "image/webp");
-await json("pieces-duo/salon/large/releve.json", { le: maintenant, ajuste: true, emplacements: { tele: [0.433, 0.195, 0.137, 0.244], cadres: [], places: [{ x: 0.5, y: 0.94, hauteur: 0.5 }] } });
+await poserPiece(deposer, "salon", { le: maintenant });
 const nuit = await (await fetch(`${BASE}/api/cron/decouvrir-selection`)).json();
 ok(nuit.faites?.length === 23, "la nuit est passée");
 

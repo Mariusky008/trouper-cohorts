@@ -3,12 +3,13 @@
 //
 // L'administrateur (Léa, 15-17 ans, sur ce téléphone) n'a pas de pièce : « Choisis ta pièce » s'ouvre, sans ✕ ; les
 // pièces prêtes seulement, celles des plus jeunes d'abord. Un toucher : le hangar en grand, « Je m'installe ici » : on
-// est chez soi — le panorama, sa figurine au milieu de l'écran, « Glisse pour faire le tour » (parti au premier
-// glissement). Toucher la télé : ce qu'elle accueillera ; une lampe : elle s'allume, puis s'éteint ; la fenêtre : l'heure
+// est chez soi — l'image de la pièce (celle de la messagerie, en hauteur), sa figurine à sa place, « Touche les objets de
+// ta pièce » (parti au premier toucher). Toucher la télé : ce qu'elle accueillera ; une lampe : elle s'allume, puis s'éteint ; la fenêtre : l'heure
 // qu'il est ; sa figurine : elle sautille. ⚙️ : « Changer de pièce », le hangar marqué « Ta pièce » ; le salon : on y est.
 // Recharger : le salon. Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import { BASE, D, F, lancer } from "./commun.mjs";
+import { poserPiece } from "../piece-en-hauteur.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -45,21 +46,19 @@ await json(`${LEA.id}/perso/v1/fiche.json`, fiche);
 await json(`${LEA.id}/perso/fiche.json`, fiche);
 await json(`${LEA.id}/majeur.json`, { le: maintenant, age: 15, adulte: false });
 // (deux pièces prêtes, dessinées : le hangar (ses zones posées à la main), le salon)
-const panorama = (fond, sol) =>
-  sharp(
-    Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="3584" height="1024"><rect width="3584" height="1024" fill="${fond}"/><rect y="700" width="3584" height="324" fill="${sol}"/><rect x="1580" y="200" width="430" height="256" fill="#111"/><rect x="2220" y="300" width="100" height="300" fill="#e8c070"/><rect x="300" y="150" width="600" height="420" fill="#bfe3ff"/></svg>`,
-    ),
-  )
-    .webp({ quality: 80 })
-    .toBuffer();
-for (const m of ["", "-matin", "-nuit"]) await deposer(`pieces-duo/hangar/large/panorama${m}.webp`, await panorama("#6a3a5a", "#5a4030"), "image/webp");
-await json("pieces-duo/hangar/large/releve.json", {
+await poserPiece(deposer, "hangar", {
   le: maintenant,
-  ajuste: true,
-  emplacements: { tele: [0.441, 0.195, 0.12, 0.25], fenetre: [0.084, 0.146, 0.167, 0.41], lampes: [[0.62, 0.29, 0.028, 0.29]], places: [{ x: 0.5, y: 0.94, hauteur: 0.5 }] },
+  emplacements: {
+    tele: [0.3, 0.2, 0.4, 0.16],
+    fenetre: [0.04, 0.08, 0.22, 0.3],
+    lampes: [[0.82, 0.46, 0.06, 0.2]],
+    places: [
+      { x: 0.3, y: 0.86, hauteur: 0.3 },
+      { x: 0.7, y: 0.86, hauteur: 0.3 },
+    ],
+  },
 });
-await deposer("pieces-duo/salon/large/panorama.webp", await panorama("#2a4b5c", "#6a5040"), "image/webp");
+await poserPiece(deposer, "salon", { fond: "#2a4b5c", sol: "#6a5040", lumieres: false, releve: false });
 
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const b = await lancer();
@@ -97,22 +96,15 @@ await apercu.locator('[data-geste="installer"]').click();
 // ─── chez soi ───
 const scene = p.locator('.mmc-scene[data-piece="hangar"]');
 ok(await attendre(async () => (await scene.count()) === 1 && (await p.locator(".mmc-choix").count()) === 0), "« Je m'installe ici » : on est chez soi, dans le hangar");
-ok(await attendre(async () => (await scene.locator(".mmc-fond").evaluate((i) => i.complete && i.naturalWidth > 0)) && (await scene.locator(".mmc-fig img").evaluate((i) => i.complete && i.naturalWidth > 0))), "le panorama et sa figurine, chargés");
-// (la pièce se centre sur sa figurine juste après le chargement : sur une machine lente, un instant plus tard)
-const auMilieu = async () => {
-  const f = await scene.locator(".mmc-fig").boundingBox();
-  return Boolean(f) && Math.abs(f.x + f.width / 2 - 195) < 25;
-};
-await attendre(auMilieu, 4000);
-const fig = await scene.locator(".mmc-fig").boundingBox();
+ok(await attendre(async () => (await scene.locator(".mmc-fond").evaluate((i) => i.complete && i.naturalWidth > 0)) && (await scene.locator(".mmc-fig img").evaluate((i) => i.complete && i.naturalWidth > 0))), "l'image de la pièce et sa figurine, chargées");
 const vue = await scene.boundingBox();
-ok(fig && Math.abs(fig.x + fig.width / 2 - 195) < 25 && fig.height > vue.height * 0.4 && fig.y + fig.height <= vue.height + 2, `sa figurine au milieu de l'écran, assez grande (${Math.round(fig?.x + fig?.width / 2)} pt, ${Math.round(fig?.height)} pt de haut)`);
-const largeurPano = await scene.locator(".mmc-pano").evaluate((x) => x.getBoundingClientRect().width);
-ok(Math.abs(largeurPano / vue.height - 3.5) < 0.05, `le panorama tout autour (${Math.round(largeurPano)} pt de large pour ${Math.round(vue.height)} de haut)`);
-ok((await scene.locator(".mmc-indice").count()) === 1 && /Ta maison se remplit toute seule[\s\S]*Glisse pour faire le tour/.test(await scene.locator(".mmc-indice").innerText()) && (await p.locator(".mmc-vide").count()) === 0, "l'arrivée : « Ta maison se remplit toute seule… », « Glisse pour faire le tour », dans la pièce");
+const pano = await scene.locator(".mmc-pano").boundingBox();
+ok(pano && Math.abs(pano.width / pano.height - 1024 / 1536) < 0.01 && Math.abs(pano.height - vue.height) < 2 && pano.width >= vue.width - 1, `une seule image, en hauteur, toute la hauteur de l'écran (${Math.round(pano?.width)} pt de large pour ${Math.round(pano?.height)} de haut)`);
+// (sa figurine dans son fauteuil : la place de gauche du relevé, de la tête au sol, entière à l'écran)
+const fig = await scene.locator(".mmc-fig").boundingBox();
+ok(fig && Math.abs(fig.x + fig.width / 2 - (pano.x + 0.3 * pano.width)) < 4 && Math.abs(fig.y + fig.height - (pano.y + 0.86 * pano.height)) < 4 && Math.abs(fig.height - 0.3 * pano.height) < 4 && fig.x >= -1 && fig.x + fig.width <= vue.width + 1, `sa figurine à sa place, entière à l'écran (${Math.round(fig?.x + fig?.width / 2)} pt, ${Math.round(fig?.height)} pt de haut)`);
+ok((await scene.locator(".mmc-indice").count()) === 1 && /Ta maison se remplit toute seule[\s\S]*Touche les objets de ta pièce/.test(await scene.locator(".mmc-indice").innerText()) && (await p.locator(".mmc-vide").count()) === 0 && !/Glisse/.test(await p.locator("body").innerText()), "l'arrivée : « Ta maison se remplit toute seule… », « Touche les objets de ta pièce », dans la pièce (plus de « Glisse pour faire le tour »)");
 await p.screenshot({ path: `${D}/ma-maison-3-chez-moi.png` });
-await scene.locator(".mmc-defile").evaluate((d) => d.scrollBy({ left: 500 }));
-ok(await attendre(async () => (await scene.locator(".mmc-indice").count()) === 0), "au premier glissement, l'indice s'en va");
 
 // ─── toucher les objets ───
 const toucher = async (zone) => {
@@ -123,6 +115,7 @@ const toucher = async (zone) => {
 };
 await toucher("tele");
 ok(await attendre(async () => /La télé/.test(await scene.locator('.mmc-bulle[data-bulle="tele"]').innerText())), "la télé : ce qu'elle accueillera");
+ok((await scene.locator(".mmc-indice").count()) === 0, "au premier toucher, l'indice s'en va");
 await p.screenshot({ path: `${D}/ma-maison-4-tele.png` });
 await toucher("lampes");
 ok(await attendre(async () => (await scene.locator(".mmc-lueur.allumee").count()) === 1 && /Lampe allumée/.test(await scene.locator(".mmc-bulle").innerText())), "une lampe : elle s'allume");

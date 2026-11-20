@@ -8,6 +8,7 @@
 // Sam · « Pour toi » » ; « ✓ Le garder sur ma table » : il y reste. Sam le voit en revenant. Ni erreur, ni le mot
 // « exemple ».
 import sharp from "sharp";
+import { poserPiece } from "../piece-en-hauteur.mjs";
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
 
@@ -62,14 +63,20 @@ await semer(
 await json(`${LEA.id}/proches.json`, { ids: [SAM.id] });
 await json(`${SAM.id}/proches.json`, { ids: [LEA.id] });
 // (sa pièce : le salon, ses emplacements)
-const panorama = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="3584" height="1024"><rect width="3584" height="1024" fill="#4a5a6e"/><rect y="700" width="3584" height="324" fill="#6a5040"/></svg>`))
-  .webp({ quality: 80 })
-  .toBuffer();
-for (const m of ["", "-matin", "-nuit"]) await deposer(`pieces-duo/salon/large/panorama${m}.webp`, panorama, "image/webp");
-await json("pieces-duo/salon/large/releve.json", {
+await poserPiece(deposer, "salon", {
+  fond: "#4a5a6e",
+  sol: "#6a5040",
   le: maintenant,
-  ajuste: true,
-  emplacements: { tele: [0.3, 0.2, 0.1, 0.22], etagere: [0.62, 0.15, 0.1, 0.4], cadres: [[0.16, 0.18, 0.05, 0.16]], table: [0.53, 0.8, 0.08, 0.08], places: [{ x: 0.5, y: 0.94, hauteur: 0.5 }] },
+  emplacements: {
+    tele: [0.32, 0.2, 0.36, 0.15],
+    etagere: [0.76, 0.1, 0.2, 0.34],
+    cadres: [[0.06, 0.44, 0.1, 0.09]],
+    table: [0.44, 0.78, 0.14, 0.05],
+    places: [
+      { x: 0.3, y: 0.86, hauteur: 0.3 },
+      { x: 0.7, y: 0.86, hauteur: 0.3 },
+    ],
+  },
 });
 await json(`${LEA.id}/ma-piece/piece.json`, { piece: "salon", le: maintenant });
 // (sa dernière visite chez elle : il y a deux heures ; son humeur du jour : un fou rire)

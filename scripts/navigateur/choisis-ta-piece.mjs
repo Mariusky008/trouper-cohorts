@@ -7,13 +7,14 @@
 //
 // Léa vient de valider sa figurine (« C'est moi ! ») : plus de « Découvrir ton univers » (la conversation avec Pablito),
 // mais « 🏠 Choisis ta pièce » ; l'accueil `/univers` dit pareil (« Ta pièce t'attend »). On le touche : « Choisis ta
-// pièce » s'ouvre, sans ✕ ; le hangar, « Je m'installe ici » : chez elle, sa figurine au milieu.
+// pièce » s'ouvre, sans ✕ ; le hangar, « Je m'installe ici » : chez elle, sa figurine à sa place.
 // Marc a un univers fabriqué avant : l'onglet « Ma maison », tel qu'il sera (`/univers/maison?onglet=1`), garde son
 // univers, avec la carte « Nouveau : choisis ta pièce » ; « Plus tard » : un lien discret reste (même après avoir
 // rechargé) ; le lien : le choix s'ouvre, avec ✕ (il revient à son univers) ; le salon : sa pièce, et plus de carte.
 // Ni débordement, ni erreur, ni le mot « exemple ».
 import fs from "node:fs";
 import sharp from "sharp";
+import { poserPiece } from "../piece-en-hauteur.mjs";
 import { BASE, D, F, lancer } from "./commun.mjs";
 import { lancerSecondeApp } from "../seconde-app.mjs";
 
@@ -82,12 +83,8 @@ await json(`${M1}/fiche.json`, monde);
 await json(`${MARC.id}/monde/fiche.json`, monde);
 await json(`${MARC.id}/monde/creation.json`, { version: 1, etape: "fini", mesure: 1 });
 // (deux pièces prêtes : le hangar, le salon)
-const panorama = (fond, sol) =>
-  sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="3584" height="1024"><rect width="3584" height="1024" fill="${fond}"/><rect y="700" width="3584" height="324" fill="${sol}"/><rect x="1580" y="200" width="430" height="256" fill="#111"/></svg>`))
-    .webp({ quality: 80 })
-    .toBuffer();
-await deposer("pieces-duo/hangar/large/panorama.webp", await panorama("#6a3a5a", "#5a4030"), "image/webp");
-await deposer("pieces-duo/salon/large/panorama.webp", await panorama("#2a4b5c", "#6a5040"), "image/webp");
+await poserPiece(deposer, "hangar", { le: maintenant });
+await poserPiece(deposer, "salon", { fond: "#2a4b5c", sol: "#6a5040", le: maintenant });
 
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const b = await lancer();

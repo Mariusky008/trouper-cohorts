@@ -9,6 +9,7 @@
 // le mot interdit.
 import crypto from "node:crypto";
 import sharp from "sharp";
+import { poserPiece } from "../piece-en-hauteur.mjs";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -55,15 +56,7 @@ await json(`${SAM.id}/proches.json`, { ids: [LEA.id] });
 await json(`${LEA.id}/majeur.json`, { age: 34, adulte: true, le: maintenant });
 await json(`${LEA.id}/passions.json`, { passions: ["foot", "cuisine", "animaux"], poids: {}, le: maintenant });
 // (sa pièce : le hangar, sa télé relevée)
-const panorama = await sharp(
-  Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="3584" height="1024"><rect width="3584" height="1024" fill="#6a3a5a"/><rect y="700" width="3584" height="324" fill="#5a4030"/><rect x="1580" y="200" width="430" height="256" fill="#111"/><rect x="300" y="150" width="600" height="420" fill="#bfe3ff"/></svg>`,
-  ),
-)
-  .webp({ quality: 80 })
-  .toBuffer();
-for (const m of ["", "-matin", "-nuit"]) await deposer(`pieces-duo/hangar/large/panorama${m}.webp`, panorama, "image/webp");
-await json("pieces-duo/hangar/large/releve.json", { le: maintenant, ajuste: true, emplacements: { tele: [0.441, 0.195, 0.12, 0.25], cadres: [], places: [{ x: 0.5, y: 0.94, hauteur: 0.5 }] } });
+await poserPiece(deposer, "hangar", { le: maintenant });
 const choisie = await fetch(`${BASE}/api/direct/ma-piece`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${LEA.jeton}; ${COOKIE_ADMIN}` }, body: JSON.stringify({ action: "choisir", piece: "hangar" }) });
 ok(choisie.ok, `sa pièce : le hangar (${choisie.status})`);
 // (la nuit passe : la sélection du jour)

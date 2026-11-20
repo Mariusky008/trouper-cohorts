@@ -9,6 +9,7 @@
 // cadre : sa photo, « Mis chez toi », « 🔍 La voir en grand » ; la platine : « ▶ Écouter » (le lien) ; le mot : « Gardé
 // avec Sam ». Revenir : plus d'annonce. Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
+import { poserPiece } from "../piece-en-hauteur.mjs";
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
 
@@ -58,23 +59,23 @@ await semer(
 await json(`${LEA.id}/proches.json`, { ids: [SAM.id] });
 await json(`${SAM.id}/proches.json`, { ids: [LEA.id] });
 // (sa pièce : le salon, ses emplacements relevés — la télé, la platine, l'étagère, deux cadres)
-const panorama = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="3584" height="1024"><rect width="3584" height="1024" fill="#5a4a6e"/><rect y="700" width="3584" height="324" fill="#6a5040"/></svg>`))
-  .webp({ quality: 80 })
-  .toBuffer();
-for (const m of ["", "-matin", "-nuit"]) await deposer(`pieces-duo/salon/large/panorama${m}.webp`, panorama, "image/webp");
-await json("pieces-duo/salon/large/releve.json", {
+await poserPiece(deposer, "salon", {
+  fond: "#5a4a6e",
+  sol: "#6a5040",
   le: maintenant,
-  ajuste: true,
   emplacements: {
-    tele: [0.3, 0.2, 0.1, 0.22],
-    fenetre: [0.04, 0.15, 0.08, 0.3],
-    platine: [0.62, 0.5, 0.05, 0.14],
-    etagere: [0.7, 0.15, 0.1, 0.4],
+    tele: [0.32, 0.2, 0.36, 0.15],
+    fenetre: [0.04, 0.1, 0.22, 0.26],
+    platine: [0.74, 0.5, 0.16, 0.07],
+    etagere: [0.76, 0.1, 0.2, 0.34],
     cadres: [
-      [0.16, 0.18, 0.05, 0.16],
-      [0.22, 0.18, 0.05, 0.16],
+      [0.06, 0.44, 0.1, 0.09],
+      [0.18, 0.44, 0.1, 0.09],
     ],
-    places: [{ x: 0.5, y: 0.94, hauteur: 0.5 }],
+    places: [
+      { x: 0.3, y: 0.86, hauteur: 0.3 },
+      { x: 0.7, y: 0.86, hauteur: 0.3 },
+    ],
   },
 });
 await json(`${LEA.id}/ma-piece/piece.json`, { piece: "salon", le: maintenant });
