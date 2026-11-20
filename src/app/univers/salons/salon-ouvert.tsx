@@ -368,7 +368,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         </a>
         <div className="so-titre">
           <b data-nom>{salon.nom}</b>
-          <small data-places>{P.places(ici.length)}</small>
+          <small data-places>{P.places(ici.length, nPlaces)}</small>
         </div>
         {seance?.hote && (
           <button type="button" className="so-rond so-inviter" aria-label={P.inviterTitre} data-inviter onClick={() => setInviter(true)}>
@@ -760,13 +760,32 @@ function TeleDeLaSeance({
 
   const commander = useCallback(
     async (quoi: "video" | "suivante" | "pause" | "jouer", id?: string) => {
+      // (chez l'hôte, tout de suite : sa télé n'attend pas le serveur ; la réponse confirme, ou remet comme avant)
+      const avant = ref.current;
+      const ms = Date.now() + (decalage.current ?? 0);
+      if (avant) {
+        const k = videos.findIndex((x) => x.id === avant.video.id);
+        const v = quoi === "video" ? videos.find((x) => x.id === id) : quoi === "suivante" ? (videos[k + 1] ?? videos[0]) : undefined;
+        const tout: TeleSeance | null =
+          quoi === "pause"
+            ? { ...avant, pause: positionSeance(avant, ms), n: avant.n + 1 }
+            : quoi === "jouer"
+              ? { video: avant.video, depart: ms - (avant.pause ?? 0) * 1000, n: avant.n + 1 }
+              : v
+                ? { video: v, depart: ms, n: avant.n + 1 }
+                : null;
+        if (tout) onSeance(tout);
+      }
       setOccupe(true);
       const r = await poster({ action: "tele", salon, quoi, ...(id ? { id } : {}) });
       setOccupe(false);
-      if (!r.ok) return dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
+      if (!r.ok) {
+        if (avant) onSeance(avant);
+        return dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
+      }
       if (r.j.seance) onSeance(r.j.seance as TeleSeance);
     },
-    [salon, onSeance, dire],
+    [salon, onSeance, dire, videos, decalage],
   );
   const commanderRef = useRef(commander);
 
@@ -1067,7 +1086,7 @@ const STYLES = `
 .so-allumer{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:0;border-radius:999px;padding:12px 18px;font:inherit;font-weight:900;font-size:15px;color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);box-shadow:0 10px 24px -10px rgba(255,46,154,.9);white-space:nowrap;cursor:pointer}
 .so-titre-video{position:absolute;left:10px;right:10px;bottom:8px;font-size:12.5px;font-weight:700;text-shadow:0 1px 4px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .so-tele-vide{margin:0;height:100%;display:grid;place-items:center;padding:0 20px;text-align:center;font-size:14px;opacity:.75}
-.so-piece{position:relative;width:100%;overflow:hidden;background:linear-gradient(180deg,#4a2335,#24101b)}
+.so-piece{position:relative;width:100%;overflow:hidden;background:linear-gradient(180deg,#4a2335,#24101b);isolation:isolate}
 .so-pano{position:absolute;left:0;top:0;max-width:none;background-size:cover;object-fit:cover;pointer-events:none}
 .so-fig{position:absolute;transform:translateX(-50%);padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;-webkit-tap-highlight-color:transparent;transition:opacity .4s}
 .so-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));user-select:none}

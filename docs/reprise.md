@@ -34,8 +34,10 @@ bulles, le pouls, l'arrivée, la pièce du duo — `salon-du-duo.md`, 11.8 à 11
    à enregistrer par le propriétaire, `tuto-decouvrir-tele-1..3`) ; **D1c, D3 et D4 faits le 20 novembre** (section
    18 : l'accueil comme la maquette — la carte « Ma télé du jour », les salons ouverts par passion ; les salons ouverts
    avec leur modération, `/univers/salons?theme=…`, l'administration `/admin/humain/salons`, le frein
-   `CLIKME_SALONS_OUVERTS=0`) ; restent les mèmes dans un salon ouvert, D5 (l'étagère des salons, « Ajouter en
-   proche »), D7 (les potins de ma ville) et D2 (inviter des proches, la télé synchronisée).
+   `CLIKME_SALONS_OUVERTS=0`) ; **D2 et D5 faits le 20 novembre** (sections 19 et 20 : la séance chez moi —
+   `/univers/salons?chez=moi`, trois proches invités, la télé menée par l'hôte ; l'étagère des salons, « Mes salons » en
+   fanions dans ma maison, « 👯 Ajouter en proche », « 🏠 Voir sa maison ») ; restent les mèmes dans un salon ouvert, les
+   vocaux et les mèmes dans la séance, D2b (jamais seul devant une vidéo) et D7 (les potins de ma ville).
 
 **Allumés le 19 novembre 2026** : « Ma maison » (`MA_MAISON_CATALOGUE` : après la figurine, « Choisis ta pièce » dans
 l'onglet, plus de conversation avec Pablito pour fabriquer un univers) et le salon du duo (`SALON_DU_DUO` : les

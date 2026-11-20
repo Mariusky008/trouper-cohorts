@@ -236,7 +236,7 @@ export const PHRASES_SALONS = {
   signale: "🚩 Merci, c’est signalé. Au troisième signalement en une heure, la personne quitte les salons ouverts pendant 24 h.",
   exclu: "Tu ne peux plus entrer dans les salons ouverts pour l’instant (des signalements). Reviens demain.",
   sortir: "‹",
-  places: (n: number) => `${n} ici · ${PLACES_SALON - n ? `${PLACES_SALON - n} place${PLACES_SALON - n > 1 ? "s" : ""} libre${PLACES_SALON - n > 1 ? "s" : ""}` : "complet"} · ${PLACES_SALON} places`,
+  places: (n: number, total: number = PLACES_SALON) => `${n} ici · ${total - n > 0 ? `${total - n} place${total - n > 1 ? "s" : ""} libre${total - n > 1 ? "s" : ""}` : "complet"} · ${total} places`,
   indice: "Touche une figurine : son prénom, un coucou, un bravo…",
   reagis: "Réagis :",
   ouTouche: "ou touche une figurine",

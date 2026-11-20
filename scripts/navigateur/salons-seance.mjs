@@ -162,20 +162,21 @@ await sam.waitForURL(/\/univers\/salons\?chez=/);
 ok(await attendre(sam, async () => (await sam.locator(".so[data-salon]").getAttribute("data-salon")) === SEANCE && (await sam.locator(".so[data-salon]").getAttribute("data-hote")) === null), "« Venir » : chez Léa (invité)");
 ok(/C’est Léa qui mène la télé/.test(await texte(sam.locator(".so-info"))) && (await sam.locator("[data-commandes]").count()) === 0 && (await sam.locator("[data-inviter]").count()) === 0, "« C'est Léa qui mène la télé » : ni commandes, ni invitations");
 ok(await attendre(sam, async () => (await sam.locator(".so-fig").count()) === 2), "deux figurines dans la pièce de Léa");
+ok(/2 ici · 2 places libres · 4 places/.test(await texte(sam.locator("[data-places]"))), `« ${await texte(sam.locator("[data-places]"))} » (quatre places chez soi)`);
 ok(await attendre(lea, async () => (await lea.locator(".so-fig").count()) === 2, 12000), "… Léa le voit s'asseoir (le pouls)");
 await sam.locator("[data-allumer]").click();
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-yt")) === v0), "Sam allume : la même vidéo");
 
 // ═══ LÉA MÈNE LA TÉLÉ ═══
 await lea.locator('[data-commandes] [data-pause="pause"]').click();
-ok(await attendre(lea, async () => (await lea.locator(".so-tele").getAttribute("data-pause")) === "1" && (await lea.locator(".faux-yt").getAttribute("data-pause")) === "1"), "❚❚ Pause : chez Léa");
+ok(await attendre(lea, async () => (await lea.locator(".so-tele").getAttribute("data-pause")) === "1" && (await lea.locator(".faux-yt").getAttribute("data-pause")) === "1", 3000), "❚❚ Pause : chez Léa, tout de suite");
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "1", 12000), "… et chez Sam");
 ok(/Reprendre/.test(await texte(lea.locator("[data-commandes] [data-pause]"))), "« ▶ Reprendre »");
 await lea.locator('[data-commandes] [data-pause="reprendre"]').click();
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "", 12000), "▶ Reprendre : chez Sam aussi");
 await lea.locator("[data-commandes] [data-suivante]").click();
 let v1 = "";
-ok(await attendre(lea, async () => (v1 = (await lea.locator(".so-tele").getAttribute("data-tele")) ?? "") !== v0 && (await lea.locator(".faux-yt").getAttribute("data-yt")) === v1), "⏭ Suivante : une autre vidéo chez Léa");
+ok(await attendre(lea, async () => (v1 = (await lea.locator(".so-tele").getAttribute("data-tele")) ?? "") !== v0 && (await lea.locator(".faux-yt").getAttribute("data-yt")) === v1, 3000), "⏭ Suivante : une autre vidéo chez Léa, tout de suite");
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-yt")) === v1, 12000), "… le lecteur de Sam suit");
 await lea.locator("[data-commandes] [data-choisir]").click();
 ok(await attendre(lea, async () => (await lea.locator("[data-videos] [data-video]").count()) >= 3), "📺 Choisir : sa télé du jour");
