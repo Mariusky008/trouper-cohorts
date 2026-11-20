@@ -136,8 +136,12 @@ ok(Object.values(admin.perso?.refaisables ?? {}).length === 3 && Object.values(a
 await ecrire(`${h}/perso/brouillon.json`, { ...(await lire(`${h}/perso/brouillon.json`)), faites: 12 });
 ok((await appeler({ action: "refaire" })).statut === 429, "douze propositions dans la journée : c'est assez");
 await ecrire(`${h}/perso/brouillon.json`, { ...(await lire(`${h}/perso/brouillon.json`)), faites: 3 });
-ok(!(await appeler()).prenomADonner, "son prénom est connu : plus demandé");
-await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true });
+const ePrenom = await appeler();
+ok(!ePrenom.prenomADonner && ePrenom.prenom === "Noa-Lou", `son prénom est connu : rempli d’avance, on peut le corriger (${ePrenom.prenom})`);
+// (20 novembre 2026 : corrigé avec le selfie, il change — c'est le sien)
+await appeler({ action: "selfie", photo: PHOTO, moi: true, age: true, prenom: "Noa" });
+const corrige = (await (await fetch(`${F}/human_habitants?id=eq.${h}&select=prenom`)).json())[0];
+ok(corrige?.prenom === "Noa", `son prénom corrigé, rangé sur son compte (${corrige?.prenom})`);
 const e5 = await attendre((e) => e.etape === "decouverte");
 ok(e5.etape === "decouverte" && (await lire(`${h}/perso/fiche.json`))?.version === 1, "un nouveau selfie après validation (son prénom déjà connu) : il en refait une (sa version 1 reste)");
 

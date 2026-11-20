@@ -49,6 +49,11 @@ export type EtatNouvelleFigurine = {
    * le verront partout (19 novembre 2026 : « à aucun moment à l'inscription on me demande mon prénom »)
    */
   prenomADonner?: boolean;
+  /**
+   * ✍️ son prénom déjà connu : le champ « Ton prénom » est toujours là, rempli d'avance — on le voit, on le corrige
+   * (20 novembre 2026 : « on ne me demande pas mon prénom à l'inscription », avec un compte déjà sur ce téléphone)
+   */
+  prenom?: string;
   /** 🖼️ la photo de sa figurine d'aujourd'hui (signée), pour la refaire au nouveau style sans nouveau selfie */
   photoDAvant?: string;
   /** son personnage maître, une fois validé : ses images de référence (assise, et bientôt bouche ouverte et debout) */

@@ -249,9 +249,10 @@ changement de visage, la lumière qui suit l'heure du téléphone. Aucune de ces
 ## 5. L'inscription, écran par écran
 
 1. **« Créons ta figurine ! »** Un selfie, les deux cases d'aujourd'hui (« C'est bien moi », « J'ai 15 ans ou plus »).
-   Sans compte sur ce téléphone : sa ville (n'importe laquelle). Sans prénom connu : « Ton prénom » (le 19 novembre
-   2026 : « à aucun moment à l'inscription on me demande mon prénom ») — nettoyé, refusé s'il est grossier, rangé sur
-   son compte ; ses proches le voient partout. Les cases et la photo sont vérifiées avant d'ouvrir le compte.
+   Sans compte sur ce téléphone : sa ville (n'importe laquelle). « Ton prénom » (le 19 novembre 2026 : « à aucun moment à
+   l'inscription on me demande mon prénom ») — nettoyé, refusé s'il est grossier, rangé sur son compte ; ses proches le
+   voient partout. Depuis le 20 novembre 2026 (« on ne me demande pas mon prénom à l'inscription », avec un compte déjà
+   sur ce téléphone), il est **toujours** demandé : déjà connu, il est écrit d'avance, et on le corrige. Les cases et la photo sont vérifiées avant d'ouvrir le compte.
 2. **La fabrication.** L'atelier de Pablito, une minute environ.
 3. **La découverte.** Sa figurine, assise dans son fauteuil, dans une mise en scène soignée. Premier moment fort.
 4. **Les retouches.** La coiffure, la barbe, les vêtements, les accessoires, l'expression : en le disant avec ses mots
