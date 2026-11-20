@@ -216,7 +216,8 @@ function Piece({
   const [bulle, setBulle] = useState<{ cle: EmplacementMaison; k: number } | null>(null);
   const [allumees, setAllumees] = useState<number[]>([]);
   const [saute, setSaute] = useState(0);
-  const auto = useRef(true);
+  // (la position où l'on a fait défiler la pièce soi-même : un défilement qui y arrive n'est pas un geste de lui)
+  const cible = useRef<number | null>(null);
   // 🏠 (lot M2) l'objet touché, la photo en grand ; ✨ l'arrivée (sa phrase, l'objet que la caméra regarde)
   const [objet, setObjet] = useState<ObjetMaison | null>(null);
   const [grand, setGrand] = useState<ObjetMaison | null>(null);
@@ -284,22 +285,32 @@ function Piece({
   // (la largeur du panorama est posée avant que l'image arrive — sans quoi, sur un téléphone, le défilement restait
   // collé à gauche, la figurine hors de l'écran ; on recentre encore à l'image suivante, tant qu'on n'a pas bougé)
   const touche = useRef(false);
+  // (vrai : c'est fait — ou il n'y a plus rien à faire ; faux : le défilement n'a pas encore pris, on réessaiera)
   const centrer = () => {
     const d = defile.current;
-    if (!d || !hauteur || touche.current || enVisite.current) return;
+    if (!d || touche.current || enVisite.current) return true;
+    if (!hauteur || d.scrollWidth <= d.clientWidth) return false;
     const voulu = Math.max(0, Math.min(d.scrollWidth - d.clientWidth, scene.centre.x * hauteur * ratio - d.clientWidth / 2));
-    if (Math.abs(d.scrollLeft - voulu) < 1) return;
-    auto.current = true;
+    if (Math.abs(d.scrollLeft - voulu) < 1) return true;
+    cible.current = voulu;
     d.scrollLeft = voulu;
+    return Math.abs(d.scrollLeft - voulu) < 1;
   };
   const centrerRef = useRef(centrer);
   useEffect(() => {
     centrerRef.current = centrer;
   });
+  // (sur un téléphone lent, la pièce n'est pas toujours prête à défiler tout de suite : on réessaie à chaque image,
+  // une quarantaine de fois au plus, tant qu'il n'a pas touché)
   useLayoutEffect(() => {
     touche.current = false;
-    centrerRef.current();
-    const r = window.requestAnimationFrame(() => centrerRef.current());
+    let r = 0;
+    let essais = 0;
+    const encore = () => {
+      if (centrerRef.current() || ++essais > 40) return;
+      r = window.requestAnimationFrame(encore);
+    };
+    encore();
     return () => window.cancelAnimationFrame(r);
   }, [hauteur, ratio, scene.piece, scene.centre.x]);
   // ✨ L'ARRIVÉE (lot M2) : ce qu'il a gardé depuis sa dernière visite — la phrase, puis la caméra passe sur chacun (un
@@ -405,11 +416,10 @@ function Piece({
       <div
         className="mmc-defile"
         ref={defile}
-        onScroll={() => {
-          if (auto.current) {
-            auto.current = false;
-            return;
-          }
+        onScroll={(e) => {
+          const c = cible.current;
+          if (c !== null && Math.abs(e.currentTarget.scrollLeft - c) < 2) return;
+          cible.current = null;
           if (enVisite.current) return;
           touche.current = true;
           setIndice(false);
