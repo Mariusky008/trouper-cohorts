@@ -77,8 +77,8 @@ export async function maTeleDuJour(supabase: Supabase, h: string): Promise<TeleD
   };
 }
 
-/** Une vidéo de ma télé (aujourd'hui ou hier, dans mes passions) ; sinon `null` — on n'envoie ni ne garde autre chose. */
-async function maVideo(supabase: Supabase, h: string, id: unknown): Promise<VideoTele | null> {
+/** Une vidéo de ma télé (aujourd'hui ou hier, dans mes passions) ; sinon `null` — on n'envoie, ne garde ni ne réagit à autre chose. */
+export async function maVideo(supabase: Supabase, h: string, id: unknown): Promise<VideoTele | null> {
   const i = s(id);
   if (!ID_VIDEO.test(i)) return null;
   const { listes } = await sesSelections(supabase, h);

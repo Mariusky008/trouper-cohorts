@@ -18,6 +18,12 @@
  * réseau lent), le lecteur tout simple dans l'écran (`lecteurYouTube`) : on reste dans la scène, jamais un lien vers
  * YouTube (retours du propriétaire, 20 novembre 2026).
  *
+ * ⭐ JAMAIS SEUL DEVANT UNE VIDÉO (le lot D2b, première partie ; `lib/direct/reactions-video.ts`, `decouvrir.md` section
+ * 21) : « Réagis : 😂 ❤️ 😮 😱 😴 » sous la télé, un toucher sur la pièce (je ris), deux (❤️), un appui long (😮) ; ce que
+ * l'appli comprend seule (passée avant 15 s : 😴, revenir en arrière : 😮, finie : ❤️) — tout noté à la seconde. Mes
+ * proches qui l'ont vue s'assoient à côté de moi (trois ; les autres au bord de la télé) et réagissent à la seconde où
+ * ils ont réagi ; « 🫶 En même temps que Sam ! » quand je réagis au même moment (à 1,8 s près).
+ *
  * 🔥 L'ONGLET « DÉCOUVRIR » (le lot D1b, 19 novembre 2026) : c'est elle, à la place des mèmes en plein écran et des vœux
  * (`onglet` : sous la barre du haut, au-dessus du menu ; la note et la feuille « Envoyer à… » passent devant le menu).
  * Seule, à l'adresse d'essai `/univers/tele`, elle prend tout l'écran. Dessous, dans l'onglet : « 🏡 Les maisons à
@@ -31,6 +37,20 @@ import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
 import { PHRASES_SALONS as PS, type CarteSalon, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
+import {
+  ANIMATION_VIDEO,
+  PHRASES_REACTIONS as PR,
+  REACTIONS_VIDEO,
+  SORTES_VIDEO,
+  aJouer,
+  auMemeMoment,
+  placerLesProches,
+  quandVu,
+  sorteVideo,
+  type ProcheDevantVideo,
+  type SorteVideo,
+  type SourceVideo,
+} from "@/lib/direct/reactions-video";
 
 const ROUTE = "/api/direct/tele-du-jour";
 type Lecteur = {
@@ -364,6 +384,35 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
     ref.current = { v, i };
   });
 
+  // ⭐ JAMAIS SEUL : mes proches qui ont vu cette vidéo, leurs réactions à la seconde ; ce qui joue sur les figurines
+  const [devant, setDevant] = useState<ProcheDevantVideo[]>([]);
+  const [anims, setAnims] = useState<Record<string, { a: string; e: string; n: number }>>({});
+  const [ensemble, setEnsemble] = useState("");
+  const devantRef = useRef<ProcheDevantVideo[]>([]);
+  const temps = useRef({ avant: -1, retour: -100 });
+  const ensembleVus = useRef(new Set<string>());
+  const notes = useRef(0);
+  const compte = useRef(0);
+  const vid = v?.id;
+  useEffect(() => {
+    devantRef.current = devant;
+  }, [devant]);
+  useEffect(() => {
+    if (!vid) return;
+    let fini = false;
+    temps.current = { avant: -1, retour: -100 };
+    ensembleVus.current = new Set();
+    fetch(`${ROUTE}?reactions=${encodeURIComponent(vid)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { proches?: ProcheDevantVideo[] } | null) => {
+        if (!fini) setDevant(j?.proches ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, [vid]);
+
   // (la largeur de l'écran : la télé en 16/9, la pièce dessous)
   useLayoutEffect(() => {
     const el = boite.current;
@@ -390,7 +439,12 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
     } catch {
       /* (pas de lecteur) */
     }
-    void poster({ action: "vue", id: actuelle.id, ...(o.fin ? { fin: true } : {}), ...(o.illisible ? { illisible: true } : {}), ...(secondes >= 0 ? { secondes } : {}) });
+    // (ce que l'appli comprend seule : finie → ❤️ à la fin ; passée avant 15 s → 😴 à ce moment ; puis « vue »)
+    const seul: { sorte: SorteVideo; t: number } | null = o.illisible ? null : o.fin ? { sorte: "coeur", t: Math.max(0, (actuelle.duree || secondes) - 0.5) } : secondes >= 0 && secondes < REACTIONS_VIDEO.passeeAvant ? { sorte: "bof", t: secondes } : null;
+    void (async () => {
+      if (seul) await poster({ action: "reagir", id: actuelle.id, t: seul.t, sorte: seul.sorte, source: "implicite" });
+      await poster({ action: "vue", id: actuelle.id, ...(o.fin ? { fin: true } : {}), ...(o.illisible ? { illisible: true } : {}), ...(secondes >= 0 ? { secondes } : {}) });
+    })();
     const prochaine = videos[k + 1];
     setI(k + 1);
     if (prochaine && lecteur.current?.loadVideoById) {
@@ -481,6 +535,116 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
     dire(r.ok ? P.envoyee(p.prenom) : r.j.error || "Ça n’a pas marché. Réessaie.");
   }
 
+  /** Une figurine joue une réaction (la sienne, ou celle d'un proche) : son animation, l'emoji qui jaillit. */
+  function jouer(qui: string, sorte: SorteVideo) {
+    const s = sorteVideo(sorte);
+    if (!s) return;
+    const n = ++compte.current;
+    setAnims((a) => ({ ...a, [qui]: { a: ANIMATION_VIDEO[sorte], e: s.e, n } }));
+    window.setTimeout(() => setAnims((a) => (a[qui]?.n === n ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== qui)) : a)), 1600);
+  }
+  /** 😂 Je réagis : à cette seconde (le lecteur la donne), ma figurine le joue ; « 🫶 Au même moment » qu'un proche. */
+  async function reagir(sorte: SorteVideo, source: SourceVideo, t0?: number) {
+    const actuelle = ref.current.v;
+    if (!actuelle) return;
+    let t = t0 ?? -1;
+    if (t0 === undefined) {
+      try {
+        t = Number(lecteur.current?.getCurrentTime?.() ?? -1);
+      } catch {
+        t = -1;
+      }
+    }
+    if (!(t >= 0)) {
+      if (source !== "implicite") dire(PR.pasIci);
+      return;
+    }
+    if (source !== "implicite") {
+      jouer("moi", sorte);
+      const p = auMemeMoment(t, devantRef.current);
+      if (p && !ensembleVus.current.has(p.cle)) {
+        ensembleVus.current.add(p.cle);
+        setEnsemble(PR.ensemble(p.prenom));
+        window.setTimeout(() => setEnsemble(""), 2400);
+      } else if (notes.current < 2) {
+        notes.current += 1;
+        dire(PR.note(sorteVideo(sorte)?.e ?? "", t, devantRef.current.map((x) => x.prenom)));
+      }
+    }
+    await poster({ action: "reagir", id: actuelle.id, t, sorte, source });
+  }
+  const reagirRef = useRef(reagir);
+  const jouerRef = useRef(jouer);
+  useEffect(() => {
+    reagirRef.current = reagir;
+    jouerRef.current = jouer;
+  });
+
+  // ▶ pendant la lecture : les réactions de mes proches à leur seconde ; revenir en arrière de plus de 3 s → 😮
+  const lit = allumer && !simple;
+  useEffect(() => {
+    if (!lit) return;
+    const id = window.setInterval(() => {
+      let t = -1;
+      try {
+        t = Number(lecteur.current?.getCurrentTime?.() ?? -1);
+      } catch {
+        t = -1;
+      }
+      if (!(t >= 0)) return;
+      const k = temps.current;
+      for (const { cle, r } of aJouer(devantRef.current, k.avant, t)) jouerRef.current(cle, r.sorte);
+      if (k.avant >= 0 && t < k.avant - REACTIONS_VIDEO.retour && t - k.retour > REACTIONS_VIDEO.retourEcart) {
+        k.retour = t;
+        void reagirRef.current("oh", "implicite", t);
+      }
+      k.avant = t;
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [lit]);
+
+  // 👆 les gestes sans viser, sur la pièce : un toucher → je ris ; deux → ❤️ ; un appui long → 😮
+  const touche = useRef<{ long: number | null; simple: number | null; dernier: number; bas: boolean }>({ long: null, simple: null, dernier: 0, bas: false });
+  const peutReagir = lit && Boolean(v);
+  const gestes = peutReagir
+    ? {
+        onPointerDown: () => {
+          const k = touche.current;
+          k.bas = true;
+          k.long = window.setTimeout(() => {
+            k.long = null;
+            k.bas = false;
+            void reagir("oh", "geste");
+          }, 520);
+        },
+        onPointerUp: () => {
+          const k = touche.current;
+          if (!k.bas) return;
+          k.bas = false;
+          if (k.long) window.clearTimeout(k.long);
+          k.long = null;
+          const now = Date.now();
+          if (k.simple && now - k.dernier < 320) {
+            window.clearTimeout(k.simple);
+            k.simple = null;
+            void reagir("coeur", "geste");
+            return;
+          }
+          k.dernier = now;
+          k.simple = window.setTimeout(() => {
+            k.simple = null;
+            void reagir("rire", "geste");
+          }, 320);
+        },
+        onPointerCancel: () => {
+          const k = touche.current;
+          k.bas = false;
+          if (k.long) window.clearTimeout(k.long);
+          k.long = null;
+        },
+      }
+    : {};
+
   // 🛋️ LA PIÈCE : le panorama de ma pièce (centré sur ma figurine, ou sur la télé quand la vidéo y est), ma figurine
   const scene = tele.scene;
   const zone = scene?.emplacements?.tele;
@@ -497,6 +661,28 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
       : { left: 0, top: 0, width: L, height: hEcran };
   const theme = v ? themeDe(v.theme) : undefined;
   const fini = !v;
+  // (ma figurine, et à côté d'elle les trois proches qui s'assoient : à gauche, à droite, un peu au fond)
+  const mienne = scene ? { x: tx + scene.centre.x * lPano, y: scene.centre.y * hPiece, h: scene.centre.hauteur * hPiece } : { x: L / 2, y: hPiece * 0.96, h: hPiece * 0.82 };
+  const { assis, bord } = placerLesProches(devant);
+  const AUTOUR = [
+    { dx: -0.3, dy: 0, k: 0.94 },
+    { dx: 0.3, dy: 0, k: 0.94 },
+    { dx: 0.16, dy: -0.09, k: 0.74 },
+  ];
+  const ouEst = (k: number) => {
+    const a = AUTOUR[k];
+    const h = mienne.h * a.k;
+    return { x: Math.min(L - h * 0.28, Math.max(h * 0.28, mienne.x + a.dx * L)), y: mienne.y + a.dy * hPiece, h };
+  };
+  const pop = (qui: string, x: number, y: number) => {
+    const an = anims[qui];
+    return an ? (
+      <span key={`pop-${qui}-${an.n}`} className="td-pop" style={{ left: x, top: y }} aria-hidden="true">
+        {an.e}
+      </span>
+    ) : null;
+  };
+  const anim = (qui: string) => (anims[qui] ? ` a-${anims[qui].a}` : "");
 
   return (
     <div className={cls} data-video={v?.id ?? ""} data-mode={enPiece ? "piece" : "grand"}>
@@ -515,30 +701,65 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
       </header>
 
       <div className="td-scene" ref={boite} style={{ height: (enPiece ? 0 : hEcran) + hPiece }}>
-        <div className="td-piece" style={{ top: enPiece ? 0 : hEcran, height: hPiece }} data-piece={scene?.piece ?? ""}>
-          {scene ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="td-pano" src={scene.panorama.src} srcSet={scene.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPiece, transform: `translateX(${tx}px)`, backgroundImage: `url(${scene.panorama.flou})` }} />
-              {tele.figurine && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  className="td-figurine"
-                  src={tele.figurine.src}
-                  srcSet={tele.figurine.srcset}
-                  sizes="240px"
-                  alt="Ta figurine"
-                  style={{ height: scene.centre.hauteur * hPiece, left: tx + scene.centre.x * lPano, top: scene.centre.y * hPiece }}
-                />
-              )}
-            </>
-          ) : (
-            tele.figurine && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="td-figurine seule" src={tele.figurine.src} srcSet={tele.figurine.srcset} sizes="240px" alt="Ta figurine" style={{ height: hPiece * 0.82, left: L / 2, top: hPiece * 0.96 }} />
-            )
+        <div className="td-piece" style={{ top: enPiece ? 0 : hEcran, height: hPiece }} data-piece={scene?.piece ?? ""} data-gestes={peutReagir ? "1" : undefined} {...gestes}>
+          {scene && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="td-pano" src={scene.panorama.src} srcSet={scene.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPiece, transform: `translateX(${tx}px)`, backgroundImage: `url(${scene.panorama.flou})` }} />
+          )}
+          {/* (⭐ mes proches qui l'ont vue : assis à côté de moi, ils réagissent à leur seconde) */}
+          {L > 0 &&
+            assis.map((p, k) => {
+              const o = ouEst(k);
+              return (
+                <span key={p.cle} className="td-place" data-proche-assis={p.cle}>
+                  {p.figurine ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className={`td-proche${anim(p.cle)}`} src={p.figurine.src} srcSet={p.figurine.srcset} sizes="200px" alt={p.prenom} style={{ height: o.h, left: o.x, top: o.y, zIndex: k === 2 ? 1 : 2 }} />
+                  ) : (
+                    <span className={`td-proche td-proche-rond${anim(p.cle)}`} style={{ height: o.h * 0.42, width: o.h * 0.42, left: o.x, top: o.y, fontSize: o.h * 0.2 }}>
+                      {p.prenom.slice(0, 1)}
+                    </span>
+                  )}
+                  <span className="td-qui" style={{ left: o.x, top: o.y - o.h * 0.98, zIndex: 4 }}>
+                    {p.prenom}
+                    <em>{quandVu(p.vu)}</em>
+                  </span>
+                  {pop(p.cle, o.x + o.h * 0.18, o.y - o.h * 0.9)}
+                </span>
+              );
+            })}
+          {tele.figurine && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className={`td-figurine${scene ? "" : " seule"}${anim("moi")}`}
+              src={tele.figurine.src}
+              srcSet={tele.figurine.srcset}
+              sizes="240px"
+              alt="Ta figurine"
+              style={{ height: mienne.h, left: mienne.x, top: mienne.y, zIndex: 3 }}
+            />
+          )}
+          {pop("moi", mienne.x + mienne.h * 0.18, mienne.y - mienne.h * 0.9)}
+          {bord.length > 0 && (
+            <div className="td-bord" data-bord>
+              {bord.map((p) => (
+                <span key={p.cle} className={`td-tete${anims[p.cle] ? " hop" : ""}`} title={`${p.prenom} · ${quandVu(p.vu)}`} data-proche-bord={p.cle}>
+                  {anims[p.cle]?.e ?? p.prenom.slice(0, 1)}
+                </span>
+              ))}
+            </div>
+          )}
+          {v && v.duree > 0 && devant.some((p) => p.reactions.length) && (
+            <div className="td-fil" aria-hidden="true" data-fil>
+              {devant.flatMap((p) => p.reactions.map((r, k) => <span key={`${p.cle}-${k}`} style={{ left: `${Math.min(100, (r.t / v.duree) * 100)}%` }}>{sorteVideo(r.sorte)?.e}</span>))}
+            </div>
           )}
         </div>
+        {ensemble && (
+          <p className="td-ensemble" data-ensemble role="status">
+            {ensemble}
+          </p>
+        )}
 
         <div className={`td-ecran${glisse ? " glisse" : ""}`} style={ecran}>
           {fini ? (
@@ -571,6 +792,20 @@ function Television({ tele, cls, allumer: tout = false }: { tele: TeleDuJour; cl
           <p className="td-chaine">
             {v.chaine} · {duree(v.duree)}
           </p>
+          {devant.length > 0 && (
+            <p className="td-avec" data-avec>
+              👥 {PR.avecToi(devant.length)}
+            </p>
+          )}
+          <div className="td-reagir" data-rangee>
+            <span>{PR.reagis}</span>
+            {SORTES_VIDEO.map((x) => (
+              <button key={x.cle} type="button" data-reagir={x.cle} aria-label={x.nom} disabled={!peutReagir} onClick={() => void reagir(x.cle, "rangee")}>
+                {x.e}
+              </button>
+            ))}
+          </div>
+          {peutReagir && <p className="td-astuce">{PR.gestes}</p>}
           <div className="td-gestes">
             <button type="button" data-suivante disabled={occupe} onClick={() => suivante()}>
               {P.suivante}
@@ -653,6 +888,36 @@ const STYLES = `
 .td-piece{position:absolute;left:0;right:0;overflow:hidden;background:linear-gradient(180deg,#4a2335,#24101b)}
 .td-pano{position:absolute;left:0;top:0;max-width:none;background-size:cover;object-fit:cover}
 .td-figurine{position:absolute;transform:translate(-50%,-100%);max-width:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45))}
+.td-piece[data-gestes]{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:pointer}
+.td-proche{position:absolute;transform:translate(-50%,-100%);max-width:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45));pointer-events:none}
+.td-proche-rond{display:grid;place-items:center;border-radius:50%;background:#5a2c48;box-shadow:0 0 0 2px rgba(255,255,255,.7);font-weight:900;color:#fff}
+.td-qui{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;padding:2px 8px;border-radius:10px;background:rgba(24,7,20,.62);font-size:11px;font-weight:800;line-height:1.25;white-space:nowrap;pointer-events:none}
+.td-qui em{font-style:normal;font-weight:600;font-size:10px;opacity:.8}
+.td-figurine.a-rit,.td-proche.a-rit{animation:td-rit .42s ease-in-out 3}
+.td-figurine.a-saute,.td-proche.a-saute{animation:td-saute .46s ease-out 2}
+.td-figurine.a-pulse,.td-proche.a-pulse{animation:td-pulse .5s ease-in-out 3}
+.td-figurine.a-somnole,.td-proche.a-somnole{animation:td-somnole 1.6s ease-in-out}
+@keyframes td-rit{0%,100%{transform:translate(-50%,-100%)}25%{transform:translate(-50%,-104%) rotate(-4deg)}50%{transform:translate(-50%,-100.5%)}75%{transform:translate(-50%,-104%) rotate(4deg)}}
+@keyframes td-saute{0%,100%{transform:translate(-50%,-100%)}40%{transform:translate(-50%,-110%)}}
+@keyframes td-pulse{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-100%) scale(1.06)}}
+@keyframes td-somnole{0%,100%{transform:translate(-50%,-100%)}30%,70%{transform:translate(-50%,-99%) rotate(6deg)}}
+.td-pop{position:absolute;z-index:5;transform:translate(-50%,-50%);font-size:28px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;pointer-events:none;animation:td-pop 1.4s ease-out forwards;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+@keyframes td-pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.4)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-160%) scale(1)}}
+.td-bord{position:absolute;left:8px;top:26px;z-index:4;display:flex;gap:4px}
+.td-tete{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#5a2c48;box-shadow:0 0 0 2px rgba(255,255,255,.75);font-size:12px;font-weight:900}
+.td-tete.hop{animation:td-hop .45s ease-out 2}
+@keyframes td-hop{50%{transform:translateY(-8px)}}
+.td-fil{position:absolute;left:12px;right:12px;top:4px;height:18px;z-index:4;border-radius:9px;background:rgba(0,0,0,.35);pointer-events:none}
+.td-fil span{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:11px;line-height:1}
+.td-ensemble{position:absolute;left:50%;top:45%;z-index:6;margin:0;transform:translate(-50%,-50%);padding:9px 18px;border-radius:999px;background:linear-gradient(135deg,#fff0c8,#F2C46B);color:#2a1424;font-weight:900;font-size:15px;white-space:nowrap;box-shadow:0 10px 30px rgba(242,196,107,.55);pointer-events:none;animation:td-ensemble 2.4s ease-out forwards}
+@keyframes td-ensemble{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}14%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}24%{transform:translate(-50%,-50%) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%)}}
+.td-avec{margin:0;font-size:13.5px;font-weight:800;color:#F2C46B}
+.td-reagir{display:flex;align-items:center;gap:8px;margin-top:2px}
+.td-reagir span{font-size:13px;font-weight:800;color:#ead3df;margin-right:2px}
+.td-reagir button{width:44px;height:44px;flex:none;border:0;border-radius:50%;background:rgba(255,255,255,.1);font-size:22px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;cursor:pointer;transition:transform .12s}
+.td-reagir button:active{transform:scale(.9)}
+.td-reagir button:disabled{opacity:.35}
+.td-astuce{margin:0;font-size:12px;color:#a88a9b}
 .td-ecran{position:absolute;overflow:hidden;background:#000;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .td-ecran.glisse{transition:left .35s ease,top .35s ease,width .35s ease,height .35s ease}
 .td-lecteur,.td-lecteur iframe{width:100%;height:100%;border:0;display:block}
