@@ -5,9 +5,17 @@
  * Rangé à part de tout habitant : `essais-visage/<id>/` — `fiche.json` ({ id, prenom, moi, le, accord }), `photo.jpg`
  * (effacée dès que la figurine est faite), `figurine.png` (assise, détourée), `corps.png` et `tete.png` (les calques du
  * lot S1, `decouperFigurine`), `reperes.json` (la boîte de la tête, son pivot, et où le corps a été découpé), puis
- * `tete-<expression>.png` : chaque expression est faite sur la figurine entière (le moteur garde le cadrage), puis **sa
- * tête est découpée au même endroit** que la tête habituelle — posée par-dessus, elle remplace le visage sans que le
- * corps bouge.
+ * `tete-<expression>.png` : chaque expression est faite sur la figurine entière (`expression-<expression>.png`, gardée
+ * telle que le moteur l'a faite), puis **sa tête est découpée au même endroit** que la tête habituelle — posée
+ * par-dessus, elle remplace le visage sans que le corps bouge.
+ *
+ * (21 novembre 2026, le propriétaire : « pour une ou deux expressions la figurine se double […] quand il utilise une
+ * autre expression elle se juxtapose et si c'est en biais alors on voit les deux figurines ». Le moteur ne garde pas
+ * toujours le cadrage au pixel près : la tête découpée « au même endroit » était décalée, et la tête habituelle, restée
+ * sur le corps, dépassait. Désormais : la boîte est **recalée** sur l'image de l'expression (`recaler` : là où sa
+ * silhouette colle le mieux à celle de la tête habituelle — quelques pixels de côté, un peu plus grande ou plus petite) ;
+ * et le salon d'essai montre **le corps sans sa tête** (`corps-sans-tete.png` : le haut de la boîte de la tête effacé,
+ * le cou reste) — ce qui dépasse d'une expression ne laisse plus voir l'autre tête.)
  *
  * Un passage fait une étape : la figurine (d'après la photo), la découpe (sans moteur), puis une expression.
  *
@@ -76,6 +84,11 @@ export const consigneExpression = (e: ExpressionVisage) =>
   consigneVisageAssiseLibre(`${VISAGES[e]}. The head keeps EXACTLY the same position, size and angle (no tilt, no turn): only the face changes`);
 
 const nomTete = (e: ExpressionVisage) => `tete-${e}.png`;
+/** (l'expression entière, telle que le moteur l'a faite : sa tête s'y redécoupe sans repasser par le moteur) */
+const nomExpression = (e: ExpressionVisage) => `expression-${e}.png`;
+const CORPS_SANS_TETE = "corps-sans-tete.png";
+/** La part de la boîte de la tête effacée du corps (en partant du haut) : le cou reste, sous la tête qui penche. */
+const PART_SANS_TETE = 0.88;
 /** Les étapes faites, d'après les fichiers. */
 const faitesDe = (noms: string[]): EtapeEssai[] =>
   ETAPES_ESSAI.filter((e) => (e === "figurine" ? noms.includes("figurine.png") : e === "calques" ? noms.includes("reperes.json") && noms.includes("tete.png") : noms.includes(nomTete(e))));
@@ -169,31 +182,109 @@ export async function refairePersonne(supabase: Supabase, id: unknown, quoi: unk
   if (!idValide(id) || (quoi !== "expressions" && quoi !== "calques")) return { erreur: "Refaire quoi ?" };
   const d = depotDans(supabase, dossier(id));
   const noms = EXPRESSIONS_VISAGE.map((e) => nomTete(e.cle));
-  for (const n of quoi === "calques" ? ["corps.png", "tete.png", "reperes.json", ...noms] : noms) await d.effacer(n).catch(() => undefined);
+  // (refaire la découpe : les expressions entières restent — leurs têtes se redécoupent sans le moteur ; refaire les
+  // expressions : tout est refait)
+  const entieres = EXPRESSIONS_VISAGE.map((e) => nomExpression(e.cle));
+  for (const n of quoi === "calques" ? ["corps.png", CORPS_SANS_TETE, "tete.png", "reperes.json", ...noms] : [...noms, ...entieres]) await d.effacer(n).catch(() => undefined);
   return {};
 }
 
-/** La tête d'une autre image de la même figurine, découpée au même endroit que sa tête habituelle (fondue en bas). */
-async function teteAuMemeEndroit(image: Buffer, r: ReperesEssai): Promise<Buffer> {
+type Pixels = { data: Buffer; w: number; h: number };
+const pixels = async (image: Buffer, taille?: [number, number]): Promise<Pixels> => {
+  const { data, info } = await (taille ? sharp(image).resize(taille[0], taille[1], { fit: "fill" }) : sharp(image)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { data, w: info.width, h: info.height };
+};
+/**
+ * (où est la tête dans une autre image de la même figurine : la boîte habituelle `[x, y, l, h]` décalée de `dx`, `dy`
+ * pixels et agrandie de `e` autour de son centre — là où sa silhouette, le haut de la boîte, colle le mieux à celle de la
+ * tête habituelle ; d'abord à grands pas, puis au pixel près. Sans mieux net : la boîte telle quelle.)
+ */
+export function recaler(orig: Pixels, autre: Pixels, boite: [number, number, number, number]): { dx: number; dy: number; e: number } {
+  const [x0, y0, l, h] = boite;
+  const G = 40;
+  const rangs = Math.max(1, Math.round(G * PART_SANS_TETE));
+  const pts: { x: number; y: number; a: number }[] = [];
+  for (let gy = 0; gy < rangs; gy++)
+    for (let gx = 0; gx < G; gx++) {
+      const x = x0 + ((gx + 0.5) / G) * l;
+      const y = y0 + ((gy + 0.5) / G) * h;
+      const xi = Math.min(orig.w - 1, Math.max(0, Math.round(x)));
+      const yi = Math.min(orig.h - 1, Math.max(0, Math.round(y)));
+      pts.push({ x, y, a: orig.data[(yi * orig.w + xi) * 4 + 3] });
+    }
+  const [cx, cy] = [x0 + l / 2, y0 + h / 2];
+  const ecart = (dx: number, dy: number, e: number) => {
+    let somme = 0;
+    for (const p of pts) {
+      const x = Math.round(cx + dx + (p.x - cx) * e);
+      const y = Math.round(cy + dy + (p.y - cy) * e);
+      const a = x < 0 || y < 0 || x >= autre.w || y >= autre.h ? 0 : autre.data[(y * autre.w + x) * 4 + 3];
+      somme += Math.abs(a - p.a);
+    }
+    return somme / pts.length;
+  };
+  const pas = Math.max(1, Math.round(l / G));
+  const portee = Math.max(pas, Math.round(l * 0.12));
+  const tel = ecart(0, 0, 1);
+  let mieux = { dx: 0, dy: 0, e: 1, v: tel };
+  for (let e = 0.9; e <= 1.1001; e += 0.025)
+    for (let dy = -portee; dy <= portee; dy += pas)
+      for (let dx = -portee; dx <= portee; dx += pas) {
+        const v = ecart(dx, dy, e);
+        if (v < mieux.v) mieux = { dx, dy, e, v };
+      }
+  const gros = mieux;
+  for (let e = gros.e - 0.0125; e <= gros.e + 0.01251; e += 0.00625)
+    for (let dy = gros.dy - pas; dy <= gros.dy + pas; dy++)
+      for (let dx = gros.dx - pas; dx <= gros.dx + pas; dx++) {
+        const v = ecart(dx, dy, e);
+        if (v < mieux.v) mieux = { dx, dy, e, v };
+      }
+  // (un mieux trop petit — moins de 3 points d'alpha sur 255 en moyenne : la boîte telle quelle, rien ne bouge)
+  return tel - mieux.v < 3 ? { dx: 0, dy: 0, e: 1 } : { dx: mieux.dx, dy: mieux.dy, e: Math.round(mieux.e * 10000) / 10000 };
+}
+
+/**
+ * La tête d'une autre image de la même figurine (l'expression entière), découpée **là où elle est vraiment** : la boîte
+ * de la tête habituelle, recalée sur cette image (`recaler`), ramenée à la taille habituelle, fondue en bas.
+ */
+async function teteAuMemeEndroit(image: Buffer, figurine: Buffer, r: ReperesEssai): Promise<Buffer> {
   const [W, H] = r.taille;
-  const { data, info } = await sharp(image).resize(W, H, { fit: "fill" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const [orig, autre] = await Promise.all([pixels(figurine, [W, H]), pixels(image, [W, H])]);
   const [bx, by] = r.boite;
   const [px, py, pw, ph] = r.tetePx;
-  const x0 = Math.max(0, bx + px);
-  const y0 = Math.max(0, by + py);
-  const lw = Math.max(1, Math.min(info.width - x0, pw));
-  const lh = Math.max(1, Math.min(info.height - y0, ph));
-  const sortie = Buffer.alloc(lw * lh * 4);
-  for (let y = 0; y < lh; y++) {
-    const fondu = Math.min(1, (lh - y) / 2);
-    for (let x = 0; x < lw; x++) {
-      const o = ((y0 + y) * info.width + x0 + x) * 4;
-      const t = (y * lw + x) * 4;
-      data.copy(sortie, t, o, o + 4);
-      sortie[t + 3] = Math.round(sortie[t + 3] * fondu);
-    }
+  const boite: [number, number, number, number] = [bx + px, by + py, pw, ph];
+  const { dx, dy, e } = recaler(orig, autre, boite);
+  // (la boîte recalée, dans l'image agrandie d'une marge transparente : elle peut déborder un peu du cadre)
+  const marge = Math.ceil(Math.max(pw, ph) * 0.3);
+  const [lw, lh] = [Math.max(1, Math.round(pw * e)), Math.max(1, Math.round(ph * e))];
+  const gauche = Math.round(boite[0] + pw / 2 + dx - lw / 2) + marge;
+  const haut = Math.round(boite[1] + ph / 2 + dy - lh / 2) + marge;
+  const etendue = await sharp(autre.data, { raw: { width: W, height: H, channels: 4 } })
+    .extend({ top: marge, bottom: marge, left: marge, right: marge, background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+  const { data } = await sharp(etendue)
+    .extract({ left: Math.max(0, gauche), top: Math.max(0, haut), width: Math.min(lw, W + 2 * marge - Math.max(0, gauche)), height: Math.min(lh, H + 2 * marge - Math.max(0, haut)) })
+    .resize(pw, ph, { fit: "fill" })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  for (let y = 0; y < ph; y++) {
+    const fondu = Math.min(1, (ph - y) / 2);
+    if (fondu >= 1) continue;
+    for (let x = 0; x < pw; x++) data[(y * pw + x) * 4 + 3] = Math.round(data[(y * pw + x) * 4 + 3] * fondu);
   }
-  return sharp(sortie, { raw: { width: lw, height: lh, channels: 4 } }).png().toBuffer();
+  return sharp(data, { raw: { width: pw, height: ph, channels: 4 } }).png().toBuffer();
+}
+
+/** Le corps sans sa tête habituelle : le haut de la boîte de la tête effacé (le cou reste, sous la tête qui penche). */
+async function corpsSansTete(corps: Buffer, r: ReperesEssai): Promise<Buffer> {
+  const c = await pixels(corps);
+  const [px, py, pw, ph] = r.tetePx;
+  const fin = Math.min(c.h, py + Math.round(ph * PART_SANS_TETE));
+  for (let y = Math.max(0, py); y < fin; y++) for (let x = Math.max(0, px); x < Math.min(c.w, px + pw); x++) c.data[(y * c.w + x) * 4 + 3] = 0;
+  return sharp(c.data, { raw: { width: c.w, height: c.h, channels: 4 } }).png().toBuffer();
 }
 
 /** 🛠️ Un passage : la prochaine étape qui manque. `fait` : ce qui vient d'être fait (rien : tout est fait). */
@@ -231,15 +322,22 @@ export async function fabriquerPersonne(supabase: Supabase, id: unknown, avant: 
         const m = await sharp(figurine).metadata();
         const r: ReperesEssai = { ratio: c.ratio, reperes: c.reperes, boite: c.boite, tetePx: c.tetePx, taille: [m.width ?? 0, m.height ?? 0] };
         await d.ecrire("corps.png", c.corps, "image/png");
+        await d.ecrire(CORPS_SANS_TETE, await corpsSansTete(c.corps, r), "image/png");
         await d.ecrire("tete.png", c.tete, "image/png");
         await d.ecrire("reperes.json", Buffer.from(JSON.stringify(r)), "application/json");
       } else {
-        if (!cle()) return { erreur: "Le moteur d’image n’est pas branché ici." };
         const r = json(await d.lire("reperes.json").catch(() => null)) as unknown as ReperesEssai;
         if (!Array.isArray(r.boite) || !Array.isArray(r.tetePx) || !Array.isArray(r.taille) || !r.reperes) return rater("Sa découpe est à refaire.");
-        const img = await demanderUneImage({ images: [figurine], consigne: consigneExpression(etape), transparent: true, fidelite: "high", avant, cle: cle(), base: base(), qualite: "medium" });
-        if ("erreur" in img) return rater(img.erreur);
-        await d.ecrire(nomTete(etape), await teteAuMemeEndroit(img.png, r), "image/png");
+        // (l'expression entière déjà faite — une découpe refaite : sa tête se redécoupe, sans le moteur)
+        let entiere = noms.includes(nomExpression(etape)) ? await d.lire(nomExpression(etape)).catch(() => null) : null;
+        if (!entiere) {
+          if (!cle()) return { erreur: "Le moteur d’image n’est pas branché ici." };
+          const img = await demanderUneImage({ images: [figurine], consigne: consigneExpression(etape), transparent: true, fidelite: "high", avant, cle: cle(), base: base(), qualite: "medium" });
+          if ("erreur" in img) return rater(img.erreur);
+          entiere = await sharp(img.png).png().toBuffer();
+          await d.ecrire(nomExpression(etape), entiere, "image/png");
+        }
+        await d.ecrire(nomTete(etape), await teteAuMemeEndroit(entiere, figurine, r), "image/png");
       }
     }
     if (fiche.erreur) await ecrireFiche(supabase, { ...fiche, erreur: undefined } as FicheEssai);
@@ -272,7 +370,13 @@ export async function salonEssai(supabase: Supabase): Promise<SalonEssai> {
         if (!noms.includes("reperes.json") || !noms.includes("corps.png") || !noms.includes("tete.png")) return null;
         const r = json(await d.lire("reperes.json").catch(() => null)) as unknown as ReperesEssai;
         if (!r.reperes || !Array.isArray(r.reperes.tete)) return null;
-        const [corps, tete] = await Promise.all([imageSalon(supabase, `${dossier(f.id)}/corps.png`, LARGEURS_CALQUES.corps), imageSalon(supabase, `${dossier(f.id)}/tete.png`, LARGEURS_CALQUES.tete)]);
+        // (le corps sans sa tête : fait ici pour les figurines découpées avant le 21 novembre)
+        let sansTete = noms.includes(CORPS_SANS_TETE);
+        if (!sansTete && Array.isArray(r.tetePx)) {
+          const c = await d.lire("corps.png").catch(() => null);
+          sansTete = Boolean(c && (await d.ecrire(CORPS_SANS_TETE, await corpsSansTete(c, r), "image/png").catch(() => false)));
+        }
+        const [corps, tete] = await Promise.all([imageSalon(supabase, `${dossier(f.id)}/${sansTete ? CORPS_SANS_TETE : "corps.png"}`, LARGEURS_CALQUES.corps), imageSalon(supabase, `${dossier(f.id)}/tete.png`, LARGEURS_CALQUES.tete)]);
         if (!corps || !tete) return null;
         const expressions: FigurineEssai["expressions"] = {};
         for (const e of EXPRESSIONS_VISAGE)

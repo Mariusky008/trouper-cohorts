@@ -116,6 +116,12 @@ ok(await attendre(async () => (await p.locator(".sv-fig .sv-corps").evaluateAll(
 const piece = await p.locator(".sv-piece").boundingBox();
 const lea = await p.locator('[data-figurine="a1a1a1a1a1a1"]').boundingBox();
 ok(lea && Math.abs(lea.x + lea.width / 2 - piece.x - piece.width * 0.375) < 6 && /Toi/.test(await texte(p.locator('[data-figurine="a1a1a1a1a1a1"]'))), `Léa au premier rang, au milieu : « Toi » (${Math.round(lea?.x + lea?.width / 2 - piece.x)} pt)`);
+// (📷 21 novembre 2026 : sous les expressions, le corps sans sa tête habituelle — fait ici pour ces figurines découpées
+// avant ; le haut de la boîte de la tête effacé : une expression un peu décalée ne laisse plus voir l'autre tête)
+const sansTete = await fetch(`${STOCK}/figurines-clients/essais-visage/a1a1a1a1a1a1/corps-sans-tete.png`);
+const px = sansTete.status === 200 ? await sharp(Buffer.from(await sansTete.arrayBuffer())).ensureAlpha().raw().toBuffer({ resolveWithObject: true }) : null;
+const alphaA = (x, y) => px.data[(y * px.info.width + x) * 4 + 3];
+ok(px && alphaA(TETE[0] + 140, TETE[1] + 140) === 0 && alphaA(200, 500) > 0, "le corps sans sa tête : le visage effacé du corps, le fauteuil là (rien ne double sous une expression)");
 
 // ═══ LES AMIS RÉAGISSENT AU FIL DE LA VIDÉO ═══
 const vus = new Set();

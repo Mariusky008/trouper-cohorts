@@ -853,8 +853,11 @@ http
         // (🏠 une image prolongée — les pièces en panorama : son masque et sa taille, gardés à part : « MASQUE <taille> »)
         if (b.includes('name="mask"')) consignesIA.push(`MASQUE ${champ("size")}`);
         const sharp = (await import("sharp")).default;
+        // (📷 une expression de l'essai du visage : comme le vrai moteur parfois, le cadrage bouge un peu — trois points à
+        // droite, deux plus bas ; la tête doit être recalée avant d'être découpée)
+        const decale = /The head keeps EXACTLY the same position/.test(consigne);
         const png = await sharp({ create: { width: 64, height: 96, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-          .composite([{ input: await sharp({ create: { width: 32, height: 64, channels: 4, background: { r: 200, g: 90, b: 60, alpha: 1 } } }).png().toBuffer(), left: 16, top: 16 }])
+          .composite([{ input: await sharp({ create: { width: 32, height: 64, channels: 4, background: { r: 200, g: 90, b: 60, alpha: 1 } } }).png().toBuffer(), left: decale ? 19 : 16, top: decale ? 18 : 16 }])
           .png()
           .toBuffer();
         return repondre(res, 200, { data: [{ b64_json: png.toString("base64") }], usage: { total_tokens: 4321 } });
