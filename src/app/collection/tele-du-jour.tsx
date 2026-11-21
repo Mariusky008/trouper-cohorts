@@ -46,6 +46,8 @@ import { BoutonMicro, type FinMicro } from "@/app/salon/micro";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
+import { createPortal } from "react-dom";
+import { InviterSurLaVideo } from "./carnet-proches";
 import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 import {
@@ -440,6 +442,8 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
   const [dejaVue, setDejaVue] = useState(false);
   const [repondre, setRepondre] = useState<{ cle: string; prenom: string; r: ReactionVideo } | null>(null);
   const [dit, setDit] = useState<{ jusqua: number | null } | null>(null);
+  // 👥 (21 novembre 2026, `ma-maison.md` section 25) inviter sur cette vidéo, sans quitter ma télé
+  const [inviter, setInviter] = useState(false);
   const [mots, setMots] = useState("");
   const [motsReponse, setMotsReponse] = useState("");
   const tEcrit = useRef<number | null>(null);
@@ -1043,11 +1047,13 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
           💬
           {dits > 0 && <i className="td-pastille">{dits}</i>}
         </button>
-        {/* (🎬 lot D2 : la séance chez moi — mes proches devant ma télé, la même seconde pour tous) */}
-        <a className="td-chip-barre" href="/univers/salons?chez=moi" data-chez-moi>
+        {/* (🎬 lot D2 : la séance chez moi — 👥 21 novembre 2026 : mes proches à cocher ici même, sans quitter la page ; la
+            séance, ensuite, si je veux) */}
+        <button type="button" className="td-chip-barre" data-chez-moi onClick={() => setInviter(true)}>
           {PR.inviter}
-        </a>
+        </button>
       </header>
+      {inviter && v && createPortal(<InviterSurLaVideo video={{ id: v.id, titre: v.titre }} position={() => Math.max(0, lireT())} onFermer={() => setInviter(false)} />, document.body)}
 
       <div className="td-scene" ref={boite} style={{ height: (enPiece ? 0 : hEcran) + hPiece }}>
         <div className="td-piece" style={{ top: enPiece ? 0 : hEcran, height: hPiece }} data-piece={scene?.piece ?? ""} data-gestes={peutReagir ? "1" : undefined} {...gestes}>

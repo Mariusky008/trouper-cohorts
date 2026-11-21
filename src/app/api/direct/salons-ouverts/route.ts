@@ -15,6 +15,9 @@
 // POST { action: "entrer-chez", chez: "moi" | <clé> } → { ouverture } : ma pièce, ma télé ; chez un proche qui m'invite
 // POST { action: "tele", salon, quoi: "video" | "suivante" | "pause" | "jouer", id? } → { seance } : l'hôte mène la télé
 // POST { action: "inviter", cles: [<clé>…] }   → { invites } : trois proches au plus (une notification chacun)
+// POST { action: "inviter-video", id, t, cles } → { invites, titre, cle } : 👥 depuis ma télé du jour, sans la quitter —
+//                                                 ma séance se cale sur cette vidéo (à cette seconde, en pause), mes
+//                                                 proches sont invités avec elle (`ma-maison.md`, section 25)
 // POST { action: "pas-maintenant", cle }       → { ok } : l'invitation de cet hôte s'en va
 // 🗄️ LE LOT D5
 // POST { action: "aimer", salon, message }     → { aimes, etagere } : trois cœurs, le message monte sur l'étagère
@@ -39,6 +42,7 @@ import {
   etagereDuSalon,
   garderMoment,
   inviterChezMoi,
+  inviterSurUneVideo,
   mesInvitations,
   nePlusVoir,
   poulsDuSalon,
@@ -55,7 +59,7 @@ const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
 const FERMES = { error: "Les salons ouverts sont fermés pour l’instant." };
 // (les séances entre proches ne passent pas par l'interrupteur des salons ouverts)
-const SEANCE = new Set(["entrer-chez", "tele", "inviter", "pas-maintenant"]);
+const SEANCE = new Set(["entrer-chez", "tele", "inviter", "inviter-video", "pas-maintenant"]);
 const enSeance = (salon: unknown) => String(salon ?? "").startsWith("chez-");
 
 export async function GET(request: Request) {
@@ -120,6 +124,10 @@ export async function POST(request: Request) {
   if (p.action === "inviter") {
     const r = await inviterChezMoi(supabase, moi, p.cles);
     return repondre(r, { invites: r.invites });
+  }
+  if (p.action === "inviter-video") {
+    const r = await inviterSurUneVideo(supabase, moi, p);
+    return repondre(r, { invites: r.invites, titre: r.titre, cle: r.cle });
   }
   if (p.action === "pas-maintenant") return repondre(await refuserInvitation(supabase, moi, p.cle));
   // 🗄️ l'étagère, 👯 les proches

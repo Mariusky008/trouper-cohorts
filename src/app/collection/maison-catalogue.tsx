@@ -45,6 +45,8 @@ import {
 import { createPortal } from "react-dom";
 import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuiPeutEntrer, RegarderADeux, type LigneAbsence } from "./ajouter-chez-moi";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
+import { PHRASES_CARNET } from "@/lib/direct/carnet-proches";
+import { CarnetDesProches } from "./carnet-proches";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
@@ -233,6 +235,8 @@ function Piece({
   // ＋🗑️ (lot M2, deuxième partie) ajouter chez moi ; l'objet à enlever (un appui long) ; ce qui vient d'être fait
   const [ajout, setAjout] = useState(false);
   const [qui, setQui] = useState(false);
+  // 👯 (21 novembre 2026, section 25) le carnet de mes proches
+  const [carnet, setCarnet] = useState(false);
   // 🎁 (lot M5) le cadeau touché sur la table (et ouvert) ; la surprise à laisser, en visite ; les miennes qui attendent
   const [cadeau, setCadeau] = useState<CadeauMaison | null>(null);
   const [ouvert, setOuvert] = useState(false);
@@ -989,18 +993,19 @@ function Piece({
               <span aria-hidden="true">＋</span>
               {PHRASES_BAS.ajouter}
             </button>
+            {/* (👯 21 novembre 2026 : le carnet de mes proches — « Comme la voient tes proches » est dedans) */}
             <button
               type="button"
               className="mmc-gros-bouton"
-              data-geste="qui"
+              data-geste="proches"
               data-visibilite={maison.visibilite ?? "proches"}
               onClick={() => {
                 fermerTout();
-                setQui(true);
+                setCarnet(true);
               }}
             >
-              <span aria-hidden="true">👀</span>
-              {PHRASES_BAS.commeEux}
+              <span aria-hidden="true">👯</span>
+              {PHRASES_CARNET.bouton}
             </button>
           </div>
         ) : (
@@ -1049,6 +1054,17 @@ function Piece({
       {regarder &&
         visite?.cle &&
         createPortal(<RegarderADeux cle={visite.cle} prenom={visite.prenom} onFermer={() => setRegarder(false)} onPropose={() => setFrappe(true)} />, document.body)}
+      {carnet &&
+        createPortal(
+          <CarnetDesProches
+            onFermer={() => setCarnet(false)}
+            onQui={() => {
+              setCarnet(false);
+              setQui(true);
+            }}
+          />,
+          document.body,
+        )}
       {qui &&
         createPortal(
           <QuiPeutEntrer
