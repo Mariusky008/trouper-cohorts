@@ -127,9 +127,25 @@ ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-carte-
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-salon]").count()) === 12), "les douze salons");
 const ordre = await lea.locator("#o-decouvrir [data-salon]").evaluateAll((l) => l.map((a) => a.getAttribute("data-salon")));
 ok(ordre.slice(0, 3).sort().join() === "animaux,cuisine,foot", `ses passions d'abord (${ordre.slice(0, 3).join(", ")})`);
-ok(/Personne pour l’instant/.test(await texte(lea.locator('#o-decouvrir [data-salon="foot"]'))) && /url\(/.test(await lea.locator('#o-decouvrir [data-salon="foot"] .td-salon-vig').evaluate((e) => e.style.backgroundImage)), "le salon du foot : son décor, personne pour l'instant");
+// (🟢 21 novembre 2026, la maquette B choisie par le propriétaire : la vitrine en direct, puis deux rangées qui défilent)
+ok(/^⚽\s*Foot\s*Personne$/.test(await texte(lea.locator('#o-decouvrir [data-salon="foot"]'))), `la carte du foot : un grand émoji, un nom court, « Personne » (${await texte(lea.locator('#o-decouvrir [data-salon="foot"]'))})`);
+const fonds = await lea.locator("#o-decouvrir [data-salon]").evaluateAll((l) => l.slice(0, 4).map((a) => getComputedStyle(a.querySelector(".td-salon-haut")).backgroundImage));
+ok(fonds.every((f) => /gradient/.test(f)) && new Set(fonds).size === fonds.length, "une couleur par passion (quatre cartes, quatre dégradés)");
+ok(/Tes passions/.test(await texte(lea.locator("#o-decouvrir .td-salons"))) && /À découvrir/.test(await texte(lea.locator("#o-decouvrir .td-salons"))), "deux rangées : « Tes passions », « À découvrir »");
+const rangee = lea.locator("#o-decouvrir .td-rangee").last();
+ok(await rangee.evaluate((r) => getComputedStyle(r).overflowX === "auto" && r.scrollWidth > r.clientWidth + 20), "… « À découvrir » défile de côté");
+ok(!(await deborde(lea)), "… sans élargir la page");
+const aligne = await rangee.evaluate((r) => ({ carte: r.querySelector("[data-salon]").getBoundingClientRect().left, titre: r.previousElementSibling.getBoundingClientRect().left, bord: r.getBoundingClientRect().right, ecran: window.innerWidth }));
+ok(Math.abs(aligne.carte - aligne.titre) < 2 && Math.abs(aligne.bord - aligne.ecran) < 2, `… la première carte sous le titre, la rangée jusqu'au bord de l'écran (${Math.round(aligne.carte)} / ${Math.round(aligne.titre)}, ${Math.round(aligne.bord)} / ${aligne.ecran})`);
+const vitrine = lea.locator("#o-decouvrir [data-vitrine]");
+ok((await vitrine.count()) === 1 && (await vitrine.getAttribute("data-vitrine")) === "foot", `la vitrine « En direct maintenant » : personne nulle part, sa première passion (${await vitrine.getAttribute("data-vitrine")})`);
+ok(/En direct maintenant/.test(await texte(lea.locator("#o-decouvrir .td-direct"))) && /Personne pour l’instant : entre le premier/.test(await texte(vitrine)) && /Entrer/.test(await texte(vitrine)), `… « ${await texte(vitrine)} »`);
+ok(/i\.ytimg\.com|youtube/.test(await vitrine.locator(".td-vitrine-tele").evaluate((e) => e.style.backgroundImage)) && /^« .+ »$/.test(await texte(vitrine.locator(".td-vitrine-titre"))), `… sa télé : la vignette et le titre de la vidéo du moment (${await texte(vitrine.locator(".td-vitrine-titre"))})`);
 await lea.waitForTimeout(400);
 await lea.screenshot({ path: `${D}/salons-ouverts-1-accueil.png`, fullPage: false });
+await lea.locator("#o-decouvrir .td-direct").evaluate((e) => e.scrollIntoView({ block: "start" }));
+await lea.waitForTimeout(300);
+await lea.screenshot({ path: `${D}/salons-ouverts-1b-vitrine.png`, fullPage: false });
 await lea.locator('#o-decouvrir [data-salon="foot"]').click();
 await lea.waitForURL(/\/univers\/salons\?theme=foot/);
 const salon = lea.locator(".so[data-salon]");
@@ -201,6 +217,18 @@ ok(await attendre(lea, async () => (await lea.locator(`.so-fig.cache[data-q="${S
 
 ok(!(await deborde(lea)), "rien ne déborde (iPhone)");
 ok(!/exemple/i.test(await lea.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
+
+// ═══ 🟢 ZOÉ, PENDANT CE TEMPS : LA VITRINE EN DIRECT ═══
+const zoe2 = await ouvrir(ZOE);
+await zoe2.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
+await fermerPablito(zoe2, "#o-decouvrir");
+const vit2 = zoe2.locator('#o-decouvrir [data-vitrine="foot"]');
+ok(await attendre(zoe2, async () => (await vit2.locator(".td-vitrine-gradin img").count()) === 2 && /2 ici/.test(await texte(vit2)), 30000), `Zoé : la vitrine en direct — le foot, Léa et Sam assis (${await texte(vit2)})`);
+ok((await zoe2.locator("#o-decouvrir .td-direct i.vif").count()) === 1 && /2 ici/.test(await texte(zoe2.locator('#o-decouvrir [data-salon="foot"]'))), "… le point vert, et « 2 ici » sur la carte du foot");
+await vit2.evaluate((e) => e.scrollIntoView({ block: "center" }));
+await zoe2.waitForTimeout(500);
+await zoe2.screenshot({ path: `${D}/salons-ouverts-1c-vitrine-en-direct.png` });
+await zoe2.context().close();
 await lea.context().close();
 
 // ═══ SUR UN ORDINATEUR ═══

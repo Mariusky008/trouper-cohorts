@@ -125,6 +125,12 @@ export type MonSalon = { theme: IdTheme; e: string; nom: string };
 export type MessageSalon = { id: string; de: string; prenom: string; le: number; sorte: "texte" | "reaction" | "geste"; texte?: string; cle?: string; a?: string };
 /** Un salon, sur l'accueil de Découvrir. */
 export type CarteSalon = { theme: IdTheme; e: string; nom: string; presents: number; salons: number; mien: boolean; decor: { src: string; flou: string } | null; teles?: number };
+/**
+ * 🟢 LA VITRINE DE DÉCOUVRIR (21 novembre 2026, le propriétaire choisit la maquette B : « la vitrine en direct ») : le
+ * salon où il se passe le plus de choses en ce moment — ce qui passe à sa télé, les figurines de ceux qui y sont ; sans
+ * personne nulle part, le premier de ses salons, et ce qui y passe.
+ */
+export type VitrineSalon = { theme: IdTheme; e: string; nom: string; presents: number; video?: { id: string; titre: string }; figurines: string[] };
 /** La télé du salon : la sélection du jour du thème, en boucle, à la même seconde pour tous. */
 export type VideoSalon = { id: string; titre: string; chaine: string; duree: number };
 
@@ -207,6 +213,13 @@ export const PHRASES_SALONS = {
   chapo: "Tes passions d’abord. Tu entres, ta figurine s’assoit, on parle.",
   chapoJeunes: "Les salons des 15-17 ans : tu n’y croises jamais d’adulte. ",
   autres: "Les autres salons",
+  /** (la maquette B) la vitrine, puis deux rangées */
+  direct: "En direct maintenant",
+  tesPassions: "Tes passions",
+  aDecouvrir: "À découvrir",
+  personne: "Personne",
+  icCourt: (n: number) => (n ? `${n} ici` : "Personne"),
+  vitrineVide: "Personne pour l’instant : entre le premier",
   ici: (n: number) => (n ? `${n} ici` : "Personne pour l’instant"),
   entrer: "Entrer",
   slogan: "Regarde tes vidéos avec ceux que tu aimes, même quand ils sont loin.",

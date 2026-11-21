@@ -1443,3 +1443,40 @@ Jusqu'ici, on ne revoyait une vidéo que par la notification « revois-la avec s
 `entrer-chez` avec `video` : sa séance se cale dessus, pas sur une vidéo qui n'est pas à sa télé) ; `tele-du-jour.mjs` (la
 rangée « 📼 Revoir » sur l'accueil, et son lien) ; `salons-seance.mjs` (le salon rouvert sur la vidéo choisie, et Sam,
 assis là, la revoit avec elle) ; `ma-maison-catalogue.mjs` (la puce et sa feuille, vide).
+
+## 32. 🟢 Les salons par passion, version B : la vitrine en direct, puis des rangées (21 novembre 2026)
+
+Le propriétaire, devant l'accueil de Découvrir : « je trouve que l'UX est pas bon, tout se ressemble […] changer les
+miniatures pour quelque chose de plus beau, plus clair et plus moderne ». Une maquette d'abord
+(`docs/univers/maquettes/salons-passion.html` : trois propositions côte à côte) ; il choisit **la B** : « la
+vitrine en direct : le salon le plus vivant en haut, puis des rangées qui défilent de côté ».
+
+Sous « Ma télé du jour » (et « 📼 Revoir »), à la place de la grille de vignettes qui se ressemblaient toutes :
+
+- **« 🟢 En direct maintenant »** : une seule grande carte, **la vitrine** — le salon où il y a le plus de monde en ce
+  moment (dans sa maison de salons : adultes, ou 15-17 ans). Dedans : sa télé avec la vignette de la vidéo qui y passe à
+  cette seconde (la même pour tous, `positionTele`), les figurines de ceux qui sont assis (cinq au plus — leur figurine,
+  jamais leur compte), « ⚽ Le salon du foot », « 3 ici », le titre de la vidéo, et **« Entrer »**. Personne nulle part :
+  sa première passion, « Personne pour l'instant : entre le premier » (le point est gris, pas vert).
+- **« Tes passions »**, puis **« À découvrir »** (« Les salons ouverts » s'il n'a pas de passion) : deux rangées qui
+  défilent de côté (sans élargir la page ; elles vont jusqu'au bord de l'écran). Une carte par salon, petite et nette :
+  **une couleur par passion** (un dégradé : vert pour le foot, orange pour la cuisine, violet pour la musique…), **un
+  grand émoji**, un nom court (« Foot », « Jeux vidéo », « Télé-réalité »), « 3 ici » avec un point vert, ou « Personne »
+  avec un point gris. Un toucher : on entre, comme avant.
+- Les 15-17 ans gardent leur phrase : « Les salons des 15-17 ans : tu n'y croises jamais d'adulte. »
+
+**Le code** : `lib/direct/salons-ouverts.ts` (`VitrineSalon`, les phrases `direct`, `tesPassions`, `aDecouvrir`,
+`icCourt`, `vitrineVide`) ; `lib/direct/salons-ouverts-serveur.ts` — `comptesDesSalons` rend aussi `plusVivant` (le
+salon et ceux qui y sont), `vitrineDesSalons` (sa vidéo du moment, les figurines), `accueilDesSalons` rend `vitrine` en
+plus des `cartes` (elles gardent leur `decor`, que d'autres écrans lisent) ; `app/collection/tele-du-jour.tsx`
+(`SalonsOuverts` : `.td-vitrine[data-vitrine]`, `.td-rangee`, `.td-salon[data-salon]`, les couleurs `.c-<thème>`). La
+vitrine est gardée avec le reste dans la mémoire du téléphone (`MEMOIRE_SALONS`, section « ⚡ La vitesse » de
+`docs/reprise.md`).
+
+**Les essais** : `essai-salons-ouverts-route.mjs` (personne nulle part : la vitrine est sa première passion, avec sa
+vidéo ; Léa et Sam au foot : Zoé voit le foot en vitrine, leurs deux figurines, aucun compte ; Noé ne voit que la maison
+des 15-17 ans) ; `navigateur/salons-ouverts.mjs` (la carte du foot « ⚽ Foot Personne », une couleur par carte, les deux
+rangées, « À découvrir » défile sans élargir la page — la première carte sous son titre, la rangée jusqu'au bord de
+l'écran —, la vitrine, sa vignette et son titre ; puis Zoé, pendant que Léa et Sam sont au foot : la vitrine en direct,
+le point vert, leurs deux figurines, « 2 ici » ; captures `salons-ouverts-1-accueil.png`, `salons-ouverts-1b-vitrine.png`,
+`salons-ouverts-1c-vitrine-en-direct.png`).

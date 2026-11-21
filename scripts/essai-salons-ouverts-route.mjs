@@ -88,6 +88,8 @@ ok(a1.maison === "adultes" && a1.cartes?.length === 12, `Léa (adulte) : les dou
 ok(a1.cartes.slice(0, 3).every((c) => c.mien) && a1.cartes.slice(0, 3).map((c) => c.theme).sort().join() === "animaux,cuisine,foot", "ses passions d'abord");
 const foot = a1.cartes.find((c) => c.theme === "foot");
 ok(foot?.nom === "Le salon du foot" && foot.presents === 0 && /\/api\/direct\/salon\/fichier\//.test(foot.decor?.src ?? ""), "le salon du foot : personne, son décor (le salon)");
+// (🟢 la vitrine « En direct maintenant » : personne nulle part — sa première passion, sa télé du moment, personne)
+ok(a1.vitrine?.theme === "foot" && a1.vitrine.nom === "Le salon du foot" && a1.vitrine.presents === 0 && a1.vitrine.figurines.length === 0 && /^[A-Za-z0-9_-]{11}$/.test(a1.vitrine.video?.id ?? "") && a1.vitrine.video.titre, `la vitrine, personne nulle part : sa première passion et sa vidéo du moment (${a1.vitrine?.theme}, « ${a1.vitrine?.video?.titre} »)`);
 const n0 = await accueil(NOE);
 ok(n0.maison === "jeunes" && n0.cartes.length === 11 && !n0.cartes.some((c) => c.theme === "parents"), "Noé (15 ans) : onze salons, pas celui des jeunes parents");
 ok((await entrer(NOE, "parents")).statut === 403, "… il n'y entre pas");
@@ -106,6 +108,11 @@ const o3 = (await entrer(NOE)).ouverture;
 ok(o3?.salon?.maison === "jeunes" && o3.presents.length === 1, "Noé : le salon du foot des 15-17 ans — il n'y voit ni Léa ni Sam");
 const L = o1.moi;
 const S = o2.moi;
+// (🟢 la vitrine suit le salon le plus vivant : Zoé, qui n'y est pas, y voit Léa et Sam — leurs figurines, jamais leur compte)
+const v1 = (await accueil(ZOE)).vitrine;
+ok(v1?.theme === "foot" && v1.presents === 2 && v1.figurines.length === 2 && v1.figurines.every((f) => /\/api\/direct\/salon\/fichier\//.test(f)) && v1.video?.id, `la vitrine suit le salon le plus vivant : le foot, deux figurines (${v1?.theme}, ${v1?.presents})`);
+ok(!JSON.stringify(v1).includes(LEA.id) && !JSON.stringify(v1).includes(SAM.id), "… aucun compte dans la vitrine");
+ok((await accueil(NOE)).vitrine?.presents === 1, "… Noé ne voit que la maison des 15-17 ans (lui, seul)");
 
 // ═══ ÉCRIRE ═══
 const m1 = await poster(LEA, { action: "ecrire", salon: "foot-1", sorte: "texte", texte: "  Salut   tout le monde 👋 " });

@@ -59,6 +59,7 @@ import {
   maisonDe,
   nomDuSalon,
   positionSeance,
+  positionTele,
   reactionDe,
   refusDuMessage,
   salonDe,
@@ -72,6 +73,7 @@ import {
   type MessageSalon,
   type PresentSalon,
   type VideoSalon,
+  type VitrineSalon,
 } from "./salons-ouverts";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -442,30 +444,51 @@ async function exclureDesSalons(supabase: Supabase, x: { q: string; h: string; p
 }
 
 // ─── 🧭 l'accueil de Découvrir : les salons de mes passions, puis les autres ───
-async function comptesDesSalons(supabase: Supabase, m: MaisonSalons): Promise<Map<IdTheme, { presents: number; salons: number }>> {
+async function comptesDesSalons(supabase: Supabase, m: MaisonSalons): Promise<{ parTheme: Map<IdTheme, { presents: number; salons: number }>; plusVivant: { id: string; theme: IdTheme; presents: Entree[] } | null }> {
   const noms = (await lister(supabase, base(m))).map((e) => e.nom).filter((n) => salonDe(n));
-  const l = await Promise.all(noms.map(async (id) => ({ theme: salonDe(id)!.theme, n: (await presentsFrais(supabase, m, id)).length })));
+  const l = await Promise.all(noms.map(async (id) => ({ id, theme: salonDe(id)!.theme, presents: await presentsFrais(supabase, m, id) })));
   const parTheme = new Map<IdTheme, { presents: number; salons: number }>();
   for (const x of l) {
     const c = parTheme.get(x.theme) ?? { presents: 0, salons: 0 };
-    parTheme.set(x.theme, { presents: c.presents + x.n, salons: c.salons + (x.n ? 1 : 0) });
+    parTheme.set(x.theme, { presents: c.presents + x.presents.length, salons: c.salons + (x.presents.length ? 1 : 0) });
   }
-  return parTheme;
+  // (🟢 la vitrine : le salon le plus rempli en ce moment)
+  const plusVivant = l.filter((x) => x.presents.length).sort((a, b) => b.presents.length - a.presents.length)[0] ?? null;
+  return { parTheme, plusVivant };
+}
+
+/**
+ * 🟢 LA VITRINE (la maquette B) : le salon le plus rempli — ce qui passe à sa télé (la sélection du jour, à la même
+ * seconde pour tous), les figurines de ceux qui y sont (cinq au plus) ; personne nulle part : le premier de ses salons.
+ */
+async function vitrineDesSalons(supabase: Supabase, m: MaisonSalons, plusVivant: { id: string; theme: IdTheme; presents: Entree[] } | null, premier: IdTheme | undefined): Promise<VitrineSalon | undefined> {
+  const theme = plusVivant?.theme ?? premier;
+  const t = theme ? themeDe(theme) : null;
+  if (!theme || !t) return undefined;
+  const [videos, figurines] = await Promise.all([
+    videosDuSalon(supabase, theme, m).catch(() => [] as VideoSalon[]),
+    plusVivant ? Promise.all(plusVivant.presents.slice(0, 5).map((e) => lirePresent(supabase, m, plusVivant.id, e.nom).then((f) => s(f.figurine?.src)).catch(() => ""))) : Promise.resolve([] as string[]),
+  ]);
+  const pos = videos.length ? positionTele(videos, Date.now()) : null;
+  const v = pos ? videos[pos.i] : null;
+  return { theme, e: t.e, nom: SALONS[theme].nom, presents: plusVivant?.presents.length ?? 0, ...(v ? { video: { id: v.id, titre: v.titre } } : {}), figurines: figurines.filter(Boolean) };
 }
 
 /** 🧭 Les cartes des salons (ses passions d'abord) ; `age` : il doit d'abord dire s'il a 18 ans. */
-export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promise<{ age?: true; maison?: MaisonSalons; cartes: CarteSalon[]; invitations?: InvitationTele[]; demandes?: DemandeProche[] }> {
+export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promise<{ age?: true; maison?: MaisonSalons; cartes: CarteSalon[]; vitrine?: VitrineSalon; invitations?: InvitationTele[]; demandes?: DemandeProche[] }> {
   // (🎬 lot D2 : les invitations devant la télé d'un proche ; 👯 lot D5 : les demandes de proche reçues dans un salon)
   const [invitations, demandes] = await Promise.all([mesInvitations(supabase, moi).catch(() => []), mesDemandes(supabase, moi).catch(() => [])]);
   const enPlus = { ...(invitations.length ? { invitations } : {}), ...(demandes.length ? { demandes } : {}) };
   const m = await maisonDeMoi(supabase, moi.id);
   if (!m) return { age: true, cartes: [], ...enPlus };
   const themes = themesDesSalons(m);
-  const [passions, parTheme] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), comptesDesSalons(supabase, m)]);
+  const [passions, { parTheme, plusVivant }] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), comptesDesSalons(supabase, m)]);
   const miens = new Set(passions?.passions ?? []);
+  const premier = themes.find((t) => miens.has(t.id))?.id ?? themes[0]?.id;
   const decorsVus = new Map<PieceDuo, Promise<ScenePiece | null>>();
   const gradinsVus = new Map<IdGradin, Promise<GradinScene | null>>();
-  const cartes = await Promise.all(
+  const [cartes, vitrine] = await Promise.all([
+    Promise.all(
     themes.map(async (t): Promise<CarteSalon> => {
       // (🎭 son gradin validé d'abord ; sinon la pièce de son décor)
       const g = gradinDuTheme(t.id);
@@ -478,8 +501,10 @@ export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promi
       const c = parTheme.get(t.id) ?? { presents: 0, salons: 0 };
       return { theme: t.id, e: t.e, nom: SALONS[t.id].nom, presents: c.presents, salons: c.salons, mien: miens.has(t.id), decor: image ? { src: image.src, flou: image.flou } : null };
     }),
-  );
-  return { maison: m, cartes: [...cartes.filter((c) => c.mien), ...cartes.filter((c) => !c.mien)], ...enPlus };
+    ),
+    vitrineDesSalons(supabase, m, plusVivant, premier).catch(() => undefined),
+  ]);
+  return { maison: m, cartes: [...cartes.filter((c) => c.mien), ...cartes.filter((c) => !c.mien)], ...(vitrine ? { vitrine } : {}), ...enPlus };
 }
 
 // ─── 🛡️ l'administration (`/admin/humain/salons`) ───

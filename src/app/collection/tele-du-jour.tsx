@@ -51,7 +51,7 @@ import { TesPassions } from "./tes-passions";
 import { createPortal } from "react-dom";
 import { InviterSurLaVideo } from "./carnet-proches";
 import { RangeeRevoir } from "./revoir";
-import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
+import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele, type VitrineSalon } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 import {
   ANIMATION_VIDEO,
@@ -251,14 +251,19 @@ function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; 
  * 🛋️ Les salons ouverts (lots D3 et D4) : une carte par passion — les miennes d'abord, avec ceux qui y sont. Au-dessus :
  * 🎬 les invitations devant la télé d'un proche (lot D2) et 👯 les demandes de proche reçues dans un salon (lot D5).
  */
-type AccueilSalons = { cartes: CarteSalon[]; age?: boolean; maison?: string; invitations?: InvitationTele[]; demandes?: DemandeProche[] };
+/** (une carte de la rangée) le nom court d'un salon : « Le salon du foot » → « Foot ». */
+const nomCourt = (nom: string) => {
+  const c = nom.replace(/^(Le|La|Les) salons? (des |du |de la |de l’|de l'|de |d’)?/i, "").trim();
+  return c ? c[0].toUpperCase() + c.slice(1) : nom;
+};
+type AccueilSalons = { cartes: CarteSalon[]; vitrine?: VitrineSalon; age?: boolean; maison?: string; invitations?: InvitationTele[]; demandes?: DemandeProche[] };
 function SalonsOuverts() {
   const [a, setA] = useState<AccueilSalons | null>(null);
   const charger = useCallback(async () => {
     const r = await fetch("/api/direct/salons-ouverts?accueil=1", { cache: "no-store" }).catch(() => null);
     if (!r?.ok) return setA({ cartes: [] });
     const j = (await r.json().catch(() => ({}))) as AccueilSalons;
-    const v: AccueilSalons = { cartes: j.cartes ?? [], age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes };
+    const v: AccueilSalons = { cartes: j.cartes ?? [], vitrine: j.vitrine, age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes };
     setA(v);
     ecrireMemoire(MEMOIRE_SALONS, v);
   }, []);
@@ -297,38 +302,74 @@ function SalonsOuverts() {
       </>
     );
   if (!a.cartes.length) return attente;
+  // 🟢 (21 novembre 2026, le propriétaire choisit la maquette B) la vitrine en direct, puis deux rangées qui défilent :
+  // ses passions, puis les autres — une couleur et un grand émoji par passion, reconnus d'un coup d'œil
   const miens = a.cartes.filter((c) => c.mien);
   const autres = a.cartes.filter((c) => !c.mien);
+  const v = a.vitrine;
   const carte = (c: CarteSalon) => (
-    <a key={c.theme} className="td-salon" href={`/univers/salons?theme=${c.theme}`} data-salon={c.theme}>
-      <span className="td-salon-vig" style={c.decor ? { backgroundImage: `url(${c.decor.src}), url(${c.decor.flou})` } : undefined}>
-        <span className={`td-ici${c.presents ? " vif" : ""}`}>
-          <i />
-          {PS.ici(c.presents)}
-        </span>
+    <a key={c.theme} className={`td-salon c-${c.theme}`} href={`/univers/salons?theme=${c.theme}`} data-salon={c.theme}>
+      <span className="td-salon-haut" aria-hidden="true">
+        {c.e}
       </span>
-      <b>
-        {c.e} {c.nom}
-      </b>
-      <small>{PS.entrer} ›</small>
+      <span className="td-salon-bas">
+        <b>{nomCourt(c.nom)}</b>
+        <small className={`td-ici${c.presents ? " vif" : ""}`}>
+          <i />
+          {PS.icCourt(c.presents)}
+        </small>
+      </span>
     </a>
   );
   return (
     <>
     {attente}
     <section className="td-salons" data-salons>
-      <h3>
-        {PS.titre} <small>{PS.sousTitre}</small>
-      </h3>
-      <p className="td-salons-chapo">
-        {a.maison === "jeunes" ? PS.chapoJeunes : ""}
-        {PS.chapo}
-      </p>
-      {miens.length > 0 && <div className="td-grille">{miens.map(carte)}</div>}
+      {a.maison === "jeunes" && <p className="td-salons-chapo">{PS.chapoJeunes}</p>}
+      {v && (
+        <>
+          <h3 className="td-direct">
+            <i className={v.presents ? "vif" : ""} />
+            {PS.direct}
+          </h3>
+          <a className={`td-vitrine c-${v.theme}`} href={`/univers/salons?theme=${v.theme}`} data-vitrine={v.theme}>
+            <span className="td-vitrine-tele" style={v.video ? { backgroundImage: `url(${vignetteYouTube(v.video.id)})` } : undefined}>
+              <span aria-hidden="true">▶</span>
+            </span>
+            {v.figurines.length > 0 && (
+              <span className="td-vitrine-gradin" aria-hidden="true">
+                {v.figurines.map((f, k) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={k} src={f} alt="" loading="lazy" />
+                ))}
+              </span>
+            )}
+            <span className="td-vitrine-bas">
+              <span>
+                <b>
+                  {v.e} {v.nom}
+                </b>
+                <small className={`td-ici${v.presents ? " vif" : ""}`}>
+                  <i />
+                  {v.presents ? PS.icCourt(v.presents) : PS.vitrineVide}
+                </small>
+                {v.video && <small className="td-vitrine-titre">« {v.video.titre} »</small>}
+              </span>
+              <span className="td-entrer">{PS.entrer}</span>
+            </span>
+          </a>
+        </>
+      )}
+      {miens.length > 0 && (
+        <>
+          <h3>{PS.tesPassions}</h3>
+          <div className="td-rangee">{miens.map(carte)}</div>
+        </>
+      )}
       {autres.length > 0 && (
         <>
-          <h3 className="td-autres">{PS.autres}</h3>
-          <div className="td-grille">{autres.map(carte)}</div>
+          <h3>{miens.length ? PS.aDecouvrir : PS.titre}</h3>
+          <div className="td-rangee">{autres.map(carte)}</div>
         </>
       )}
     </section>
@@ -1610,13 +1651,42 @@ const STYLES = `
 .td-age{display:flex;flex-direction:column;gap:8px}
 .td-age button{border:0;border-radius:999px;padding:11px 16px;font:inherit;font-weight:900;font-size:14.5px;background:rgba(255,255,255,.12);color:#FFF4E6;cursor:pointer}
 .td-age button:first-child{background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);color:#2a0f1f}
-.td-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.td-salon{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:#FFF4E6}
-.td-salon-vig{position:relative;aspect-ratio:4/3;border-radius:16px;background:#3a1a2a center/cover no-repeat;box-shadow:0 10px 22px -12px rgba(0,0,0,.8)}
-.td-ici{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.6);font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-direct{display:flex;align-items:center;gap:8px}
+.td-direct i{width:9px;height:9px;border-radius:50%;background:#9a8a90}
+.td-direct i.vif{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.22)}
+.td-vitrine{display:flex;flex-direction:column;border-radius:24px;overflow:hidden;text-decoration:none;color:#FFF4E6;background:linear-gradient(160deg,#3a1428,#1a0a14);box-shadow:inset 0 0 0 1px rgba(255,210,122,.25),0 14px 30px -16px rgba(0,0,0,.8)}
+.td-vitrine-tele{margin:12px 12px 0;aspect-ratio:16/9;max-width:100%;border-radius:14px;display:grid;place-items:center;background:var(--g,linear-gradient(135deg,#2d6fb8,#7a3fa8 55%,#ff7a59)) center/cover no-repeat}
+.td-vitrine-tele span{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.45);font-size:18px}
+.td-vitrine-gradin{display:flex;justify-content:center;gap:2px;margin:-26px 0 0;position:relative;height:72px}
+.td-vitrine-gradin img{height:72px;width:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
+.td-vitrine-bas{display:flex;align-items:center;gap:10px;padding:10px 14px 14px}
+.td-vitrine-bas>span:first-child{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.td-vitrine-bas b{font-size:16px;font-weight:900}
+.td-vitrine-bas small{font-size:12px;font-weight:700;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-vitrine-bas .td-vitrine-titre{opacity:.6;font-weight:600}
+.td-entrer{flex:none;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,#ff6fbd,#FF2E9A);color:#2a0f1f;font-weight:900;font-size:13px}
+.td-rangee{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+@media (max-width:600px){.td-rangee{margin-inline:calc(50% - 50vw);padding-inline:calc(50vw - 50%)}}
+.td-rangee::-webkit-scrollbar{display:none}
+.td-salon{flex:none;width:128px;border-radius:18px;overflow:hidden;background:#22101B;text-decoration:none;color:#FFF4E6;box-shadow:0 10px 22px -14px rgba(0,0,0,.8)}
+.td-salon-haut{height:84px;display:grid;place-items:center;font-size:40px;background:var(--g,linear-gradient(145deg,#5a3a6a,#2a1424))}
+.td-salon-bas{display:flex;flex-direction:column;gap:4px;padding:8px 10px 10px}
+.td-salon b{font-size:13.5px;font-weight:900;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-ici{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;opacity:.85;white-space:nowrap}
 .td-ici:not(.vif) i{background:#9a8a90;box-shadow:none}
-.td-salon b{font-size:14px;font-weight:900;line-height:1.2}
-.td-salon small{font-size:12px;opacity:.65}
-.td-autres{opacity:.85}
-@media (min-width:760px){.td-grille{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.td-ici i{flex:none}
+.td-vitrine-bas .td-ici{white-space:normal;align-items:flex-start;line-height:1.35;overflow:visible}
+.td-vitrine-bas .td-ici i{margin-top:4px}
+.c-foot{--g:linear-gradient(145deg,#1f9d55,#0f5132)}
+.c-series{--g:linear-gradient(145deg,#c0392b,#6d1b4f)}
+.c-musique{--g:linear-gradient(145deg,#8e44ad,#3b1e74)}
+.c-jeux{--g:linear-gradient(145deg,#2d6fb8,#1b2f6b)}
+.c-tele{--g:linear-gradient(145deg,#ff7a59,#c2185b)}
+.c-humour{--g:linear-gradient(145deg,#f5b700,#e06c00)}
+.c-cuisine{--g:linear-gradient(145deg,#e67e22,#a0442a)}
+.c-mode{--g:linear-gradient(145deg,#ff5fa2,#9b2c74)}
+.c-manga{--g:linear-gradient(145deg,#ff6f61,#7a2fa8)}
+.c-animaux{--g:linear-gradient(145deg,#4caf8a,#2b6b5a)}
+.c-revisions{--g:linear-gradient(145deg,#3f8efc,#2b3a8f)}
+.c-parents{--g:linear-gradient(145deg,#f7a1c4,#b0507f)}
 `;
