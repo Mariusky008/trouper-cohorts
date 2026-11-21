@@ -144,7 +144,7 @@ const carnet = lea.locator("[data-carnet]");
 ok(await attendre(lea, async () => (await carnet.locator(`[data-mes-proches] [data-proche="${SAM.cle}"]`).count()) === 1), "le carnet : Sam, son proche");
 ok((await carnet.locator(`[data-proche="${SAM.cle}"] [data-sa-maison]`).getAttribute("href")) === `/univers/chez/${SAM.cle}` && (await carnet.locator(`[data-proche="${SAM.cle}"] [data-parler]`).getAttribute("href")) === `/collection?parler=${SAM.cle}#proches`, "… 🏠 sa maison, 💬 leur conversation");
 const wa = decodeURIComponent((await carnet.locator("[data-ajouter-proche] [data-lien-whatsapp]").getAttribute("href")) ?? "");
-ok(wa.startsWith("https://wa.me/?text=") && wa.includes(`/collection?proche=${LEA.cle}#proches`) && /Ajoute-moi sur ClikMe/.test(wa), "« ＋ Ajouter un proche » : son lien, par WhatsApp");
+ok(wa.startsWith("https://api.whatsapp.com/send?text=") && wa.includes(`/collection?proche=${LEA.cle}#proches`) && /Ajoute-moi sur ClikMe/.test(wa), "« ＋ Ajouter un proche » : son lien, par WhatsApp");
 await lea.waitForTimeout(300);
 await lea.screenshot({ path: `${D}/ma-maison-visite-0-carnet.png` });
 await carnet.locator('[data-geste="qui"]').click();

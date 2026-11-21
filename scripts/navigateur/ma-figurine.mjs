@@ -382,7 +382,7 @@ const lien = await lea.locator(".tf-meme-pret .tf-copier").getAttribute("data-li
 ok(/\/figurine\/[a-z0-9]{12}$/.test(lien ?? ""), `son lien (${lien})`);
 const partage = await lea.locator(".tf-meme-pret .tf-partager-meme").count();
 const wa = partage ? "" : await lea.locator(".tf-meme-pret .tf-wa").getAttribute("href");
-ok(partage === 1 || wa === `https://wa.me/?text=${encodeURIComponent(lien)}`, "sans texte ni blabla : le mème lui-même (la feuille de partage), sinon son lien seul");
+ok(partage === 1 || wa === `https://api.whatsapp.com/send?text=${encodeURIComponent(lien)}`, "sans texte ni blabla : le mème lui-même (la feuille de partage), sinon son lien seul");
 ok((await lea.locator(".tf-meme-pret a[download]").count()) === 1 && (await lea.locator(".tf-meme-pret .tf-adresse").count()) === 0, "« ⬇️ » : elle peut l'enregistrer (son lien se copie, sans s'afficher en entier)");
 ok((await texte(lea, ".tf-feuille.ouverte .tf-meme-titre")) === "Ton mème est prêt ✅", "son mème prêt monte dans une feuille, en bas de l'écran : « Ton mème est prêt ✅ »");
 ok((await lea.locator(".tf-meme-pret .tf-public, .tf-meme-pret .tf-poster-jour").count()) === 0, "plus de « 🌍 Poster sur le fil de Dax » : le fil de la ville est parti avec l'ancien « Découvrir »");

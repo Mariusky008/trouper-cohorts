@@ -1386,6 +1386,15 @@ proche en s'asseyant (« Oui »).
   plus, son thème monte ou descend ; **mes réactions** (😂 ❤️ 😮 😱 👏) restent sur la vidéo, à leur seconde : mes amis
   les verront (😱 devient « Oh non ! », 👏 « J'adore »).
 
+**🖼️ L'aperçu dans WhatsApp** (21 novembre 2026, le propriétaire : « j'ai la miniature sur WhatsApp qui parle d'un autre
+concept, donc il faut la refaire ») : le lien d'une place a son propre aperçu — « 🎬 Léa t'invite devant sa télé », « Une
+place t'attend à côté de sa figurine : vous regardez des vidéos ensemble sur ClikMe. », et sa carte (1200 × 630, en
+JPEG léger, `univers/salons/apercu/route.tsx`) : « ClikMe », son prénom, la télé allumée, sa figurine assise et la place
+libre qui brille (« ＋ Ta place »), « Prendre ma place ». Un lien qui n'existe pas (ou de plus d'une semaine) : la même
+carte, sans prénom ni figurine — une clé seule ne montre la figurine de personne (`apercuDeLaPlace`). **Les émojis du
+message** arrivaient en « � » : l'adresse courte `wa.me` les abîme en redirigeant ; les liens de l'appli passent
+désormais par celle de WhatsApp (`api.whatsapp.com/send`) — l'invitation, le carnet, le talkie, le partage d'un mème.
+
 **Le rangement** : `decouvrir/salons/prives/chez-<q>/places/<jeton>.json` ({ h, le, pris?, prisLe? }). **La route**
 (`/api/direct/salons-ouverts`) : `place` → `{ lien, prenom }` ; `entrer-chez` prend `place` (le jeton). La page de la
 figurine prend `suite` (le lien d'une place : « 🎬 Rejoindre ta place »).

@@ -1347,6 +1347,15 @@ grand : « le chat […] n'est pas totalement détouré ».
 **Les essais** : `salon-ouvrir.mjs` (« sa figurine pas découpée, de l'ancien style : la mienne est là quand même,
 seule »).
 
+### 11.26 🧍 La télé ne passe plus sur la tête (21 novembre 2026)
+
+Le propriétaire, capture à l'appui : « la télé passe au-dessus de la tête de la figurine ». Allumée, la vidéo joue dans un
+lecteur qui **flotte par-dessus la scène** (il suit l'écran à chaque image, la caméra peut glisser ; il ne se recharge
+jamais) — il recouvrait donc une figurine assise devant l'écran. Désormais, **le lecteur est découpé à la silhouette des
+figurines qui sont devant lui** (le corps de chacune, sa tête d'origine comprise ; un masque CSS, mesuré à chaque image) :
+la tête reste devant la vidéo (`tele-duo.tsx`, `silhouettesDevant`, `masqueDe`). L'essai : `salon-tele.mjs` (les
+figurines devant l'écran, découpées dans le lecteur).
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

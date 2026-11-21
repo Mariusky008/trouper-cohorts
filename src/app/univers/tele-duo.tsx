@@ -81,6 +81,43 @@ function mesurer(el: HTMLElement | null, scene?: HTMLElement | null): Cadre | nu
   const coupe = s ? [s.top - r.top, r.right - s.right, r.bottom - s.bottom, s.left - r.left].map((v) => `${Math.max(0, Math.round(v))}px`).join(" ") : undefined;
   return { l: r.left, t: r.top, w: r.width, h: r.height, ...(coupe && coupe !== "0px 0px 0px 0px" ? { coupe } : {}) };
 }
+/**
+ * 🧍 (21 novembre 2026, le propriétaire : « la télé passe au-dessus de la tête de la figurine ») le lecteur flotte
+ * par-dessus la scène : là où une figurine assise devant la télé le recouvre, il est découpé à sa silhouette (le corps de
+ * la figurine, sa tête d'origine comprise) — elle reste devant l'écran. En pixels du lecteur.
+ */
+type Silhouette = { src: string; x: number; y: number; w: number; h: number };
+function silhouettesDevant(scene: HTMLElement | null, c: Cadre): Silhouette[] {
+  if (!scene) return [];
+  const l: Silhouette[] = [];
+  for (const img of scene.querySelectorAll<HTMLImageElement>(".sc-fig > .sc-calque > img")) {
+    const r = img.getBoundingClientRect();
+    const src = img.currentSrc || img.src;
+    if (!src || r.width <= 0 || r.right <= c.l || r.left >= c.l + c.w || r.bottom <= c.t || r.top >= c.t + c.h) continue;
+    l.push({ src, x: Math.round(r.left - c.l), y: Math.round(r.top - c.t), w: Math.round(r.width), h: Math.round(r.height) });
+  }
+  return l;
+}
+/** Le masque du lecteur : tout l'écran, moins les silhouettes (chacune « exclue » du fond). */
+function masqueDe(s: Silhouette[]): React.CSSProperties {
+  if (!s.length) return {};
+  const images = [...s.map((x) => `url("${x.src}")`), "linear-gradient(#000,#000)"].join(",");
+  const positions = [...s.map((x) => `${x.x}px ${x.y}px`), "0 0"].join(",");
+  const tailles = [...s.map((x) => `${x.w}px ${x.h}px`), "100% 100%"].join(",");
+  return {
+    WebkitMaskImage: images,
+    WebkitMaskPosition: positions,
+    WebkitMaskSize: tailles,
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskComposite: [...s.map(() => "xor"), "source-over"].join(","),
+    maskImage: images,
+    maskPosition: positions,
+    maskSize: tailles,
+    maskRepeat: "no-repeat",
+    maskComposite: [...s.map(() => "exclude"), "add"].join(","),
+  } as React.CSSProperties;
+}
+const memesSilhouettes = (a: Silhouette[], b: Silhouette[]) => a.length === b.length && a.every((x, k) => x.src === b[k].src && x.x === b[k].x && x.y === b[k].y && x.w === b[k].w && x.h === b[k].h);
 /** La scène qui contient la télé et coupe ce qui la dépasse (le premier parent en `overflow: hidden`). */
 function sceneDe(el: HTMLElement | null): HTMLElement | null {
   for (let x = el?.parentElement ?? null; x; x = x.parentElement) {
@@ -154,6 +191,7 @@ export function TeleDuo({
   const hote = useRef<HTMLDivElement>(null);
   const ecran = useRef<HTMLDivElement>(null);
   const [cadre, setCadre] = useState<Cadre | null>(null);
+  const [silhouettes, setSilhouettes] = useState<Silhouette[]>([]);
   const [taille, setTaille] = useState<{ l: number; h: number } | null>(null);
   const allumee = Boolean(video);
   // (les coins, dans la télé : de 0 à 1 sur sa boîte)
@@ -176,6 +214,11 @@ export function TeleDuo({
     const suivre = () => {
       const c = mesurer(ecran.current, scene);
       if (c) setCadre((x) => (x && Math.abs(x.l - c.l) < 0.5 && Math.abs(x.t - c.t) < 0.5 && Math.abs(x.w - c.w) < 0.5 && Math.abs(x.h - c.h) < 0.5 && x.coupe === c.coupe ? x : c));
+      // (🧍 les figurines assises devant l'écran : découpées dans le lecteur)
+      if (c) {
+        const s = silhouettesDevant(scene, c);
+        setSilhouettes((x) => (memesSilhouettes(x, s) ? x : s));
+      }
       id = requestAnimationFrame(suivre);
     };
     id = requestAnimationFrame(suivre);
@@ -339,8 +382,9 @@ export function TeleDuo({
           <div
             className="tv-flottant"
             // (de loin, le lecteur ne prend pas le toucher : il passe à la télé, qui ramène la caméra)
-            style={{ left: cadre.l, top: cadre.t, width: cadre.w, height: cadre.h, pointerEvents: proche ? "auto" : "none", ...(cadre.coupe ? { clipPath: `inset(${cadre.coupe})` } : {}) }}
+            style={{ left: cadre.l, top: cadre.t, width: cadre.w, height: cadre.h, pointerEvents: proche ? "auto" : "none", ...(cadre.coupe ? { clipPath: `inset(${cadre.coupe})` } : {}), ...masqueDe(silhouettes) }}
             data-lecteur={video.id}
+            data-silhouettes={silhouettes.length || undefined}
             data-proche={proche ? "1" : "0"}
           >
             <div className="tv-deforme" style={deformeLecteur}>

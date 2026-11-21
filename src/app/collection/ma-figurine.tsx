@@ -155,7 +155,7 @@ export function PanneauEnvoi({ lien, texte, titre = "Ton message est prêt ✓" 
   return (
     <div className="tf-pret">
       <b>{titre}</b>
-      <a className="tf-wa" href={`https://wa.me/?text=${encodeURIComponent(`${texte} ${lien}`)}`} target="_blank" rel="noopener noreferrer">
+      <a className="tf-wa" href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${texte} ${lien}`)}`} target="_blank" rel="noopener noreferrer">
         Envoyer sur WhatsApp
       </a>
       <div className="tf-autres">
@@ -1196,7 +1196,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
                     📲 Partager
                   </button>
                 ) : (
-                  <a className="tf-wa" href={`https://wa.me/?text=${encodeURIComponent(envoye?.lien ?? "")}`} target="_blank" rel="noopener noreferrer">
+                  <a className="tf-wa" href={`https://api.whatsapp.com/send?text=${encodeURIComponent(envoye?.lien ?? "")}`} target="_blank" rel="noopener noreferrer">
                     WhatsApp
                   </a>
                 )}

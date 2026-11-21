@@ -71,6 +71,12 @@ jour, « 👥 Inviter » ouvre une feuille sur place (mes proches à cocher, tro
 maison, « 👯 Mes proches » : le carnet (leur maison, notre conversation, « L'ajouter aussi », ajouter un proche par
 WhatsApp ; « Comme la voient tes proches » dedans).
 
+**🛠️ Les retours du 21 novembre 2026 (au soir)** : plus de rectangles blancs dans Ma maison (`ma-maison.md`, section 23) ;
+la vidéo de la télé ne passe plus sur la tête des figurines (`salon-du-duo.md`, 11.26) ; l'invitation WhatsApp a son
+propre aperçu, et ses émojis arrivent intacts (`decouvrir.md`, section 30). À suivre, dans l'ordre : la maquette des
+miniatures des salons, la vitesse de l'appli, la séance entre amis (l'invitation garde sa vidéo, l'invité invite, tout
+pour tous).
+
 **📷 V2 : ma figurine fait ma tête (21 novembre 2026 ; `decouvrir.md`, section 28.7)** : dans ma télé du jour, « 📷 Ma
 figurine fait ma tête » (proposé une fois, rangé sur le téléphone) ; ma figurine vivante fait mon expression ; mes
 expressions notées à la seconde (source « visage ») et rejouées par ma figurine chez mes proches. Reste V3 (en direct).
