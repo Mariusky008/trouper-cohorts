@@ -71,6 +71,24 @@ jour, « 👥 Inviter » ouvre une feuille sur place (mes proches à cocher, tro
 maison, « 👯 Mes proches » : le carnet (leur maison, notre conversation, « L'ajouter aussi », ajouter un proche par
 WhatsApp ; « Comme la voient tes proches » dedans).
 
+**⚡ La vitesse (21 novembre 2026, au soir)** : le propriétaire, « j'aimerais que ça soit quasi automatique quand j'arrive
+sur l'application et quand je change de page, comme WhatsApp […] sur ClikMe ça prend 3 à 4 secondes ». Mesuré (le faux
+Supabase sait attendre : `FAUX_LATENCE=60` ms par aller-retour, et compter : `/__compte`, `FAUX_JOURNAL=1`) : l'ouverture
+faisait 152 allers-retours, en chaînes (une route attendait la précédente). Fait :
+- **ce que chaque écran a montré la dernière fois revient tout de suite** (`app/collection/memoire-locale.ts`) — sa
+  figurine, Découvrir (sa télé du jour, les salons, ses vidéos déjà vues, les maisons à visiter), Messages, Ma maison —
+  puis le serveur le remplace ; gardé 20 heures (images signées, elles valent au moins 24 heures) ou trois jours (adresses
+  stables), **rangé par compte** (une empreinte donnée par la page : un autre compte sur le même téléphone ne voit rien
+  du premier) ; avant : 45 minutes, presque toujours périmé ;
+- **les autres onglets se préparent en douce** une fois l'écran ouvert (`prechauffer`) : changer d'onglet est immédiat ;
+- **« Ma télé du jour » ouvre la séance sans recharger l'appli** (préparée dès que Découvrir est là) ;
+- côté serveur : l'adresse stable d'une image (`imageSalon`) lit la version de sa source et son index en même temps, et la
+  figurine de la maison lit sa fiche et sa note en même temps — sur chaque écran.
+Mesures (60 ms par aller-retour, en local) : première ouverture 1 056 → 846 ms ; réouverture 328 ms (la mémoire) ; Ma
+maison 287 ms, Messages 77 ms, retour à Découvrir 62 ms ; la séance d'un toucher 1 299 → 826 ms. **À faire ensuite** :
+raccourcir les chaînes des routes les plus longues (Messages : 37 allers-retours en 13 étapes ; les salons : 51 ; la
+séance : une dizaine d'étapes).
+
 **🛠️ Les retours du 21 novembre 2026 (au soir)** : plus de rectangles blancs dans Ma maison (`ma-maison.md`, section 23) ;
 la vidéo de la télé ne passe plus sur la tête des figurines (`salon-du-duo.md`, 11.26) ; l'invitation WhatsApp a son
 propre aperçu, et ses émojis arrivent intacts (`decouvrir.md`, section 30). À suivre, dans l'ordre : la maquette des

@@ -24,6 +24,7 @@ import { MA_MAISON_CATALOGUE } from "@/lib/direct/ma-maison";
 import { TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
 import { DansLesPieces, useBoucle, type PieceVue } from "@/app/univers/piece-vivante";
 import { MaisonDuCatalogue } from "./maison-catalogue";
+import { MEMOIRE_MAISON, lireMemoire } from "./memoire-locale";
 import { EtagereChezMoi } from "./etagere";
 import { FenetreSurMonUnivers, useMonUnivers } from "./chez-moi";
 import { useMesVisites } from "./visites-recues";
@@ -75,6 +76,9 @@ function useASaPiece(actif: boolean): boolean | null {
   useEffect(() => {
     if (!actif) return;
     let fini = false;
+    // (⚡ sa maison de la dernière fois : on sait tout de suite s'il a sa pièce)
+    const deja = lireMemoire<{ scene?: unknown }>(MEMOIRE_MAISON);
+    if (deja) void Promise.resolve().then(() => !fini && setA((x) => x ?? Boolean(deja.scene)));
     fetch("/api/direct/ma-piece", { cache: "no-store" })
       .then(async (r) => (r.ok ? ((await r.json()) as { maison?: { scene?: unknown } }) : null))
       .then((j) => !fini && setA(Boolean(j?.maison?.scene)))

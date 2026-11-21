@@ -38,6 +38,8 @@
  * visiter » (celles ouvertes à tout le monde, le lot M4 ; elles étaient dans l'ancienne page).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { MEMOIRE_MAISONS, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import { PHRASES_TELE_DU_JOUR as P, duree, type TeleDuJour, type VideoTele } from "@/lib/direct/tele-du-jour";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { PHRASES_CHAINES as PC, ilYa } from "@/lib/direct/chaines";
@@ -92,8 +94,15 @@ const poster = (corps: Record<string, unknown>) =>
     .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as Reponse }));
 const parSeconde = (l: ReactionVideo[]) => [...l].sort((a, b) => a.t - b.t);
 
+/** ⭐ ma séance (« Ma télé du jour », le lot B) */
+const SEANCE = "/univers/salons?chez=moi";
 export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
   const [tele, setTele] = useState<TeleDuJour | null>(null);
+  // (⚡ 21 novembre 2026 : ma séance s'ouvre sans recharger l'appli — préparée dès que Découvrir est là)
+  const router = useRouter();
+  useEffect(() => {
+    router.prefetch(SEANCE);
+  }, [router]);
   const [erreur, setErreur] = useState("");
   const charger = useCallback(async () => {
     const r = await fetch(ROUTE, { cache: "no-store" }).catch(() => null);
@@ -101,9 +110,15 @@ export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
     if (!r?.ok || !j?.tele) return setErreur(j?.error || "Pas de réseau : réessaie dans un instant.");
     setErreur("");
     setTele(j.tele);
+    ecrireMemoire(MEMOIRE_TELE, j.tele);
   }, []);
   useEffect(() => {
-    void Promise.resolve().then(charger);
+    // (⚡ 21 novembre 2026 : sa télé de la dernière fois, tout de suite ; le serveur la remplace dès qu'il répond)
+    const deja = lireMemoire<TeleDuJour>(MEMOIRE_TELE);
+    void Promise.resolve().then(() => {
+      if (deja) setTele((x) => x ?? deja);
+      return charger();
+    });
   }, [charger]);
   const cls = `td${onglet ? " onglet" : ""}`;
   // (🧭 l'accueil de l'onglet : la carte de ma télé, les salons ouverts ; ma télé s'ouvre d'un toucher)
@@ -155,7 +170,7 @@ export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
       <>
         {/* (⭐ le lot B, 21 novembre 2026 : « Ma télé du jour » est mon salon à quatre places — la même chose que les salons
             ouverts, pour mes amis : on y entre d'un toucher, la vidéo part toute seule) */}
-        <AccueilDecouvrir tele={tele} onRegarder={() => (tele.videos.length ? window.location.assign("/univers/salons?chez=moi") : setVue("tele"))} onPassions={() => setVue("passions")} />
+        <AccueilDecouvrir tele={tele} onRegarder={() => (tele.videos.length ? router.push(SEANCE) : setVue("tele"))} onPassions={() => setVue("passions")} />
         {maisons}
         <style>{STYLES}</style>
       </>
@@ -243,10 +258,17 @@ function SalonsOuverts() {
     const r = await fetch("/api/direct/salons-ouverts?accueil=1", { cache: "no-store" }).catch(() => null);
     if (!r?.ok) return setA({ cartes: [] });
     const j = (await r.json().catch(() => ({}))) as AccueilSalons;
-    setA({ cartes: j.cartes ?? [], age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes });
+    const v: AccueilSalons = { cartes: j.cartes ?? [], age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes };
+    setA(v);
+    ecrireMemoire(MEMOIRE_SALONS, v);
   }, []);
   useEffect(() => {
-    void Promise.resolve().then(charger);
+    // (⚡ les salons de la dernière fois, tout de suite)
+    const deja = lireMemoire<AccueilSalons>(MEMOIRE_SALONS);
+    void Promise.resolve().then(() => {
+      if (deja) setA((x) => x ?? deja);
+      return charger();
+    });
   }, [charger]);
   if (!a) return null;
   const dire = async (adulte: boolean) => {
@@ -376,9 +398,17 @@ function MaisonsAVisiter() {
   const [liste, setListe] = useState<UniversPublic[]>([]);
   useEffect(() => {
     let fini = false;
+    // (⚡ celles de la dernière fois, tout de suite)
+    const deja = lireMemoire<UniversPublic[]>(MEMOIRE_MAISONS);
+    if (deja) void Promise.resolve().then(() => !fini && setListe((x) => (x.length ? x : deja)));
     fetch("/api/direct/visites?publics=1", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j: { publics?: UniversPublic[] }) => !fini && setListe(Array.isArray(j.publics) ? j.publics : []))
+      .then((j: { publics?: UniversPublic[] }) => {
+        if (fini) return;
+        const l = Array.isArray(j.publics) ? j.publics : [];
+        setListe(l);
+        ecrireMemoire(MEMOIRE_MAISONS, l);
+      })
       .catch(() => undefined);
     return () => {
       fini = true;

@@ -51,7 +51,7 @@ import { Autour, STYLES_AUTOUR } from "./autour";
 import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
 import { RaccourcisMoi, STYLES_CHEZ_MOI } from "./chez-moi";
 import { STYLES_MEME_POUR } from "./meme-pour";
-import { MEMOIRE_ETAT, ecrireMemoire, lireMemoire } from "./memoire-locale";
+import { MEMOIRE_ETAT, MEMOIRE_MAISON, MEMOIRE_PROCHES, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire, poserProprietaire, prechauffer } from "./memoire-locale";
 import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } from "./rituel";
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
@@ -136,7 +136,10 @@ const ALIAS: Record<string, Vue> = {
  * (`maison` : « Ma maison » du catalogue, et l'inscription « Choisis ta pièce » ; `salon` : les conversations dans le salon
  * du duo — les interrupteurs, tels que le serveur les donne, `interrupteurs-serveur.ts`)
  */
-export function MaCollection({ villes = [], univers = false, maison = false, salon = false }: { villes?: { slug: string; nom: string }[]; univers?: boolean; maison?: boolean; salon?: boolean }) {
+export function MaCollection({ villes = [], qui = "", univers = false, maison = false, salon = false }: { villes?: { slug: string; nom: string }[]; qui?: string; univers?: boolean; maison?: boolean; salon?: boolean }) {
+  // ⚡ (21 novembre 2026) ce que ce téléphone garde de ses écrans, rangé sous son compte — posé avant que les onglets
+  // ne lisent leur mémoire (leurs effets passent avant ceux de cette page)
+  if (typeof window !== "undefined") poserProprietaire(qui);
   const [etat, setEtat] = useState<EtatMaFigurine | null>(null);
   const [charge, setCharge] = useState(false);
   const [vue, setVue] = useState<Vue>("figurine");
@@ -284,6 +287,19 @@ export function MaCollection({ villes = [], univers = false, maison = false, sal
   const onglet = vue;
   const compte = charge ? Boolean(etat?.compte) : null;
   const prete = etat?.etape === "prete";
+
+  // 🔥 (21 novembre 2026, « comme WhatsApp ») LES AUTRES ONGLETS SE PRÉPARENT EN DOUCE : une fois l'écran ouvert, ce que
+  // montrent Découvrir, Messages et Ma maison est lu et gardé (`prechauffer`) — toucher un onglet montre tout de suite
+  useEffect(() => {
+    if (!compte || !prete) return;
+    const t = window.setTimeout(() => {
+      void prechauffer(MEMOIRE_TELE, "/api/direct/tele-du-jour", (j) => j.tele);
+      void prechauffer(MEMOIRE_SALONS, "/api/direct/salons-ouverts?accueil=1", (j) => ({ cartes: j.cartes ?? [], age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes }));
+      void prechauffer(MEMOIRE_PROCHES, "/api/direct/proches", (j) => (Array.isArray(j.proches) ? { proches: j.proches, presence: j.presence !== false, cle: j.cle ?? "" } : null));
+      if (univers && maison) void prechauffer(MEMOIRE_MAISON, "/api/direct/ma-piece", (j) => j.maison);
+    }, 1800);
+    return () => window.clearTimeout(t);
+  }, [compte, prete, univers, maison]);
 
   // 🟢 « LÀ MAINTENANT » : toutes les minutes, tant que la page est visible — et ses messages non lus
   useEffect(() => {

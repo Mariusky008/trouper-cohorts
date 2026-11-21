@@ -17,6 +17,7 @@
  * on n'anime que `transform` et `opacity` (`ma-maison.md`, section 9).
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { MEMOIRE_MAISON, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import {
   EMPLACEMENTS_MAISON,
   MAISON_VIDE,
@@ -1235,10 +1236,15 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
   useEffect(() => {
     if (!actif) return;
     let fini = false;
+    // (⚡ 21 novembre 2026 : sa maison de la dernière fois, tout de suite ; le serveur la remplace dès qu'il répond)
+    const deja = lireMemoire<MaMaisonVue>(MEMOIRE_MAISON);
+    if (deja) void Promise.resolve().then(() => !fini && setMaison((x) => x ?? deja));
     void lire(ROUTE).then((r) => {
       if (fini) return;
-      if (r.maison) setMaison(r.maison);
-      else setErreur(r.error || "Ta maison ne s’est pas ouverte.");
+      if (r.maison) {
+        setMaison(r.maison);
+        ecrireMemoire(MEMOIRE_MAISON, r.maison);
+      } else setErreur(r.error || "Ta maison ne s’est pas ouverte.");
     });
     return () => {
       fini = true;
