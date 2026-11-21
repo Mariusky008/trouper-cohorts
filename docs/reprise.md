@@ -61,6 +61,11 @@ tu veux » et trois grands boutons (🛎️ Pendant ton absence, ＋ Ajouter che
 visite : d'abord la porte et « ✊ Toc toc », puis « Nouveau aujourd'hui », 🎁 Une surprise et 💬 Votre salon (proches).
 Pas encore : « 🎬 Film à deux » (le défi à deux attend le propriétaire).
 
+**🎬 Regarder à deux (21 novembre 2026 ; `ma-maison.md`, section 24)** : le propriétaire a choisi B. En visite chez un
+proche : une vidéo (ma télé du jour, ou un lien YouTube) à regarder avec lui ; ma séance est prête, il est invité, sa
+maison le dit (« Pendant ton absence »). Vue ensemble (les deux dans la séance, vingt secondes) : un souvenir commun chez
+les deux, « Gardé avec Sam · 🎬 Vu ensemble, le … ».
+
 **🎭 Les gradins des salons ouverts (20 novembre 2026, au soir ; `decouvrir.md`, section 27)** : un décor par lieu (onze
 lieux pour les douze passions), huit emplacements sur deux marches, fabriqués et validés par le propriétaire sur
 `/admin/humain/salons` ; seul un gradin validé va dans les salons (sinon, la pièce). **À faire par le propriétaire, en

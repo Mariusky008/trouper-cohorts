@@ -14,7 +14,7 @@
  * - `LaisserUneSurprise` (🎁, le lot M5) : en visite chez un proche, un objet (un bouquet, une tasse…) et un petit mot,
  *   posés emballés sur sa table basse (les souvenirs du lot 6 des visites).
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AJOUTS_MAISON,
   AJOUT_MOT_MAX,
@@ -32,6 +32,8 @@ import {
 } from "@/lib/direct/ma-maison";
 import type { Visibilite } from "@/lib/direct/monde";
 import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR } from "@/lib/direct/visites";
+import { LIEN_REGARDER_MAX, PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
+import { vignetteYouTube } from "@/lib/direct/tele";
 
 const ROUTE = "/api/direct/ma-piece";
 type Reponse = { ok?: boolean; id?: string; maison?: MaMaisonVue; error?: string };
@@ -341,6 +343,120 @@ export function LaisserUneSurprise({ cle, prenom, onFermer, onPosee }: { cle: st
   );
 }
 
+/**
+ * 🎬 (« Regarder à deux », `ma-maison.md` section 24) LA FEUILLE : une vidéo de ma télé du jour (ses six premières), ou un
+ * lien YouTube ; « Proposer à Léa » — ma séance est prête, elle est invitée. Puis « 📺 Aller devant ma télé ».
+ */
+export function RegarderADeux({ cle, prenom, onFermer, onPropose }: { cle: string; prenom: string; onFermer: () => void; onPropose: (titre: string) => void }) {
+  const [videos, setVideos] = useState<{ id: string; titre: string; chaine: string }[] | null>(null);
+  const [choisie, setChoisie] = useState("");
+  const [lien, setLien] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const [propose, setPropose] = useState("");
+  useEffect(() => {
+    let fini = false;
+    void fetch("/api/direct/tele-du-jour", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { tele?: { videos?: { id: string; titre: string; chaine: string }[] } }) => !fini && setVideos((j.tele?.videos ?? []).slice(0, 6)))
+      .catch(() => !fini && setVideos([]));
+    return () => {
+      fini = true;
+    };
+  }, []);
+  async function proposer() {
+    if ((!choisie && !lien.trim()) || enCours) return;
+    setEnCours(true);
+    setErreur("");
+    try {
+      const r = await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "regarder", cle, ...(lien.trim() ? { lien: lien.trim() } : { id: choisie }) }) });
+      const j = (await r.json().catch(() => ({}))) as { error?: string; titre?: string };
+      if (!r.ok) throw new Error(j.error || "Ça n’a pas marché : réessaie.");
+      setPropose(j.titre ?? "");
+      onPropose(j.titre ?? "");
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Ça n’a pas marché : réessaie.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+  return (
+    <div className="acm" role="dialog" aria-modal="true" aria-label={PHRASES_REGARDER.titre} data-regarder onClick={onFermer}>
+      <div className="acm-feuille" onClick={(e) => e.stopPropagation()}>
+        <div className="acm-tete">
+          <b>{PHRASES_REGARDER.titre}</b>
+          <button type="button" className="acm-fermer" aria-label="Fermer" onClick={onFermer}>
+            ✕
+          </button>
+        </div>
+        {propose ? (
+          <>
+            <p className="acm-regarde-fait" role="status" data-propose>
+              {PHRASES_REGARDER.propose(prenom)}
+            </p>
+            <p className="acm-chapo">
+              « {propose} » · {PHRASES_REGARDER.apres}
+            </p>
+            <a className="acm-principal acm-lien" href="/univers/salons?chez=moi" data-aller-tele>
+              {PHRASES_REGARDER.allerDevant}
+            </a>
+            <button type="button" className="acm-secondaire" onClick={onFermer}>
+              {PHRASES_REGARDER.rester}
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="acm-chapo">{PHRASES_REGARDER.chapo(prenom)}</p>
+            <b className="acm-quoi">{PHRASES_REGARDER.maTele}</b>
+            {videos === null ? (
+              <p className="acm-chapo" aria-busy="true">
+                …
+              </p>
+            ) : videos.length ? (
+              <div className="acm-videos">
+                {videos.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    data-video={v.id}
+                    aria-pressed={choisie === v.id && !lien.trim()}
+                    className={choisie === v.id && !lien.trim() ? "choisi" : ""}
+                    onClick={() => {
+                      setLien("");
+                      setChoisie(v.id);
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" loading="lazy" />
+                    <span>{v.titre}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="acm-chapo" data-sans-tele>
+                {PHRASES_REGARDER.sansTele}
+              </p>
+            )}
+            <label className="acm-quoi" htmlFor="acm-lien-youtube">
+              {PHRASES_REGARDER.lien}
+            </label>
+            <input id="acm-lien-youtube" className="acm-champ" data-champ="lien-youtube" inputMode="url" maxLength={LIEN_REGARDER_MAX} placeholder={PHRASES_REGARDER.indiceLien} value={lien} onChange={(e) => setLien(e.target.value)} />
+            {erreur && (
+              <p className="acm-erreur" role="alert">
+                {erreur}
+              </p>
+            )}
+            <button type="button" className="acm-principal" data-proposer disabled={(!choisie && !lien.trim()) || enCours} onClick={() => void proposer()}>
+              {enCours ? "…" : PHRASES_REGARDER.proposer(prenom)}
+            </button>
+          </>
+        )}
+      </div>
+      <style>{STYLES_AJOUTER}</style>
+    </div>
+  );
+}
+
 /** Une ligne de « Pendant ton absence » : ce qui s'est passé, et de quoi y aller. */
 export type LigneAbsence = { cle: string; e: string; texte: string; detail?: string; action?: { nom: string; faire: () => void } };
 
@@ -391,6 +507,13 @@ export function PendantTonAbsence({ lignes, onFermer }: { lignes: LigneAbsence[]
 
 const STYLES_AJOUTER = `
 .acm-chapo{margin:0;color:#c9b29c;font-size:14px;line-height:1.45}
+.acm-videos{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.acm-videos button{display:flex;flex-direction:column;gap:5px;padding:0 0 8px;border:1px solid #5a4232;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.04);color:#FFF4E6;font:inherit;text-align:left;cursor:pointer}
+.acm-videos button.choisi{border-color:#ffd27a;background:rgba(255,210,122,.14)}
+.acm-videos img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#170f0a}
+.acm-videos span{padding:0 8px;font-size:12.5px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.acm-regarde-fait{margin:0;padding:12px 14px;border-radius:14px;background:rgba(69,212,131,.14);color:#c9f5dc;font-weight:800;font-size:15px;line-height:1.4}
+.acm-lien{display:block;text-align:center;text-decoration:none}
 .acm-pied{margin:4px 0 0;color:#c9b29c;font-size:12.5px;line-height:1.4}
 .acm-absence{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .acm-absence li{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.07)}

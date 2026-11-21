@@ -11,10 +11,14 @@
 // POST { action: "vu" }                            → chez moi : j'ai découvert qui est passé (plus « nouveau »)
 // POST { action: "ignorer", cle }                  → chez moi : ignorer la demande d'un inconnu qui a frappé
 // POST { action: "visibilite", visibilite, adulte? } → chez moi : qui peut entrer (« tous » : 18 ans ou plus déclarés)
+// POST { action: "regarder", cle, id? | lien? }   → 🎬 « Regarder à deux » (ses proches) : une vidéo de ma télé du jour
+//                                                   (`id`) ou un lien YouTube ; ma séance est prête, il est invité →
+//                                                   { titre } (`ma-maison.md`, section 24)
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { choisirVisibilite, deciderSouvenir, frapper, ignorerDemande, laisserSouvenir, marquerVisitesVues, mesVisites, retirerSouvenir, signalerUnivers, universPublics, visiterUnivers } from "@/lib/direct/visites-serveur";
+import { proposerDeRegarder } from "@/lib/direct/salons-ouverts-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +43,10 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 403 });
+  if (p?.action === "regarder") {
+    const x = await proposerDeRegarder(supabase, moi, p);
+    return NextResponse.json(x.error ? { error: x.error } : { ok: true, titre: x.titre }, { status: x.error ? (x.statut ?? 400) : 200, headers: sansCache });
+  }
   const r =
     p?.action === "frapper"
       ? await frapper(supabase, moi, p.cle)

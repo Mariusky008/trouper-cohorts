@@ -73,6 +73,8 @@ export type ObjetGarde = {
   emojiAvant?: string;
   /** ✋ (lot E4) déposé à la main, pas noté par les figurines : pas de citation ; `de8` : qui l'a déposé. */
   depose?: true;
+  /** 🎬 (« Regarder à deux », `ma-maison.md` section 24) un souvenir commun : l'identifiant de l'autre (« Gardé avec Sam »). */
+  ensemble?: string;
   /** 📌 (lot E5) la question qui attend (un souvenir proposé, ou l'issue d'une épreuve). */
   demande?: Demande;
   /** 🪦 (lot E5) pourquoi c'est une pierre tombale : un « non », 48 heures sans réponse, ou retiré. */

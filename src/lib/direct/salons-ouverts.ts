@@ -112,7 +112,7 @@ export type TeleSeance = { video: VideoSalon; depart: number; pause?: number; n:
 /** Où en est la vidéo de la séance à cet instant (en secondes). */
 export const positionSeance = (t: TeleSeance, ms: number): number => Math.max(0, Math.min(t.video.duree || 1e6, t.pause ?? (ms - t.depart) / 1000));
 /** Une invitation reçue (« 🎬 Léa t'invite devant sa télé »). */
-export type InvitationTele = { cle: string; prenom: string; le: number };
+export type InvitationTele = { cle: string; prenom: string; le: number; /** 🎬 (« Regarder à deux ») la vidéo qu'il propose */ titre?: string };
 /** 👯 (lot D5) une demande de proche reçue dans un salon ouvert. */
 export type DemandeProche = { q: string; prenom: string; salon: string; le: number };
 /** 🗄️ (lot D5) un moment de l'étagère d'un salon : un message aimé par trois personnes au moins. */

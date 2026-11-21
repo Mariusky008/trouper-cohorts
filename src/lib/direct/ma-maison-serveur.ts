@@ -20,7 +20,7 @@
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { lireFichePerso } from "./fiches-serveur";
-import { depotDans, ecrireJson, lireJson, lireLigne } from "./ma-figurine-serveur";
+import { SEAU_FIGURINES, depotDans, ecrireJson, lireJson, lireLigne } from "./ma-figurine-serveur";
 import { jourParis } from "@/lib/jour-paris";
 import { humeurDe } from "./rituel";
 import { objetDe } from "./visites";
@@ -46,7 +46,8 @@ import { emplacementsValides, momentDuoDe, pieceDuoDe, pieceDuoValide, type Mome
 import { imageSalon } from "./salon-fichiers-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
 import { themeDe } from "./decouvrir";
-import type { MonSalon } from "./salons-ouverts";
+import { INVITATION_MS, type MonSalon } from "./salons-ouverts";
+import type { PropositionRegarder } from "./regarder-a-deux";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -210,6 +211,20 @@ export async function mesSalons(supabase: Supabase, h: string): Promise<MonSalon
     .map((x) => ({ theme: x.t.id, e: x.t.e, nom: x.t.nom }));
 }
 
+/**
+ * 🎬 (« Regarder à deux », section 24) Les vidéos que mes proches me proposent de regarder avec eux : leurs invitations
+ * devant leur télé qui portent une vidéo (`<habitant>/invitations-tele/<q>.json`, six heures).
+ */
+export async function propositionsDeRegarder(supabase: Supabase, h: string): Promise<PropositionRegarder[]> {
+  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(`${h}/invitations-tele`, { limit: 20, sortBy: { column: "name", order: "desc" } });
+  const lus = await Promise.all((data ?? []).filter((e) => e.name.endsWith(".json")).map((e) => lireJson<Partial<PropositionRegarder>>(supabase, `${h}/invitations-tele/${e.name}`).catch(() => ({}) as Partial<PropositionRegarder>)));
+  return lus
+    .filter((x) => s(x.cle) && s(x.titre) && Date.now() - (Number(x.le) || 0) < INVITATION_MS)
+    .map((x) => ({ cle: s(x.cle), prenom: s(x.prenom) || "Ton proche", titre: s(x.titre), le: Number(x.le) }))
+    .sort((a, b) => b.le - a.le)
+    .slice(0, 3);
+}
+
 export async function maMaison(supabase: Supabase, h: string, maintenant = new Date()): Promise<MaMaisonVue> {
   const piece = await lireSaPiece(supabase, h);
   const [scene, figurine, objets, vu, visibilite, adulte, cle] = await Promise.all([
@@ -224,14 +239,16 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
   if (!scene) return { piece, scene, figurine };
   const vuLe = Number(vu.le) || 0;
   // (🙂🚪🎁 lot M5 : son humeur, qui a frappé depuis sa dernière visite, les cadeaux sur la table)
-  const [vie, question, salons] = await Promise.all([
+  const [vie, question, salons, regarder] = await Promise.all([
     vieDeLaMaison(supabase, h, { depuis: vuLe || Date.now() }).catch(() => ({})),
     // (💬 lot M5 : ce que mes proches ont répondu à ma question du jour)
     questionChezMoi(supabase, h).catch(() => null),
     // (🏠 lot D5 : mes salons, en fanions)
     mesSalons(supabase, h).catch(() => []),
+    // (🎬 « Regarder à deux » : les vidéos que mes proches me proposent)
+    propositionsDeRegarder(supabase, h).catch(() => []),
   ]);
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}) };
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}), ...(regarder.length ? { regarder } : {}) };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */
