@@ -1214,3 +1214,27 @@ figurines prêtes seulement, « moi » d'abord, une vidéo pour commencer ; « c
 ensemble ; un sourire, un rire, la tête penchée ; le visage habituel ; « Revoir avec mes réactions » rejoue le rire à la
 bonne seconde ; la page de l'administrateur).
 
+**Le retour du propriétaire, le 21 novembre 2026** : « tous les visages sont faits […] j'ai bien toutes les figurines
+avec les expressions durant la vidéo » ; mais « pour une ou deux expressions la figurine se double […] Kilian a
+apparemment sa figurine de départ et quand il utilise une autre expression elle se juxtapose, et si c'est en biais
+alors on voit les deux figurines ». (Pas de textes ni de voix : l'essai ne montre que les expressions.)
+
+- **La cause** : chaque expression est refaite par le moteur sur la figurine entière, puis sa tête est découpée « au
+  même endroit » que la tête habituelle. Le moteur ne garde pas toujours le cadrage au pixel près : la tête découpée
+  était décalée, et la tête habituelle, restée sur le corps, dépassait — surtout quand la tête penche.
+- **Le corps sans sa tête** (`corps-sans-tete.png`) : le salon d'essai pose les têtes sur le corps dont le haut de la
+  boîte de la tête est effacé (88 % ; le cou reste, sous la tête qui penche). Ce qui dépasse d'une expression ne laisse
+  plus voir l'autre tête. Fait d'office pour les figurines déjà découpées : **rien à refaire** pour que Kilian ne se
+  double plus.
+- **La tête recalée** (pour les expressions faites désormais) : avant de la découper, la boîte est cherchée sur l'image
+  de l'expression — quelques pixels de côté, un peu plus grande ou plus petite — là où sa silhouette colle le mieux à la
+  tête habituelle (`recaler`). L'expression entière est gardée (`expression-<expression>.png`) : « Refaire la découpe »
+  redécoupe ses têtes sans repasser par le moteur ; « Refaire les expressions » les refait toutes.
+- **Si une expression de Kilian reste un peu de travers** (la tête décalée, pas doublée) : « ↺ Refaire les expressions »
+  sur sa ligne, puis « Fabriquer » — elles seront recalées.
+
+Les essais : `essai-visage-essai-route.mjs` (le faux moteur décale exprès le cadrage des expressions, de trois points et
+deux : la tête recalée colle à la tête habituelle ; l'expression entière gardée ; le corps sans sa tête ; « Refaire la
+découpe » redécoupe sans le moteur) ; `visage-essai.mjs` (le corps sans sa tête, fait d'office pour des figurines
+découpées avant).
+

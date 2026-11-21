@@ -86,6 +86,22 @@ ok(consignes.length === 5 && consignes.every((c) => /EXACTLY THE SAME FIGURINE/.
 const tete = await sharp(await lire(`essais-visage/${a1.id}/tete.png`)).metadata();
 const rire = await sharp(await lire(`essais-visage/${a1.id}/tete-rire.png`)).metadata();
 ok(rire.width === tete.width && rire.height === tete.height && rire.hasAlpha, `… sa tête découpée au même endroit, de la même taille (${rire.width} × ${rire.height})`);
+// (📷 21 novembre 2026 : le faux moteur décale le cadrage des expressions, comme le vrai parfois — la tête est recalée)
+const alphas = async (chemin) => {
+  const { data, info } = await sharp(await lire(chemin)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { a: Array.from({ length: info.width * info.height }, (_, i) => data[i * 4 + 3]), w: info.width, h: info.height };
+};
+const aT = await alphas(`essais-visage/${a1.id}/tete.png`);
+const aR = await alphas(`essais-visage/${a1.id}/tete-rire.png`);
+const differents = aT.a.filter((v, i) => i < aT.w * (aT.h - 3) && Math.abs(v - aR.a[i]) > 40).length;
+ok(differents <= aT.w * aT.h * 0.02, `… recalée : le cadrage de l'expression a bougé, sa tête colle quand même à la tête habituelle (${differents} points différents sur ${aT.w * aT.h})`);
+ok(Boolean(await lire(`essais-visage/${a1.id}/expression-rire.png`)), "… l'expression entière est gardée (pour redécouper sans le moteur)");
+const cst = await alphas(`essais-visage/${a1.id}/corps-sans-tete.png`);
+const [tpx, tpy, tpw, tph] = r2.tetePx;
+let resteTete = 0;
+for (let y = tpy; y < tpy + Math.round(tph * 0.88); y++) for (let x = tpx; x < tpx + tpw; x++) resteTete += cst.a[y * cst.w + x] > 0 ? 1 : 0;
+const corpsA = await alphas(`essais-visage/${a1.id}/corps.png`);
+ok(resteTete === 0 && cst.w === corpsA.w && cst.a.filter((v) => v > 0).length > 0, "le corps sans sa tête : le haut de la boîte de la tête effacé, le reste du corps là (rien ne double sous une expression)");
 const f8 = await admin({ action: "fabriquer", id: a1.id });
 const L8 = personne(f8.etat, "Léa");
 ok(f8.statut === 200 && !f8.fait && L8?.faites.length === 7 && Object.keys(L8.expressions).length === 5, "un passage de plus : rien — les sept étapes faites, les cinq expressions");
@@ -103,8 +119,15 @@ const m1 = await admin({ action: "moi", id: a2.id });
 ok(personne(m1.etat, "Sam")?.moi === true && personne(m1.etat, "Léa")?.moi === false && (await appel("/api/direct/visage-essai")).salon?.figurines?.[0]?.prenom === "Sam", "« C'est moi » : Sam, à la place de Léa (une seule à la fois)");
 
 // ═══ REFAIRE, EFFACER ═══
+// (« Refaire la découpe » : les expressions entières restent — leurs têtes se redécoupent, sans le moteur)
+const x0 = await admin({ action: "refaire", id: a1.id, quoi: "calques" });
+ok(x0.statut === 200 && personne(x0.etat, "Léa")?.faites.join() === "figurine" && !(await lire(`essais-visage/${a1.id}/corps-sans-tete.png`)) && Boolean(await lire(`essais-visage/${a1.id}/expression-rire.png`)), "« Refaire la découpe » : sa découpe et ses têtes effacées, ses expressions entières gardées");
+const avantRedecoupe = (await toutIA()).filter((c) => c.startsWith("IMAGE ")).length;
+const refaites = [];
+for (let k = 0; k < 6; k++) refaites.push((await admin({ action: "fabriquer", id: a1.id })).fait);
+ok(refaites.join() === "calques,sourire,rire,surprise,bof,grimace" && (await toutIA()).filter((c) => c.startsWith("IMAGE ")).length === avantRedecoupe && Boolean(await lire(`essais-visage/${a1.id}/corps-sans-tete.png`)), `… redécoupée : sa découpe, puis ses cinq têtes, sans repasser par le moteur (${refaites.join(", ")})`);
 const x1 = await admin({ action: "refaire", id: a1.id, quoi: "expressions" });
-ok(x1.statut === 200 && Object.keys(personne(x1.etat, "Léa")?.expressions ?? {}).length === 0 && personne(x1.etat, "Léa").faites.length === 2, "« Refaire les expressions » : effacées, sa figurine et sa découpe restent");
+ok(x1.statut === 200 && Object.keys(personne(x1.etat, "Léa")?.expressions ?? {}).length === 0 && personne(x1.etat, "Léa").faites.length === 2 && !(await lire(`essais-visage/${a1.id}/expression-rire.png`)), "« Refaire les expressions » : effacées (entières aussi : le moteur les refera), sa figurine et sa découpe restent");
 ok((await admin({ action: "refaire", id: a1.id, quoi: "tout" })).statut === 400 && (await admin({ action: "fabriquer", id: "pas-un-id" })).statut === 400 && (await admin({ action: "danser", id: a1.id })).statut === 400, "refaire autre chose, une personne inconnue, une action inconnue : refusés");
 const x2 = await admin({ action: "effacer", id: a1.id });
 ok(x2.statut === 200 && !personne(x2.etat, "Léa") && !(await lire(`essais-visage/${a1.id}/figurine.png`)) && !(await lire(`essais-visage/${a1.id}/fiche.json`)), "« Effacer » : tout s'efface");
