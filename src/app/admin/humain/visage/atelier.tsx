@@ -47,6 +47,7 @@ export function AtelierVisage() {
   const [accord, setAccord] = useState(false);
   const [moi, setMoi] = useState(false);
   const [aEffacer, setAEffacer] = useState<string | null>(null);
+  const [manque, setManque] = useState("");
 
   const charger = useCallback(async () => {
     const r = await fetch(ROUTE, { cache: "no-store" }).catch(() => null);
@@ -64,8 +65,18 @@ export function AtelierVisage() {
     if (j.etat) setEtat(j.etat);
     return { ok: Boolean(r?.ok), fait: j.fait, error: j.error || (r ? undefined : "La page ne répond pas."), etat: j.etat };
   };
+  // (la photo choisie, ou glissée sur la zone : réduite sur le téléphone, puis montrée en vignette)
+  const choisir = (f: File | undefined) => {
+    if (!f) return;
+    setManque("");
+    void reduire(f).then(setPhoto, () => setManque("Cette photo ne se lit pas ici (une photo HEIC de l’iPhone ?) : essaie une photo en JPEG ou en PNG."));
+  };
   const ajouter = async (e: React.FormEvent) => {
     e.preventDefault();
+    // (ce qui manque est dit, au lieu d'un bouton qui ne répond pas)
+    const m = !prenom.trim() ? "Écris son prénom." : !photo ? "Choisis d’abord sa photo (📷 juste au-dessus)." : !accord ? "Coche son accord." : "";
+    setManque(m);
+    if (m) return;
     setOccupe("ajouter");
     const r = await appeler({ action: "ajouter", prenom, photo, accord, moi });
     setOccupe(null);
@@ -129,27 +140,45 @@ export function AtelierVisage() {
         <form style={carte} onSubmit={(e) => void ajouter(e)} data-ajouter-personne>
           <b>Ajouter une personne</b> <small style={{ color: "#666" }}>({etat.personnes.length}/{PERSONNES_ESSAI_MAX})</small>
           <p style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", margin: "8px 0" }}>
-            <input value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Prénom" maxLength={20} style={{ ...bouton, cursor: "text", background: "#fff" }} data-prenom />
-            <input
-              type="file"
-              accept="image/*"
-              data-photo
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void reduire(f).then(setPhoto, () => setNote("Cette photo ne se lit pas : essaie une autre."));
-              }}
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {photo && <img src={photo} alt="" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8 }} />}
+            <input value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Prénom" maxLength={20} style={{ ...bouton, cursor: "text", background: "#fff", fontSize: 15, padding: "8px 12px" }} data-prenom />
           </p>
+          {/* (la photo : une zone bien visible — on la touche pour choisir, ou on y glisse la photo depuis l'ordinateur) */}
+          <label
+            data-zone-photo
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              choisir(e.dataTransfer.files?.[0]);
+            }}
+            style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0", padding: 12, border: "2px dashed #a1a1aa", borderRadius: 12, background: photo ? "#f0fdf4" : "#fafafa", cursor: "pointer" }}
+          >
+            <input type="file" accept="image/*" data-photo style={{ display: "none" }} onChange={(e) => choisir(e.target.files?.[0])} />
+            {photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photo} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10 }} data-vignette-photo />
+            ) : (
+              <span style={{ fontSize: 30 }} aria-hidden="true">
+                📷
+              </span>
+            )}
+            <span>
+              <b style={{ display: "block", fontSize: 15 }}>{photo ? "✓ Sa photo est choisie" : "Choisir sa photo"}</b>
+              <small style={{ color: "#666" }}>{photo ? "Toucher pour en changer" : "De face, bien éclairée — ou glisse-la ici"}</small>
+            </span>
+          </label>
           <label style={{ display: "block", fontSize: 14, margin: "4px 0" }}>
             <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} data-accord /> {P.accord}
           </label>
           <label style={{ display: "block", fontSize: 14, margin: "4px 0" }}>
             <input type="checkbox" checked={moi} onChange={(e) => setMoi(e.target.checked)} data-moi /> {P.moi}
           </label>
-          <button type="submit" style={fort} disabled={occupe !== null || !prenom.trim() || !photo || !accord}>
-            {P.ajouter}
+          {manque && (
+            <p style={{ color: "#b91c1c", margin: "6px 0" }} data-manque>
+              {manque}
+            </p>
+          )}
+          <button type="submit" style={{ ...fort, fontSize: 15, padding: "8px 16px" }} disabled={occupe !== null}>
+            {occupe === "ajouter" ? "…" : P.ajouter}
           </button>
         </form>
       )}

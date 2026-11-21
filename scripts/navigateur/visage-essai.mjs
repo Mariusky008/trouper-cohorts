@@ -7,8 +7,9 @@
 // ils rient ensemble. « 📷 Ma figurine fait ma tête » : la caméra s'ouvre ; un sourire, la figurine sourit ; un rire,
 // elle rit ; la tête penchée, la sienne aussi. Ses réactions sont notées pendant que la vidéo passe ; « ▶ Revoir avec mes
 // réactions » : la vidéo repart, sa figurine rejoue son rire à la bonne seconde (la caméra ne compte plus). La page de
-// l'administrateur : les trois, leurs cinq expressions, « ▶ Ouvrir le salon d'essai ». Ni débordement, ni le mot
-// « exemple », ni erreur.
+// l'administrateur : les trois, leurs cinq expressions, « ▶ Ouvrir le salon d'essai » ; ajouter Elise — la zone « 📷
+// Choisir sa photo » se voit, « Ajouter » sans photo le dit, la photo choisie montre sa vignette. Ni débordement, ni le
+// mot « exemple », ni erreur.
 import sharp from "sharp";
 import { BASE, D, F, lancer } from "./commun.mjs";
 
@@ -173,6 +174,19 @@ ok(await attendre(async () => (await a.locator("[data-personne]").count()) === 3
 const carteLea = a.locator('[data-personne="a1a1a1a1a1a1"]');
 ok((await carteLea.getAttribute("data-faites")) === "7" && (await carteLea.locator("[data-expression]").count()) === 5 && /c’est moi/.test(await texte(carteLea)) && (await a.locator('[data-salon-essai][href="/univers/visage"]').count()) === 1, "Léa : les sept étapes, ses cinq expressions, « c'est moi » ; « ▶ Ouvrir le salon d'essai »");
 await a.screenshot({ path: `${D}/visage-essai-4-atelier.png`, fullPage: true });
+// (ajouter quelqu'un : la zone de la photo se voit ; « Ajouter » dit ce qui manque, au lieu de ne pas répondre)
+const form = a.locator("[data-ajouter-personne]");
+ok(/Choisir sa photo/.test(await texte(form.locator("[data-zone-photo]"))) && (await form.locator("[data-zone-photo]").isVisible()), "« Ajouter une personne » : la zone « 📷 Choisir sa photo » se voit");
+await form.locator("[data-prenom]").fill("Elise");
+await form.locator("[data-accord]").check();
+await form.locator('button[type="submit"]').click();
+ok(await attendre(async () => /Choisis d’abord sa photo/.test(await texte(form.locator("[data-manque]"))), 4000), "sans photo, « Ajouter » le dit : « Choisis d'abord sa photo »");
+const portrait = await sharp({ create: { width: 600, height: 800, channels: 3, background: "#d4a373" } }).png().toBuffer();
+await form.locator("[data-photo]").setInputFiles({ name: "elise.png", mimeType: "image/png", buffer: portrait });
+ok(await attendre(async () => (await form.locator("[data-vignette-photo]").count()) === 1 && /Sa photo est choisie/.test(await texte(form.locator("[data-zone-photo]")))), "la photo choisie : sa vignette, « ✓ Sa photo est choisie »");
+await a.screenshot({ path: `${D}/visage-essai-5-ajouter.png` });
+await form.locator('button[type="submit"]').click();
+ok(await attendre(async () => (await a.locator("[data-personne]").count()) === 4 && /« Elise » est dans l’essai/.test(await texte(a.locator("[data-note-visage]")))), "« Ajouter » : Elise est dans l'essai (quatre personnes)");
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs[0]})` : ""}`);
 await b.close();
