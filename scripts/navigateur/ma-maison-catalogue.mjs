@@ -114,6 +114,10 @@ const fig = await scene.locator(".mmc-fig").boundingBox();
 ok(fig && Math.abs(fig.x + fig.width / 2 - (pano.x + 0.3 * pano.width)) < 4 && Math.abs(fig.y + fig.height - (pano.y + 0.86 * pano.height)) < 4 && Math.abs(fig.height - 0.3 * pano.height) < 4 && fig.x >= vue.x - 1 && fig.x + fig.width <= vue.x + vue.width + 1, `sa figurine à sa place, entière à l'écran (${Math.round(fig?.x + fig?.width / 2)} pt, ${Math.round(fig?.height)} pt de haut)`);
 ok((await scene.locator(".mmc-indice").count()) === 1 && /Ta maison se remplit toute seule[\s\S]*Touche les objets de ta pièce/.test(await scene.locator(".mmc-indice").innerText()) && (await p.locator(".mmc-vide").count()) === 0 && !/Glisse/.test(await p.locator("body").innerText()), "l'arrivée : « Ta maison se remplit toute seule… », « Touche les objets de ta pièce », dans la pièce (plus de « Glisse pour faire le tour »)");
 await p.screenshot({ path: `${D}/ma-maison-3-chez-moi.png` });
+// (📼 section 31 de Découvrir : « 📼 Revoir », ses vidéos déjà vues — aucune encore)
+await scene.locator('[data-puce="revoir"]').click();
+ok(await attendre(async () => /Tes vidéos déjà vues viendront ici/.test(await p.locator("[data-feuille-revoir]").innerText())), "« 📼 Revoir » : la feuille de ses vidéos déjà vues (aucune encore)");
+await p.locator("[data-feuille-revoir] button[aria-label='Fermer']").click();
 
 // ─── toucher les objets ───
 const toucher = async (zone) => {

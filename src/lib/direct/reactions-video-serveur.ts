@@ -31,6 +31,7 @@ import { cleProfil } from "./autour-serveur";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { dejaVue, maVideo } from "./tele-du-jour-serveur";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
+import { noterARevoir, revue } from "./revoir-serveur";
 import {
   PHRASES_REACTIONS,
   REACTIONS_VIDEO,
@@ -130,6 +131,8 @@ export async function noterReaction(
   if (!(await ecrireJson(supabase, chemin, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   if (!prevenirLui || !pour || !r.texte) return { ok: true, reaction: r };
   const prenom = await prenomDuProche(supabase, moi.id);
+  // (📼 section 31 : dans sa boîte « à revoir »)
+  await noterARevoir(supabase, pour.h, { id: v.id, titre: v.titre }, prenom).catch(() => undefined);
   return {
     ok: true,
     reaction: r,
@@ -189,6 +192,8 @@ export async function apresLaVue(supabase: Supabase, moi: Habitant, video: strin
   await ecrireJson(supabase, chemin, { ...fiche, ...(eux.length ? { prevenus } : {}) } satisfies FicheReactions);
   if (!v || !eux.length) return;
   const prenom = await prenomDuProche(supabase, moi.id);
+  // (📼 section 31 : la vidéo va dans leur boîte « à revoir », avec mon prénom)
+  await Promise.all(eux.map((p) => noterARevoir(supabase, p.h, { id: v.id, titre: v.titre }, prenom).catch(() => undefined)));
   const notif: Notif = { titre: PHRASES_REACTIONS.aRegarde(prenom, titreCourt(v.titre)), corps: PHRASES_REACTIONS.revoisLa, url: adresseVideo(v.id), tag: `tele-${v.id}` };
   await Promise.all(eux.map((p) => prevenirUnHabitantAppli(supabase, p.h, notif).catch(() => "rien")));
 }
@@ -202,7 +207,7 @@ export async function reactionsDesProches(supabase: Supabase, moi: Habitant, id:
   const v = await maVideo(supabase, moi.id, id);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const maCle = cleProfil(moi.id);
-  const [mutuels, mienne, vue] = await Promise.all([prochesQuiLontVue(supabase, moi.id, v.id), lireFiche(supabase, cheminReactions(v.id, moi.id)), dejaVue(supabase, moi.id, v.id)]);
+  const [mutuels, mienne, vue] = await Promise.all([prochesQuiLontVue(supabase, moi.id, v.id), lireFiche(supabase, cheminReactions(v.id, moi.id)), dejaVue(supabase, moi.id, v.id), revue(supabase, moi.id, v.id).catch(() => undefined)]);
   const sans = await Promise.all(
     mutuels.map(async (x): Promise<ProcheDevantVideo> => ({ cle: cleProfil(x.h), prenom: await prenomDuProche(supabase, x.h), figurine: null, vu: x.vu, reactions: await avecVoix(supabase, v.id, x.h, x.reactions.filter((r) => !r.a || r.a === maCle)) })),
   );

@@ -13,7 +13,8 @@
 // POST { action: "ne-plus-voir" | "revoir", q } → { caches }
 // 🎬 LE LOT D2, LA SÉANCE CHEZ MOI (le salon « chez-<q> » : pouls, écrire, sortir, conversation comme un salon ouvert)
 // POST { action: "entrer-chez", chez: "moi" | <clé>, place? } → { ouverture } : ma télé ; chez un proche qui m'invite
-//                                               (`place` : le jeton d'un lien WhatsApp — sa place libre, et proches)
+//                                               (`place` : le jeton d'un lien WhatsApp — sa place libre, et proches ;
+//                                               `video` : 📼 chez moi, « Revoir » une vidéo déjà vue)
 // POST { action: "place" }                     → { lien, prenom } : ➕ un lien qui réserve une place libre de ma télé
 //                                               (six heures, une personne ; `decouvrir.md` section 30)
 // POST { action: "tele", salon, quoi: "video" | "suivante" | "pause" | "jouer", id? } → { seance } : l'hôte mène la télé
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
   }
   // 🎬 la séance chez moi
   if (p.action === "entrer-chez") {
-    const r = await entrerChez(supabase, moi, p.chez, p.place);
+    const r = await entrerChez(supabase, moi, p.chez, p.place, p.video);
     return repondre(r, { ouverture: r.ouverture }, r.figurine ? { figurine: true } : {});
   }
   if (p.action === "tele") {

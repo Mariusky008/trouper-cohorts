@@ -48,6 +48,7 @@ import { chargerYouTube } from "@/app/univers/tele-duo";
 import { TesPassions } from "./tes-passions";
 import { createPortal } from "react-dom";
 import { InviterSurLaVideo } from "./carnet-proches";
+import { RangeeRevoir } from "./revoir";
 import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 import {
@@ -223,6 +224,8 @@ function AccueilDecouvrir({ tele, onRegarder, onPassions }: { tele: TeleDuJour; 
           <span className="td-regarder">▶ Regarder</span>
         </div>
       </button>
+      {/* (📼 section 31 : mes vidéos déjà vues — revois-les, avec les réactions de tes amis) */}
+      <RangeeRevoir />
       <p className="td-slogan">{PS.slogan}</p>
       <SalonsOuverts />
     </section>

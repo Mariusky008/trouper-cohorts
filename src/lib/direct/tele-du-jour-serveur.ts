@@ -28,6 +28,7 @@ import { mettreALaTele } from "./tele-serveur";
 import { surYouTube } from "./tele";
 import { TELE_DU_JOUR, clePoids, melanger, type ListeTele, type TeleDuJour, type VideoTele } from "./tele-du-jour";
 import { videosDeMaPassion } from "./passion-perso-serveur";
+import { ajouterAHistorique } from "./revoir-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Resultat<T> = T & { error?: string; statut?: number };
@@ -122,6 +123,8 @@ export async function noterVue(supabase: Supabase, h: string, id: unknown, o: { 
   const vues = [...(fiche.vues ?? []).filter((x) => x !== v.id), v.id].slice(-TELE_DU_JOUR.vuesGardees);
   const aujourdhui = (fiche.jour === jour ? Number(fiche.aujourdhui) || 0 : 0) + (deja ? 0 : 1);
   if (!(await ecrireJson(supabase, cheminTeleDuJour(h), { ...fiche, vues, jour, aujourdhui } satisfies FicheTeleDuJour))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // (📼 section 31 : elle va dans mon historique — « Revoir »)
+  if (o.illisible !== true) await ajouterAHistorique(supabase, h, v).catch(() => undefined);
   if (o.illisible !== true && !deja) {
     // (une vidéo d'une de mes chaînes n'a pas de thème : rien ne bouge ; celle de ma passion à soi : son poids « perso »)
     const k = clePoids(v);

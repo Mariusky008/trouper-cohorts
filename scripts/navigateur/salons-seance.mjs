@@ -207,6 +207,10 @@ await sam.locator(".so-fermer").click();
 await lea.screenshot({ path: `${D}/salons-seance-3-hote.png` });
 await sam.screenshot({ path: `${D}/salons-seance-4-invite.png` });
 ok(!(await deborde(lea)) && !(await deborde(sam)), "rien ne déborde (la séance)");
+// (📼 « Revoir », section 31 de Découvrir : son salon se rouvre sur la vidéo choisie, depuis le début)
+await lea.goto(`${BASE}/univers/salons?chez=moi&video=${v0}`, { waitUntil: "domcontentloaded" });
+ok(await attendre(lea, async () => (await lea.locator(".so-tele").getAttribute("data-tele")) === v0 && (await lea.locator(".faux-yt").getAttribute("data-yt")) === v0, 15000), "📼 Revoir : son salon se rouvre sur la vidéo choisie");
+ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-yt")) === v0, 12000), "… et Sam, assis là, la revoit avec elle");
 await sam.context().close();
 await lea.context().close();
 
