@@ -66,6 +66,11 @@ proche : une vidéo (ma télé du jour, ou un lien YouTube) à regarder avec lui
 maison le dit (« Pendant ton absence »). Vue ensemble (les deux dans la séance, vingt secondes) : un souvenir commun chez
 les deux, « Gardé avec Sam · 🎬 Vu ensemble, le … ».
 
+**👥 Inviter sans quitter sa télé, 👯 le carnet (21 novembre 2026 ; `ma-maison.md`, section 25)** : dans ma télé du
+jour, « 👥 Inviter » ouvre une feuille sur place (mes proches à cocher, trois au plus ; WhatsApp ; ma télé) ; dans Ma
+maison, « 👯 Mes proches » : le carnet (leur maison, notre conversation, « L'ajouter aussi », ajouter un proche par
+WhatsApp ; « Comme la voient tes proches » dedans).
+
 **🎭 Les gradins des salons ouverts (20 novembre 2026, au soir ; `decouvrir.md`, section 27)** : un décor par lieu (onze
 lieux pour les douze passions), huit emplacements sur deux marches, fabriqués et validés par le propriétaire sur
 `/admin/humain/salons` ; seul un gradin validé va dans les salons (sinon, la pièce). **À faire par le propriétaire, en

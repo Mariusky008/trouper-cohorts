@@ -120,6 +120,13 @@ await lea.locator("#o-decouvrir [data-carte-tele]").click();
 const chezMoi = lea.locator("#o-decouvrir [data-chez-moi]");
 ok(await attendre(lea, async () => /👥 Inviter/.test(await texte(chezMoi))), "« 👥 Inviter », dans la barre de sa télé du jour (comme la maquette)");
 await chezMoi.click();
+// (👥 `ma-maison.md` section 25 : une feuille, sur place — ses proches à cocher, son lien par WhatsApp, sa télé)
+const surPlace = lea.locator("[data-inviter-video]");
+ok(await attendre(lea, async () => (await surPlace.locator(`[data-inviter-proche="${SAM.cle}"]`).count()) === 1) && new URL(lea.url()).pathname === "/collection", "« 👥 Inviter » : ses proches, sur place (elle reste sur sa télé)");
+ok((await surPlace.locator("[data-inviter]").isDisabled()) && decodeURIComponent((await surPlace.locator("[data-lien-whatsapp]").getAttribute("href")) ?? "").includes("/collection?proche="), "… « 🎬 Inviter » attend qu'on choisisse ; son lien par WhatsApp pour les autres");
+await lea.waitForTimeout(300);
+await lea.screenshot({ path: `${D}/salons-seance-0-sur-place.png` });
+await surPlace.locator("[data-aller-tele]").click();
 await lea.waitForURL(/\/univers\/salons\?chez=moi/);
 const seance = lea.locator(".so[data-salon]");
 ok(await attendre(lea, async () => /^chez-/.test((await seance.getAttribute("data-salon")) ?? "") && (await seance.getAttribute("data-hote")) === "1"), "chez elle : la séance (elle en est l'hôte)");

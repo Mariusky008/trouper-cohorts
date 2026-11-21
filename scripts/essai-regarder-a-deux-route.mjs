@@ -101,7 +101,7 @@ const dossier = `decouvrir/salons/prives/${SEANCE}`;
 const t0 = await lire(`${dossier}/tele.json`);
 ok(/^chez-/.test(SEANCE) && t0.video?.id === V.id && t0.pause === 0, `sa séance est prête : la vidéo, en pause au début (${SEANCE})`);
 const e0 = await lire(`${dossier}/ensemble.json`);
-ok(e0.de === SAM.id && e0.avec === LEA.id && e0.video?.id === V.id && !e0.fait, "… elle attend de la regarder avec Léa");
+ok(e0.de === SAM.id && [e0.avec].flat()[0] === LEA.id && e0.video?.id === V.id && !e0.fait, "… elle attend de la regarder avec Léa");
 
 // chez Léa : l'invitation, et sa maison qui le dit
 const acc = await appel(LEA, `${SALONS}?accueil=1`);
@@ -144,6 +144,19 @@ ok(vu?.avec?.prenom === "Sam" && vu.avec.cle === CLE_SAM && /^🎬 Vu ensemble, 
 ok(!objets.includes(SAM.id) && !objets.includes(LEA.id), "… aucun compte n'est montré");
 const e1 = await lire(`${dossier}/ensemble.json`);
 ok(e1.fait > 0, "la séance le retient (une seule fois)");
+
+// ═══ 👥 INVITER SUR CETTE VIDÉO, DEPUIS SA TÉLÉ DU JOUR (section 25) ═══
+const W = tele.videos[1];
+ok((await appel(SAM, SALONS, { action: "inviter-video", id: W.id, t: 42, cles: [] })).statut === 400, "inviter sur une vidéo, personne de choisi : refusé");
+ok((await appel(SAM, SALONS, { action: "inviter-video", id: "zzzzzzzzzzz", t: 0, cles: [CLE_LEA] })).statut === 404, "… une vidéo qui n'est pas à sa télé : refusée");
+ok((await appel(TOM, SALONS, { action: "inviter-video", id: W.id, t: 0, cles: [CLE_LEA] })).statut >= 403, "… Tom, qui n'est pas son proche (ni la vidéo à sa télé) : refusé");
+const iv = await appel(SAM, SALONS, { action: "inviter-video", id: W.id, t: 42, cles: [CLE_LEA] });
+ok(iv.statut === 200 && iv.invites?.[0] === CLE_LEA && iv.titre === W.titre && iv.cle === CLE_SAM, `Sam invite Léa sur « ${iv.titre} », depuis sa télé du jour`);
+const t2 = await lire(`${dossier}/tele.json`);
+ok(t2.video?.id === W.id && t2.pause === 42, "… sa séance se cale sur la vidéo, à la seconde où il en était (42 s), en pause");
+const e2 = await lire(`${dossier}/ensemble.json`);
+ok(e2.de === SAM.id && Array.isArray(e2.avec) && e2.avec[0] === LEA.id && !e2.fait, "… regardée ensemble, elle deviendra un souvenir commun");
+ok((await appel(LEA, `${SALONS}?accueil=1`)).invitations?.[0]?.titre === W.titre, "… Léa est invitée avec la vidéo");
 
 ok(!/exemple/i.test(JSON.stringify([p1, acc, mL, mL2])), "jamais le mot « exemple »");
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nRegarder à deux : tout est bon.");

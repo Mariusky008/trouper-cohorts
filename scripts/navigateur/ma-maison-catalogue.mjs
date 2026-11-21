@@ -104,7 +104,7 @@ ok(pano && Math.abs(pano.width / pano.height - 1024 / 1536) < 0.01 && Math.abs(p
 ok(vue && vue.height > 844 * 0.55, `… une grande carte (${Math.round(vue?.height)} pt de haut)`);
 ok(/^Ma maison$/.test((await scene.locator(".mmc-entete .mmc-nom").innerText()).trim()) && /Hangar|hangar/.test(await scene.locator(".mmc-entete .mmc-ou").innerText()) && (await scene.locator(".mmc-entete .mmc-medaillon img").count()) === 1, `l'en-tête : sa figurine en médaillon, « Ma maison », sa pièce et son moment (${await scene.locator(".mmc-entete .mmc-ou").innerText()})`);
 const gros = scene.locator(".mmc-gros-bouton");
-ok((await gros.count()) === 3 && /Pendant ton absence/.test(await gros.nth(0).innerText()) && /Ajouter chez moi/.test(await gros.nth(1).innerText()) && /Comme la voient tes proches/.test(await gros.nth(2).innerText()), "le bas : « Pendant ton absence », « Ajouter chez moi », « Comme la voient tes proches »");
+ok((await gros.count()) === 3 && /Pendant ton absence/.test(await gros.nth(0).innerText()) && /Ajouter chez moi/.test(await gros.nth(1).innerText()) && /Mes proches/.test(await gros.nth(2).innerText()), "le bas : « Pendant ton absence », « Ajouter chez moi », « 👯 Mes proches »");
 const boites = await Promise.all([0, 1, 2].map((k) => gros.nth(k).boundingBox()));
 ok(boites.every((x) => x && x.y + x.height <= 844 + 1 && x.height >= 56 && x.height < 90), `… les trois à l'écran, de la même taille (${boites.map((x) => Math.round(x?.height)).join(", ")} pt)`);
 ok(/Aujourd’hui, si tu veux/i.test(await scene.locator(".mmc-puces").innerText()) && (await scene.locator('.mmc-puce[data-puce="tele"]').getAttribute("href")) === "/collection#decouvrir", "« Aujourd'hui, si tu veux » : « 📺 Ma télé »");

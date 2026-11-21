@@ -135,9 +135,20 @@ const attendre = async (p, f, ms = 15000) => {
 };
 const lea = await tel(LEA, true);
 await lea.goto(`${BASE}/univers/maison`, { waitUntil: "domcontentloaded" });
-const bouton = lea.locator('[data-geste="qui"]');
-ok(await attendre(lea, async () => (await bouton.getAttribute("data-visibilite")) === "proches" && /Comme la voient tes proches/.test(await bouton.innerText())), "👀 « Comme la voient tes proches » : ses proches, d'office");
+// (👯 section 25 : le carnet de ses proches — Sam, sa maison, leur conversation ; son lien par WhatsApp ; et « 👀 Comme
+// la voient tes proches », dedans)
+const bouton = lea.locator('[data-geste="proches"]');
+ok(await attendre(lea, async () => (await bouton.getAttribute("data-visibilite")) === "proches" && /Mes proches/.test(await bouton.innerText())), "👯 « Mes proches » : sa maison, à ses proches d'office");
 await bouton.click();
+const carnet = lea.locator("[data-carnet]");
+ok(await attendre(lea, async () => (await carnet.locator(`[data-mes-proches] [data-proche="${SAM.cle}"]`).count()) === 1), "le carnet : Sam, son proche");
+ok((await carnet.locator(`[data-proche="${SAM.cle}"] [data-sa-maison]`).getAttribute("href")) === `/univers/chez/${SAM.cle}` && (await carnet.locator(`[data-proche="${SAM.cle}"] [data-parler]`).getAttribute("href")) === `/collection?parler=${SAM.cle}#proches`, "… 🏠 sa maison, 💬 leur conversation");
+const wa = decodeURIComponent((await carnet.locator("[data-ajouter-proche] [data-lien-whatsapp]").getAttribute("href")) ?? "");
+ok(wa.startsWith("https://wa.me/?text=") && wa.includes(`/collection?proche=${LEA.cle}#proches`) && /Ajoute-moi sur ClikMe/.test(wa), "« ＋ Ajouter un proche » : son lien, par WhatsApp");
+await lea.waitForTimeout(300);
+await lea.screenshot({ path: `${D}/ma-maison-visite-0-carnet.png` });
+await carnet.locator('[data-geste="qui"]').click();
+ok(await attendre(lea, async () => (await carnet.count()) === 0), "« 👀 Comme la voient tes proches » : le carnet laisse la place à « Qui peut entrer chez moi ? »");
 const feuille = lea.locator("[data-qui-entre]");
 ok(await attendre(lea, async () => (await feuille.locator("[data-visibilite]").count()) === 3 && (await feuille.locator('[data-visibilite="proches"]').getAttribute("aria-pressed")) === "true"), "« Qui peut entrer chez moi ? » : trois choix, « Mes proches » coché");
 await feuille.locator('[data-visibilite="tous"]').click();
@@ -160,7 +171,7 @@ const zoe = await tel(ZOE);
 await zoe.goto(`${BASE}/univers/chez/${LEA.cle}?piece=1`, { waitUntil: "domcontentloaded" });
 const scene = zoe.locator('.mmc-visite[data-visite="ouvert"] .mmc-scene');
 ok(await attendre(zoe, async () => (await scene.locator(".mmc-objet").count()) === 1 && /Chez Léa/.test(await scene.locator(".mmc-nom").innerText())), "l'écran de Zoé : « 🏠 Chez Léa », un seul objet");
-ok((await scene.locator('[data-geste="ajouter"], [data-geste="reglages"], [data-geste="qui"], [data-geste="absence"]').count()) === 0, "… ni ＋, ni ⚙️, ni 👀, ni 🛎️ : ce n'est pas chez elle");
+ok((await scene.locator('[data-geste="ajouter"], [data-geste="reglages"], [data-geste="qui"], [data-geste="proches"], [data-geste="absence"]').count()) === 0, "… ni ＋, ni ⚙️, ni 👯, ni 🛎️ : ce n'est pas chez elle");
 // (🚪 la maquette : d'abord sa porte — on frappe, sa figurine ouvre)
 const porte = scene.locator("[data-porte]");
 ok(await attendre(zoe, async () => /Tu es devant la porte de Léa\. Frappe : sa figurine t’ouvre\./.test(await porte.innerText())), "sa porte : « Tu es devant la porte de Léa. Frappe : sa figurine t'ouvre. »");

@@ -723,3 +723,37 @@ prévenu ; en pause, puis quelques secondes : rien ; le pouls de Léa ne le pose
 chez les deux, une fois, « Gardé avec Sam · 🎬 Vu ensemble, le … », sa vignette YouTube) ; `ma-maison-vie.mjs` (les trois
 boutons ; la feuille ; un lien proposé ; chez Léa, la ligne et la pastille ; « Regarder » : devant la télé de Sam, la
 vidéo y attend).
+
+## 25. 👥 Inviter sans quitter sa télé, et 👯 le carnet de mes proches (21 novembre 2026)
+
+Le propriétaire : « lorsqu'on est dans "Ma télé du jour" […] et qu'on veut inviter quelqu'un, alors au lieu d'avoir
+directement la liste de nos amis ou une possibilité d'envoyer une invitation via WhatsApp pour nous rejoindre sur cette
+vidéo, on est sorti de la page pour se retrouver sur mon salon […] c'est très compliqué. Aussi pour ajouter quelqu'un à
+mes proches il faudrait que je puisse le faire de ma maison aussi et pas que de la messagerie, et que j'aie donc un
+carnet d'adresses dans "ma maison". »
+
+- **👥 Inviter, dans ma télé du jour** : une feuille **sur place** (on reste sur la vidéo) — « 👥 Regarder avec… »,
+  « « … » : tes proches sont invités devant ta télé, à la seconde où tu en es. » Mes proches (des deux côtés) à cocher,
+  **trois au plus** ; « 🎬 Inviter (n) ». Ma séance se cale sur **cette vidéo, à cette seconde, en pause** (on la lance
+  ensemble) ; ils sont invités avec elle (la notification « 🎬 Léa veut regarder « … » avec toi », leur carte « Venir »,
+  « Pendant ton absence » dans leur maison — section 24) ; regardée ensemble, elle devient un souvenir commun, avec
+  chacun de ceux qui étaient là. Puis : « ✓ Invitation envoyée à Sam », **« 📺 Les attendre devant ma télé »**,
+  **« 📲 Leur dire par WhatsApp »** (le lien de ma séance, avec le titre), ou « Continuer ici ».
+  - « 📺 Aller devant ma télé » sans inviter personne ; et pour **quelqu'un qui n'est pas encore mes proches** : « 📲
+    Envoie-lui ton lien par WhatsApp » (mon lien de proche, `/collection?proche=<clé>`).
+- **👯 Mes proches, dans Ma maison** : le troisième grand bouton du bas (à la place de « 👀 Comme la voient tes
+  proches », qui passe dedans). Le carnet : **mes proches** (leur figurine, « 🟢 Là maintenant », **🏠 sa maison**,
+  **💬 notre conversation**) ; **ceux qui m'ont ajouté** (« ＋ L'ajouter aussi », sur place) ; **ceux qui doivent encore
+  m'ajouter** ; **« ＋ Ajouter un proche »** — mon lien, **par WhatsApp** ou **copié** (« il t'ajoute, tu l'ajoutes, et
+  vous êtes proches ») ; et **« 👀 Comme la voient tes proches · Qui peut entrer chez moi ? »**.
+
+Les textes : `src/lib/direct/carnet-proches.ts` ; les feuilles : `src/app/collection/carnet-proches.tsx`
+(`CarnetDesProches`, `InviterSurLaVideo`). La route : `POST /api/direct/salons-ouverts { action: "inviter-video", id, t,
+cles }` → `{ invites, titre, cle }` (la vidéo doit être à ma télé du jour ; mes proches seulement ; trois au plus) ; le
+souvenir commun se pose avec chacun (`ensemble.json` : `avec`, une liste ; `faits`).
+
+**Les essais** : `essai-regarder-a-deux-route.mjs` (inviter sur une vidéo : personne de choisi, une vidéo hors de sa
+télé, un inconnu : refusés ; la séance calée à 42 s, en pause ; l'invitation avec la vidéo) ; `salons-seance.mjs` (« 👥
+Inviter » : la feuille sur place, Sam à cocher, son lien par WhatsApp, « 📺 Aller devant ma télé ») ;
+`ma-maison-visite.mjs` (le carnet : Sam, sa maison, leur conversation ; son lien par WhatsApp ; « 👀 Comme la voient tes
+proches » ouvre « Qui peut entrer chez moi ? ») ; `ma-maison-catalogue.mjs` (« 👯 Mes proches » en bas).
