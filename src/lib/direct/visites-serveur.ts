@@ -162,7 +162,7 @@ export async function visiterUnivers(supabase: Supabase, visiteur: Habitant | nu
     cles: acces.proche ? f.elements.map((e) => ({ id: e.id, quoi: e.quoi, pourquoi: e.pourquoi, source: e.source, ...(e.zone ? { zone: e.zone } : {}) })) : [],
     souvenirs: poses.map((x) => souvenirVu(x, noms.get(x.de) ?? "Quelqu’un")),
     peutLaisser: Boolean(visiteur && visiteur.id !== h && acces.proche),
-    frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && v.le.startsWith(jour))),
+    frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && jourParis(new Date(v.le)) === jour)),
     mesCadeaux: visiteur ? souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length : 0,
     chezSoi: visiteur?.id === h,
     etagere,
@@ -188,7 +188,7 @@ async function chezQui(supabase: Supabase, visiteur: Habitant, cle: unknown): Pr
 async function noterVisite(supabase: Supabase, de: string, h: string): Promise<boolean> {
   const jour = jourParis();
   const visites = await lireVisites(supabase, h);
-  if (visites.some((v) => v.de === de && v.le.startsWith(jour))) return false;
+  if (visites.some((v) => v.de === de && jourParis(new Date(v.le)) === jour)) return false;
   await ecrireJson(supabase, cheminVisites(h), { liste: [...visites, { de, le: new Date().toISOString() }].slice(-40) });
   return true;
 }
@@ -434,7 +434,7 @@ export async function maisonVisitee(supabase: Supabase, visiteur: Habitant | nul
     maison: { piece, scene, figurine, contenu, ...vie },
     proche: acces.proche,
     chezSoi,
-    frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && v.le.startsWith(jour))),
+    frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && jourParis(new Date(v.le)) === jour)),
     ...(visiteur && acces.proche && !chezSoi ? { peutLaisser: true, mesCadeaux: souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length } : {}),
     ...(nouveaux.length ? { nouveaux } : {}),
     ...(question ? { question } : {}),
