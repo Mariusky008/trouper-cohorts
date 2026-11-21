@@ -26,6 +26,7 @@ import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
+import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import {
   GESTES_SALON,
   INVITES_MAX,
@@ -51,6 +52,9 @@ const POULS_MS = 4000;
 const BULLE_MS = 6500;
 type Lecteur = {
   destroy?: () => void;
+  mute?: () => void;
+  unMute?: () => void;
+  setVolume?: (v: number) => void;
   playVideo?: () => void;
   pauseVideo?: () => void;
   seekTo?: (t: number, loin: boolean) => void;
@@ -344,19 +348,14 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // (sur un ordinateur, la télé ne dépasse pas 680 points : la pièce et ses figurines tiennent dans l'écran)
   const lTele = Math.min(L, 680);
   const H = Math.round(Math.min(Math.max(L * 0.82, 260), 400));
-  const decor = o.decor;
-  // (l'image de la pièce — celle de la messagerie, en hauteur, le 20 novembre 2026 — couvre la bande, posée sur son sol)
-  const ratio = decor ? decor.panorama.largeur / Math.max(1, decor.panorama.hauteur) : 1;
-  const lPano = Math.max(L, H * ratio);
-  const hPano = lPano / Math.max(ratio, 0.01);
-  const tx = decor ? Math.min(0, Math.max(L - lPano, L / 2 - decor.centre.x * lPano)) : 0;
-  const ty = Math.min(0, H - hPano);
-  // 🎭 (section 27) LE GRADIN DE SA PASSION, s'il est validé : l'image carrée couvre la bande, posée sur son sol, assez
-  // petite pour que toutes les têtes se voient (sur un ordinateur, les côtés : sa vignette floue) ; ses huit emplacements
+  // 🎭 (21 novembre 2026, le propriétaire : « comme la photo 2 ») TOUJOURS LE GRADIN — plus jamais la pièce : le décor
+  // validé de sa passion (l'image carrée posée sur son sol, assez petite pour que toutes les têtes se voient ; sur un
+  // ordinateur, les côtés : sa vignette floue), sinon le fond sombre et les places du plan ; la séance : ses quatre places
   const gradin = prive ? null : o.gradin;
+  const plan: readonly PlaceGradin[] = gradin?.places ?? (prive ? PLAN_SEANCE : PLAN_GRADIN);
   const rG = gradin ? gradin.image.largeur / Math.max(1, gradin.image.hauteur) : 1;
-  const hautG = gradin ? Math.max(0, Math.min(...gradin.places.map((p) => p.y - p.hauteur)) - 0.05) : 0;
-  const hG = gradin ? Math.min(Math.max(L / rG, H), H / Math.max(0.3, 1 - hautG)) : 0;
+  const hautG = Math.max(0, Math.min(...plan.map((p) => p.y - p.hauteur)) - 0.05);
+  const hG = Math.min(Math.max(L / rG, H), H / Math.max(0.3, 1 - hautG));
   const lG = hG * rG;
   const gx = (L - lG) / 2;
   const gy = H - hG;
@@ -372,20 +371,16 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   }
   // (🎭 dans un gradin, chacun se voit toujours devant, au milieu : sa place et la première s'échangent, pour lui seul)
   const kMoi = places.get(o.moi);
-  const vue = (k: number) => (gradin && kMoi !== undefined ? (k === kMoi ? 0 : k === 0 ? kMoi : k) : k);
+  const vue = (k: number) => (kMoi !== undefined ? (k === kMoi ? 0 : k === 0 ? kMoi : k) : k);
   const ou = (q: string) => {
     const k = places.get(q);
     if (k === undefined) return null;
-    if (gradin) {
-      const g = gradin.places[vue(k)];
-      return g ? { x: gx + g.x * lG, y: gy + g.y * hG, h: g.hauteur * hG } : null;
-    }
-    const pl = PLACES_DU_SALON[k];
-    return pl ? { x: pl.x * L, y: pl.y * H, h: pl.h * H } : null;
+    const g = plan[vue(k)];
+    return g ? { x: gx + g.x * lG, y: gy + g.y * hG, h: g.hauteur * hG } : null;
   };
-  // (🎭 les places libres du gradin : elles brillent doucement)
+  // (🎭 les places libres : elles brillent doucement)
   const vues = new Set([...places.values()].map(vue));
-  const libres = gradin ? gradin.places.map((g, k) => ({ g, k })).filter((x) => !vues.has(x.k)) : [];
+  const libres = plan.map((g, k) => ({ g, k })).filter((x) => !vues.has(x.k));
 
   return (
     <main className={`so${prive ? " so-seance" : ""}`} data-salon={salon.id} data-maison={salon.maison} data-presents={ici.length} data-hote={seance?.hote ? "1" : undefined}>
@@ -414,27 +409,22 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
 
       <div className="so-scene" ref={boite}>
         {seance ? (
-          <TeleDeLaSeance salon={salon.id} seance={tele} hote={seance.hote} videos={o.tele.videos} decalage={decalage} largeur={lTele} onSeance={setTele} dire={dire} />
+          <TeleDeLaSeance salon={salon.id} seance={tele} hote={seance.hote} prenomHote={seance.prenom} videos={o.tele.videos} decalage={decalage} largeur={lTele} onSeance={setTele} dire={dire} />
         ) : (
           <TeleDuSalon videos={o.tele.videos} decalage={decalage} largeur={lTele} />
         )}
-        <div className="so-piece" style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-decor={gradin ? "" : (decor?.piece ?? "")} data-gradin={gradin?.id}>
-          {gradin ? (
+        <div className="so-piece" style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-gradin={gradin?.id ?? "plan"}>
+          {gradin && (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="so-pano so-gradin" src={gradin.image.src} srcSet={gradin.image.srcset} sizes={`${Math.round(lG)}px`} alt="" style={{ width: lG, height: hG, transform: `translate(${gx}px, ${gy}px)`, backgroundImage: `url(${gradin.image.flou})` }} />
               <span className="so-gradin-voile" aria-hidden="true" />
-              {L > 0 &&
-                libres.map(({ g, k }) => (
-                  <span key={k} className="so-libre" data-libre={k} aria-hidden="true" style={{ left: gx + g.x * lG, top: gy + g.y * hG, width: g.hauteur * hG * 0.78, height: g.hauteur * hG * 0.22 }} />
-                ))}
             </>
-          ) : (
-            decor && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="so-pano" src={decor.panorama.src} srcSet={decor.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPano, transform: `translate(${tx}px, ${ty}px)`, backgroundImage: `url(${decor.panorama.flou})` }} />
-            )
           )}
+          {L > 0 &&
+            libres.map(({ g, k }) => (
+              <span key={k} className="so-libre" data-libre={k} aria-hidden="true" style={{ left: gx + g.x * lG, top: gy + g.y * hG, width: g.hauteur * hG * 0.78, height: g.hauteur * hG * 0.22 }} />
+            ))}
           {L > 0 &&
             ici.map((p) => {
               const x = ou(p.q);
@@ -508,7 +498,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           ) : (
             indice && ici.length > 1 && <p className="so-indice">{P.indice}</p>
           )}
-          {gradin && ici.length === 1 && (
+          {!prive && ici.length === 1 && (
             <p className="so-indice" data-seul-salon>
               {P.seulSalon}
             </p>
@@ -787,17 +777,20 @@ function TeleDeLaSeance({
   largeur,
   onSeance,
   dire,
+  prenomHote,
 }: {
   salon: string;
   seance: TeleSeance | null;
   hote: boolean;
+  prenomHote?: string;
   videos: VideoSalon[];
   decalage: React.RefObject<number>;
   largeur: number;
   onSeance: (s: TeleSeance) => void;
   dire: (t: string, ms?: number) => void;
 }) {
-  const [allumee, setAllumee] = useState(false);
+  // (🔊 21 novembre 2026 : plus de « ▶ Allumer » — la vidéo part toute seule à l'arrivée, en silence ; un toucher met le son)
+  const [son, setSon] = useState(false);
   const [simple, setSimple] = useState(false);
   const [choix, setChoix] = useState(false);
   const [occupe, setOccupe] = useState(false);
@@ -863,10 +856,11 @@ function TeleDeLaSeance({
     suivre();
   });
 
-  // (le lecteur de YouTube : créé à l'allumage ; sans commandes chez les invités — c'est l'hôte qui mène)
+  // (le lecteur de YouTube : créé à l'arrivée, en silence, sans ses commandes — c'est l'hôte qui mène)
+  const sansVideo = !seance;
   useEffect(() => {
     const s0 = ref.current;
-    if (!allumee || simple || !s0) return;
+    if (simple || !s0) return;
     let fini = false;
     chargerYouTube()
       .then((YT) => {
@@ -878,11 +872,12 @@ function TeleDeLaSeance({
           host: "https://www.youtube-nocookie.com",
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, start: Math.floor(ici()), playsinline: 1, rel: 0, modestbranding: 1, controls: 0, disablekb: 1, iv_load_policy: 3, origin: window.location.origin },
+          playerVars: { autoplay: 1, mute: 1, start: Math.floor(ici()), playsinline: 1, rel: 0, modestbranding: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, origin: window.location.origin },
           events: {
             onReady: (e: { target?: Lecteur }) => {
               pret.current = true;
               joue.current = { id: s0.video.id, n: s0.n };
+              e.target?.mute?.();
               if (s0.pause !== undefined) e.target?.pauseVideo?.();
               else e.target?.playVideo?.();
               suivre();
@@ -908,11 +903,11 @@ function TeleDeLaSeance({
       lecteur.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allumee, simple]);
+  }, [simple, sansVideo]);
 
   // (toutes les 5 secondes : plus de deux secondes d'écart, on se recale ; arrêté sans que l'hôte l'ait voulu, on repart)
   useEffect(() => {
-    if (!allumee || simple) return;
+    if (simple) return;
     const id = window.setInterval(() => {
       const l = lecteur.current;
       const s = ref.current;
@@ -923,45 +918,36 @@ function TeleDeLaSeance({
       if (l.getPlayerState?.() === 2) l.playVideo?.();
     }, 5000);
     return () => window.clearInterval(id);
-  }, [allumee, simple, ici]);
+  }, [simple, ici]);
 
   // (le lecteur tout simple : chez l'hôte, la suivante à la fin de celle-ci)
   useEffect(() => {
-    if (!allumee || !simple || !hote || !seance || seance.pause !== undefined) return;
+    if (!simple || !hote || !seance || seance.pause !== undefined) return;
     const reste = Math.max(2, (seance.video.duree || 600) - positionSeance(seance, Date.now() + (decalage.current ?? 0)));
     const id = window.setTimeout(() => void commanderRef.current("suivante"), reste * 1000 + 800);
     return () => window.clearTimeout(id);
-  }, [allumee, simple, hote, seance, decalage]);
+  }, [simple, hote, seance, decalage]);
 
   const v = seance?.video;
   const enPause = seance?.pause !== undefined;
+  const mettreLeSon = () => {
+    const l = lecteur.current;
+    l?.unMute?.();
+    l?.setVolume?.(100);
+    if (!enPause) l?.playVideo?.();
+    setSon(true);
+  };
   return (
     <>
-      <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={v?.id ?? ""} data-n={seance?.n ?? 0} data-pause={enPause ? "1" : undefined}>
+      <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={v?.id ?? ""} data-n={seance?.n ?? 0} data-pause={enPause ? "1" : undefined} data-son={son ? "1" : "0"}>
         {!v ? (
           <p className="so-tele-vide">{hote ? P.sansVideos : P.pasDeTele}</p>
-        ) : allumee && simple ? (
-          enPause ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="so-vignette" src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" />
-              <span className="so-en-pause">❚❚</span>
-            </>
-          ) : (
-            <iframe key={`${v.id}-${seance.n}`} className="so-lecteur" data-simple title={v.titre} src={lecteurYouTube(v.id, { debut: Math.floor(ici()) })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
-          )
-        ) : allumee ? (
-          <div ref={boite} className="so-lecteur" />
+        ) : simple ? (
+          !enPause && <iframe key={`${v.id}-${seance.n}-${son ? "son" : "muet"}`} className="so-lecteur" data-simple title={v.titre} src={lecteurYouTube(v.id, { debut: Math.floor(ici()), muet: !son, epure: true })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
         ) : (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="so-vignette" src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" />
-            <button type="button" className="so-allumer" data-allumer onClick={() => setAllumee(true)}>
-              {P.allumer}
-            </button>
-            <span className="so-titre-video">{v.titre}</span>
-          </>
+          <div ref={boite} className="so-lecteur" />
         )}
+        {v && (enPause ? <Affiche v={v} action={hote ? { nom: P.lancer, faire: () => void commander("jouer") } : undefined} attente={hote ? undefined : P.attendLancer(prenomHote || "L’hôte")} /> : <Son actif={son} titre={v.titre} onSon={mettreLeSon} />)}
       </div>
       {hote && (
         <div className="so-commandes" data-commandes style={{ width: largeur || "100%" }}>
@@ -1012,28 +998,23 @@ function TeleDeLaSeance({
 
 // ─── 📺 la télé du salon : la sélection du jour, à la même seconde pour tous ───
 function TeleDuSalon({ videos, decalage, largeur }: { videos: VideoSalon[]; decalage: React.RefObject<number>; largeur: number }) {
-  const [allumee, setAllumee] = useState(false);
+  // (🔊 21 novembre 2026 : la télé du salon part toute seule à l'arrivée, en silence ; un toucher met le son)
+  const [son, setSon] = useState(false);
   const [simple, setSimple] = useState(false);
   const [pos, setPos] = useState(() => positionTele(videos, Date.now() + (decalage.current ?? 0)));
   const hote = useRef<HTMLDivElement>(null);
   const lecteur = useRef<Lecteur | null>(null);
   const maintenant = useCallback(() => positionTele(videos, Date.now() + (decalage.current ?? 0)), [videos, decalage]);
-  // (éteinte : la vignette suit la vidéo du moment)
-  useEffect(() => {
-    if (allumee) return;
-    const id = window.setInterval(() => setPos(maintenant()), 5000);
-    return () => window.clearInterval(id);
-  }, [allumee, maintenant]);
   // (le lecteur tout simple : la suivante à la fin de celle-ci)
   useEffect(() => {
-    if (!allumee || !simple || !pos) return;
+    if (!simple || !pos) return;
     const reste = Math.max(2, (videos[pos.i]?.duree ?? 30) - pos.t);
     const id = window.setTimeout(() => setPos(maintenant()), reste * 1000 + 800);
     return () => window.clearTimeout(id);
-  }, [allumee, simple, pos, videos, maintenant]);
-  // (le lecteur de YouTube : créé à l'allumage, il change de vidéo sans se refaire)
+  }, [simple, pos, videos, maintenant]);
+  // (le lecteur de YouTube : créé à l'arrivée, en silence et sans ses commandes ; il change de vidéo sans se refaire)
   useEffect(() => {
-    if (!allumee || simple) return;
+    if (simple) return;
     let fini = false;
     const p0 = maintenant();
     if (!p0) return;
@@ -1047,9 +1028,12 @@ function TeleDuSalon({ videos, decalage, largeur }: { videos: VideoSalon[]; deca
           host: "https://www.youtube-nocookie.com",
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, start: p0.t, playsinline: 1, rel: 0, modestbranding: 1, controls: 1, iv_load_policy: 3, origin: window.location.origin },
+          playerVars: { autoplay: 1, mute: 1, start: p0.t, playsinline: 1, rel: 0, modestbranding: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, origin: window.location.origin },
           events: {
-            onReady: (e: { target?: Lecteur }) => e.target?.playVideo?.(),
+            onReady: (e: { target?: Lecteur }) => {
+              e.target?.mute?.();
+              e.target?.playVideo?.();
+            },
             // (finie : la suivante, à sa seconde du moment)
             onStateChange: (e: { data?: number }) => {
               if (fini || e.data !== 0) return;
@@ -1078,34 +1062,58 @@ function TeleDuSalon({ videos, decalage, largeur }: { videos: VideoSalon[]; deca
       lecteur.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allumee, simple]);
+  }, [simple]);
 
   const v = pos ? videos[pos.i] : undefined;
+  const mettreLeSon = () => {
+    const l = lecteur.current;
+    l?.unMute?.();
+    l?.setVolume?.(100);
+    l?.playVideo?.();
+    setSon(true);
+  };
   return (
-    <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={v?.id ?? ""}>
+    <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={v?.id ?? ""} data-son={son ? "1" : "0"}>
       {!v ? (
         <p className="so-tele-vide">{P.pasDeTele}</p>
-      ) : allumee && simple && pos ? (
-        <iframe key={`${pos.i}-${v.id}`} className="so-lecteur" data-simple title={v.titre} src={lecteurYouTube(v.id, { debut: pos.t })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
-      ) : allumee ? (
-        <div ref={hote} className="so-lecteur" />
+      ) : simple && pos ? (
+        <iframe key={`${pos.i}-${v.id}-${son ? "son" : "muet"}`} className="so-lecteur" data-simple title={v.titre} src={lecteurYouTube(v.id, { debut: pos.t, muet: !son, epure: true })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
       ) : (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="so-vignette" src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" />
-          <button
-            type="button"
-            className="so-allumer"
-            data-allumer
-            onClick={() => {
-              setPos(maintenant());
-              setAllumee(true);
-            }}
-          >
-            {P.allumer}
-          </button>
-          <span className="so-titre-video">{v.titre}</span>
-        </>
+        <div ref={hote} className="so-lecteur" />
+      )}
+      {v && <Son actif={son} titre={v.titre} onSon={mettreLeSon} />}
+    </div>
+  );
+}
+
+/**
+ * 🔊 (21 novembre 2026) Par-dessus la vidéo : un toucher met le son (« 🔊 Touche pour le son », tant qu'elle est muette) ;
+ * il couvre l'image — ni la barre de YouTube, ni sa pause, ni « Plus de vidéos » ne viennent la distraire.
+ */
+function Son({ actif, titre, onSon }: { actif: boolean; titre: string; onSon: () => void }) {
+  return (
+    <button type="button" className={`so-son${actif ? " a-son" : ""}`} data-son-bouton aria-label={actif ? titre : P.son} onClick={onSon}>
+      {!actif && <span>{P.son}</span>}
+    </button>
+  );
+}
+
+/** ⏸ (la séance en pause) Son affiche, épurée : l'image, le titre, la chaîne ; l'hôte la lance d'un toucher. */
+function Affiche({ v, action, attente }: { v: VideoSalon; action?: { nom: string; faire: () => void }; attente?: string }) {
+  return (
+    <div className="so-affiche" data-affiche>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" />
+      <span className="so-affiche-bas">
+        <b>{v.titre}</b>
+        {v.chaine && <small>{v.chaine}</small>}
+      </span>
+      {action ? (
+        <button type="button" className="so-lancer" data-jouer onClick={action.faire}>
+          {action.nom}
+        </button>
+      ) : (
+        attente && <span className="so-attente">{attente}</span>
       )}
     </div>
   );
@@ -1131,12 +1139,21 @@ const STYLES = `
 .so-titre small{font-size:12.5px;opacity:.75}
 .so-scene{position:relative;width:100%}
 .so-tele{position:relative;margin:0 auto;background:#000;overflow:hidden}
-.so-vignette{width:100%;height:100%;object-fit:cover;opacity:.75;display:block}
 .so-lecteur,.so-lecteur iframe{width:100%;height:100%;border:0;display:block}
-.so-allumer{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:0;border-radius:999px;padding:12px 18px;font:inherit;font-weight:900;font-size:15px;color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);box-shadow:0 10px 24px -10px rgba(255,46,154,.9);white-space:nowrap;cursor:pointer}
-.so-titre-video{position:absolute;left:10px;right:10px;bottom:8px;font-size:12.5px;font-weight:700;text-shadow:0 1px 4px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-son{position:absolute;inset:0;z-index:2;display:flex;align-items:flex-end;justify-content:center;padding:0 0 12px;border:0;background:transparent;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.so-son span{padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.62);font-weight:800;font-size:13.5px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:so-son 2.4s ease-in-out infinite}
+.so-son.a-son{cursor:default}
+@keyframes so-son{0%,100%{opacity:.85}50%{opacity:1}}
+.so-affiche{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:flex-end;background:#000}
+.so-affiche img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.so-affiche::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.78))}
+.so-affiche-bas{position:relative;z-index:1;display:flex;flex-direction:column;gap:2px;padding:0 12px 10px}
+.so-affiche-bas b{font-size:14.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.so-affiche-bas small{font-size:12px;opacity:.8}
+.so-lancer{position:absolute;z-index:2;left:50%;top:42%;transform:translate(-50%,-50%);border:0;border-radius:999px;padding:12px 20px;font:inherit;font-weight:900;font-size:15px;color:#fff;background:rgba(0,0,0,.55);box-shadow:inset 0 0 0 2px rgba(255,255,255,.85);cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.so-attente{position:absolute;z-index:2;left:50%;top:42%;transform:translate(-50%,-50%);padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.6);font-weight:800;font-size:13.5px;white-space:nowrap}
 .so-tele-vide{margin:0;height:100%;display:grid;place-items:center;padding:0 20px;text-align:center;font-size:14px;opacity:.75}
-.so-piece{position:relative;width:100%;overflow:hidden;background:linear-gradient(180deg,#4a2335,#24101b);isolation:isolate}
+.so-piece{position:relative;width:100%;overflow:hidden;background:linear-gradient(180deg,#3a1d2c,#1c0d15);isolation:isolate}
 .so-pano{position:absolute;left:0;top:0;max-width:none;background-size:cover;object-fit:cover;pointer-events:none}
 .so-fig{position:absolute;transform:translateX(-50%);padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;-webkit-tap-highlight-color:transparent;transition:opacity .4s}
 .so-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));user-select:none}
@@ -1155,7 +1172,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-gradin-voile{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 100%,rgba(20,8,14,0) 45%,rgba(20,8,14,.42) 100%)}
 .so-libre{position:absolute;z-index:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,226,160,.75),rgba(255,190,110,.32) 55%,rgba(255,170,90,0));box-shadow:0 0 18px 4px rgba(255,200,120,.28);animation:so-libre 2.8s ease-in-out infinite}
 @keyframes so-libre{0%,100%{opacity:.55}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.so-libre{animation:none;opacity:.8}}
+@media (prefers-reduced-motion:reduce){.so-libre,.so-son span{animation:none;opacity:.8}}
 .so-souvenir{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px;background:rgba(255,154,60,.92);color:#2b1b12;font-weight:800}
 .so-indice[data-seul-salon]{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px}
 .so-indice{position:absolute;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12.5px;white-space:nowrap;z-index:950}
@@ -1217,7 +1234,6 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-commandes{display:flex;gap:8px;justify-content:center;margin:8px auto 0;flex-wrap:wrap}
 .so-commandes button{border:0;border-radius:999px;padding:8px 14px;font:inherit;font-weight:800;font-size:13.5px;background:rgba(255,255,255,.12);color:#FFF4E6;cursor:pointer}
 .so-commandes button:disabled{opacity:.5}
-.so-en-pause{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:34px;font-weight:900;text-shadow:0 2px 10px #000}
 .so-seance .so-scene{padding-bottom:4px}
 .so-conv p.moi b{color:#ff8fc8}
 .so-conv .vide{opacity:.55}

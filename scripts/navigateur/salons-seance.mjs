@@ -79,6 +79,9 @@ window.YT = { Player: function (el, o) {
   self.seekTo = function (t) { base = t; t0 = Date.now(); d.dataset.recale = String(Math.round(t)); };
   self.getCurrentTime = function () { return etat === 1 ? base + (Date.now() - t0) / 1000 : base; };
   self.getPlayerState = function () { return etat; };
+  self.mute = function () { d.dataset.muet = "1"; };
+  self.unMute = function () { d.dataset.muet = ""; };
+  self.setVolume = function () {};
   self.destroy = function () { d.remove(); };
   setTimeout(function () { o.events && o.events.onReady && o.events.onReady({ target: self }); }, 10);
 } };
@@ -136,8 +139,11 @@ ok(/Invite tes proches/.test(await texte(lea.locator("[data-note]"))), "« Invit
 ok((await lea.locator("[data-commandes] [data-pause]").count()) === 1 && (await lea.locator("[data-commandes] [data-suivante]").count()) === 1 && (await lea.locator("[data-commandes] [data-choisir]").count()) === 1, "ses commandes : ❚❚ Pause, ⏭ Suivante, 📺 Choisir");
 ok((await lea.locator("[data-etagere]").count()) === 0 && /Tu mènes la télé/.test(await texte(lea.locator(".so-info"))), "… « Tu mènes la télé » (pas d'étagère : c'est chez elle)");
 const v0 = await lea.locator(".so-tele").getAttribute("data-tele");
-await lea.locator("[data-allumer]").click();
-ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === v0), `« ▶ Allumer » : sa télé du jour (${v0})`);
+// (🔊 21 novembre 2026 : sa télé du jour part toute seule, en silence ; 🎭 quatre places, sans pièce)
+ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === v0 && (await lea.locator(".faux-yt").getAttribute("data-muet")) === "1") && (await lea.locator("[data-allumer]").count()) === 0, `sa télé du jour part toute seule, en silence (${v0})`);
+ok((await lea.locator('.so-piece[data-gradin="plan"]').count()) === 1 && (await lea.locator(".so-libre").count()) === 3, "… quatre places, comme un salon (trois brillent, libres)");
+await lea.locator("[data-son-bouton]").click();
+ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-muet")) === ""), "un toucher : le son");
 
 // inviter Sam
 await lea.locator("[data-inviter]").click();
@@ -168,13 +174,14 @@ ok(/C’est Léa qui mène la télé/.test(await texte(sam.locator(".so-info")))
 ok(await attendre(sam, async () => (await sam.locator(".so-fig").count()) === 2), "deux figurines dans la pièce de Léa");
 ok(/2 ici · 2 places libres · 4 places/.test(await texte(sam.locator("[data-places]"))), `« ${await texte(sam.locator("[data-places]"))} » (quatre places chez soi)`);
 ok(await attendre(lea, async () => (await lea.locator(".so-fig").count()) === 2, 12000), "… Léa le voit s'asseoir (le pouls)");
-await sam.locator("[data-allumer]").click();
-ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-yt")) === v0), "Sam allume : la même vidéo");
+ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-yt")) === v0), "chez Sam : la même vidéo, partie toute seule");
 
 // ═══ LÉA MÈNE LA TÉLÉ ═══
 await lea.locator('[data-commandes] [data-pause="pause"]').click();
 ok(await attendre(lea, async () => (await lea.locator(".so-tele").getAttribute("data-pause")) === "1" && (await lea.locator(".faux-yt").getAttribute("data-pause")) === "1", 3000), "❚❚ Pause : chez Léa, tout de suite");
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "1", 12000), "… et chez Sam");
+ok(await attendre(sam, async () => /Léa va lancer la vidéo/.test(await texte(sam.locator("[data-affiche]"))), 6000) && (await lea.locator("[data-affiche] [data-jouer]").count()) === 1, "en pause : son affiche (l'image, le titre) — « ▶ Lancer la vidéo » chez Léa, « Léa va lancer la vidéo » chez Sam");
+await sam.screenshot({ path: `${D}/salons-seance-3b-affiche.png` });
 ok(/Reprendre/.test(await texte(lea.locator("[data-commandes] [data-pause]"))), "« ▶ Reprendre »");
 await lea.locator('[data-commandes] [data-pause="reprendre"]').click();
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "", 12000), "▶ Reprendre : chez Sam aussi");

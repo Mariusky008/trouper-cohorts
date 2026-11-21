@@ -219,6 +219,11 @@ export const PHRASES_SALONS = {
   regles: "Relu avant d’apparaître · ni vocal ni photo ici · on ne voit que ton prénom et ta figurine",
   tele: "📺 La sélection du jour, la même seconde pour tout le salon",
   allumer: "▶ Allumer la télé du salon",
+  /** 🔊 (21 novembre 2026) la vidéo part toute seule, en silence : un toucher sur l'image met le son */
+  son: "🔊 Touche pour le son",
+  /** (en pause : l'hôte la lance d'un toucher ; chez ses proches, on attend) */
+  lancer: "▶ Lancer la vidéo",
+  attendLancer: (prenom: string) => `${prenom} va lancer la vidéo`,
   pasDeTele: "La télé du salon s’allume avec la sélection du jour.",
   ecrire: "Écris au salon",
   refus: (r: string) => `🚫 Ce message ne part pas : ${r}.`,

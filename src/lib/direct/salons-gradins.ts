@@ -144,6 +144,18 @@ export const PLAN_GRADIN: readonly PlaceGradin[] = [
   { x: 0.8, y: 0.6, hauteur: 0.21 },
 ];
 
+/**
+ * 🛋️ (21 novembre 2026, « Ma télé du jour » et la séance chez moi : « la même chose, mais avec seulement 4 places pour
+ * nos amis ») Les quatre places d'une séance, sans décor : les deux du milieu devant, une de chaque côté — plus grandes
+ * que celles d'un salon de huit.
+ */
+export const PLAN_SEANCE: readonly PlaceGradin[] = [
+  { x: 0.375, y: 0.92, hauteur: 0.34 },
+  { x: 0.625, y: 0.92, hauteur: 0.34 },
+  { x: 0.14, y: 0.86, hauteur: 0.3 },
+  { x: 0.86, y: 0.86, hauteur: 0.3 },
+];
+
 const fraction = (v: unknown) => {
   const n = Number(v);
   return Number.isFinite(n) && n >= 0 && n <= 1 ? Math.round(n * 1000) / 1000 : null;

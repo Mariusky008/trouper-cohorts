@@ -1238,3 +1238,34 @@ deux : la tête recalée colle à la tête habituelle ; l'expression entière ga
 découpe » redécoupe sans le moteur) ; `visage-essai.mjs` (le corps sans sa tête, fait d'office pour des figurines
 découpées avant).
 
+
+## 29. Les salons comme l'essai du visage : le gradin partout, la vidéo qui part seule (21 novembre 2026)
+
+Le propriétaire, captures à l'appui (le salon de l'humour dans sa pièce, avec « ▶ Allumer la télé du salon » ; le salon
+d'essai du visage) : « c'est toujours l'ancienne version […] je ne veux pas de ce bouton "allumer" qui sert à rien, je
+veux directement quand j'arrive sur le salon que la vidéo se déclenche, donc pas […] beaucoup de choses distrayantes avec
+le bouton pause, la barre de progression etc. mais plutôt [une affiche] plus épurée et directe dans l'action ». Puis, à
+nos questions : la vidéo démarre seule, en silence, un toucher met le son (« Oui ») ; toujours le gradin, comme l'essai
+(« Oui »).
+
+- **Toujours le gradin** (les salons ouverts et la séance chez moi) : le décor validé de la passion s'il y en a un
+  (section 27) ; sinon **le fond sombre** de l'essai du visage et les places du plan (`PLAN_GRADIN`, huit) — plus jamais
+  la pièce. Chacun se voit devant, au milieu ; les places libres brillent. La séance : **quatre places**, plus grandes
+  (`PLAN_SEANCE` : les deux du milieu devant, une de chaque côté). (Le serveur envoie encore la pièce, pour les cartes de
+  Découvrir ; l'écran du salon ne s'en sert plus.)
+- **La vidéo part toute seule** à l'arrivée, **en silence** (un téléphone ne laisse pas une vidéo démarrer seule avec le
+  son) : plus de « ▶ Allumer » ; le lecteur de YouTube **sans ses commandes** (ni barre, ni pause, ni « Plus de
+  vidéos » : un voile transparent couvre l'image). **« 🔊 Touche pour le son »** : un toucher n'importe où sur la vidéo
+  met le son, l'étiquette s'en va.
+- **La séance en pause** : son **affiche**, épurée — l'image de la vidéo, son titre, sa chaîne ; chez l'hôte, « ▶ Lancer
+  la vidéo » ; chez ses proches, « Léa va lancer la vidéo ». (L'hôte garde ❚❚ Pause, ⏭ Suivante, 📺 Choisir, sous la
+  télé.)
+
+**Les essais** : `salons-ouverts.mjs` (le gradin sans décor : le fond sombre, sept places qui brillent, sa figurine en
+grand ; plus de « Allumer » ; la vidéo du moment part seule, en silence ; « 🔊 Touche pour le son » ; un toucher : le son)
+; `salons-seance.mjs` (sa télé du jour part seule, en silence ; quatre places ; le son ; en pause : l'affiche, « ▶ Lancer
+la vidéo » chez Léa, « Léa va lancer la vidéo » chez Sam) ; `salons-gradins.mjs` (un décor validé : comme avant).
+
+**La suite** (le lot B, décidé le même jour) : « Ma télé du jour » devient ma séance — le même salon à quatre places ; mes
+amis qui ont déjà vu la vidéo y rejouent leurs réactions ; une place libre (＋) ouvre mon carnet, ou envoie un lien
+WhatsApp qui assoit la personne à cette place (et nous rend proches).
