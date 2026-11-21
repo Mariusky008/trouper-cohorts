@@ -662,10 +662,28 @@ const MEMES_IA = [
   { texte: "Aujourd’hui, mon énergie est à cent pour cent. Demain, on verra.", sentiment: "euphorie", danse: true },
 ];
 
+// ⏱️ (21 novembre 2026, « la vitesse ») POUR MESURER, PAS POUR LES ESSAIS : `FAUX_LATENCE=80` fait attendre chaque
+// demande 80 ms (le vrai Supabase est loin du serveur, l'aller-retour se compte) ; `/__compte` dit combien de demandes
+// sont arrivées, par sorte (`?zero=1` remet à zéro) — de quoi voir combien d'allers-retours fait chaque écran ;
+// `FAUX_JOURNAL=1` écrit chaque demande, dans l'ordre (ce qui attend quoi).
+const LATENCE = Math.max(0, Number(process.env.FAUX_LATENCE) || 0);
+const compte = { total: 0, base: 0, stockage: 0, auth: 0 };
 http
   .createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+      if (url.pathname === "/__compte") {
+        const avant = { ...compte };
+        if (url.searchParams.get("zero")) for (const k of Object.keys(compte)) compte[k] = 0;
+        res.writeHead(200, { "content-type": "application/json" });
+        return res.end(JSON.stringify(avant));
+      }
+      if (url.pathname.startsWith("/rest/") || url.pathname.startsWith("/storage/") || url.pathname.startsWith("/auth/")) {
+        compte.total += 1;
+        compte[url.pathname.startsWith("/rest/") ? "base" : url.pathname.startsWith("/storage/") ? "stockage" : "auth"] += 1;
+        if (process.env.FAUX_JOURNAL) console.log(`[journal] ${Date.now() % 100000} ${req.method} ${decodeURIComponent(url.pathname).replace("/storage/v1/object/", "S ").replace("/rest/v1/", "R ")}${url.search.length < 80 ? url.search : ""}`);
+        if (LATENCE) await new Promise((fini) => setTimeout(fini, LATENCE));
+      }
       // LE NAVIGATEUR Y ÉCRIT DIRECTEMENT (adresse signée d'envoi) : le vrai répond au CORS, lui aussi.
       res.setHeader("access-control-allow-origin", "*");
       res.setHeader("access-control-allow-headers", "*");

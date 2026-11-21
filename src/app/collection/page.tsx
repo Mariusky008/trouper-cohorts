@@ -3,6 +3,7 @@
 // Resserré sur le mème le 7 novembre 2026 : l'album des commerçants et « Ce mois-ci » sont partis (les cartes de fidélité
 // commencées restent sur la page de chaque commerçant, `/f/<slug>`). Ici, côté serveur, il ne reste que les villes où
 // ClikMe a des commerces : « Crée ta figurine » en demande une à qui n'a pas encore de compte. Voir `docs/figurines.md` (9.0).
+import { createHash } from "node:crypto";
 import type { Metadata, Viewport } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { villeSlug } from "@/lib/direct/ville";
@@ -50,26 +51,33 @@ async function commercesClikMe(supabase: ReturnType<typeof createAdminClient>): 
   return lignes;
 }
 
-/** Les villes des commerces ClikMe (la sienne d'abord, puis les plus fournies). */
-async function villesClikMe(): Promise<{ slug: string; nom: string }[]> {
+/**
+ * Les villes des commerces ClikMe (la sienne d'abord, puis les plus fournies) ; et ⚡ l'empreinte de son compte (21
+ * novembre 2026) : ce que ce téléphone garde de ses écrans est rangé sous elle (`memoire-locale.ts`) — un autre compte sur
+ * le même téléphone ne voit jamais ce que voyait le premier.
+ */
+async function villesClikMe(): Promise<{ villes: { slug: string; nom: string }[]; qui: string }> {
   try {
     const supabase = createAdminClient();
     const [data, moi] = await Promise.all([commercesClikMe(supabase), habitantCourant(supabase).catch(() => null)]);
+    const qui = moi?.id ? createHash("sha256").update(`clikme-memoire:${moi.id}`).digest("hex").slice(0, 16) : "";
     const lignes = data.filter((x) => /^[a-z0-9-]{2,120}$/i.test(s(x.slug)) && s(x.business_name).trim());
     const ville = (x: Ligne) => s(x.city).replace(/\b\d{5}\b/g, " ").replace(/\s+/g, " ").trim();
     const parVille = new Map<string, number>();
     for (const x of lignes) parVille.set(villeSlug(ville(x)), (parVille.get(villeSlug(ville(x))) ?? 0) + 1);
     const chezMoi = moi?.villeSlug || "";
-    return [...new Map(lignes.map((x) => [villeSlug(ville(x)), ville(x)])).entries()]
+    const villes = [...new Map(lignes.map((x) => [villeSlug(ville(x)), ville(x)])).entries()]
       .filter(([slug, nom]) => slug && nom)
       .sort((a, b) => Number(b[0] === chezMoi) - Number(a[0] === chezMoi) || (parVille.get(b[0]) ?? 0) - (parVille.get(a[0]) ?? 0) || a[1].localeCompare(b[1], "fr"))
       .map(([slug, nom]) => ({ slug, nom }));
+    return { villes, qui };
   } catch {
-    return []; // base indisponible : la page s'ouvre quand même
+    return { villes: [], qui: "" }; // base indisponible : la page s'ouvre quand même
   }
 }
 
 export default async function PageCollection() {
   // (🔀 les interrupteurs, côté serveur : il peut les freiner sans déployer — `interrupteurs-serveur.ts`)
-  return <MaCollection villes={await villesClikMe()} univers={universPourTous()} maison={maisonPourTous()} salon={salonPourTous()} />;
+  const { villes, qui } = await villesClikMe();
+  return <MaCollection villes={villes} qui={qui} univers={universPourTous()} maison={maisonPourTous()} salon={salonPourTous()} />;
 }

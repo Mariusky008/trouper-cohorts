@@ -116,13 +116,17 @@ export async function sceneDeLaMaison(supabase: Supabase, p: PieceDuo, maintenan
  * stable. `null` s'il n'a pas encore sa figurine du nouveau style.
  */
 export async function figurineDeLaMaison(supabase: Supabase, h: string): Promise<MaMaisonVue["figurine"]> {
-  const perso = await lireFichePerso(supabase, h).catch(() => ({ fiche: null }));
+  const d = depotDans(supabase, dossierMaison(h));
+  // (⚡ 21 novembre 2026, « la vitesse » : sa fiche et la note de sa figurine détourée, lues en même temps ; puis son
+  // image, à adresse stable — trois allers-retours en moins à chaque écran qui la montre)
+  const [perso, note] = await Promise.all([lireFichePerso(supabase, h).catch(() => ({ fiche: null })), d.lire("figurine.json").catch(() => null)]);
   const source = perso.fiche?.style === "collection-1" ? s(perso.fiche.references.assise?.chemin) : "";
   if (!source) return null;
-  const d = depotDans(supabase, dossierMaison(h));
-  const noms = await d.lister().catch(() => [] as string[]);
-  const deja = noms.includes("figurine.json") && noms.includes("figurine.png") && json(await d.lire("figurine.json").catch(() => null)).source === source;
-  if (!deja) {
+  if (json(note).source === source) {
+    const deja = await imageSalon(supabase, `${dossierMaison(h)}/figurine.png`, LARGEURS_FIGURINE);
+    if (deja) return deja;
+  }
+  {
     const octets = await depotDans(supabase, source.slice(0, source.lastIndexOf("/")))
       .lire(source.slice(source.lastIndexOf("/") + 1))
       .catch(() => null);

@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { PHRASES_REVOIR as P, lienRevoir, type VideoARevoir } from "@/lib/direct/revoir";
 import { vignetteYouTube } from "@/lib/direct/tele";
+import { MEMOIRE_REVOIR, ecrireMemoire, lireMemoire } from "./memoire-locale";
 
 /** Mes vidéos déjà vues (`null` : en chemin). */
 export function useHistorique(actif = true) {
@@ -19,10 +20,17 @@ export function useHistorique(actif = true) {
   useEffect(() => {
     if (!actif) return;
     let fini = false;
+    // (⚡ ses vidéos de la dernière fois, tout de suite)
+    const deja = lireMemoire<VideoARevoir[]>(MEMOIRE_REVOIR);
+    if (deja) void Promise.resolve().then(() => !fini && setListe((x) => x ?? deja));
     void fetch("/api/direct/tele-du-jour?historique=1", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j: { historique?: VideoARevoir[] }) => !fini && setListe(j.historique ?? []))
-      .catch(() => !fini && setListe([]));
+      .then((j: { historique?: VideoARevoir[] }) => {
+        if (fini) return;
+        setListe(j.historique ?? []);
+        ecrireMemoire(MEMOIRE_REVOIR, j.historique ?? []);
+      })
+      .catch(() => !fini && setListe((x) => x ?? []));
     return () => {
       fini = true;
     };
