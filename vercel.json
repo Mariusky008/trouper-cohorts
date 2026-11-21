@@ -96,6 +96,10 @@
     {
       "path": "/api/cron/decouvrir-selection",
       "schedule": "7 2 * * *"
+    },
+    {
+      "path": "/api/cron/expressions-figurines",
+      "schedule": "23 3 * * *"
     }
   ]
 }

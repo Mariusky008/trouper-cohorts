@@ -179,6 +179,20 @@ export function reperesValides(o: unknown): Reperes | null {
   return { tete: [mille(x), mille(y), mille(l), mille(hh)], pivot: cou, bouche, joues: [joues[0], joues[1]] };
 }
 
+/** L'empreinte d'une image de sa figurine (le début du nom de ses calques, et de ses expressions). */
+export const empreinteDe = (chemin: string) => createHash("sha1").update(chemin).digest("hex").slice(0, 16);
+
+/**
+ * Où le corps est découpé dans l'image de sa figurine (`[x, y, largeur, hauteur]` en pixels : la boîte de la plus grande
+ * silhouette, comme `decouperFigurine`) — pour retrouver la tête au pixel près sur une autre image de la même figurine.
+ */
+export async function boiteDuCorps(source: Buffer): Promise<[number, number, number, number] | null> {
+  const { data, info } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const alpha = new Uint8Array(info.width * info.height);
+  for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
+  return plusGrandeSilhouette(alpha, info.width, info.height)?.boite ?? null;
+}
+
 // ─── la découpe ───
 /** 🎭 Une figurine assise (PNG avec transparence) → son corps, sa tête, ses repères (dans le cadre du corps). */
 export async function decouperFigurine(source: Buffer): Promise<{ corps: Buffer; tete: Buffer; ratio: number; reperes: Reperes; par: "regard" | "estime"; boite: [number, number, number, number]; tetePx: [number, number, number, number] } | null> {
@@ -241,7 +255,7 @@ export async function decouperFigurine(source: Buffer): Promise<{ corps: Buffer;
 export async function calquesDeFigurine(supabase: Supabase, h: string, o: { fabriquer?: boolean } = {}): Promise<FigurineLocale | null> {
   const chemin = await cheminFigurineAssise(supabase, h);
   if (!chemin) return null;
-  const cle = createHash("sha1").update(chemin).digest("hex").slice(0, 16);
+  const cle = empreinteDe(chemin);
   const deja = await lireJson<FigurineLocale>(supabase, `${dossier(h)}/${cle}.json`);
   if (deja.corps?.fichier && deja.tete?.fichier && Array.isArray(deja.tete.boite)) return deja as FigurineLocale;
   if (o.fabriquer === false) return null;

@@ -1,6 +1,7 @@
 // 🗣️ SA PROPRE FIGURINE (`lib/direct/ma-figurine.ts`).
 //
 // GET : où il en est (sa photo, sa figurine, ses expressions, ses options, ses messages). Sans cookie : « photo ».
+//   (📷 après la réponse, le lot V1 : ses cinq expressions de visage, s'il en manque — `expressions-figurine-serveur.ts`)
 // POST { action: "photo", photo: data:image…, accord: true, majeur: true, prenom?, ville?, univers?, lien? } : sa photo — dès le
 //   départ (sans compte, on lui en ouvre un dans `ville`, une ville des commerces ClikMe) ; le moteur fabrique ensuite sa
 //   figurine. `majeur` : 🔞 « J'ai 15 ans ou plus » (`AGE_MINIMUM`), sans quoi rien ne part. `lien` : 📲 il répond à un
@@ -51,6 +52,7 @@
 import { NextResponse, after } from "next/server";
 import { fabriquerVisagesPerso, visagesPersoVoulus } from "@/lib/direct/visages-perso-serveur";
 import { figurineDuNouveauStyle, poserLePont, visagesDuNouveauStyle } from "@/lib/direct/pont-univers-serveur";
+import { fabriquerExpressionsDeTete } from "@/lib/direct/expressions-figurine-serveur";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant, poserCookie } from "@/lib/direct/habitant";
 import { abonner, choisirLesReponses, couper, estAbonne, jetonAppli, lierAppli, prevenirDUneReponse, prevenuDesReponses } from "@/lib/direct/appli-collection-serveur";
@@ -124,6 +126,12 @@ export async function GET(request: Request) {
   }
   // 🌉 (l'interrupteur « Univers pour tous » allumé) sa figurine du nouveau style devient celle de l'appli
   if (moi) await poserLePont(supabase, moi).catch(() => false);
+  // (📷 le lot V1 : s'il manque de ses cinq expressions — un passage raté, une nouvelle image —, elles se reprennent après
+  // la réponse ; pas plus d'une fois par demi-heure après un passage raté : `expressions-figurine-serveur.ts`)
+  if (moi) {
+    const avant = Date.now() + (maxDuration - 20) * 1000;
+    after(() => fabriquerExpressionsDeTete(supabase, moi.id, { avant }).catch(() => null));
+  }
   return NextResponse.json({ ok: true, etat: await etatMaFigurine(supabase, moi) }, { headers: sansCache });
 }
 

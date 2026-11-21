@@ -1155,7 +1155,7 @@ bouche, tu fais la grimace, tu tournes la tête vers ton voisin — elle aussi. 
 | Lot | Contenu |
 |---|---|
 | **V0** — l'essai | Sur la page d'essais de l'administrateur : les cinq expressions de **la figurine du propriétaire** (le moteur d'image, en ligne), et une page où sa figurine fait sa tête devant sa caméra — pour voir l'effet en vrai avant d'aller plus loin. |
-| **V1** — les expressions pour tous | Faites dès « C'est moi ! » ; le rattrapage (à l'ouverture, la nuit) ; refaites avec une nouvelle image. |
+| **V1** — les expressions pour tous | Faites dès « C'est moi ! » ; le rattrapage (à l'ouverture, la nuit) ; refaites avec une nouvelle image. **Fait** (28.6). |
 | **V2** — ma télé du jour | L'interrupteur ; ma figurine fait ma tête sur mon écran ; mes expressions notées à la seconde, rejouées par ma figurine chez mes proches. |
 | **V3** — en direct | Les salons ouverts et la séance chez moi : chacun voit les figurines des autres faire leur tête (d'abord au rythme du pouls, quelques secondes ; puis en temps réel). |
 | **V4** — le clip | « 🎬 Nos réactions » : nos figurines qui réagissent, à partager. |
@@ -1238,6 +1238,54 @@ deux : la tête recalée colle à la tête habituelle ; l'expression entière ga
 découpe » redécoupe sans le moteur) ; `visage-essai.mjs` (le corps sans sa tête, fait d'office pour des figurines
 découpées avant).
 
+
+### 28.6 Le lot V1 : les expressions pour tous (21 novembre 2026) — fait
+
+Le propriétaire, à « On lance la suite du visage (les 5 expressions pour tout le monde à « C'est moi ! ») ? » : « Oui ».
+
+**Ce qui se fait, pour chaque habitant qui a sa figurine assise du nouveau style** (le code :
+`lib/direct/expressions-figurine-serveur.ts`) :
+- **son corps sans sa tête** (le haut de la boîte de sa tête effacé, le cou reste — sans le moteur) ;
+- **ses cinq expressions** (😊 😂 😮 😑 😝), **toutes à la fois** : chacune faite par le moteur sur sa figurine entière,
+  d'après elle (fidélité haute, qualité moyenne), avec la consigne de l'essai (« la tête exactement à la même place ») ;
+  puis **sa tête découpée là où elle est vraiment** (recalée sur sa tête habituelle, de la même taille). Les outils sont
+  ceux de l'essai du lot V0, partagés (la consigne, `recaler`, la tête au même endroit, le corps sans sa tête).
+
+**Quand** :
+- **après « C'est moi ! »**, avec ses calques (`/api/direct/nouvelle-figurine`, action `valider`, après la réponse) : la
+  personne n'attend rien ;
+- **s'il en manque, à l'ouverture de l'appli** (le `GET` de `/api/direct/ma-figurine`, après la réponse) — un passage
+  raté, **une nouvelle image** de sa figurine (une autre empreinte : ses calques et ses expressions se refont ; celles
+  d'avant restent rangées), ou ceux qui avaient leur figurine avant le lot V1 ;
+- **la nuit**, par petits paquets (`/api/cron/expressions-figurines`, à 3 h 23 UTC : huit figurines au plus, deux
+  à la fois, 280 secondes au plus) — les figurines prêtes de l'appli (`clik_ma_figurine`), les plus récentes d'abord ;
+- **un passage raté** se reprend, **pas avant une demi-heure** (même en ouvrant l'appli) : le moteur n'est pas relancé en
+  boucle. Un seul passage à la fois par habitant (un verrou de trois minutes).
+- Une tête perdue se **redécoupe** dans l'expression entière gardée, sans repasser par le moteur.
+
+**Rangées à côté de ses calques** (`<habitant>/calques/`) : `<empreinte>-expression-<e>.png` (l'expression entière),
+`<empreinte>-tete-<e>.png` (sa tête), `<empreinte>-corps-sans-tete.png`, et `<empreinte>-expressions.json`
+({ empreinte, tetes: { sourire, rire, surprise, bof, grimace }, corpsSansTete, le, rate?, erreur? } — leurs adresses
+stables, publiées une fois en WebP par `imageSalon`, comme ses calques).
+
+**Rien ne change à l'écran pour l'instant** : elles servent au lot V2 (ma figurine fait ma tête dans ma télé du jour,
+mes expressions rejouées chez mes proches) et au lot V3 (en direct dans les salons).
+
+**Pour le propriétaire** : sur `/admin/humain/visage`, sous l'essai, **« 📷 Les expressions des habitants »** — combien
+de figurines ont leurs cinq expressions (« 12 sur 14 prêtes · 1 en attente · 1 en reprise »), les huit dernières avec
+leurs cinq têtes (et ce qui a raté), et **« ▶ Rattraper maintenant »** (le rattrapage de la nuit, tout de suite).
+
+**Le coût** : cinq images moyennes par figurine, une fois (et à chaque nouvelle image de sa figurine) ; la nuit, huit
+figurines au plus.
+
+**Les essais** : `essai-expressions-figurine-route.mjs` (Léa ouvre l'appli : ses cinq expressions et son corps sans sa
+tête, après la réponse — cinq demandes au moteur, rangées à côté de ses calques, la tête de la taille habituelle, le
+visage effacé du corps ; rouverte : rien n'est refait ; une tête perdue : redécoupée sans le moteur ; une nouvelle image :
+de nouvelles expressions ; Zoé, un passage raté il y a dix minutes : rien ; la page de l'administrateur ; la nuit :
+Zoé rattrapée, Max rien ; « Rattraper maintenant ») ; `essai-nouvelle-figurine-route.mjs` (« C'est moi ! » : ses cinq
+expressions suivent) ; `essai-visage-essai-route.mjs` et `visage-essai.mjs` (l'essai du lot V0, avec les outils
+partagés). (`essai-bascule-route.mjs` et `ma-figurine.mjs` laissent de côté les demandes des expressions, qui se font
+après la réponse et peuvent tomber au milieu.)
 
 ## 29. Les salons comme l'essai du visage : le gradin partout, la vidéo qui part seule (21 novembre 2026)
 

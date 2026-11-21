@@ -26,7 +26,9 @@ const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content
 const deposer = (chemin, corps, type) => fetch(`${STOCK}/figurines-clients/${chemin}`, { method: "POST", headers: { "content-type": type }, body: corps });
 const json = (chemin, x) => deposer(chemin, JSON.stringify(x), "application/json");
 const ligne = async (h) => (await (await fetch(`${F}/clik_ma_figurine?habitant_id=eq.${h}`)).json())[0] ?? null;
-const ia = async () => (await (await fetch(`${FAUX}/__ia`)).json()).filter((c) => typeof c === "string" && c.startsWith("IMAGE "));
+// (📷 sans les cinq expressions du lot V1 — la tête seulement : elles se font après la réponse, à l'ouverture de l'appli, et
+// peuvent tomber au milieu)
+const ia = async () => (await (await fetch(`${FAUX}/__ia`)).json()).filter((c) => typeof c === "string" && c.startsWith("IMAGE ") && !c.includes("The head keeps EXACTLY the same position"));
 const dossierExpressions = (h, neutre) => `${h}/expr-${createHash("sha1").update(neutre).digest("hex").slice(0, 16)}`;
 
 let echecs = 0;
