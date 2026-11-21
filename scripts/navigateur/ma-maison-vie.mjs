@@ -136,7 +136,11 @@ await sam.goto(`${BASE}/univers/chez/${LEA.cle}?piece=1`, { waitUntil: "domconte
 const scene = sam.locator('.mmc-visite[data-visite="ouvert"] .mmc-scene');
 ok(await attendre(sam, async () => (await scene.locator(".mmc-objet").count()) === 3), "Sam chez Léa : ses objets");
 ok(await attendre(sam, async () => /😂|🤣/.test(await texte(scene.locator("[data-humeur]")))), `🙂 l'humeur de Léa au-dessus de sa figurine (${await texte(scene.locator("[data-humeur]"))})`);
-ok(await attendre(sam, async () => /Nouveau chez Léa aujourd’hui : Le Petit Prince/.test(await texte(scene.locator("[data-arrivee]"))), 8000), "✨ « Nouveau chez Léa aujourd'hui : Le Petit Prince »");
+// (🚪 la maquette, section 23 : on frappe d'abord ; ce qui est nouveau se montre une fois entré)
+ok((await scene.locator("[data-arrivee]").count()) === 0, "devant sa porte : rien ne s'annonce encore");
+await scene.locator('[data-geste="frapper"]').click();
+ok(await attendre(sam, async () => /Nouveau chez Léa aujourd’hui : Le Petit Prince/.test(await texte(scene.locator("[data-arrivee]"))), 8000), "✨ entré : « Nouveau chez Léa aujourd'hui : Le Petit Prince »");
+ok(/Nouveau aujourd’hui/i.test(await texte(scene.locator(".mmc-puces"))) && (await texte(scene.locator('.mmc-puce[data-puce="livre00001"]'))) === "📚 Nouveau", `… et en bas, « Nouveau aujourd'hui » : « 📚 Nouveau » (${await texte(scene.locator(".mmc-puces"))})`);
 ok(await attendre(sam, async () => vus.includes("livre00001"), 8000), "… la caméra va le voir");
 ok(await attendre(sam, async () => (await scene.locator("[data-arrivee]").count()) === 0, 8000), "… puis la maison est à lui");
 await sam.screenshot({ path: `${D}/ma-maison-vie-1-sam.png` });
@@ -161,6 +165,18 @@ ok(!/\d+ visite/.test(await texte(chez.locator("[data-arrivee]"))), "… sans co
 const paquet = chez.locator('.mmc-cadeau[data-attente="1"]');
 ok(await attendre(lea, async () => (await paquet.count()) === 1), "🎁 le paquet sur la table basse, emballé");
 ok(await attendre(lea, async () => (await chez.locator("[data-arrivee]").count()) === 0, 12000), "… l'arrivée finie");
+// (🛎️ la maquette, section 23 : « Pendant ton absence », ce qu'on a laissé chez elle — sans compteur de visites)
+const absence = chez.locator('[data-geste="absence"]');
+ok((await absence.locator("[data-pastille]").getAttribute("data-pastille")) === "2", `🛎️ « Pendant ton absence » : sa pastille (${await texte(absence.locator("[data-pastille]"))})`);
+await absence.click();
+const feuille = lea.locator("[data-absence]");
+ok(await attendre(lea, async () => /Sam a frappé à ta porte/.test(await texte(feuille.locator('[data-ligne-absence="frappe-0"]'))) && /Sam t’a laissé une surprise/.test(await texte(feuille.locator('[data-ligne-absence^="cadeau-"]')))), "… « 🚪 Sam a frappé à ta porte », « 🎁 Sam t'a laissé une surprise »");
+ok(/Pas de compteur de visites/.test(await texte(feuille)) && !/\d+ visite/.test(await texte(feuille)), "… « Pas de compteur de visites : seulement ce que tes proches ont laissé »");
+await lea.waitForTimeout(350);
+await lea.screenshot({ path: `${D}/ma-maison-vie-3-absence.png` });
+await feuille.locator('[data-ligne-absence^="cadeau-"] button').click();
+ok(await attendre(lea, async () => (await feuille.count()) === 0 && /Sam t’a laissé un cadeau/.test(await texte(chez.locator('.mmc-bulle[data-bulle="cadeau"]')))), "« Ouvrir » : la feuille se ferme, le cadeau est là, dans la pièce");
+await chez.locator('.mmc-bulle[data-bulle="cadeau"] button[aria-label="Fermer"]').click();
 await paquet.evaluate((x) => x.scrollIntoView({ inline: "center", block: "nearest" }));
 await lea.waitForTimeout(300);
 await paquet.click();
@@ -168,7 +184,7 @@ const bulle = chez.locator('.mmc-bulle[data-bulle="cadeau"]');
 ok(await attendre(lea, async () => /Sam t’a laissé un cadeau/.test(await texte(bulle))), "un toucher : « 🎁 Sam t'a laissé un cadeau »");
 await bulle.locator("[data-ouvrir-cadeau]").click();
 ok(await attendre(lea, async () => /💐 Un bouquet/.test(await texte(bulle)) && /De Sam · « Pour toi »/.test(await texte(bulle))), "« Ouvrir » : « 💐 Un bouquet », « De Sam · « Pour toi » »");
-await lea.screenshot({ path: `${D}/ma-maison-vie-3-cadeau.png` });
+await lea.screenshot({ path: `${D}/ma-maison-vie-4-cadeau.png` });
 await bulle.locator('[data-decider="oui"]').click();
 ok(await attendre(lea, async () => (await paquet.count()) === 0 && (await chez.locator(".mmc-cadeau:not(.emballe)").count()) === 1 && /💐/.test(await texte(chez.locator(".mmc-cadeau").first()))), "« ✓ Le garder sur ma table » : le bouquet y reste");
 ok(/😂|🤣/.test(await texte(chez.locator("[data-humeur]"))), "son humeur, chez elle aussi");

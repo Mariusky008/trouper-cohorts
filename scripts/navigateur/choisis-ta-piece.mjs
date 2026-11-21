@@ -196,6 +196,17 @@ if (await attendre(z, async () => (await z.locator(".bv .tu-passer").count()) ==
 ok(await attendre(z, async () => (await z.locator("#o-maison .mmc-choix").count()) === 1, 30000), "l’onglet « Ma maison » s’ouvre sur « Choisis ta pièce »");
 await z.waitForTimeout(800);
 await z.screenshot({ path: `${D}/choisis-ta-piece-6-allume.png` });
+// (🎨 `ma-maison.md`, section 23 : dans l'onglet aussi, l'en-tête, la pièce en carte et les trois grands boutons)
+await z.locator("#o-maison .mmc-carte[data-piece]").first().click();
+await z.locator('#o-maison .mmc-apercu [data-geste="installer"]').click();
+ok(await attendre(z, async () => (await z.locator("#o-maison .mmc-gros-bouton").count()) === 3 && /Ma maison/.test(await z.locator("#o-maison .mmc-entete").innerText())), "installée : dans l'onglet, « Ma maison », la pièce en carte, les trois grands boutons");
+const cadreZ = await z.locator("#o-maison .mmc-cadre").boundingBox();
+ok(cadreZ && cadreZ.height > 300 && cadreZ.width > 300, `… une vraie carte (${Math.round(cadreZ?.width)} × ${Math.round(cadreZ?.height)} pt)`);
+const navZ = await z.locator(".mc-nav").boundingBox();
+const grosZ = await z.locator("#o-maison .mmc-gros-bouton").first().boundingBox();
+ok(navZ && grosZ && grosZ.y + grosZ.height <= navZ.y - 4, `… les trois grands boutons au-dessus de la barre du bas, sans faire défiler (${Math.round(grosZ?.y + grosZ?.height)} / ${Math.round(navZ?.y)} pt)`);
+await z.waitForTimeout(600);
+await z.screenshot({ path: `${D}/choisis-ta-piece-7-onglet.png` });
 await z.goto(`${ALLUME}/univers`, { waitUntil: "networkidle" });
 ok(await attendre(z, async () => (await z.locator('section[data-suite="piece"] a[href="/collection#maison"]').count()) === 1), "l’accueil `/univers` : « Ta pièce t’attend », vers l’onglet");
 const creer = await z.evaluate(async () => (await fetch("/api/direct/univers", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "creer" }) })).status);

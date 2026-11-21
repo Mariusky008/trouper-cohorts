@@ -619,3 +619,57 @@ ses lumières, son relevé — des rectangles de couleur qui dessinent ce que di
 (l'image en 768 et 1024 points, servie en 1024 × 1536 ; le centre : la place de gauche, même écrite en second ; sans
 relevé, le centre par défaut) ; `ma-maison-catalogue.mjs` (une seule image, en hauteur, toute la hauteur de l'écran ;
 sa figurine à sa place, entière ; « Touche les objets de ta pièce », parti au premier toucher ; plus de « Glisse »).
+
+## 23. Comme la maquette : l'en-tête, la pièce en carte, les boutons du bas (21 novembre 2026)
+
+Le propriétaire, maquette à l'appui (`Ma_maison_ClikMe.html`) : « regarde aussi la page "ma maison" parce qu'elle ne
+ressemble pas vraiment à ce qui était prévu […] il manque les boutons et le style ». La page reprend la maquette, dans
+ses couleurs (le brun chaud, le crème, l'ambre, le dégradé orange-corail des boutons forts) :
+
+- **L'en-tête** : sa figurine en médaillon, « Ma maison » (« 🏠 Chez Léa » en visite, avec ‹ pour revenir), en
+  dessous sa pièce et son moment (« 🛋️ Salon · 🌙 soir »), son humeur du jour dans une pastille (elle quitte le dessus
+  de la figurine), et ⚙️ (changer de pièce) chez soi.
+- **La pièce, en carte** aux coins arrondis, entre l'en-tête et le bas. Tant qu'on n'a rien touché, **ce qui se touche
+  est entouré** (les emplacements et les objets, un contour crème qui respire), avec « 👆 Touche les objets de ta
+  pièce » en bas de la carte ; au premier toucher, l'indice et les contours s'en vont. Les « Mes salons » (fanions),
+  l'arrivée, les bulles, « ✓ … » : dans la carte.
+- **Le bas, chez soi** : « Aujourd'hui, si tu veux » — les puces « ❓ Question » (sa question du jour, quand il y en a
+  une) et « 📺 Ma télé » (Découvrir) ; puis **trois grands boutons** :
+  - **🛎️ Pendant ton absence** (le bouton fort), avec sa pastille : une feuille, « Ce qu'on a laissé chez toi » — qui a
+    frappé, les surprises qui attendent (« Ouvrir » : la feuille se ferme, le paquet s'ouvre dans la pièce), les
+    réponses à sa question (« Voir »), ce qu'il a gardé depuis sa dernière visite (« Voir » : la caméra y va). **Pas de
+    compteur de visites** : seulement ce que les proches ont laissé. Rien de neuf : « Rien de neuf pour l'instant : tes
+    proches passeront bientôt. »
+  - **＋ Ajouter chez moi** (la feuille du lot M2).
+  - **👀 Comme la voient tes proches** : « Qui peut entrer chez moi ? » (la feuille du lot M4, avec « 👀 Voir ma maison
+    comme mes visiteurs »). L'icône de la visibilité n'est plus affichée ; elle reste lisible pour les essais
+    (`data-visibilite`).
+- **En visite, d'abord sa porte** : « Tu es devant la porte de Léa. Frappe : sa figurine t'ouvre. » et **« ✊ Toc
+  toc »** — sa visite est notée (« ✓ Léa saura que tu as frappé ») et sa figurine dit « Oh, te voilà ! Entre 😊 ». Ce
+  qu'elle a mis aujourd'hui ne s'annonce qu'une fois entré. Déjà frappé aujourd'hui : la porte est ouverte. Chez soi
+  (`/univers/chez/<sa clé>`), pas de porte. **Changement** : avant, on pouvait regarder sans frapper ; maintenant, toute
+  visite commence par « Toc toc » — chaque visiteur est donc signalé (une fois par jour, comme avant).
+- **Le bas, en visite** : « Nouveau aujourd'hui » (une puce par chose mise aujourd'hui : « 🖼️ Photo », « 🎬 Clip »,
+  « 🎵 Chanson », ou son emoji et « Nouveau » ; un toucher la montre) et « ❓ Question » ; pour un proche, **🎁 Une
+  surprise** et **💬 Votre salon** (le bouton fort ; il ouvre « Mes proches », faute d'adresse directe vers une
+  conversation).
+- **Dans l'onglet « Ma maison »** (`/collection#maison`), la carte se règle sur la hauteur de l'écran
+  (`100svh − 390 points`, entre 280 et 560) : l'en-tête, la pièce et les trois grands boutons tiennent au-dessus de la
+  barre du bas de l'appli, sans faire défiler. La phrase d'une maison encore vide (« Ta maison se remplit toute
+  seule… ») va dans la pièce, avec « Touche les objets », comme en plein écran.
+- Les feuilles de Ma maison (Ajouter chez moi, Qui peut entrer, Laisser une surprise, Pendant ton absence) passent aux
+  couleurs de la maquette (le brun, l'ambre, le bouton orange-corail).
+- **Pas dans ce lot** : « 🎬 Film à deux » (le défi à deux attend la décision du propriétaire, section 19.1) ; les
+  trois pièces de la maquette (Salon, Télé, Terrasse) — une seule pièce, une seule image (section 22).
+
+Les textes : `PHRASES_BAS` et `puceDeLObjet` (`src/lib/direct/ma-maison.ts`) ; la feuille : `PendantTonAbsence`
+(`src/app/collection/ajouter-chez-moi.tsx`).
+
+**Les essais** : `ma-maison-catalogue.mjs` (l'en-tête ; la pièce prend toute la hauteur de sa carte ; les trois grands
+boutons à l'écran ; « Aujourd'hui, si tu veux » et « 📺 Ma télé » ; les contours, partis au premier toucher) ;
+`ma-maison-visite.mjs` (la porte et « ✊ Toc toc » sur une ligne ; « Oh, te voilà ! Entre 😊 » ; ni « Une surprise » ni
+« Votre salon » pour qui n'est pas proche ; pour Sam, les deux) ; `ma-maison-question.mjs` (frapper, puis « ❓ Question »
+en bas) ; `ma-maison-vie.mjs` (rien ne s'annonce devant la porte ; entré : « Nouveau chez Léa aujourd'hui » et la puce
+« 📚 Nouveau » ; chez Léa, « 🛎️ Pendant ton absence » avec sa pastille, ses lignes, « Ouvrir ») ;
+`choisis-ta-piece.mjs` (dans l'onglet, une fois la pièce choisie : la carte et les trois grands boutons au-dessus de la
+barre du bas).

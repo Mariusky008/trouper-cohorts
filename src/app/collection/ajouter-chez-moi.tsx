@@ -22,6 +22,7 @@ import {
   AJOUT_TITRE_MAX,
   OU_VA,
   PHRASES_AJOUT,
+  PHRASES_BAS,
   PHRASES_CADEAU,
   PHRASES_VISITE,
   VISIBILITES_MAISON,
@@ -340,34 +341,91 @@ export function LaisserUneSurprise({ cle, prenom, onFermer, onPosee }: { cle: st
   );
 }
 
+/** Une ligne de « Pendant ton absence » : ce qui s'est passé, et de quoi y aller. */
+export type LigneAbsence = { cle: string; e: string; texte: string; detail?: string; action?: { nom: string; faire: () => void } };
+
+/**
+ * 🛎️ (21 novembre 2026, la maquette) « PENDANT TON ABSENCE » : ce que ses proches ont laissé chez lui — qui a frappé, les
+ * surprises sur la table, les réponses à sa question, ce qui est arrivé chez lui — chacun avec « Voir » ; jamais un compte
+ * de visites.
+ */
+export function PendantTonAbsence({ lignes, onFermer }: { lignes: LigneAbsence[]; onFermer: () => void }) {
+  return (
+    <div className="acm" role="dialog" aria-modal="true" aria-label={PHRASES_BAS.absence} data-absence onClick={onFermer}>
+      <div className="acm-feuille" onClick={(e) => e.stopPropagation()}>
+        <div className="acm-tete">
+          <b>🛎️ {PHRASES_BAS.absence}</b>
+          <button type="button" className="acm-fermer" aria-label="Fermer" onClick={onFermer}>
+            ✕
+          </button>
+        </div>
+        <p className="acm-chapo">{PHRASES_BAS.absenceChapo}</p>
+        {lignes.length ? (
+          <ul className="acm-absence">
+            {lignes.map((l) => (
+              <li key={l.cle} data-ligne-absence={l.cle}>
+                <span aria-hidden="true">{l.e}</span>
+                <span>
+                  <b>{l.texte}</b>
+                  {l.detail && <small>{l.detail}</small>}
+                </span>
+                {l.action && (
+                  <button type="button" onClick={l.action.faire}>
+                    {l.action.nom}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="acm-chapo" data-absence-vide>
+            {PHRASES_BAS.absenceVide}
+          </p>
+        )}
+        <p className="acm-pied">{PHRASES_BAS.absencePied}</p>
+      </div>
+      <style>{STYLES_AJOUTER}</style>
+    </div>
+  );
+}
+
 const STYLES_AJOUTER = `
+.acm-chapo{margin:0;color:#c9b29c;font-size:14px;line-height:1.45}
+.acm-pied{margin:4px 0 0;color:#c9b29c;font-size:12.5px;line-height:1.4}
+.acm-absence{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.acm-absence li{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.07)}
+.acm-absence li>span:first-child{font-size:24px;flex:none}
+.acm-absence li>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.acm-absence b{font-size:14.5px;line-height:1.3}
+.acm-absence small{color:#c9b29c;font-size:12.5px}
+.acm-absence button{flex:none;border:0;background:none;color:#ffd27a;font-weight:900;font-size:14px;cursor:pointer}
 .acm{position:fixed;inset:0;z-index:35;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,5,8,.55);animation:acm-voile .2s ease-out}
-.acm-feuille{width:100%;max-width:520px;max-height:88svh;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding:16px 16px calc(18px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;background:#2c1129;color:#FFF4E6;font-family:-apple-system,"SF Pro Rounded",system-ui,"Segoe UI",Roboto,sans-serif;animation:acm-monte .25s ease-out}
+.acm-feuille{width:100%;max-width:520px;max-height:88svh;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding:16px 16px calc(18px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;background:#24180f;color:#FFF4E6;font-family:-apple-system,"SF Pro Rounded",system-ui,"Segoe UI",Roboto,sans-serif;animation:acm-monte .25s ease-out}
 .acm-tete{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .acm-tete b{font-size:17px}
 .acm-fermer{width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#FFF4E6;cursor:pointer}
-.acm-retour{border:0;background:none;color:#f2be6a;font:inherit;font-weight:800;font-size:15px;cursor:pointer;padding:4px 0}
-.acm-doux{margin:0;color:#F3DCE6;font-size:14.5px;line-height:1.45}
+.acm-retour{border:0;background:none;color:#ffd27a;font:inherit;font-weight:800;font-size:15px;cursor:pointer;padding:4px 0}
+.acm-doux{margin:0;color:#eee0d0;font-size:14.5px;line-height:1.45}
 .acm-doux.petit{font-size:13px;opacity:.85}
 .acm-choix{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.acm-choix button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:1px solid #5a3352;border-radius:14px;background:rgba(255,255,255,.04);color:#FFF4E6;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+.acm-choix button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:1px solid #5a4232;border-radius:14px;background:rgba(255,255,255,.04);color:#FFF4E6;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
 .acm-choix button span{font-size:24px;line-height:1}
-.acm-choix button.choisi{border-color:#f2be6a;background:rgba(242,190,106,.14)}
+.acm-choix button.choisi{border-color:#ffd27a;background:rgba(255,210,122,.14)}
 .acm-form{display:flex;flex-direction:column;gap:10px}
 .acm-quoi{font-size:16px}
-.acm-quoi small{font-weight:600;color:#c6a6bd}
-.acm-champ{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #5a3352;border-radius:12px;background:#1d0a1b;color:#FFF4E6;font:inherit;font-size:16px}
+.acm-quoi small{font-weight:600;color:#c9b29c}
+.acm-champ{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #5a4232;border-radius:12px;background:#170f0a;color:#FFF4E6;font:inherit;font-size:16px}
 .acm-apercu{max-width:100%;max-height:34svh;align-self:center;border-radius:8px;object-fit:contain}
-.acm-principal{padding:13px;border:0;border-radius:999px;background:#ff2f8f;color:#fff;font:inherit;font-weight:900;font-size:16px;cursor:pointer}
+.acm-principal{padding:13px;border:0;border-radius:999px;background:linear-gradient(135deg,#ff9a3c,#ff5e62);color:#fff;font:inherit;font-weight:900;font-size:16px;cursor:pointer}
 .acm-principal.danger{background:#c0392b}
 .acm-principal:disabled{opacity:.6}
-.acm-secondaire{padding:11px;border:1px solid #5a3352;border-radius:999px;background:none;color:#FFF4E6;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
+.acm-secondaire{padding:11px;border:1px solid #5a4232;border-radius:999px;background:none;color:#FFF4E6;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
 .acm-erreur{margin:0;color:#ffb4a8;font-size:14px}
 .acm-qui{display:flex;flex-direction:column;gap:8px}
-.acm-qui button{display:flex;flex-direction:column;gap:3px;text-align:left;padding:12px 14px;border:1px solid #5a3352;border-radius:14px;background:rgba(255,255,255,.04);color:#FFF4E6;font:inherit;cursor:pointer}
-.acm-qui button.choisi{border-color:#f2be6a;background:rgba(242,190,106,.12)}
+.acm-qui button{display:flex;flex-direction:column;gap:3px;text-align:left;padding:12px 14px;border:1px solid #5a4232;border-radius:14px;background:rgba(255,255,255,.04);color:#FFF4E6;font:inherit;cursor:pointer}
+.acm-qui button.choisi{border-color:#ffd27a;background:rgba(255,210,122,.12)}
 .acm-qui b{font-size:15.5px}
-.acm-qui span{font-size:13.5px;color:#F3DCE6;line-height:1.4}
+.acm-qui span{font-size:13.5px;color:#eee0d0;line-height:1.4}
 .acm-adulte{display:flex;align-items:center;gap:10px;font-size:15px}
 .acm-adulte input{width:20px;height:20px}
 .acm-lien{text-align:center;text-decoration:none;display:block}

@@ -113,7 +113,11 @@ const sam = await tel(SAM);
 await sam.goto(`${BASE}/univers/chez/${LEA.cle}?piece=1`, { waitUntil: "domcontentloaded" });
 const scene = sam.locator('.mmc-visite[data-visite="ouvert"] .mmc-scene');
 const puce = scene.locator('[data-geste="question"]');
-ok(await attendre(sam, async () => /La question du jour de Léa/.test(await texte(puce))), "💬 « La question du jour de Léa »");
+// (🚪 la maquette, section 23 : on frappe d'abord, sa figurine ouvre)
+ok(await attendre(sam, async () => (await scene.locator('[data-geste="frapper"]').count()) === 1), "sa porte : « ✊ Toc toc »");
+await scene.locator('[data-geste="frapper"]').click();
+ok(await attendre(sam, async () => (await scene.locator("[data-porte]").count()) === 0), "… on entre");
+ok(await attendre(sam, async () => /❓ Question/.test(await texte(puce)) && (await puce.getAttribute("title")) === "💬 La question du jour de Léa"), "« ❓ Question » en bas (« La question du jour de Léa »)");
 await sam.screenshot({ path: `${D}/ma-maison-question-1-puce.png` });
 await puce.click();
 const bulle = scene.locator('.mmc-bulle[data-bulle="question"]');
@@ -122,7 +126,7 @@ ok((await bulle.locator("[data-choix]").count()) === 4, "… ses quatre réponse
 ok(/Réponds d’abord : tu découvriras ensuite la réponse de Léa/.test(await texte(bulle)), "« Réponds d'abord : tu découvriras ensuite la réponse de Léa »");
 const avant = await sam.evaluate(async (cle) => (await (await fetch(`/api/direct/ma-piece?chez=${cle}`)).json()).visite?.question, LEA.cle);
 ok((await bulle.locator("[data-sa-reponse]").count()) === 0 && avant?.cle === "vacances" && !("saReponse" in avant), "… la sienne, cachée (ni à l'écran, ni envoyée)");
-ok((await scene.locator(".mmc-actions-visite").count()) === 0, "… la bulle seule (frapper et la surprise s'effacent)");
+ok((await scene.locator('.mmc-actions-visite [data-geste="surprise"]').isVisible()), "… « Une surprise » reste en bas");
 await bulle.locator('[data-choix="🏖️ Plage"]').click();
 ok((await bulle.locator('[data-choix="🏖️ Plage"]').getAttribute("aria-pressed")) === "true", "« 🏖️ Plage » choisi");
 await sam.waitForTimeout(300);
@@ -134,9 +138,9 @@ await sam.screenshot({ path: `${D}/ma-maison-question-3-decouverte.png` });
 const horsChoix = await repondre(sam, LEA.cle, "Les deux");
 ok(horsChoix.statut === 400 && /Choisis une des réponses/.test(horsChoix.j.error ?? ""), "une réponse hors des choix : refusée");
 await bulle.getByRole("button", { name: "Fermer" }).click();
-ok(await attendre(sam, async () => (await bulle.count()) === 0 && (await scene.locator(".mmc-actions-visite").count()) === 1), "✕ : la bulle se ferme, frapper revient");
+ok(await attendre(sam, async () => (await bulle.count()) === 0), "✕ : la bulle se ferme");
 await sam.reload({ waitUntil: "domcontentloaded" });
-ok(await attendre(sam, async () => (await puce.count()) === 1), "Sam revient : la question est toujours là");
+ok(await attendre(sam, async () => (await puce.count()) === 1 && (await scene.locator("[data-porte]").count()) === 0), "Sam revient : il a déjà frappé aujourd'hui (la porte est ouverte), la question est toujours là");
 await puce.click();
 ok(await attendre(sam, async () => /Toi : 🏖️ Plage/.test(await texte(bulle)) && /Léa : 🏔️ Montagne/.test(await texte(bulle))), "… avec sa réponse et celle de Léa");
 
@@ -154,7 +158,7 @@ ok(await attendre(lea, async () => /Sam a répondu à ta question du jour/.test(
 await lea.screenshot({ path: `${D}/ma-maison-question-4-arrivee.png` });
 ok(await attendre(lea, async () => (await chez.locator("[data-arrivee]").count()) === 0, 12000), "… l'arrivée finie");
 const sienne = chez.locator('[data-geste="question"]');
-ok(await attendre(lea, async () => /Ta question du jour/.test(await texte(sienne))), "« 💬 Ta question du jour »");
+ok(await attendre(lea, async () => /❓ Question/.test(await texte(sienne)) && (await sienne.getAttribute("title")) === "💬 Ta question du jour"), "« ❓ Question » (« Ta question du jour »)");
 await sienne.click();
 const reponses = chez.locator('.mmc-bulle[data-bulle="question"]');
 ok(await attendre(lea, async () => /En vacances, tu es plutôt…/.test(await texte(reponses)) && /Sam : 🏖️ Plage/.test(await texte(reponses.locator("[data-reponse]")))), "… « Sam : 🏖️ Plage »");

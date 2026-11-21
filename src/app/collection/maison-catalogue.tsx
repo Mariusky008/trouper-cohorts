@@ -21,14 +21,15 @@ import {
   EMPLACEMENTS_MAISON,
   MAISON_VIDE,
   PHRASES_AJOUT,
+  PHRASES_BAS,
   PHRASES_MAISON,
   PHRASES_VISITE,
-  VISIBILITES_MAISON,
   arriveeChezMoi,
   ditDeLObjet,
   objetsPlaces,
   phraseAbsence,
   phraseNouveautes,
+  puceDeLObjet,
   PHRASES_CADEAU,
   PHRASES_QUESTION,
   type CadeauMaison,
@@ -42,7 +43,7 @@ import {
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
 import { createPortal } from "react-dom";
-import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, QuiPeutEntrer } from "./ajouter-chez-moi";
+import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuiPeutEntrer, type LigneAbsence } from "./ajouter-chez-moi";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
@@ -242,6 +243,11 @@ function Piece({
   const [reponse, setReponse] = useState("");
   const [erreurQ, setErreurQ] = useState("");
   const [frappe, setFrappe] = useState(Boolean(visite?.frappe));
+  // 🎨 (la maquette) « Pendant ton absence » ouvert ; en visite, la porte qui s'ouvre et « Oh, te voilà ! Entre 😊 »
+  const [absenceOuverte, setAbsenceOuverte] = useState(false);
+  const [accueil, setAccueil] = useState(false);
+  // (la porte ouverte, on est entré : ce qu'il a mis aujourd'hui peut se montrer — juste après « Léa saura que tu as frappé »)
+  const [entre, setEntre] = useState(!visite || Boolean(visite.frappe));
   const [aEnlever, setAEnlever] = useState<ObjetMaison | null>(null);
   const [fait, setFait] = useState("");
   /** (le nouvel objet : la caméra va le voir, il s'éclaire un instant) */
@@ -326,8 +332,10 @@ function Piece({
   // toucher l'arrête) ; ensuite le serveur retient la visite (`vu`). Rien de nouveau : la visite est retenue tout de suite.
   const pret = hauteur > 0;
   const enVisiteChez = Boolean(visite);
+  // (🚪 en visite, l'arrivée attend qu'on soit entré : on a frappé)
+  const porteOuverte = entre;
   useEffect(() => {
-    if (!pret) return;
+    if (!pret || !porteOuverte) return;
     // (la réponse est lue : sans quoi la requête resterait ouverte ; en visite, rien n'est retenu — c'est chez lui)
     const dire = () => {
       if (enVisiteChez) return;
@@ -415,13 +423,130 @@ function Piece({
     };
     // (une fois la scène mesurée)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pret, enVisiteChez]);
+  }, [pret, enVisiteChez, porteOuverte]);
   const zones = zonesDe(scene.emplacements);
   const dit = bulle ? EMPLACEMENTS_MAISON[bulle.cle] : null;
   const moment = MOMENTS_DUO.find((m) => m.cle === scene.moment);
   const c = scene.centre;
+  // 🎨 (la maquette) ce qui attend chez moi : qui a frappé, les surprises, les réponses, ce qui est arrivé — et sa pastille
+  const neufsChezMoi = visite || !maison.contenu ? null : arriveeChezMoi(maison.contenu, maison.vuLe ?? 0);
+  const cadeauxEnAttente = (maison.table ?? []).filter((g) => g.attente);
+  const repondus = visite ? [] : [...new Set((maison.question?.reponses ?? []).filter((r) => (Date.parse(r.le) || 0) > (maison.vuLe ?? 0)).map((r) => r.de))];
+  const fermerTout = () => {
+    setIndice(false);
+    setBulle(null);
+    setObjet(null);
+    setCadeau(null);
+  };
+  const lignesAbsence: LigneAbsence[] = visite
+    ? []
+    : [
+        ...(maison.absence ?? []).map((p, k) => ({ cle: `frappe-${k}`, e: "🚪", texte: PHRASES_BAS.frappe(p) })),
+        ...cadeauxEnAttente.map((g) => ({
+          cle: `cadeau-${g.id}`,
+          e: "🎁",
+          texte: PHRASES_BAS.cadeau(g.de),
+          action: {
+            nom: PHRASES_BAS.ouvrir,
+            faire: () => {
+              setAbsenceOuverte(false);
+              fermerTout();
+              setOuvert(false);
+              setCadeau(g);
+            },
+          },
+        })),
+        ...(maison.question?.reponses.length
+          ? [
+              {
+                cle: "question",
+                e: "💬",
+                texte: PHRASES_BAS.reponses(new Set(maison.question.reponses.map((r) => r.de)).size),
+                detail: `« ${maison.question.q} »`,
+                action: {
+                  nom: PHRASES_BAS.voir,
+                  faire: () => {
+                    setAbsenceOuverte(false);
+                    fermerTout();
+                    setQuestionOuverte(true);
+                  },
+                },
+              },
+            ]
+          : []),
+        ...(neufsChezMoi?.ids.length
+          ? [
+              {
+                cle: "garde",
+                e: "✨",
+                texte: neufsChezMoi.phrase.replace(/^✨\s*/u, ""),
+                action: {
+                  nom: PHRASES_BAS.voir,
+                  faire: () => {
+                    setAbsenceOuverte(false);
+                    fermerTout();
+                    montrer(neufsChezMoi.ids[0]);
+                  },
+                },
+              },
+            ]
+          : []),
+      ];
+  const pastille = (maison.absence?.length ?? 0) + cadeauxEnAttente.length + (repondus.length ? 1 : 0) + (neufsChezMoi?.ids.length ? 1 : 0);
+  // (en visite : ce qui est nouveau chez lui aujourd'hui, en puces)
+  const neufsVisite = visite?.nouveaux?.length ? objetsPlaces(maison.contenu ?? { cadres: [], platine: null, tele: null, etagere: [], total: 0 }).filter((o) => visite.nouveaux!.includes(o.id)).slice(0, 3) : [];
+  const questionIci = visite ? question : maison.question;
+  const frapper = async () => {
+    if (!visite) return;
+    const e = await visite.onFrapper();
+    if (e) {
+      setFait(e);
+      return;
+    }
+    setFrappe(true);
+    setAccueil(true);
+    setFait(PHRASES_VISITE.frappe(visite.prenom));
+    window.setTimeout(() => {
+      setFait("");
+      setEntre(true);
+    }, 2600);
+    window.setTimeout(() => setAccueil(false), 3200);
+  };
   return (
-    <div className={`mmc-scene moment-${scene.moment}`} ref={cadre} data-piece={scene.piece} data-moment={scene.moment}>
+    <div className={`mmc-scene moment-${scene.moment}${visite ? " en-visite" : ""}`} data-piece={scene.piece} data-moment={scene.moment}>
+      {/* 🎨 l'en-tête : sa figurine en médaillon, « Ma maison » (ou « Chez Léa »), sa pièce et son moment, son humeur */}
+      <header className="mmc-entete">
+        {visite && (
+          <a className="mmc-rond mmc-retour" href="/collection#proches" aria-label={PHRASES_VISITE.retour}>
+            ‹
+          </a>
+        )}
+        {figurine && (
+          <span className="mmc-medaillon" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={figurine.src} alt="" />
+          </span>
+        )}
+        <span className="mmc-titre">
+          <b className="mmc-nom">{visite ? `🏠 ${PHRASES_VISITE.chez(visite.prenom)}` : PHRASES_BAS.maMaison}</b>
+          <small className="mmc-ou">
+            {scene.emoji} {scene.nom}
+            {moment && ` · ${moment.emoji} ${moment.nom.toLowerCase()}`}
+          </small>
+        </span>
+        {maison.humeur && (
+          <span className="mmc-humeur" data-humeur>
+            {maison.humeur.emoji} {maison.humeur.nom}
+          </span>
+        )}
+        {!visite && (
+          <button type="button" className="mmc-rond" onClick={onReglages} aria-label="Changer de pièce" data-geste="reglages">
+            ⚙️
+          </button>
+        )}
+      </header>
+      {/* (la pièce, en carte ; tant qu'on n'a rien touché, ce qui se touche est entouré) */}
+      <div className={`mmc-cadre${indice && !arrivee && porteOuverte ? " montre" : ""}`} ref={cadre}>
       <div
         className="mmc-defile"
         ref={defile}
@@ -543,59 +668,13 @@ function Piece({
               <img src={figurine.src} srcSet={figurine.srcset} sizes={hauteur ? `${Math.round(hauteur * c.hauteur * (figurine.largeur / Math.max(1, figurine.hauteur)))}px` : "360px"} alt="" draggable={false} />
             </button>
           )}
-          {/* 🙂 (lot M5) son humeur du jour, au-dessus de sa figurine */}
-          {maison.humeur && (
-            <span className="mmc-humeur" data-humeur style={{ left: `${c.x * 100}%`, bottom: `${(1 - c.y + c.hauteur) * 100}%` }}>
-              {maison.humeur.emoji} {maison.humeur.nom}
+          {/* 😊 (la maquette) en visite, la porte ouverte : sa figurine dit bonjour */}
+          {accueil && (
+            <span className="mmc-accueil" role="status" data-accueil style={{ left: `${c.x * 100}%`, bottom: `${(1 - c.y + c.hauteur) * 100}%` }}>
+              {PHRASES_BAS.entre}
             </span>
           )}
         </div>
-      </div>
-      <div className="mmc-haut">
-        {visite && (
-          <a className="mmc-reglages mmc-retour" href="/collection#proches" aria-label={PHRASES_VISITE.retour}>
-            ‹
-          </a>
-        )}
-        <span className="mmc-nom">
-          {visite ? `🏠 ${PHRASES_VISITE.chez(visite.prenom)}` : `${scene.emoji} ${scene.nom}`}
-          {moment && <small> · {moment.emoji}</small>}
-        </span>
-        {!visite && (
-        <span className="mmc-boutons">
-          <button
-            type="button"
-            className="mmc-reglages"
-            onClick={() => {
-              setIndice(false);
-              setObjet(null);
-              setBulle(null);
-              setQui(true);
-            }}
-            aria-label={PHRASES_VISITE.quiTitre}
-            data-geste="qui"
-          >
-            {VISIBILITES_MAISON.find((x) => x.v === (maison.visibilite ?? "proches"))?.titre.split(" ")[0] ?? "🚪"}
-          </button>
-          <button
-            type="button"
-            className="mmc-reglages mmc-ajouter"
-            onClick={() => {
-              setIndice(false);
-              setObjet(null);
-              setBulle(null);
-              setAjout(true);
-            }}
-            aria-label="Ajouter chez moi"
-            data-geste="ajouter"
-          >
-            ＋
-          </button>
-          <button type="button" className="mmc-reglages" onClick={onReglages} aria-label="Changer de pièce" data-geste="reglages">
-            ⚙️
-          </button>
-        </span>
-        )}
       </div>
       {/* 🏠 (lot D5 de Découvrir) « Mes salons » : les salons ouverts où je vais, en fanions — chez moi seulement */}
       {!visite && maison.salons?.length ? (
@@ -613,10 +692,10 @@ function Piece({
           {arrivee}
         </p>
       )}
-      {indice && !arrivee && !objet && (
+      {indice && !arrivee && !objet && !(visite && !frappe) && (
         <div className="mmc-indice">
           {phrase && <span>{phrase}</span>}
-          <b aria-hidden="true">Touche les objets de ta pièce</b>
+          <b aria-hidden="true">{visite ? PHRASES_BAS.indiceVisite : PHRASES_BAS.indiceMoi}</b>
         </div>
       )}
       {dit && bulle && (
@@ -670,23 +749,6 @@ function Piece({
             ✕
           </button>
         </div>
-      )}
-      {/* 💬 (lot M5) la question du jour : chez soi, ce qu'on y a répondu ; chez un proche, y répondre pour voir la sienne */}
-      {(visite ? question : maison.question) && !questionOuverte && !arrivee && !fait && (
-        <button
-          type="button"
-          className="mmc-qdj"
-          data-geste="question"
-          onClick={() => {
-            setIndice(false);
-            setBulle(null);
-            setObjet(null);
-            setCadeau(null);
-            setQuestionOuverte(true);
-          }}
-        >
-          {visite ? PHRASES_QUESTION.chezLui(visite.prenom) : PHRASES_QUESTION.chezMoi}
-        </button>
       )}
       {questionOuverte && (visite ? question : maison.question) && (
         <div className="mmc-bulle" role="status" data-bulle="question">
@@ -822,39 +884,138 @@ function Piece({
           </button>
         </div>
       )}
-      {visite && (visite.peutLaisser || !frappe) && !objet && !bulle && !cadeau && !questionOuverte && (
-        <div className="mmc-actions-visite">
-          {!frappe && (
-            <button
-              type="button"
-              className="mmc-frapper"
-              data-geste="frapper"
-              onClick={async () => {
-                const e = await visite.onFrapper();
-                if (e) {
-                  setFait(e);
-                  return;
-                }
-                setFrappe(true);
-                setFait(PHRASES_VISITE.frappe(visite.prenom));
-                window.setTimeout(() => setFait(""), 2600);
-              }}
-            >
-              {PHRASES_VISITE.frapper}
-            </button>
-          )}
-          {visite.peutLaisser && (
-            <button type="button" className="mmc-frapper secondaire" data-geste="surprise" onClick={() => setSurprise(true)}>
-              {PHRASES_CADEAU.laisser}
-            </button>
-          )}
-          {mesCadeaux > 0 && (
-            <small className="mmc-mes-cadeaux" data-mes-cadeaux>
-              {PHRASES_CADEAU.dejaLa(mesCadeaux)}
-            </small>
-          )}
+      {fait && (
+        <p className="mmc-fait" role="status" data-fait>
+          {fait}
+        </p>
+      )}
+      {/* 🚪 (la maquette) en visite : sa porte, d'abord — on frappe, sa figurine ouvre */}
+      {visite && !frappe && (
+        <div className="mmc-porte" data-porte>
+          <span className="mmc-battant" aria-hidden="true">
+            {figurine && (
+              <span className="mmc-medaillon">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={figurine.src} alt="" />
+              </span>
+            )}
+          </span>
+          <p>{PHRASES_BAS.porte(visite.prenom)}</p>
+          <button type="button" className="mmc-toc" data-geste="frapper" onClick={() => void frapper()}>
+            {PHRASES_BAS.toctoc}
+          </button>
         </div>
       )}
+      </div>
+      {/* 🎨 (la maquette) le bas : ce qu'on peut faire aujourd'hui, puis les trois grands boutons */}
+      <div className="mmc-bas" style={visite && !frappe ? { visibility: "hidden" } : undefined}>
+        {(visite ? neufsVisite.length > 0 || questionIci : true) && (
+          <div className="mmc-puces">
+            <span className="mmc-surtitre">{visite ? PHRASES_BAS.nouveau : PHRASES_BAS.aujourdhui}</span>
+            {neufsVisite.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                className="mmc-puce"
+                data-puce={o.id}
+                onClick={() => {
+                  fermerTout();
+                  setQuestionOuverte(false);
+                  setObjet(o);
+                  montrer(o.id);
+                }}
+              >
+                {puceDeLObjet(o)}
+              </button>
+            ))}
+            {questionIci && (
+              <button
+                type="button"
+                className="mmc-puce"
+                data-geste="question"
+                title={visite ? PHRASES_QUESTION.chezLui(visite.prenom) : PHRASES_QUESTION.chezMoi}
+                onClick={() => {
+                  fermerTout();
+                  setQuestionOuverte(true);
+                }}
+              >
+                {PHRASES_BAS.question}
+              </button>
+            )}
+            {!visite && (
+              <a className="mmc-puce" href="/collection#decouvrir" data-puce="tele">
+                {PHRASES_BAS.maTele}
+              </a>
+            )}
+          </div>
+        )}
+        {!visite ? (
+          <div className="mmc-gros">
+            <button
+              type="button"
+              className="mmc-gros-bouton fort"
+              data-geste="absence"
+              onClick={() => {
+                fermerTout();
+                setAbsenceOuverte(true);
+              }}
+            >
+              <span aria-hidden="true">🛎️</span>
+              {PHRASES_BAS.absence}
+              {pastille > 0 && (
+                <i className="mmc-pastille" data-pastille={pastille}>
+                  {pastille}
+                </i>
+              )}
+            </button>
+            <button
+              type="button"
+              className="mmc-gros-bouton"
+              data-geste="ajouter"
+              onClick={() => {
+                fermerTout();
+                setAjout(true);
+              }}
+            >
+              <span aria-hidden="true">＋</span>
+              {PHRASES_BAS.ajouter}
+            </button>
+            <button
+              type="button"
+              className="mmc-gros-bouton"
+              data-geste="qui"
+              data-visibilite={maison.visibilite ?? "proches"}
+              onClick={() => {
+                fermerTout();
+                setQui(true);
+              }}
+            >
+              <span aria-hidden="true">👀</span>
+              {PHRASES_BAS.commeEux}
+            </button>
+          </div>
+        ) : (
+          visite.peutLaisser && (
+            <div className="mmc-gros mmc-actions-visite">
+              <button type="button" className="mmc-gros-bouton" data-geste="surprise" onClick={() => setSurprise(true)}>
+                <span aria-hidden="true">🎁</span>
+                {PHRASES_BAS.surprise}
+              </button>
+              <a className="mmc-gros-bouton fort" href="/collection#proches" data-geste="salon">
+                <span aria-hidden="true">💬</span>
+                {PHRASES_BAS.salon}
+              </a>
+            </div>
+          )
+        )}
+        {visite && mesCadeaux > 0 && (
+          <small className="mmc-mes-cadeaux" data-mes-cadeaux>
+            {PHRASES_CADEAU.dejaLa(mesCadeaux)}
+          </small>
+        )}
+      </div>
+      {absenceOuverte &&
+        createPortal(<PendantTonAbsence lignes={lignesAbsence} onFermer={() => setAbsenceOuverte(false)} />, document.body)}
       {surprise &&
         visite?.cle &&
         createPortal(
@@ -884,11 +1045,6 @@ function Piece({
           />,
           document.body,
         )}
-      {fait && (
-        <p className="mmc-fait" role="status" data-fait>
-          {fait}
-        </p>
-      )}
       {/* (posées sur la page entière : par-dessus la pièce et le menu, quoi qu'il arrive) */}
       {ajout &&
         createPortal(
@@ -1055,9 +1211,8 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
         <div className="mmc-scene attente" aria-hidden="true" />
       ) : maison.scene ? (
         <>
-          {/* (la phrase de l'arrivée : dans la pièce en plein écran, sous elle dans l'onglet) */}
-          <Piece maison={{ ...maison, scene: maison.scene }} phrase={plein && !maison.contenu?.total ? MAISON_VIDE : undefined} onReglages={() => setChoix(true)} onMaison={setMaison} />
-          {!plein && !maison.contenu?.total && <p className="mmc-vide">{MAISON_VIDE}</p>}
+          {/* (la phrase de l'arrivée, une maison encore vide : dans la pièce, avec « Touche les objets ») */}
+          <Piece maison={{ ...maison, scene: maison.scene }} phrase={!maison.contenu?.total ? MAISON_VIDE : undefined} onReglages={() => setChoix(true)} onMaison={setMaison} />
         </>
       ) : null}
       {ouvert && maison && <Choix catalogue={catalogue} actuelle={maison.scene ? maison.piece : null} onChoisir={choisir} onFermer={maison.scene ? () => setChoix(false) : onRenoncer} />}
@@ -1120,8 +1275,46 @@ export function VisiteDeLaMaison({ cle }: { cle: string }) {
 
 const STYLES_MAISON_CATALOGUE = `
 .mmc{position:relative;display:flex;flex-direction:column;gap:10px;color:#FFF4E6}
-.mmc-scene{position:relative;height:min(68svh,620px);border-radius:22px;overflow:hidden;background:#1a0f14;box-shadow:0 18px 40px -20px rgba(0,0,0,.8)}
+.mmc-scene{position:relative;display:flex;flex-direction:column;border-radius:26px;overflow:hidden;background:#17100c;color:#fbf3ea;box-shadow:0 18px 40px -20px rgba(0,0,0,.8)}
+.mmc-scene.attente{height:min(68svh,620px)}
 .mmc.plein .mmc-scene{height:100svh;border-radius:0;box-shadow:none}
+.mmc-entete{flex:none;display:flex;align-items:center;gap:9px;padding:12px 12px 8px}
+.mmc.plein .mmc-entete{padding-top:calc(12px + env(safe-area-inset-top))}
+.mmc-rond{flex:none;width:36px;height:36px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.09);color:#fbf3ea;font:inherit;font-size:17px;line-height:1;text-decoration:none;cursor:pointer}
+.mmc-retour{font-size:24px}
+.mmc-medaillon{position:relative;flex:none;width:42px;height:42px;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 50% 35%,#e0a26a,#a8683a);box-shadow:0 0 0 2px #ffb347}
+.mmc-medaillon img{position:absolute;left:50%;top:1%;width:210%;height:auto;max-width:none;transform:translateX(-50%);user-select:none;-webkit-user-drag:none}
+.mmc-titre{flex:1;min-width:0;display:flex;flex-direction:column}
+.mmc-nom{font-weight:900;font-size:18px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mmc-ou{font-weight:600;font-size:12px;line-height:1.3;color:#c9b29c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mmc-humeur{flex:none;max-width:38%;padding:6px 10px;border-radius:14px;background:rgba(255,255,255,.09);font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mmc-cadre{position:relative;flex:1;min-height:0;margin:0 10px;border-radius:24px;overflow:hidden;background:#3a2414;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.mmc:not(.plein) .mmc-cadre{flex:none;height:clamp(280px,calc(100svh - 390px),560px)}
+.mmc-bas{flex:none;display:flex;flex-direction:column;gap:9px;padding:10px 12px 14px}
+.mmc.plein .mmc-bas{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.mmc-puces{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none}
+.mmc-puces::-webkit-scrollbar{display:none}
+.mmc-surtitre{flex:none;width:76px;font-weight:800;font-size:10px;line-height:1.15;letter-spacing:.02em;text-transform:uppercase;color:#ffd98a}
+.mmc-puce{flex:none;display:flex;align-items:center;gap:5px;padding:8px 11px;border:0;border-radius:14px;background:#33241a;box-shadow:inset 0 0 0 1px rgba(255,211,110,.35);color:#fbf3ea;font:inherit;font-weight:700;font-size:12.5px;white-space:nowrap;text-decoration:none;cursor:pointer}
+.mmc-gros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mmc-gros.mmc-actions-visite{grid-template-columns:repeat(2,1fr)}
+.mmc-gros-bouton{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:6px 4px;border:0;border-radius:18px;background:#33241a;box-shadow:inset 0 0 0 1px #5a4232;color:#fbf3ea;font:inherit;font-weight:800;font-size:12px;line-height:1.15;text-align:center;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mmc-gros-bouton span{font-size:22px;line-height:1}
+.mmc-gros-bouton.fort{background:linear-gradient(135deg,#ff9a3c,#ff5e62);box-shadow:0 8px 20px rgba(255,94,98,.3)}
+.mmc-gros-bouton:active,.mmc-puce:active,.mmc-toc:active{transform:scale(.97)}
+.mmc-pastille{position:absolute;top:6px;right:7px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#fff8ee;color:#2b1b12;font-style:normal;font-weight:900;font-size:11.5px;line-height:20px}
+.mmc-porte{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;background:radial-gradient(circle at 50% 40%,#4a2f1c,#17100c 72%)}
+.mmc-battant{position:relative;height:min(290px,48%);aspect-ratio:18/29;border-radius:10px;background:linear-gradient(180deg,#9a6a45,#6a4428);box-shadow:inset 0 0 0 8px #553520,0 20px 50px rgba(0,0,0,.6)}
+.mmc-battant::after{content:"";position:absolute;right:11%;top:52%;width:14px;height:14px;border-radius:50%;background:#ffcf6b;box-shadow:0 0 10px #ffcf6b}
+.mmc-battant .mmc-medaillon{position:absolute;left:50%;top:20%;transform:translateX(-50%);width:64px;height:64px;box-shadow:0 0 0 3px #f6e3c4}
+.mmc-porte p{margin:0;max-width:270px;color:#c9b29c;font-weight:700;font-size:14px;line-height:1.4;text-align:center}
+.mmc-toc{padding:12px 22px;border:0;border-radius:16px;background:#ff6b6b;color:#fff;font:inherit;font-weight:800;font-size:15.5px;white-space:nowrap;cursor:pointer;box-shadow:0 6px 16px rgba(255,107,107,.3)}
+.mmc-accueil{position:absolute;z-index:4;transform:translate(-50%,-10px);width:max-content;max-width:230px;padding:8px 12px;border-radius:16px;background:#fff8ee;color:#2b1b12;font-weight:800;font-size:13px;line-height:1.3;box-shadow:0 6px 18px rgba(30,10,0,.4);pointer-events:none;animation:mmc-apparait .3s ease-out}
+.mmc-accueil::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;background:#fff8ee;transform:translateX(-50%) rotate(45deg)}
+@keyframes mmc-apparait{from{opacity:0}to{opacity:1}}
+.mmc-cadre.montre .mmc-zone::after{box-shadow:0 0 0 2px rgba(255,248,238,.7),0 0 16px rgba(255,220,140,.55);animation:mmc-montre 2.4s ease-in-out infinite}
+.mmc-cadre.montre .mmc-pano>.mmc-objet{border-radius:8px;box-shadow:0 0 0 2px rgba(255,248,238,.7),0 0 16px rgba(255,220,140,.55)}
+@keyframes mmc-montre{50%{box-shadow:0 0 0 2.5px rgba(255,255,255,.95),0 0 26px rgba(255,220,140,.9)}}
 .mmc-scene.attente{background:linear-gradient(110deg,#1a0f14 30%,#2a1820 50%,#1a0f14 70%);background-size:200% 100%;animation:mmc-attente 1.4s linear infinite}
 @keyframes mmc-attente{to{background-position:-200% 0}}
 .mmc-defile{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;text-align:center}
@@ -1143,11 +1336,7 @@ const STYLES_MAISON_CATALOGUE = `
 @keyframes mmc-saut2{0%,100%{transform:translateY(0)}35%{transform:translateY(-7%) rotate(2deg)}70%{transform:translateY(0) scale(1.02,.97)}}
 .moment-soir .mmc-fig img{filter:sepia(.12) saturate(1.06) brightness(.97)}
 .moment-nuit .mmc-fig img{filter:brightness(.8) saturate(.85) sepia(.1)}
-.mmc-haut{position:absolute;left:10px;right:10px;top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none}
-.mmc.plein .mmc-haut{top:calc(10px + env(safe-area-inset-top))}
-.mmc-nom{padding:7px 13px;border-radius:999px;background:rgba(20,10,14,.62);font-weight:900;font-size:14.5px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.mmc-nom small{font-weight:700;opacity:.85}
-.mmc-fanions{position:absolute;left:10px;top:58px;display:flex;gap:6px;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none;z-index:5}
+.mmc-fanions{position:absolute;left:10px;top:10px;display:flex;gap:6px;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none;z-index:5}
 .mmc-fanions a{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 7px 11px;min-width:42px;color:#2a1424;text-decoration:none;background:linear-gradient(180deg,#ffe3a8,#f2c46b);clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);box-shadow:0 4px 10px rgba(0,0,0,.3);transform-origin:top center;animation:mmc-fanion 4s ease-in-out infinite}
 .mmc-fanions a:nth-child(2n){animation-delay:-1.3s;background:linear-gradient(180deg,#ffc2df,#ff8fc8)}
 .mmc-fanions a:nth-child(3n){animation-delay:-2.6s;background:linear-gradient(180deg,#c9e6ff,#8cc4f2)}
@@ -1155,8 +1344,6 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-fanions small{font-size:9.5px;font-weight:900;max-width:64px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @keyframes mmc-fanion{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
 @media (prefers-reduced-motion: reduce){.mmc-fanions a{animation:none}}
-.mmc-boutons{display:flex;gap:8px}
-.mmc-qdj{position:absolute;left:10px;top:calc(60px + env(safe-area-inset-top));max-width:calc(100% - 20px);padding:7px 13px;border:0;border-radius:999px;background:rgba(255,246,234,.92);color:#2a1424;font-weight:800;font-size:13.5px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mmc-reponses,.mmc-repondre{grid-column:1;display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .mmc-reponses span{font-size:14px;color:#F3DCE6}
 .mmc-reponses strong{color:#FFF4E6}
@@ -1164,39 +1351,28 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-champ-reponse{padding:10px 12px;border:1px solid #5a3352;border-radius:12px;background:#1d0a1b;color:#FFF4E6;font:inherit;font-size:16px}
 .mmc-erreur-q{color:#ffb4a8!important}
 .mmc-bulle .mmc-action[aria-pressed="true"]{background:#f2be6a}
-.mmc-retour{display:grid;place-items:center;text-decoration:none;color:#FFF4E6;font-size:24px;line-height:1;margin-right:auto}
-.mmc-haut .mmc-retour + .mmc-nom{margin-right:auto;margin-left:8px}
-.mmc-visite{min-height:100svh;background:#1a0f14}
+.mmc-visite{min-height:100svh;background:#17100c}
 .mmc-ferme{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;font-size:16px;line-height:1.5}
 .mmc-ferme a{color:#f2be6a;font-weight:800;text-decoration:none}
-.mmc-chez-soi{position:fixed;left:50%;top:calc(62px + env(safe-area-inset-top));transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(20,10,14,.72);font-size:13.5px;white-space:nowrap}
-.mmc-actions-visite{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;width:max-content;max-width:calc(100% - 32px)}
-.mmc-frapper.secondaire{background:rgba(20,10,14,.78);box-shadow:none;border:1px solid rgba(255,244,230,.35);font-size:15px;padding:11px 20px}
-.mmc-mes-cadeaux{padding:5px 12px;border-radius:999px;background:rgba(20,10,14,.7);font-size:13px}
+.mmc-chez-soi{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top));transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(20,10,14,.72);font-size:13.5px;white-space:nowrap}
+.mmc-mes-cadeaux{align-self:center;padding:2px 10px;color:#c9b29c;font-size:12.5px}
 .mmc-table{position:absolute;display:flex;align-items:flex-end;justify-content:center;gap:6%;pointer-events:none}
 .mmc-cadeau{pointer-events:auto;padding:0;border:0;background:none;cursor:pointer;font-size:clamp(14px,5vh,40px);line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45));-webkit-tap-highlight-color:transparent}
 .mmc-cadeau.emballe{animation:mmc-paquet 2.6s ease-in-out infinite}
 @keyframes mmc-paquet{0%,80%,100%{transform:none}86%{transform:rotate(-8deg)}92%{transform:rotate(7deg)}}
-.mmc-humeur{position:absolute;transform:translate(-50%,-6px);padding:5px 11px;border-radius:999px;background:rgba(255,246,234,.94);color:#2a1424;font-weight:800;font-size:clamp(11px,1.7vh,14px);white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.35);pointer-events:none}
-.mmc-frapper{white-space:nowrap;padding:13px 22px;border:0;border-radius:999px;background:#ff2f8f;color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(255,47,143,.8)}
-.mmc-ajouter{font-weight:900;color:#FFF4E6}
-.mmc-fait{position:absolute;left:50%;top:62px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(69,212,131,.92);color:#10261a;font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .3s ease-out}
-.mmc.plein .mmc-fait{top:calc(62px + env(safe-area-inset-top))}
+.mmc-fait{position:absolute;z-index:9;left:50%;top:12px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(69,212,131,.92);color:#10261a;font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .3s ease-out}
 .mmc-objet{-webkit-touch-callout:none;user-select:none}
-.mmc-reglages{pointer-events:auto;width:40px;height:40px;border:0;border-radius:50%;background:rgba(20,10,14,.62);font-size:19px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.mmc-indice{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100% - 32px);padding:9px 15px;border-radius:18px;background:rgba(20,10,14,.66);text-align:center;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.mmc.plein .mmc-indice{bottom:calc(16px + env(safe-area-inset-bottom))}
+.mmc-indice{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100% - 32px);padding:8px 14px;border-radius:18px;background:rgba(30,16,8,.75);text-align:center;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .mmc-indice span{font-size:14px;line-height:1.4;color:#F3DCE6}
-.mmc-indice b{font-size:13.5px;white-space:nowrap;animation:mmc-indice 2.4s ease-in-out infinite}
+.mmc-indice b{font-size:12.5px;font-weight:800;white-space:nowrap;animation:mmc-indice 2.4s ease-in-out infinite}
 @keyframes mmc-indice{0%,100%{opacity:.75}50%{opacity:1}}
-.mmc-bulle{position:absolute;left:10px;right:10px;bottom:12px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:12px 14px;border-radius:16px;background:rgba(20,10,14,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);line-height:1.4;animation:mmc-bulle .25s ease-out}
-.mmc.plein .mmc-bulle{bottom:calc(12px + env(safe-area-inset-bottom))}
+.mmc-bulle{position:absolute;z-index:9;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:12px 14px;border-radius:18px;background:rgba(28,16,9,.93);box-shadow:0 10px 30px rgba(0,0,0,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);line-height:1.4;animation:mmc-bulle .25s ease-out}
 .mmc-bulle b{font-size:15px}
 .mmc-bulle span{grid-column:1;font-size:14px;color:#F3DCE6}
 .mmc-bulle button{grid-row:1/3;grid-column:2;align-self:start;width:30px;height:30px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#FFF4E6;cursor:pointer}
 @keyframes mmc-bulle{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .mmc-bulle .mmc-actions{grid-column:1;display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.mmc-bulle .mmc-action{display:inline-flex;align-items:center;padding:7px 13px;border-radius:999px;background:#FFF4E6;color:#2a1424;font-weight:900;font-size:14px;text-decoration:none}
+.mmc-bulle .mmc-action{display:inline-flex;align-items:center;padding:8px 13px;border-radius:14px;background:#fff8ee;color:#2b1b12;font-weight:900;font-size:14px;text-decoration:none}
 .mmc-objet{position:absolute;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .35s ease,filter .35s ease}
 .mmc-objet img{user-select:none;-webkit-user-drag:none}
 .mmc-objet.vise{transform:scale(1.1);filter:drop-shadow(0 0 12px rgba(255,214,150,.95));z-index:2}
@@ -1217,14 +1393,12 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-platine .mmc-emoji{background:rgba(255,246,234,.94)}
 .moment-soir .mmc-objet img{filter:sepia(.14) saturate(1.04) brightness(.97)}
 .moment-nuit .mmc-objet img{filter:brightness(.72) saturate(.85)}
-.mmc-arrivee{position:absolute;left:50%;top:62px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(20,10,14,.78);font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .35s ease-out;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.mmc-arrivee{position:absolute;z-index:6;left:50%;top:12px;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 32px);padding:9px 16px;border-radius:999px;background:rgba(20,10,14,.78);font-weight:900;font-size:15px;text-align:center;pointer-events:none;animation:mmc-arrivee .35s ease-out;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 @keyframes mmc-arrivee{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
-.mmc.plein .mmc-arrivee{top:calc(62px + env(safe-area-inset-top))}
 .mmc-grand{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;background:rgba(10,5,8,.92);cursor:zoom-out}
 .mmc-grand img{max-width:100%;max-height:78svh;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
 .mmc-grand p{margin:0;font-size:14px;color:#F3DCE6}
 .mmc-grand button{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#FFF4E6;font-size:16px;cursor:pointer}
-.mmc-vide{margin:0 2px;color:#CDB4C0;font-size:14px;line-height:1.45}
 .mmc-erreur-grande{margin:24px 16px;font-size:16px;line-height:1.45}
 .mmc-choix{position:fixed;inset:0;z-index:60;overflow-y:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));background:#140b10;color:#FFF4E6}
 .mmc-choix header{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -1251,5 +1425,5 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-oui:disabled{opacity:.7;cursor:default}
 .mmc-non{background:rgba(255,255,255,.1);color:#FFF4E6}
 .mmc-erreur{color:#FFB4A9 !important}
-@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe{animation:none!important}.mmc-objet{transition:none}}
+@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-cadre.montre .mmc-zone::after,.mmc-accueil,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe{animation:none!important}.mmc-objet{transition:none}}
 `;
