@@ -632,9 +632,10 @@ ses couleurs (le brun chaud, le crème, l'ambre, le dégradé orange-corail des 
 - **L'en-tête** : sa figurine en médaillon, « Ma maison » (« 🏠 Chez Léa » en visite, avec ‹ pour revenir), en
   dessous sa pièce et son moment (« 🛋️ Salon · 🌙 soir »), son humeur du jour dans une pastille (elle quitte le dessus
   de la figurine), et ⚙️ (changer de pièce) chez soi.
-- **La pièce, en carte** aux coins arrondis, entre l'en-tête et le bas. Tant qu'on n'a rien touché, **ce qui se touche
-  est entouré** (les emplacements et les objets, un contour crème qui respire), avec « 👆 Touche les objets de ta
-  pièce » en bas de la carte ; au premier toucher, l'indice et les contours s'en vont. Les « Mes salons » (fanions),
+- **La pièce, en carte** aux coins arrondis, entre l'en-tête et le bas. Tant qu'on n'a rien touché, « 👆 Touche les
+  objets de ta pièce » en bas de la carte ; au premier toucher, l'indice s'en va. (Au début, ce qui se touche était aussi
+  entouré d'un contour crème ; le 21 novembre 2026, le propriétaire : « il y a des rectangles blancs autour de ce qui est
+  cliquable » — les contours sont partis.) Les « Mes salons » (fanions),
   l'arrivée, les bulles, « ✓ … » : dans la carte.
 - **Le bas, chez soi** : « Aujourd'hui, si tu veux » — les puces « ❓ Question » (sa question du jour, quand il y en a
   une) et « 📺 Ma télé » (Découvrir) ; puis **trois grands boutons** :

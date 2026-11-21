@@ -149,6 +149,9 @@ await lea.screenshot({ path: `${D}/salons-seance-0-places.png` });
 // inviter Sam : une place libre (＋) — son carnet, ou un lien WhatsApp qui réserve la place
 await lea.locator("button.so-place-libre").first().click();
 ok(await attendre(lea, async () => decodeURIComponent((await lea.locator("[data-whatsapp-place]").getAttribute("href").catch(() => "")) ?? "").includes("/univers/salons?chez=")), "« ＋ » : sa feuille — ses proches, et « 📲 Inviter par WhatsApp » (un lien qui réserve la place)");
+// (21 novembre 2026 : les émojis arrivaient en « � » dans WhatsApp — l'adresse de WhatsApp les garde, pas `wa.me`)
+const hrefWa = (await lea.locator("[data-whatsapp-place]").getAttribute("href")) ?? "";
+ok(hrefWa.startsWith("https://api.whatsapp.com/send?text=") && decodeURIComponent(hrefWa.split("text=")[1] ?? "").startsWith("🎬 Léa t’invite"), "… l'adresse de WhatsApp, ses émojis intacts (« 🎬 Léa t'invite… »)");
 ok(await attendre(lea, async () => (await lea.locator(`[data-proches] [data-invite="${SAM.cle}"]`).count()) === 1), "« 👥 » : ses proches (Sam)");
 await lea.locator(`[data-invite="${SAM.cle}"]`).click();
 ok((await lea.locator(`[data-invite="${SAM.cle}"]`).getAttribute("aria-pressed")) === "true" && /Inviter \(1\)/.test(await texte(lea.locator("[data-envoyer-invitations]"))), "Sam choisi : « Inviter (1) »");

@@ -108,7 +108,8 @@ ok((await gros.count()) === 3 && /Pendant ton absence/.test(await gros.nth(0).in
 const boites = await Promise.all([0, 1, 2].map((k) => gros.nth(k).boundingBox()));
 ok(boites.every((x) => x && x.y + x.height <= 844 + 1 && x.height >= 56 && x.height < 90), `… les trois à l'écran, de la même taille (${boites.map((x) => Math.round(x?.height)).join(", ")} pt)`);
 ok(/Aujourd’hui, si tu veux/i.test(await scene.locator(".mmc-puces").innerText()) && (await scene.locator('.mmc-puce[data-puce="tele"]').getAttribute("href")) === "/collection#decouvrir", "« Aujourd'hui, si tu veux » : « 📺 Ma télé »");
-ok((await scene.locator(".mmc-cadre.montre").count()) === 1, "ce qui se touche est entouré, tant qu'on n'a rien touché");
+// (21 novembre 2026, le propriétaire : « des rectangles blancs autour de ce qui est cliquable » — plus de contours)
+ok((await scene.locator(".mmc-cadre.montre").count()) === 0 && (await scene.locator(".mmc-zone").evaluateAll((l) => l.every((z) => /none|rgba\([^)]*, 0\)/.test(getComputedStyle(z, "::after").boxShadow)))), "pas de rectangles blancs autour de ce qui se touche");
 // (sa figurine dans son fauteuil : la place de gauche du relevé, de la tête au sol, entière à l'écran)
 const fig = await scene.locator(".mmc-fig").boundingBox();
 ok(fig && Math.abs(fig.x + fig.width / 2 - (pano.x + 0.3 * pano.width)) < 4 && Math.abs(fig.y + fig.height - (pano.y + 0.86 * pano.height)) < 4 && Math.abs(fig.height - 0.3 * pano.height) < 4 && fig.x >= vue.x - 1 && fig.x + fig.width <= vue.x + vue.width + 1, `sa figurine à sa place, entière à l'écran (${Math.round(fig?.x + fig?.width / 2)} pt, ${Math.round(fig?.height)} pt de haut)`);
@@ -128,7 +129,7 @@ const toucher = async (zone) => {
 };
 await toucher("tele");
 ok(await attendre(async () => /La télé/.test(await scene.locator('.mmc-bulle[data-bulle="tele"]').innerText())), "la télé : ce qu'elle accueillera");
-ok((await scene.locator(".mmc-indice").count()) === 0 && (await scene.locator(".mmc-cadre.montre").count()) === 0, "au premier toucher, l'indice s'en va (et les contours avec lui)");
+ok((await scene.locator(".mmc-indice").count()) === 0, "au premier toucher, l'indice s'en va");
 await p.screenshot({ path: `${D}/ma-maison-4-tele.png` });
 await toucher("lampes");
 ok(await attendre(async () => (await scene.locator(".mmc-lueur.allumee").count()) === 1 && /Lampe allumée/.test(await scene.locator(".mmc-bulle").innerText())), "une lampe : elle s'allume");

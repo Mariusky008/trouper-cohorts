@@ -569,7 +569,9 @@ function Piece({
         )}
       </header>
       {/* (la pièce, en carte ; tant qu'on n'a rien touché, ce qui se touche est entouré) */}
-      <div className={`mmc-cadre${indice && !arrivee && porteOuverte ? " montre" : ""}`} ref={cadre}>
+      {/* (21 novembre 2026, le propriétaire : « il y a des rectangles blancs autour de ce qui est cliquable » — plus de
+          contours : « 👆 Touche les objets » suffit) */}
+      <div className="mmc-cadre" ref={cadre}>
       <div
         className="mmc-defile"
         ref={defile}
@@ -1369,9 +1371,6 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-accueil{position:absolute;z-index:4;transform:translate(-50%,-10px);width:max-content;max-width:230px;padding:8px 12px;border-radius:16px;background:#fff8ee;color:#2b1b12;font-weight:800;font-size:13px;line-height:1.3;box-shadow:0 6px 18px rgba(30,10,0,.4);pointer-events:none;animation:mmc-apparait .3s ease-out}
 .mmc-accueil::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;background:#fff8ee;transform:translateX(-50%) rotate(45deg)}
 @keyframes mmc-apparait{from{opacity:0}to{opacity:1}}
-.mmc-cadre.montre .mmc-zone::after{box-shadow:0 0 0 2px rgba(255,248,238,.7),0 0 16px rgba(255,220,140,.55);animation:mmc-montre 2.4s ease-in-out infinite}
-.mmc-cadre.montre .mmc-pano>.mmc-objet{border-radius:8px;box-shadow:0 0 0 2px rgba(255,248,238,.7),0 0 16px rgba(255,220,140,.55)}
-@keyframes mmc-montre{50%{box-shadow:0 0 0 2.5px rgba(255,255,255,.95),0 0 26px rgba(255,220,140,.9)}}
 .mmc-scene.attente{background:linear-gradient(110deg,#1a0f14 30%,#2a1820 50%,#1a0f14 70%);background-size:200% 100%;animation:mmc-attente 1.4s linear infinite}
 @keyframes mmc-attente{to{background-position:-200% 0}}
 .mmc-defile{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;text-align:center}
@@ -1482,5 +1481,5 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-oui:disabled{opacity:.7;cursor:default}
 .mmc-non{background:rgba(255,255,255,.1);color:#FFF4E6}
 .mmc-erreur{color:#FFB4A9 !important}
-@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-cadre.montre .mmc-zone::after,.mmc-accueil,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe{animation:none!important}.mmc-objet{transition:none}}
+@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-accueil,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe{animation:none!important}.mmc-objet{transition:none}}
 `;

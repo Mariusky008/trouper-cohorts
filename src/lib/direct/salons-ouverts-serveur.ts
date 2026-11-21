@@ -21,7 +21,7 @@ import { randomBytes } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
-import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe } from "./ma-figurine-serveur";
+import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe, telecharger } from "./ma-figurine-serveur";
 import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
 import { cheminMesSalons, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, visibiliteDeLaMaison } from "./ma-maison-serveur";
@@ -716,6 +716,23 @@ export async function reserverUnePlace(supabase: Supabase, moi: Habitant): Promi
   const jeton = randomBytes(12).toString("base64url");
   if (!(await ecrireJson(supabase, cheminPlace(qui8(moi.id), jeton), { h: moi.id, le: Date.now() }))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   return { lien: `/univers/salons?chez=${encodeURIComponent(cle)}&place=${jeton}`, prenom };
+}
+/**
+ * 🖼️ L'APERÇU D'UN LIEN DE PLACE, DANS WHATSAPP (21 novembre 2026, le propriétaire : « la miniature sur WhatsApp parle
+ * d'un autre concept ») : le prénom de celui qui invite et sa figurine assise — seulement pour un lien de place qui
+ * existe (créé il y a moins d'une semaine) : une clé seule ne montre la figurine de personne.
+ */
+export async function apercuDeLaPlace(supabase: Supabase, chez: unknown, jeton: unknown): Promise<{ prenom: string; figurine: Buffer | null } | null> {
+  const j = jetonValide(jeton);
+  if (!j) return null;
+  const hHote = await hDeCle(supabase, chez).catch(() => null);
+  if (!hHote) return null;
+  const f = await lireJson<{ h?: string; le?: number }>(supabase, cheminPlace(qui8(hHote), j)).catch(() => ({}) as { h?: string; le?: number });
+  if (f.h !== hHote || Date.now() - (Number(f.le) || 0) > 7 * 24 * 3600_000) return null;
+  // (sa figurine assise, détourée — celle de sa maison : faite ici si elle ne l'est pas encore ; lue dans le seau)
+  const [prenom, faite] = await Promise.all([prenomDuCompte(supabase, hHote).catch(() => ""), figurineDeLaMaison(supabase, hHote).catch(() => null)]);
+  const figurine = faite ? await telecharger(supabase, `${hHote}/ma-piece/figurine.png`).catch(() => null) : null;
+  return { prenom, figurine };
 }
 /** (il ouvre le lien d'une place : elle est à lui — l'invitation, et proches des deux côtés ; `null` : c'est fait) */
 async function prendrePlace(supabase: Supabase, hHote: string, qHote: string, moi: Habitant, jeton: string): Promise<string | null> {

@@ -163,6 +163,16 @@ ok((await appel(LEA, `${SALONS}?accueil=1`)).invitations?.[0]?.titre === W.titre
 const pl = await appel(SAM, SALONS, { action: "place" });
 const jeton = new URL(`https://x${pl.lien ?? ""}`).searchParams.get("place") ?? "";
 ok(pl.statut === 200 && pl.lien?.startsWith(`/univers/salons?chez=${CLE_SAM}&place=`) && /^[A-Za-z0-9_-]{12,32}$/.test(jeton) && pl.prenom === "Sam", "« 📲 Inviter par WhatsApp » : un lien qui réserve une place libre de sa télé");
+// (🖼️ 21 novembre 2026 : son aperçu dans WhatsApp — « 🎬 Sam t'invite devant sa télé », et sa carte)
+const page = await (await fetch(`${BASE}${pl.lien}`, { headers: { cookie: COOKIE_ADMIN } })).text();
+const og = (p) => new RegExp(`<meta property="og:${p}" content="([^"]*)"`).exec(page)?.[1]?.replace(/&amp;/g, "&") ?? "";
+ok(og("title") === "🎬 Sam t’invite devant sa télé" && /Une place t’attend à côté de sa figurine/.test(og("description")), `l'aperçu du lien dans WhatsApp : « ${og("title")} »`);
+ok(og("image").includes(`/univers/salons/apercu?chez=${CLE_SAM}&place=${jeton}`), "… et sa carte");
+const carte = await fetch(`${BASE}/univers/salons/apercu?chez=${CLE_SAM}&place=${jeton}`);
+const octetsCarte = carte.ok ? Buffer.from(await carte.arrayBuffer()) : Buffer.alloc(0);
+ok(carte.status === 200 && carte.headers.get("content-type") === "image/jpeg" && octetsCarte.length > 5000 && octetsCarte.length < 300_000, `la carte : un JPEG léger (${Math.round(octetsCarte.length / 1024)} ko)`);
+const pageFaux = await (await fetch(`${BASE}/univers/salons?chez=${CLE_SAM}&place=pasunbonjeton00`, { headers: { cookie: COOKIE_ADMIN } })).text();
+ok(/<meta property="og:title" content="🎬 Une place t’attend devant la télé"/.test(pageFaux) && !pageFaux.includes("Sam t’invite"), "un faux lien : l'aperçu ne dit le prénom de personne");
 ok((await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM })).statut === 403, "Tom, sans le lien : il n'entre pas");
 ok((await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM, place: "pasunbonjeton00" })).statut === 403, "… ni avec un faux lien");
 const pT = await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM, place: jeton });
