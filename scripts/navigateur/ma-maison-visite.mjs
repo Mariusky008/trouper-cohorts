@@ -4,8 +4,9 @@
 // Sam. Sam est son proche ; Zoé, non. 🚪 « Qui peut entrer ? » : « 👯 Mes proches » d'office ; « 🌍 Tout le monde »
 // demande « J'ai 18 ans ou plus ». La route : Sam voit tout ; Zoé, la maison fermée tant qu'elle est réservée aux
 // proches, puis — ouverte à tous — seulement le livre (un cadre garde son tableau) ; « Les univers à visiter » la
-// montrent. L'écran de Zoé : « 🏠 Chez Léa », le livre seul (« Mis par Léa »), ni ＋ ni ⚙️, « 🚪 Frapper à la porte » —
-// Léa le saura. « 🔒 Moi seul » : la maison fermée, même pour Sam. Ni débordement, ni erreur, ni le mot « exemple ».
+// montrent. L'écran de Zoé : « 🏠 Chez Léa », d'abord sa porte (la maquette, section 23) : « ✊ Toc toc » — Léa le
+// saura, et sa figurine ouvre ; puis le livre seul (« Mis par Léa »), ni ＋ ni ⚙️. Sam, son proche : « 🎁 Une surprise »
+// et « 💬 Votre salon ». « 🔒 Moi seul » : la maison fermée, même pour Sam. Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import { poserPiece } from "../piece-en-hauteur.mjs";
 import crypto from "node:crypto";
@@ -135,7 +136,7 @@ const attendre = async (p, f, ms = 15000) => {
 const lea = await tel(LEA, true);
 await lea.goto(`${BASE}/univers/maison`, { waitUntil: "domcontentloaded" });
 const bouton = lea.locator('[data-geste="qui"]');
-ok(await attendre(lea, async () => (await bouton.innerText()).trim() === "👯"), `🚪 en haut de sa pièce : « 👯 » (ses proches, d'office)`);
+ok(await attendre(lea, async () => (await bouton.getAttribute("data-visibilite")) === "proches" && /Comme la voient tes proches/.test(await bouton.innerText())), "👀 « Comme la voient tes proches » : ses proches, d'office");
 await bouton.click();
 const feuille = lea.locator("[data-qui-entre]");
 ok(await attendre(lea, async () => (await feuille.locator("[data-visibilite]").count()) === 3 && (await feuille.locator('[data-visibilite="proches"]').getAttribute("aria-pressed")) === "true"), "« Qui peut entrer chez moi ? » : trois choix, « Mes proches » coché");
@@ -148,7 +149,7 @@ ok((await feuille.locator(".acm-erreur").count()) === 0, "coché : le message s'
 await lea.waitForTimeout(400);
 await lea.screenshot({ path: `${D}/ma-maison-visite-1-qui.png` });
 await feuille.locator("[data-garder]").click();
-ok(await attendre(lea, async () => (await feuille.count()) === 0 && (await bouton.innerText()).trim() === "🌍"), "coché : sa maison est ouverte à tous (🌍)");
+ok(await attendre(lea, async () => (await feuille.count()) === 0 && (await bouton.getAttribute("data-visibilite")) === "tous"), "coché : sa maison est ouverte à tous (🌍)");
 const publics = await lireStock("univers/publics.json");
 ok((publics.liste ?? []).some((x) => x.h === LEA.id), "… et entre dans « Les univers à visiter »");
 
@@ -159,7 +160,20 @@ const zoe = await tel(ZOE);
 await zoe.goto(`${BASE}/univers/chez/${LEA.cle}?piece=1`, { waitUntil: "domcontentloaded" });
 const scene = zoe.locator('.mmc-visite[data-visite="ouvert"] .mmc-scene');
 ok(await attendre(zoe, async () => (await scene.locator(".mmc-objet").count()) === 1 && /Chez Léa/.test(await scene.locator(".mmc-nom").innerText())), "l'écran de Zoé : « 🏠 Chez Léa », un seul objet");
-ok((await scene.locator('[data-geste="ajouter"], [data-geste="reglages"], [data-geste="qui"]').count()) === 0, "… ni ＋, ni ⚙️, ni 🚪 : ce n'est pas chez elle");
+ok((await scene.locator('[data-geste="ajouter"], [data-geste="reglages"], [data-geste="qui"], [data-geste="absence"]').count()) === 0, "… ni ＋, ni ⚙️, ni 👀, ni 🛎️ : ce n'est pas chez elle");
+// (🚪 la maquette : d'abord sa porte — on frappe, sa figurine ouvre)
+const porte = scene.locator("[data-porte]");
+ok(await attendre(zoe, async () => /Tu es devant la porte de Léa\. Frappe : sa figurine t’ouvre\./.test(await porte.innerText())), "sa porte : « Tu es devant la porte de Léa. Frappe : sa figurine t'ouvre. »");
+ok((await scene.locator(".mmc-indice").count()) === 0, "… pas encore « Touche les objets »");
+const frapperBox = await scene.locator('[data-geste="frapper"]').boundingBox();
+ok(frapperBox && frapperBox.height < 60, `« ✊ Toc toc » sur une ligne (${Math.round(frapperBox?.height)} pt)`);
+await zoe.screenshot({ path: `${D}/ma-maison-visite-2-porte.png` });
+await scene.locator('[data-geste="frapper"]').click();
+ok(await attendre(zoe, async () => /Léa saura que tu as frappé/.test(await scene.locator("[data-fait]").innerText())), "« ✊ Toc toc » : « ✓ Léa saura que tu as frappé »");
+ok(await attendre(zoe, async () => (await porte.count()) === 0 && /Oh, te voilà ! Entre 😊/.test(await scene.locator("[data-accueil]").innerText())), "… la porte s'ouvre : « Oh, te voilà ! Entre 😊 »");
+const visites = await lireStock(`${LEA.id}/monde/visites.json`);
+ok((visites.liste ?? []).some((x) => x.de === ZOE.id), "… et Léa le saura (sa visite est notée)");
+ok((await scene.locator(".mmc-actions-visite").count()) === 0, "Zoé n'est pas sa proche : ni « Une surprise », ni « Votre salon »");
 const livre = scene.locator('.mmc-objet[aria-label="📚 Le Petit Prince"]');
 await livre.evaluate((x) => x.scrollIntoView({ inline: "center", block: "nearest" }));
 await zoe.waitForTimeout(250);
@@ -170,13 +184,7 @@ const fig = scene.locator(".mmc-fig");
 ok(await attendre(zoe, async () => (await fig.locator("img").evaluate((i) => i.complete && i.naturalWidth > 0)) === true), "la figurine de Léa, chez elle, au centre");
 await fig.evaluate((x) => x.scrollIntoView({ inline: "center", block: "nearest" }));
 await zoe.waitForTimeout(300);
-const frapperBox = await scene.locator('[data-geste="frapper"]').boundingBox();
-ok(frapperBox && frapperBox.height < 60, `« Frapper à la porte » sur une ligne (${Math.round(frapperBox?.height)} pt)`);
-await zoe.screenshot({ path: `${D}/ma-maison-visite-2-zoe.png` });
-await scene.locator('[data-geste="frapper"]').click();
-ok(await attendre(zoe, async () => /Léa saura que tu as frappé/.test(await scene.locator("[data-fait]").innerText())), "« 🚪 Frapper à la porte » : « ✓ Léa saura que tu as frappé »");
-const visites = await lireStock(`${LEA.id}/monde/visites.json`);
-ok((visites.liste ?? []).some((x) => x.de === ZOE.id), "… et Léa le saura (sa visite est notée)");
+await zoe.screenshot({ path: `${D}/ma-maison-visite-3-zoe.png` });
 ok(!(await zoe.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1)), "pas de débordement");
 
 // ═══ SAM, SON PROCHE : TOUT, ET « GARDÉ AVEC SAM » ═══
@@ -184,6 +192,9 @@ const sam = await tel(SAM);
 await sam.goto(`${BASE}/univers/chez/${LEA.cle}?piece=1`, { waitUntil: "domcontentloaded" });
 const sceneSam = sam.locator('.mmc-visite[data-visite="ouvert"] .mmc-scene');
 ok(await attendre(sam, async () => (await sceneSam.locator(".mmc-objet").count()) === 3), "Sam : les trois (la photo au cadre, le livre, le mot)");
+await sceneSam.locator('[data-geste="frapper"]').click();
+ok(await attendre(sam, async () => (await sceneSam.locator("[data-porte]").count()) === 0 && /Une surprise/.test(await sceneSam.locator(".mmc-actions-visite").innerText()) && (await sceneSam.locator('[data-geste="salon"]').getAttribute("href")) === "/collection#proches"), "son proche, entré : « 🎁 Une surprise » et « 💬 Votre salon »");
+await sam.screenshot({ path: `${D}/ma-maison-visite-4-sam.png` });
 
 // ═══ « 🔒 MOI SEUL » ═══
 const r = await fetch(`${BASE}/api/direct/ma-piece`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${LEA.jeton}; sb-127-auth-token=base64-${b64(session)}` }, body: JSON.stringify({ action: "visibilite", v: "moi" }) });

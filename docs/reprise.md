@@ -55,6 +55,12 @@ ouverts montrent l'image en hauteur de la messagerie (`pieces-duo/<pièce>/decor
 comme la messagerie, sa figurine à la place de gauche du relevé. Les essais posent la pièce avec
 `scripts/piece-en-hauteur.mjs`.
 
+**Ma maison comme la maquette (21 novembre 2026 ; `ma-maison.md`, section 23)** : l'en-tête (médaillon, « Ma maison »,
+pièce · moment, humeur, ⚙️), la pièce en carte (ce qui se touche entouré jusqu'au premier toucher), « Aujourd'hui, si
+tu veux » et trois grands boutons (🛎️ Pendant ton absence, ＋ Ajouter chez moi, 👀 Comme la voient tes proches). En
+visite : d'abord la porte et « ✊ Toc toc », puis « Nouveau aujourd'hui », 🎁 Une surprise et 💬 Votre salon (proches).
+Pas encore : « 🎬 Film à deux » (le défi à deux attend le propriétaire).
+
 **🎭 Les gradins des salons ouverts (20 novembre 2026, au soir ; `decouvrir.md`, section 27)** : un décor par lieu (onze
 lieux pour les douze passions), huit emplacements sur deux marches, fabriqués et validés par le propriétaire sur
 `/admin/humain/salons` ; seul un gradin validé va dans les salons (sinon, la pièce). **À faire par le propriétaire, en

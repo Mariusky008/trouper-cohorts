@@ -264,6 +264,42 @@ export const PHRASES_MAISON = {
 } as const;
 
 /**
+ * 🎨 (21 novembre 2026, le propriétaire : « elle ne ressemble pas vraiment à ce qui était prévu […] il manque les boutons
+ * et le style » — la maquette « Ma maison, version adulte ») L'EN-TÊTE ET LES BOUTONS DU BAS (`ma-maison.md`, section 23) :
+ * sa figurine en médaillon, « Ma maison », sa pièce et son moment, son humeur ; dessous, « Aujourd'hui, si tu veux » et
+ * trois grands boutons — chez soi : « 🛎️ Pendant ton absence », « ＋ Ajouter chez moi », « 👀 Comme la voient tes
+ * proches » ; chez un proche : la porte (« ✊ Toc toc »), « 🎁 Une surprise », « 💬 Votre salon ».
+ */
+export const PHRASES_BAS = {
+  maMaison: "Ma maison",
+  aujourdhui: "Aujourd’hui, si tu veux",
+  nouveau: "Nouveau aujourd’hui",
+  question: "❓ Question",
+  maTele: "📺 Ma télé",
+  absence: "Pendant ton absence",
+  absenceChapo: "Ce qu’on a laissé chez toi",
+  absenceVide: "Rien de neuf pour l’instant : tes proches passeront bientôt.",
+  absencePied: "Pas de compteur de visites : seulement ce que tes proches ont laissé.",
+  ajouter: "Ajouter chez moi",
+  commeEux: "Comme la voient tes proches",
+  surprise: "Une surprise",
+  salon: "Votre salon",
+  toctoc: "✊ Toc toc",
+  porte: (prenom: string) => `Tu es devant la porte de ${prenom}. Frappe : sa figurine t’ouvre.`,
+  entre: "Oh, te voilà ! Entre 😊",
+  indiceMoi: "👆 Touche les objets de ta pièce",
+  indiceVisite: "👆 Touche les objets",
+  frappe: (prenom: string) => `${prenom} a frappé à ta porte`,
+  cadeau: (prenom: string) => `${prenom} t’a laissé une surprise`,
+  reponses: (n: number) => `${n > 1 ? `${n} proches ont` : "Un proche a"} répondu à ta question du jour`,
+  voir: "Voir",
+  ouvrir: "Ouvrir",
+} as const;
+/** (en visite) le petit nom d'un objet nouveau du jour, pour sa puce : « 🖼️ Photo », « 🎬 Clip », « 🎵 Chanson »… */
+export const puceDeLObjet = (o: { sorte: SorteMaison; emoji: string }) =>
+  o.sorte === "photo" ? "🖼️ Photo" : o.sorte === "video" ? "🎬 Clip" : o.sorte === "musique" ? "🎵 Chanson" : `${o.emoji} Nouveau`;
+
+/**
  * ＋ (lot M2, deuxième partie) « AJOUTER CHEZ MOI » (`ma-maison.md`, section 6) : mettre soi-même ce qui compte, sans
  * conversation — une photo de son téléphone (un cadre), un film ou un clip (la télé), une chanson (la platine), un livre,
  * une recette, un voyage, une fierté ou autre chose (l'étagère). Rien d'obligatoire.
