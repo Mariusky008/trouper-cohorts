@@ -1269,3 +1269,40 @@ la vidéo » chez Léa, « Léa va lancer la vidéo » chez Sam) ; `salons-gradi
 **La suite** (le lot B, décidé le même jour) : « Ma télé du jour » devient ma séance — le même salon à quatre places ; mes
 amis qui ont déjà vu la vidéo y rejouent leurs réactions ; une place libre (＋) ouvre mon carnet, ou envoie un lien
 WhatsApp qui assoit la personne à cette place (et nous rend proches).
+
+## 30. ⭐ « Ma télé du jour » est mon salon à quatre places (21 novembre 2026, le lot B)
+
+Le propriétaire : « c'est un peu compliqué la différence entre "Ma télé du jour" qui nous donne les vidéos du jour mais on
+arrive dans notre salon, et du coup on est perdu entre "Les salons ouverts par passion" et "Ma télé du jour" : je pense
+qu'il faut simplifier en ayant la même chose mais avec seulement 4 places pour seulement nos amis, même décor, sauf que
+les places libres sont cliquables et ouvrent votre carnet d'adresses pour envoyer une invitation simplement s'ils sont
+déjà inscrits sur ClikMe, ou alors une invitation envoyée sur WhatsApp pour nous rejoindre à la place libre ». Puis, à nos
+questions : garder les réactions des amis qui ont déjà vu la vidéo (« Oui ») ; celui qui ouvre le lien WhatsApp devient
+proche en s'asseyant (« Oui »).
+
+- **La carte « Ma télé du jour »** (Découvrir) : « ▶ Regarder » ouvre **ma séance** (`/univers/salons?chez=moi`) — le même
+  salon que ceux des passions (section 29) : **quatre places**, la vidéo qui part seule (ma télé du jour, dans son ordre),
+  « 🔊 Touche pour le son ». (Sans vidéos encore : l'écran d'avant, « bientôt ». L'écran d'avant reste aussi celui des
+  notifications « revois-la avec ses réactions » : `/collection?tele=<id>`.)
+- **⭐ Mes amis qui l'ont déjà vue** (chez moi seulement) : ceux de mes proches qui ont vu cette vidéo s'assoient aux
+  places libres — **la dernière reste libre**, pour inviter — « Sam · l'a vue », et **rejouent leurs réactions à leur
+  seconde** (l'emoji qui saute, ou leurs mots en bulle). Quand l'un d'eux arrive en vrai, il n'est plus assis en souvenir.
+- **➕ Une place libre** (chez moi) : un « ＋ » qui brille ; un toucher ouvre la feuille d'invitation — **mes proches à
+  cocher** (trois au plus, la notification et la carte « Venir », comme avant), et **« 📲 Inviter par WhatsApp »** : un
+  lien qui **réserve une place** (`/univers/salons?chez=<ma clé>&place=<jeton>`, six heures, une seule personne).
+  Celui qui l'ouvre s'assoit à la place libre, et **nous devenons proches des deux côtés** ; je suis prévenu (« 🎬 Tom a
+  pris ta place libre »). Sans figurine : « Créer ma figurine », puis « 🎬 Rejoindre ta place » (le même lien). Le lien
+  déjà servi : « Ce lien a déjà servi, ou il a plus de six heures : demande-en un autre. »
+- **Ma télé du jour apprend toujours** : la vidéo d'avant est notée vue (jusqu'où, jusqu'au bout ?) — elle ne revient
+  plus, son thème monte ou descend ; **mes réactions** (😂 ❤️ 😮 😱 👏) restent sur la vidéo, à leur seconde : mes amis
+  les verront (😱 devient « Oh non ! », 👏 « J'adore »).
+
+**Le rangement** : `decouvrir/salons/prives/chez-<q>/places/<jeton>.json` ({ h, le, pris?, prisLe? }). **La route**
+(`/api/direct/salons-ouverts`) : `place` → `{ lien, prenom }` ; `entrer-chez` prend `place` (le jeton). La page de la
+figurine prend `suite` (le lien d'une place : « 🎬 Rejoindre ta place »).
+
+**Les essais** : `essai-regarder-a-deux-route.mjs` (le lien d'une place ; Tom, sans lui, puis avec un faux : refusé ;
+avec : assis, et proches des deux côtés ; Zoé avec le même : déjà servi ; Tom revient : sa place l'attend) ;
+`salons-seance.mjs` (la carte mène au salon ; Sam, qui l'a déjà vue, assis à côté — « Sam · l'a vue » — et son rire à
+2 s ; deux « ＋ » ; la feuille et « 📲 Inviter par WhatsApp » ; Sam arrivé en vrai, plus en souvenir) ; `tele-du-jour.mjs`
+(« ▶ Regarder » : le salon à quatre places ; l'écran d'avant par son adresse).

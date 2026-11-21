@@ -58,7 +58,7 @@ async function photoReduite(f: File): Promise<string> {
 }
 
 /** (`piece` : où mène « 🏠 Choisis ta pièce » — vide : le parcours d'avant, `choisis-ta-piece-serveur.ts`) */
-export function NouvelleFigurine({ piece = "" }: { piece?: string }) {
+export function NouvelleFigurine({ piece = "", place }: { piece?: string; place?: string }) {
   const [etat, setEtat] = useState<EtatNouvelleFigurine | null>(null);
   const [erreur, setErreur] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -119,7 +119,7 @@ export function NouvelleFigurine({ piece = "" }: { piece?: string }) {
       ) : etape === "decouverte" ? (
         <Decouverte etat={etat} occupe={occupe} faire={faire} />
       ) : (
-        <Validee etat={etat} piece={piece} onRefaire={() => setRefaireDepuisLeDebut(true)} />
+        <Validee etat={etat} piece={piece} place={place} onRefaire={() => setRefaireDepuisLeDebut(true)} />
       )}
       {erreur && etat && (
         <p className="nf-erreur" role="alert">
@@ -397,7 +397,7 @@ function Decouverte({ etat, occupe, faire }: { etat: EtatNouvelleFigurine; occup
 }
 
 // ─── validée ──────────────────────────────────────────────────────────────────────────────────────
-function Validee({ etat, piece, onRefaire }: { etat: EtatNouvelleFigurine; piece: string; onRefaire: () => void }) {
+function Validee({ etat, piece, place, onRefaire }: { etat: EtatNouvelleFigurine; piece: string; place?: string; onRefaire: () => void }) {
   const f = etat.figurine;
   if (!f?.images.assise) return <p className="nf-centre">Un instant…</p>;
   return (
@@ -416,7 +416,15 @@ function Validee({ etat, piece, onRefaire }: { etat: EtatNouvelleFigurine; piece
           </div>
         )
       )}
-      {piece ? (
+      {place ? (
+        // (➕ arrivé par le lien WhatsApp d'une place libre : sa place, devant la télé de son ami)
+        <>
+          <p className="nf-suite">Une place t’attend devant la télé de ton ami.</p>
+          <a className="nf-bouton nf-vers" href={place} data-suite="place">
+            🎬 Rejoindre ta place
+          </a>
+        </>
+      ) : piece ? (
         // (🏠 lot M3 : Pablito ne fabrique plus l'univers — on choisit sa pièce, et on arrive chez soi)
         <>
           <p className="nf-suite">{TEXTES_PIECE.suite}</p>

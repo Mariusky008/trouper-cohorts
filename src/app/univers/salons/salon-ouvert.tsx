@@ -26,6 +26,7 @@ import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
+import { sorteVideo, type ProcheDevantVideo, type SorteVideo } from "@/lib/direct/reactions-video";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import {
   GESTES_SALON,
@@ -39,6 +40,7 @@ import {
   positionSeance,
   positionTele,
   refusDuMessage,
+  type CleReaction,
   type MessageSalon,
   type MomentSalon,
   type PresentSalon,
@@ -70,6 +72,13 @@ type Etat =
   | { etat: "erreur"; message: string }
   | { etat: "pret"; o: OuvertureSalonOuvert };
 
+/** ⭐ (le lot B) ma télé du jour : une vidéo vue, une réaction gardée (`/api/direct/tele-du-jour`). */
+const posterTele = (corps: Record<string, unknown>) =>
+  fetch("/api/direct/tele-du-jour", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) })
+    .then((r) => r.text())
+    .catch(() => "");
+/** (les réactions du salon, en sortes de ma télé du jour : 😱 « Oh non ! », 👏 « J'adore ») */
+const SORTE_DE_REACTION: Record<CleReaction, SorteVideo> = { rire: "rire", coeur: "coeur", oh: "oh", surprise: "peur", bravo: "coeur" };
 const poster = (corps: Record<string, unknown>) =>
   fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) })
     .then(async (r) => ({ ok: r.ok, statut: r.status, j: (await r.json().catch(() => ({}))) as Record<string, unknown> }))
@@ -84,17 +93,18 @@ function sortir(salon: string) {
   }
 }
 
-export function SalonOuvert({ theme, chez }: { theme?: string; chez?: string }) {
+export function SalonOuvert({ theme, chez, place }: { theme?: string; chez?: string; place?: string }) {
   const [etat, setEtat] = useState<Etat>({ etat: "chargement" });
   const entrer = useCallback(async () => {
-    // (🎬 lot D2 : chez moi, ou chez un proche qui m'a invité)
-    const r = await poster(chez ? { action: "entrer-chez", chez } : { action: "entrer", theme });
+    // (🎬 lot D2 : chez moi, ou chez un proche qui m'a invité ; ➕ le lot B : la place libre d'un lien WhatsApp)
+    const r = await poster(chez ? { action: "entrer-chez", chez, ...(place ? { place } : {}) } : { action: "entrer", theme });
     if (r.ok && r.j.ouverture) return setEtat({ etat: "pret", o: r.j.ouverture as OuvertureSalonOuvert });
     if (r.j.age) return setEtat({ etat: "age" });
-    if (r.j.figurine) return setEtat({ etat: "sans-figurine" });
+    // (➕ sans compte ni figurine — quelqu'un qui arrive par le lien WhatsApp d'une place libre : sa figurine d'abord)
+    if (r.j.figurine || r.statut === 401) return setEtat({ etat: "sans-figurine" });
     if (r.j.exclu) return setEtat({ etat: "exclu" });
     setEtat({ etat: "erreur", message: String(r.j.error || "Ça n’a pas marché. Réessaie.") });
-  }, [theme, chez]);
+  }, [theme, chez, place]);
   useEffect(() => {
     void Promise.resolve().then(entrer);
   }, [entrer]);
@@ -122,7 +132,7 @@ export function SalonOuvert({ theme, chez }: { theme?: string; chez?: string }) 
       {etat.etat === "sans-figurine" && (
         <p>
           {P.sansFigurine}{" "}
-          <a className="so-lien" href="/univers/figurine">
+          <a className="so-lien" href={place && chez ? `/univers/figurine?suite=${encodeURIComponent(`/univers/salons?chez=${chez}&place=${place}`)}` : "/univers/figurine"} data-creer-figurine>
             Créer ma figurine
           </a>
         </p>
@@ -173,6 +183,65 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   useEffect(() => {
     decalage.current = o.tele.maintenant - Date.now();
   }, [o.tele.maintenant]);
+  // ⭐ (le lot B, 21 novembre 2026 : « Ma télé du jour » est ma séance) CHEZ MOI, MES AMIS QUI ONT DÉJÀ VU CETTE VIDÉO :
+  // assis aux places libres (sans prendre la dernière : on peut toujours inviter), ils rejouent leurs réactions à leur
+  // seconde ; et ma télé du jour apprend — les vidéos vues, mes réactions gardées pour mes amis
+  const idVideo = seance?.hote ? tele?.video.id : undefined;
+  const [fantomes, setFantomes] = useState<ProcheDevantVideo[]>([]);
+  const [popsF, setPopsF] = useState<{ id: number; cle: string; e: string; texte?: string }[]>([]);
+  const vuJusqua = useRef<{ id: string; duree: number; t: number } | null>(null);
+  useEffect(() => {
+    let fini = false;
+    // (la précédente, vue jusqu'où ? ma télé du jour la note — elle ne reviendra plus)
+    const avant = vuJusqua.current;
+    if (avant && avant.id !== idVideo && avant.t > 0) void posterTele({ action: "vue", id: avant.id, secondes: Math.round(avant.t), fin: avant.t >= (avant.duree || 1e6) - 3 });
+    vuJusqua.current = idVideo && tele ? { id: idVideo, duree: tele.video.duree, t: 0 } : null;
+    void Promise.resolve()
+      .then(() => (idVideo ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}`, { cache: "no-store" }).then((r) => r.json()) : { proches: [] }))
+      .then((j: { proches?: ProcheDevantVideo[] }) => !fini && setFantomes((j.proches ?? []).filter((p) => p.figurine)))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+    // (une autre vidéo : ses amis à elle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idVideo]);
+  // (toutes les 400 ms : où en est la vidéo — leurs réactions qui arrivent à leur seconde, et jusqu'où je l'ai vue)
+  useEffect(() => {
+    if (!idVideo || !fantomes.length) return;
+    let avant = -1;
+    let n = 0;
+    const id = window.setInterval(() => {
+      const s = teleRef.current;
+      if (!s || s.video.id !== idVideo) return;
+      const t = positionSeance(s, Date.now() + (decalage.current ?? 0));
+      if (avant >= 0 && t > avant && t - avant < 3)
+        for (const f of fantomes)
+          for (const r of f.reactions)
+            if (r.t > avant && r.t <= t) {
+              const k = ++n;
+              setPopsF((l) => [...l, { id: k, cle: f.cle, e: sorteVideo(r.sorte)?.e ?? "🙂", ...(r.texte ? { texte: r.texte } : {}) }]);
+              window.setTimeout(() => setPopsF((l) => l.filter((x) => x.id !== k)), r.texte ? 3200 : 1700);
+            }
+      avant = t;
+    }, 400);
+    return () => window.clearInterval(id);
+  }, [idVideo, fantomes]);
+  const teleRef = useRef(tele);
+  useEffect(() => {
+    teleRef.current = tele;
+    const v = vuJusqua.current;
+    if (v && tele && tele.video.id === v.id) v.t = Math.max(v.t, positionSeance(tele, Date.now() + (decalage.current ?? 0)));
+  });
+  // (je pars : la vidéo du moment, vue jusqu'où)
+  useEffect(() => {
+    const partir = () => {
+      const v = vuJusqua.current;
+      if (v && v.t > 0) navigator.sendBeacon?.("/api/direct/tele-du-jour", new Blob([JSON.stringify({ action: "vue", id: v.id, secondes: Math.round(v.t), fin: v.t >= (v.duree || 1e6) - 3 })], { type: "application/json" }));
+    };
+    window.addEventListener("pagehide", partir);
+    return () => window.removeEventListener("pagehide", partir);
+  }, []);
   const moiArrive = o.presents.find((p) => p.q === o.moi)?.arrive ?? 0;
   const etatRef = useRef({ presents, caches, onDehors, onExclu });
   useEffect(() => {
@@ -378,9 +447,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const g = plan[vue(k)];
     return g ? { x: gx + g.x * lG, y: gy + g.y * hG, h: g.hauteur * hG } : null;
   };
-  // (🎭 les places libres : elles brillent doucement)
+  // (🎭 les places libres : elles brillent doucement ; ⭐ chez moi, mes amis qui l'ont vue s'y assoient d'abord — la
+  // dernière reste libre, pour inviter)
   const vues = new Set([...places.values()].map(vue));
-  const libres = plan.map((g, k) => ({ g, k })).filter((x) => !vues.has(x.k));
+  const toutesLibres = plan.map((g, k) => ({ g, k })).filter((x) => !vues.has(x.k));
+  // (un ami qui est là en vrai n'est pas aussi assis en souvenir)
+  const enVrai = new Set(ici.map((p) => p.prenom.trim().toLowerCase()));
+  const assisF = fantomes
+    .filter((f) => !enVrai.has(f.prenom.trim().toLowerCase()))
+    .slice(0, Math.max(0, toutesLibres.length - 1))
+    .map((f, i) => ({ f, g: toutesLibres[i].g }));
+  const libres = toutesLibres.slice(assisF.length);
 
   return (
     <main className={`so${prive ? " so-seance" : ""}`} data-salon={salon.id} data-maison={salon.maison} data-presents={ici.length} data-hote={seance?.hote ? "1" : undefined}>
@@ -422,9 +499,25 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             </>
           )}
           {L > 0 &&
-            libres.map(({ g, k }) => (
-              <span key={k} className="so-libre" data-libre={k} aria-hidden="true" style={{ left: gx + g.x * lG, top: gy + g.y * hG, width: g.hauteur * hG * 0.78, height: g.hauteur * hG * 0.22 }} />
-            ))}
+            libres.map(({ g, k }) =>
+              seance?.hote ? (
+                // (➕ le lot B : chez moi, une place libre s'ouvre — mon carnet, ou un lien WhatsApp qui la réserve)
+                <button
+                  key={k}
+                  type="button"
+                  className="so-place-libre"
+                  data-libre={k}
+                  aria-label={P.placeLibre}
+                  style={{ left: gx + g.x * lG, top: gy + g.y * hG, width: g.hauteur * hG * 0.62, height: g.hauteur * hG * 0.62 }}
+                  onClick={() => setInviter(true)}
+                >
+                  <span className="so-libre" aria-hidden="true" />
+                  <b aria-hidden="true">＋</b>
+                </button>
+              ) : (
+                <span key={k} className="so-libre" data-libre={k} aria-hidden="true" style={{ left: gx + g.x * lG, top: gy + g.y * hG, width: g.hauteur * hG * 0.78, height: g.hauteur * hG * 0.22 }} />
+              ),
+            )}
           {L > 0 &&
             ici.map((p) => {
               const x = ou(p.q);
@@ -453,6 +546,33 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   )}
                   <small>{moi ? "Toi" : p.prenom}</small>
                 </button>
+              );
+            })}
+          {L > 0 &&
+            assisF.map(({ f, g }) => {
+              const x = gx + g.x * lG;
+              const y = gy + g.y * hG;
+              const h = g.hauteur * hG;
+              const pops = popsF.filter((p) => p.cle === f.cle);
+              return (
+                <span key={f.cle} className="so-fig fantome" data-fantome={f.cle} style={{ left: x, bottom: H - y, height: h, zIndex: Math.round(y) }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {f.figurine && <img src={f.figurine.src} srcSet={f.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} />}
+                  <small>
+                    {f.prenom} · {P.aRegarde}
+                  </small>
+                  {pops.map((p) =>
+                    p.texte ? (
+                      <i key={p.id} className="so-bulle so-bulle-fantome" data-pop-fantome={f.cle}>
+                        {p.texte}
+                      </i>
+                    ) : (
+                      <i key={p.id} className="so-pop so-pop-fantome" data-pop-fantome={f.cle}>
+                        {p.e}
+                      </i>
+                    ),
+                  )}
+                </span>
               );
             })}
           {L > 0 &&
@@ -511,7 +631,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         <div className="so-reagir" data-reagir>
           <span>{P.reagis}</span>
           {REACTIONS_SALON.map((r) => (
-            <button key={r.cle} type="button" data-r={r.cle} aria-label={r.nom} disabled={occupe} onClick={() => void envoyer({ sorte: "reaction", cle: r.cle })}>
+            <button
+              key={r.cle}
+              type="button"
+              data-r={r.cle}
+              aria-label={r.nom}
+              disabled={occupe}
+              onClick={() => {
+                void envoyer({ sorte: "reaction", cle: r.cle });
+                // (⭐ le lot B : chez moi, ma réaction reste sur la vidéo, à sa seconde — mes amis la verront)
+                const s = tele;
+                if (seance?.hote && s) void posterTele({ action: "reagir", id: s.video.id, t: Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" });
+              }}
+            >
               {r.e}
             </button>
           ))}
@@ -709,12 +841,19 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
   const [proches, setProches] = useState<Proche[] | null>(null);
   const [choisis, setChoisis] = useState<string[]>([]);
   const [occupe, setOccupe] = useState(false);
+  // (➕ le lot B : le lien WhatsApp d'une place libre, préparé dès l'ouverture — il s'ouvre d'un toucher)
+  const [whatsapp, setWhatsapp] = useState("");
   useEffect(() => {
     let fini = false;
     void fetch("/api/direct/proches", { cache: "no-store" })
       .then((r) => r.json())
       .then((j: { proches?: Proche[] }) => !fini && setProches((j.proches ?? []).filter((p) => p.lien === "proches")))
       .catch(() => !fini && setProches([]));
+    void poster({ action: "place" }).then((r) => {
+      if (fini || !r.ok || !r.j.lien) return;
+      const url = `${window.location.origin}${String(r.j.lien)}`;
+      setWhatsapp(`https://wa.me/?text=${encodeURIComponent(`${P.textePlace(String(r.j.prenom ?? ""))} ${url}`)}`);
+    });
     return () => {
       fini = true;
     };
@@ -763,6 +902,18 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
         {P.inviterEnvoyer}
         {choisis.length ? ` (${choisis.length})` : ""}
       </button>
+      <div className="so-whatsapp">
+        <small>{P.whatsappPlaceDit}</small>
+        {whatsapp ? (
+          <a className="so-bouton clair" href={whatsapp} target="_blank" rel="noopener noreferrer" data-whatsapp-place>
+            {P.whatsappPlace}
+          </a>
+        ) : (
+          <span className="so-bouton clair" aria-busy="true">
+            …
+          </span>
+        )}
+      </div>
     </Feuille>
   );
 }
@@ -1159,6 +1310,11 @@ const STYLES = `
 .so-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));user-select:none}
 .so-fig small{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.6);white-space:nowrap;max-width:110%;overflow:hidden;text-overflow:ellipsis}
 .so-fig.moi small{background:#FF2E9A;color:#2a0f1f}
+.so-fig.fantome{cursor:default;pointer-events:none}
+.so-fig.fantome img{opacity:.92}
+.so-fig.fantome small{background:rgba(0,0,0,.45);font-weight:700}
+.so-pop-fantome{left:50%;bottom:100%;font-style:normal}
+.so-bulle-fantome{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);font-style:normal;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
 .so-fig.cache{opacity:.3}
 .so-sans{font-size:34px}
 .so-bulle{position:absolute;transform:translateX(-50%);margin:0;max-width:136px;padding:6px 10px;border-radius:14px;background:#fff;color:#2a0f1f;font-size:12.5px;font-weight:700;line-height:1.25;box-shadow:0 6px 16px -6px rgba(0,0,0,.6);z-index:900;animation:so-entre .25s ease-out}
@@ -1170,6 +1326,12 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-vol{position:absolute;transform:translateX(-50%);font-size:28px;z-index:902;animation:so-vol 1.4s ease-in-out forwards;pointer-events:none}
 .so-piece[data-gradin]{background-size:cover;background-position:center bottom}
 .so-gradin-voile{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 100%,rgba(20,8,14,0) 45%,rgba(20,8,14,.42) 100%)}
+.so-place-libre{position:absolute;z-index:2;transform:translate(-50%,-78%);display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px rgba(255,226,160,.45);color:#ffe2a0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.so-place-libre b{position:relative;z-index:1;font-size:26px;font-weight:900;line-height:1}
+.so-place-libre .so-libre{left:50%;top:100%;width:126%;height:36%}
+.so-whatsapp{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.so-whatsapp small{font-size:13px;line-height:1.4;opacity:.8}
+.so-whatsapp .so-bouton{text-align:center;text-decoration:none}
 .so-libre{position:absolute;z-index:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,226,160,.75),rgba(255,190,110,.32) 55%,rgba(255,170,90,0));box-shadow:0 0 18px 4px rgba(255,200,120,.28);animation:so-libre 2.8s ease-in-out infinite}
 @keyframes so-libre{0%,100%{opacity:.55}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.so-libre,.so-son span{animation:none;opacity:.8}}

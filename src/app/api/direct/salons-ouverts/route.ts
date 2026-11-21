@@ -12,7 +12,10 @@
 // POST { action: "signaler", salon, q, motif, message? } → { ok, exclu } ; trois en une heure : 24 h dehors
 // POST { action: "ne-plus-voir" | "revoir", q } → { caches }
 // 🎬 LE LOT D2, LA SÉANCE CHEZ MOI (le salon « chez-<q> » : pouls, écrire, sortir, conversation comme un salon ouvert)
-// POST { action: "entrer-chez", chez: "moi" | <clé> } → { ouverture } : ma pièce, ma télé ; chez un proche qui m'invite
+// POST { action: "entrer-chez", chez: "moi" | <clé>, place? } → { ouverture } : ma télé ; chez un proche qui m'invite
+//                                               (`place` : le jeton d'un lien WhatsApp — sa place libre, et proches)
+// POST { action: "place" }                     → { lien, prenom } : ➕ un lien qui réserve une place libre de ma télé
+//                                               (six heures, une personne ; `decouvrir.md` section 30)
 // POST { action: "tele", salon, quoi: "video" | "suivante" | "pause" | "jouer", id? } → { seance } : l'hôte mène la télé
 // POST { action: "inviter", cles: [<clé>…] }   → { invites } : trois proches au plus (une notification chacun)
 // POST { action: "inviter-video", id, t, cles } → { invites, titre, cle } : 👥 depuis ma télé du jour, sans la quitter —
@@ -44,6 +47,7 @@ import {
   inviterChezMoi,
   inviterSurUneVideo,
   mesInvitations,
+  reserverUnePlace,
   nePlusVoir,
   poulsDuSalon,
   refuserInvitation,
@@ -59,7 +63,7 @@ const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
 const FERMES = { error: "Les salons ouverts sont fermés pour l’instant." };
 // (les séances entre proches ne passent pas par l'interrupteur des salons ouverts)
-const SEANCE = new Set(["entrer-chez", "tele", "inviter", "inviter-video", "pas-maintenant"]);
+const SEANCE = new Set(["entrer-chez", "tele", "inviter", "inviter-video", "place", "pas-maintenant"]);
 const enSeance = (salon: unknown) => String(salon ?? "").startsWith("chez-");
 
 export async function GET(request: Request) {
@@ -114,7 +118,7 @@ export async function POST(request: Request) {
   }
   // 🎬 la séance chez moi
   if (p.action === "entrer-chez") {
-    const r = await entrerChez(supabase, moi, p.chez);
+    const r = await entrerChez(supabase, moi, p.chez, p.place);
     return repondre(r, { ouverture: r.ouverture }, r.figurine ? { figurine: true } : {});
   }
   if (p.action === "tele") {
@@ -124,6 +128,10 @@ export async function POST(request: Request) {
   if (p.action === "inviter") {
     const r = await inviterChezMoi(supabase, moi, p.cles);
     return repondre(r, { invites: r.invites });
+  }
+  if (p.action === "place") {
+    const r = await reserverUnePlace(supabase, moi);
+    return repondre(r, { lien: r.lien, prenom: r.prenom });
   }
   if (p.action === "inviter-video") {
     const r = await inviterSurUneVideo(supabase, moi, p);
