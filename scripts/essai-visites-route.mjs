@@ -157,5 +157,17 @@ ok((await faire(NICO, { action: "signaler", cle: MARC.cle })).statut === 200 && 
 const proches = await (await fetch(`${BASE}/api/direct/proches`, { headers: { cookie: `clikme_habitant=${INES.jeton}` } })).json();
 ok(proches?.proches?.find((p) => p.cle === MARC.cle)?.univers === true, "dans « Proches », Inès voit « 🏡 Son univers »");
 
+// ═══ 🕛 APRÈS MINUIT : « aujourd'hui » se compte à l'heure de Paris ═══
+// (une visite à 0 h 05 à Paris est encore la veille en temps universel : elle compte pour aujourd'hui)
+const jourParis = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+const D = jourParis();
+let t0 = Date.parse(`${D}T00:00:00Z`) - 3 * 3_600_000;
+while (jourParis(new Date(t0)) !== D) t0 += 60_000;
+const minuitCinq = new Date(t0 + 5 * 60_000).toISOString();
+ok(!minuitCinq.startsWith(D), `0 h 05 à Paris, c'est encore la veille en temps universel (${minuitCinq})`);
+await json(`${MARC.id}/monde/visites.json`, { liste: [{ de: INES.id, le: minuitCinq }] });
+ok((await voir(INES, `cle=${MARC.cle}`)).vue?.frappe === true, "Inès est passée à 0 h 05 : elle a déjà frappé aujourd'hui");
+ok((await faire(INES, { action: "frapper", cle: MARC.cle })).statut === 200 && (await lire(`${MARC.id}/monde/visites.json`))?.liste?.length === 1, "… elle frappe de nouveau : toujours une visite aujourd'hui, pas deux");
+
 console.log(echecs ? `\n${echecs} échec(s)` : "\nles visites tiennent ✓");
 process.exit(echecs ? 1 : 0);

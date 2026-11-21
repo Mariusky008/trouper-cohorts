@@ -479,6 +479,9 @@ pas d'univers fabriqué, ou quand on la demande (`?piece=1`, l'essai).
 - **🚪 Frapper à la porte** : comme pour les univers (une visite notée par jour, Léa prévenue une fois par jour,
   « ✓ Léa saura que tu as frappé ») — les visites (`chezQui`, `universOuvert`, `universPublics`) savent désormais entrer
   dans une pièce du catalogue (`maisonOuUnivers`).
+  (Correctif du 21 novembre 2026 : « par jour » se compte à l'heure de Paris, même juste après minuit — une visite à
+  0 h 05, encore la veille en temps universel, comptait pour un autre jour : le visiteur pouvait être noté deux fois, et
+  « déjà frappé » se perdait.)
 
 **L'essai** : `scripts/navigateur/ma-maison-visite.mjs` (28 contrôles : Sam voit tout, Zoé trouve la maison réservée ; 🚪
 « 👯 » d'office, trois choix, « Tout le monde » refusé sans « 18 ans ou plus », puis 🌍 et « Les univers à visiter » ;
