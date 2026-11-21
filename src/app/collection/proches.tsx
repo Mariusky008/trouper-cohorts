@@ -322,7 +322,8 @@ export function Proches({
       setGeste("");
     }
   }
-  const lienWhatsApp = (x: { url: string; pour: string }) => `https://wa.me/?text=${encodeURIComponent(`${texteDuLien(x.pour)} ${x.url}`)}`;
+  // (les émojis arrivaient en « � » par `wa.me` : l'adresse de WhatsApp les garde)
+  const lienWhatsApp = (x: { url: string; pour: string }) => `https://api.whatsapp.com/send?text=${encodeURIComponent(`${texteDuLien(x.pour)} ${x.url}`)}`;
   async function copierLeLien(x: { url: string; pour: string }) {
     try {
       await navigator.clipboard.writeText(`${texteDuLien(x.pour)} ${x.url}`);

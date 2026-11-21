@@ -51,4 +51,6 @@ export const lienDeProche = (origine: string, cle: string) => `${origine}/collec
 /** Ma séance (mes proches invités y entrent) : `/univers/salons?chez=<clé>`. */
 export const lienDeSeance = (origine: string, cle: string) => `${origine}/univers/salons?chez=${encodeURIComponent(cle)}`;
 /** Un message tout prêt dans WhatsApp (sans destinataire : on le choisit dans WhatsApp). */
-export const lienWhatsApp = (texte: string, url: string) => `https://wa.me/?text=${encodeURIComponent(`${texte} ${url}`)}`;
+// (21 novembre 2026 : les émojis du message arrivaient en « � » — l'adresse courte `wa.me` les abîme en redirigeant ;
+// celle de WhatsApp les garde)
+export const lienWhatsApp = (texte: string, url: string) => `https://api.whatsapp.com/send?text=${encodeURIComponent(`${texte} ${url}`)}`;

@@ -126,7 +126,7 @@ await zoe.waitForSelector(".tf-feuille.ouverte .pr-pret", { timeout: 30000 });
 const url = await zoe.locator(".tf-feuille.ouverte .pr-pret").getAttribute("data-url");
 const wa = await zoe.locator(".tf-feuille.ouverte .pr-pret a.pr-bouton").getAttribute("href");
 const ID = /\/t\/([a-z0-9]{12})$/.exec(url ?? "")?.[1] ?? "";
-ok(Boolean(ID) && wa?.startsWith("https://wa.me/?text=") && decodeURIComponent(wa.split("text=")[1]).includes(`Karim ! 🎙️ Ma figurine a un message pour toi, écoute 👇 ${url}`), `« Ton message est prêt » : « L'envoyer sur WhatsApp » (${decodeURIComponent(wa?.split("text=")[1] ?? "")})`);
+ok(Boolean(ID) && wa?.startsWith("https://api.whatsapp.com/send?text=") && decodeURIComponent(wa.split("text=")[1]).includes(`Karim ! 🎙️ Ma figurine a un message pour toi, écoute 👇 ${url}`), `« Ton message est prêt » : « L'envoyer sur WhatsApp » (${decodeURIComponent(wa?.split("text=")[1] ?? "")})`);
 ok((await texte(zoe, ".tf-feuille.ouverte .pr-pret")).includes("Encore 2 aujourd’hui"), "trois par jour : encore deux");
 await capture(zoe, "2-pret");
 const fiche = await lireStock(`liens/${ID}.json`);

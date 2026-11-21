@@ -193,6 +193,19 @@ await p.screenshot({ path: `${D}/salon-tele-2-proche.png` });
 await p.locator(".tv-bouton[data-geste=allumer]").click();
 ok(await attendre(() => p.evaluate(() => { const v = document.querySelector(".tv-flottant video.tv-fichier"); return Boolean(v) && v.currentTime > 0.2 && !v.muted; }), 8000), "« ▶ Allumer » : sa vidéo joue, avec le son");
 ok((await tv())?.etat === "allumee", "la télé est allumée");
+// (🧍 21 novembre 2026, « la télé passe au-dessus de la tête de la figurine » : une figurine devant l'écran est découpée
+// dans le lecteur, qui flotte par-dessus la scène)
+const devant = await p.evaluate(() => {
+  const l = document.querySelector(".tv-flottant")?.getBoundingClientRect();
+  if (!l) return null;
+  const n = [...document.querySelectorAll(".sc-fig > .sc-calque > img")].filter((i) => {
+    const r = i.getBoundingClientRect();
+    return r.width > 0 && r.right > l.left && r.left < l.right && r.bottom > l.top && r.top < l.bottom;
+  }).length;
+  const f = document.querySelector(".tv-flottant");
+  return { n, marque: Number(f?.getAttribute("data-silhouettes") ?? 0), masque: getComputedStyle(f).webkitMaskImage || getComputedStyle(f).maskImage || "" };
+});
+ok(devant && devant.marque === devant.n && (devant.n === 0 || /url\(/.test(devant.masque)), `les figurines devant l'écran, découpées dans le lecteur (${devant?.n} devant)`);
 await p.locator(".tv-eteindre").click();
 await p.locator(".sd-recul").click();
 ok(await attendre(async () => (await tv())?.proche === false && (await p.locator(".sd-recul").count()) === 0, 3000), "« ↩ La pièce » : la caméra revient");

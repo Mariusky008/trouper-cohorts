@@ -26,6 +26,7 @@ import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
+import { lienWhatsApp } from "@/lib/direct/carnet-proches";
 import { sorteVideo, type ProcheDevantVideo, type ReactionVideo, type SorteVideo } from "@/lib/direct/reactions-video";
 import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
 import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/direct/visage-essai";
@@ -961,7 +962,8 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
     void poster({ action: "place" }).then((r) => {
       if (fini || !r.ok || !r.j.lien) return;
       const url = `${window.location.origin}${String(r.j.lien)}`;
-      setWhatsapp(`https://wa.me/?text=${encodeURIComponent(`${P.textePlace(String(r.j.prenom ?? ""))} ${url}`)}`);
+      // (les émojis arrivaient en « � » par `wa.me` : l'adresse de WhatsApp les garde — `lienWhatsApp`)
+      setWhatsapp(lienWhatsApp(P.textePlace(String(r.j.prenom ?? "")), url));
     });
     return () => {
       fini = true;
