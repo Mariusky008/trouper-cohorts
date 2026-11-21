@@ -5,8 +5,9 @@
 // proche, entre : l'humeur de Léa au-dessus de sa figurine, « ✨ Nouveau chez Léa aujourd'hui : Le Petit Prince » (la
 // caméra va le voir) ; « 🎁 Laisser une surprise » : un bouquet et un mot, posés emballés sur sa table. Léa rentre :
 // « 🚪 Sam a frappé à ta porte pendant ton absence », le paquet sur la table basse ; « Ouvrir » : « 💐 Un bouquet », « De
-// Sam · « Pour toi » » ; « ✓ Le garder sur ma table » : il y reste. Sam le voit en revenant. Ni erreur, ni le mot
-// « exemple ».
+// Sam · « Pour toi » » ; « ✓ Le garder sur ma table » : il y reste. Sam le voit en revenant. 🎬 « Regarder à deux »
+// (section 24) : Sam propose un lien YouTube ; chez Léa, « Pendant ton absence » le dit, et « Regarder » la mène devant
+// la télé de Sam, la vidéo y attend. Ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import { poserPiece } from "../piece-en-hauteur.mjs";
 import crypto from "node:crypto";
@@ -155,6 +156,21 @@ await sam.screenshot({ path: `${D}/ma-maison-vie-2-surprise.png` });
 await surprise.locator("[data-poser]").click();
 ok(await attendre(sam, async () => /Léa la trouvera en rentrant/.test(await texte(scene.locator("[data-fait]")))), "« 🎁 Léa la trouvera en rentrant »");
 ok(await attendre(sam, async () => /Ta surprise attend qu’on l’ouvre/.test(await texte(scene.locator("[data-mes-cadeaux]")))), "… « Ta surprise attend qu'on l'ouvre »");
+// (🎬 « Regarder à deux », `ma-maison.md` section 24 : une vidéo à regarder avec Léa — un lien YouTube)
+const gros = scene.locator(".mmc-actions-visite .mmc-gros-bouton");
+ok((await gros.count()) === 3 && /Une surprise/.test(await texte(gros.nth(0))) && /Regarder à deux/.test(await texte(gros.nth(1))) && /Votre salon/.test(await texte(gros.nth(2))), "trois boutons : « 🎁 Une surprise », « 🎬 Regarder à deux », « 💬 Votre salon »");
+await scene.locator('[data-geste="regarder"]').click();
+const reg = sam.locator("[data-regarder]");
+ok(await attendre(sam, async () => /Choisis une vidéo à regarder avec Léa/.test(await texte(reg)) && (await reg.locator("[data-video], [data-sans-tele]").count()) > 0), "« 🎬 Regarder à deux » : « Choisis une vidéo à regarder avec Léa »");
+ok(await reg.locator("[data-proposer]").isDisabled(), "… rien de choisi : « Proposer à Léa » attend");
+await reg.locator('[data-champ="lien-youtube"]').fill("https://youtu.be/Rg4kZ2pQ71x");
+await sam.waitForTimeout(300);
+await sam.screenshot({ path: `${D}/ma-maison-vie-2b-regarder.png` });
+await reg.locator("[data-proposer]").click();
+ok(await attendre(sam, async () => /rendez-vous devant ta télé avec Léa/.test(await texte(reg.locator("[data-propose]"))) && /Vidéo d’essai Rg4kZ2pQ71x/.test(await texte(reg))), "« Proposer à Léa » : « C'est proposé : rendez-vous devant ta télé avec Léa »");
+ok((await reg.locator("[data-aller-tele]").getAttribute("href")) === "/univers/salons?chez=moi", "… « 📺 Aller devant ma télé »");
+await reg.getByRole("button", { name: "Rester ici" }).click();
+ok(await attendre(sam, async () => (await reg.count()) === 0), "« Rester ici » : la feuille se ferme");
 
 // ═══ LÉA RENTRE ═══
 const lea = await tel(LEA, true);
@@ -167,10 +183,11 @@ ok(await attendre(lea, async () => (await paquet.count()) === 1), "🎁 le paque
 ok(await attendre(lea, async () => (await chez.locator("[data-arrivee]").count()) === 0, 12000), "… l'arrivée finie");
 // (🛎️ la maquette, section 23 : « Pendant ton absence », ce qu'on a laissé chez elle — sans compteur de visites)
 const absence = chez.locator('[data-geste="absence"]');
-ok((await absence.locator("[data-pastille]").getAttribute("data-pastille")) === "2", `🛎️ « Pendant ton absence » : sa pastille (${await texte(absence.locator("[data-pastille]"))})`);
+ok((await absence.locator("[data-pastille]").getAttribute("data-pastille")) === "3", `🛎️ « Pendant ton absence » : sa pastille (${await texte(absence.locator("[data-pastille]"))})`);
 await absence.click();
 const feuille = lea.locator("[data-absence]");
 ok(await attendre(lea, async () => /Sam a frappé à ta porte/.test(await texte(feuille.locator('[data-ligne-absence="frappe-0"]'))) && /Sam t’a laissé une surprise/.test(await texte(feuille.locator('[data-ligne-absence^="cadeau-"]')))), "… « 🚪 Sam a frappé à ta porte », « 🎁 Sam t'a laissé une surprise »");
+ok(/Sam te propose de regarder « Vidéo d’essai Rg4kZ2pQ71x » ensemble/.test(await texte(feuille.locator('[data-ligne-absence^="regarder-"]'))), "… « 🎬 Sam te propose de regarder « … » ensemble »");
 ok(/Pas de compteur de visites/.test(await texte(feuille)) && !/\d+ visite/.test(await texte(feuille)), "… « Pas de compteur de visites : seulement ce que tes proches ont laissé »");
 await lea.waitForTimeout(350);
 await lea.screenshot({ path: `${D}/ma-maison-vie-3-absence.png` });
@@ -193,6 +210,16 @@ ok(/😂|🤣/.test(await texte(chez.locator("[data-humeur]"))), "son humeur, ch
 await sam.reload({ waitUntil: "domcontentloaded" });
 ok(await attendre(sam, async () => (await scene.locator(".mmc-cadeau").count()) === 1 && /💐/.test(await texte(scene.locator(".mmc-cadeau")))), "Sam revient : son bouquet sur la table de Léa");
 ok((await scene.locator("[data-mes-cadeaux]").count()) === 0, "… plus rien qui attend");
+
+// (🎬 Léa : « Regarder » la mène devant la télé de Sam, la vidéo proposée y attend)
+await lea.reload({ waitUntil: "domcontentloaded" });
+ok(await attendre(lea, async () => (await chez.locator('[data-geste="absence"]').count()) === 1), "Léa revient chez elle");
+await chez.locator('[data-geste="absence"]').click();
+await feuille.locator('[data-ligne-absence^="regarder-"] button').click();
+ok(await attendre(lea, async () => new URL(lea.url()).pathname === "/univers/salons" && new URL(lea.url()).searchParams.get("chez")?.length > 0, 15000), `« Regarder » : devant la télé de Sam (${lea.url().replace(BASE, "")})`);
+ok(await attendre(lea, async () => (await lea.locator('.so-tele[data-tele="Rg4kZ2pQ71x"]').count()) === 1, 20000), "… la vidéo proposée y attend");
+await lea.waitForTimeout(500);
+await lea.screenshot({ path: `${D}/ma-maison-vie-5-seance.png` });
 
 for (const p of [lea, sam]) ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
 ok(!erreurs.length, `aucune erreur${erreurs.length ? ` : ${erreurs.slice(0, 3).join(" | ")}` : ""}`);

@@ -43,7 +43,8 @@ import {
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
 import { createPortal } from "react-dom";
-import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuiPeutEntrer, type LigneAbsence } from "./ajouter-chez-moi";
+import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuiPeutEntrer, RegarderADeux, type LigneAbsence } from "./ajouter-chez-moi";
+import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
@@ -236,6 +237,8 @@ function Piece({
   const [cadeau, setCadeau] = useState<CadeauMaison | null>(null);
   const [ouvert, setOuvert] = useState(false);
   const [surprise, setSurprise] = useState(false);
+  // 🎬 (« Regarder à deux », section 24) la feuille, en visite chez un proche
+  const [regarder, setRegarder] = useState(false);
   const [mesCadeaux, setMesCadeaux] = useState(visite?.mesCadeaux ?? 0);
   // 💬 (lot M5) la question du jour : la bulle ouverte ; en visite, sa question (mise à jour quand on y répond)
   const [questionOuverte, setQuestionOuverte] = useState(false);
@@ -442,6 +445,12 @@ function Piece({
     ? []
     : [
         ...(maison.absence ?? []).map((p, k) => ({ cle: `frappe-${k}`, e: "🚪", texte: PHRASES_BAS.frappe(p) })),
+        ...(maison.regarder ?? []).map((x) => ({
+          cle: `regarder-${x.cle}`,
+          e: "🎬",
+          texte: PHRASES_REGARDER.ligne(x.prenom, x.titre),
+          action: { nom: PHRASES_REGARDER.regarder, faire: () => window.location.assign(`/univers/salons?chez=${encodeURIComponent(x.cle)}`) },
+        })),
         ...cadeauxEnAttente.map((g) => ({
           cle: `cadeau-${g.id}`,
           e: "🎁",
@@ -492,7 +501,7 @@ function Piece({
             ]
           : []),
       ];
-  const pastille = (maison.absence?.length ?? 0) + cadeauxEnAttente.length + (repondus.length ? 1 : 0) + (neufsChezMoi?.ids.length ? 1 : 0);
+  const pastille = (maison.absence?.length ?? 0) + (maison.regarder?.length ?? 0) + cadeauxEnAttente.length + (repondus.length ? 1 : 0) + (neufsChezMoi?.ids.length ? 1 : 0);
   // (en visite : ce qui est nouveau chez lui aujourd'hui, en puces)
   const neufsVisite = visite?.nouveaux?.length ? objetsPlaces(maison.contenu ?? { cadres: [], platine: null, tele: null, etagere: [], total: 0 }).filter((o) => visite.nouveaux!.includes(o.id)).slice(0, 3) : [];
   const questionIci = visite ? question : maison.question;
@@ -1001,6 +1010,10 @@ function Piece({
                 <span aria-hidden="true">🎁</span>
                 {PHRASES_BAS.surprise}
               </button>
+              <button type="button" className="mmc-gros-bouton" data-geste="regarder" onClick={() => setRegarder(true)}>
+                <span aria-hidden="true">🎬</span>
+                {PHRASES_REGARDER.bouton}
+              </button>
               <a className="mmc-gros-bouton fort" href="/collection#proches" data-geste="salon">
                 <span aria-hidden="true">💬</span>
                 {PHRASES_BAS.salon}
@@ -1033,6 +1046,9 @@ function Piece({
           />,
           document.body,
         )}
+      {regarder &&
+        visite?.cle &&
+        createPortal(<RegarderADeux cle={visite.cle} prenom={visite.prenom} onFermer={() => setRegarder(false)} onPropose={() => setFrappe(true)} />, document.body)}
       {qui &&
         createPortal(
           <QuiPeutEntrer
@@ -1297,7 +1313,6 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-surtitre{flex:none;width:76px;font-weight:800;font-size:10px;line-height:1.15;letter-spacing:.02em;text-transform:uppercase;color:#ffd98a}
 .mmc-puce{flex:none;display:flex;align-items:center;gap:5px;padding:8px 11px;border:0;border-radius:14px;background:#33241a;box-shadow:inset 0 0 0 1px rgba(255,211,110,.35);color:#fbf3ea;font:inherit;font-weight:700;font-size:12.5px;white-space:nowrap;text-decoration:none;cursor:pointer}
 .mmc-gros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.mmc-gros.mmc-actions-visite{grid-template-columns:repeat(2,1fr)}
 .mmc-gros-bouton{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:6px 4px;border:0;border-radius:18px;background:#33241a;box-shadow:inset 0 0 0 1px #5a4232;color:#fbf3ea;font:inherit;font-weight:800;font-size:12px;line-height:1.15;text-align:center;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mmc-gros-bouton span{font-size:22px;line-height:1}
 .mmc-gros-bouton.fort{background:linear-gradient(135deg,#ff9a3c,#ff5e62);box-shadow:0 8px 20px rgba(255,94,98,.3)}

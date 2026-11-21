@@ -18,6 +18,7 @@ import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type P
 import type { ImageSalon } from "./salon";
 import type { Visibilite } from "./monde";
 import type { MonSalon } from "./salons-ouverts";
+import type { PropositionRegarder } from "./regarder-a-deux";
 
 /**
  * 🔀 L'interrupteur : ALLUMÉ le 19 novembre 2026 (le propriétaire, après une nouvelle inscription arrivée sur l'ancien
@@ -78,6 +79,8 @@ export type MaMaisonVue = {
   question?: QuestionChezMoi;
   /** 🏠 (lot D5 de Découvrir) « Mes salons » : les salons ouverts où je vais, en fanions (chez moi seulement) */
   salons?: MonSalon[];
+  /** 🎬 (« Regarder à deux », section 24) les vidéos que mes proches me proposent de regarder avec eux (six heures) */
+  regarder?: PropositionRegarder[];
 };
 
 /** 💬 (lot M5) La question du jour, chez soi : ce que ses proches y ont répondu. */

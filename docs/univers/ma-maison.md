@@ -661,6 +661,8 @@ ses couleurs (le brun chaud, le crème, l'ambre, le dégradé orange-corail des 
   couleurs de la maquette (le brun, l'ambre, le bouton orange-corail).
 - **Pas dans ce lot** : « 🎬 Film à deux » (le défi à deux attend la décision du propriétaire, section 19.1) ; les
   trois pièces de la maquette (Salon, Télé, Terrasse) — une seule pièce, une seule image (section 22).
+- **Confirmé par le propriétaire** (21 novembre 2026) : la porte et « ✊ Toc toc » au début de chaque visite (« OUI ») ;
+  une seule pièce (« OUI une seule pièce »). « 🎬 Film à deux » devient « 🎬 Regarder à deux » (section 24).
 
 Les textes : `PHRASES_BAS` et `puceDeLObjet` (`src/lib/direct/ma-maison.ts`) ; la feuille : `PendantTonAbsence`
 (`src/app/collection/ajouter-chez-moi.tsx`).
@@ -673,3 +675,51 @@ en bas) ; `ma-maison-vie.mjs` (rien ne s'annonce devant la porte ; entré : « N
 « 📚 Nouveau » ; chez Léa, « 🛎️ Pendant ton absence » avec sa pastille, ses lignes, « Ouvrir ») ;
 `choisis-ta-piece.mjs` (dans l'onglet, une fois la pièce choisie : la carte et les trois grands boutons au-dessus de la
 barre du bas).
+
+## 24. 🎬 Regarder à deux : le souvenir commun (21 novembre 2026)
+
+Le « défi à deux qui devient un souvenir commun » (section 7, 19.1) : dans la maquette, « 🎬 Film à deux » proposait une
+liste de films de la semaine ; on choisissait, l'affiche s'encadrait chez les deux. Deux façons de faire lui ont été
+proposées : A, la maquette (on regarde ailleurs, ClikMe garde l'affiche) ; B, une vidéo regardée **ensemble dans
+ClikMe**. Le propriétaire : « ok pour B ».
+
+- **En visite chez un proche** (proches des deux côtés), le troisième bouton du bas : **🎁 Une surprise · 🎬 Regarder à
+  deux · 💬 Votre salon** (comme la maquette). La feuille : « Choisis une vidéo à regarder avec Léa. Quand vous l'aurez
+  vue ensemble, elle restera chez vous deux. » — les six premières vidéos de **ma télé du jour** (leurs vignettes), ou
+  **un lien YouTube** ; « 🎬 Proposer à Léa ». Puis : « 🎬 C'est proposé : rendez-vous devant ta télé avec Léa. »,
+  « 📺 Aller devant ma télé » (`/univers/salons?chez=moi`) ou « Rester ici ».
+- **Un lien YouTube** : sa fiche vient de l'API YouTube que l'appli utilise déjà (le faux YouTube dans les essais) —
+  son titre, sa chaîne, sa durée. Une vidéo réservée aux adultes, qui ne se lit pas ailleurs, en direct, ou dont le titre
+  parle d'alcool : « Cette vidéo ne se regarde pas dans ClikMe : choisis-en une autre. » YouTube muet : elle passe sous le
+  nom « Une vidéo YouTube ».
+- **Ce qui se passe** : ma séance (la séance chez moi, `decouvrir.md` section 19) est prête — la vidéo, **en pause au
+  début** (on la lance ensemble) ; Léa est **invitée devant ma télé** (six heures, comme toute invitation), avec une
+  notification « 🎬 Sam veut regarder « … » avec toi » ; sa carte « Venir » dans Découvrir ; et dans sa maison,
+  **🛎️ Pendant ton absence** : « 🎬 Sam te propose de regarder « … » ensemble » — « Regarder » la mène devant ma télé
+  (la pastille le compte). Une nouvelle proposition au même proche remplace la précédente.
+- **Le rendez-vous** : si Léa arrive et que je ne suis pas là, je suis prévenu, une fois (« 🎬 Léa est devant ta télé —
+  Viens : vous regardez « … » ensemble. »). C'est moi qui mène la télé : je lance la vidéo.
+- **Le souvenir commun** : quand nous sommes **tous les deux dans la séance** et que **la vidéo proposée joue depuis
+  vingt secondes**, elle va **chez nous deux** — une vidéo (à la télé de la pièce, à sa place), « 🎬 », son titre :
+  « **Gardé avec Sam · 🎬 Vu ensemble, le 21 novembre** » (« Gardé avec Léa » chez moi). Une seule fois par vidéo et par
+  proche ; pas compté dans les ajouts du jour ; rien si la maison est pleine. Sa vignette : celle de YouTube, que le
+  téléphone lit (rien n'est recopié chez nous). La séance le dit aux deux : « ✨ « … » : un souvenir commun, chez vous
+  deux ». Il se voit des proches seulement (pas des visiteurs qui ne le sont pas).
+
+**Le rangement** : `decouvrir/salons/prives/chez-<q>/ensemble.json` (`de`, `avec`, `video`, `le`, `prevenu`, `fait`) ;
+l'invitation porte la vidéo (`<habitant>/invitations-tele/<q>.json` : `titre`) ; le souvenir, dans l'étagère de chacun
+(`<habitant>/etagere-perso.json`, `message` : `ensemble-<q de l'autre>-<vidéo>`, `ensemble` : l'autre).
+
+**La route** : `POST /api/direct/visites { action: "regarder", cle, id? | lien? }` → `{ titre }` ; le pouls d'une séance
+rend `souvenir` (le titre), une vingtaine de secondes ; Ma maison (`/api/direct/ma-piece`) rend `regarder`.
+
+Les textes : `src/lib/direct/regarder-a-deux.ts` ; la feuille : `RegarderADeux` (`ajouter-chez-moi.tsx`) ; le serveur :
+`proposerDeRegarder` et le souvenir au pouls (`salons-ouverts-serveur.ts`), `poserSouvenirCommun` (`etagere-serveur.ts`).
+
+**Les essais** : `scripts/essai-regarder-a-deux-route.mjs` (Tom, pas son proche : refusé ; rien de choisi, un lien qui
+n'est pas YouTube, une fiche qui ne passe pas, une vidéo hors de sa télé, chez soi : refusés ; un lien : son titre ; une
+vidéo de sa télé la remplace ; la séance prête, en pause ; l'invitation et `regarder` chez Léa ; Léa la première : Sam
+prévenu ; en pause, puis quelques secondes : rien ; le pouls de Léa ne le pose pas ; vingt-cinq secondes : le souvenir,
+chez les deux, une fois, « Gardé avec Sam · 🎬 Vu ensemble, le … », sa vignette YouTube) ; `ma-maison-vie.mjs` (les trois
+boutons ; la feuille ; un lien proposé ; chez Léa, la ligne et la pastille ; « Regarder » : devant la télé de Sam, la
+vidéo y attend).

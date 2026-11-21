@@ -27,10 +27,12 @@ import { sesDixHuitAns } from "./majorite-serveur";
 import { cheminMesSalons, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { gradinDuSalon } from "./salons-gradins-serveur";
 import { gradinDuTheme, type GradinScene, type IdGradin } from "./salons-gradins";
-import { ajouterChezMoi } from "./etagere-serveur";
+import { ajouterChezMoi, poserSouvenirCommun } from "./etagere-serveur";
+import { LIEN_REGARDER_MAX, PHRASES_REGARDER, SECONDES_ENSEMBLE, SOUVENIR_DIT_MS, TITRE_PAR_DEFAUT } from "./regarder-a-deux";
+import { videoYouTube } from "./tele";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
 import { maTeleDuJour } from "./tele-du-jour-serveur";
-import { lireSelection } from "./selection-serveur";
+import { details, lireSelection } from "./selection-serveur";
 import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
@@ -56,6 +58,7 @@ import {
   idSalon,
   maisonDe,
   nomDuSalon,
+  positionSeance,
   reactionDe,
   refusDuMessage,
   salonDe,
@@ -280,7 +283,7 @@ async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise
 }
 
 // ─── 💓 le pouls : qui est là, ce qui s'est dit depuis ───
-export type PoulsSalonOuvert = { ici: string[]; nouveaux: PresentSalon[]; messages: MessageSalon[]; maintenant: number; exclu?: true; dehors?: true; seance?: TeleSeance | null };
+export type PoulsSalonOuvert = { ici: string[]; nouveaux: PresentSalon[]; messages: MessageSalon[]; maintenant: number; exclu?: true; dehors?: true; seance?: TeleSeance | null; /** 🎬 (« Regarder à deux ») le titre du souvenir commun qui vient de se poser */ souvenir?: string };
 /**
  * 💓 Le pouls (toutes les quelques secondes) : les présents (`ici`, et le détail de ceux qu'il ne connaît pas encore),
  * les messages après `depuis` ; il redit qu'il est là (toutes les 30 s au plus).
@@ -313,7 +316,9 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
     derniersMessages(supabase, m, sid, { depuis: Math.max(Number(depuis) || 0, maintenant - CONSERVE_MS), limite: 30, caches }),
     r.seance ? lireTeleSeance(supabase, r.seance.qHote) : Promise.resolve(undefined),
   ]);
-  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}) } };
+  // (🎬 « Regarder à deux » : vue ensemble, la vidéo devient un souvenir commun)
+  const souvenir = r.seance && seance && presents.length >= 2 ? await souvenirSiEnsemble(supabase, r.seance.qHote, q, presents, seance, maintenant).catch(() => null) : null;
+  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}) } };
 }
 
 // ─── ✍️ écrire, réagir, un geste ───
@@ -545,6 +550,9 @@ const seanceDe = (id: unknown): string | null => /^chez-([A-Za-z0-9_-]{4,16})$/.
 const cheminInvite = (qHote: string, q: string) => `${dossierSalon("prives", idSeance(qHote))}/invites/${q}.json`;
 const cheminTeleSeance = (qHote: string) => `${dossierSalon("prives", idSeance(qHote))}/tele.json`;
 const dossierInvitations = (h: string) => `${h}/invitations-tele`;
+/** 🎬 (« Regarder à deux ») ce que la séance attend : la vidéo proposée, à regarder avec lui. */
+const cheminEnsemble = (qHote: string) => `${dossierSalon("prives", idSeance(qHote))}/ensemble.json`;
+type Ensemble = { de?: string; avec?: string; video?: VideoSalon; le?: number; fait?: number; prevenu?: number };
 
 async function invite(supabase: Supabase, qHote: string, q: string): Promise<boolean> {
   const f = await lireJson<{ le?: number }>(supabase, cheminInvite(qHote, q)).catch(() => ({}) as { le?: number });
@@ -590,6 +598,8 @@ export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknow
   const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: maintenant, ecrits: [] };
   if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   void nettoyerMessages(supabase, m, id, maintenant);
+  // (🎬 « Regarder à deux » : son proche arrive pour la vidéo proposée, et l'hôte n'est pas là — il est prévenu, une fois)
+  if (!hote && !presents.some((p) => p.nom === qHote)) await prevenirLHote(supabase, hHote, qHote, moi.id, prenom, maintenant).catch(() => undefined);
   // (l'hôte arrive : sa télé est prête — la première vidéo de sa télé du jour, si rien ne passe depuis six heures)
   const videos: VideoSalon[] = (teleDuJour?.videos ?? []).map((v) => ({ id: v.id, titre: v.titre, chaine: v.chaine, duree: v.duree }));
   let seance = deja && maintenant - deja.depart < INVITATION_MS ? deja : null;
@@ -647,7 +657,7 @@ export async function teleDeLaSeance(supabase: Supabase, moi: Habitant, p: Recor
  * 👥 Inviter jusqu'à trois proches (des deux côtés) devant ma télé : chacun voit l'invitation dans Découvrir (« Venir »
  * / « Pas maintenant ») et reçoit une notification ; elle tient six heures.
  */
-export async function inviterChezMoi(supabase: Supabase, moi: Habitant, cles: unknown): Promise<Resultat<{ invites?: string[] }>> {
+export async function inviterChezMoi(supabase: Supabase, moi: Habitant, cles: unknown, o: { titre?: string } = {}): Promise<Resultat<{ invites?: string[] }>> {
   const l = (Array.isArray(cles) ? cles : []).map(s).filter(Boolean);
   if (!l.length) return { error: "Qui invites-tu ?", statut: 400 };
   if (l.length > INVITES_MAX) return { error: `${INVITES_MAX} proches au plus.`, statut: 400 };
@@ -660,11 +670,16 @@ export async function inviterChezMoi(supabase: Supabase, moi: Habitant, cles: un
     if (!h || h === moi.id || !(await seParlent(supabase, moi.id, h).catch(() => false))) continue;
     const q = qui8(h);
     // (une invitation par proche toutes les dix minutes : pas de pluie de notifications)
-    const avant = await lireJson<{ le?: number }>(supabase, cheminInvite(qMoi, q)).catch(() => ({}) as { le?: number });
+    const avant = await lireJson<{ le?: number; titre?: string }>(supabase, cheminInvite(qMoi, q)).catch(() => ({}) as { le?: number; titre?: string });
     const recente = maintenant - (Number(avant.le) || 0) < 10 * 60_000;
-    await ecrireJson(supabase, cheminInvite(qMoi, q), { h, le: maintenant });
-    await ecrireJson(supabase, `${dossierInvitations(h)}/${qMoi}.json`, { cle: maCle, prenom: prenom || "Ton proche", le: maintenant });
-    if (!recente) await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.invitation(prenom || "Ton proche"), corps: "Viens t’asseoir : on regarde la même vidéo, en même temps.", url: `/univers/salons?chez=${maCle}`, tag: `tele-${qMoi}` }).catch(() => "rien");
+    await ecrireJson(supabase, cheminInvite(qMoi, q), { h, le: maintenant, ...(o.titre ? { titre: o.titre } : {}) });
+    await ecrireJson(supabase, `${dossierInvitations(h)}/${qMoi}.json`, { cle: maCle, prenom: prenom || "Ton proche", le: maintenant, ...(o.titre ? { titre: o.titre } : {}) });
+    // (🎬 « Regarder à deux » : une vidéo proposée se dit — une autre vidéo passe même après une invitation récente ; la
+    // même, non : pas de pluie de notifications)
+    const notif = o.titre
+      ? { titre: PHRASES_REGARDER.notifTitre(prenom || "Ton proche", o.titre), corps: PHRASES_REGARDER.notifCorps }
+      : { titre: PHRASES_SALONS.invitation(prenom || "Ton proche"), corps: "Viens t’asseoir : on regarde la même vidéo, en même temps." };
+    if (!recente || (o.titre && o.titre !== avant.titre)) await prevenirUnHabitantAppli(supabase, h, { ...notif, url: `/univers/salons?chez=${maCle}`, tag: `tele-${qMoi}` }).catch(() => "rien");
     invites.push(cle);
   }
   if (!invites.length) return { error: "Ces personnes ne sont pas tes proches.", statut: 403 };
@@ -675,7 +690,71 @@ export async function inviterChezMoi(supabase: Supabase, moi: Habitant, cles: un
 export async function mesInvitations(supabase: Supabase, moi: Habitant): Promise<InvitationTele[]> {
   const l = await lister(supabase, dossierInvitations(moi.id), { limite: 20, recents: true });
   const lus = await Promise.all(l.map((e) => lireJson<Partial<InvitationTele>>(supabase, `${dossierInvitations(moi.id)}/${e.nom}`)));
-  return lus.filter((x) => s(x.cle) && Date.now() - (Number(x.le) || 0) < INVITATION_MS).map((x) => ({ cle: s(x.cle), prenom: s(x.prenom), le: Number(x.le) }));
+  return lus.filter((x) => s(x.cle) && Date.now() - (Number(x.le) || 0) < INVITATION_MS).map((x) => ({ cle: s(x.cle), prenom: s(x.prenom), le: Number(x.le), ...(s(x.titre) ? { titre: s(x.titre) } : {}) }));
+}
+
+// ═══ 🎬 REGARDER À DEUX (`ma-maison.md`, section 24) ═══════════════════════════════════════════════════════════════
+/**
+ * 🎬 En visite chez un proche (des deux côtés) : une vidéo à regarder avec lui — une de ma télé du jour (`id`), ou un
+ * lien YouTube (`lien`). Ma séance est prête (la vidéo, en pause au début : on la lance ensemble) ; il est invité devant
+ * ma télé (six heures), et sa maison le dit (« Pendant ton absence »).
+ */
+export async function proposerDeRegarder(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ titre?: string }>> {
+  const h = await hDeCle(supabase, p.cle).catch(() => null);
+  if (!h) return { error: "Cette maison n’existe pas.", statut: 404 };
+  if (h === moi.id) return { error: "C’est chez toi 🙂", statut: 400 };
+  if (!(await seParlent(supabase, moi.id, h).catch(() => false))) return { error: PHRASES_REGARDER.pasProche, statut: 403 };
+  let video: VideoSalon | null = null;
+  if (s(p.id)) {
+    const v = ((await maTeleDuJour(supabase, moi.id).catch(() => null))?.videos ?? []).find((x) => x.id === s(p.id));
+    if (!v) return { error: PHRASES_REGARDER.pasATaTele, statut: 404 };
+    video = { id: v.id, titre: v.titre, chaine: v.chaine, duree: v.duree };
+  } else if (s(p.lien)) {
+    const y = videoYouTube(s(p.lien).slice(0, LIEN_REGARDER_MAX));
+    if (!y) return { error: PHRASES_REGARDER.pasYouTube, statut: 400 };
+    // (sa fiche YouTube — le faux YouTube dans les essais : son titre, sa chaîne, sa durée ; une vidéo qui ne se regarde
+    // pas ici — réservée aux adultes, pas lisible ailleurs, en direct, des mots d'alcool — est refusée ; YouTube muet :
+    // elle passe quand même, sous le nom « Une vidéo YouTube »)
+    const fiche = await details([y.id], { min: 1, max: 6 * 3600 }).then(
+      (l) => l[0] ?? null,
+      () => undefined,
+    );
+    if (fiche === null) return { error: PHRASES_REGARDER.pasIci, statut: 400 };
+    video = fiche ? { id: fiche.id, titre: fiche.titre, chaine: fiche.chaine, duree: fiche.duree } : { id: y.id, titre: TITRE_PAR_DEFAUT, chaine: "", duree: 0 };
+  } else return { error: PHRASES_REGARDER.choisis, statut: 400 };
+  const qMoi = qui8(moi.id);
+  const maintenant = Date.now();
+  const avant = await lireTeleSeance(supabase, qMoi);
+  const seance: TeleSeance = { video, depart: maintenant, pause: 0, n: (avant?.n ?? 0) + 1 };
+  if (!(await ecrireJson(supabase, cheminTeleSeance(qMoi), seance))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  await ecrireJson(supabase, cheminEnsemble(qMoi), { de: moi.id, avec: h, video, le: maintenant } satisfies Ensemble);
+  const cle = await poserProfil(supabase, h).catch(() => "");
+  const r = await inviterChezMoi(supabase, moi, [cle], { titre: video.titre });
+  if (r.error) return { error: r.error, statut: r.statut };
+  return { titre: video.titre };
+}
+/**
+ * (le pouls d'une séance : la vidéo proposée, regardée ensemble — les deux là, elle joue, une vingtaine de secondes —
+ * devient un souvenir commun ; c'est le pouls de l'hôte qui le pose, une fois ; puis il se dit aux deux un moment)
+ */
+async function souvenirSiEnsemble(supabase: Supabase, qHote: string, q: string, presents: Entree[], seance: TeleSeance, maintenant: number): Promise<string | null> {
+  const e = await lireJson<Ensemble>(supabase, cheminEnsemble(qHote)).catch(() => ({}) as Ensemble);
+  if (!e.de || !e.avec || !e.video?.id) return null;
+  if (e.fait) return maintenant - e.fait < SOUVENIR_DIT_MS ? e.video.titre : null;
+  if (q !== qHote || maintenant - (Number(e.le) || 0) > INVITATION_MS) return null;
+  const ici = new Set(presents.map((p) => p.nom));
+  if (!ici.has(qHote) || !ici.has(qui8(e.avec))) return null;
+  if (seance.video.id !== e.video.id || seance.pause !== undefined || positionSeance(seance, maintenant) < SECONDES_ENSEMBLE) return null;
+  if (!(await ecrireJson(supabase, cheminEnsemble(qHote), { ...e, fait: maintenant }))) return null;
+  await poserSouvenirCommun(supabase, e.de, e.avec, e.video);
+  return e.video.titre;
+}
+/** (son proche arrive pour la vidéo proposée et l'hôte n'est pas là : « 🎬 Léa est devant ta télé », une fois) */
+async function prevenirLHote(supabase: Supabase, hHote: string, qHote: string, hVenu: string, prenom: string, maintenant: number): Promise<void> {
+  const e = await lireJson<Ensemble>(supabase, cheminEnsemble(qHote)).catch(() => ({}) as Ensemble);
+  if (e.avec !== hVenu || e.fait || e.prevenu || !e.video || maintenant - (Number(e.le) || 0) > INVITATION_MS) return;
+  await ecrireJson(supabase, cheminEnsemble(qHote), { ...e, prevenu: maintenant });
+  await prevenirUnHabitantAppli(supabase, hHote, { titre: PHRASES_REGARDER.arriveTitre(prenom || "Ton proche"), corps: PHRASES_REGARDER.arriveCorps(e.video.titre), url: "/univers/salons?chez=moi", tag: `tele-${qHote}` }).catch(() => "rien");
 }
 /** « Pas maintenant » : l'invitation s'en va (celle de cet hôte). */
 export async function refuserInvitation(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat> {

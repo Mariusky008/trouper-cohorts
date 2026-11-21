@@ -52,6 +52,8 @@ import { DUO_MS, titreDuDuo } from "./meme-salon";
 import { AJOUT_MOT_MAX, AJOUT_PHOTO, AJOUT_TITRE_MAX, ajoutDe, type ObjetMaison } from "./ma-maison";
 import { APERCU, apercuDuHtml, urlLisible } from "./ecrit";
 import { lireLeWeb } from "./ecrit-serveur";
+import { PHRASES_REGARDER, jourDuSouvenir } from "./regarder-a-deux";
+import { videoYouTube, vignetteYouTube } from "./tele";
 import { cheminReglages, dossierMessages, figurineVue, hDeCle, nomsDuFil, nomsRecents, pairDe, parolesCachees, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import {
   CATALOGUE,
@@ -1075,7 +1077,11 @@ export async function objetsDeMaMaison(supabase: Supabase, h: string): Promise<O
   // (ajouté à la main, lot M2 : un film sans image va quand même à la télé ; son mot se dit sous son titre)
   const enMaison = (o: ObjetVu, brut?: ObjetGarde): ObjetMaison => {
     const lien = o.image?.lien ?? brut?.media?.lien;
-    const mot = brut?.message.startsWith("maison-") ? s(brut.citation) : "";
+    // (🎬 « Regarder à deux » : un souvenir commun dit le jour où on l'a vu ensemble)
+    const mot = brut?.message.startsWith("maison-") ? s(brut.citation) : brut?.ensemble ? PHRASES_REGARDER.vu(jourDuSouvenir(brut.le)) : "";
+    // (🎬 un souvenir commun : la vignette de la vidéo, que le téléphone lit chez YouTube — rien n'est recopié chez nous)
+    const yt = brut?.ensemble && lien ? videoYouTube(lien) : null;
+    const vignetteEnsemble = yt ? { src: vignetteYouTube(yt.id), l: 480, h: 360 } : null;
     const detail = mot || o.detail;
     return {
       id: o.id,
@@ -1083,7 +1089,7 @@ export async function objetsDeMaMaison(supabase: Supabase, h: string): Promise<O
       emoji: o.emoji,
       titre: o.titre,
       ...(detail ? { detail } : {}),
-      ...(o.image ? { image: { src: o.image.src, l: o.image.l, h: o.image.h } } : {}),
+      ...(o.image ? { image: { src: o.image.src, l: o.image.l, h: o.image.h } } : vignetteEnsemble ? { image: vignetteEnsemble } : {}),
       ...(lien ? { lien } : {}),
       ...(o.avec ? { avec: o.avec } : {}),
       le: o.le,
@@ -1099,10 +1105,15 @@ export async function objetsDeMaMaison(supabase: Supabase, h: string): Promise<O
       return miens.map((o) => enMaison({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: prenom, aujourdhui: jour }), avec: { prenom, cle } }));
     }),
   );
+  // (🎬 un souvenir commun : avec qui — son prénom, la clé de sa maison)
+  const avecQuiEnsemble = async (h: string) => {
+    const [prenom, cle] = await Promise.all([prenomDe(supabase, h, "Ton proche"), poserProfil(supabase, h).catch(() => "")]);
+    return { prenom, cle };
+  };
   const deposes = await Promise.all(
     perso.objets.filter(visible).map(async (o) => {
-      const image = await imageVue(supabase, o.image);
-      return enMaison({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), ...(image ? { image } : {}) }, o);
+      const [image, avec] = await Promise.all([imageVue(supabase, o.image), o.ensemble ? avecQuiEnsemble(o.ensemble) : Promise.resolve(null)]);
+      return enMaison({ ...vueDe(o, { moi8, prenomMoi, prenomAutre: "", aujourdhui: jour }), ...(image ? { image } : {}), ...(avec ? { avec } : {}) }, o);
     }),
   );
   return [...deposes, ...deLeurs.flat()].sort((a, b) => a.le.localeCompare(b.le)).slice(-120);
@@ -1194,6 +1205,48 @@ export async function ajouterChezMoi(supabase: Supabase, moi: Habitant, p: Recor
   if (!(await ecrirePerso(supabase, moi.id, { ...perso, objets: [...perso.objets, o].slice(-200), depots: { jour, n: depots + 1 } }))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await noterStat(supabase, "deposes");
   return { ok: true, id };
+}
+
+/**
+ * 🎬 (« Regarder à deux », `ma-maison.md` section 24) LE SOUVENIR COMMUN : la vidéo regardée ensemble va chez les deux,
+ * à la télé (une vidéo), avec l'autre (« Gardé avec Sam · 🎬 Vu ensemble, le 21 novembre »). Pas compté dans les ajouts
+ * du jour ; une seule fois par vidéo et par proche ; rien si la maison est pleine. Rien n'est téléchargé : sa vignette,
+ * le téléphone la lit chez YouTube (`objetsDeMaMaison`).
+ */
+export async function poserSouvenirCommun(supabase: Supabase, a: string, b: string, video: { id: string; titre: string }): Promise<number> {
+  if (!etagereAllumee() || a === b) return 0;
+  const lien = `https://www.youtube.com/watch?v=${video.id}`;
+  const titre = [...s(video.titre).replace(/\s+/g, " ")].slice(0, AJOUT_TITRE_MAX).join("") || PHRASES_REGARDER.titre;
+  const le = new Date().toISOString();
+  let poses = 0;
+  for (const [moi, autre] of [
+    [a, b],
+    [b, a],
+  ]) {
+    const perso = await lirePerso(supabase, moi);
+    const message = `ensemble-${qui8(autre)}-${video.id}`;
+    if (perso.objets.some((o) => o.message === message && visible(o))) continue;
+    if (perso.objets.filter(visible).length >= DEPOT.perso) continue;
+    const id = nouvelId();
+    const o: ObjetGarde = {
+      id,
+      genre: "gout",
+      nuance: "aime",
+      emoji: "🎬",
+      titre,
+      concerne: qui8(moi),
+      citation: "",
+      de8: qui8(a),
+      message,
+      le,
+      etat: "actif",
+      depose: true,
+      ensemble: autre,
+      media: { sorte: "video", lien },
+    };
+    if (await ecrirePerso(supabase, moi, { ...perso, objets: [...perso.objets, o].slice(-200) })) poses++;
+  }
+  return poses;
 }
 
 /**

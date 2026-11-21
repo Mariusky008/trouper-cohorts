@@ -25,6 +25,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
+import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import {
   GESTES_SALON,
   INVITES_MAX,
@@ -156,6 +157,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [signaler, setSignaler] = useState<PresentSalon | null>(null);
   const [conversation, setConversation] = useState<MessageSalon[] | null>(null);
   const [indice, setIndice] = useState(true);
+  // 🎬 (« Regarder à deux », `ma-maison.md` section 24) la vidéo vue ensemble vient de devenir un souvenir commun
+  const [souvenir, setSouvenir] = useState("");
   const [occupe, setOccupe] = useState(false);
   const boite = useRef<HTMLDivElement>(null);
   const [L, setL] = useState(0);
@@ -248,6 +251,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       recevoir(p.messages, true);
       // (🎬 la télé de la séance : ce que l'hôte vient de faire)
       if (p.seance !== undefined) setTele((x) => (p.seance && (p.seance.n !== x?.n || p.seance.video.id !== x?.video.id) ? p.seance : (x ?? p.seance ?? null)));
+      setSouvenir(p.souvenir ?? "");
     };
     const id = window.setInterval(() => void battre(), POULS_MS);
     // (quitter la page : sa place se libère tout de suite — pas au simple remontage de l'écran)
@@ -497,7 +501,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 </span>
               );
             })}
-          {indice && ici.length > 1 && <p className="so-indice">{P.indice}</p>}
+          {souvenir ? (
+            <p className="so-indice so-souvenir" role="status" data-souvenir>
+              {PHRASES_REGARDER.souvenir(souvenir)}
+            </p>
+          ) : (
+            indice && ici.length > 1 && <p className="so-indice">{P.indice}</p>
+          )}
           {gradin && ici.length === 1 && (
             <p className="so-indice" data-seul-salon>
               {P.seulSalon}
@@ -1146,6 +1156,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-libre{position:absolute;z-index:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,226,160,.75),rgba(255,190,110,.32) 55%,rgba(255,170,90,0));box-shadow:0 0 18px 4px rgba(255,200,120,.28);animation:so-libre 2.8s ease-in-out infinite}
 @keyframes so-libre{0%,100%{opacity:.55}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.so-libre{animation:none;opacity:.8}}
+.so-souvenir{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px;background:rgba(255,154,60,.92);color:#2b1b12;font-weight:800}
 .so-indice[data-seul-salon]{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px}
 .so-indice{position:absolute;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12.5px;white-space:nowrap;z-index:950}
 @keyframes so-entre{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
