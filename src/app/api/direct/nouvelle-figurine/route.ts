@@ -25,6 +25,7 @@ import { villeEcrite } from "@/lib/direct/nouvelle-figurine";
 import { motInterdit } from "@/lib/direct/mots-interdits";
 import { villeSlug } from "@/lib/direct/ville";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
+import { fabriquerExpressionsDeTete } from "@/lib/direct/expressions-figurine-serveur";
 import { envoyerSelfie, etatNouvelleFigurine, fabriquerProposition, fabriquerSesReferences, refaire, retoucher, selfieRecevable, valider } from "@/lib/direct/nouvelle-figurine-serveur";
 
 export const dynamic = "force-dynamic";
@@ -107,7 +108,8 @@ export async function POST(request: Request) {
     // (puis, l'interrupteur « Univers pour tous » allumé : elle devient sa figurine dans l'appli — `pont-univers-serveur.ts`)
     if (version) after(() => fabriquerSesReferences(supabase, moi.id, version, avant).then(() => poserLePont(supabase, moi)).catch(() => undefined));
     // (🎭 et ses calques — le corps, la tête, ses repères —, faits une fois pour le salon du duo et sa maison : `calques-figurine-serveur.ts`)
-    if (version) after(() => calquesDeFigurine(supabase, moi.id).catch(() => null));
+    // (📷 puis ses cinq expressions — la tête seulement —, d'après ses calques : `expressions-figurine-serveur.ts`, le lot V1)
+    if (version) after(() => calquesDeFigurine(supabase, moi.id).then(() => fabriquerExpressionsDeTete(supabase, moi.id, { avant })).catch(() => null));
     return repondre(r, { version });
   }
   return NextResponse.json({ error: "Demande incomplète." }, { status: 400 });

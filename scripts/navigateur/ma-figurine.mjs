@@ -520,7 +520,8 @@ await hugo.locator(".tf-surprise-encore").click();
 await hugo.waitForFunction(() => (document.querySelector(".tf-surprise small")?.textContent ?? "").includes("d’après ta carte"), null, { timeout: 20000 });
 const surprise3 = (await texte(hugo, ".tf-surprise-texte")).replace(/^« | »$/g, "");
 const consignes = await (await fetch(F.replace("/rest/v1", "/__ia"))).json();
-const consigne = consignes.at(-1) ?? "";
+// (la dernière consigne de texte : une image — les expressions du lot V1, après la réponse — peut être tombée après)
+const consigne = consignes.filter((c) => typeof c === "string" && !c.startsWith("IMAGE ")).at(-1) ?? "";
 ok(surprise3.includes("Les chiens du quartier") && (await hugo.locator(".tf-surprise-carte").count()) === 0, `avec sa carte : l'IA l'écrit d'après lui (les animaux) — « ${surprise3} »`);
 ok(/animaux/.test(consigne) && /Agis tout de suite|agis tout de suite/.test(consigne) && /On n’est jamais trop curieux/.test(consigne) && !/Hugo/.test(consigne) && /Ne devine JAMAIS le genre/.test(consigne) && /l'alcool/.test(consigne), "la consigne : sa carte (ses goûts, ses réponses, sa phrase), jamais son prénom ; ni genre deviné, ni alcool");
 // « C'est moi ✓ » : le texte est écrit, son visage choisi (la feuille se ferme) — rien n'est lu par une voix de synthèse

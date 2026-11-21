@@ -71,6 +71,11 @@ jour, « 👥 Inviter » ouvre une feuille sur place (mes proches à cocher, tro
 maison, « 👯 Mes proches » : le carnet (leur maison, notre conversation, « L'ajouter aussi », ajouter un proche par
 WhatsApp ; « Comme la voient tes proches » dedans).
 
+**📷 V1 : les expressions pour tous (21 novembre 2026 ; `decouvrir.md`, section 28.6)** : chaque figurine du nouveau
+style reçoit ses cinq expressions (la tête seulement) et son corps sans sa tête — après « C'est moi ! », à l'ouverture de
+l'appli s'il en manque, la nuit (huit au plus) ; refaites avec une nouvelle image. Rien ne change encore à l'écran (pour
+V2 et V3). Le propriétaire les voit sur `/admin/humain/visage` (« Les expressions des habitants »).
+
 **🎭 Les salons comme l'essai, ⭐ ma télé du jour en salon (21 novembre 2026 ; `decouvrir.md`, sections 29 et 30)** :
 le gradin partout (le décor validé, sinon le fond sombre), la vidéo qui part seule en silence (« 🔊 Touche pour le
 son »), plus de « Allumer » ; « Ma télé du jour » ouvre ma séance à quatre places — mes amis qui l'ont vue y rejouent
