@@ -94,6 +94,12 @@ par le propriétaire — sur l'accueil de Découvrir, « En direct maintenant »
 les figurines de ceux qui y sont, « Entrer »), puis « Tes passions » et « À découvrir » en rangées qui défilent, une
 couleur et un grand émoji par passion.
 
+**🎞️👥 La séance entre amis (21 novembre 2026, au soir ; `decouvrir.md`, section 33)** : l'invitation garde sa vidéo
+(l'invité la regarde à son rythme ; ensemble tant que l'hôte est dessus ; sinon la figurine de l'hôte la rejoue en
+souvenir) ; l'invité invite un de ses proches à une place libre (proche de lui seulement) ; la fiche entière pour tous.
+**À faire ensuite (le lot suivant, section 33.4)** : la voix à la seconde, la ligne du temps, « Ce qui s'est dit » et la
+carte de la caméra pour l'invité aussi.
+
 **🛠️ Les retours du 21 novembre 2026 (au soir)** : plus de rectangles blancs dans Ma maison (`ma-maison.md`, section 23) ;
 la vidéo de la télé ne passe plus sur la tête des figurines (`salon-du-duo.md`, 11.26) ; l'invitation WhatsApp a son
 propre aperçu, et ses émojis arrivent intacts (`decouvrir.md`, section 30). À suivre, dans l'ordre : la maquette des

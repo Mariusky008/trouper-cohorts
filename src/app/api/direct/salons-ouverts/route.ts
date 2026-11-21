@@ -15,10 +15,15 @@
 // POST { action: "entrer-chez", chez: "moi" | <clé>, place? } → { ouverture } : ma télé ; chez un proche qui m'invite
 //                                               (`place` : le jeton d'un lien WhatsApp — sa place libre, et proches ;
 //                                               `video` : 📼 chez moi, « Revoir » une vidéo déjà vue)
-// POST { action: "place" }                     → { lien, prenom } : ➕ un lien qui réserve une place libre de ma télé
+// POST { action: "place", salon?, chez? }      → { lien, prenom, chez? } : ➕ un lien qui réserve une place libre de ma télé
+//                                                (👥 chez un proche : une place chez lui, et nous deux devenons proches)
 //                                               (six heures, une personne ; `decouvrir.md` section 30)
 // POST { action: "tele", salon, quoi: "video" | "suivante" | "pause" | "jouer", id? } → { seance } : l'hôte mène la télé
-// POST { action: "inviter", cles: [<clé>…] }   → { invites } : trois proches au plus (une notification chacun)
+// POST { action: "inviter", cles: [<clé>…] }   → { invites } : trois proches au plus (une notification chacun) ; 👥 avec
+//                                                `salon` et `chez` (la clé de l'hôte) : assis chez un proche, j'invite UN
+//                                                DE MES proches à une place libre (l'hôte est prévenu)
+// (🎞️ `entrer-chez` : l'invité avec une vidéo reçoit `tele.gardee` — il la garde, à son rythme ; `tele` : un invité met
+//  aussi en pause et reprend, ensemble ; choisir la vidéo reste à l'hôte)
 // POST { action: "inviter-video", id, t, cles } → { invites, titre, cle } : 👥 depuis ma télé du jour, sans la quitter —
 //                                                 ma séance se cale sur cette vidéo (à cette seconde, en pause), mes
 //                                                 proches sont invités avec elle (`ma-maison.md`, section 25)
@@ -45,6 +50,7 @@ import {
   entrerChez,
   etagereDuSalon,
   garderMoment,
+  inviterALaSeance,
   inviterChezMoi,
   inviterSurUneVideo,
   mesInvitations,
@@ -127,12 +133,13 @@ export async function POST(request: Request) {
     return repondre(r, { seance: r.seance });
   }
   if (p.action === "inviter") {
-    const r = await inviterChezMoi(supabase, moi, p.cles);
+    // (👥 21 novembre 2026 : `salon` + `chez` — assis chez un proche, j'invite un de mes proches à une place libre)
+    const r = p.salon ? await inviterALaSeance(supabase, moi, p.salon, p.chez, p.cles) : await inviterChezMoi(supabase, moi, p.cles);
     return repondre(r, { invites: r.invites });
   }
   if (p.action === "place") {
-    const r = await reserverUnePlace(supabase, moi);
-    return repondre(r, { lien: r.lien, prenom: r.prenom });
+    const r = await reserverUnePlace(supabase, moi, { salon: p.salon, chez: p.chez });
+    return repondre(r, { lien: r.lien, prenom: r.prenom, ...(r.chez ? { chez: r.chez } : {}) });
   }
   if (p.action === "inviter-video") {
     const r = await inviterSurUneVideo(supabase, moi, p);
@@ -150,7 +157,7 @@ export async function POST(request: Request) {
   }
   if (p.action === "proche") {
     const r = await demanderProche(supabase, moi, p);
-    return repondre(r, { proches: Boolean(r.proches), envoyee: Boolean(r.envoyee) });
+    return repondre(r, { proches: Boolean(r.proches), envoyee: Boolean(r.envoyee), ...(r.deja ? { deja: true } : {}) });
   }
   if (p.action === "repondre-proche") {
     const r = await repondreDemande(supabase, moi, p);

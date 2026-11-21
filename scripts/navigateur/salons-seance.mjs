@@ -4,8 +4,8 @@
 //
 // D2 : dans « Ma télé du jour », « 👥 Regarder avec mes proches » ; chez Léa : sa pièce, « 🏠 Chez Léa », ses commandes
 // (❚❚, ⏭, 📺 Choisir). « 👥 » : elle invite Sam. Sam voit « 🎬 Léa t'invite devant sa télé » dans Découvrir, « Venir » :
-// il s'assoit à côté d'elle, « C'est Léa qui mène la télé », pas de commandes. Léa met en pause, passe à la suivante :
-// le lecteur de Sam suit. Entre proches, un lien part (rien n'est relu).
+// il s'assoit à côté d'elle, « C'est Léa qui mène la télé » (il met aussi en pause : ensemble). Léa met en pause, passe à
+// la suivante : le lecteur de Sam suit. Sa fiche est entière (« tout pour tous »). Entre proches, un lien part (rien n'est relu).
 // D5 : dans le salon du foot, Ben touche la bulle d'Ana : ❤️ ; trois cœurs, elle monte sur l'étagère (🗄️) ; « 📌
 // Garder ». La fiche d'Ana : ses passions, « 👯 Ajouter en proche », « 🏠 Voir sa maison ». Ana accepte dans Découvrir ;
 // sa maison montre le fanion ⚽ (« Mes salons »). Rien ne déborde, jamais le mot « exemple », aucune erreur.
@@ -175,7 +175,8 @@ await sam.screenshot({ path: `${D}/salons-seance-2-invitation.png` });
 await invitation.locator("[data-venir]").click();
 await sam.waitForURL(/\/univers\/salons\?chez=/);
 ok(await attendre(sam, async () => (await sam.locator(".so[data-salon]").getAttribute("data-salon")) === SEANCE && (await sam.locator(".so[data-salon]").getAttribute("data-hote")) === null), "« Venir » : chez Léa (invité)");
-ok(/C’est Léa qui mène la télé/.test(await texte(sam.locator(".so-info"))) && (await sam.locator("[data-commandes]").count()) === 0 && (await sam.locator("[data-inviter]").count()) === 0, "« C'est Léa qui mène la télé » : ni commandes, ni invitations");
+// (🎞️ 21 novembre 2026, « tout pour tous » : l'invité met aussi en pause — ensemble ; choisir la vidéo reste à Léa)
+ok(/C’est Léa qui mène la télé/.test(await texte(sam.locator(".so-info"))) && (await sam.locator('[data-commandes="ensemble"] [data-pause]').count()) === 1 && (await sam.locator("[data-commandes] [data-suivante], [data-commandes] [data-choisir]").count()) === 0 && (await sam.locator("[data-inviter]").count()) === 0, "« C'est Léa qui mène la télé » : la pause (ensemble), ni ⏭ ni 📺");
 ok(await attendre(sam, async () => (await sam.locator(".so-fig").count()) === 2), "deux figurines dans la pièce de Léa");
 ok(/2 ici · 2 places libres · 4 places/.test(await texte(sam.locator("[data-places]"))), `« ${await texte(sam.locator("[data-places]"))} » (quatre places chez soi)`);
 ok(await attendre(lea, async () => (await lea.locator(".so-fig:not(.fantome)").count()) === 2 && (await lea.locator(`[data-fantome="${SAM.cle}"]`).count()) === 0, 12000), "… Léa le voit s'asseoir (le pouls) — en vrai, plus en souvenir");
@@ -185,7 +186,7 @@ ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("
 await lea.locator('[data-commandes] [data-pause="pause"]').click();
 ok(await attendre(lea, async () => (await lea.locator(".so-tele").getAttribute("data-pause")) === "1" && (await lea.locator(".faux-yt").getAttribute("data-pause")) === "1", 3000), "❚❚ Pause : chez Léa, tout de suite");
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "1", 12000), "… et chez Sam");
-ok(await attendre(sam, async () => /Léa va lancer la vidéo/.test(await texte(sam.locator("[data-affiche]"))), 6000) && (await lea.locator("[data-affiche] [data-jouer]").count()) === 1, "en pause : son affiche (l'image, le titre) — « ▶ Lancer la vidéo » chez Léa, « Léa va lancer la vidéo » chez Sam");
+ok(await attendre(sam, async () => (await sam.locator("[data-affiche] [data-jouer]").count()) === 1, 6000) && (await lea.locator("[data-affiche] [data-jouer]").count()) === 1, "en pause : son affiche (l'image, le titre) — « ▶ Lancer la vidéo », chez Léa et chez Sam (ensemble)");
 await sam.screenshot({ path: `${D}/salons-seance-3b-affiche.png` });
 ok(/Reprendre/.test(await texte(lea.locator("[data-commandes] [data-pause]"))), "« ▶ Reprendre »");
 await lea.locator('[data-commandes] [data-pause="reprendre"]').click();
@@ -205,7 +206,8 @@ await sam.locator(".so-ecrire input").fill("regarde www.monsite.fr");
 await sam.locator(".so-ecrire button").click();
 ok(await attendre(lea, async () => /monsite/.test(await texte(lea.locator(".so-bulle"))), 12000) && (await sam.locator("[data-refus]").count()) === 0, "Sam envoie un lien : il part (entre proches)");
 await sam.locator(".so-fig:not([data-moi])").click();
-ok((await sam.locator("[data-signaler]").count()) === 0 && (await sam.locator("[data-ajouter-proche]").count()) === 0 && (await sam.locator("[data-geste]").count()) > 0, "toucher Léa : des gestes, ni signaler, ni « ajouter »");
+// (👥 21 novembre 2026, « tout pour tous » : la fiche entière — un proche de proche peut être là)
+ok((await sam.locator("[data-signaler]").count()) === 1 && (await sam.locator("[data-ajouter-proche]").count()) === 1 && (await sam.locator("[data-voir-maison]").count()) === 1 && (await sam.locator("[data-ne-plus-voir]").count()) === 1 && (await sam.locator("[data-geste]").count()) > 0, "toucher Léa : des gestes, « 👯 Ajouter en proche », « 🏠 Voir sa maison », « 🙈 Ne plus voir », « 🚩 Signaler »");
 await sam.locator(".so-fermer").click();
 await lea.screenshot({ path: `${D}/salons-seance-3-hote.png` });
 await sam.screenshot({ path: `${D}/salons-seance-4-invite.png` });

@@ -31,13 +31,16 @@
 //                                               au plus ; `son` : le fichier en data: URL) ; ses proches l'écoutent
 // Une vidéo vue, s'il a réagi : ceux de ses proches qui l'avaient vue reçoivent « 🎬 Léa a regardé « … » : revois-la
 // avec ses réactions » (après la réponse ; une fois par proche et par vidéo).
-// 404 : une vidéo qui n'est pas à sa télé (on n'envoie, ne garde ni ne réagit à autre chose).
+// 404 : une vidéo qui n'est pas à sa télé (on n'envoie, ne garde ni ne réagit à autre chose). 🎞️ (21 novembre 2026) sauf
+// `seance: "chez-<q>"` (réagir, écrire, répondre, un vocal, ?reactions=) : la vidéo de la séance où il est — celle de la
+// télé de l'hôte, ou celle que l'invité garde (`videoDeLaSeance`).
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { apresEcrit } from "@/lib/direct/ecrit-serveur";
 import { envoyerVideo, garderVideo, maTeleDuJour, maVideo, noterVue } from "@/lib/direct/tele-du-jour-serveur";
 import { apresLaVue, noterReaction, noterVocal, prevenir, reactionsDesProches } from "@/lib/direct/reactions-video-serveur";
+import { videoDeLaSeance } from "@/lib/direct/salons-ouverts-serveur";
 import { monHistorique } from "@/lib/direct/revoir-serveur";
 import { figurineVivante } from "@/lib/direct/expressions-figurine-serveur";
 
@@ -53,7 +56,7 @@ export async function GET(request: Request) {
   const q = new URL(request.url).searchParams;
   const video = q.get("reactions");
   if (video !== null) {
-    const r = await reactionsDesProches(supabase, moi, video);
+    const r = await reactionsDesProches(supabase, moi, video, q.get("seance") ? await videoDeLaSeance(supabase, moi, q.get("seance"), video) : null);
     return NextResponse.json(r.error ? { error: r.error } : { ok: true, proches: r.proches, miennes: r.miennes, vue: r.vue }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
   }
   // (📷 le lot V2 : ma figurine vivante — ses calques et ses cinq expressions, s'ils sont prêts)
@@ -81,13 +84,13 @@ export async function POST(request: Request) {
   if (p?.action === "reagir" || p?.action === "ecrire" || p?.action === "repondre") {
     const x: Record<string, unknown> =
       p.action === "reagir" ? { t: p.t, sorte: p.sorte, source: p.source, visage: p.visage, d: p.d } : p.action === "ecrire" ? { t: p.t, texte: p.texte ?? "" } : { a: p.a ?? "", repond: p.repond, texte: p.texte ?? "", sorte: p.sorte };
-    const r = await noterReaction(supabase, moi, p.id, x);
+    const r = await noterReaction(supabase, moi, p.id, x, p.seance ? await videoDeLaSeance(supabase, moi, p.seance, p.id) : null);
     const pr = r.prevenir;
     if (pr) after(() => prevenir(supabase, pr).catch(() => undefined));
     return repondre(r, r.ignoree ? { ignoree: true } : r.reaction ? { reaction: r.reaction } : {});
   }
   if (p?.action === "vocal") {
-    const r = await noterVocal(supabase, moi, p.id, { t: p.t, son: p.son, duree: p.duree });
+    const r = await noterVocal(supabase, moi, p.id, { t: p.t, son: p.son, duree: p.duree }, p.seance ? await videoDeLaSeance(supabase, moi, p.seance, p.id) : null);
     return repondre(r, r.ignoree ? { ignoree: true } : r.reaction ? { reaction: r.reaction } : {});
   }
   if (p?.action === "garder") {

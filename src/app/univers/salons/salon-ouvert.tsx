@@ -19,7 +19,11 @@
  *
  * 🎬 (lot D2, section 19) **La séance chez moi** (`chez`) : le même écran, dans ma pièce, quatre places. L'hôte mène la
  * télé (sa télé du jour : ❚❚, ⏭, 📺 Choisir) ; chez ses proches, le lecteur suit la même seconde (recalé au-delà de
- * deux secondes d'écart). « 👥 Inviter » : jusqu'à trois proches. Entre proches : ni relecture, ni signalement.
+ * deux secondes d'écart). « 👥 Inviter » : jusqu'à trois proches. Entre proches : rien n'est relu.
+ *
+ * 🎞️👥 (21 novembre 2026, section 33) L'invité avec une vidéo la garde (à son rythme ; ensemble tant que l'hôte est
+ * dessus ; sinon la figurine de l'hôte la rejoue en souvenir) ; ensemble, il met aussi en pause ; il invite un de ses
+ * proches à une place libre ; la fiche est entière pour tous (un proche de proche peut être là).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { chargerYouTube } from "@/app/univers/tele-duo";
@@ -184,6 +188,15 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const prive = Boolean(seance);
   const nPlaces = prive ? PLACES_SEANCE : PLACES_DU_SALON.length;
   const [tele, setTele] = useState<TeleSeance | null>(o.tele.seance ?? null);
+  // 🎞️ (21 novembre 2026, le propriétaire : « il garde sa vidéo ») L'INVITÉ AVEC UNE VIDÉO la regarde depuis le début, à son
+  // rythme (`aPart` : sa télé à lui, sa pause à lui) ; tant que l'hôte est sur la même vidéo, ils sont ensemble en direct ;
+  // l'hôte passe à une autre : il garde la sienne, là où il en est — et la figurine de l'hôte, à côté de lui, rejoue ses
+  // réactions à elle ; finie (ou « 👀 Rejoindre »), il retrouve la télé de l'hôte
+  const gardee = seance && !seance.hote ? o.tele.gardee : undefined;
+  const [aPart, setAPart] = useState<TeleSeance | null>(() => (gardee && o.tele.seance?.video.id !== gardee.id ? { video: gardee, depart: o.tele.maintenant, n: 1000 } : null));
+  const [gardeeFinie, setGardeeFinie] = useState(false);
+  /** ce que je regarde : ma vidéo gardée, ou la télé de l'hôte */
+  const regarde = aPart ?? tele;
   const [inviter, setInviter] = useState(false);
   // (🗄️ lot D5 : l'étagère ouverte ; les messages que j'ai aimés)
   const [etagere, setEtagere] = useState<MomentSalon[] | null>(null);
@@ -216,7 +229,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // ⭐ (le lot B, 21 novembre 2026 : « Ma télé du jour » est ma séance) CHEZ MOI, MES AMIS QUI ONT DÉJÀ VU CETTE VIDÉO :
   // assis aux places libres (sans prendre la dernière : on peut toujours inviter), ils rejouent leurs réactions à leur
   // seconde ; et ma télé du jour apprend — les vidéos vues, mes réactions gardées pour mes amis
-  const idVideo = seance?.hote ? tele?.video.id : undefined;
+  // (🎞️ 21 novembre 2026 : chez un proche aussi — sur la vidéo que je regarde, l'hôte compris s'il l'a vue)
+  const idVideo = prive ? regarde?.video.id : undefined;
   const [fantomes, setFantomes] = useState<ProcheDevantVideo[]>([]);
   const [popsF, setPopsF] = useState<{ id: number; cle: string; e: string; texte?: string }[]>([]);
   // 📷 (le lot V2, `decouvrir.md` section 28.7) MA FIGURINE FAIT MA TÊTE : chez moi, si mes cinq expressions sont prêtes ;
@@ -268,9 +282,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     // (la précédente, vue jusqu'où ? ma télé du jour la note — elle ne reviendra plus)
     const avant = vuJusqua.current;
     if (avant && avant.id !== idVideo && avant.t > 0) void posterTele({ action: "vue", id: avant.id, secondes: Math.round(avant.t), fin: avant.t >= (avant.duree || 1e6) - 3 });
-    vuJusqua.current = idVideo && tele ? { id: idVideo, duree: tele.video.duree, t: 0 } : null;
+    // (ma télé du jour n'apprend que chez moi : chez un proche, la vidéo n'est pas forcément à ma télé)
+    vuJusqua.current = seance?.hote && idVideo && regarde ? { id: idVideo, duree: regarde.video.duree, t: 0 } : null;
     void Promise.resolve()
-      .then(() => (idVideo ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}`, { cache: "no-store" }).then((r) => r.json()) : { proches: [] }))
+      .then(() => (idVideo ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}&seance=${encodeURIComponent(salon.id)}`, { cache: "no-store" }).then((r) => r.json()) : { proches: [] }))
       .then((j: { proches?: ProcheDevantVideo[] }) => !fini && setFantomes((j.proches ?? []).filter((p) => p.figurine)))
       .catch(() => undefined);
     return () => {
@@ -306,12 +321,37 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     }, 400);
     return () => window.clearInterval(id);
   }, [idVideo, fantomes]);
-  const teleRef = useRef(tele);
+  const teleRef = useRef(regarde);
   useEffect(() => {
-    teleRef.current = tele;
+    teleRef.current = regarde;
     const v = vuJusqua.current;
-    if (v && tele && tele.video.id === v.id) v.t = Math.max(v.t, positionSeance(tele, Date.now() + (decalage.current ?? 0)));
+    if (v && regarde && regarde.video.id === v.id) v.t = Math.max(v.t, positionSeance(regarde, Date.now() + (decalage.current ?? 0)));
   });
+  // 🎞️ (la télé de l'hôte vient de changer : je garde ma vidéo s'il la quitte ; ensemble s'il la rejoint au même moment)
+  const suivreHote = useRef((avant: TeleSeance | null, neuf: TeleSeance | null) => void [avant, neuf]);
+  useEffect(() => {
+    suivreHote.current = (avant, neuf) => {
+      if (!gardee || gardeeFinie || !seance) return;
+      const ms = Date.now() + (decalage.current ?? 0);
+      if (!aPart && avant?.video.id === gardee.id && neuf && neuf.video.id !== gardee.id) {
+        const t = positionSeance(avant, ms);
+        setAPart({ video: gardee, depart: ms - t * 1000, ...(avant.pause !== undefined ? { pause: avant.pause } : {}), n: avant.n + 1000 });
+        dire(P.tuGardes(seance.prenom), 5200);
+      } else if (aPart && neuf?.video.id === aPart.video.id && Math.abs(positionSeance(neuf, ms) - positionSeance(aPart, ms)) < 4) {
+        setAPart(null);
+        dire(P.ensemble(seance.prenom), 4200);
+      }
+    };
+  });
+  const rejoindre = () => {
+    setAPart(null);
+    if (seance) dire(P.ensemble(seance.prenom), 4200);
+  };
+  const finDeMaVideo = () => {
+    setGardeeFinie(true);
+    setAPart(null);
+    if (seance) dire(P.tuRejoins(seance.prenom), 5200);
+  };
   // (je pars : la vidéo du moment, vue jusqu'où)
   useEffect(() => {
     const partir = () => {
@@ -321,6 +361,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     window.addEventListener("pagehide", partir);
     return () => window.removeEventListener("pagehide", partir);
   }, []);
+  const hoteRef = useRef(tele);
+  useEffect(() => {
+    hoteRef.current = tele;
+  });
   const moiArrive = o.presents.find((p) => p.q === o.moi)?.arrive ?? 0;
   const etatRef = useRef({ presents, caches, onDehors, onExclu });
   useEffect(() => {
@@ -402,7 +446,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       });
       recevoir(p.messages, true);
       // (🎬 la télé de la séance : ce que l'hôte vient de faire)
-      if (p.seance !== undefined) setTele((x) => (p.seance && (p.seance.n !== x?.n || p.seance.video.id !== x?.video.id) ? p.seance : (x ?? p.seance ?? null)));
+      if (p.seance !== undefined) {
+        const avant = hoteRef.current;
+        const neuf = p.seance && (p.seance.n !== avant?.n || p.seance.video.id !== avant?.video.id) ? p.seance : (avant ?? p.seance ?? null);
+        setTele(neuf);
+        if (neuf !== avant) suivreHote.current(avant, neuf);
+      }
       setSouvenir(p.souvenir ?? "");
     };
     const id = window.setInterval(() => void battre(), POULS_MS);
@@ -483,7 +532,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   async function demanderProche(p: PresentSalon) {
     setFiche(null);
     const r = await poster({ action: "proche", salon: salon.id, q: p.q });
-    dire(!r.ok ? String(r.j.error || "Ça n’a pas marché. Réessaie.") : r.j.proches ? P.procheFait(p.prenom) : P.procheEnvoye(p.prenom), 5200);
+    dire(!r.ok ? String(r.j.error || "Ça n’a pas marché. Réessaie.") : r.j.deja ? P.dejaProches : r.j.proches ? P.procheFait(p.prenom) : P.procheEnvoye(p.prenom), 5200);
   }
   async function signalerPour(p: PresentSalon, motif: string) {
     const dernierMot = [...messages].reverse().find((m) => m.de === p.q && m.sorte === "texte");
@@ -530,10 +579,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // dernière reste libre, pour inviter)
   const vues = new Set([...places.values()].map(vue));
   const toutesLibres = plan.map((g, k) => ({ g, k })).filter((x) => !vues.has(x.k));
-  // (un ami qui est là en vrai n'est pas aussi assis en souvenir)
-  const enVrai = new Set(ici.map((p) => p.prenom.trim().toLowerCase()));
+  // (un ami qui est là en vrai n'est pas aussi assis en souvenir ; 🎞️ seul sur ma vidéo gardée, celui qui est là mais
+  // regarde autre chose — l'hôte — rejoue sur sa propre figurine ses réactions à MA vidéo : « Léa · l'a vue »)
+  const nomDe = (x: string) => x.trim().toLowerCase();
+  const enVrai = new Set(ici.filter((p) => p.q !== o.moi).map((p) => nomDe(p.prenom)));
+  const souvenirDe = new Map(aPart ? fantomes.filter((f) => enVrai.has(nomDe(f.prenom))).map((f) => [nomDe(f.prenom), f] as const) : []);
   const assisF = fantomes
-    .filter((f) => !enVrai.has(f.prenom.trim().toLowerCase()))
+    .filter((f) => !enVrai.has(nomDe(f.prenom)))
     .slice(0, Math.max(0, toutesLibres.length - 1))
     .map((f, i) => ({ f, g: toutesLibres[i].g }));
   const libres = toutesLibres.slice(assisF.length);
@@ -565,7 +617,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
 
       <div className="so-scene" ref={boite}>
         {seance ? (
-          <TeleDeLaSeance salon={salon.id} seance={tele} hote={seance.hote} prenomHote={seance.prenom} videos={o.tele.videos} decalage={decalage} largeur={lTele} onSeance={setTele} dire={dire} />
+          <TeleDeLaSeance
+            salon={salon.id}
+            seance={regarde}
+            mode={seance.hote ? "hote" : aPart ? "seul" : "ensemble"}
+            prenomHote={seance.prenom}
+            videos={o.tele.videos}
+            decalage={decalage}
+            largeur={lTele}
+            onSeance={aPart ? setAPart : setTele}
+            onFin={finDeMaVideo}
+            onRejoindre={rejoindre}
+            dire={dire}
+          />
         ) : (
           <TeleDuSalon videos={o.tele.videos} decalage={decalage} largeur={lTele} />
         )}
@@ -579,8 +643,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           )}
           {L > 0 &&
             libres.map(({ g, k }) =>
-              seance?.hote ? (
-                // (➕ le lot B : chez moi, une place libre s'ouvre — mon carnet, ou un lien WhatsApp qui la réserve)
+              prive ? (
+                // (➕ le lot B : chez moi, une place libre s'ouvre — mon carnet, ou un lien WhatsApp qui la réserve ; 👥 21
+                // novembre 2026 : chez un proche aussi — j'y invite un de MES proches)
                 <button
                   key={k}
                   type="button"
@@ -603,13 +668,16 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               if (!x) return null;
               const cache = caches.includes(p.q);
               const moi = p.q === o.moi;
+              const souvenir = moi ? undefined : souvenirDe.get(nomDe(p.prenom));
+              const popsS = souvenir ? popsF.filter((x) => x.cle === souvenir.cle) : [];
               return (
                 <button
                   key={p.q}
                   type="button"
-                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}`}
+                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}`}
                   data-q={p.q}
                   data-moi={moi ? "1" : undefined}
+                  data-souvenir={souvenir ? souvenir.cle : undefined}
                   style={{ left: x.x, bottom: H - x.y, height: x.h, zIndex: Math.round(x.y) }}
                   aria-label={moi ? "Ta figurine" : p.prenom}
                   onClick={() => {
@@ -619,13 +687,26 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 >
                   {moi && vivante && maTete.etat === "on" ? (
                     <FigurineVivanteVue v={vivante} hauteur={x.h} e={maTete.tete.e} roulis={maTete.tete.roulis} lacet={maTete.tete.lacet} />
+                  ) : souvenir?.vivante ? (
+                    <FigurineVivanteVue v={souvenir.vivante} hauteur={x.h} e={exprF[souvenir.cle] ?? null} />
                   ) : p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${Math.round(x.h)}px`} alt="" draggable={false} />
                   ) : (
                     <span className="so-sans">🪑</span>
                   )}
-                  <small>{moi ? "Toi" : p.prenom}</small>
+                  <small>{moi ? "Toi" : souvenir ? `${p.prenom} · ${P.aRegarde}` : p.prenom}</small>
+                  {popsS.map((x) =>
+                    x.texte ? (
+                      <i key={x.id} className="so-bulle so-bulle-fantome" data-pop-fantome={souvenir?.cle}>
+                        {x.texte}
+                      </i>
+                    ) : (
+                      <i key={x.id} className="so-pop so-pop-fantome" data-pop-fantome={souvenir?.cle}>
+                        {x.e}
+                      </i>
+                    ),
+                  )}
                 </button>
               );
             })}
@@ -726,7 +807,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       </div>
 
       <section className="so-bas">
-        <p className="so-info">{seance ? (seance.hote ? P.hote : P.invite(seance.prenom)) : P.tele}</p>
+        <p className="so-info" data-info>{seance ? (seance.hote ? P.hote : aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : P.tele}</p>
+        {aPart && tele?.video.id === aPart.video.id && (
+          <button type="button" className="so-bouton petit doux so-aussi" data-aussi onClick={rejoindre}>
+            {P.aussi(seance?.prenom ?? "")}
+          </button>
+        )}
         {seance?.hote && vivante && (
           <div className="so-camera" data-camera-zone>
             <video ref={maTete.video} className={`so-miroir${maTete.etat === "on" ? " vue" : ""}`} playsInline muted aria-hidden="true" />
@@ -748,10 +834,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               aria-label={r.nom}
               disabled={occupe}
               onClick={() => {
-                void envoyer({ sorte: "reaction", cle: r.cle });
-                // (⭐ le lot B : chez moi, ma réaction reste sur la vidéo, à sa seconde — mes amis la verront)
-                const s = tele;
-                if (seance?.hote && s) void posterTele({ action: "reagir", id: s.video.id, t: Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" });
+                // (🎞️ seul sur ma vidéo gardée : la réaction saute sur ma figurine, sans partir au salon — les autres
+                // regardent autre chose ; elle reste sur la vidéo, et ils la verront en la regardant)
+                if (aPart) jouer({ id: `local-${Date.now()}`, de: o.moi, prenom: "", le: Date.now(), sorte: "reaction", cle: r.cle });
+                else void envoyer({ sorte: "reaction", cle: r.cle });
+                // (⭐ le lot B : ma réaction reste sur la vidéo, à sa seconde — mes amis la verront ; 🎞️ chez un proche aussi)
+                const s = regarde;
+                if (prive && s) void posterTele({ action: "reagir", seance: salon.id, id: s.video.id, t: Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" });
               }}
             >
               {r.e}
@@ -788,7 +877,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             )}
             <div>
               <h2>{fiche.prenom}</h2>
-              <small>{P.fiche}</small>
+              <small>{prive ? P.ficheSeance : P.fiche}</small>
             </div>
           </div>
           {!prive && fiche.passions?.length ? (
@@ -816,8 +905,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               </button>
             ))}
           </div>
-          {!prive && (
-            <div className="so-liens">
+          {/* (👥 21 novembre 2026, « tout pour tous » : devant une télé aussi — le proche d'un invité s'y assoit) */}
+          <div className="so-liens">
               <button type="button" className="so-bouton petit" data-ajouter-proche onClick={() => void demanderProche(fiche)}>
                 {P.proche}
               </button>
@@ -831,8 +920,6 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 </span>
               )}
             </div>
-          )}
-          {!prive && (
           <div className="so-discret">
             <button type="button" data-ne-plus-voir onClick={() => void cacher(fiche)}>
               {P.nePlusVoir}
@@ -848,7 +935,6 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               {P.signaler}
             </button>
           </div>
-          )}
         </Feuille>
       )}
 
@@ -898,7 +984,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         </Feuille>
       )}
 
-      {inviter && <Inviter onFermer={() => setInviter(false)} dire={dire} />}
+      {inviter && <Inviter onFermer={() => setInviter(false)} dire={dire} chez={seance && !seance.hote ? { salon: salon.id, cle: seance.cle, prenom: seance.prenom, libres: libres.length } : undefined} />}
       <style>{STYLES}</style>
     </main>
   );
@@ -947,7 +1033,11 @@ function Feuille({ children, onFermer }: { children: React.ReactNode; onFermer: 
 
 // ─── 👥 inviter mes proches (lot D2) ───
 type Proche = { cle: string; prenom: string; image?: string; lien?: string };
-function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, ms?: number) => void }) {
+// (👥 21 novembre 2026, « l'invité invite » : `chez` — assis chez un proche, j'invite un de MES proches à une place libre ;
+// le lien WhatsApp réserve une place chez lui, et nous deux devenons proches)
+function Inviter({ onFermer, dire, chez }: { onFermer: () => void; dire: (t: string, ms?: number) => void; chez?: { salon: string; cle: string; prenom: string; libres: number } }) {
+  const max = chez ? Math.max(1, Math.min(INVITES_MAX, chez.libres)) : INVITES_MAX;
+  const ou = chez ? { salon: chez.salon, chez: chez.cle } : {};
   const [proches, setProches] = useState<Proche[] | null>(null);
   const [choisis, setChoisis] = useState<string[]>([]);
   const [occupe, setOccupe] = useState(false);
@@ -957,21 +1047,23 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
     let fini = false;
     void fetch("/api/direct/proches", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j: { proches?: Proche[] }) => !fini && setProches((j.proches ?? []).filter((p) => p.lien === "proches")))
+      .then((j: { proches?: Proche[] }) => !fini && setProches((j.proches ?? []).filter((p) => p.lien === "proches" && p.cle !== chez?.cle)))
       .catch(() => !fini && setProches([]));
-    void poster({ action: "place" }).then((r) => {
+    void poster({ action: "place", ...ou }).then((r) => {
       if (fini || !r.ok || !r.j.lien) return;
       const url = `${window.location.origin}${String(r.j.lien)}`;
       // (les émojis arrivaient en « � » par `wa.me` : l'adresse de WhatsApp les garde — `lienWhatsApp`)
-      setWhatsapp(lienWhatsApp(P.textePlace(String(r.j.prenom ?? "")), url));
+      setWhatsapp(lienWhatsApp(chez ? P.textePlaceChez(String(r.j.prenom ?? ""), chez.prenom) : P.textePlace(String(r.j.prenom ?? "")), url));
     });
     return () => {
       fini = true;
     };
+    // (une fois, à l'ouverture de la feuille)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   async function envoyer() {
     setOccupe(true);
-    const r = await poster({ action: "inviter", cles: choisis });
+    const r = await poster({ action: "inviter", cles: choisis, ...ou });
     setOccupe(false);
     if (!r.ok) return dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
     onFermer();
@@ -980,7 +1072,7 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
   return (
     <Feuille onFermer={onFermer}>
       <h2>{P.inviterTitre}</h2>
-      <p className="so-chapo">{P.inviterChapo}</p>
+      <p className="so-chapo">{chez ? P.inviterChapoChez(chez.prenom) : P.inviterChapo}</p>
       {proches === null ? (
         <p>…</p>
       ) : proches.length === 0 ? (
@@ -996,7 +1088,7 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
                   className={pris ? "pris" : ""}
                   data-invite={p.cle}
                   aria-pressed={pris}
-                  disabled={!pris && choisis.length >= INVITES_MAX}
+                  disabled={!pris && choisis.length >= max}
                   onClick={() => setChoisis((l) => (pris ? l.filter((x) => x !== p.cle) : [...l, p.cle]))}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1014,7 +1106,7 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
         {choisis.length ? ` (${choisis.length})` : ""}
       </button>
       <div className="so-whatsapp">
-        <small>{P.whatsappPlaceDit}</small>
+        <small>{chez ? P.whatsappPlaceDitChez(chez.prenom) : P.whatsappPlaceDit}</small>
         {whatsapp ? (
           <a className="so-bouton clair" href={whatsapp} target="_blank" rel="noopener noreferrer" data-whatsapp-place>
             {P.whatsappPlace}
@@ -1030,27 +1122,36 @@ function Inviter({ onFermer, dire }: { onFermer: () => void; dire: (t: string, m
 }
 
 // ─── 🎬 la télé de la séance : l'hôte la mène, ses proches suivent la même seconde (lot D2) ───
+// (🎞️ 21 novembre 2026 : trois façons de la regarder — « hote » : il la mène ; « ensemble » : un invité sur la télé de
+// l'hôte, qui met aussi en pause et reprend, pour tout le monde ; « seul » : un invité sur sa vidéo gardée, à son rythme —
+// sa pause à lui, rien ne part au serveur ; finie : `onFin`)
 function TeleDeLaSeance({
   salon,
   seance,
-  hote,
+  mode,
   videos,
   decalage,
   largeur,
   onSeance,
+  onFin,
+  onRejoindre,
   dire,
   prenomHote,
 }: {
   salon: string;
   seance: TeleSeance | null;
-  hote: boolean;
+  mode: "hote" | "ensemble" | "seul";
   prenomHote?: string;
   videos: VideoSalon[];
   decalage: React.RefObject<number>;
   largeur: number;
   onSeance: (s: TeleSeance) => void;
+  onFin?: () => void;
+  onRejoindre?: () => void;
   dire: (t: string, ms?: number) => void;
 }) {
+  const hote = mode === "hote";
+  const seul = mode === "seul";
   // (🔊 21 novembre 2026 : plus de « ▶ Allumer » — la vidéo part toute seule à l'arrivée, en silence ; un toucher met le son)
   const [son, setSon] = useState(false);
   const [simple, setSimple] = useState(false);
@@ -1070,7 +1171,7 @@ function TeleDeLaSeance({
       const ms = Date.now() + (decalage.current ?? 0);
       if (avant) {
         const k = videos.findIndex((x) => x.id === avant.video.id);
-        const v = quoi === "video" ? videos.find((x) => x.id === id) : quoi === "suivante" ? (videos[k + 1] ?? videos[0]) : undefined;
+        const v = !hote ? undefined : quoi === "video" ? videos.find((x) => x.id === id) : quoi === "suivante" ? (videos[k + 1] ?? videos[0]) : undefined;
         const tout: TeleSeance | null =
           quoi === "pause"
             ? { ...avant, pause: positionSeance(avant, ms), n: avant.n + 1 }
@@ -1081,6 +1182,9 @@ function TeleDeLaSeance({
                 : null;
         if (tout) onSeance(tout);
       }
+      // (🎞️ seul sur sa vidéo : sa pause à lui, rien ne part)
+      if (seul) return;
+      if (!hote && quoi !== "pause" && quoi !== "jouer") return;
       setOccupe(true);
       const r = await poster({ action: "tele", salon, quoi, ...(id ? { id } : {}) });
       setOccupe(false);
@@ -1090,9 +1194,11 @@ function TeleDeLaSeance({
       }
       if (r.j.seance) onSeance(r.j.seance as TeleSeance);
     },
-    [salon, onSeance, dire, videos, decalage],
+    [salon, onSeance, dire, videos, decalage, hote, seul],
   );
   const commanderRef = useRef(commander);
+  const finRef = useRef(onFin);
+  const modeRef = useRef(mode);
 
   // (le lecteur suit ce que l'hôte a fait : une autre vidéo, la pause, la reprise)
   const suivre = useCallback(() => {
@@ -1115,6 +1221,8 @@ function TeleDeLaSeance({
   useEffect(() => {
     ref.current = seance;
     commanderRef.current = commander;
+    finRef.current = onFin;
+    modeRef.current = mode;
     suivre();
   });
 
@@ -1144,9 +1252,11 @@ function TeleDeLaSeance({
               else e.target?.playVideo?.();
               suivre();
             },
-            // (finie : chez l'hôte, la suivante de sa télé du jour)
+            // (finie : chez l'hôte, la suivante de sa télé du jour ; 🎞️ sa vidéo gardée : il rejoint l'hôte)
             onStateChange: (e: { data?: number }) => {
-              if (!fini && e.data === 0 && hote) void commanderRef.current("suivante");
+              if (fini || e.data !== 0) return;
+              if (modeRef.current === "hote") void commanderRef.current("suivante");
+              else if (modeRef.current === "seul") finRef.current?.();
             },
           },
         }) as Lecteur;
@@ -1182,13 +1292,13 @@ function TeleDeLaSeance({
     return () => window.clearInterval(id);
   }, [simple, ici]);
 
-  // (le lecteur tout simple : chez l'hôte, la suivante à la fin de celle-ci)
+  // (le lecteur tout simple : chez l'hôte, la suivante à la fin de celle-ci ; 🎞️ sa vidéo gardée : il rejoint l'hôte)
   useEffect(() => {
-    if (!simple || !hote || !seance || seance.pause !== undefined) return;
+    if (!simple || (!hote && !seul) || !seance || seance.pause !== undefined) return;
     const reste = Math.max(2, (seance.video.duree || 600) - positionSeance(seance, Date.now() + (decalage.current ?? 0)));
-    const id = window.setTimeout(() => void commanderRef.current("suivante"), reste * 1000 + 800);
+    const id = window.setTimeout(() => (hote ? void commanderRef.current("suivante") : finRef.current?.()), reste * 1000 + 800);
     return () => window.clearTimeout(id);
-  }, [simple, hote, seance, decalage]);
+  }, [simple, hote, seul, seance, decalage]);
 
   const v = seance?.video;
   const enPause = seance?.pause !== undefined;
@@ -1209,27 +1319,31 @@ function TeleDeLaSeance({
         ) : (
           <div ref={boite} className="so-lecteur" />
         )}
-        {v && (enPause ? <Affiche v={v} action={hote ? { nom: P.lancer, faire: () => void commander("jouer") } : undefined} attente={hote ? undefined : P.attendLancer(prenomHote || "L’hôte")} /> : <Son actif={son} titre={v.titre} onSon={mettreLeSon} />)}
+        {/* (🎞️ 21 novembre 2026 : en pause, chacun la lance — ensemble, pour tout le monde) */}
+        {v && (enPause ? <Affiche v={v} action={{ nom: P.lancer, faire: () => void commander("jouer") }} /> : <Son actif={son} titre={v.titre} onSon={mettreLeSon} />)}
       </div>
-      {hote && (
-        <div className="so-commandes" data-commandes style={{ width: largeur || "100%" }}>
-          {v && (
-            <button type="button" data-pause={enPause ? "reprendre" : "pause"} disabled={occupe} onClick={() => void commander(enPause ? "jouer" : "pause")}>
-              {enPause ? P.reprendre : P.pause}
-            </button>
-          )}
-          {videos.length > 1 && (
-            <button type="button" data-suivante disabled={occupe} onClick={() => void commander("suivante")}>
-              {P.suivante}
-            </button>
-          )}
-          {videos.length > 0 && (
-            <button type="button" data-choisir disabled={occupe} onClick={() => setChoix(true)}>
-              {P.choisir}
-            </button>
-          )}
-        </div>
-      )}
+      <div className="so-commandes" data-commandes={mode} style={{ width: largeur || "100%" }}>
+        {v && (
+          <button type="button" data-pause={enPause ? "reprendre" : "pause"} disabled={occupe} onClick={() => void commander(enPause ? "jouer" : "pause")}>
+            {enPause ? P.reprendre : P.pause}
+          </button>
+        )}
+        {hote && videos.length > 1 && (
+          <button type="button" data-suivante disabled={occupe} onClick={() => void commander("suivante")}>
+            {P.suivante}
+          </button>
+        )}
+        {hote && videos.length > 0 && (
+          <button type="button" data-choisir disabled={occupe} onClick={() => setChoix(true)}>
+            {P.choisir}
+          </button>
+        )}
+        {seul && onRejoindre && (
+          <button type="button" data-rejoindre onClick={onRejoindre}>
+            {P.rejoindre(prenomHote || "l’hôte")}
+          </button>
+        )}
+      </div>
       {choix && (
         <Feuille onFermer={() => setChoix(false)}>
           <h2>{P.choisirTitre}</h2>
@@ -1433,6 +1547,9 @@ const STYLES = `
 .so-fig.fantome{cursor:default;pointer-events:none}
 .so-fig.fantome img{opacity:.92}
 .so-fig.fantome small{background:rgba(0,0,0,.45);font-weight:700}
+.so-fig.souvenir small{background:rgba(0,0,0,.45);font-weight:700}
+.so-aussi{display:block;margin:6px auto 0}
+.so-commandes button[data-rejoindre]{background:rgba(255,46,154,.25)}
 .so-pop-fantome{left:50%;bottom:100%;font-style:normal}
 .so-bulle-fantome{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);font-style:normal;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
 .so-fig.cache{opacity:.3}

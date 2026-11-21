@@ -52,6 +52,8 @@ export async function GET(req: Request) {
   }
   const [image, polices] = await Promise.all([a?.figurine ? figurine(a.figurine) : Promise.resolve(null), policesClikme()]);
   const prenom = a?.prenom || "";
+  // (👥 une place réservée par un invité chez un proche : « Sam t'invite chez Léa », la figurine de Sam)
+  const chez = (a?.chez || "").slice(0, 14);
   const grand = prenom.length > 11 ? 58 : 74;
   const tv = { x: 690, y: 70, l: 430, h: 242 };
 
@@ -77,7 +79,7 @@ export async function GET(req: Request) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", marginTop: 30 }}>
             {prenom ? <span style={{ fontSize: grand, fontWeight: 800, lineHeight: 1.05, color: "#FF4FAE" }}>{prenom}</span> : null}
-            <span style={{ fontSize: prenom ? 50 : 60, fontWeight: 800, lineHeight: 1.18 }}>{prenom ? "t’invite devant sa télé" : "Une place t’attend"}</span>
+            <span style={{ fontSize: prenom ? 50 : 60, fontWeight: 800, lineHeight: 1.18 }}>{prenom ? (chez ? `t’invite chez ${chez}` : "t’invite devant sa télé") : "Une place t’attend"}</span>
             <span style={{ fontSize: prenom ? 50 : 60, fontWeight: 800, lineHeight: 1.18 }}>{prenom ? "" : "devant la télé"}</span>
             <span style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.35, color: "#E5CFC0", marginTop: 14 }}>{prenom ? "Une place t’attend à côté de sa figurine : vous regardez des vidéos ensemble." : "Vos figurines côte à côte, devant les mêmes vidéos."}</span>
           </div>
