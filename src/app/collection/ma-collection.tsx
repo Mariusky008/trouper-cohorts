@@ -294,7 +294,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     if (!compte || !prete) return;
     const t = window.setTimeout(() => {
       void prechauffer(MEMOIRE_TELE, "/api/direct/tele-du-jour", (j) => j.tele);
-      void prechauffer(MEMOIRE_SALONS, "/api/direct/salons-ouverts?accueil=1", (j) => ({ cartes: j.cartes ?? [], age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes }));
+      void prechauffer(MEMOIRE_SALONS, "/api/direct/salons-ouverts?accueil=1", (j) => ({ cartes: j.cartes ?? [], vitrine: j.vitrine, age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes }));
       void prechauffer(MEMOIRE_PROCHES, "/api/direct/proches", (j) => (Array.isArray(j.proches) ? { proches: j.proches, presence: j.presence !== false, cle: j.cle ?? "" } : null));
       if (univers && maison) void prechauffer(MEMOIRE_MAISON, "/api/direct/ma-piece", (j) => j.maison);
     }, 1800);

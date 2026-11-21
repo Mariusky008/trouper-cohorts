@@ -89,6 +89,11 @@ maison 287 ms, Messages 77 ms, retour à Découvrir 62 ms ; la séance d'un touc
 raccourcir les chaînes des routes les plus longues (Messages : 37 allers-retours en 13 étapes ; les salons : 51 ; la
 séance : une dizaine d'étapes).
 
+**🟢 Les salons par passion, version B (21 novembre 2026, au soir ; `decouvrir.md`, section 32)** : la maquette B choisie
+par le propriétaire — sur l'accueil de Découvrir, « En direct maintenant » (la vitrine : le salon le plus vivant, sa télé,
+les figurines de ceux qui y sont, « Entrer »), puis « Tes passions » et « À découvrir » en rangées qui défilent, une
+couleur et un grand émoji par passion.
+
 **🛠️ Les retours du 21 novembre 2026 (au soir)** : plus de rectangles blancs dans Ma maison (`ma-maison.md`, section 23) ;
 la vidéo de la télé ne passe plus sur la tête des figurines (`salon-du-duo.md`, 11.26) ; l'invitation WhatsApp a son
 propre aperçu, et ses émojis arrivent intacts (`decouvrir.md`, section 30). À suivre, dans l'ordre : la maquette des
