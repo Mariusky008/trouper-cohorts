@@ -1156,7 +1156,7 @@ bouche, tu fais la grimace, tu tournes la tête vers ton voisin — elle aussi. 
 |---|---|
 | **V0** — l'essai | Sur la page d'essais de l'administrateur : les cinq expressions de **la figurine du propriétaire** (le moteur d'image, en ligne), et une page où sa figurine fait sa tête devant sa caméra — pour voir l'effet en vrai avant d'aller plus loin. |
 | **V1** — les expressions pour tous | Faites dès « C'est moi ! » ; le rattrapage (à l'ouverture, la nuit) ; refaites avec une nouvelle image. **Fait** (28.6). |
-| **V2** — ma télé du jour | L'interrupteur ; ma figurine fait ma tête sur mon écran ; mes expressions notées à la seconde, rejouées par ma figurine chez mes proches. |
+| **V2** — ma télé du jour | L'interrupteur ; ma figurine fait ma tête sur mon écran ; mes expressions notées à la seconde, rejouées par ma figurine chez mes proches. **Fait** (28.7). |
 | **V3** — en direct | Les salons ouverts et la séance chez moi : chacun voit les figurines des autres faire leur tête (d'abord au rythme du pouls, quelques secondes ; puis en temps réel). |
 | **V4** — le clip | « 🎬 Nos réactions » : nos figurines qui réagissent, à partager. |
 
@@ -1286,6 +1286,47 @@ Zoé rattrapée, Max rien ; « Rattraper maintenant ») ; `essai-nouvelle-figuri
 expressions suivent) ; `essai-visage-essai-route.mjs` et `visage-essai.mjs` (l'essai du lot V0, avec les outils
 partagés). (`essai-bascule-route.mjs` et `ma-figurine.mjs` laissent de côté les demandes des expressions, qui se font
 après la réponse et peuvent tomber au milieu.)
+
+### 28.7 Le lot V2 : ma figurine fait ma tête, dans ma télé du jour (21 novembre 2026) — fait
+
+Le propriétaire : « Oui » (au lot V2, et à la phrase de l'interrupteur).
+
+**Dans ma télé du jour** (ma séance, `/univers/salons?chez=moi`), quand mes cinq expressions sont prêtes (le lot V1) :
+- **« 📷 Ma figurine fait ma tête »**, **proposé une fois** (une carte dans la pièce : « La caméra reste sur ton
+  téléphone : on ne garde que tes réactions, jamais ton image. », « Allumer la caméra » / « Plus tard ») ; puis
+  **l'interrupteur** sous la télé (allumé ou éteint), **rangé sur le téléphone** : rouverte, la caméra revient seule si
+  je l'ai allumée. Éteint au départ.
+- **Ma figurine devient vivante** : son corps sans sa tête, sa tête qui fait mon expression (instantané : les cinq sont
+  chargées d'avance), penche et se tourne comme dans un miroir ; un petit miroir rond dit que la caméra tourne ; « Je
+  vois : 😂 ». **La caméra s'arrête dès que l'appli passe en arrière-plan** (elle revient au retour). Rien ne part du
+  téléphone (la lecture du visage de Google, sur le téléphone : `lire-visage.ts`).
+- **Mes expressions sont notées à la seconde de la vidéo** (quand elle passe, pas en pause) : une réaction de source
+  « visage », avec l'expression et **sa durée** (de 0,5 à 6 s ; notée quand elle finit). Elle compte comme les autres :
+  un rire, c'est 😂 ; un sourire, ❤️ ; la surprise, 😮 ; le bof, 😴 ; la grimace, 😱 (« Oh non ! ») — elle nourrit
+  « 🫶 Au même moment », la ligne du temps, « 💬 Ce qui s'est dit ». Quarante au plus par vidéo ; la même expression à
+  moins de 1,2 s, une seule ; elle n'empêche pas un 😂 de la rangée au même moment.
+- **Chez mes proches** : quand Sam regarde plus tard la vidéo que j'ai vue, **ma figurine, assise en souvenir à côté de
+  lui, fait mes vraies têtes à la seconde** (pendant leur durée), au lieu d'un émoji. Sans expressions prêtes : l'émoji,
+  comme avant.
+
+**Le code** : `app/univers/visage/ma-tete.ts` (`useMaTete` : la caméra, l'expression tenue un instant, la tête penchée ;
+arrêtée en arrière-plan), `app/univers/visage/figurine-vivante.tsx` (`FigurineVivanteVue`),
+`lib/direct/expressions-figurine.ts` (`FigurineVivante`), `figurineVivante` (`expressions-figurine-serveur.ts` : ses
+calques et ses cinq expressions, seulement s'ils sont prêts — rien n'est fabriqué). **Les réactions** (`reactions-video.ts`) :
+la source « visage », `visage` et `d`, `SORTE_DU_VISAGE`. **La route** (`/api/direct/tele-du-jour`) : `GET ?vivante=1` →
+ma figurine vivante ; `reagir` prend `source: "visage"`, `visage`, `d` ; `GET ?reactions=` rend la figurine vivante des
+proches assis (`vivante`). Les réglages du téléphone : `clikme-visage-camera`, `clikme-visage-propose`.
+
+**Pas encore** (le lot V3) : en direct, mes amis assis dans ma séance ne voient pas encore ma figurine faire ma tête ;
+l'écran d'avant (celui des notifications, `/collection?tele=<id>`) ne change pas.
+
+**Les essais** : `visage-seance.mjs` (sur un iPhone, une fausse caméra et une fausse lecture du visage : pas de figurine
+vivante tant que ses expressions ne sont pas faites ; par la route — un rire vu compte comme un 😂 avec sa durée, une
+expression sans expression ou inconnue refusée, un sourire c'est ❤️ et six secondes au plus, le même juste après une seule
+fois, un 😂 de la rangée au même moment compte ; dans sa séance — la proposition, une fois, et sa phrase ; Sam en souvenir,
+sa figurine vivante, sa vraie tête de rire à 3 s puis son visage habituel ; « Allumer la caméra » : sa figurine vivante,
+elle rit — sa figurine rit, « Je vois : 😂 » ; son rire noté à la seconde avec sa durée, et Sam le verra ; rouverte : plus
+de proposition, la caméra revient seule ; éteinte : sa figurine d'une seule image).
 
 ## 29. Les salons comme l'essai du visage : le gradin partout, la vidéo qui part seule (21 novembre 2026)
 

@@ -13,7 +13,9 @@
 //                                               leurs réactions à la seconde, quand ils l'ont vue, la figurine des trois
 //                                               qui s'assoient à côté de lui
 // POST { action: "reagir", id, t, sorte, source? } → { ok, reaction?, ignoree? } : 😂 ❤️ 😮 😱 😴 à cette seconde (la
-//                                               rangée, un geste sans viser, ou ce que l'appli comprend seule)
+//                                               rangée, un geste sans viser, ou ce que l'appli comprend seule ; 📷
+//                                               `source: "visage"`, `visage`, `d` : une expression vue sur mon visage)
+// GET ?vivante=1                              → { vivante } : 📷 ma figurine vivante (le lot V2), ou `null`
 // Une vidéo vue (« vue ») : ses proches le verront assis à côté d'eux, même sans réaction (après la réponse).
 // (deuxième partie, `decouvrir.md` section 22)
 // GET ?reactions=<id>                         → { proches, miennes, vue } : aussi les siennes, et s'il l'a déjà vue
@@ -37,6 +39,7 @@ import { apresEcrit } from "@/lib/direct/ecrit-serveur";
 import { envoyerVideo, garderVideo, maTeleDuJour, maVideo, noterVue } from "@/lib/direct/tele-du-jour-serveur";
 import { apresLaVue, noterReaction, noterVocal, prevenir, reactionsDesProches } from "@/lib/direct/reactions-video-serveur";
 import { monHistorique } from "@/lib/direct/revoir-serveur";
+import { figurineVivante } from "@/lib/direct/expressions-figurine-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +56,8 @@ export async function GET(request: Request) {
     const r = await reactionsDesProches(supabase, moi, video);
     return NextResponse.json(r.error ? { error: r.error } : { ok: true, proches: r.proches, miennes: r.miennes, vue: r.vue }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
   }
+  // (📷 le lot V2 : ma figurine vivante — ses calques et ses cinq expressions, s'ils sont prêts)
+  if (q.get("vivante") !== null) return NextResponse.json({ ok: true, vivante: await figurineVivante(supabase, moi.id) }, { headers: sansCache });
   if (q.get("historique") !== null) return NextResponse.json({ ok: true, historique: await monHistorique(supabase, moi.id) }, { headers: sansCache });
   if (q.get("video") !== null) {
     const v = await maVideo(supabase, moi.id, q.get("video"));
@@ -75,7 +80,7 @@ export async function POST(request: Request) {
   }
   if (p?.action === "reagir" || p?.action === "ecrire" || p?.action === "repondre") {
     const x: Record<string, unknown> =
-      p.action === "reagir" ? { t: p.t, sorte: p.sorte, source: p.source } : p.action === "ecrire" ? { t: p.t, texte: p.texte ?? "" } : { a: p.a ?? "", repond: p.repond, texte: p.texte ?? "", sorte: p.sorte };
+      p.action === "reagir" ? { t: p.t, sorte: p.sorte, source: p.source, visage: p.visage, d: p.d } : p.action === "ecrire" ? { t: p.t, texte: p.texte ?? "" } : { a: p.a ?? "", repond: p.repond, texte: p.texte ?? "", sorte: p.sorte };
     const r = await noterReaction(supabase, moi, p.id, x);
     const pr = r.prevenir;
     if (pr) after(() => prevenir(supabase, pr).catch(() => undefined));

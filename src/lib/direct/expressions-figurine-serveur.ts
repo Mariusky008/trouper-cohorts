@@ -30,7 +30,7 @@ import { consigneVisageAssiseLibre } from "./perso-consignes";
 import { prendre, rendre } from "./pieces-duo-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
 import { EXPRESSIONS_VISAGE, type ExpressionVisage } from "./visage-essai";
-import { RATTRAPAGE_EXPRESSIONS, type EtatExpressionsHabitants, type ExpressionsFigurine, type ExpressionsHabitantVue } from "./expressions-figurine";
+import { RATTRAPAGE_EXPRESSIONS, type EtatExpressionsHabitants, type ExpressionsFigurine, type ExpressionsHabitantVue, type FigurineVivante } from "./expressions-figurine";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -199,6 +199,19 @@ export async function sesExpressions(supabase: Supabase, h: string): Promise<{ e
   if (!chemin) return null;
   const etat = await lireEtat(supabase, h, empreinteDe(chemin));
   return { etat, completes: complet(etat) };
+}
+
+/**
+ * 📷 SA FIGURINE VIVANTE (le lot V2) : ses calques et ses cinq expressions, s'ils sont prêts pour son image d'aujourd'hui
+ * (rien n'est fabriqué ici) ; sinon `null` — elle s'affiche alors comme avant, d'une seule image.
+ */
+export async function figurineVivante(supabase: Supabase, h: string): Promise<FigurineVivante | null> {
+  const chemin = await cheminFigurineAssise(supabase, h);
+  if (!chemin) return null;
+  const [calques, etat] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), lireEtat(supabase, h, empreinteDe(chemin))]);
+  if (!calques || !complet(etat) || !etat.corpsSansTete) return null;
+  const e = etat.tetes as Record<ExpressionVisage, string>;
+  return { ratio: calques.ratio, corps: etat.corpsSansTete, tete: { src: calques.tete.fichier, boite: calques.tete.boite, pivot: calques.tete.pivot }, expressions: { sourire: e.sourire, rire: e.rire, surprise: e.surprise, bof: e.bof, grimace: e.grimace } };
 }
 
 export type PassageExpressions = { faites: ExpressionVisage[]; manquent: ExpressionVisage[]; rien?: "sans-figurine" | "deja" | "en-pause" | "en-cours"; erreur?: string };

@@ -32,6 +32,7 @@ import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { dejaVue, maVideo } from "./tele-du-jour-serveur";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
 import { noterARevoir, revue } from "./revoir-serveur";
+import { figurineVivante } from "./expressions-figurine-serveur";
 import {
   PHRASES_REACTIONS,
   REACTIONS_VIDEO,
@@ -119,7 +120,7 @@ export async function noterReaction(
     pour = { h: lui.h, cle, repond };
   }
   const t = pour ? Math.min(pour.repond + REACTIONS_VIDEO.apres, v.duree > 0 ? v.duree : Infinity) : x.t;
-  const r = reactionValide({ t, sorte: x.sorte ?? (texte ? sorteDuTexte(texte) : undefined), source: texte ? "rangee" : x.source, texte, ...(pour ? { a: pour.cle, repond: pour.repond } : {}) });
+  const r = reactionValide({ t, sorte: x.sorte ?? (texte ? sorteDuTexte(texte) : undefined), source: texte ? "rangee" : x.source, texte, ...(pour ? { a: pour.cle, repond: pour.repond } : {}), ...(!texte && x.source === "visage" ? { visage: x.visage, d: x.d } : {}) });
   if (!r || (v.duree > 0 && r.t > v.duree + 2)) return { error: "Cette réaction n’existe pas.", statut: 400 };
   const chemin = cheminReactions(v.id, moi.id);
   const f = await lireFiche(supabase, chemin);
@@ -213,6 +214,13 @@ export async function reactionsDesProches(supabase: Supabase, moi: Habitant, id:
   );
   const { assis, bord } = placerLesProches(sans);
   const deQui = new Map(mutuels.map((x) => [cleProfil(x.h), x.h]));
-  const avecFigurines = await Promise.all(assis.map(async (p) => ({ ...p, figurine: await figurineDeLaMaison(supabase, deQui.get(p.cle) ?? "").catch(() => null) })));
+  // (📷 le lot V2 : sa figurine vivante, si ses expressions sont prêtes — elle rejoue ses vraies expressions, à la seconde)
+  const avecFigurines = await Promise.all(
+    assis.map(async (p) => {
+      const h = deQui.get(p.cle) ?? "";
+      const [figurine, vivante] = await Promise.all([figurineDeLaMaison(supabase, h).catch(() => null), figurineVivante(supabase, h).catch(() => null)]);
+      return { ...p, figurine, ...(vivante ? { vivante } : {}) };
+    }),
+  );
   return { proches: [...avecFigurines, ...bord], miennes: await avecVoix(supabase, v.id, moi.id, lesReactions(mienne)), vue };
 }
