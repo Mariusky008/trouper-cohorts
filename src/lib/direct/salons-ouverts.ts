@@ -219,6 +219,20 @@ export const PHRASES_SALONS = {
   regles: "Relu avant d’apparaître · ni vocal ni photo ici · on ne voit que ton prénom et ta figurine",
   tele: "📺 La sélection du jour, la même seconde pour tout le salon",
   allumer: "▶ Allumer la télé du salon",
+  /** 🔊 (21 novembre 2026) la vidéo part toute seule, en silence : un toucher sur l'image met le son */
+  son: "🔊 Touche pour le son",
+  /** (en pause : l'hôte la lance d'un toucher ; chez ses proches, on attend) */
+  lancer: "▶ Lancer la vidéo",
+  attendLancer: (prenom: string) => `${prenom} va lancer la vidéo`,
+  /** ➕ (21 novembre 2026, le lot B) une place libre de ma télé : mon carnet, ou un lien WhatsApp qui la réserve */
+  placeLibre: "Une place libre : invite quelqu’un",
+  whatsappPlace: "📲 Inviter par WhatsApp",
+  whatsappPlaceDit: "Pour quelqu’un qui n’est pas encore sur ClikMe, ou pas encore ton proche : il s’assoit à la place libre, et vous devenez proches.",
+  textePlace: (prenom: string) => `🎬 ${prenom ? `${prenom} t’invite` : "Je t’invite"} à regarder des vidéos avec moi sur ClikMe : une place t’attend devant ma télé 👉`,
+  placePrise: (prenom: string) => `🎬 ${prenom} a pris ta place libre`,
+  placePriseCorps: "Il est devant ta télé : viens regarder avec lui.",
+  placePerimee: "Ce lien a déjà servi, ou il a plus de six heures : demande-en un autre.",
+  aRegarde: "l’a vue",
   pasDeTele: "La télé du salon s’allume avec la sélection du jour.",
   ecrire: "Écris au salon",
   refus: (r: string) => `🚫 Ce message ne part pas : ${r}.`,

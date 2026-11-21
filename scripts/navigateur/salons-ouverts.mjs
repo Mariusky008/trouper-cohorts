@@ -68,6 +68,9 @@ window.YT = { Player: function (el, o) {
   var self = this;
   self.loadVideoById = function (x) { d.dataset.yt = x.videoId || x; };
   self.playVideo = function () { d.dataset.joue = "1"; };
+  self.mute = function () { d.dataset.muet = "1"; };
+  self.unMute = function () { d.dataset.muet = ""; };
+  self.setVolume = function () {};
   self.destroy = function () { d.remove(); };
   setTimeout(function () { o.events && o.events.onReady && o.events.onReady({ target: self }); }, 10);
 } };
@@ -133,14 +136,21 @@ const salon = lea.locator(".so[data-salon]");
 ok(await attendre(lea, async () => (await salon.getAttribute("data-salon")) === "foot-1"), "elle entre : le salon du foot");
 ok(/⚽ Le salon du foot/.test(await texte(lea.locator("[data-nom]"))) && /1 ici · 7 places libres · 8 places/.test(await texte(lea.locator("[data-places]"))), `« ${await texte(lea.locator("[data-nom]"))} », « ${await texte(lea.locator("[data-places]"))} »`);
 ok(await attendre(lea, async () => (await lea.locator('.so-fig[data-moi] img').evaluate((i) => i.complete && i.naturalWidth > 0)) === true && /Toi/.test(await texte(lea.locator(".so-fig[data-moi]")))), "sa figurine, dans la pièce : « Toi »");
-ok(await attendre(lea, async () => (await lea.locator(".so-pano").evaluate((i) => i.complete && i.naturalWidth > 0)) === true), "la pièce du salon (son décor)");
+// (🎭 21 novembre 2026, « comme la photo 2 » : plus jamais la pièce — sans décor validé, le fond sombre et les places du plan)
+ok((await lea.locator('.so-piece[data-gradin="plan"]').count()) === 1 && (await lea.locator(".so-pano").count()) === 0 && (await lea.locator(".so-libre").count()) === 7, "le salon en gradin, comme l'essai du visage (sans décor validé : le fond sombre, sept places qui brillent)");
+const figL = await lea.locator(".so-fig[data-moi]").boundingBox();
+ok(figL && figL.height > 80, `… sa figurine en grand, au premier rang (${Math.round(figL?.height ?? 0)} pt)`);
 ok(/on ne voit que ton prénom et ta figurine/.test(await texte(lea.locator("[data-note]"))), "« Tu t'assois. Ici, on ne voit que ton prénom et ta figurine. »");
 const tele = await lea.locator(".so-tele").boundingBox();
 ok(tele && Math.abs(tele.width - 390) < 2 && Math.abs(tele.height - (390 * 9) / 16) < 2, `la télé du salon en grand écran (${Math.round(tele?.width ?? 0)} × ${Math.round(tele?.height ?? 0)})`);
 const avant = await lea.locator(".so-tele").getAttribute("data-tele");
-await lea.locator("[data-allumer]").click();
-ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === avant), `« ▶ Allumer la télé du salon » : la vidéo du moment (${avant})`);
+// (🔊 21 novembre 2026 : plus de « ▶ Allumer » — la vidéo part toute seule, en silence ; un toucher met le son)
+ok((await lea.locator("[data-allumer]").count()) === 0, "plus de bouton « ▶ Allumer »");
+ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === avant && (await lea.locator(".faux-yt").getAttribute("data-joue")) === "1" && (await lea.locator(".faux-yt").getAttribute("data-muet")) === "1"), `la vidéo du moment part toute seule, en silence (${avant})`);
+ok(/Touche pour le son/.test(await texte(lea.locator("[data-son-bouton]"))), "« 🔊 Touche pour le son »");
 await lea.screenshot({ path: `${D}/salons-ouverts-2-entree.png` });
+await lea.locator("[data-son-bouton]").click();
+ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-muet")) === "" && (await lea.locator(".so-tele").getAttribute("data-son")) === "1" && !/Touche pour le son/.test(await texte(lea.locator(".so-tele")))), "un toucher : le son (l'étiquette s'en va)");
 
 // ═══ SAM ENTRE, IL ÉCRIT ═══
 const s = await route(SAM, { action: "entrer", theme: "foot" });

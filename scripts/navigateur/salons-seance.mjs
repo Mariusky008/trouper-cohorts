@@ -79,6 +79,9 @@ window.YT = { Player: function (el, o) {
   self.seekTo = function (t) { base = t; t0 = Date.now(); d.dataset.recale = String(Math.round(t)); };
   self.getCurrentTime = function () { return etat === 1 ? base + (Date.now() - t0) / 1000 : base; };
   self.getPlayerState = function () { return etat; };
+  self.mute = function () { d.dataset.muet = "1"; };
+  self.unMute = function () { d.dataset.muet = ""; };
+  self.setVolume = function () {};
   self.destroy = function () { d.remove(); };
   setTimeout(function () { o.events && o.events.onReady && o.events.onReady({ target: self }); }, 10);
 } };
@@ -111,22 +114,19 @@ const texte = async (loc) => (await loc.innerText().catch(() => "")).replace(/\s
 const route = async (x, corps) => (await fetch(`${BASE}/api/direct/salons-ouverts`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify(corps) })).json();
 const deborde = (p) => p.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1);
 
+// (⭐ le lot B : Sam a déjà vu la première vidéo de leur télé du jour — même passions — et y a ri à 2 s)
+const appelTele = async (x, corps) => (await fetch(`${BASE}/api/direct/tele-du-jour`, corps ? { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify(corps) } : { headers: { cookie: `clikme_habitant=${x.jeton}` } })).json();
+const vSam = (await appelTele(LEA)).tele?.videos?.[0]?.id;
+await appelTele(SAM, { action: "reagir", id: vSam, t: 2, sorte: "rire", source: "rangee" });
+await appelTele(SAM, { action: "vue", id: vSam, fin: true, secondes: 150 });
+
 // ═══ 🎬 LÉA : « 👥 REGARDER AVEC MES PROCHES » ═══
 const lea = await ouvrir(LEA);
 await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
 await fermerPablito(lea, "#o-decouvrir");
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-carte-tele]").count()) === 1, 45000), "Découvrir : la carte « Ma télé du jour »");
+// (⭐ le lot B, 21 novembre 2026 : « Ma télé du jour » est son salon à quatre places — la carte y mène tout droit)
 await lea.locator("#o-decouvrir [data-carte-tele]").click();
-const chezMoi = lea.locator("#o-decouvrir [data-chez-moi]");
-ok(await attendre(lea, async () => /👥 Inviter/.test(await texte(chezMoi))), "« 👥 Inviter », dans la barre de sa télé du jour (comme la maquette)");
-await chezMoi.click();
-// (👥 `ma-maison.md` section 25 : une feuille, sur place — ses proches à cocher, son lien par WhatsApp, sa télé)
-const surPlace = lea.locator("[data-inviter-video]");
-ok(await attendre(lea, async () => (await surPlace.locator(`[data-inviter-proche="${SAM.cle}"]`).count()) === 1) && new URL(lea.url()).pathname === "/collection", "« 👥 Inviter » : ses proches, sur place (elle reste sur sa télé)");
-ok((await surPlace.locator("[data-inviter]").isDisabled()) && decodeURIComponent((await surPlace.locator("[data-lien-whatsapp]").getAttribute("href")) ?? "").includes("/collection?proche="), "… « 🎬 Inviter » attend qu'on choisisse ; son lien par WhatsApp pour les autres");
-await lea.waitForTimeout(300);
-await lea.screenshot({ path: `${D}/salons-seance-0-sur-place.png` });
-await surPlace.locator("[data-aller-tele]").click();
 await lea.waitForURL(/\/univers\/salons\?chez=moi/);
 const seance = lea.locator(".so[data-salon]");
 ok(await attendre(lea, async () => /^chez-/.test((await seance.getAttribute("data-salon")) ?? "") && (await seance.getAttribute("data-hote")) === "1"), "chez elle : la séance (elle en est l'hôte)");
@@ -136,11 +136,19 @@ ok(/Invite tes proches/.test(await texte(lea.locator("[data-note]"))), "« Invit
 ok((await lea.locator("[data-commandes] [data-pause]").count()) === 1 && (await lea.locator("[data-commandes] [data-suivante]").count()) === 1 && (await lea.locator("[data-commandes] [data-choisir]").count()) === 1, "ses commandes : ❚❚ Pause, ⏭ Suivante, 📺 Choisir");
 ok((await lea.locator("[data-etagere]").count()) === 0 && /Tu mènes la télé/.test(await texte(lea.locator(".so-info"))), "… « Tu mènes la télé » (pas d'étagère : c'est chez elle)");
 const v0 = await lea.locator(".so-tele").getAttribute("data-tele");
-await lea.locator("[data-allumer]").click();
-ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === v0), `« ▶ Allumer » : sa télé du jour (${v0})`);
+// (🔊 21 novembre 2026 : sa télé du jour part toute seule, en silence ; 🎭 quatre places, sans pièce)
+ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === v0 && (await lea.locator(".faux-yt").getAttribute("data-muet")) === "1") && (await lea.locator("[data-allumer]").count()) === 0, `sa télé du jour part toute seule, en silence (${v0})`);
+ok(v0 === vSam, "… la première de sa télé du jour, celle que Sam a déjà vue");
+ok(await attendre(lea, async () => /Sam · l’a vue/.test(await texte(lea.locator(`[data-fantome="${SAM.cle}"]`)))), "⭐ Sam, qui l'a déjà vue, est assis à côté d'elle (« Sam · l'a vue »)");
+ok(await attendre(lea, async () => (await lea.locator(`[data-pop-fantome="${SAM.cle}"]`).count()) >= 1, 8000), "… et à 2 s, il rit (sa réaction, à sa seconde)");
+ok((await lea.locator('.so-piece[data-gradin="plan"]').count()) === 1 && (await lea.locator("button.so-place-libre").count()) === 2, "… quatre places, comme un salon : elle, Sam en souvenir, deux libres « ＋ » à toucher");
+await lea.locator("[data-son-bouton]").click();
+ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-muet")) === ""), "un toucher : le son");
+await lea.screenshot({ path: `${D}/salons-seance-0-places.png` });
 
-// inviter Sam
-await lea.locator("[data-inviter]").click();
+// inviter Sam : une place libre (＋) — son carnet, ou un lien WhatsApp qui réserve la place
+await lea.locator("button.so-place-libre").first().click();
+ok(await attendre(lea, async () => decodeURIComponent((await lea.locator("[data-whatsapp-place]").getAttribute("href").catch(() => "")) ?? "").includes("/univers/salons?chez=")), "« ＋ » : sa feuille — ses proches, et « 📲 Inviter par WhatsApp » (un lien qui réserve la place)");
 ok(await attendre(lea, async () => (await lea.locator(`[data-proches] [data-invite="${SAM.cle}"]`).count()) === 1), "« 👥 » : ses proches (Sam)");
 await lea.locator(`[data-invite="${SAM.cle}"]`).click();
 ok((await lea.locator(`[data-invite="${SAM.cle}"]`).getAttribute("aria-pressed")) === "true" && /Inviter \(1\)/.test(await texte(lea.locator("[data-envoyer-invitations]"))), "Sam choisi : « Inviter (1) »");
@@ -167,14 +175,15 @@ ok(await attendre(sam, async () => (await sam.locator(".so[data-salon]").getAttr
 ok(/C’est Léa qui mène la télé/.test(await texte(sam.locator(".so-info"))) && (await sam.locator("[data-commandes]").count()) === 0 && (await sam.locator("[data-inviter]").count()) === 0, "« C'est Léa qui mène la télé » : ni commandes, ni invitations");
 ok(await attendre(sam, async () => (await sam.locator(".so-fig").count()) === 2), "deux figurines dans la pièce de Léa");
 ok(/2 ici · 2 places libres · 4 places/.test(await texte(sam.locator("[data-places]"))), `« ${await texte(sam.locator("[data-places]"))} » (quatre places chez soi)`);
-ok(await attendre(lea, async () => (await lea.locator(".so-fig").count()) === 2, 12000), "… Léa le voit s'asseoir (le pouls)");
-await sam.locator("[data-allumer]").click();
-ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-yt")) === v0), "Sam allume : la même vidéo");
+ok(await attendre(lea, async () => (await lea.locator(".so-fig:not(.fantome)").count()) === 2 && (await lea.locator(`[data-fantome="${SAM.cle}"]`).count()) === 0, 12000), "… Léa le voit s'asseoir (le pouls) — en vrai, plus en souvenir");
+ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-yt")) === v0), "chez Sam : la même vidéo, partie toute seule");
 
 // ═══ LÉA MÈNE LA TÉLÉ ═══
 await lea.locator('[data-commandes] [data-pause="pause"]').click();
 ok(await attendre(lea, async () => (await lea.locator(".so-tele").getAttribute("data-pause")) === "1" && (await lea.locator(".faux-yt").getAttribute("data-pause")) === "1", 3000), "❚❚ Pause : chez Léa, tout de suite");
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "1", 12000), "… et chez Sam");
+ok(await attendre(sam, async () => /Léa va lancer la vidéo/.test(await texte(sam.locator("[data-affiche]"))), 6000) && (await lea.locator("[data-affiche] [data-jouer]").count()) === 1, "en pause : son affiche (l'image, le titre) — « ▶ Lancer la vidéo » chez Léa, « Léa va lancer la vidéo » chez Sam");
+await sam.screenshot({ path: `${D}/salons-seance-3b-affiche.png` });
 ok(/Reprendre/.test(await texte(lea.locator("[data-commandes] [data-pause]"))), "« ▶ Reprendre »");
 await lea.locator('[data-commandes] [data-pause="reprendre"]').click();
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "", 12000), "▶ Reprendre : chez Sam aussi");

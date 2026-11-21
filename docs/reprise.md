@@ -71,6 +71,11 @@ jour, « 👥 Inviter » ouvre une feuille sur place (mes proches à cocher, tro
 maison, « 👯 Mes proches » : le carnet (leur maison, notre conversation, « L'ajouter aussi », ajouter un proche par
 WhatsApp ; « Comme la voient tes proches » dedans).
 
+**🎭 Les salons comme l'essai, ⭐ ma télé du jour en salon (21 novembre 2026 ; `decouvrir.md`, sections 29 et 30)** :
+le gradin partout (le décor validé, sinon le fond sombre), la vidéo qui part seule en silence (« 🔊 Touche pour le
+son »), plus de « Allumer » ; « Ma télé du jour » ouvre ma séance à quatre places — mes amis qui l'ont vue y rejouent
+leurs réactions, une place libre « ＋ » ouvre mes proches ou un lien WhatsApp qui la réserve (et rend proches).
+
 **🎭 Les gradins des salons ouverts (20 novembre 2026, au soir ; `decouvrir.md`, section 27)** : un décor par lieu (onze
 lieux pour les douze passions), huit emplacements sur deux marches, fabriqués et validés par le propriétaire sur
 `/admin/humain/salons` ; seul un gradin validé va dans les salons (sinon, la pièce). **À faire par le propriétaire, en

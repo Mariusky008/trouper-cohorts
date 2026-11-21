@@ -11,8 +11,11 @@ export const revalidate = 0;
 
 export const metadata = { title: "Ta figurine — ClikMe" };
 
-export default async function PageNouvelleFigurine({ searchParams }: { searchParams: Promise<{ piece?: string }> }) {
+export default async function PageNouvelleFigurine({ searchParams }: { searchParams: Promise<{ piece?: string; suite?: string }> }) {
   if (!(await universPermis())) redirect("/admin");
-  // (🏠 lot M3 : après « C'est moi ! », « Choisis ta pièce » — l'administrateur qui le demande, puis tout le monde)
-  return <NouvelleFigurine piece={await versSaPiece((await searchParams).piece)} />;
+  const { piece, suite } = await searchParams;
+  // (🏠 lot M3 : après « C'est moi ! », « Choisis ta pièce » — l'administrateur qui le demande, puis tout le monde ;
+  // ➕ 21 novembre 2026 : arrivé par le lien WhatsApp d'une place libre, « 🎬 Rejoindre ta place » d'abord)
+  const place = suite && /^\/univers\/salons\?chez=[A-Za-z0-9_-]{4,64}&place=[A-Za-z0-9_-]{12,32}$/.test(suite) ? suite : undefined;
+  return <NouvelleFigurine piece={await versSaPiece(piece)} place={place} />;
 }

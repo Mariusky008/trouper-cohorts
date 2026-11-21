@@ -35,7 +35,8 @@ const qui = (n, prenom) => ({ id: `5a5a5a5a-0000-4000-8000-0000005c20${String(n)
 const LEA = qui(1, "Léa");
 const SAM = qui(2, "Sam");
 const TOM = qui(3, "Tom");
-const GENS = [LEA, SAM, TOM];
+const ZOE = qui(4, "Zoé");
+const GENS = [LEA, SAM, TOM, ZOE];
 const maintenant = new Date().toISOString();
 await semer("human_habitants", GENS.map((x) => ({ id: x.id, device_token: x.jeton, prenom: x.prenom, ville_slug: "dax" })));
 await semer("clik_ma_figurine", GENS.map((x) => ({ habitant_id: x.id, prenom: x.prenom, accord_le: maintenant, prete_le: maintenant })));
@@ -158,6 +159,21 @@ const e2 = await lire(`${dossier}/ensemble.json`);
 ok(e2.de === SAM.id && Array.isArray(e2.avec) && e2.avec[0] === LEA.id && !e2.fait, "… regardée ensemble, elle deviendra un souvenir commun");
 ok((await appel(LEA, `${SALONS}?accueil=1`)).invitations?.[0]?.titre === W.titre, "… Léa est invitée avec la vidéo");
 
-ok(!/exemple/i.test(JSON.stringify([p1, acc, mL, mL2])), "jamais le mot « exemple »");
+// ═══ ➕ UNE PLACE LIBRE, PAR WHATSAPP (le lot B, `decouvrir.md` section 30) ═══
+const pl = await appel(SAM, SALONS, { action: "place" });
+const jeton = new URL(`https://x${pl.lien ?? ""}`).searchParams.get("place") ?? "";
+ok(pl.statut === 200 && pl.lien?.startsWith(`/univers/salons?chez=${CLE_SAM}&place=`) && /^[A-Za-z0-9_-]{12,32}$/.test(jeton) && pl.prenom === "Sam", "« 📲 Inviter par WhatsApp » : un lien qui réserve une place libre de sa télé");
+ok((await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM })).statut === 403, "Tom, sans le lien : il n'entre pas");
+ok((await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM, place: "pasunbonjeton00" })).statut === 403, "… ni avec un faux lien");
+const pT = await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM, place: jeton });
+ok(pT.statut === 200 && pT.ouverture?.salon?.id === SEANCE, "avec le lien : Tom s'assoit à la place libre");
+const prT = await lire(`${TOM.id}/proches.json`);
+const prS = await lire(`${SAM.id}/proches.json`);
+ok((prT.ids ?? []).includes(SAM.id) && (prS.ids ?? []).includes(TOM.id), "… et Sam et lui sont proches, des deux côtés");
+const pZ = await appel(ZOE, SALONS, { action: "entrer-chez", chez: CLE_SAM, place: jeton });
+ok(pZ.statut === 403 && /déjà servi/.test(pZ.error ?? ""), "Zoé, avec le même lien : il a déjà servi (une place, une personne)");
+ok((await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM, place: jeton })).statut === 200, "Tom revient avec son lien : sa place l'attend toujours");
+
+ok(!/exemple/i.test(JSON.stringify([p1, acc, mL, mL2, pl])), "jamais le mot « exemple »");
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nRegarder à deux : tout est bon.");
 process.exit(echecs ? 1 : 0);

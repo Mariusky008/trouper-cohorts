@@ -192,6 +192,12 @@ ok(/Regarde tes vidéos avec ceux que tu aimes/.test(await texte(lea.locator("#o
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-salon]").count()) === 12), "les salons ouverts : douze, ses passions d'abord");
 await lea.screenshot({ path: `${D}/tele-du-jour-4a-accueil.png` });
 await carte.click();
+// (⭐ le lot B, 21 novembre 2026 : « Ma télé du jour » est mon salon à quatre places — la carte y mène)
+await lea.waitForURL(/\/univers\/salons\?chez=moi/);
+ok(await attendre(lea, async () => /^chez-/.test((await lea.locator(".so[data-salon]").getAttribute("data-salon")) ?? "") && (await lea.locator(".so[data-salon]").getAttribute("data-hote")) === "1" && /4 places/.test(await texte(lea.locator("[data-places]")))), "« ▶ Regarder » : son salon à quatre places (elle en est l'hôte)");
+// (l'écran d'avant — celui des notifications « revois-la avec ses réactions » — par son adresse)
+await lea.goto(`${BASE}/collection?tele=${premiere}&v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
+await fermerPablito(lea, "#o-decouvrir");
 const onglet = lea.locator("#o-decouvrir .td.onglet");
 ok(await attendre(lea, async () => Boolean(await onglet.getAttribute("data-video").catch(() => ""))), "l'onglet « Découvrir » : sa télé du jour");
 const tailles = await lea.evaluate(() => {

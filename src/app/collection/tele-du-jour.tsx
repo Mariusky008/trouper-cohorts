@@ -152,7 +152,9 @@ export function TeleDuJourEcran({ onglet = false }: { onglet?: boolean }) {
   if (onglet && vue === "accueil")
     return (
       <>
-        <AccueilDecouvrir tele={tele} onRegarder={() => setVue("tele")} onPassions={() => setVue("passions")} />
+        {/* (⭐ le lot B, 21 novembre 2026 : « Ma télé du jour » est mon salon à quatre places — la même chose que les salons
+            ouverts, pour mes amis : on y entre d'un toucher, la vidéo part toute seule) */}
+        <AccueilDecouvrir tele={tele} onRegarder={() => (tele.videos.length ? window.location.assign("/univers/salons?chez=moi") : setVue("tele"))} onPassions={() => setVue("passions")} />
         {maisons}
         <style>{STYLES}</style>
       </>

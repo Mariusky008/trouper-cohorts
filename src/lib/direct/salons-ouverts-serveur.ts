@@ -550,6 +550,9 @@ const seanceDe = (id: unknown): string | null => /^chez-([A-Za-z0-9_-]{4,16})$/.
 const cheminInvite = (qHote: string, q: string) => `${dossierSalon("prives", idSeance(qHote))}/invites/${q}.json`;
 const cheminTeleSeance = (qHote: string) => `${dossierSalon("prives", idSeance(qHote))}/tele.json`;
 const dossierInvitations = (h: string) => `${h}/invitations-tele`;
+/** ➕ (le lot B) une place libre réservée par un lien WhatsApp : `places/<jeton>.json` ({ h, le, pris?, prisLe? }). */
+const cheminPlace = (qHote: string, jeton: string) => `${dossierSalon("prives", idSeance(qHote))}/places/${jeton}.json`;
+const jetonValide = (x: unknown) => (/^[A-Za-z0-9_-]{12,32}$/.test(String(x ?? "")) ? String(x) : null);
 /** 🎬 (« Regarder à deux ») ce que la séance attend : la vidéo proposée, à regarder avec lui. */
 const cheminEnsemble = (qHote: string) => `${dossierSalon("prives", idSeance(qHote))}/ensemble.json`;
 type Ensemble = { de?: string; avec?: string | string[]; video?: VideoSalon; le?: number; fait?: number; faits?: string[]; prevenu?: number };
@@ -570,13 +573,20 @@ async function lireTeleSeance(supabase: Supabase, qHote: string): Promise<TeleSe
  * pièce de Ma maison (sinon le salon du catalogue) ; la télé qu'il mène — l'hôte, en arrivant, la trouve prête (la
  * première vidéo de sa télé du jour).
  */
-export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; figurine?: true }>> {
+export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknown, jetonPlace?: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; figurine?: true }>> {
   const hHote = chez === "moi" ? moi.id : await hDeCle(supabase, chez).catch(() => null);
   if (!hHote) return { error: "Cette maison n’existe pas.", statut: 404 };
   const qHote = qui8(hHote);
   const q = qui8(moi.id);
   const hote = hHote === moi.id;
-  if (!hote && !(await invite(supabase, qHote, q))) return { error: PHRASES_SALONS.pasInvite, statut: 403 };
+  // (➕ le lot B : un lien WhatsApp qui réserve une place libre — il s'y assoit, et ils deviennent proches)
+  if (!hote && !(await invite(supabase, qHote, q))) {
+    const jeton = jetonValide(jetonPlace);
+    if (!jeton) return { error: PHRASES_SALONS.pasInvite, statut: 403 };
+    if (!(await figurineDeLaMaison(supabase, moi.id).catch(() => null))) return { error: PHRASES_SALONS.sansFigurine, statut: 409, figurine: true };
+    const r = await prendrePlace(supabase, hHote, qHote, moi, jeton);
+    if (r) return { error: r, statut: 403 };
+  }
   const m: Lieu = "prives";
   const id = idSeance(qHote);
   const [figurine, prenom, prenomHote, presents, piece, cle, teleDuJour, deja] = await Promise.all([
@@ -686,6 +696,34 @@ export async function inviterChezMoi(supabase: Supabase, moi: Habitant, cles: un
   }
   if (!invites.length) return { error: "Ces personnes ne sont pas tes proches.", statut: 403 };
   return { invites };
+}
+
+/**
+ * ➕ (le lot B, 21 novembre 2026) UNE PLACE LIBRE DE MA TÉLÉ, PAR WHATSAPP : un lien qui la réserve (six heures, une seule
+ * personne) — `/univers/salons?chez=<ma clé>&place=<jeton>`. Celui qui l'ouvre (sa figurine faite) s'y assoit, et nous
+ * devenons proches des deux côtés (le propriétaire : « oui, proche en s'asseyant »).
+ */
+export async function reserverUnePlace(supabase: Supabase, moi: Habitant): Promise<Resultat<{ lien?: string; prenom?: string }>> {
+  const [cle, prenom] = await Promise.all([poserProfil(supabase, moi.id), prenomDe(supabase, moi).catch(() => "")]);
+  if (!cle) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  const jeton = randomBytes(12).toString("base64url");
+  if (!(await ecrireJson(supabase, cheminPlace(qui8(moi.id), jeton), { h: moi.id, le: Date.now() }))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  return { lien: `/univers/salons?chez=${encodeURIComponent(cle)}&place=${jeton}`, prenom };
+}
+/** (il ouvre le lien d'une place : elle est à lui — l'invitation, et proches des deux côtés ; `null` : c'est fait) */
+async function prendrePlace(supabase: Supabase, hHote: string, qHote: string, moi: Habitant, jeton: string): Promise<string | null> {
+  const f = await lireJson<{ h?: string; le?: number; pris?: string }>(supabase, cheminPlace(qHote, jeton)).catch(() => ({}) as { h?: string; le?: number; pris?: string });
+  const encore = f.h === hHote && Date.now() - (Number(f.le) || 0) < INVITATION_MS;
+  if (!encore || (f.pris && f.pris !== moi.id)) return PHRASES_SALONS.placePerimee;
+  const maintenant = Date.now();
+  if (!f.pris) await ecrireJson(supabase, cheminPlace(qHote, jeton), { ...f, pris: moi.id, prisLe: maintenant });
+  await ecrireJson(supabase, cheminInvite(qHote, qui8(moi.id)), { h: moi.id, le: maintenant });
+  await Promise.all([ajouterProche(supabase, moi.id, hHote), ajouterProche(supabase, hHote, moi.id)]);
+  if (!f.pris) {
+    const prenom = (await prenomDe(supabase, moi).catch(() => "")) || "Quelqu’un";
+    await prevenirUnHabitantAppli(supabase, hHote, { titre: PHRASES_SALONS.placePrise(prenom), corps: PHRASES_SALONS.placePriseCorps, url: "/univers/salons?chez=moi", tag: `tele-${qHote}` }).catch(() => "rien");
+  }
+  return null;
 }
 
 /** 🎬 Mes invitations (de moins de six heures). */
