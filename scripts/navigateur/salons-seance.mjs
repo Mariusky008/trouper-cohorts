@@ -113,6 +113,14 @@ const attendre = async (p, f, ms = 15000) => {
 const texte = async (loc) => (await loc.innerText().catch(() => "")).replace(/\s+/g, " ").trim();
 const route = async (x, corps) => (await fetch(`${BASE}/api/direct/salons-ouverts`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify(corps) })).json();
 const deborde = (p) => p.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1);
+// (📷 « tout pour tous », section 34 : la carte de la caméra est proposée une fois à chacun, s'il a ses expressions — « Pas maintenant »)
+// (`vivante` : la réponse que l'écran attend — « mes expressions sont-elles faites ? » ; oui : la carte s'ouvre)
+const reponseVivante = (p) => p.waitForResponse((r) => r.url().includes("/api/direct/tele-du-jour?vivante=1"), { timeout: 30000 }).catch(() => null);
+const sansCarteCamera = async (p, attente) => {
+  const r = await attente;
+  const j = r ? await r.json().catch(() => ({})) : {};
+  if (j.vivante && (await attendre(p, async () => (await p.locator("[data-proposer-camera]").count()) === 1, 5000))) await p.locator("[data-plus-tard]").click();
+};
 
 // (⭐ le lot B : Sam a déjà vu la première vidéo de leur télé du jour — même passions — et y a ri à 2 s)
 const appelTele = async (x, corps) => (await fetch(`${BASE}/api/direct/tele-du-jour`, corps ? { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify(corps) } : { headers: { cookie: `clikme_habitant=${x.jeton}` } })).json();
@@ -126,11 +134,13 @@ await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "dom
 await fermerPablito(lea, "#o-decouvrir");
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-carte-tele]").count()) === 1, 45000), "Découvrir : la carte « Ma télé du jour »");
 // (⭐ le lot B, 21 novembre 2026 : « Ma télé du jour » est son salon à quatre places — la carte y mène tout droit)
+const vivanteLea = reponseVivante(lea);
 await lea.locator("#o-decouvrir [data-carte-tele]").click();
 await lea.waitForURL(/\/univers\/salons\?chez=moi/);
 const seance = lea.locator(".so[data-salon]");
 ok(await attendre(lea, async () => /^chez-/.test((await seance.getAttribute("data-salon")) ?? "") && (await seance.getAttribute("data-hote")) === "1"), "chez elle : la séance (elle en est l'hôte)");
 const SEANCE = await seance.getAttribute("data-salon");
+await sansCarteCamera(lea, vivanteLea);
 ok(/🏠 Chez Léa/.test(await texte(lea.locator("[data-nom]"))) && /1 ici/.test(await texte(lea.locator("[data-places]"))), `« ${await texte(lea.locator("[data-nom]"))} »`);
 ok(/Invite tes proches/.test(await texte(lea.locator("[data-note]"))), "« Invite tes proches : ils s'assoient à côté de toi. »");
 ok((await lea.locator("[data-commandes] [data-pause]").count()) === 1 && (await lea.locator("[data-commandes] [data-suivante]").count()) === 1 && (await lea.locator("[data-commandes] [data-choisir]").count()) === 1, "ses commandes : ❚❚ Pause, ⏭ Suivante, 📺 Choisir");
@@ -172,9 +182,11 @@ const haut = await sam.evaluate(() => {
 });
 ok(haut, "… tout en haut, avant sa télé du jour");
 await sam.screenshot({ path: `${D}/salons-seance-2-invitation.png` });
+const vivanteSam = reponseVivante(sam);
 await invitation.locator("[data-venir]").click();
 await sam.waitForURL(/\/univers\/salons\?chez=/);
 ok(await attendre(sam, async () => (await sam.locator(".so[data-salon]").getAttribute("data-salon")) === SEANCE && (await sam.locator(".so[data-salon]").getAttribute("data-hote")) === null), "« Venir » : chez Léa (invité)");
+await sansCarteCamera(sam, vivanteSam);
 // (🎞️ 21 novembre 2026, « tout pour tous » : l'invité met aussi en pause — ensemble ; choisir la vidéo reste à Léa)
 ok(/C’est Léa qui mène la télé/.test(await texte(sam.locator(".so-info"))) && (await sam.locator('[data-commandes="ensemble"] [data-pause]').count()) === 1 && (await sam.locator("[data-commandes] [data-suivante], [data-commandes] [data-choisir]").count()) === 0 && (await sam.locator("[data-inviter]").count()) === 0, "« C'est Léa qui mène la télé » : la pause (ensemble), ni ⏭ ni 📺");
 ok(await attendre(sam, async () => (await sam.locator(".so-fig").count()) === 2), "deux figurines dans la pièce de Léa");
@@ -203,7 +215,7 @@ ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("
 
 // entre proches : rien n'est relu
 await sam.locator(".so-ecrire input").fill("regarde www.monsite.fr");
-await sam.locator(".so-ecrire button").click();
+await sam.locator(".so-ecrire button[type=submit]").click();
 ok(await attendre(lea, async () => /monsite/.test(await texte(lea.locator(".so-bulle"))), 12000) && (await sam.locator("[data-refus]").count()) === 0, "Sam envoie un lien : il part (entre proches)");
 await sam.locator(".so-fig:not([data-moi])").click();
 // (👥 21 novembre 2026, « tout pour tous » : la fiche entière — un proche de proche peut être là)

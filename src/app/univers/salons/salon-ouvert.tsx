@@ -24,6 +24,10 @@
  * 🎞️👥 (21 novembre 2026, section 33) L'invité avec une vidéo la garde (à son rythme ; ensemble tant que l'hôte est
  * dessus ; sinon la figurine de l'hôte la rejoue en souvenir) ; ensemble, il met aussi en pause ; il invite un de ses
  * proches à une place libre ; la fiche est entière pour tous (un proche de proche peut être là).
+ *
+ * 📷⏱💬🎙️ (section 34, « tout pour tous ») Dans la séance, pour chacun : « 📷 » en haut (la carte de la maquette, la
+ * pastille), sa tête copiée en direct chez ceux qui regardent avec lui, la ligne du temps sous la télé, « 💬 Ce qui s'est
+ * dit » (toucher une ligne revoit le moment), et sa vraie voix à la seconde (le micro de la barre d'écriture).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { chargerYouTube } from "@/app/univers/tele-duo";
@@ -31,7 +35,8 @@ import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import { lienWhatsApp } from "@/lib/direct/carnet-proches";
-import { sorteVideo, type ProcheDevantVideo, type ReactionVideo, type SorteVideo } from "@/lib/direct/reactions-video";
+import { PHRASES_REACTIONS as PR, ceQuiSestDit, seconde, sorteVideo, type ProcheDevantVideo, type ReactionVideo, type SorteVideo } from "@/lib/direct/reactions-video";
+import { BoutonMicro, type FinMicro } from "@/app/salon/micro";
 import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
 import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/direct/visage-essai";
 import { useMaTete } from "@/app/univers/visage/ma-tete";
@@ -89,6 +94,8 @@ const posterTele = (corps: Record<string, unknown>) =>
 /** 📷 (le lot V2) l'interrupteur « Ma figurine fait ma tête », et sa proposition faite une fois : rangés sur le téléphone */
 const CLE_CAMERA = "clikme-visage-camera";
 const CLE_PROPOSEE = "clikme-visage-propose";
+/** (📷 « tout pour tous » : il a dit « Je l'allume » une fois — ensuite, « 📷 » l'allume d'un toucher) */
+const CLE_ACCEPTEE = "clikme-visage-accepte";
 const lireReglage = (k: string) => {
   try {
     return window.localStorage.getItem(k) === "1";
@@ -112,6 +119,8 @@ const expressionA = (reactions: readonly ReactionVideo[], t: number): Expression
   return null;
 };
 /** (les réactions du salon, en sortes de ma télé du jour : 😱 « Oh non ! », 👏 « J'adore ») */
+/** (la ligne du temps : une couleur par proche, comme dans ma télé du jour) */
+const COULEURS = ["#FF2E9A", "#F2C46B", "#45d483", "#7fb2ff", "#c38bff", "#ff8a5c"];
 const SORTE_DE_REACTION: Record<CleReaction, SorteVideo> = { rire: "rire", coeur: "coeur", oh: "oh", surprise: "peur", bravo: "coeur" };
 const poster = (corps: Record<string, unknown>) =>
   fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) })
@@ -232,6 +241,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // (🎞️ 21 novembre 2026 : chez un proche aussi — sur la vidéo que je regarde, l'hôte compris s'il l'a vue)
   const idVideo = prive ? regarde?.video.id : undefined;
   const [fantomes, setFantomes] = useState<ProcheDevantVideo[]>([]);
+  // (📷 « tout pour tous » : la ligne du temps et « 💬 Ce qui s'est dit » — tous mes proches qui l'ont vue, et les miennes)
+  const [devant, setDevant] = useState<ProcheDevantVideo[]>([]);
+  const [miennes, setMiennes] = useState<ReactionVideo[]>([]);
+  const [dejaVue, setDejaVue] = useState(false);
+  const [dit, setDit] = useState<{ jusqua: number | null } | null>(null);
+  const loin = useRef(0);
   const [popsF, setPopsF] = useState<{ id: number; cle: string; e: string; texte?: string }[]>([]);
   // 📷 (le lot V2, `decouvrir.md` section 28.7) MA FIGURINE FAIT MA TÊTE : chez moi, si mes cinq expressions sont prêtes ;
   // la caméra, lue sur le téléphone (rien ne part) ; mes expressions notées à la seconde de la vidéo (source « visage ») —
@@ -240,8 +255,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [cameraVoulue, setCameraVoulue] = useState(false);
   const [proposer, setProposer] = useState(false);
   const [exprF, setExprF] = useState<Record<string, ExpressionVisage | null>>({});
+  // (📷 21 novembre 2026, « tout pour tous » : chez un proche aussi — l'invité a sa caméra, comme l'hôte)
   useEffect(() => {
-    if (!seance?.hote) return;
+    if (!prive) return;
     let fini = false;
     void fetch("/api/direct/tele-du-jour?vivante=1", { cache: "no-store" })
       .then((r) => r.json())
@@ -256,7 +272,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     return () => {
       fini = true;
     };
-  }, [seance?.hote]);
+  }, [prive]);
   const enCours = useRef<{ e: ExpressionVisage; t: number; debut: number; video: string } | null>(null);
   const noterMaTete = useCallback((e: ExpressionVisage | null) => {
     // (l'expression d'avant finit : notée à sa seconde, avec sa durée ; la nouvelle commence — si la vidéo passe)
@@ -264,18 +280,51 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     enCours.current = null;
     if (fin) {
       const d = (Date.now() - fin.debut) / 1000;
-      if (d >= 0.5) void posterTele({ action: "reagir", id: fin.video, t: fin.t, source: "visage", visage: fin.e, d: Math.round(Math.min(6, d) * 10) / 10 });
+      if (d >= 0.5) void posterTele({ action: "reagir", seance: salon.id, id: fin.video, t: fin.t, source: "visage", visage: fin.e, d: Math.round(Math.min(6, d) * 10) / 10 });
     }
     const s = teleRef.current;
     if (e && s && !s.pause) enCours.current = { e, t: Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10, debut: Date.now(), video: s.video.id };
-  }, []);
-  const maTete = useMaTete(Boolean(seance?.hote && vivante && cameraVoulue), noterMaTete);
+  }, [salon.id]);
+  const maTete = useMaTete(Boolean(prive && vivante && cameraVoulue), noterMaTete);
   const choisirCamera = (oui: boolean) => {
     poserReglage(CLE_CAMERA, oui);
     poserReglage(CLE_PROPOSEE, true);
+    if (oui) poserReglage(CLE_ACCEPTEE, true);
     setCameraVoulue(oui);
     setProposer(false);
   };
+  // (📷 la maquette : « 📷 » en haut — la première fois, la carte ; ensuite, un toucher l'allume ou l'éteint)
+  const toucherCamera = () => {
+    if (cameraVoulue) {
+      choisirCamera(false);
+      return dire(P.cameraEteinte);
+    }
+    if (!lireReglage(CLE_ACCEPTEE)) return setProposer(true);
+    choisirCamera(true);
+    dire(P.cameraAllumee);
+  };
+  // 👀 (la maquette : « si tes proches regardent en même temps, ta figurine copie ta tête en direct ») LA TÊTE EN DIRECT :
+  // la mienne part quand elle change (un mot, au plus une fois par seconde ; redite toutes les 15 s tant qu'elle marche) ;
+  // celle des autres arrive avec le pouls, et leur figurine vivante la refait
+  const teteVoulue = useRef<string>("off");
+  const teteDite = useRef<{ e: string; le: number }>({ e: "off", le: 0 });
+  useEffect(() => {
+    teteVoulue.current = maTete.etat === "on" ? (maTete.tete.e ?? "neutre") : "off";
+  });
+  useEffect(() => {
+    if (!prive) return;
+    const id = window.setInterval(() => {
+      const e = teteVoulue.current;
+      const dite = teteDite.current;
+      if (e === dite.e && (e === "off" || Date.now() - dite.le < 15_000)) return;
+      teteDite.current = { e, le: Date.now() };
+      void poster({ action: "tete", salon: salon.id, e: e === "neutre" ? null : e });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [prive, salon.id]);
+  const [tetes, setTetes] = useState<Record<string, ExpressionVisage | null>>({});
+  const [vivantesDe, setVivantesDe] = useState<Record<string, FigurineVivante | null>>({});
+  const vivantesDemandees = useRef(new Set<string>());
   const vuJusqua = useRef<{ id: string; duree: number; t: number } | null>(null);
   useEffect(() => {
     let fini = false;
@@ -286,7 +335,14 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     vuJusqua.current = seance?.hote && idVideo && regarde ? { id: idVideo, duree: regarde.video.duree, t: 0 } : null;
     void Promise.resolve()
       .then(() => (idVideo ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}&seance=${encodeURIComponent(salon.id)}`, { cache: "no-store" }).then((r) => r.json()) : { proches: [] }))
-      .then((j: { proches?: ProcheDevantVideo[] }) => !fini && setFantomes((j.proches ?? []).filter((p) => p.figurine)))
+      .then((j: { proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean }) => {
+        if (fini) return;
+        setDevant(j.proches ?? []);
+        setFantomes((j.proches ?? []).filter((p) => p.figurine));
+        setMiennes(j.miennes ?? []);
+        setDejaVue(Boolean(j.vue));
+        loin.current = 0;
+      })
       .catch(() => undefined);
     return () => {
       fini = true;
@@ -453,6 +509,16 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         if (neuf !== avant) suivreHote.current(avant, neuf);
       }
       setSouvenir(p.souvenir ?? "");
+      // (👀 la tête de chacun, en ce moment ; sa figurine vivante, demandée une fois)
+      setTetes(p.tetes ?? {});
+      for (const q of Object.keys(p.tetes ?? {}))
+        if (!vivantesDemandees.current.has(q)) {
+          vivantesDemandees.current.add(q);
+          void fetch(`${ROUTE}?salon=${encodeURIComponent(salon.id)}&vivante=${encodeURIComponent(q)}`, { cache: "no-store" })
+            .then((r) => r.json())
+            .then((j: { vivante?: FigurineVivante | null }) => setVivantesDe((x) => ({ ...x, [q]: j.vivante ?? null })))
+            .catch(() => vivantesDemandees.current.delete(q));
+        }
     };
     const id = window.setInterval(() => void battre(), POULS_MS);
     // (quitter la page : sa place se libère tout de suite — pas au simple remontage de l'écran)
@@ -508,6 +574,87 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       dire(P.nePlusVu(p.prenom));
     }
   }
+  // ─── 💬 CE QUI S'EST DIT, ⏱ LA LIGNE DU TEMPS, 🎙️ LA VOIX À LA SECONDE (« tout pour tous », section 34) ───
+  const ouJenSuis = () => (regarde ? positionSeance(regarde, Date.now() + (decalage.current ?? 0)) : 0);
+  async function ouvrirDit() {
+    const id = regarde?.video.id;
+    if (!id) return;
+    // (relu en l'ouvrant : un vocal laissé à l'instant y est ; ce qui vient plus loin reste caché — sauf déjà vue)
+    const j = (await fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(id)}&seance=${encodeURIComponent(salon.id)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .catch(() => null)) as { proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean } | null;
+    if (j?.proches) setDevant(j.proches);
+    if (j?.miennes) setMiennes(j.miennes);
+    const vue = Boolean(j?.vue ?? dejaVue);
+    setDit({ jusqua: vue ? null : Math.max(loin.current, ouJenSuis()) });
+  }
+  /** (toucher une ligne : on revoit le moment, deux secondes avant — seul sur sa vidéo, chez soi ; sinon pour tous) */
+  async function revoirMoment(t: number) {
+    setDit(null);
+    const a = Math.max(0, t - 2);
+    const ms = Date.now() + (decalage.current ?? 0);
+    if (aPart) return setAPart((s) => (s ? { ...s, depart: ms - a * 1000, ...(s.pause !== undefined ? { pause: a } : {}), n: s.n + 1 } : s));
+    const r = await poster({ action: "tele", salon: salon.id, quoi: "aller", t: a });
+    if (r.ok && r.j.seance) setTele(r.j.seance as TeleSeance);
+    else if (!r.ok) dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
+  }
+  const tTexte = useRef<HTMLSpanElement>(null);
+  const rempli = useRef<HTMLDivElement>(null);
+  const nDit = devant.reduce((n, p) => n + p.reactions.filter((r) => r.source !== "implicite").length, 0) + miennes.filter((r) => r.source !== "implicite").length;
+  // (toutes les demi-secondes : où en est la vidéo, sur la ligne ; jusqu'où je l'ai vue — « Ce qui s'est dit » cache la suite)
+  useEffect(() => {
+    if (!prive) return;
+    const id = window.setInterval(() => {
+      const s = teleRef.current;
+      if (!s) return;
+      const t = positionSeance(s, Date.now() + (decalage.current ?? 0));
+      loin.current = Math.max(loin.current, t);
+      if (tTexte.current) tTexte.current.textContent = seconde(t);
+      if (rempli.current) rempli.current.style.width = `${s.video.duree > 0 ? Math.min(100, (t / s.video.duree) * 100) : 0}%`;
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [prive]);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  function ecouter(url?: string) {
+    if (!url) return;
+    audio.current?.pause();
+    const a = new Audio(url);
+    audio.current = a;
+    void a.play().catch(() => undefined);
+  }
+  const micro = useRef<{ t: number; id: string } | null>(null);
+  function debutMicro() {
+    micro.current = regarde ? { t: Math.round(ouJenSuis() * 10) / 10, id: regarde.video.id } : null;
+    setNote(PR.tuParles);
+  }
+  async function finMicro(f: FinMicro) {
+    const m = micro.current;
+    micro.current = null;
+    setNote((x) => (x === PR.tuParles ? "" : x));
+    if (!("vocal" in f)) {
+      if ("court" in f) dire(PR.court);
+      else if ("erreur" in f) dire(f.erreur);
+      return;
+    }
+    if (!m) return dire(PR.pasIci);
+    jouer({ id: `local-voix-${Date.now()}`, de: o.moi, prenom: "", le: Date.now(), sorte: "texte", texte: PR.unVocal });
+    const son = await new Promise<string>((ok) => {
+      const lf = new FileReader();
+      lf.onload = () => ok(String(lf.result));
+      lf.onerror = () => ok("");
+      lf.readAsDataURL(f.vocal.blob);
+    });
+    const r = await fetch("/api/direct/tele-du-jour", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "vocal", seance: salon.id, id: m.id, t: m.t, son, duree: f.vocal.duree }) })
+      .then(async (x) => ({ ok: x.ok, j: (await x.json().catch(() => ({}))) as { error?: string; reaction?: ReactionVideo } }))
+      .catch(() => ({ ok: false, j: { error: "Pas de réseau : réessaie dans un instant." } as { error?: string; reaction?: ReactionVideo } }));
+    if (!r.ok) return dire(r.j.error || "Ton vocal n’est pas parti. Réessaie dans un instant.");
+    const rv = r.j.reaction;
+    if (rv) setMiennes((l) => [...l, rv].sort((a, b) => a.t - b.t));
+    dire(PR.vocalNote(m.t, devant.map((x) => x.prenom)), 5200);
+    // (ensemble : ceux qui sont là le voient — il est dans « Ce qui s'est dit »)
+    if (!aPart && presents.length > 1) void envoyer({ sorte: "texte", texte: P.vocalSalon(seconde(m.t)) });
+  }
+
   // ─── 🗄️ ❤️ l'étagère du salon ; 👯 ajouter en proche (lot D5) ───
   async function aimer(id: string) {
     if (prive || aimes.includes(id)) return;
@@ -605,6 +752,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             👥
           </button>
         )}
+        {prive && vivante && (
+          <button type="button" className={`so-rond${cameraVoulue ? " allume" : ""}`} aria-label={P.cameraTitre} aria-pressed={cameraVoulue} data-camera-haut onClick={toucherCamera}>
+            📷
+          </button>
+        )}
         {!prive && (
           <button type="button" className="so-rond" aria-label={P.etagere} data-etagere onClick={() => void ouvrirEtagere()}>
             🗄️
@@ -633,6 +785,30 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         ) : (
           <TeleDuSalon videos={o.tele.videos} decalage={decalage} largeur={lTele} />
         )}
+        {/* (⏱ « tout pour tous » : la ligne du temps — où on en est, les réactions de chacun en points — et « 💬 Ce qui
+            s'est dit ») */}
+        {seance && regarde ? (
+          <div className="so-temps" data-ligne-temps style={{ width: lTele || "100%" }}>
+            <span ref={tTexte}>0:00</span>
+            <div className="so-ligne">
+              <div className="so-rempli" ref={rempli} />
+              {regarde.video.duree > 0 &&
+                devant.flatMap((p, kp) =>
+                  p.reactions
+                    .filter((r) => r.source !== "implicite")
+                    .map((r, k) => <i key={`${p.cle}-${k}`} className="so-tic" data-tic={p.cle} style={{ left: `${Math.min(100, (r.t / regarde.video.duree) * 100)}%`, ["--c" as string]: COULEURS[kp % COULEURS.length] }} />),
+                )}
+              {regarde.video.duree > 0 &&
+                miennes
+                  .filter((r) => r.source !== "implicite")
+                  .map((r, k) => <i key={`moi-${k}`} className="so-tic moi" data-tic="moi" style={{ left: `${Math.min(100, (r.t / regarde.video.duree) * 100)}%` }} />)}
+            </div>
+            <span>{seconde(regarde.video.duree)}</span>
+            <button type="button" className="so-dit" data-dit onClick={() => void ouvrirDit()}>
+              {PR.ditN(nDit)}
+            </button>
+          </div>
+        ) : null}
         <div className="so-piece" style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-gradin={gradin?.id ?? "plan"}>
           {gradin && (
             <>
@@ -669,6 +845,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               const cache = caches.includes(p.q);
               const moi = p.q === o.moi;
               const souvenir = moi ? undefined : souvenirDe.get(nomDe(p.prenom));
+              // (👀 ensemble sur la même vidéo : sa caméra marche, sa figurine copie sa tête en direct)
+              const enDirect = !moi && !souvenir && !aPart && p.q in tetes ? vivantesDe[p.q] : undefined;
               const popsS = souvenir ? popsF.filter((x) => x.cle === souvenir.cle) : [];
               return (
                 <button
@@ -678,6 +856,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   data-q={p.q}
                   data-moi={moi ? "1" : undefined}
                   data-souvenir={souvenir ? souvenir.cle : undefined}
+                  data-en-direct={enDirect ? (tetes[p.q] ?? "neutre") : undefined}
                   style={{ left: x.x, bottom: H - x.y, height: x.h, zIndex: Math.round(x.y) }}
                   aria-label={moi ? "Ta figurine" : p.prenom}
                   onClick={() => {
@@ -689,6 +868,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     <FigurineVivanteVue v={vivante} hauteur={x.h} e={maTete.tete.e} roulis={maTete.tete.roulis} lacet={maTete.tete.lacet} />
                   ) : souvenir?.vivante ? (
                     <FigurineVivanteVue v={souvenir.vivante} hauteur={x.h} e={exprF[souvenir.cle] ?? null} />
+                  ) : enDirect ? (
+                    <FigurineVivanteVue v={enDirect} hauteur={x.h} e={tetes[p.q] ?? null} />
                   ) : p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${Math.round(x.h)}px`} alt="" draggable={false} />
@@ -777,19 +958,20 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 </span>
               );
             })}
-          {proposer && (
-            <div className="so-propose" role="dialog" aria-label={PV.camera} data-proposer-camera>
-              <b>{PV.camera}</b>
-              <p>{PV.cameraNote}</p>
-              <div>
-                <button type="button" className="so-bouton petit" data-allumer-camera onClick={() => choisirCamera(true)}>
-                  {PV.allumer}
-                </button>
-                <button type="button" className="so-bouton petit doux" data-plus-tard onClick={() => choisirCamera(false)}>
-                  {PV.plusTard}
-                </button>
-              </div>
-            </div>
+          {/* (🔴 la maquette : une pastille reste visible tant qu'elle marche ; un toucher l'arrête) */}
+          {cameraVoulue && maTete.etat === "on" && (
+            <button
+              type="button"
+              className="so-pastille-cam"
+              data-pastille-camera
+              onClick={() => {
+                choisirCamera(false);
+                dire(P.cameraEteinte);
+              }}
+            >
+              <i aria-hidden="true" />
+              {P.pastille}
+            </button>
           )}
           {souvenir ? (
             <p className="so-indice so-souvenir" role="status" data-souvenir>
@@ -813,15 +995,18 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             {P.aussi(seance?.prenom ?? "")}
           </button>
         )}
-        {seance?.hote && vivante && (
+        {prive && vivante && (
           <div className="so-camera" data-camera-zone>
             <video ref={maTete.video} className={`so-miroir${maTete.etat === "on" ? " vue" : ""}`} playsInline muted aria-hidden="true" />
             <button type="button" className={`so-bouton petit${cameraVoulue ? " actif" : " doux"}`} aria-pressed={cameraVoulue} data-camera={cameraVoulue ? "on" : "off"} onClick={() => choisirCamera(!cameraVoulue)}>
               {PV.camera}
             </button>
-            <small data-etat-camera>
-              {maTete.etat === "charge" ? PV.lecture : maTete.etat === "refus" ? PV.cameraRefus : maTete.etat === "rate" ? PV.lectureRatee : maTete.etat === "on" ? PV.jeVois(emojiDe(maTete.tete.e)) : PV.cameraNote}
-            </small>
+            {/* (éteinte : rien de plus — « 📷 » en haut a la carte qui explique ; 21 novembre 2026) */}
+            {(cameraVoulue || maTete.etat !== "off") && (
+              <small data-etat-camera>
+                {maTete.etat === "charge" ? PV.lecture : maTete.etat === "refus" ? PV.cameraRefus : maTete.etat === "rate" ? PV.lectureRatee : maTete.etat === "on" ? PV.jeVois(emojiDe(maTete.tete.e)) : PV.cameraNote}
+              </small>
+            )}
           </div>
         )}
         <div className="so-reagir" data-reagir>
@@ -840,7 +1025,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 else void envoyer({ sorte: "reaction", cle: r.cle });
                 // (⭐ le lot B : ma réaction reste sur la vidéo, à sa seconde — mes amis la verront ; 🎞️ chez un proche aussi)
                 const s = regarde;
-                if (prive && s) void posterTele({ action: "reagir", seance: salon.id, id: s.video.id, t: Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" });
+                if (prive && s) {
+                  const tR = Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10;
+                  void posterTele({ action: "reagir", seance: salon.id, id: s.video.id, t: tR, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" });
+                  setMiennes((l) => [...l, { t: tR, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" } as ReactionVideo].sort((a, b) => a.t - b.t));
+                }
               }}
             >
               {r.e}
@@ -855,6 +1044,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         )}
         <form className="so-ecrire" onSubmit={(e) => void ecrire(e)}>
           <input value={texte} maxLength={TEXTE_SALON_MAX} autoComplete="off" placeholder={P.ecrire} aria-label={P.ecrire} name="texte" onChange={(e) => setTexte(e.target.value)} />
+          {/* (🎙️ « tout pour tous » : ma vraie voix, à la seconde de la vidéo — mes proches l'écouteront à ce moment) */}
+          {seance && regarde && <BoutonMicro prenom="tes proches" onDebut={debutMicro} onNiveau={() => undefined} onFin={(f) => void finMicro(f)} />}
           <button type="submit" className="so-bouton petit" disabled={occupe || !texte.trim()}>
             Envoyer
           </button>
@@ -984,6 +1175,74 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         </Feuille>
       )}
 
+      {dit && (
+        <Feuille onFermer={() => setDit(null)}>
+          <h2>{PR.dit}</h2>
+          {(() => {
+            const l = ceQuiSestDit(devant, miennes, { moi: PR.toi, jusqua: dit.jusqua });
+            if (!l.lignes.length && !l.cachees) return <p className="vide">{PR.rienDit}</p>;
+            return (
+              <div className="so-dit-liste" data-feuille-dit>
+                <ul>
+                  {l.lignes.map((x, k) => (
+                    <li key={`${x.cle}-${x.t}-${k}`}>
+                      <button type="button" data-ligne={x.t} className={x.pourMoi ? "pour-moi" : undefined} onClick={() => void revoirMoment(x.t)}>
+                        <span className="so-dit-t">{seconde(x.t)}</span>
+                        <b>{x.prenom}</b>
+                        <span>
+                          {x.aQui !== undefined ? `↩ ${x.pourMoi ? PR.aToi : x.aQui} : ` : ""}
+                          {x.voix ? PR.unVocal : x.texte ? `« ${x.texte} »` : x.e}
+                        </span>
+                      </button>
+                      {x.voix?.url && (
+                        <button type="button" className="so-ecoute" data-ecouter={x.t} onClick={() => ecouter(x.voix?.url)}>
+                          {PR.ecouter}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                {l.cachees > 0 && (
+                  <p className="vide" data-plus-loin>
+                    {PR.plusLoin(l.cachees)}
+                  </p>
+                )}
+                {l.lignes.length > 0 && <p className="so-chapo">{PR.revoir}</p>}
+              </div>
+            );
+          })()}
+        </Feuille>
+      )}
+      {proposer && (
+        <Feuille onFermer={() => choisirCamera(false)}>
+          <div className="so-carte-camera" data-proposer-camera>
+            <h2>{P.cameraTitre}</h2>
+            <p className="so-chapo">{P.cameraChapo}</p>
+            <ul>
+              {P.cameraPoints.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+            <p className="so-citation">{P.cameraCitation}</p>
+            <div className="so-actions">
+              <button
+                type="button"
+                className="so-bouton"
+                data-allumer-camera
+                onClick={() => {
+                  choisirCamera(true);
+                  dire(P.cameraAllumee);
+                }}
+              >
+                {P.cameraOui}
+              </button>
+              <button type="button" className="so-bouton clair" data-plus-tard onClick={() => choisirCamera(false)}>
+                {P.cameraNon}
+              </button>
+            </div>
+          </div>
+        </Feuille>
+      )}
       {inviter && <Inviter onFermer={() => setInviter(false)} dire={dire} chez={seance && !seance.hote ? { salon: salon.id, cle: seance.cle, prenom: seance.prenom, libres: libres.length } : undefined} />}
       <style>{STYLES}</style>
     </main>
@@ -1510,15 +1769,43 @@ const STYLES = `
 .so-camera small{opacity:.75;font-size:12.5px;line-height:1.4;flex:1;min-width:160px}
 .so-miroir{width:0;height:0;border-radius:50%;object-fit:cover;transform:scaleX(-1);background:#000}
 .so-miroir.vue{width:40px;height:40px;box-shadow:0 0 0 2px #FF2E9A}
-.so-propose{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:960;width:min(320px,calc(100% - 32px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(20,10,16,.92);box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:6px}
-.so-propose b{font-size:15px}
-.so-propose p{margin:0;font-size:13px;line-height:1.4;opacity:.85}
-.so-propose div{display:flex;gap:8px;flex-wrap:wrap}
 .so-bouton:disabled{opacity:.5}
 .so-lien{color:#ff8fc8;font-weight:800}
 .so-erreur{color:#ffb4c8}
 .so-haut{display:flex;align-items:center;gap:10px;padding:0 12px 10px}
 .so-rond{flex:none;width:40px;height:40px;border-radius:50%;border:0;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#FFF4E6;font-size:20px;font-weight:900;text-decoration:none;cursor:pointer}
+.so-rond.allume{background:rgba(255,46,154,.35);box-shadow:0 0 0 2px rgba(255,46,154,.6)}
+/* 📷 (« tout pour tous ») la pastille de la caméra, la carte de la maquette */
+.so-pastille-cam{position:absolute;left:10px;top:10px;z-index:960;display:flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:6px 11px;background:rgba(0,0,0,.6);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.so-pastille-cam i{width:8px;height:8px;border-radius:50%;background:#ff3b5c;box-shadow:0 0 0 3px rgba(255,59,92,.25);animation:so-clignote 1.2s steps(2) infinite}
+@keyframes so-clignote{50%{opacity:.35}}
+.so-carte-camera ul{margin:4px 0 12px;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.35}
+.so-citation{margin:0 0 14px;font-style:italic;font-weight:700;opacity:.85}
+.so-actions{display:flex;gap:10px;flex-wrap:wrap}
+/* ⏱ la ligne du temps, 💬 ce qui s'est dit */
+.so-temps{display:flex;align-items:center;gap:8px;margin:8px auto 0;font-size:11.5px;font-weight:700;color:#ead3df;font-variant-numeric:tabular-nums;box-sizing:border-box;padding:0 12px}
+.so-ligne{position:relative;flex:1;min-width:40px;height:6px;border-radius:3px;background:rgba(255,255,255,.14)}
+.so-rempli{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:linear-gradient(90deg,#ff6fbd,#FF2E9A)}
+.so-tic{position:absolute;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--c,#F2C46B);box-shadow:0 0 0 2px #1c0d15}
+.so-tic.moi{background:#fff}
+.so-dit{flex:none;border:0;border-radius:999px;padding:6px 10px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.so-dit-liste ul{margin:0 0 10px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.so-dit-liste li{display:flex;gap:6px;align-items:center}
+.so-dit-liste li>button:first-child{flex:1;min-width:0;display:flex;gap:8px;align-items:baseline;text-align:left;border:0;border-radius:12px;padding:9px 10px;background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:14px;cursor:pointer}
+.so-dit-liste li>button.pour-moi{box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.7)}
+.so-dit-t{flex:none;font-variant-numeric:tabular-nums;opacity:.6;font-size:12px}
+.so-ecoute{flex:none;border:0;border-radius:999px;padding:8px 11px;background:rgba(255,46,154,.25);color:#FFF4E6;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+/* 🎙️ le micro de la barre d'écriture (comme ma télé du jour) */
+.so-ecrire{position:relative}
+.so-ecrire .sd-micro{flex:none;width:42px;height:42px;padding:0;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);border-radius:50%;background:rgba(20,8,16,.55);color:#FFF4E6;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .15s ease,background .15s ease,box-shadow .15s ease;cursor:pointer}
+.so-ecrire .sd-micro svg{width:20px;height:20px}
+.so-ecrire .sd-micro.actif{transform:scale(1.28);background:#ff3b5c;box-shadow:0 0 0 9px rgba(255,59,92,.2),0 6px 18px rgba(255,59,92,.45)}
+.so-ecrire .sd-enreg{position:absolute;left:0;right:150px;top:50%;margin-top:-22px;height:44px;box-sizing:border-box;border-radius:22px;background:#170816;display:flex;align-items:center;gap:9px;padding:0 14px;box-shadow:inset 0 0 0 1.5px rgba(255,90,110,.7);transform:translateX(var(--dx,0px));z-index:2}
+.so-ecrire .sd-pt-rouge{width:10px;height:10px;border-radius:50%;background:#ff3b5c;flex:none;animation:so-clignote 1s steps(2) infinite}
+.so-ecrire .sd-enreg b{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;flex:none}
+.so-ecrire .sd-enreg canvas{flex:1;min-width:0;height:26px}
+.so-ecrire .sd-glisse{font-weight:600;font-size:11px;color:#c08fb0;flex:none;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.so-pastille-cam i,.so-ecrire .sd-pt-rouge{animation:none}}
 .so-titre{flex:1;min-width:0;display:flex;flex-direction:column}
 .so-titre b{font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .so-titre small{font-size:12.5px;opacity:.75}

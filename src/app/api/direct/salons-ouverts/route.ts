@@ -28,6 +28,10 @@
 //                                                 ma séance se cale sur cette vidéo (à cette seconde, en pause), mes
 //                                                 proches sont invités avec elle (`ma-maison.md`, section 25)
 // POST { action: "pas-maintenant", cle }       → { ok } : l'invitation de cet hôte s'en va
+// 📷 (21 novembre 2026, « tout pour tous » ; `decouvrir.md` section 34) DANS LA SÉANCE :
+// POST { action: "tete", salon, e }            → { ok } : la tête que ma caméra voit (un mot, `null` neutre, « off »)
+// GET ?salon=<chez-…>&vivante=<q>              → { vivante } : sa figurine vivante, pour copier sa tête en direct
+// (le pouls d'une séance rend `tetes` : la tête de chacun, en ce moment ; `tele` : `quoi: "aller", t` — revoir un moment)
 // 🗄️ LE LOT D5
 // POST { action: "aimer", salon, message }     → { aimes, etagere } : trois cœurs, le message monte sur l'étagère
 // GET ?etagere=<id>                            → { moments } : l'étagère du salon (de son thème)
@@ -51,6 +55,8 @@ import {
   etagereDuSalon,
   garderMoment,
   inviterALaSeance,
+  poserMaTete,
+  vivanteDeLaSeance,
   inviterChezMoi,
   inviterSurUneVideo,
   mesInvitations,
@@ -89,6 +95,11 @@ export async function GET(request: Request) {
   if (u.get("conversation")) {
     const r = await conversationDuSalon(supabase, moi, u.get("conversation"));
     return NextResponse.json(r.error ? { error: r.error } : { ok: true, messages: r.messages }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+  }
+  // (📷 la figurine vivante de quelqu'un de la séance : pour copier sa tête en direct)
+  if (u.get("vivante")) {
+    const v = await vivanteDeLaSeance(supabase, moi, u.get("salon"), u.get("vivante"));
+    return NextResponse.json(v.error ? { error: v.error } : { ok: true, vivante: v.vivante ?? null }, { status: v.error ? (v.statut ?? 400) : 200, headers: sansCache });
   }
   const r = await poulsDuSalon(supabase, moi, u.get("salon"), u.get("depuis"), u.get("connus"));
   return NextResponse.json(r.error ? { error: r.error } : { ok: true, pouls: r.pouls }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
@@ -132,6 +143,7 @@ export async function POST(request: Request) {
     const r = await teleDeLaSeance(supabase, moi, p);
     return repondre(r, { seance: r.seance });
   }
+  if (p.action === "tete") return repondre(await poserMaTete(supabase, moi, p.salon, p.e));
   if (p.action === "inviter") {
     // (👥 21 novembre 2026 : `salon` + `chez` — assis chez un proche, j'invite un de mes proches à une place libre)
     const r = p.salon ? await inviterALaSeance(supabase, moi, p.salon, p.chez, p.cles) : await inviterChezMoi(supabase, moi, p.cles);
