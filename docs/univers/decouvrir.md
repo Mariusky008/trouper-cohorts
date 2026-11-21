@@ -283,7 +283,7 @@ de 15 s : une fille seule sur son canapé lance une vidéo ; les figurines de se
 | **D1c** ✅ (section 18) | L'accueil de Découvrir comme la maquette : la carte « Ma télé du jour », la phrase, les salons ouverts | D1b |
 | **D2** ✅ (section 19) | La séance chez moi : ma pièce, quatre places, inviter trois proches, la télé synchronisée menée par l'hôte (sur le moteur des salons ouverts) ; restent les vocaux et les mèmes entre proches dans la séance | D1, D3 |
 | **D2b ⭐** (1re partie ✅, section 21 ; 2e partie ✅, section 22) | Jamais seul devant une vidéo (4.5) : les réactions notées à la seconde (implicites, gestes, écrit, voix), rejouées par les figurines de mes proches ; « 📷 Ta figurine fait ta tête » ; le clip « Nos réactions » | D2 |
-| **D2c** | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites une fois | D2b, l'essai des poses |
+| **D2c** (élargi, section 28 : « 📷 Ta figurine, c'est ton visage », lots V0 à V4) | Les expressions du visage de chaque figurine (sourire, rire, surprise, bof, grimace), faites dès « C'est moi ! » ; ta figurine fait ta tête, en direct, sur toutes les vidéos | D2b, les calques (lot S1) |
 | **D3 + D4** ✅ (section 18, avancés par le propriétaire avant D2) | Les salons ouverts (instances de 8, présence, écrire, réagir, gestes, la télé du thème) **avec** la modération et la sécurité ; reste : les mèmes dans un salon ouvert | D1c |
 | **D5** ✅ (section 20) | L'étagère des salons (❤️, trois cœurs, « 📌 Garder »), « Mes salons » dans ma maison (des fanions), « 👯 Ajouter en proche » et « 🏠 Voir sa maison » depuis une figurine | D3 |
 | **D6** (élargi, section 23.3) | TikTok et Instagram : partager une vidéo vers ClikMe (le menu « Partager » sur Android, coller le lien sur iPhone), lue par le lecteur officiel, en portrait | D1 |
@@ -1094,4 +1094,119 @@ de l'accueil ; jamais dans la séance ; refaire le relevé, le plan, des places 
 désordre, retirer, refaire le décor) ; `salons-gradins.mjs` (sur un iPhone : la tribune, toutes les têtes visibles, «
 Toi » devant au milieu, sept places qui brillent, la phrase quand on est seul ; Sam entre : six places, et sur son
 téléphone c'est lui qui est au milieu ; sur un ordinateur ; la page de l'administrateur).
+
+## 28. 📷 « Ta figurine, c'est ton visage » (20 novembre 2026, au soir)
+
+Le propriétaire : « on a tout le squelette de l'app, mais il nous manque le détail qui la rendra complètement
+successful » ; puis, sur les pistes proposées : seulement le rire, « c'est très enfermant » ; trop compliqué ; « il
+faut un geste qu'on puisse faire sur toutes les vidéos [les gens en regardent des dizaines, parfois 50 ou 100 par
+jour] et qui crée quelque chose instantanément » ; enfin « ok », et : « ce qui veut dire que dès l'inscription, à la
+création de la figurine, on crée aussi 5 expressions, comme ça ce sera certain d'être créé ? » — oui.
+
+### 28.1 L'idée
+
+**Le geste, c'est ton visage.** Pendant que tu regardes une vidéo, la caméra de devant lit ton visage **sur le
+téléphone** ; ta figurine fait **ta tête, à la seconde** : tu éclates de rire, elle éclate de rire ; tu ouvres grand la
+bouche, tu fais la grimace, tu tournes la tête vers ton voisin — elle aussi. Rien à toucher, sur toutes les vidéos
+(la première comme la centième de la journée), instantané, sans coût à chaque fois.
+
+- **En direct** (les salons ouverts, la séance chez moi) : le gradin s'anime de vraies émotions — huit figurines qui
+  rient, sursautent, se tournent les unes vers les autres.
+- **En différé** (ma télé du jour, avec mes proches, section 21) : quand Sam regarde plus tard la vidéo que j'ai vue, ma
+  figurine, assise à côté de lui, **revit mes vraies réactions** à la seconde près — mon vrai fou rire, pas un émoji.
+- **Ensuite** : « 🎬 Nos réactions », le petit clip de nos figurines qui réagissent, à partager (déjà prévu, D2b).
+
+### 28.2 Les expressions : faites une fois, dès « C'est moi ! »
+
+- **Cinq expressions** en plus de son visage habituel : 😊 le sourire, 😂 le rire, 😮 la surprise, 😑 le bof, 😝 la
+  grimace. **La tête seulement** (le calque de la tête, lot S1 : sa boîte, son pivot au milieu du cou) : le corps et le
+  fauteuil restent les mêmes, le changement ne se voit pas ; une image plus petite, donc moins chère. Chacune est faite
+  **d'après la tête de sa figurine** (fidélité haute) : elle reste reconnaissable, la même personne, le même style.
+- **Quand** : dans la même chaîne que ses autres images (après la réponse à « C'est moi ! », `fabriquerSesReferences` :
+  la bouche ouverte, debout, les calques) — **la personne n'attend rien**, tout est prêt une minute plus tard.
+- **Pour être certain qu'elles existent** :
+  - un passage raté (le moteur ne répond pas) est **repris tout seul** à sa prochaine ouverture de l'appli ;
+  - **ceux qui ont déjà leur figurine** : rattrapés à leur prochaine ouverture, et la nuit par petits paquets ;
+  - **une nouvelle image de sa figurine** (une nouvelle tenue) : ses expressions se refont avec ses calques (même
+    empreinte que les calques) ;
+  - **en attendant**, rien n'est bloqué : sa figurine bouge déjà la tête (le calque), et les émojis restent.
+- **Rangement** : à côté de ses calques (`<habitant>/calques/<empreinte>-expression-<nom>.png`), publiées une fois à
+  adresse stable (WebP), comme la tête.
+- **Coût** : cinq têtes par personne, une seule fois (de l'ordre de quelques dizaines de centimes) — puis plus rien,
+  quel que soit le nombre de vidéos regardées.
+
+### 28.3 La lecture du visage : rien ne quitte le téléphone
+
+- Une bibliothèque gratuite qui tourne dans le navigateur (la lecture du visage de Google, MediaPipe, chargée une fois)
+  donne, une quinzaine de fois par seconde, ce que fait le visage (le sourire, la bouche ouverte, les sourcils, les yeux)
+  et où regarde la tête. L'appli en déduit l'expression du moment et l'inclinaison de la tête.
+- **Aucune image ne part** : seulement « 😂 de 1:20 à 1:23 », « tête vers la gauche » — comme les réactions à la seconde
+  d'aujourd'hui. La caméra s'arrête dès que l'appli passe en arrière-plan.
+- **Un interrupteur** : « 📷 Ma figurine fait ma tête », éteint au départ, proposé une fois avec une phrase claire (« La
+  caméra reste sur ton téléphone : on ne garde que tes réactions, jamais ton image »), rangé dans les réglages. Sans
+  caméra : les émojis, comme aujourd'hui.
+- **Un rire vu compte comme un 😂** (source « visage ») : il nourrit ce qui existe — « 🫶 En même temps que Sam ! », les
+  points sur la ligne du temps, « 💬 Ce qui s'est dit ».
+- Les règles des salons ne changent pas (prénom et figurine seulement, les 15-17 ans à part) : on ne voit jamais le
+  visage de quelqu'un, seulement sa figurine.
+
+### 28.4 Les lots
+
+| Lot | Contenu |
+|---|---|
+| **V0** — l'essai | Sur la page d'essais de l'administrateur : les cinq expressions de **la figurine du propriétaire** (le moteur d'image, en ligne), et une page où sa figurine fait sa tête devant sa caméra — pour voir l'effet en vrai avant d'aller plus loin. |
+| **V1** — les expressions pour tous | Faites dès « C'est moi ! » ; le rattrapage (à l'ouverture, la nuit) ; refaites avec une nouvelle image. |
+| **V2** — ma télé du jour | L'interrupteur ; ma figurine fait ma tête sur mon écran ; mes expressions notées à la seconde, rejouées par ma figurine chez mes proches. |
+| **V3** — en direct | Les salons ouverts et la séance chez moi : chacun voit les figurines des autres faire leur tête (d'abord au rythme du pouls, quelques secondes ; puis en temps réel). |
+| **V4** — le clip | « 🎬 Nos réactions » : nos figurines qui réagissent, à partager. |
+
+Avec **🎁 « la vidéo offerte »** (chaque jour, chacun de mes proches peut m'offrir une vidéo, une seule ; acceptée par le
+propriétaire le même soir), à écrire dans sa propre section quand on la fera.
+
+### 28.5 Le lot V0 : l'essai (20 novembre 2026, au soir) — fait
+
+Le propriétaire : « je peux te donner 4 ou 5 visages d'amis […] pour les mettre dans une maquette d'un salon où il y
+aurait une vidéo YouTube ? comme ça je vois si ça marche bien, l'effet wow » ; puis, plutôt que de confier une clé :
+« peut-être puis-je le faire de l'admin ». Tout se fait donc en ligne, avec la clé du moteur déjà rangée dans Vercel.
+
+**L'atelier** (`/admin/humain/visage`, lien « 📷 L'essai du visage » sur la page de l'administrateur) :
+- jusqu'à **six personnes** : un prénom, une photo de face (réduite sur le téléphone), **son accord** (case à cocher,
+  obligatoire), « c'est moi » (une seule à la fois : sa figurine fera ta tête) ;
+- **« 🛠️ Fabriquer »**, une étape par passage (une minute environ chacune) : sa figurine assise (la consigne des
+  figurines, `consigneSculptee`, d'après sa photo — **la photo s'efface aussitôt**), sa découpe (le corps et la tête, les
+  calques du lot S1, sans moteur), puis ses **cinq expressions** : chacune faite sur la figurine entière (« la tête
+  exactement à la même place, de la même taille, sous le même angle : seul le visage change »), puis **sa tête découpée
+  au pixel près au même endroit** que la tête habituelle (`decouperFigurine` rend maintenant où il a découpé le corps et la
+  tête) ; « 🛠️ Tout fabriquer » enchaîne tout le monde ; ses expressions posées à côté de sa figurine ; « ↺ Refaire les
+  expressions » ; « 🗑️ Effacer » (tout) ;
+- rangé à part de tout habitant : `essais-visage/<id>/`.
+
+**Le salon d'essai** (`/univers/visage`, l'administrateur seulement, pensé pour le téléphone) :
+- en haut, **la vidéo** (le lecteur officiel de YouTube ; pour commencer, la première vidéo de l'humour du jour ; un lien
+  collé en change) ; dessous, **le gradin** (la salle de cinéma s'il est validé, sinon un autre gradin validé, sinon un
+  fond sombre et les huit tapis du plan) ; sa figurine au premier rang, au milieu (« Toi »), les amis autour ;
+- chaque figurine est son corps et sa tête posée dessus ; ses cinq expressions sont des têtes chargées d'avance :
+  **changer d'expression est instantané** ; un émoji saute au-dessus de la tête à chaque réaction ;
+- **les amis** suivent une piste tirée au sort pour l'essai (un rire, un sourire, une surprise, une grimace, un bof, toutes
+  les 6 à 16 secondes, parfois la tête tournée vers son voisin ; environ toutes les 30 secondes, **un fou rire de tout le
+  salon**, aux mêmes secondes) — leurs vraies réactions viendront avec le lot V2 ; la page le dit ;
+- **« 📷 Ma figurine fait ma tête »** : la caméra de devant, un petit miroir rond pour savoir qu'elle tourne, « Je vois :
+  😂 » ; la lecture du visage de Google (MediaPipe 0.10.14, chargée au premier allumage, sur le téléphone : **rien ne
+  part**) ; l'expression tenue un instant pour ne pas clignoter (0,2 s pour changer, 0,5 s au moins), la tête penchée (12°
+  au plus : au-delà, la tête d'origine dépasse dessous) et tournée, comme dans un miroir ; plus de visage depuis une
+  seconde : le visage habituel ;
+- ses réactions sont **notées à la seconde de la vidéo** pendant qu'elle passe ; **« ▶ Revoir avec mes réactions »** : la
+  vidéo repart du début, sa figurine rejoue ses vraies réactions, la caméra ne compte plus — « comme tes proches la
+  verront ».
+
+**À faire par le propriétaire, en ligne** : sur `/admin/humain/visage`, ajouter 4 ou 5 amis (avec leur accord) et
+soi-même (« c'est moi »), « 🛠️ Tout fabriquer » (sept étapes par personne), puis « ▶ Ouvrir le salon d'essai » sur son
+téléphone.
+
+**Les essais** : `essai-visage-essai-route.mjs` (l'administrateur seul ; l'accord, la photo, le prénom ; six au plus ; la
+figurine — la photo effacée —, la découpe, les cinq expressions, la tête découpée de la même taille ; le salon : les
+figurines prêtes seulement, « moi » d'abord, une vidéo pour commencer ; « c'est moi », refaire, effacer) ;
+`visage-essai.mjs` (sur un iPhone, une fausse caméra, une fausse lecture du visage : les amis réagissent et rient
+ensemble ; un sourire, un rire, la tête penchée ; le visage habituel ; « Revoir avec mes réactions » rejoue le rire à la
+bonne seconde ; la page de l'administrateur).
 

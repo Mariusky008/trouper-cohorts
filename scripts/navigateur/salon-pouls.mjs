@@ -127,7 +127,8 @@ while (Date.now() - t0 < 16000) {
 ok(JSON.stringify(vus) === JSON.stringify(DITS), `la figurine de Sam redit ses trois messages, un à un, dans l'ordre (${JSON.stringify(vus)})`);
 ok(fini && fini - t0 < 14000, `en moins de 12 s, l'ouverture comprise (${fini ? fini - t0 : "—"} ms)`);
 ok((await texte(".sd-bulle.autre")) === DITS[2], "le dernier reste");
-ok(/^Dernière visite à \d+ h \d\d$/.test(await texte('.sd-qui [data-presence="absent"]')), `« ${await texte(".sd-qui span")} »`);
+// (parti il y a vingt minutes : « hier » si l'essai passe entre minuit et minuit vingt, à l'heure de Paris)
+ok(/^Dernière visite (hier )?à \d+ h \d\d$/.test(await texte('.sd-qui [data-presence="absent"]')), `« ${await texte(".sd-qui span")} »`);
 await p.screenshot({ path: `${D}/salon-pouls-1-arrivee.png` });
 
 // ═══ LE POULS, SAM ABSENT : TOUTES LES 10 S ═══

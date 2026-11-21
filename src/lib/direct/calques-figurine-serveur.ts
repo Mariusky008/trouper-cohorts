@@ -96,7 +96,7 @@ function voisinDe(e: Int32Array, i: number, w: number, h: number, n: number): bo
 }
 
 // ─── la tête et ses repères ───
-type Reperes = { tete: Zone; pivot: [number, number]; bouche: [number, number]; joues: [[number, number], [number, number]] };
+export type Reperes = { tete: Zone; pivot: [number, number]; bouche: [number, number]; joues: [[number, number], [number, number]] };
 
 /**
  * L'ESTIMATION PAR LA SILHOUETTE (dans le cadre du corps) : le crâne est la ligne la plus large du premier tiers ; le cou,
@@ -181,7 +181,7 @@ export function reperesValides(o: unknown): Reperes | null {
 
 // ─── la découpe ───
 /** 🎭 Une figurine assise (PNG avec transparence) → son corps, sa tête, ses repères (dans le cadre du corps). */
-export async function decouperFigurine(source: Buffer): Promise<{ corps: Buffer; tete: Buffer; ratio: number; reperes: Reperes; par: "regard" | "estime" } | null> {
+export async function decouperFigurine(source: Buffer): Promise<{ corps: Buffer; tete: Buffer; ratio: number; reperes: Reperes; par: "regard" | "estime"; boite: [number, number, number, number]; tetePx: [number, number, number, number] } | null> {
   const { data, info } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const [W, H] = [info.width, info.height];
   const alpha = new Uint8Array(W * H);
@@ -229,7 +229,9 @@ export async function decouperFigurine(source: Buffer): Promise<{ corps: Buffer;
   const tete = await sharp(teteBrut, { raw: { width: lw, height: lh, channels: 4 } }).png().toBuffer();
   // (la boîte réelle de la tête, telle qu'elle est découpée)
   const reel: Reperes = { ...reperes, tete: [mille(x0 / bw), mille(y0 / bh), mille(lw / bw), mille(lh / bh)] };
-  return { corps, tete, ratio: mille(bw / bh), reperes: reel, par };
+  // (`boite` : où le corps a été découpé dans l'image d'origine ; `tetePx` : la tête dans le corps — en pixels, pour
+  // découper exactement au même endroit une autre image de la même figurine : ses expressions, `visage-essai-serveur.ts`)
+  return { corps, tete, ratio: mille(bw / bh), reperes: reel, par, boite: [bx, by, bw, bh], tetePx: [x0, y0, lw, lh] };
 }
 
 /**
