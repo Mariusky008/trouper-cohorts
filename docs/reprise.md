@@ -71,6 +71,10 @@ jour, « 👥 Inviter » ouvre une feuille sur place (mes proches à cocher, tro
 maison, « 👯 Mes proches » : le carnet (leur maison, notre conversation, « L'ajouter aussi », ajouter un proche par
 WhatsApp ; « Comme la voient tes proches » dedans).
 
+**📷 V2 : ma figurine fait ma tête (21 novembre 2026 ; `decouvrir.md`, section 28.7)** : dans ma télé du jour, « 📷 Ma
+figurine fait ma tête » (proposé une fois, rangé sur le téléphone) ; ma figurine vivante fait mon expression ; mes
+expressions notées à la seconde (source « visage ») et rejouées par ma figurine chez mes proches. Reste V3 (en direct).
+
 **📷 V1 : les expressions pour tous (21 novembre 2026 ; `decouvrir.md`, section 28.6)** : chaque figurine du nouveau
 style reçoit ses cinq expressions (la tête seulement) et son corps sans sa tête — après « C'est moi ! », à l'ouverture de
 l'appli s'il en manque, la nuit (huit au plus) ; refaites avec une nouvelle image. Rien ne change encore à l'écran (pour

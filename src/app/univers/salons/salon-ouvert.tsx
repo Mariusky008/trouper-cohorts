@@ -26,7 +26,11 @@ import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
-import { sorteVideo, type ProcheDevantVideo, type SorteVideo } from "@/lib/direct/reactions-video";
+import { sorteVideo, type ProcheDevantVideo, type ReactionVideo, type SorteVideo } from "@/lib/direct/reactions-video";
+import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
+import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/direct/visage-essai";
+import { useMaTete } from "@/app/univers/visage/ma-tete";
+import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import {
   GESTES_SALON,
@@ -77,6 +81,31 @@ const posterTele = (corps: Record<string, unknown>) =>
   fetch("/api/direct/tele-du-jour", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) })
     .then((r) => r.text())
     .catch(() => "");
+/** 📷 (le lot V2) l'interrupteur « Ma figurine fait ma tête », et sa proposition faite une fois : rangés sur le téléphone */
+const CLE_CAMERA = "clikme-visage-camera";
+const CLE_PROPOSEE = "clikme-visage-propose";
+const lireReglage = (k: string) => {
+  try {
+    return window.localStorage.getItem(k) === "1";
+  } catch {
+    return false;
+  }
+};
+const poserReglage = (k: string, oui: boolean) => {
+  try {
+    window.localStorage.setItem(k, oui ? "1" : "0");
+  } catch {
+    /* (sans stockage : le réglage vaut pour cette visite) */
+  }
+};
+/** (l'expression d'un ami à cette seconde : celle qu'il faisait, s'il y en a une) */
+const expressionA = (reactions: readonly ReactionVideo[], t: number): ExpressionVisage | null => {
+  for (let k = reactions.length - 1; k >= 0; k--) {
+    const r = reactions[k];
+    if (r.visage && r.t <= t && t < r.t + (r.d ?? 1.5)) return r.visage;
+  }
+  return null;
+};
 /** (les réactions du salon, en sortes de ma télé du jour : 😱 « Oh non ! », 👏 « J'adore ») */
 const SORTE_DE_REACTION: Record<CleReaction, SorteVideo> = { rire: "rire", coeur: "coeur", oh: "oh", surprise: "peur", bravo: "coeur" };
 const poster = (corps: Record<string, unknown>) =>
@@ -189,6 +218,49 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const idVideo = seance?.hote ? tele?.video.id : undefined;
   const [fantomes, setFantomes] = useState<ProcheDevantVideo[]>([]);
   const [popsF, setPopsF] = useState<{ id: number; cle: string; e: string; texte?: string }[]>([]);
+  // 📷 (le lot V2, `decouvrir.md` section 28.7) MA FIGURINE FAIT MA TÊTE : chez moi, si mes cinq expressions sont prêtes ;
+  // la caméra, lue sur le téléphone (rien ne part) ; mes expressions notées à la seconde de la vidéo (source « visage ») —
+  // mes amis les verront, rejouées par ma figurine ; et la leur, ici, fait leurs vraies têtes
+  const [vivante, setVivante] = useState<FigurineVivante | null>(null);
+  const [cameraVoulue, setCameraVoulue] = useState(false);
+  const [proposer, setProposer] = useState(false);
+  const [exprF, setExprF] = useState<Record<string, ExpressionVisage | null>>({});
+  useEffect(() => {
+    if (!seance?.hote) return;
+    let fini = false;
+    void fetch("/api/direct/tele-du-jour?vivante=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { vivante?: FigurineVivante | null }) => {
+        if (fini || !j.vivante) return;
+        setVivante(j.vivante);
+        const voulue = lireReglage(CLE_CAMERA);
+        setCameraVoulue(voulue);
+        setProposer(!voulue && !lireReglage(CLE_PROPOSEE));
+      })
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+    };
+  }, [seance?.hote]);
+  const enCours = useRef<{ e: ExpressionVisage; t: number; debut: number; video: string } | null>(null);
+  const noterMaTete = useCallback((e: ExpressionVisage | null) => {
+    // (l'expression d'avant finit : notée à sa seconde, avec sa durée ; la nouvelle commence — si la vidéo passe)
+    const fin = enCours.current;
+    enCours.current = null;
+    if (fin) {
+      const d = (Date.now() - fin.debut) / 1000;
+      if (d >= 0.5) void posterTele({ action: "reagir", id: fin.video, t: fin.t, source: "visage", visage: fin.e, d: Math.round(Math.min(6, d) * 10) / 10 });
+    }
+    const s = teleRef.current;
+    if (e && s && !s.pause) enCours.current = { e, t: Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10, debut: Date.now(), video: s.video.id };
+  }, []);
+  const maTete = useMaTete(Boolean(seance?.hote && vivante && cameraVoulue), noterMaTete);
+  const choisirCamera = (oui: boolean) => {
+    poserReglage(CLE_CAMERA, oui);
+    poserReglage(CLE_PROPOSEE, true);
+    setCameraVoulue(oui);
+    setProposer(false);
+  };
   const vuJusqua = useRef<{ id: string; duree: number; t: number } | null>(null);
   useEffect(() => {
     let fini = false;
@@ -215,10 +287,16 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       const s = teleRef.current;
       if (!s || s.video.id !== idVideo) return;
       const t = positionSeance(s, Date.now() + (decalage.current ?? 0));
+      // (📷 le lot V2 : leurs vraies têtes, à la seconde — une figurine vivante fait l'expression au lieu d'un émoji)
+      const vivantes = fantomes.filter((f) => f.vivante);
+      if (vivantes.length) {
+        const ex = Object.fromEntries(vivantes.map((f) => [f.cle, expressionA(f.reactions, t)]));
+        setExprF((x) => (Object.keys(ex).some((k) => ex[k] !== x[k]) ? ex : x));
+      }
       if (avant >= 0 && t > avant && t - avant < 3)
         for (const f of fantomes)
           for (const r of f.reactions)
-            if (r.t > avant && r.t <= t) {
+            if (r.t > avant && r.t <= t && !(r.visage && f.vivante)) {
               const k = ++n;
               setPopsF((l) => [...l, { id: k, cle: f.cle, e: sorteVideo(r.sorte)?.e ?? "🙂", ...(r.texte ? { texte: r.texte } : {}) }]);
               window.setTimeout(() => setPopsF((l) => l.filter((x) => x.id !== k)), r.texte ? 3200 : 1700);
@@ -538,7 +616,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     if (!moi) setFiche(p);
                   }}
                 >
-                  {p.figurine ? (
+                  {moi && vivante && maTete.etat === "on" ? (
+                    <FigurineVivanteVue v={vivante} hauteur={x.h} e={maTete.tete.e} roulis={maTete.tete.roulis} lacet={maTete.tete.lacet} />
+                  ) : p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${Math.round(x.h)}px`} alt="" draggable={false} />
                   ) : (
@@ -556,8 +636,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               const pops = popsF.filter((p) => p.cle === f.cle);
               return (
                 <span key={f.cle} className="so-fig fantome" data-fantome={f.cle} style={{ left: x, bottom: H - y, height: h, zIndex: Math.round(y) }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {f.figurine && <img src={f.figurine.src} srcSet={f.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} />}
+                  {f.vivante ? (
+                    <FigurineVivanteVue v={f.vivante} hauteur={h} e={exprF[f.cle] ?? null} />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    f.figurine && <img src={f.figurine.src} srcSet={f.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} />
+                  )}
                   <small>
                     {f.prenom} · {P.aRegarde}
                   </small>
@@ -611,6 +695,20 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 </span>
               );
             })}
+          {proposer && (
+            <div className="so-propose" role="dialog" aria-label={PV.camera} data-proposer-camera>
+              <b>{PV.camera}</b>
+              <p>{PV.cameraNote}</p>
+              <div>
+                <button type="button" className="so-bouton petit" data-allumer-camera onClick={() => choisirCamera(true)}>
+                  {PV.allumer}
+                </button>
+                <button type="button" className="so-bouton petit doux" data-plus-tard onClick={() => choisirCamera(false)}>
+                  {PV.plusTard}
+                </button>
+              </div>
+            </div>
+          )}
           {souvenir ? (
             <p className="so-indice so-souvenir" role="status" data-souvenir>
               {PHRASES_REGARDER.souvenir(souvenir)}
@@ -628,6 +726,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
 
       <section className="so-bas">
         <p className="so-info">{seance ? (seance.hote ? P.hote : P.invite(seance.prenom)) : P.tele}</p>
+        {seance?.hote && vivante && (
+          <div className="so-camera" data-camera-zone>
+            <video ref={maTete.video} className={`so-miroir${maTete.etat === "on" ? " vue" : ""}`} playsInline muted aria-hidden="true" />
+            <button type="button" className={`so-bouton petit${cameraVoulue ? " actif" : " doux"}`} aria-pressed={cameraVoulue} data-camera={cameraVoulue ? "on" : "off"} onClick={() => choisirCamera(!cameraVoulue)}>
+              {PV.camera}
+            </button>
+            <small data-etat-camera>
+              {maTete.etat === "charge" ? PV.lecture : maTete.etat === "refus" ? PV.cameraRefus : maTete.etat === "rate" ? PV.lectureRatee : maTete.etat === "on" ? PV.jeVois(emojiDe(maTete.tete.e)) : PV.cameraNote}
+            </small>
+          </div>
+        )}
         <div className="so-reagir" data-reagir>
           <span>{P.reagis}</span>
           {REACTIONS_SALON.map((r) => (
@@ -1280,6 +1389,15 @@ const STYLES = `
 .so-bouton{border:0;border-radius:999px;padding:12px 18px;font:inherit;font-weight:900;font-size:15px;color:#2a0f1f;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);cursor:pointer}
 .so-bouton.clair{background:rgba(255,255,255,.12);color:#FFF4E6}
 .so-bouton.petit{padding:9px 14px;font-size:14px}
+.so-bouton.doux{background:rgba(255,255,255,.12);color:#FFF4E6}
+.so-camera{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 8px}
+.so-camera small{opacity:.75;font-size:12.5px;line-height:1.4;flex:1;min-width:160px}
+.so-miroir{width:0;height:0;border-radius:50%;object-fit:cover;transform:scaleX(-1);background:#000}
+.so-miroir.vue{width:40px;height:40px;box-shadow:0 0 0 2px #FF2E9A}
+.so-propose{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:960;width:min(320px,calc(100% - 32px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(20,10,16,.92);box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:6px}
+.so-propose b{font-size:15px}
+.so-propose p{margin:0;font-size:13px;line-height:1.4;opacity:.85}
+.so-propose div{display:flex;gap:8px;flex-wrap:wrap}
 .so-bouton:disabled{opacity:.5}
 .so-lien{color:#ff8fc8;font-weight:800}
 .so-erreur{color:#ffb4c8}

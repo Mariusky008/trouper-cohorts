@@ -5,6 +5,7 @@
  * FICHIER PARTAGÉ (l'écran et le serveur).
  */
 import type { ExpressionVisage } from "./visage-essai";
+import type { Zone } from "./pieces-duo";
 
 /**
  * Ses expressions, pour son image d'aujourd'hui (`empreinte` : celle de ses calques). `tetes` et `corpsSansTete` : leurs
@@ -18,6 +19,18 @@ export type ExpressionsFigurine = {
   le?: string;
   rate?: string;
   erreur?: string;
+};
+
+/**
+ * 📷 UNE FIGURINE VIVANTE (le lot V2) : son corps sans sa tête, sa tête habituelle (sa boîte et son pivot, dans le cadre
+ * du corps : de 0 à 1) et ses cinq expressions — toutes à adresse stable. Posée à une place : le corps, puis la tête qui
+ * change d'expression (instantané : les cinq sont chargées d'avance) et qui penche. Seulement quand les cinq sont prêtes.
+ */
+export type FigurineVivante = {
+  ratio: number;
+  corps: string;
+  tete: { src: string; boite: Zone; pivot: [number, number] };
+  expressions: Record<ExpressionVisage, string>;
 };
 
 /** Le rattrapage : pas plus de huit figurines par nuit, et une demi-heure entre deux passages ratés. */

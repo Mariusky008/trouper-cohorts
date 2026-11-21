@@ -148,6 +148,9 @@ export const PHRASES_VISAGE = {
   salon: "▶ Ouvrir le salon d’essai",
   salonTitre: "📷 Le salon d’essai",
   camera: "📷 Ma figurine fait ma tête",
+  /** (le lot V2) proposé une fois, dans ma télé du jour */
+  allumer: "Allumer la caméra",
+  plusTard: "Plus tard",
   cameraOff: "Arrêter la caméra",
   cameraNote: "La caméra reste sur ton téléphone : on ne garde que tes réactions, jamais ton image.",
   cameraRefus: "La caméra n’a pas pu s’ouvrir : autorise-la dans les réglages du navigateur.",

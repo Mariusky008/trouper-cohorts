@@ -7,6 +7,8 @@
  * Partagé (l'écran, le serveur, les essais).
  */
 import type { ImageSalon } from "./salon";
+import { expressionValide, type ExpressionVisage } from "./visage-essai";
+import type { FigurineVivante } from "./expressions-figurine";
 
 /** La rangée sous la télé (la maquette, section 12) : un toucher, une réaction à cette seconde. */
 export const SORTES_VIDEO = [
@@ -17,22 +19,30 @@ export const SORTES_VIDEO = [
   { cle: "bof", e: "😴", nom: "Bof" },
 ] as const;
 export type SorteVideo = (typeof SORTES_VIDEO)[number]["cle"];
-/** D'où elle vient : la rangée, un geste sans viser sur la pièce, ou ce que l'appli comprend seule (passer, revoir, finir). */
-export const SOURCES_VIDEO = ["rangee", "geste", "implicite"] as const;
+/**
+ * D'où elle vient : la rangée, un geste sans viser sur la pièce, ce que l'appli comprend seule (passer, revoir, finir),
+ * ou 📷 mon visage (le lot V2, `decouvrir.md` section 28.7 : la caméra, lue sur le téléphone — ma figurine fait ma tête).
+ */
+export const SOURCES_VIDEO = ["rangee", "geste", "implicite", "visage"] as const;
 export type SourceVideo = (typeof SOURCES_VIDEO)[number];
 /**
  * Une réaction : sa seconde dans la vidéo (au dixième), sa sorte, d'où elle vient, quand. Écrite (deuxième partie) :
  * `texte` (sa sorte se déduit des mots) ; une réponse à un proche : `a` (sa clé) et `repond` (la seconde de sa
  * réaction ; la réponse se place juste après).
  */
-export type ReactionVideo = { t: number; sorte: SorteVideo; source: SourceVideo; le: number; texte?: string; a?: string; repond?: number; voix?: VoixVideo };
+export type ReactionVideo = { t: number; sorte: SorteVideo; source: SourceVideo; le: number; texte?: string; a?: string; repond?: number; voix?: VoixVideo; visage?: ExpressionVisage; d?: number };
+/**
+ * 📷 (le lot V2) une expression vue sur mon visage compte comme une réaction (source « visage », avec `visage` et sa
+ * durée `d`) : un rire, c'est 😂 ; un sourire, ❤️ ; la surprise, 😮 ; le bof, 😴 ; la grimace, 😱 (« Oh non ! »).
+ */
+export const SORTE_DU_VISAGE: Record<ExpressionVisage, SorteVideo> = { rire: "rire", sourire: "coeur", surprise: "oh", bof: "bof", grimace: "peur" };
 /**
  * 🎙️ Un vocal laissé à cette seconde (sa vraie voix, jamais une voix de synthèse) : son identifiant, sa durée, le type
  * du fichier ; `url` (lien signé, une heure) seulement dans ce que le serveur rend.
  */
 export type VoixVideo = { id: string; duree: number; ext: string; url?: string };
 /** Un proche qui a vu cette vidéo : sa clé, son prénom, sa figurine assise (les trois premiers), quand il l'a vue, ses réactions. */
-export type ProcheDevantVideo = { cle: string; prenom: string; figurine: ImageSalon | null; vu: number; reactions: ReactionVideo[] };
+export type ProcheDevantVideo = { cle: string; prenom: string; figurine: ImageSalon | null; vu: number; reactions: ReactionVideo[]; vivante?: FigurineVivante };
 
 export const REACTIONS_VIDEO = {
   /** par vidéo et par personne */
@@ -58,6 +68,10 @@ export const REACTIONS_VIDEO = {
   apres: 0.6,
   /** 🎙️ des vocaux : 20 au plus par vidéo et par personne */
   vocaux: 20,
+  /** 📷 (le lot V2) des expressions vues sur mon visage : 40 au plus par vidéo et par personne, de 0,5 à 6 s chacune */
+  visages: 40,
+  visageMin: 0.5,
+  visageMax: 6,
 } as const;
 
 /** ↩ Les trois réponses toutes prêtes (section 13), ou trois mots. */
@@ -89,17 +103,26 @@ export const sorteVideo = (x: unknown) => SORTES_VIDEO.find((s) => s.cle === x);
 
 /** Une réaction reçue (du téléphone) ou relue (d'un fichier) : sa seconde, sa sorte ; sinon `null`. */
 export function reactionValide(
-  x: { t?: unknown; sorte?: unknown; source?: unknown; le?: unknown; texte?: unknown; a?: unknown; repond?: unknown; voix?: unknown } | null | undefined,
+  x: { t?: unknown; sorte?: unknown; source?: unknown; le?: unknown; texte?: unknown; a?: unknown; repond?: unknown; voix?: unknown; visage?: unknown; d?: unknown } | null | undefined,
   le = Date.now(),
 ): ReactionVideo | null {
   if (!x) return null;
   const t = Number(x.t);
   if (!Number.isFinite(t) || t < 0 || t > REACTIONS_VIDEO.dureeMax) return null;
-  const s = sorteVideo(x.sorte);
-  if (!s) return null;
   const source = (SOURCES_VIDEO as readonly string[]).includes(String(x.source)) ? (x.source as SourceVideo) : "rangee";
+  // (📷 une expression de mon visage : sa sorte se déduit de l'expression ; sans expression, ce n'en est pas une)
+  const visage = source === "visage" && expressionValide(x.visage) ? x.visage : null;
+  if (source === "visage" && !visage) return null;
+  const s = visage ? sorteVideo(SORTE_DU_VISAGE[visage]) : sorteVideo(x.sorte);
+  if (!s) return null;
   const quand = Number(x.le);
   const r: ReactionVideo = { t: Math.round(t * 10) / 10, sorte: s.cle, source, le: Number.isFinite(quand) && quand > 0 ? quand : le };
+  if (visage) {
+    r.visage = visage;
+    const d = Number(x.d);
+    r.d = Math.round(Math.min(REACTIONS_VIDEO.visageMax, Math.max(REACTIONS_VIDEO.visageMin, Number.isFinite(d) ? d : 1.5)) * 10) / 10;
+    return r;
+  }
   const texte = texteValide(x.texte);
   if (texte) r.texte = texte;
   const repond = Number(x.repond);
@@ -121,7 +144,9 @@ export function ajouterReaction(liste: readonly ReactionVideo[], r: ReactionVide
   if (liste.length >= REACTIONS_VIDEO.max) return null;
   const proche = (x: ReactionVideo) => Math.abs(x.t - r.t) < REACTIONS_VIDEO.rafale;
   if (r.voix) return liste.filter((x) => x.voix).length >= REACTIONS_VIDEO.vocaux ? null : [...liste, r].sort((a, b) => a.t - b.t);
-  if (r.texte ? liste.some((x) => x.texte === r.texte && proche(x)) : liste.some((x) => !x.texte && !x.voix && x.sorte === r.sorte && proche(x))) return null;
+  // (📷 mon visage : 40 au plus ; la même expression à moins de 1,2 s, une seule)
+  if (r.visage) return liste.filter((x) => x.visage).length >= REACTIONS_VIDEO.visages || liste.some((x) => x.visage === r.visage && proche(x)) ? null : [...liste, r].sort((a, b) => a.t - b.t);
+  if (r.texte ? liste.some((x) => x.texte === r.texte && proche(x)) : liste.some((x) => !x.texte && !x.voix && !x.visage && x.sorte === r.sorte && proche(x))) return null;
   return [...liste, r].sort((a, b) => a.t - b.t);
 }
 
