@@ -76,6 +76,10 @@ le gradin partout (le décor validé, sinon le fond sombre), la vidéo qui part 
 son »), plus de « Allumer » ; « Ma télé du jour » ouvre ma séance à quatre places — mes amis qui l'ont vue y rejouent
 leurs réactions, une place libre « ＋ » ouvre mes proches ou un lien WhatsApp qui la réserve (et rend proches).
 
+**📼 Revoir (21 novembre 2026 ; `decouvrir.md`, section 31)** : l'historique de mes vidéos vues — une rangée sur
+l'accueil de Découvrir, une puce et une feuille dans Ma maison ; « 💬 Sam a réagi » quand un proche a réagi depuis (aussi
+dans « Pendant ton absence ») ; un toucher la rouvre dans ma séance, où leurs réactions repassent à leur seconde.
+
 **🎭 Les gradins des salons ouverts (20 novembre 2026, au soir ; `decouvrir.md`, section 27)** : un décor par lieu (onze
 lieux pour les douze passions), huit emplacements sur deux marches, fabriqués et validés par le propriétaire sur
 `/admin/humain/salons` ; seul un gradin validé va dans les salons (sinon, la pièce). **À faire par le propriétaire, en

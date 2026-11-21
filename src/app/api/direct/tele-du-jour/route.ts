@@ -17,6 +17,8 @@
 // Une vidéo vue (« vue ») : ses proches le verront assis à côté d'eux, même sans réaction (après la réponse).
 // (deuxième partie, `decouvrir.md` section 22)
 // GET ?reactions=<id>                         → { proches, miennes, vue } : aussi les siennes, et s'il l'a déjà vue
+// GET ?historique=1                           → { historique } : 📼 ses vidéos déjà vues, et les amis qui y ont réagi depuis
+//                                               (« Revoir », `decouvrir.md` section 31)
 // GET ?video=<id>                             → { video } : une vidéo de sa télé, même déjà vue (la notification
 //                                               « revois-la avec ses réactions », « Léa t'a répondu »)
 // POST { action: "ecrire", id, t, texte }     → { ok, reaction?, ignoree? } : ce qu'il écrit à cette seconde (90
@@ -34,6 +36,7 @@ import { habitantCourant } from "@/lib/direct/habitant";
 import { apresEcrit } from "@/lib/direct/ecrit-serveur";
 import { envoyerVideo, garderVideo, maTeleDuJour, maVideo, noterVue } from "@/lib/direct/tele-du-jour-serveur";
 import { apresLaVue, noterReaction, noterVocal, prevenir, reactionsDesProches } from "@/lib/direct/reactions-video-serveur";
+import { monHistorique } from "@/lib/direct/revoir-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +53,7 @@ export async function GET(request: Request) {
     const r = await reactionsDesProches(supabase, moi, video);
     return NextResponse.json(r.error ? { error: r.error } : { ok: true, proches: r.proches, miennes: r.miennes, vue: r.vue }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
   }
+  if (q.get("historique") !== null) return NextResponse.json({ ok: true, historique: await monHistorique(supabase, moi.id) }, { headers: sansCache });
   if (q.get("video") !== null) {
     const v = await maVideo(supabase, moi.id, q.get("video"));
     return NextResponse.json(v ? { ok: true, video: v } : { error: "Cette vidéo n’est plus à ta télé." }, { status: v ? 200 : 404, headers: sansCache });

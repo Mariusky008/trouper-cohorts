@@ -47,6 +47,8 @@ import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import { PHRASES_CARNET } from "@/lib/direct/carnet-proches";
 import { CarnetDesProches } from "./carnet-proches";
+import { FeuilleRevoir } from "./revoir";
+import { PHRASES_REVOIR, lienRevoir } from "@/lib/direct/revoir";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
@@ -237,6 +239,8 @@ function Piece({
   const [qui, setQui] = useState(false);
   // 👯 (21 novembre 2026, section 25) le carnet de mes proches
   const [carnet, setCarnet] = useState(false);
+  // 📼 (section 31 de Découvrir) mes vidéos déjà vues
+  const [revoir, setRevoir] = useState(false);
   // 🎁 (lot M5) le cadeau touché sur la table (et ouvert) ; la surprise à laisser, en visite ; les miennes qui attendent
   const [cadeau, setCadeau] = useState<CadeauMaison | null>(null);
   const [ouvert, setOuvert] = useState(false);
@@ -449,6 +453,12 @@ function Piece({
     ? []
     : [
         ...(maison.absence ?? []).map((p, k) => ({ cle: `frappe-${k}`, e: "🚪", texte: PHRASES_BAS.frappe(p) })),
+        ...(maison.aRevoir ?? []).map((x) => ({
+          cle: `revoir-${x.id}`,
+          e: "💬",
+          texte: PHRASES_REVOIR.ligne(x.de, x.titre),
+          action: { nom: PHRASES_REVOIR.revoir, faire: () => window.location.assign(lienRevoir(x.id)) },
+        })),
         ...(maison.regarder ?? []).map((x) => ({
           cle: `regarder-${x.cle}`,
           e: "🎬",
@@ -505,7 +515,7 @@ function Piece({
             ]
           : []),
       ];
-  const pastille = (maison.absence?.length ?? 0) + (maison.regarder?.length ?? 0) + cadeauxEnAttente.length + (repondus.length ? 1 : 0) + (neufsChezMoi?.ids.length ? 1 : 0);
+  const pastille = (maison.absence?.length ?? 0) + (maison.regarder?.length ?? 0) + (maison.aRevoir?.length ?? 0) + cadeauxEnAttente.length + (repondus.length ? 1 : 0) + (neufsChezMoi?.ids.length ? 1 : 0);
   // (en visite : ce qui est nouveau chez lui aujourd'hui, en puces)
   const neufsVisite = visite?.nouveaux?.length ? objetsPlaces(maison.contenu ?? { cadres: [], platine: null, tele: null, etagere: [], total: 0 }).filter((o) => visite.nouveaux!.includes(o.id)).slice(0, 3) : [];
   const questionIci = visite ? question : maison.question;
@@ -960,6 +970,20 @@ function Piece({
                 {PHRASES_BAS.maTele}
               </a>
             )}
+            {!visite && (
+              <button
+                type="button"
+                className="mmc-puce"
+                data-puce="revoir"
+                onClick={() => {
+                  fermerTout();
+                  setRevoir(true);
+                }}
+              >
+                {PHRASES_REVOIR.puce}
+                {(maison.aRevoir?.length ?? 0) > 0 && <i className="mmc-puce-n">{maison.aRevoir!.length}</i>}
+              </button>
+            )}
           </div>
         )}
         {!visite ? (
@@ -1054,6 +1078,7 @@ function Piece({
       {regarder &&
         visite?.cle &&
         createPortal(<RegarderADeux cle={visite.cle} prenom={visite.prenom} onFermer={() => setRegarder(false)} onPropose={() => setFrappe(true)} />, document.body)}
+      {revoir && createPortal(<FeuilleRevoir onFermer={() => setRevoir(false)} />, document.body)}
       {carnet &&
         createPortal(
           <CarnetDesProches
@@ -1328,6 +1353,7 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-puces::-webkit-scrollbar{display:none}
 .mmc-surtitre{flex:none;width:76px;font-weight:800;font-size:10px;line-height:1.15;letter-spacing:.02em;text-transform:uppercase;color:#ffd98a}
 .mmc-puce{flex:none;display:flex;align-items:center;gap:5px;padding:8px 11px;border:0;border-radius:14px;background:#33241a;box-shadow:inset 0 0 0 1px rgba(255,211,110,.35);color:#fbf3ea;font:inherit;font-weight:700;font-size:12.5px;white-space:nowrap;text-decoration:none;cursor:pointer}
+.mmc-puce-n{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ffd27a;color:#2b1b12;font-style:normal;font-weight:900;font-size:11px;line-height:18px;text-align:center}
 .mmc-gros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .mmc-gros-bouton{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:6px 4px;border:0;border-radius:18px;background:#33241a;box-shadow:inset 0 0 0 1px #5a4232;color:#fbf3ea;font:inherit;font-weight:800;font-size:12px;line-height:1.15;text-align:center;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mmc-gros-bouton span{font-size:22px;line-height:1}

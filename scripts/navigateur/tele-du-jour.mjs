@@ -190,6 +190,10 @@ ok(await attendre(lea, async () => (await carte.count()) === 1 && /vidéos t’a
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir .td-carte-pano").evaluate((i) => i.complete && i.naturalWidth > 0)) === true && (await lea.locator("#o-decouvrir .td-carte-fig").count()) === 1), "… sa pièce et sa figurine dans la vignette");
 ok(/Regarde tes vidéos avec ceux que tu aimes/.test(await texte(lea.locator("#o-decouvrir .td-slogan"))), "la phrase de ClikMe");
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-salon]").count()) === 12), "les salons ouverts : douze, ses passions d'abord");
+// (📼 section 31 : ses vidéos déjà vues, sous la carte — un toucher la rouvre dans son salon)
+const revoir = lea.locator(`#o-decouvrir [data-revoir] [data-revoir-video="${premiere}"]`);
+ok(await attendre(lea, async () => (await revoir.count()) === 1), "« 📼 Revoir » : la vidéo qu'elle a vue, sous sa télé du jour");
+ok((await revoir.getAttribute("href")) === `/univers/salons?chez=moi&video=${premiere}`, "… elle se rouvre dans son salon");
 await lea.screenshot({ path: `${D}/tele-du-jour-4a-accueil.png` });
 await carte.click();
 // (⭐ le lot B, 21 novembre 2026 : « Ma télé du jour » est mon salon à quatre places — la carte y mène)

@@ -174,6 +174,32 @@ const pZ = await appel(ZOE, SALONS, { action: "entrer-chez", chez: CLE_SAM, plac
 ok(pZ.statut === 403 && /déjà servi/.test(pZ.error ?? ""), "Zoé, avec le même lien : il a déjà servi (une place, une personne)");
 ok((await appel(TOM, SALONS, { action: "entrer-chez", chez: CLE_SAM, place: jeton })).statut === 200, "Tom revient avec son lien : sa place l'attend toujours");
 
-ok(!/exemple/i.test(JSON.stringify([p1, acc, mL, mL2, pl])), "jamais le mot « exemple »");
+// ═══ 📼 REVOIR (`decouvrir.md` section 31) ═══
+const TELE = "/api/direct/tele-du-jour";
+const X = tele.videos[2];
+// (Sam la voit d'abord, en riant ; puis Léa, qui écrit à 12 s : Sam l'avait vue — elle va dans sa boîte « à revoir »)
+await appel(SAM, TELE, { action: "reagir", id: X.id, t: 5, sorte: "rire", source: "rangee" });
+await appel(SAM, TELE, { action: "vue", id: X.id, fin: true, secondes: 150 });
+const h0 = (await appel(SAM, `${TELE}?historique=1`)).historique ?? [];
+ok(h0[0]?.id === X.id && h0[0].titre === X.titre && !h0[0].nouveaux, "📼 l'historique de Sam : la vidéo qu'il vient de voir, en tête (rien de neuf encore)");
+await appel(LEA, TELE, { action: "ecrire", id: X.id, t: 12, texte: "Trop drôle 😂" });
+await appel(LEA, TELE, { action: "vue", id: X.id, fin: true, secondes: 150 });
+let h1 = [];
+for (let k = 0; k < 30 && !h1.find((v) => v.id === X.id)?.nouveaux; k++) {
+  await new Promise((ok2) => setTimeout(ok2, 300));
+  h1 = (await appel(SAM, `${TELE}?historique=1`)).historique ?? [];
+}
+const x1 = h1.find((v) => v.id === X.id);
+ok(x1?.nouveaux?.de?.[0] === "Léa" && x1.nouveaux.n >= 1, `… Léa y a réagi depuis : « 💬 Léa a réagi » (${JSON.stringify(x1?.nouveaux ?? null)})`);
+const mS = (await appel(SAM, "/api/direct/ma-piece", null, COOKIE_ADMIN)).maison;
+ok(mS?.aRevoir?.some((x) => x.id === X.id && x.de.includes("Léa")), "… sa maison le dit aussi (« Pendant ton absence » : « Léa a réagi à « … » »)");
+const rS = await appel(SAM, `${TELE}?reactions=${X.id}`);
+ok(rS.proches?.some((p) => p.prenom === "Léa" && p.reactions.some((r) => r.texte === "Trop drôle 😂")), "il la revoit : la réaction de Léa est là, à sa seconde");
+ok(!((await appel(SAM, `${TELE}?historique=1`)).historique ?? []).find((v) => v.id === X.id)?.nouveaux, "… et elle sort de sa boîte (plus « nouveau »)");
+const eR = await appel(SAM, SALONS, { action: "entrer-chez", chez: "moi", video: X.id });
+ok(eR.statut === 200 && eR.ouverture?.tele?.seance?.video?.id === X.id && eR.ouverture.tele.seance.pause === undefined, "« Revoir » : son salon se cale sur elle, depuis le début");
+ok((await appel(SAM, SALONS, { action: "entrer-chez", chez: "moi", video: "zzzzzzzzzzz" })).ouverture?.tele?.seance?.video?.id !== "zzzzzzzzzzz", "… pas une vidéo qui n'est pas à sa télé");
+
+ok(!/exemple/i.test(JSON.stringify([p1, acc, mL, mL2, pl, h1])), "jamais le mot « exemple »");
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nRegarder à deux : tout est bon.");
 process.exit(echecs ? 1 : 0);

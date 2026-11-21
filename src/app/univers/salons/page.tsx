@@ -13,11 +13,13 @@ export const revalidate = 0;
 
 export const metadata = { title: "Un salon ouvert — ClikMe" };
 
-export default async function PageSalonOuvert({ searchParams }: { searchParams: Promise<{ theme?: string; chez?: string; place?: string }> }) {
+export default async function PageSalonOuvert({ searchParams }: { searchParams: Promise<{ theme?: string; chez?: string; place?: string; video?: string }> }) {
   if (!(await universPermis())) redirect("/admin");
-  const { theme, chez, place } = await searchParams;
+  const { theme, chez, place, video } = await searchParams;
   // (une séance entre proches ne dépend pas de l'interrupteur des salons ouverts ; ➕ `place` : le jeton d'un lien WhatsApp)
-  if (chez && /^(moi|[A-Za-z0-9_-]{4,64})$/.test(chez)) return <SalonOuvert chez={chez} place={place && /^[A-Za-z0-9_-]{12,32}$/.test(place) ? place : undefined} />;
+  // (📼 `video` : chez moi, « Revoir » une vidéo déjà vue)
+  if (chez && /^(moi|[A-Za-z0-9_-]{4,64})$/.test(chez))
+    return <SalonOuvert chez={chez} place={place && /^[A-Za-z0-9_-]{12,32}$/.test(place) ? place : undefined} video={chez === "moi" && video && /^[A-Za-z0-9_-]{11}$/.test(video) ? video : undefined} />;
   if (!salonsOuverts()) notFound();
   const t = themeDe(theme);
   if (!t) notFound();

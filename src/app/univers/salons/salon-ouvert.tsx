@@ -93,18 +93,18 @@ function sortir(salon: string) {
   }
 }
 
-export function SalonOuvert({ theme, chez, place }: { theme?: string; chez?: string; place?: string }) {
+export function SalonOuvert({ theme, chez, place, video }: { theme?: string; chez?: string; place?: string; video?: string }) {
   const [etat, setEtat] = useState<Etat>({ etat: "chargement" });
   const entrer = useCallback(async () => {
     // (🎬 lot D2 : chez moi, ou chez un proche qui m'a invité ; ➕ le lot B : la place libre d'un lien WhatsApp)
-    const r = await poster(chez ? { action: "entrer-chez", chez, ...(place ? { place } : {}) } : { action: "entrer", theme });
+    const r = await poster(chez ? { action: "entrer-chez", chez, ...(place ? { place } : {}), ...(video ? { video } : {}) } : { action: "entrer", theme });
     if (r.ok && r.j.ouverture) return setEtat({ etat: "pret", o: r.j.ouverture as OuvertureSalonOuvert });
     if (r.j.age) return setEtat({ etat: "age" });
     // (➕ sans compte ni figurine — quelqu'un qui arrive par le lien WhatsApp d'une place libre : sa figurine d'abord)
     if (r.j.figurine || r.statut === 401) return setEtat({ etat: "sans-figurine" });
     if (r.j.exclu) return setEtat({ etat: "exclu" });
     setEtat({ etat: "erreur", message: String(r.j.error || "Ça n’a pas marché. Réessaie.") });
-  }, [theme, chez, place]);
+  }, [theme, chez, place, video]);
   useEffect(() => {
     void Promise.resolve().then(entrer);
   }, [entrer]);

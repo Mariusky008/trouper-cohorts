@@ -48,6 +48,7 @@ import { sesDixHuitAns } from "./majorite-serveur";
 import { themeDe } from "./decouvrir";
 import { INVITATION_MS, type MonSalon } from "./salons-ouverts";
 import type { PropositionRegarder } from "./regarder-a-deux";
+import { maBoiteARevoir } from "./revoir-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -239,7 +240,7 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
   if (!scene) return { piece, scene, figurine };
   const vuLe = Number(vu.le) || 0;
   // (🙂🚪🎁 lot M5 : son humeur, qui a frappé depuis sa dernière visite, les cadeaux sur la table)
-  const [vie, question, salons, regarder] = await Promise.all([
+  const [vie, question, salons, regarder, aRevoir] = await Promise.all([
     vieDeLaMaison(supabase, h, { depuis: vuLe || Date.now() }).catch(() => ({})),
     // (💬 lot M5 : ce que mes proches ont répondu à ma question du jour)
     questionChezMoi(supabase, h).catch(() => null),
@@ -247,8 +248,10 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
     mesSalons(supabase, h).catch(() => []),
     // (🎬 « Regarder à deux » : les vidéos que mes proches me proposent)
     propositionsDeRegarder(supabase, h).catch(() => []),
+    // (📼 « Revoir » : mes vidéos vues où des amis ont réagi depuis)
+    maBoiteARevoir(supabase, h).catch(() => []),
   ]);
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}), ...(regarder.length ? { regarder } : {}) };
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}), ...(regarder.length ? { regarder } : {}), ...(aRevoir.length ? { aRevoir: aRevoir.slice(0, 5).map((x) => ({ id: x.id, titre: x.titre, de: x.de })) } : {}) };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */

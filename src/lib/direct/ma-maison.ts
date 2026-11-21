@@ -81,6 +81,8 @@ export type MaMaisonVue = {
   salons?: MonSalon[];
   /** 🎬 (« Regarder à deux », section 24) les vidéos que mes proches me proposent de regarder avec eux (six heures) */
   regarder?: PropositionRegarder[];
+  /** 📼 (« Revoir », `decouvrir.md` section 31) mes vidéos vues auxquelles des amis ont réagi depuis */
+  aRevoir?: { id: string; titre: string; de: string[] }[];
 };
 
 /** 💬 (lot M5) La question du jour, chez soi : ce que ses proches y ont répondu. */

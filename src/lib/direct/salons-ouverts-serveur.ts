@@ -573,7 +573,7 @@ async function lireTeleSeance(supabase: Supabase, qHote: string): Promise<TeleSe
  * pièce de Ma maison (sinon le salon du catalogue) ; la télé qu'il mène — l'hôte, en arrivant, la trouve prête (la
  * première vidéo de sa télé du jour).
  */
-export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknown, jetonPlace?: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; figurine?: true }>> {
+export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknown, jetonPlace?: unknown, revoir?: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; figurine?: true }>> {
   const hHote = chez === "moi" ? moi.id : await hDeCle(supabase, chez).catch(() => null);
   if (!hHote) return { error: "Cette maison n’existe pas.", statut: 404 };
   const qHote = qui8(hHote);
@@ -615,6 +615,13 @@ export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknow
   // (l'hôte arrive : sa télé est prête — la première vidéo de sa télé du jour, si rien ne passe depuis six heures)
   const videos: VideoSalon[] = (teleDuJour?.videos ?? []).map((v) => ({ id: v.id, titre: v.titre, chaine: v.chaine, duree: v.duree }));
   let seance = deja && maintenant - deja.depart < INVITATION_MS ? deja : null;
+  // (📼 section 31 : « Revoir » — chez moi, la télé se cale sur cette vidéo déjà vue, depuis le début ; mes amis qui l'ont
+  // vue y rejouent leurs réactions)
+  const aRevoir = hote && revoir ? await maVideo(supabase, moi.id, revoir).catch(() => null) : null;
+  if (aRevoir) {
+    seance = { video: { id: aRevoir.id, titre: aRevoir.titre, chaine: aRevoir.chaine, duree: aRevoir.duree }, depart: maintenant, n: (deja?.n ?? 0) + 1 };
+    await ecrireJson(supabase, cheminTeleSeance(qHote), seance);
+  }
   if (hote && !seance && videos.length) {
     seance = { video: videos[0], depart: maintenant, n: (deja?.n ?? 0) + 1 };
     await ecrireJson(supabase, cheminTeleSeance(qHote), seance);

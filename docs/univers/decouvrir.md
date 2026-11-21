@@ -1306,3 +1306,42 @@ avec : assis, et proches des deux côtés ; Zoé avec le même : déjà servi ; 
 `salons-seance.mjs` (la carte mène au salon ; Sam, qui l'a déjà vue, assis à côté — « Sam · l'a vue » — et son rire à
 2 s ; deux « ＋ » ; la feuille et « 📲 Inviter par WhatsApp » ; Sam arrivé en vrai, plus en souvenir) ; `tele-du-jour.mjs`
 (« ▶ Regarder » : le salon à quatre places ; l'écran d'avant par son adresse).
+
+## 31. 📼 Revoir : mes vidéos déjà vues, et ce que mes amis y ont dit depuis (21 novembre 2026)
+
+**La demande du propriétaire** : « lorsque j'ai vu une vidéo et que je l'ai commentée et que je pars et que des amis ou
+autre la commentent aussi, alors comment puis-je la revoir ? Peut-être faudrait-il que sur la page Ma maison et
+Découverte il y ait l'historique des vidéos regardées, avec une petite modification si de nouveaux commentaires
+apparaissent. »
+
+Jusqu'ici, on ne revoyait une vidéo que par la notification « revois-la avec ses réactions ». Maintenant :
+
+- **L'historique** : chaque vidéo de ma télé du jour que je vois (dans ma séance, ou sur l'écran d'avant) y va — la plus
+  récente d'abord ; vue de nouveau, elle remonte. Soixante gardées, vingt-quatre montrées. (Une vidéo qui ne se lit pas
+  ici n'y va pas.)
+- **Ce qui s'y est passé depuis** : quand un de mes proches réagit à une vidéo que j'ai vue (un emoji, ses mots, sa
+  voix), elle va dans **ma boîte « à revoir »**, avec son prénom. Elle y reste jusqu'à ce que je la revoie.
+- **📼 Sur l'accueil de Découvrir**, sous « Ma télé du jour » : la rangée « 📼 Revoir » (les vignettes, qui défilent) ;
+  sur celles où des amis ont réagi depuis, un liseré doré et « 💬 Sam a réagi » (« Sam et Léa ont réagi »…). Rien tant
+  qu'aucune vidéo n'est vue.
+- **📼 Dans Ma maison** : la puce « 📼 Revoir » (avec le nombre de vidéos où des amis ont réagi) ouvre la même liste en
+  feuille (« Tes vidéos déjà vues viendront ici. » tant qu'il n'y en a pas). Et dans **« Pendant ton absence »** : « 💬
+  Sam a réagi à « … » », avec « Revoir » ; comptées dans la pastille.
+- **Un toucher la rouvre dans mon salon** (`/univers/salons?chez=moi&video=<id>`) : ma séance se cale sur elle, depuis
+  le début — mes amis qui l'ont vue y sont assis et **rejouent leurs réactions à leur seconde** (section 30) ; ceux qui
+  sont assis là en vrai la revoient avec moi. Seulement une vidéo de ma télé du jour (une autre : la séance ne bouge pas).
+  En la revoyant, elle sort de ma boîte.
+
+**Le rangement** : `<habitant>/tele-historique.json` ({ liste: [{ id, titre, chaine, duree, le }] }) et
+`<habitant>/tele-revoir.json` ({ videos: { <id>: { titre, de: [prénoms], n, le } } }, trente au plus). **Le code** :
+`lib/direct/revoir.ts` (les textes, `lienRevoir`), `lib/direct/revoir-serveur.ts` (`ajouterAHistorique` — appelé par
+`noterVue` —, `noterARevoir` — appelé quand un proche réagit, par `reactions-video-serveur` —, `revue`, `maBoiteARevoir`,
+`monHistorique`), `app/collection/revoir.tsx` (`RangeeRevoir`, `FeuilleRevoir`). **La route** :
+`GET /api/direct/tele-du-jour?historique=1` → `{ historique }` ; `GET ?reactions=<id>` vide la boîte de cette vidéo ;
+`entrer-chez` (salons ouverts) prend `video`. Ma maison : `aRevoir` (cinq au plus) dans la vue de ma pièce.
+
+**Les essais** : `essai-regarder-a-deux-route.mjs` (l'historique de Sam ; Léa écrit sur une vidéo qu'il a vue :
+« 💬 Léa a réagi », et sa maison le dit ; il la revoit — la réaction de Léa est là — et elle sort de sa boîte ;
+`entrer-chez` avec `video` : sa séance se cale dessus, pas sur une vidéo qui n'est pas à sa télé) ; `tele-du-jour.mjs` (la
+rangée « 📼 Revoir » sur l'accueil, et son lien) ; `salons-seance.mjs` (le salon rouvert sur la vidéo choisie, et Sam,
+assis là, la revoit avec elle) ; `ma-maison-catalogue.mjs` (la puce et sa feuille, vide).
