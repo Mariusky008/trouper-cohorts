@@ -1172,6 +1172,10 @@ aurait une vidéo YouTube ? comme ça je vois si ça marche bien, l'effet wow »
 **L'atelier** (`/admin/humain/visage`, lien « 📷 L'essai du visage » sur la page de l'administrateur) :
 - jusqu'à **six personnes** : un prénom, une photo de face (réduite sur le téléphone), **son accord** (case à cocher,
   obligatoire), « c'est moi » (une seule à la fois : sa figurine fera ta tête) ;
+- (21 novembre 2026, le propriétaire : « quand j'appuie sur ajouter rien ne se passe et je ne vois pas non plus où mettre
+  la photo ») la photo se choisit dans une zone bien visible, « 📷 Choisir sa photo » (ou on y glisse la photo depuis
+  l'ordinateur), qui montre sa vignette une fois choisie ; « Ajouter » répond toujours : il dit ce qui manque (son
+  prénom, sa photo, son accord), et qu'une photo HEIC de l'iPhone ne se lit pas partout (en JPEG ou en PNG, elle passe) ;
 - **« 🛠️ Fabriquer »**, une étape par passage (une minute environ chacune) : sa figurine assise (la consigne des
   figurines, `consigneSculptee`, d'après sa photo — **la photo s'efface aussitôt**), sa découpe (le corps et la tête, les
   calques du lot S1, sans moteur), puis ses **cinq expressions** : chacune faite sur la figurine entière (« la tête
