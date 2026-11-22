@@ -45,6 +45,12 @@ async function attendreQue(f, ms = 30000) {
   return null;
 }
 
+// (« Ma maison » n'est encore ouverte qu'à l'administrateur, ici : Léa l'est, comme dans les autres essais de sa maison)
+const ADMIN = "00000000-0000-4000-8000-0000000ad001";
+await semer("admins", [{ user_id: ADMIN }]);
+const b64 = (x) => Buffer.from(JSON.stringify(x)).toString("base64url");
+const session = { access_token: "faux-admin", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: "faux", user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@example.invalid", app_metadata: {}, user_metadata: {} } };
+
 const qui = (n, prenom) => ({ id: `4a150a15-0000-4000-8000-00000000ee0${n}`, jeton: `jeton-ma-maison-humeur-000${n}`, prenom });
 const LEA = qui(1, "Léa");
 const SAM = qui(2, "Sam");
@@ -130,9 +136,9 @@ await humeur("tristesse");
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const b = await lancer();
 const erreurs = [];
-const tel = async (q) => {
+const tel = async (q, admin = false) => {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
-  await ctx.addCookies([{ name: "clikme_habitant", value: q.jeton, url: BASE }]);
+  await ctx.addCookies([{ name: "clikme_habitant", value: q.jeton, url: BASE }, ...(admin ? [{ name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE }] : [])]);
   const p = await ctx.newPage();
   p.on("pageerror", (e) => erreurs.push(String(e)));
   p.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && erreurs.push(m.text()));
@@ -148,7 +154,7 @@ const attendre = async (p, f, ms = 15000) => {
 };
 const charge = (p, img) => p.evaluate((x) => (x ? x.complete && x.naturalWidth > 0 : false), img);
 
-const lea = await tel(LEA);
+const lea = await tel(LEA, true);
 await lea.goto(`${BASE}/univers/maison`, { waitUntil: "domcontentloaded" });
 const chez = lea.locator('.mmc-scene[data-piece="salon"]');
 const figJour = chez.locator('.mmc-fig [data-tete-du-jour="triste"]');
