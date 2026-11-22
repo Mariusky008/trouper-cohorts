@@ -580,6 +580,12 @@ calques d'avant et les expressions se refont une fois, sans le moteur), le masqu
 de la table, l'invitation dans une autre pièce seulement si l'autre est dans la conversation, « ‹ Proches », le chat sans
 ombre kaki (le ronron : un enregistrement à déposer par le propriétaire, boucle « Sur les genoux »).
 
+**🧭 Le menu du bas (22 novembre 2026)** : le gros bouton rond est désormais l'onglet où l'on est (« Découvrir »,
+« Messages », « Ma maison » ou « Autour ») ; « Ma maison » garde sa figurine, en petit, quand on n'y est pas — le
+propriétaire : « pour qu'on sache où l'on est ; pour l'instant, on a l'impression d'être toujours sur "Ma maison" »
+(`ma-collection.tsx`, `mc-nav-centre` suit `onglet` ; essai : `bascule-univers.mjs`). **🖥️ La messagerie sur un
+ordinateur** : la pièce entière, ses côtés floutés (`salon-du-duo.md`, section 11.30).
+
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.

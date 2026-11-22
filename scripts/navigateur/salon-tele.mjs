@@ -259,6 +259,22 @@ ok(await attendre(async () => (await tv())?.proche === true && (await p.locator(
 ok((await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "rien ne déborde");
 ok((await p.evaluate(() => document.querySelector(".sd").scrollTop)) === 0, "le salon n'a pas glissé");
 ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "jamais le mot interdit");
+
+// ═══ 🖥️ SUR UN ORDINATEUR ═══
+// (22 novembre 2026, le propriétaire : « sur ordinateur ce n'est pas du tout responsive » — la pièce, en hauteur, était
+// coupée de moitié dans une fenêtre large, les figurines énormes : on n'en coupe plus que 20 % au plus, les côtés
+// montrent la même pièce, floue)
+await p.locator(".sd-recul").click().catch(() => undefined);
+await p.setViewportSize({ width: 1280, height: 800 });
+await p.waitForTimeout(800);
+const large = await p.evaluate(() => {
+  const sc = document.querySelector(".sd-scene").getBoundingClientRect();
+  const st = document.querySelector(".sc-stage").getBoundingClientRect();
+  const cam = document.querySelector(".sc-camera").style.transform;
+  return { vu: sc.height / (st.height || 1), cotes: st.width < sc.width - 40, fond: document.querySelectorAll(".sc-fond").length, cam };
+});
+ok(large.vu >= 0.79 && large.cotes && large.fond === 1, `sur 1280 × 800 : au moins 80 % de la hauteur de la pièce à l'écran (${Math.round(large.vu * 100)} %), ses côtés floutés`);
+await p.screenshot({ path: `${D}/salon-tele-4-ordinateur.png` });
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
 await b.close();
 console.log(echecs ? `\n${echecs} échec(s)` : "\nla télé dans la pièce du salon : tout est bon");

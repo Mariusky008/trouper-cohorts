@@ -1482,6 +1482,20 @@ lumières » ? »
 lecteurs d'écran) ; sa carte sous la puce, le moment, et un toucher la referme ; sans carreaux tracés, la neige tombe dans
 la fenêtre relevée ; sans fenêtre, la carte le dit et rien ne tombe dans la pièce.
 
+### 11.30 🖥️ Sur un ordinateur, la pièce entière (22 novembre 2026)
+
+Le propriétaire, capture à l'appui : « sur ordinateur, ce n'est pas du tout responsive ». La pièce est en hauteur ; dans
+une fenêtre large, la scène la « couvrait » : elle était coupée de moitié, les figurines énormes, la table et le chat
+hors champ.
+
+- La scène ne coupe plus que **20 % de la hauteur de la pièce au plus** (`mettreEnPlace`, `moteur.ts`) ; sur un téléphone,
+  rien ne change (la pièce le remplit déjà).
+- **Les côtés** montrent la même pièce, floue et assombrie (`.sc-fond`), au lieu d'un vide.
+- Tout le reste (les figurines, la table, la télé, les bulles) suit : ses positions sont celles de la pièce.
+
+**L'essai** : `navigateur/salon-tele.mjs` — sur 1280 × 800, au moins 80 % de la hauteur de la pièce à l'écran, ses côtés
+floutés.
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

@@ -485,13 +485,15 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
 
       {/* LE MENU, EN BAS (6 novembre 2026 : « il faut qu'on voie en un coup d'œil qu'on est différent ») : un dock qui flotte ;
           au milieu, en gros bouton rond avec SA figurine dedans : « Créer » (7 novembre 2026), puis « Chez moi » (le menu à
-          trois, 13 novembre 2026) */}
+          trois, 13 novembre 2026). 22 novembre 2026, le propriétaire : « quand je clique sur un bouton, qu'il se mette aussi
+          gros que "Ma maison", et que "Ma maison" redevienne normal, pour qu'on sache où l'on est » — LE GROS BOUTON ROND EST
+          L'ONGLET OÙ L'ON EST ; « Ma maison » garde sa figurine, en petit, quand on n'y est pas */}
       <nav className={`mc-nav${univers ? " quatre" : ""}`} aria-label="ClikMe">
         {(univers ? MENU_UNIVERS : MENU).map((o) => (
           <button
             key={o.cle}
             type="button"
-            className={`mc-nav-${o.cle}${o.cle === (univers ? "maison" : "figurine") ? " mc-nav-centre" : ""}${onglet === o.cle ? " pris" : ""}`}
+            className={`mc-nav-${o.cle}${o.cle === (univers ? "maison" : "figurine") ? " mc-nav-moi" : ""}${onglet === o.cle ? " mc-nav-centre pris" : ""}`}
             aria-current={onglet === o.cle ? "page" : undefined}
             onClick={() => aller(o.cle, undefined, false, true)}
           >
@@ -615,10 +617,12 @@ button.mc-moi i{position:absolute;right:-3px;top:-4px;display:grid;place-items:c
   box-shadow:0 18px 40px -14px rgba(0,0,0,.95),inset 0 0 0 1px rgba(255,255,255,.09),inset 0 1px 0 rgba(255,200,230,.14)}
 .mc-nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,46,154,.85),rgba(242,196,107,.85),transparent)}
 .mc-nav.trois{grid-template-columns:1fr 1.15fr 1fr;max-width:420px}
-.mc-nav.quatre{grid-template-columns:1fr 1fr 1.15fr 1fr;max-width:460px}
+.mc-nav.quatre{grid-template-columns:repeat(4,minmax(0,1fr));max-width:460px}
 .mc-nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:4px 0 2px;border:0;background:none;color:#9C8290;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .2s}
 .mc-nav button.pris{color:#FFF4E6}
-.mc-nav-ico{position:relative;display:grid;place-items:center;width:44px;height:34px;border-radius:14px;transition:transform .3s cubic-bezier(.2,1.6,.4,1),background .25s}
+.mc-nav-ico{position:relative;display:grid;place-items:center;width:44px;height:34px;border-radius:14px;transition:transform .3s cubic-bezier(.2,1.6,.4,1),background .25s,width .3s cubic-bezier(.2,1.4,.4,1),height .3s cubic-bezier(.2,1.4,.4,1),margin-top .3s cubic-bezier(.2,1.4,.4,1),border-radius .3s}
+.mc-nav-ico svg{transition:width .3s,height .3s}
+.mc-nav-moi:not(.mc-nav-centre) .mc-nav-ico img{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#3a1530;box-shadow:0 0 0 2px rgba(255,244,230,.28)}
 .mc-nav-ico svg{display:block;opacity:.9}
 .mc-nav button.pris .mc-nav-ico{transform:translateY(-3px);background:linear-gradient(135deg,rgba(255,46,154,.32),rgba(242,196,107,.22));box-shadow:0 8px 18px -8px rgba(255,46,154,.9)}
 .mc-nav button.pris .mc-nav-ico svg{color:#FFF4E6;opacity:1}
