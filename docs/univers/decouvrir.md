@@ -1721,3 +1721,64 @@ Le propriétaire, captures à l'appui, chez lui (« Chez Marius ») :
   414 × 720, les réactions, le micro et l'écriture se voient sans défiler ; le 😂 bondit, vole et éclate, puis s'efface ;
 - `navigateur/visage-seance.mjs` : la pastille est dans le bouton de la caméra, plus dans la pièce ;
 - `navigateur/salons-seance.mjs` : plus de « Tu mènes la télé ».
+
+## 36. 🎵 Le salon musique : on propose, on écoute ensemble, la radio prend le relais (22 novembre 2026, le lot M1)
+
+Le propriétaire, sur la proposition « une platine dans chaque salon, à côté de la télé » : « ils regardent déjà des
+vidéos dans les salons, donc ça ne va pas vraiment ensemble. Il faut que ce soit un salon ou un endroit dédié seulement
+à la musique, où les gens peuvent proposer des musiques, et quand il n'y en a pas, il y a automatiquement des clips qui
+passent, qu'on peut écouter avec les autres. » Puis : « On part sur YouTube seul pour le premier lot » et « On commence
+par la musique ».
+
+**Le salon de la musique existe déjà** (le thème `musique` des salons par passion, son décor : la chambre musicale) : sa
+télé passe en boucle la sélection du jour (« clip officiel », « live session musique », « nouveau son français »), à la
+même seconde pour tous. Le lot M1 en fait **le salon musique** — les autres salons ne changent pas.
+
+### 36.1 Ce qu'on y fait
+
+- **🎵 Proposer un morceau** : un lien YouTube collé, ou un clip de la radio du jour. Il entre dans **la file** du salon :
+  **un seul morceau à la fois par personne** dans la file (personne ne la prend pour lui) ; dix au plus dans la file.
+  Un morceau de 30 secondes à 15 minutes ; ce qui ne se regarde pas ici (réservé aux adultes, en direct, des mots
+  d'alcool) est refusé, comme pour « Regarder à deux ». Sans rien qui passe, il part tout de suite.
+- **❤️ Faire monter un morceau** : les présents mettent un cœur aux morceaux de la file (pas au leur) ; le plus aimé
+  passe d'abord, à égalité le plus ancien.
+- **À la même seconde pour tous** : le morceau qui passe est écrit sur le salon (`platine.json` : celui qui passe, son
+  départ, la file) ; chaque téléphone le joue à sa seconde, comme la télé d'une séance. Fini, le suivant de la file
+  part — le premier pouls qui le voit l'écrit pour tous.
+- **📻 La radio du salon** : la file vide, la télé reprend la sélection du jour, là où elle en est (comme aujourd'hui).
+  « 🎵 Proposer le suivant » reprend la main.
+- **Qui l'a proposé** : pendant le morceau, la bande sous la télé le dit (« 🎵 Le choix de Léa »), et sa figurine porte
+  une note qui danse ; à la fin, « C'était le choix de Léa » et « Voir sa fiche » (sa fiche du salon : ses passions,
+  « Demander en proche »).
+- **Réagir en musique** : dans le salon musique, les réactions deviennent 🔥 « Ça brûle », 🎶 « Je chante », 💃 « Je
+  danse », ❤️ « J'adore », 😂 « Rire » : ma figurine danse (💃) ou chante (🎶, une note au-dessus d'elle) quelques
+  secondes, chez tout le monde.
+
+### 36.2 Ce qui ne change pas
+
+- La modération des salons : on ne colle un lien que dans « Proposer un morceau » (jamais dans la conversation) ;
+  signaler, ne plus voir quelqu'un, l'exclusion ; la maison des jeunes et celle des adultes, séparées.
+- Les séances entre amis (« Ma télé du jour ») et les autres salons : rien ne bouge.
+
+### 36.3 Pour plus tard (pas dans ce lot)
+
+- Chercher un titre (la recherche YouTube coûte cher en quota : à décider).
+- Mon morceau du jour, dans ma maison et sur ma fiche.
+- Les salons musique par genre, dans la vitrine.
+- Le blind test (avec les extraits Deezer).
+
+### 36.4 Le code, les essais
+
+- `lib/direct/platine.ts` (la file, son ordre, la platine à l'heure — `platineALHeure`, la même pour tous ; les
+  réactions en musique ; les phrases), `platine-serveur.ts` (lire, tenir à l'heure, proposer, aimer, retirer ; le
+  morceau d'un lien ou de la radio), `salons-ouverts-serveur.ts` (`actionDePlatine` ; la platine à l'entrée et dans le
+  pouls ; 🔥 🎶 💃 seulement dans le salon de la musique), la route (`proposer-morceau`, `coeur-morceau`,
+  `retirer-morceau`), `salon-ouvert.tsx` (la télé joue le morceau proposé à sa seconde, sinon la radio ; la bande de la
+  platine ; « Proposer un morceau » ; la note au-dessus de la figurine de celui qui l'a choisi ; 💃 elle danse).
+- **Les essais** : `essai-salon-musique-route.mjs` (la radio d'abord ; proposer, il part ; la file, un seul par
+  personne ; les cœurs font monter ; fini : le suivant part à la fin du précédent, ou maintenant après une longue
+  absence ; retirer ; la radio reprend ; ce qui ne passe pas — pas YouTube, trop long, d'alcool, pas de la radio, la
+  file pleine, pas dans le salon ; le salon du foot sans platine ni 💃 ; les 15-17 ans, leur platine à eux) ;
+  `navigateur/salon-musique.mjs` (deux iPhone : la radio, proposer un lien, « Ton choix » et « Le choix de Léa », la
+  même vidéo, la note ; un clip de la radio, « À suivre », le ❤️ ; 💃 chez l'autre ; fini : « C'était le choix de
+  Léa », « Voir sa fiche »).

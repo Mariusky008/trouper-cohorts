@@ -38,6 +38,10 @@
 // POST { action: "garder", salon, moment }     → { id } : le moment va sur mon étagère, dans ma maison
 // POST { action: "proche", salon, q }          → { proches?, envoyee? } : « 👯 Ajouter en proche »
 // POST { action: "repondre-proche", q, oui }   → { proches } : accepter (ou non) une demande reçue
+// POST { action: "proposer-morceau", salon, lien? | id? } → { platine, titre, part? } : 🎵 (le lot M1) dans le salon de la
+//      musique, un morceau dans la file (un lien YouTube, ou un clip de la radio du jour) ; rien ne passe : il part
+// POST { action: "coeur-morceau", salon, q }   → { platine } : ❤️ fait monter (ou plus) le morceau de q dans la file
+// POST { action: "retirer-morceau", salon }    → { platine } : ↩️ retire le sien de la file
 // `CLIKME_SALONS_OUVERTS=0` : les salons ouverts sont fermés (404) ; les séances entre proches restent possibles.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -46,6 +50,7 @@ import { direSesDixHuitAns } from "@/lib/direct/majorite-serveur";
 import { salonsOuverts } from "@/lib/direct/interrupteurs-serveur";
 import {
   accueilDesSalons,
+  actionDePlatine,
   aimerMessage,
   conversationDuSalon,
   demanderProche,
@@ -170,6 +175,10 @@ export async function POST(request: Request) {
   if (p.action === "proche") {
     const r = await demanderProche(supabase, moi, p);
     return repondre(r, { proches: Boolean(r.proches), envoyee: Boolean(r.envoyee), ...(r.deja ? { deja: true } : {}) });
+  }
+  if (p.action === "proposer-morceau" || p.action === "coeur-morceau" || p.action === "retirer-morceau") {
+    const r = await actionDePlatine(supabase, moi, p);
+    return repondre(r, { platine: r.platine, ...(r.titre ? { titre: r.titre } : {}), ...(r.part ? { part: true } : {}) });
   }
   if (p.action === "repondre-proche") {
     const r = await repondreDemande(supabase, moi, p);
