@@ -171,6 +171,30 @@ ok(await attendre(sam, async () => (await propose.count()) === 1, 10000) && /Ta 
 await sam.screenshot({ path: `${D}/seance-pour-tous-1-carte.png` });
 await sam.locator("[data-plus-tard]").click();
 ok(await attendre(sam, async () => (await secondes(sam)) >= 12, 20000), `la vidéo avance (${await secondes(sam)} s)`);
+// (💬 22 novembre 2026, « la barre "Ce qui s'est dit" est trop discrète, mal positionnée » : une bande sous la télé, avec
+// le dernier mot dit jusqu'où on en est)
+ok(await attendre(sam, async () => /0:04 Léa « trop drôle »/.test(await texte(sam.locator("[data-dit] [data-dernier-dit]"))), 6000), `💬 la bande sous la télé : le dernier mot dit (« ${await texte(sam.locator("[data-dit]"))} »)`);
+const bande = await sam.evaluate(() => {
+  const d = document.querySelector("[data-dit]").getBoundingClientRect();
+  const l = document.querySelector("[data-ligne-temps]").getBoundingClientRect();
+  const pi = document.querySelector(".so-piece").getBoundingClientRect();
+  return { sous: d.top >= l.bottom - 1 && d.bottom <= pi.top + 1, large: d.width > window.innerWidth * 0.8 };
+});
+ok(bande.sous && bande.large, `… sous la ligne du temps, au-dessus de la pièce, sur toute la largeur (${JSON.stringify(bande)})`);
+// (📱 « je ne vois pas les boutons du bas sur mon écran, il faut que je scrolle » : sur un écran de téléphone dans le
+// navigateur, la pièce prend ce qui reste — l'écriture se voit sans défiler)
+await sam.evaluate(() => window.scrollTo(0, 0));
+await sam.setViewportSize({ width: 414, height: 720 });
+ok(
+  await attendre(sam, () => sam.evaluate(() => {
+    const e = document.querySelector(".so-ecrire").getBoundingClientRect();
+    const f = document.querySelector(".so-fig[data-moi]")?.getBoundingClientRect();
+    return window.scrollY === 0 && e.bottom <= window.innerHeight && (f?.height ?? 0) >= 80;
+  }), 4000),
+  `sur 414 × 720 : les réactions, le micro et l'écriture se voient sans défiler (${await sam.evaluate(() => Math.round(document.querySelector(".so-ecrire").getBoundingClientRect().bottom))} / 720)`,
+);
+await sam.screenshot({ path: `${D}/seance-pour-tous-1b-ecran.png` });
+await sam.setViewportSize({ width: 390, height: 844 });
 await sam.locator("[data-dit]").click();
 const dit = sam.locator("[data-feuille-dit]");
 ok(await attendre(sam, async () => /0:02 Léa 😂/.test(await texte(dit)) && /0:04 Léa « trop drôle »/.test(await texte(dit))), `💬 Ce qui s'est dit : « ${await texte(dit)} »`);
@@ -179,7 +203,11 @@ const nAvant = await lea.locator(".so-tele").getAttribute("data-n");
 await dit.locator('[data-ligne="4"]').click();
 ok(await attendre(lea, async () => (await lea.locator(".so-tele").getAttribute("data-n")) !== nAvant && (await secondes(lea)) <= 9, 12000), `toucher « trop drôle » : la vidéo revient au moment — chez Léa aussi, ensemble (${await secondes(lea)} s)`);
 await sam.locator('[data-reagir] [data-r="rire"]').click();
+// (✨ « quand je clique, j'ai l'impression que rien ne se produit… pas d'effet wow » : le bouton bondit, le 😂 vole jusqu'à
+// sa figurine et y éclate)
+ok(await attendre(sam, async () => (await sam.locator('.so-jaillit').count()) > 0, 1500) && /tape/.test((await sam.locator('[data-reagir] [data-r="rire"]').getAttribute("class")) ?? ""), "✨ son 😂 bondit, vole jusqu'à sa figurine et y éclate");
 ok(await attendre(sam, async () => (await sam.locator('[data-ligne-temps] [data-tic="moi"]').count()) === 1, 4000), "son 😂 : un point sur la ligne");
+ok(await attendre(sam, async () => (await sam.locator('.so-jaillit').count()) === 0, 4000), "… puis l'éclat s'efface");
 
 // ═══ 📷 LA CAMÉRA DE SAM ; CHEZ LÉA, SA FIGURINE COPIE SA TÊTE EN DIRECT ═══
 await sam.locator("[data-camera-haut]").click();

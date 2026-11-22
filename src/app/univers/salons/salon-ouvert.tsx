@@ -441,6 +441,74 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     setNote(t);
     window.setTimeout(() => setNote((x) => (x === t ? "" : x)), ms);
   }, []);
+  // ✨ (22 novembre 2026, le propriétaire : « quand je clique, j'ai l'impression que rien ne se produit… pas d'effet wow »)
+  const sansMouvement = () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  /** Ma réaction part du bouton (il bondit, une onde), vole jusqu'à ma figurine et y éclate en petites copies. */
+  function jaillir(e: string, bouton: HTMLElement) {
+    try {
+      navigator.vibrate?.(18);
+    } catch {
+      /* (pas de vibreur) */
+    }
+    bouton.classList.remove("tape");
+    void bouton.offsetWidth;
+    bouton.classList.add("tape");
+    const fig = boite.current?.querySelector<HTMLElement>(".so-fig.moi");
+    if (sansMouvement() || !fig || typeof document.body.animate !== "function") return;
+    const a = bouton.getBoundingClientRect();
+    const b = fig.getBoundingClientRect();
+    const [x0, y0] = [a.left + a.width / 2, a.top + a.height / 2];
+    const [x1, y1] = [b.left + b.width / 2, b.top + b.height * 0.22];
+    const [dx, dy] = [x1 - x0, y1 - y0];
+    const vol = document.createElement("span");
+    vol.className = "so-jaillit";
+    vol.dataset.jaillit = e;
+    vol.textContent = e;
+    Object.assign(vol.style, { left: `${x0}px`, top: `${y0}px` });
+    document.body.append(vol);
+    const fin = () => vol.remove();
+    vol
+      .animate(
+        [
+          { transform: "translate(-50%,-50%) scale(.8)" },
+          { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% + ${dy * 0.5 - 70}px)) scale(1.9)`, offset: 0.55 },
+          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(2.3)` },
+        ],
+        { duration: 620, easing: "cubic-bezier(.3,.7,.4,1)" },
+      )
+      .finished.then(() => {
+        fin();
+        for (let k = 0; k < 9; k++) {
+          const p = document.createElement("span");
+          p.className = "so-jaillit petit";
+          p.textContent = e;
+          Object.assign(p.style, { left: `${x1}px`, top: `${y1}px` });
+          document.body.append(p);
+          const ang = (k / 9) * Math.PI * 2 + Math.random() * 0.5;
+          const r = 46 + Math.random() * 44;
+          p.animate(
+            [
+              { transform: "translate(-50%,-50%) scale(.5)", opacity: 1 },
+              { transform: `translate(calc(-50% + ${Math.cos(ang) * r}px), calc(-50% + ${Math.sin(ang) * r - 18}px)) scale(1.05)`, opacity: 0 },
+            ],
+            { duration: 780, easing: "cubic-bezier(.2,.8,.3,1)" },
+          ).finished.then(
+            () => p.remove(),
+            () => p.remove(),
+          );
+        }
+        fig.animate([{ transform: "translateX(-50%) scale(1)" }, { transform: "translateX(-50%) scale(1.09)" }, { transform: "translateX(-50%) scale(1)" }], { duration: 400, easing: "ease-out" });
+      }, fin);
+  }
+  /** 📷 Ma figurine s'illumine (la caméra s'allume : elle va faire ma tête). */
+  function briller() {
+    const fig = boite.current?.querySelector<HTMLElement>(".so-fig.moi");
+    if (!fig) return;
+    fig.classList.remove("brille");
+    void fig.offsetWidth;
+    fig.classList.add("brille");
+    window.setTimeout(() => fig.classList.remove("brille"), 1300);
+  }
   useEffect(() => {
     const id = window.setTimeout(() => setNote((x) => (x === P.bienvenue || x === P.seuls || x.startsWith("Le premier") ? "" : x)), 4200);
     const id2 = window.setTimeout(() => setIndice(false), 9000);
@@ -600,6 +668,34 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   }
   const tTexte = useRef<HTMLSpanElement>(null);
   const rempli = useRef<HTMLDivElement>(null);
+  const bas = useRef<HTMLElement>(null);
+  const [hauteurLibre, setHauteurLibre] = useState<number | null>(null);
+  useEffect(() => {
+    if (!prive) return;
+    const mesurer = () => {
+      const piece = boite.current?.querySelector<HTMLElement>(".so-piece");
+      const b = bas.current;
+      if (!piece || !b || window.innerWidth >= 1000) return setHauteurLibre(null);
+      const haut = piece.getBoundingClientRect().top + window.scrollY;
+      setHauteurLibre(Math.round(window.innerHeight - haut - b.offsetHeight - 20));
+    };
+    mesurer();
+    const ro = new ResizeObserver(mesurer);
+    if (bas.current) ro.observe(bas.current);
+    if (boite.current) ro.observe(boite.current);
+    window.addEventListener("resize", mesurer);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", mesurer);
+    };
+  }, [prive, L]);
+  const [ditJusqua, setDitJusqua] = useState(0);
+  // (💬 22 novembre 2026, le propriétaire : « la barre "Ce qui s'est dit" est trop discrète, mal positionnée » — une bande
+  // sous la télé, avec le dernier mot dit jusqu'où on en est ; la suite reste cachée)
+  const dernierDit = (() => {
+    const l = ceQuiSestDit(devant, miennes, { moi: PR.toi, jusqua: dejaVue ? null : ditJusqua }).lignes;
+    return l.length ? l[l.length - 1] : null;
+  })();
   const nDit = devant.reduce((n, p) => n + p.reactions.filter((r) => r.source !== "implicite").length, 0) + miennes.filter((r) => r.source !== "implicite").length;
   // (toutes les demi-secondes : où en est la vidéo, sur la ligne ; jusqu'où je l'ai vue — « Ce qui s'est dit » cache la suite)
   useEffect(() => {
@@ -609,6 +705,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       if (!s) return;
       const t = positionSeance(s, Date.now() + (decalage.current ?? 0));
       loin.current = Math.max(loin.current, t);
+      // (💬 le dernier mot dit, sous la télé : il suit la vidéo, toutes les deux secondes)
+      setDitJusqua((v) => (Math.abs(Math.max(loin.current, t) - v) >= 2 ? Math.max(loin.current, t) : v));
       if (tTexte.current) tTexte.current.textContent = seconde(t);
       if (rempli.current) rempli.current.style.width = `${s.video.duree > 0 ? Math.min(100, (t / s.video.duree) * 100) : 0}%`;
     }, 500);
@@ -691,7 +789,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // ─── la mise en page : la télé en 16/9, la pièce dessous ───
   // (sur un ordinateur, la télé ne dépasse pas 680 points : la pièce et ses figurines tiennent dans l'écran)
   const lTele = Math.min(L, 680);
-  const H = Math.round(Math.min(Math.max(L * 0.82, 260), 400));
+  // (📱 22 novembre 2026, le propriétaire : « je ne vois pas les boutons du bas, il faut que je scrolle — beaucoup d'espace
+  // perdu au-dessus des figurines » : sur un téléphone, la pièce de la séance prend ce qui reste de l'écran, sous la télé,
+  // au-dessus des boutons — entre 130 points et sa hauteur d'avant)
+  const H0 = Math.round(Math.min(Math.max(L * 0.82, 260), 400));
+  const H = prive && hauteurLibre !== null ? Math.round(Math.min(H0, Math.max(130, hauteurLibre))) : H0;
   // 🎭 (21 novembre 2026, le propriétaire : « comme la photo 2 ») TOUJOURS LE GRADIN — plus jamais la pièce : le décor
   // validé de sa passion (l'image carrée posée sur son sol, assez petite pour que toutes les têtes se voient ; sur un
   // ordinateur, les côtés : sa vignette floue), sinon le fond sombre et les places du plan ; la séance : ses quatre places
@@ -804,10 +906,22 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   .map((r, k) => <i key={`moi-${k}`} className="so-tic moi" data-tic="moi" style={{ left: `${Math.min(100, (r.t / regarde.video.duree) * 100)}%` }} />)}
             </div>
             <span>{seconde(regarde.video.duree)}</span>
-            <button type="button" className="so-dit" data-dit onClick={() => void ouvrirDit()}>
-              {PR.ditN(nDit)}
-            </button>
           </div>
+        ) : null}
+        {seance && regarde ? (
+          <button type="button" className={`so-dit${dernierDit ? "" : " vide"}`} data-dit onClick={() => void ouvrirDit()} style={{ width: lTele ? lTele - 24 : undefined }}>
+            <b className="so-dit-titre">{PR.ditN(nDit)}</b>
+            <span className="so-dit-dernier" data-dernier-dit={dernierDit ? dernierDit.t : undefined}>
+              {dernierDit ? (
+                <>
+                  <span className="so-dit-t">{seconde(dernierDit.t)}</span> <b>{dernierDit.prenom}</b> {dernierDit.voix ? PR.unVocal : dernierDit.texte ? `« ${dernierDit.texte} »` : dernierDit.e}
+                </>
+              ) : (
+                PR.ditVide
+              )}
+            </span>
+            <i aria-label={PR.toutVoir}>›</i>
+          </button>
         ) : null}
         <div className="so-piece" style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-gradin={gradin?.id ?? "plan"}>
           {gradin && (
@@ -958,21 +1072,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 </span>
               );
             })}
-          {/* (🔴 la maquette : une pastille reste visible tant qu'elle marche ; un toucher l'arrête) */}
-          {cameraVoulue && maTete.etat === "on" && (
-            <button
-              type="button"
-              className="so-pastille-cam"
-              data-pastille-camera
-              onClick={() => {
-                choisirCamera(false);
-                dire(P.cameraEteinte);
-              }}
-            >
-              <i aria-hidden="true" />
-              {P.pastille}
-            </button>
-          )}
+          {/* (🔴 la pastille de la maquette — visible tant qu'elle marche, un toucher l'arrête — est désormais le bouton de la
+              caméra, en bas : le 22 novembre 2026, le propriétaire, « on peut la supprimer, elle est en doublon ») */}
           {souvenir ? (
             <p className="so-indice so-souvenir" role="status" data-souvenir>
               {PHRASES_REGARDER.souvenir(souvenir)}
@@ -988,8 +1089,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         </div>
       </div>
 
-      <section className="so-bas">
-        <p className="so-info" data-info>{seance ? (seance.hote ? P.hote : aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : P.tele}</p>
+      <section className="so-bas" ref={bas}>
+        {/* (22 novembre 2026, le propriétaire : « supprime cette phrase : Tu mènes la télé… » — l'hôte n'a plus de phrase) */}
+        {!seance?.hote && (
+          <p className="so-info" data-info>
+            {seance ? (aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : P.tele}
+          </p>
+        )}
         {aPart && tele?.video.id === aPart.video.id && (
           <button type="button" className="so-bouton petit doux so-aussi" data-aussi onClick={rejoindre}>
             {P.aussi(seance?.prenom ?? "")}
@@ -998,7 +1104,22 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         {prive && vivante && (
           <div className="so-camera" data-camera-zone>
             <video ref={maTete.video} className={`so-miroir${maTete.etat === "on" ? " vue" : ""}`} playsInline muted aria-hidden="true" />
-            <button type="button" className={`so-bouton petit${cameraVoulue ? " actif" : " doux"}`} aria-pressed={cameraVoulue} data-camera={cameraVoulue ? "on" : "off"} onClick={() => choisirCamera(!cameraVoulue)}>
+            <button
+              type="button"
+              className={`so-bouton petit${cameraVoulue ? " actif" : " doux"}`}
+              aria-pressed={cameraVoulue}
+              data-camera={cameraVoulue ? "on" : "off"}
+              data-pastille-camera={cameraVoulue && maTete.etat === "on" ? "1" : undefined}
+              onClick={() => {
+                const oui = !cameraVoulue;
+                choisirCamera(oui);
+                if (oui) {
+                  briller();
+                  dire(P.cameraAllumee);
+                } else dire(P.cameraEteinte);
+              }}
+            >
+              {cameraVoulue && maTete.etat === "on" && <i className="so-rec" aria-hidden="true" />}
               {PV.camera}
             </button>
             {/* (éteinte : rien de plus — « 📷 » en haut a la carte qui explique ; 21 novembre 2026) */}
@@ -1018,7 +1139,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               data-r={r.cle}
               aria-label={r.nom}
               disabled={occupe}
-              onClick={() => {
+              onClick={(ev) => {
+                // (✨ 22 novembre 2026, le propriétaire : « quand je clique, j'ai l'impression que rien ne se produit » — elle
+                // part du bouton, vole jusqu'à ma figurine et y éclate, tout de suite)
+                jaillir(r.e, ev.currentTarget);
                 // (🎞️ seul sur ma vidéo gardée : la réaction saute sur ma figurine, sans partir au salon — les autres
                 // regardent autre chose ; elle reste sur la vidéo, et ils la verront en la regardant)
                 if (aPart) jouer({ id: `local-${Date.now()}`, de: o.moi, prenom: "", le: Date.now(), sorte: "reaction", cle: r.cle });
@@ -1035,7 +1159,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               {r.e}
             </button>
           ))}
-          <small>{P.ouTouche}</small>
+          {!prive && <small>{P.ouTouche}</small>}
         </div>
         {refus && (
           <p className="so-refus" data-refus role="alert">
@@ -1765,8 +1889,12 @@ const STYLES = `
 .so-bouton.clair{background:rgba(255,255,255,.12);color:#FFF4E6}
 .so-bouton.petit{padding:9px 14px;font-size:14px}
 .so-bouton.doux{background:rgba(255,255,255,.12);color:#FFF4E6}
-.so-camera{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 8px}
-.so-camera small{opacity:.75;font-size:12.5px;line-height:1.4;flex:1;min-width:160px}
+.so-camera{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0}
+.so-camera small{opacity:.75;font-size:12.5px;line-height:1.4;flex:1;min-width:90px}
+.so-seance .so-bas{gap:8px;padding-top:8px}
+.so-seance .so-temps{margin-top:6px}
+.so-seance .so-commandes{margin-top:6px}
+.so-seance .so-piece{overflow:visible}
 .so-miroir{width:0;height:0;border-radius:50%;object-fit:cover;transform:scaleX(-1);background:#000}
 .so-miroir.vue{width:40px;height:40px;box-shadow:0 0 0 2px #FF2E9A}
 .so-bouton:disabled{opacity:.5}
@@ -1775,10 +1903,19 @@ const STYLES = `
 .so-haut{display:flex;align-items:center;gap:10px;padding:0 12px 10px}
 .so-rond{flex:none;width:40px;height:40px;border-radius:50%;border:0;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#FFF4E6;font-size:20px;font-weight:900;text-decoration:none;cursor:pointer}
 .so-rond.allume{background:rgba(255,46,154,.35);box-shadow:0 0 0 2px rgba(255,46,154,.6)}
-/* 📷 (« tout pour tous ») la pastille de la caméra, la carte de la maquette */
-.so-pastille-cam{position:absolute;left:10px;top:10px;z-index:960;display:flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:6px 11px;background:rgba(0,0,0,.6);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
-.so-pastille-cam i{width:8px;height:8px;border-radius:50%;background:#ff3b5c;box-shadow:0 0 0 3px rgba(255,59,92,.25);animation:so-clignote 1.2s steps(2) infinite}
+/* 📷 (« tout pour tous ») la caméra : sa pastille rouge est dans son bouton, en bas ; la carte de la maquette */
+.so-rec{display:inline-block;width:8px;height:8px;margin-right:7px;vertical-align:1px;border-radius:50%;background:#ff3b5c;box-shadow:0 0 0 3px rgba(255,59,92,.3);animation:so-clignote 1.2s steps(2) infinite}
 @keyframes so-clignote{50%{opacity:.35}}
+.so-fig.brille::after{content:"";position:absolute;left:50%;top:38%;width:115%;aspect-ratio:1;border-radius:50%;pointer-events:none;box-shadow:0 0 0 3px rgba(255,46,154,.85),0 0 28px 8px rgba(255,46,154,.45);animation:so-anneau 1.2s ease-out forwards}
+@keyframes so-anneau{from{opacity:1;transform:translate(-50%,-50%) scale(.45)}to{opacity:0;transform:translate(-50%,-50%) scale(1.35)}}
+/* ✨ une réaction : le bouton bondit, une onde ; elle vole jusqu'à ma figurine et y éclate */
+.so-reagir button{position:relative}
+.so-reagir button.tape{animation:so-tape .5s ease-out}
+.so-reagir button.tape::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;animation:so-onde .6s ease-out}
+@keyframes so-tape{0%{transform:scale(1)}30%{transform:scale(1.38)}60%{transform:scale(.92)}100%{transform:scale(1)}}
+@keyframes so-onde{from{box-shadow:0 0 0 0 rgba(255,46,154,.75)}to{box-shadow:0 0 0 20px rgba(255,46,154,0)}}
+.so-jaillit{position:fixed;z-index:60;font-size:30px;line-height:1;pointer-events:none;transform:translate(-50%,-50%);filter:drop-shadow(0 4px 8px rgba(0,0,0,.45))}
+.so-jaillit.petit{font-size:19px}
 .so-carte-camera ul{margin:4px 0 12px;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.35}
 .so-citation{margin:0 0 14px;font-style:italic;font-weight:700;opacity:.85}
 .so-actions{display:flex;gap:10px;flex-wrap:wrap}
@@ -1788,7 +1925,15 @@ const STYLES = `
 .so-rempli{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:linear-gradient(90deg,#ff6fbd,#FF2E9A)}
 .so-tic{position:absolute;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--c,#F2C46B);box-shadow:0 0 0 2px #1c0d15}
 .so-tic.moi{background:#fff}
-.so-dit{flex:none;border:0;border-radius:999px;padding:6px 10px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+/* 💬 (22 novembre 2026, « trop discrète, mal positionnée ») une bande sous la télé : le titre et le nombre, « Tout voir »,
+   le dernier mot dit jusqu'où on en est */
+.so-dit{display:flex;align-items:center;gap:8px;box-sizing:border-box;width:calc(100% - 24px);min-height:36px;margin:6px auto 4px;border:0;border-radius:999px;padding:6px 8px 6px 12px;background:linear-gradient(135deg,rgba(255,46,154,.3),rgba(255,111,189,.14));box-shadow:inset 0 0 0 1.5px rgba(255,111,189,.55);color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.so-dit:active{transform:scale(.985)}
+.so-dit-titre{flex:none;font-size:13px;font-weight:900}
+.so-dit-dernier{flex:1;min-width:0;font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-dit-dernier b{font-weight:800}
+.so-dit.vide .so-dit-dernier{opacity:.7;font-size:12.5px}
+.so-dit i{flex:none;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.16);font-style:normal;font-weight:900;font-size:16px;line-height:1}
 .so-dit-liste ul{margin:0 0 10px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .so-dit-liste li{display:flex;gap:6px;align-items:center}
 .so-dit-liste li>button:first-child{flex:1;min-width:0;display:flex;gap:8px;align-items:baseline;text-align:left;border:0;border-radius:12px;padding:9px 10px;background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;font-size:14px;cursor:pointer}
@@ -1805,7 +1950,7 @@ const STYLES = `
 .so-ecrire .sd-enreg b{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;flex:none}
 .so-ecrire .sd-enreg canvas{flex:1;min-width:0;height:26px}
 .so-ecrire .sd-glisse{font-weight:600;font-size:11px;color:#c08fb0;flex:none;white-space:nowrap}
-@media (prefers-reduced-motion:reduce){.so-pastille-cam i,.so-ecrire .sd-pt-rouge{animation:none}}
+@media (prefers-reduced-motion:reduce){.so-rec,.so-ecrire .sd-pt-rouge,.so-reagir button.tape,.so-reagir button.tape::after,.so-fig.brille::after{animation:none}}
 .so-titre{flex:1;min-width:0;display:flex;flex-direction:column}
 .so-titre b{font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .so-titre small{font-size:12.5px;opacity:.75}

@@ -144,7 +144,8 @@ await sansCarteCamera(lea, vivanteLea);
 ok(/🏠 Chez Léa/.test(await texte(lea.locator("[data-nom]"))) && /1 ici/.test(await texte(lea.locator("[data-places]"))), `« ${await texte(lea.locator("[data-nom]"))} »`);
 ok(/Invite tes proches/.test(await texte(lea.locator("[data-note]"))), "« Invite tes proches : ils s'assoient à côté de toi. »");
 ok((await lea.locator("[data-commandes] [data-pause]").count()) === 1 && (await lea.locator("[data-commandes] [data-suivante]").count()) === 1 && (await lea.locator("[data-commandes] [data-choisir]").count()) === 1, "ses commandes : ❚❚ Pause, ⏭ Suivante, 📺 Choisir");
-ok((await lea.locator("[data-etagere]").count()) === 0 && /Tu mènes la télé/.test(await texte(lea.locator(".so-info"))), "… « Tu mènes la télé » (pas d'étagère : c'est chez elle)");
+// (22 novembre 2026, le propriétaire : « supprime cette phrase : Tu mènes la télé… »)
+ok((await lea.locator("[data-etagere]").count()) === 0 && (await lea.locator(".so-info").count()) === 0, "… plus de « Tu mènes la télé » (pas d'étagère : c'est chez elle)");
 const v0 = await lea.locator(".so-tele").getAttribute("data-tele");
 // (🔊 21 novembre 2026 : sa télé du jour part toute seule, en silence ; 🎭 quatre places, sans pièce)
 ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === v0 && (await lea.locator(".faux-yt").getAttribute("data-muet")) === "1") && (await lea.locator("[data-allumer]").count()) === 0, `sa télé du jour part toute seule, en silence (${v0})`);

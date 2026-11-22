@@ -256,6 +256,9 @@ export const PHRASES_REACTIONS = {
   ditN: (n: number) => (n ? `💬 Ce qui s’est dit · ${n}` : "💬 Ce qui s’est dit"),
   plusLoin: (n: number) => `🔒 ${n} réaction${n > 1 ? "s" : ""} plus loin dans la vidéo`,
   rienDit: "Rien encore : tes réactions attendront tes proches.",
+  /** (la bande sous la télé de la séance, tant que rien n'est dit) */
+  ditVide: "Écris, parle ou réagis : ça reste à la seconde de la vidéo.",
+  toutVoir: "Tout voir",
   revoir: "Touche une ligne : tu revois le moment.",
   toi: "Toi",
   // (🎙️ les vocaux)
