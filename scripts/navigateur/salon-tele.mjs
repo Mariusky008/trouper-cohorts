@@ -198,14 +198,17 @@ ok((await tv())?.etat === "allumee", "la télé est allumée");
 const devant = await p.evaluate(() => {
   const l = document.querySelector(".tv-flottant")?.getBoundingClientRect();
   if (!l) return null;
-  const n = [...document.querySelectorAll(".sc-fig > .sc-calque > img")].filter((i) => {
+  const n = [...document.querySelectorAll(".sc-fig .sc-calque > img")].filter((i) => {
     const r = i.getBoundingClientRect();
     return r.width > 0 && r.right > l.left && r.left < l.right && r.bottom > l.top && r.top < l.bottom;
   }).length;
   const f = document.querySelector(".tv-flottant");
-  return { n, marque: Number(f?.getAttribute("data-silhouettes") ?? 0), masque: getComputedStyle(f).webkitMaskImage || getComputedStyle(f).maskImage || "" };
+  const bulles = document.querySelector(".sd-bulles");
+  return { n, marque: Number(f?.getAttribute("data-silhouettes") ?? 0), masque: getComputedStyle(f).webkitMaskImage || getComputedStyle(f).maskImage || "", plan: Number(getComputedStyle(f).zIndex), planBulles: bulles ? Number(getComputedStyle(bulles).zIndex) : 0 };
 });
-ok(devant && devant.marque === devant.n && (devant.n === 0 || /url\(/.test(devant.masque)), `les figurines devant l'écran, découpées dans le lecteur (${devant?.n} devant)`);
+ok(devant && devant.marque === devant.n && (devant.n === 0 || /url\(/.test(devant.masque)), `les figurines devant l'écran (leur corps et leur tête), découpées dans le lecteur (${devant?.n} images devant)`);
+// (🧱 22 novembre 2026, « les textes et bulles et autres sont derrière la télé » : le lecteur passe sous les bulles)
+ok(devant && devant.plan === 3 && devant.planBulles > devant.plan, `le lecteur sous les bulles (plan ${devant?.plan}, bulles ${devant?.planBulles})`);
 await p.locator(".tv-eteindre").click();
 await p.locator(".sd-recul").click();
 ok(await attendre(async () => (await tv())?.proche === false && (await p.locator(".sd-recul").count()) === 0, 3000), "« ↩ La pièce » : la caméra revient");

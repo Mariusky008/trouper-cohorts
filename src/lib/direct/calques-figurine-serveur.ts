@@ -193,6 +193,23 @@ export async function boiteDuCorps(source: Buffer): Promise<[number, number, num
   return plusGrandeSilhouette(alpha, info.width, info.height)?.boite ?? null;
 }
 
+// ─── 🧍 le corps sans sa tête (V1 ; la messagerie aussi depuis le 22 novembre 2026) ───
+/** La part de la boîte de la tête effacée du corps (en partant du haut) : le cou reste, sous la tête qui penche. */
+export const PART_SANS_TETE = 0.88;
+/**
+ * Le corps sans sa tête habituelle : le haut de la boîte de la tête effacé (le cou reste, sous la tête qui penche).
+ * Le propriétaire, le 22 novembre 2026 : « quand la tête bouge, elle est en double » — le corps gardait sa tête d'origine,
+ * qu'on voyait sous la tête qui penche.
+ */
+export async function corpsSansTete(corps: Buffer, r: { tetePx: [number, number, number, number] }): Promise<Buffer> {
+  const { data, info } = await sharp(corps).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const [w, h] = [info.width, info.height];
+  const [px, py, pw, ph] = r.tetePx;
+  const fin = Math.min(h, py + Math.round(ph * PART_SANS_TETE));
+  for (let y = Math.max(0, py); y < fin; y++) for (let x = Math.max(0, px); x < Math.min(w, px + pw); x++) data[(y * w + x) * 4 + 3] = 0;
+  return sharp(data, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
+}
+
 // ─── la découpe ───
 /** 🎭 Une figurine assise (PNG avec transparence) → son corps, sa tête, ses repères (dans le cadre du corps). */
 export async function decouperFigurine(source: Buffer): Promise<{ corps: Buffer; tete: Buffer; ratio: number; reperes: Reperes; par: "regard" | "estime"; boite: [number, number, number, number]; tetePx: [number, number, number, number] } | null> {
@@ -257,22 +274,27 @@ export async function calquesDeFigurine(supabase: Supabase, h: string, o: { fabr
   if (!chemin) return null;
   const cle = empreinteDe(chemin);
   const deja = await lireJson<FigurineLocale>(supabase, `${dossier(h)}/${cle}.json`);
-  if (deja.corps?.fichier && deja.tete?.fichier && Array.isArray(deja.tete.boite)) return deja as FigurineLocale;
+  if (deja.corps?.fichier && deja.tete?.fichier && Array.isArray(deja.tete.boite)) {
+    // (🧍 22 novembre 2026 : des calques d'avant, sans le corps sans tête — il s'ajoute une fois, quand on peut fabriquer)
+    if (deja.sansTete?.fichier || o.fabriquer === false) return deja as FigurineLocale;
+    return (await ajouterSansTete(supabase, h, cle, deja as FigurineLocale).catch(() => null)) ?? (deja as FigurineLocale);
+  }
   if (o.fabriquer === false) return null;
   const source = await telecharger(supabase, chemin);
   if (!source) return null;
   const c = await decouperFigurine(source).catch(() => null);
   if (!c) return null;
   const d = depotDans(supabase, dossier(h));
-  const sources = { corps: `${dossier(h)}/${cle}-corps.png`, tete: `${dossier(h)}/${cle}-tete.png` };
-  await Promise.all([d.ecrire(`${cle}-corps.png`, c.corps, "image/png"), d.ecrire(`${cle}-tete.png`, c.tete, "image/png")]);
+  const sources = { corps: `${dossier(h)}/${cle}-corps.png`, tete: `${dossier(h)}/${cle}-tete.png`, sansTete: `${dossier(h)}/${cle}-corps-sans-tete.png` };
+  await Promise.all([d.ecrire(`${cle}-corps.png`, c.corps, "image/png"), d.ecrire(`${cle}-tete.png`, c.tete, "image/png"), corpsSansTete(c.corps, { tetePx: c.tetePx }).then((b) => d.ecrire(`${cle}-corps-sans-tete.png`, b, "image/png"))]);
   // (publiés une fois, à adresse stable : l'ouverture d'une conversation ou de sa maison n'a plus qu'à relire)
-  const [corps, tete] = await Promise.all([imageSalon(supabase, sources.corps, LARGEURS_CALQUES.corps), imageSalon(supabase, sources.tete, LARGEURS_CALQUES.tete)]);
+  const [corps, tete, sansTete] = await Promise.all([imageSalon(supabase, sources.corps, LARGEURS_CALQUES.corps), imageSalon(supabase, sources.tete, LARGEURS_CALQUES.tete), imageSalon(supabase, sources.sansTete, LARGEURS_CALQUES.corps)]);
   if (!corps || !tete) return null;
   const f: FigurineLocale = {
     ratio: c.ratio,
     corps: { fichier: corps.src },
     tete: { fichier: tete.src, boite: c.reperes.tete, pivot: c.reperes.pivot },
+    ...(sansTete ? { sansTete: { fichier: sansTete.src } } : {}),
     sources,
     bouche: c.reperes.bouche,
     joues: c.reperes.joues,
@@ -280,4 +302,27 @@ export async function calquesDeFigurine(supabase: Supabase, h: string, o: { fabr
   };
   await d.ecrire(`${cle}.json`, Buffer.from(JSON.stringify(f)), "application/json");
   return f;
+}
+
+/**
+ * 🧍 (22 novembre 2026) Le corps sans sa tête, ajouté une fois à des calques d'avant : relu de leur corps, la tête effacée
+ * là où leur boîte de tête la dit (la même règle que pour les nouveaux, `corpsSansTete`), publié à adresse stable.
+ */
+async function ajouterSansTete(supabase: Supabase, h: string, cle: string, f: FigurineLocale): Promise<FigurineLocale | null> {
+  const src = f.sources?.corps;
+  if (!src) return null;
+  const corps = await telecharger(supabase, src);
+  if (!corps) return null;
+  const { width = 0, height = 0 } = await sharp(corps).metadata();
+  if (!width || !height) return null;
+  const [tx, ty, tw, th] = f.tete.boite;
+  const tetePx: [number, number, number, number] = [Math.max(0, Math.floor(tx * width)), Math.max(0, Math.floor(ty * height)), Math.ceil(tw * width), Math.ceil(th * height)];
+  const nom = `${cle}-corps-sans-tete.png`;
+  const d = depotDans(supabase, dossier(h));
+  if (!(await d.ecrire(nom, await corpsSansTete(corps, { tetePx }), "image/png"))) return null;
+  const img = await imageSalon(supabase, `${dossier(h)}/${nom}`, LARGEURS_CALQUES.corps);
+  if (!img) return null;
+  const neuf: FigurineLocale = { ...f, sansTete: { fichier: img.src }, sources: { ...f.sources!, sansTete: `${dossier(h)}/${nom}` } };
+  await d.ecrire(`${cle}.json`, Buffer.from(JSON.stringify(neuf)), "application/json");
+  return neuf;
 }

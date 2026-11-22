@@ -597,7 +597,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
     etagere.current.montrer(souvenirsRef.current);
     // (🐾 le chat : dans son coin, ma place pour ses genoux)
     const ch = chatSalon.current;
-    const maPlace = sceneVue.places[0];
+    // (ma place : celle de gauche, où ma figurine est posée — `calquesPoses`)
+    const maPlace = [...sceneVue.places].sort((p, q) => p.x - q.x)[0];
     chat.current = ch && maPlace ? installerChat(s, ch, { place: maPlace, ...(sceneVue.emplacements?.chat ? { coin: sceneVue.emplacements.chat } : {}) }) : null;
     // (📻 lot S4 : les talkies de la table — un vocal qui attend d'être écouté ; ceux d'avant s'y reposent, sans tomber)
     talkies.current = installerTalkiesTable(s, sceneVue.emplacements?.table, (q, id) => toucherTalkieRef.current(q, id));
@@ -1884,7 +1885,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
         onPointerDown={() => passer.current?.()}
       >
         <div ref={ici} className="sd-ici" />
-        {coucheHote && tele && zoneTele && createPortal(<TeleDuo programme={tele.programme} secours={tele.secours} zone={zoneTele} coins={sceneVue?.emplacements?.teleCoins} proche={teleProche} onToucher={() => approcherTele()} />, coucheHote)}
+        {coucheHote && tele && zoneTele && createPortal(<TeleDuo programme={tele.programme} secours={tele.secours} zone={zoneTele} coins={sceneVue?.emplacements?.teleCoins} proche={teleProche} onToucher={() => approcherTele()} plan={3} />, coucheHote)}
         {coucheHote &&
           zonesCadres.length > 0 &&
           createPortal(

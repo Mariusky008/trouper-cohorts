@@ -22,7 +22,7 @@
  */
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { boiteDuCorps, calquesDeFigurine, cheminFigurineAssise, empreinteDe } from "./calques-figurine-serveur";
+import { PART_SANS_TETE, boiteDuCorps, calquesDeFigurine, cheminFigurineAssise, corpsSansTete, empreinteDe } from "./calques-figurine-serveur";
 import { LARGEURS_CALQUES } from "./figurine-calques";
 import { depotDans, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
@@ -53,8 +53,9 @@ const VISAGES: Record<ExpressionVisage, string> = {
 export const consigneExpression = (e: ExpressionVisage) =>
   consigneVisageAssiseLibre(`${VISAGES[e]}. The head keeps EXACTLY the same position, size and angle (no tilt, no turn): only the face changes`);
 
-/** La part de la boîte de la tête effacée du corps (en partant du haut) : le cou reste, sous la tête qui penche. */
-export const PART_SANS_TETE = 0.88;
+// (la part de la tête effacée du corps, et le corps sans sa tête : `calques-figurine-serveur.ts`, une seule règle — la
+// messagerie s'en sert aussi depuis le 22 novembre 2026)
+export { PART_SANS_TETE, corpsSansTete };
 
 /**
  * Le cadrage d'une figurine, en pixels de son image : `boite`, où le corps y est découpé ; `tetePx`, la tête dans le
@@ -150,15 +151,6 @@ export async function teteAuMemeEndroit(image: Buffer, figurine: Buffer, r: Cadr
     for (let x = 0; x < pw; x++) data[(y * pw + x) * 4 + 3] = Math.round(data[(y * pw + x) * 4 + 3] * fondu);
   }
   return sharp(data, { raw: { width: pw, height: ph, channels: 4 } }).png().toBuffer();
-}
-
-/** Le corps sans sa tête habituelle : le haut de la boîte de la tête effacé (le cou reste, sous la tête qui penche). */
-export async function corpsSansTete(corps: Buffer, r: Pick<Cadrage, "tetePx">): Promise<Buffer> {
-  const c = await pixels(corps);
-  const [px, py, pw, ph] = r.tetePx;
-  const fin = Math.min(c.h, py + Math.round(ph * PART_SANS_TETE));
-  for (let y = Math.max(0, py); y < fin; y++) for (let x = Math.max(0, px); x < Math.min(c.w, px + pw); x++) c.data[(y * c.w + x) * 4 + 3] = 0;
-  return sharp(c.data, { raw: { width: c.w, height: c.h, channels: 4 } }).png().toBuffer();
 }
 
 // ═══ LES EXPRESSIONS DES HABITANTS (le lot V1) ═══

@@ -90,7 +90,8 @@ type Silhouette = { src: string; x: number; y: number; w: number; h: number };
 function silhouettesDevant(scene: HTMLElement | null, c: Cadre): Silhouette[] {
   if (!scene) return [];
   const l: Silhouette[] = [];
-  for (const img of scene.querySelectorAll<HTMLImageElement>(".sc-fig > .sc-calque > img")) {
+  // (22 novembre 2026 : le corps ET la tête — le corps n'a plus sa tête d'origine, qui doublait quand la tête bougeait)
+  for (const img of scene.querySelectorAll<HTMLImageElement>(".sc-fig .sc-calque > img")) {
     const r = img.getBoundingClientRect();
     const src = img.currentSrc || img.src;
     if (!src || r.width <= 0 || r.right <= c.l || r.left >= c.l + c.w || r.bottom <= c.t || r.top >= c.t + c.h) continue;
@@ -175,6 +176,7 @@ export function TeleDuo({
   coins,
   proche = true,
   onToucher,
+  plan,
 }: {
   programme: ProgrammeTele;
   secours?: ClipSecours[];
@@ -183,6 +185,11 @@ export function TeleDuo({
   coins?: [number, number][];
   proche?: boolean;
   onToucher?: () => void;
+  /**
+   * 🧱 (22 novembre 2026, le propriétaire : « les textes et bulles et autres sont derrière la télé ») le plan du lecteur
+   * flottant (son `z-index`, 40 sinon) : juste au-dessus de la scène, sous les bulles, les étiquettes et les feuilles.
+   */
+  plan?: number;
 }) {
   const [video, setVideo] = useState<Video | null>(null);
   const [refusees, setRefusees] = useState<string[]>([]);
@@ -382,7 +389,7 @@ export function TeleDuo({
           <div
             className="tv-flottant"
             // (de loin, le lecteur ne prend pas le toucher : il passe à la télé, qui ramène la caméra)
-            style={{ left: cadre.l, top: cadre.t, width: cadre.w, height: cadre.h, pointerEvents: proche ? "auto" : "none", ...(cadre.coupe ? { clipPath: `inset(${cadre.coupe})` } : {}), ...masqueDe(silhouettes) }}
+            style={{ left: cadre.l, top: cadre.t, width: cadre.w, height: cadre.h, pointerEvents: proche ? "auto" : "none", ...(plan !== undefined ? { zIndex: plan } : {}), ...(cadre.coupe ? { clipPath: `inset(${cadre.coupe})` } : {}), ...masqueDe(silhouettes) }}
             data-lecteur={video.id}
             data-silhouettes={silhouettes.length || undefined}
             data-proche={proche ? "1" : "0"}

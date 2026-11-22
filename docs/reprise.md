@@ -573,6 +573,10 @@ leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est 
 - **Pas sans son accord** : ouvrir l'inscription à toutes les villes (il a dit « je lance partout » ; la distribution
   des vœux le permet déjà, l'inscription non).
 
+**🛠️ La messagerie, les retours du 22 novembre 2026 (`salon-du-duo.md`, section 11.27)** : la tête ne double plus quand
+elle bouge, la télé passe sous les bulles, le chat devant / sur les genoux / ronron au toucher / détourage net, les objets
+de la table à leur taille.
+
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.

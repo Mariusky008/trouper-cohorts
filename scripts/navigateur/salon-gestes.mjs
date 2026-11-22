@@ -133,6 +133,10 @@ const surTable = await p.evaluate(() => {
   return o.width > 8 && o.left >= s.left && o.right <= s.right && o.bottom <= s.bottom && o.top >= s.top;
 });
 ok(surTable, "elle se voit, dans la scène");
+// (22 novembre 2026, le propriétaire : « le café est tout petit au lieu d'être de taille normale » — les objets de la table
+// font 7 % de la largeur de la pièce ; la règle des boutons de la messagerie les laissait à 16 points)
+const taille = await p.evaluate(() => document.querySelector(".sc-objet").getBoundingClientRect().height / document.querySelector(".sc-stage").getBoundingClientRect().width);
+ok(taille > 0.065, `… à sa taille (${(taille * 100).toFixed(1)} % de la largeur de la pièce)`);
 await p.screenshot({ path: `${D}/salon-gestes-1-arrivee.png` });
 
 // ═══ LA BARRE DES GESTES ═══

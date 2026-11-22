@@ -23,7 +23,7 @@ export function placesEtagere(e: EmplacementsDuo | null | undefined): Point[] {
 
 const STYLE = `
 .sc-souvenirs{position:absolute;inset:0;pointer-events:none}
-.sc-souvenir{position:absolute;transform:translate(-50%,-100%);margin:0;padding:0;border:0;background:none;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:calc(var(--sw)*.04);line-height:1;cursor:pointer;pointer-events:auto;filter:drop-shadow(0 2px 1.5px rgba(40,15,5,.6));-webkit-tap-highlight-color:transparent}
+.sc .sc-souvenir{position:absolute;transform:translate(-50%,-100%);margin:0;padding:0;border:0;background:none;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:calc(var(--sw)*.04);line-height:1;cursor:pointer;pointer-events:auto;filter:drop-shadow(0 2px 1.5px rgba(40,15,5,.6));-webkit-tap-highlight-color:transparent}
 .sc-souvenir.pose{animation:sc-pose .6s cubic-bezier(.2,1.6,.4,1)}
 @keyframes sc-pose{0%{transform:translate(-50%,-100%) scale(.3)}100%{transform:translate(-50%,-100%) scale(1)}}
 .sc[data-reduit] .sc-souvenir.pose{animation:none}

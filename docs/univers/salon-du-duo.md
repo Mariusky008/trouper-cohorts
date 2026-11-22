@@ -1356,6 +1356,52 @@ figurines qui sont devant lui** (le corps de chacune, sa tête d'origine compris
 la tête reste devant la vidéo (`tele-duo.tsx`, `silhouettesDevant`, `masqueDe`). L'essai : `salon-tele.mjs` (les
 figurines devant l'écran, découpées dans le lecteur).
 
+### 11.27 🛠️ Les retours du 22 novembre 2026
+
+Le propriétaire, dans sa conversation avec un proche (captures à l'appui), a fait cinq remarques.
+
+**1. « Quand la tête bouge, elle est en double. »**
+- Le corps gardait sa tête d'origine, et la tête posée dessus penche sur son ressort : on voyait les deux. Désormais la
+  scène pose **le corps sans sa tête d'origine** sous la tête qui bouge. C'est le même que celui du lot V1 : le haut de la
+  boîte de la tête effacé, le cou gardé (`corpsSansTete`, `calques-figurine-serveur.ts`).
+- Les calques le font tout de suite (`<empreinte>-corps-sans-tete.png`, à adresse stable, `FigurineLocale.sansTete`).
+- Les calques d'avant le gagnent une fois, après la réponse, à la prochaine ouverture de la conversation (`aDecouper`).
+- La vidéo d'un mème, qui pose aussi le corps puis la tête, en profite.
+- Le contrat `salon.ts` ne change pas : le corps est simplement celui sans tête.
+- Le masque de la télé (section 11.26) découpe désormais **le corps et la tête** de chaque figurine.
+
+**2. « Les textes et bulles et autres sont derrière la télé. »**
+- Allumée, la vidéo flotte par-dessus la page (section 11.26), au plan 40 : au-dessus des bulles, des étiquettes, des
+  annonces et des feuilles. Dans la messagerie, elle passe au **plan 3** : juste au-dessus de la scène, sous tout le
+  reste (`TeleDuo`, `plan`).
+
+**3. Le chat.**
+- « Le chat est derrière et du coup je peux pas cliquer dessus » : son coin était derrière un fauteuil. **Il vit
+  désormais devant les figurines**, dans son coin aussi.
+- « Il n'était pas vraiment assis sur mes genoux mais sur ma poitrine » : ses pattes étaient 12 % plus haut que le point
+  où la figurine s'assoit. **Elles sont désormais sur ce point**, et le chat est un peu plus petit (40 % de la figurine).
+  Ce sont bien mes genoux : ma place est celle de gauche.
+- « Quand le chat est sur moi, j'entends pas son ronron » : il ronronnait à son arrivée, après sa marche. Un iPhone ne
+  joue un son que pendant le toucher : **il ronronne dès qu'on le touche**, en venant. Il se tait quand il repart.
+  (Son ronronnement est l'enregistrement déposé sur la page de l'essai du compagnon : sans lui, il reste muet.)
+- « Le chat a un détour verdâtre » : le vert est retiré plus franchement au bord (un seuil plus bas, deux points
+  resserrés au lieu d'un). Le reflet vert est éteint dans tout ce qui est à demi transparent.
+
+**4. « Le café est tout petit au lieu d'être de taille normale. »**
+- La règle des boutons de la messagerie (`.sd button { font: inherit }`) passait devant celle des objets de la table :
+  la tulipe, le café, la surprise restaient à 16 points, quelle que soit la taille voulue.
+- Désormais `.sc .sc-objet` les met à **7 % de la largeur de la pièce**, et ils s'écartent un peu plus sur la table.
+- Le même défaut touchait les souvenirs de l'étagère et les talkies de la table : corrigé de la même façon.
+
+**Les essais**
+- `essai-calques-figurine-route.mjs` :
+  - le corps sans tête (le crâne effacé, le corps gardé, à adresse stable) ;
+  - des calques d'avant le gagnent sans que le reste bouge ;
+  - la scène pose le corps sans tête.
+- `salon-tele.mjs` : le masque compte le corps et la tête ; le lecteur est au plan 3, sous les bulles.
+- `salon-chat.mjs` : devant les figurines, dans son coin ; il ronronne dès le toucher ; ses pattes sur ses genoux.
+- `salon-gestes.mjs` : la tulipe à 7 % de la largeur de la pièce.
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

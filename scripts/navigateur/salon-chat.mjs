@@ -122,7 +122,8 @@ p = await ouvrirPage();
 await p.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "domcontentloaded" });
 ok(await attendre(async () => (await leChat()) !== null, 10000), "ses boucles faites : le chat est là");
 let c = await leChat();
-ok(c?.couche === "derriere" && c.lieu === "coin" && ["dort", "assis"].includes(c.boucle), `dans son coin, derrière les figurines, il ${c?.boucle === "dort" ? "dort" : "est assis"}`);
+// (22 novembre 2026, le propriétaire : « le chat est derrière, je peux pas cliquer dessus » — son coin, devant les figurines)
+ok(c?.couche === "devant" && c.lieu === "coin" && ["dort", "assis"].includes(c.boucle), `dans son coin, devant les figurines (touchable), il ${c?.boucle === "dort" ? "dort" : "est assis"}`);
 const ici = await p.evaluate(() => {
   const r = document.querySelector(".sc-chat").getBoundingClientRect();
   const s = document.querySelector(".sc-stage").getBoundingClientRect();
@@ -140,10 +141,19 @@ ok(await attendre(async () => (await leChat())?.boucle !== "alerte", 5000), "pui
 
 // ═══ ON LE TOUCHE : IL VIENT SUR MES GENOUX, ET RONRONNE ═══
 await p.locator(".sc-chat").click();
-ok(await attendre(async () => (await leChat())?.boucle === "marche", 1500), "touché : il marche");
+// (22 novembre 2026, « j'entends pas son ronron » : un iPhone ne joue un son que pendant le toucher — il ronronne dès
+// qu'on le touche, pendant qu'il vient)
+ok(await attendre(async () => sons.length > 0, 1200), "touché : il ronronne tout de suite (son vrai son)");
+ok(await attendre(async () => (await leChat())?.boucle === "marche", 1500), "… et il marche");
 ok(await attendre(async () => (await leChat())?.lieu === "genoux" && (await leChat())?.couche === "devant", 4000), "jusqu'à mes genoux, devant ma figurine");
 ok(await attendre(async () => (await leChat())?.boucle === "genoux", 3000), "il s'y couche");
-ok(await attendre(async () => sons.length > 0, 3000), "et ronronne (son vrai son)");
+// (« il n'est pas vraiment assis sur mes genoux mais sur ma poitrine » : ses pattes au point où elle s'assoit — 0,72)
+const surMoi = await p.evaluate(() => {
+  const r = document.querySelector(".sc-chat").getBoundingClientRect();
+  const s = document.querySelector(".sc-stage").getBoundingClientRect();
+  return { pattes: (r.bottom - 0.17 * r.height - s.top) / s.height, x: (r.left + r.width / 2 - s.left) / s.width };
+});
+ok(surMoi.pattes > 0.715 && surMoi.pattes < 0.76 && Math.abs(surMoi.x - 0.32) < 0.02, `sur ses genoux, pas sur sa poitrine (pattes à ${surMoi.pattes.toFixed(3)}, sa place à 0,72)`);
 await p.screenshot({ path: `${D}/salon-chat-2-genoux.png` });
 
 // ═══ UN CHECK : IL SAUTE DE JOIE ═══
