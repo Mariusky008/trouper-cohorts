@@ -16,7 +16,7 @@
  * Rien n'est généré à l'ouverture : des images à adresse stable (gardées par le téléphone), la vignette floue d'abord ;
  * on n'anime que `transform` et `opacity` (`ma-maison.md`, section 9).
  */
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MEMOIRE_MAISON, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import {
   EMPLACEMENTS_MAISON,
@@ -211,6 +211,8 @@ function Piece({
     cle?: string;
     /** 💬 (lot M5) sa question du jour (à ses proches) */
     question?: QuestionChezLui;
+    /** 🎁 (22 novembre 2026) relire la visite : la surprise posée apparaît sur sa table */
+    onRecharger?: () => Promise<unknown>;
   };
 }) {
   const { scene, figurine } = maison;
@@ -440,6 +442,11 @@ function Piece({
   const dit = bulle ? EMPLACEMENTS_MAISON[bulle.cle] : null;
   const moment = MOMENTS_DUO.find((m) => m.cle === scene.moment);
   const c = scene.centre;
+  // (🎁 les cadeaux déjà sur la table au premier rendu : ceux qui arrivent ensuite y tombent)
+  const cadeauxVus = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    cadeauxVus.current = new Set([...(cadeauxVus.current ?? []), ...(maison.table ?? []).map((g) => g.id)]);
+  });
   // 🎨 (la maquette) ce qui attend chez moi : qui a frappé, les surprises, les réponses, ce qui est arrivé — et sa pastille
   const neufsChezMoi = visite || !maison.contenu ? null : arriveeChezMoi(maison.contenu, maison.vuLe ?? 0);
   const cadeauxEnAttente = (maison.table ?? []).filter((g) => g.attente);
@@ -520,6 +527,13 @@ function Piece({
   // (en visite : ce qui est nouveau chez lui aujourd'hui, en puces)
   const neufsVisite = visite?.nouveaux?.length ? objetsPlaces(maison.contenu ?? { cadres: [], platine: null, tele: null, etagere: [], total: 0 }).filter((o) => visite.nouveaux!.includes(o.id)).slice(0, 3) : [];
   const questionIci = visite ? question : maison.question;
+  // 🎬🖼️❓ (22 novembre 2026, le propriétaire : « quand je visite la maison de quelqu'un, je n'ai pas comme sur la
+  // maquette : clip, photos, questions » — en visite, toujours, son clip à la télé et sa dernière photo, puis ce qui est
+  // nouveau aujourd'hui ; « Nouveau aujourd'hui » s'il y a du neuf, sinon « À découvrir »)
+  const leClip = visite ? (maison.contenu?.tele ?? null) : null;
+  const laPhoto = visite ? ((maison.contenu?.cadres ?? []).filter((x): x is ObjetMaison => Boolean(x)).sort((a, b) => b.le.localeCompare(a.le))[0] ?? null) : null;
+  const pucesVisite = visite ? [leClip, laPhoto, ...neufsVisite].filter((o, k, l): o is ObjetMaison => Boolean(o) && l.findIndex((x) => x?.id === o?.id) === k).slice(0, 4) : [];
+  const neufIci = pucesVisite.some((o) => visite?.nouveaux?.includes(o.id));
   const frapper = async () => {
     if (!visite) return;
     const e = await visite.onFrapper();
@@ -649,14 +663,15 @@ function Piece({
               <iframe key={enTele.id} title="La télé" src={lecteurYouTube(enTele.id, { debut: enTele.debut })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
             </div>
           )}
-          {/* 🎁 (lot M5) sur la table basse : les cadeaux des proches — emballés tant qu'ils ne sont pas ouverts */}
-          {maison.table && maison.table.length > 0 && scene.emplacements?.table && (
-            <div className="mmc-table" style={place(scene.emplacements.table)}>
+          {/* 🎁 (lot M5) sur la table basse : les cadeaux des proches — emballés tant qu'ils ne sont pas ouverts (22 novembre
+              2026 : sans table relevée dans sa pièce, à ses pieds ; celui qui vient d'arriver y tombe) */}
+          {maison.table && maison.table.length > 0 && (
+            <div className="mmc-table" style={place(scene.emplacements?.table ?? [c.x - 0.17, c.y - 0.06, 0.34, 0.07])}>
               {maison.table.map((g) => (
                 <button
                   key={g.id}
                   type="button"
-                  className={`mmc-cadeau${g.attente ? " emballe" : ""}`}
+                  className={`mmc-cadeau${g.attente ? " emballe" : ""}${cadeauxVus.current && !cadeauxVus.current.has(g.id) ? " tombe" : ""}`}
                   data-cadeau={g.id}
                   data-attente={g.attente ? "1" : undefined}
                   aria-label={g.attente ? PHRASES_CADEAU.attente(g.de) : `${g.emoji} ${g.nom}`}
@@ -792,9 +807,13 @@ function Piece({
               <span data-ma-reponse>
                 <strong>{PHRASES_QUESTION.toi}</strong> : {question.maReponse}
               </span>
-              <span data-sa-reponse>
-                <strong>{visite.prenom}</strong> : {question.saReponse}
-              </span>
+              {question.saReponse ? (
+                <span data-sa-reponse>
+                  <strong>{visite.prenom}</strong> : {question.saReponse}
+                </span>
+              ) : (
+                <small data-pas-encore>{PHRASES_QUESTION.pasEncore(visite.prenom)}</small>
+              )}
             </span>
           ) : (
             <span className="mmc-repondre">
@@ -849,7 +868,15 @@ function Piece({
       )}
       {cadeau && (
         <div className="mmc-bulle" role="status" data-bulle="cadeau" data-cadeau-bulle={cadeau.id}>
-          {cadeau.attente && !visite && !ouvert ? (
+          {cadeau.attente && visite ? (
+            <>
+              <b>{PHRASES_CADEAU.dejaLa(1)}</b>
+              <span>
+                {cadeau.emoji} {cadeau.nom}
+                {cadeau.mot ? ` · « ${cadeau.mot} »` : ""}
+              </span>
+            </>
+          ) : cadeau.attente && !visite && !ouvert ? (
             <>
               <b>{PHRASES_CADEAU.attente(cadeau.de)}</b>
               <span className="mmc-actions">
@@ -935,20 +962,24 @@ function Piece({
       </div>
       {/* 🎨 (la maquette) le bas : ce qu'on peut faire aujourd'hui, puis les trois grands boutons */}
       <div className="mmc-bas" style={visite && !frappe ? { visibility: "hidden" } : undefined}>
-        {(visite ? neufsVisite.length > 0 || questionIci : true) && (
+        {(visite ? pucesVisite.length > 0 || questionIci : true) && (
           <div className="mmc-puces">
-            <span className="mmc-surtitre">{visite ? PHRASES_BAS.nouveau : PHRASES_BAS.aujourdhui}</span>
-            {neufsVisite.map((o) => (
+            <span className="mmc-surtitre">{visite ? (neufIci ? PHRASES_BAS.nouveau : PHRASES_BAS.aDecouvrir) : PHRASES_BAS.aujourdhui}</span>
+            {pucesVisite.map((o) => (
               <button
                 key={o.id}
                 type="button"
                 className="mmc-puce"
                 data-puce={o.id}
+                data-decouvrir={o === leClip ? "clip" : o === laPhoto ? "photo" : undefined}
                 onClick={() => {
                   fermerTout();
                   setQuestionOuverte(false);
                   setObjet(o);
                   montrer(o.id);
+                  // (🎬 la maquette : son clip passe à la télé ; 🖼️ sa photo s'ouvre en grand)
+                  if (o.sorte === "video") jouerALaTele(o);
+                  else if (o.sorte === "photo" && o.image) setGrand(o);
                 }}
               >
                 {puceDeLObjet(o)}
@@ -1046,7 +1077,9 @@ function Piece({
                 <span aria-hidden="true">🎬</span>
                 {PHRASES_REGARDER.bouton}
               </button>
-              <a className="mmc-gros-bouton fort" href="/collection#proches" data-geste="salon">
+              {/* (💬 22 novembre 2026, le propriétaire : « je clique sur "Votre salon" et je suis amené sur la messagerie » —
+                  il ouvre désormais notre conversation, directement) */}
+              <a className="mmc-gros-bouton fort" href={visite.cle ? `/collection?parler=${encodeURIComponent(visite.cle)}#proches` : "/collection#proches"} data-geste="salon">
                 <span aria-hidden="true">💬</span>
                 {PHRASES_BAS.salon}
               </a>
@@ -1073,6 +1106,8 @@ function Piece({
               setFrappe(true);
               setMesCadeaux((n) => n + 1);
               setFait(PHRASES_CADEAU.posee(visite.prenom));
+              // (🎁 22 novembre 2026 : elle apparaît sur sa table, emballée — elle y tombe)
+              void visite.onRecharger?.();
               window.setTimeout(() => setFait(""), 2600);
             }}
           />,
@@ -1290,9 +1325,18 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
  * 🚪 (lot M4) LA MAISON DE QUELQU'UN, EN VISITE (`/univers/chez/<clé>`) : sa pièce en plein écran, sa figurine au centre,
  * ce qu'il montre (tout pour ses proches ; pour les autres, ce qu'il a ajouté lui-même) ; « 🚪 Frapper à la porte ».
  */
-export function VisiteDeLaMaison({ cle }: { cle: string }) {
-  const [v, setV] = useState<MaisonVisitee | null>(null);
+export function VisiteDeLaMaison({ cle, initiale }: { cle: string; initiale?: MaisonVisitee }) {
+  // (⚡ 22 novembre 2026 : servie avec la page — sinon, demandée ici)
+  const [v, setV] = useState<MaisonVisitee | null>(initiale ?? null);
+  const recharger = useCallback(async () => {
+    const j = (await fetch(`${ROUTE}?chez=${encodeURIComponent(cle)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .catch(() => null)) as { visite?: MaisonVisitee } | null;
+    if (j?.visite) setV(j.visite);
+    return j?.visite ?? null;
+  }, [cle]);
   useEffect(() => {
+    if (initiale) return;
     let fini = false;
     void fetch(`${ROUTE}?chez=${encodeURIComponent(cle)}`, { cache: "no-store" })
       .then((r) => r.json())
@@ -1301,7 +1345,7 @@ export function VisiteDeLaMaison({ cle }: { cle: string }) {
     return () => {
       fini = true;
     };
-  }, [cle]);
+  }, [cle, initiale]);
   const frapper = async (): Promise<string | null> => {
     try {
       const r = await fetch("/api/direct/visites", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "frapper", cle }) });
@@ -1323,7 +1367,7 @@ export function VisiteDeLaMaison({ cle }: { cle: string }) {
           visite={
             v.chezSoi
               ? { prenom: v.prenom, frappe: true, onFrapper: frapper, cle }
-              : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper, cle, peutLaisser: v.peutLaisser, mesCadeaux: v.mesCadeaux, nouveaux: v.nouveaux, question: v.question }
+              : { prenom: v.prenom, frappe: v.frappe, onFrapper: frapper, cle, peutLaisser: v.peutLaisser, mesCadeaux: v.mesCadeaux, nouveaux: v.nouveaux, question: v.question, onRecharger: recharger }
           }
         />
       ) : (
@@ -1419,6 +1463,8 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-chez-soi{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top));transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(20,10,14,.72);font-size:13.5px;white-space:nowrap}
 .mmc-mes-cadeaux{align-self:center;padding:2px 10px;color:#c9b29c;font-size:12.5px}
 .mmc-table{position:absolute;display:flex;align-items:flex-end;justify-content:center;gap:6%;pointer-events:none}
+.mmc-cadeau.tombe{animation:mmc-tombe .9s cubic-bezier(.3,.7,.4,1.2) both,mmc-paquet 2.6s ease-in-out .9s infinite}
+@keyframes mmc-tombe{0%{transform:translateY(-220%) scale(.6) rotate(-20deg);opacity:0}55%{transform:translateY(0) scale(1.15,.85);opacity:1}75%{transform:translateY(-12%) scale(.95,1.05)}100%{transform:none}}
 .mmc-cadeau{pointer-events:auto;padding:0;border:0;background:none;cursor:pointer;font-size:clamp(14px,5vh,40px);line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45));-webkit-tap-highlight-color:transparent}
 .mmc-cadeau.emballe{animation:mmc-paquet 2.6s ease-in-out infinite}
 @keyframes mmc-paquet{0%,80%,100%{transform:none}86%{transform:rotate(-8deg)}92%{transform:rotate(7deg)}}
@@ -1487,5 +1533,5 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-oui:disabled{opacity:.7;cursor:default}
 .mmc-non{background:rgba(255,255,255,.1);color:#FFF4E6}
 .mmc-erreur{color:#FFB4A9 !important}
-@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-accueil,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe{animation:none!important}.mmc-objet{transition:none}}
+@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-accueil,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe,.mmc-cadeau.tombe{animation:none!important}.mmc-objet{transition:none}}
 `;

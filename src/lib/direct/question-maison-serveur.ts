@@ -27,20 +27,28 @@ type Fiche = { cle?: string; reponses?: Reponse[] };
 
 /** Sa question du jour, s'il y a répondu aujourd'hui (sinon rien à montrer à ses visiteurs). */
 async function saQuestion(supabase: Supabase, h: string): Promise<QuestionVue | null> {
-  const q = await questionDuJourDe(supabase, { id: h } as Habitant).catch(() => null);
+  const q = await laQuestion(supabase, h);
   return q?.reponse ? q : null;
+}
+/** (sa question du jour, qu'il y ait répondu ou non) */
+async function laQuestion(supabase: Supabase, h: string): Promise<QuestionVue | null> {
+  return questionDuJourDe(supabase, { id: h } as Habitant).catch(() => null);
 }
 async function lesReponses(supabase: Supabase, h: string, cle: string): Promise<Reponse[]> {
   const f = await lireJson<Fiche>(supabase, cheminReponses(h, jourParis())).catch(() => ({}) as Fiche);
   return f.cle === cle && Array.isArray(f.reponses) ? f.reponses.filter((r) => s(r?.de) && s(r?.texte)) : [];
 }
 
-/** 💬 Chez lui, pour ce visiteur (un proche) : sa question ; la réponse du visiteur ; la sienne, une fois que le visiteur a répondu. */
+/**
+ * 💬 Chez lui, pour ce visiteur (un proche) : sa question ; la réponse du visiteur ; la sienne, une fois que le visiteur a
+ * répondu. (❓ 22 novembre 2026, le propriétaire : « je n'ai pas comme sur la maquette : clip, photos, questions » — sa
+ * question est là même s'il n'y a pas encore répondu, `attente` : on répond, et l'on découvrira la sienne en revenant.)
+ */
 export async function questionChezLui(supabase: Supabase, h: string, visiteur: string): Promise<QuestionChezLui | null> {
-  const q = await saQuestion(supabase, h);
+  const q = await laQuestion(supabase, h);
   if (!q) return null;
   const mienne = (await lesReponses(supabase, h, q.cle)).find((r) => r.de === visiteur);
-  return { cle: q.cle, q: q.q, ...(q.choix ? { choix: [...q.choix] } : {}), ...(mienne ? { maReponse: mienne.texte, saReponse: q.reponse } : {}) };
+  return { cle: q.cle, q: q.q, ...(q.choix ? { choix: [...q.choix] } : {}), ...(mienne ? { maReponse: mienne.texte, ...(q.reponse ? { saReponse: q.reponse } : {}) } : {}), ...(q.reponse ? {} : { attente: true as const }) };
 }
 
 /** 💬 Il répond à la question du jour de son proche (`cle` : la clé de profil de l'hôte). */
@@ -48,7 +56,7 @@ export async function repondreChezLui(supabase: Supabase, visiteur: Habitant, cl
   const h = await hDeCle(supabase, cle);
   if (!h || h === visiteur.id) return { error: "Cette maison n’existe pas.", statut: 404 };
   if (!(await seParlent(supabase, visiteur.id, h))) return { error: "La question du jour, c’est entre proches.", statut: 403 };
-  const q = await saQuestion(supabase, h);
+  const q = await laQuestion(supabase, h);
   if (!q) return { error: "Pas de question aujourd’hui.", statut: 404 };
   const t = s(texte).replace(/\s+/g, " ");
   if (!t) return { error: "Réponds en quelques mots 🙂", statut: 400 };

@@ -156,6 +156,16 @@ await sam.screenshot({ path: `${D}/ma-maison-vie-2-surprise.png` });
 await surprise.locator("[data-poser]").click();
 ok(await attendre(sam, async () => /Léa la trouvera en rentrant/.test(await texte(scene.locator("[data-fait]")))), "« 🎁 Léa la trouvera en rentrant »");
 ok(await attendre(sam, async () => /Ta surprise attend qu’on l’ouvre/.test(await texte(scene.locator("[data-mes-cadeaux]")))), "… « Ta surprise attend qu'on l'ouvre »");
+// (🎁 22 novembre 2026, le propriétaire : « quand je dépose une surprise, ça n'apparaît pas sur sa table » — elle y tombe,
+// emballée, pour lui seul ; touchée : ce qu'elle contient, qui attend qu'on l'ouvre)
+const maSurprise = scene.locator('.mmc-cadeau[data-attente="1"]');
+ok(await attendre(sam, async () => (await maSurprise.count()) === 1 && /tombe/.test((await maSurprise.getAttribute("class")) ?? ""), 6000), "🎁 sa surprise tombe sur la table de Léa, emballée");
+await maSurprise.evaluate((x) => x.scrollIntoView({ inline: "center", block: "nearest" }));
+await sam.waitForTimeout(900);
+await maSurprise.click();
+ok(await attendre(sam, async () => /Ta surprise attend qu’on l’ouvre/.test(await texte(scene.locator('.mmc-bulle[data-bulle="cadeau"]'))) && /💐 Un bouquet · « Pour toi »/.test(await texte(scene.locator('.mmc-bulle[data-bulle="cadeau"]')))), "… touchée : « Ta surprise attend qu'on l'ouvre », « 💐 Un bouquet · « Pour toi » »");
+ok((await scene.locator('.mmc-bulle[data-bulle="cadeau"] [data-ouvrir-cadeau], .mmc-bulle[data-bulle="cadeau"] [data-decider]').count()) === 0, "… ni « Ouvrir » ni « Le garder » : c'est à Léa");
+await scene.locator('.mmc-bulle[data-bulle="cadeau"] button[aria-label="Fermer"]').click();
 // (🎬 « Regarder à deux », `ma-maison.md` section 24 : une vidéo à regarder avec Léa — un lien YouTube)
 const gros = scene.locator(".mmc-actions-visite .mmc-gros-bouton");
 ok((await gros.count()) === 3 && /Une surprise/.test(await texte(gros.nth(0))) && /Regarder à deux/.test(await texte(gros.nth(1))) && /Votre salon/.test(await texte(gros.nth(2))), "trois boutons : « 🎁 Une surprise », « 🎬 Regarder à deux », « 💬 Votre salon »");

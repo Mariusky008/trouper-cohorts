@@ -88,13 +88,16 @@ export type MaMaisonVue = {
 /** 💬 (lot M5) La question du jour, chez soi : ce que ses proches y ont répondu. */
 export type QuestionChezMoi = { q: string; reponses: { de: string; texte: string; le: string }[] };
 /** 💬 (lot M5) La question du jour d'un proche, en visite : sa réponse ne se découvre qu'après la sienne. */
-export type QuestionChezLui = { cle: string; q: string; choix?: string[]; maReponse?: string; saReponse?: string };
+export type QuestionChezLui = { cle: string; q: string; choix?: string[]; maReponse?: string; saReponse?: string; attente?: true };
 export const PHRASES_QUESTION = {
   chezLui: (prenom: string) => `💬 La question du jour de ${prenom}`,
   chezMoi: "💬 Ta question du jour",
   repondre: "Répondre",
   indice: "Ta réponse, en quelques mots",
   avant: (prenom: string) => `Réponds d’abord : tu découvriras ensuite la réponse de ${prenom}.`,
+  /** (❓ il n'y a pas encore répondu) */
+  pasEncore: (prenom: string) => `${prenom} n’a pas encore répondu : tu découvriras sa réponse en revenant.`,
+  posee: "Posée par sa figurine",
   toi: "Toi",
   arrivee: (prenoms: readonly string[]) =>
     `💬 ${prenoms.length === 1 ? prenoms[0] : `${prenoms.slice(0, -1).join(", ")} et ${prenoms[prenoms.length - 1]}`} ${prenoms.length === 1 ? "a" : "ont"} répondu à ta question du jour`,
@@ -279,6 +282,8 @@ export const PHRASES_BAS = {
   maMaison: "Ma maison",
   aujourdhui: "Aujourd’hui, si tu veux",
   nouveau: "Nouveau aujourd’hui",
+  /** (🎬🖼️ en visite, rien de neuf aujourd'hui : son clip, sa photo, sa question, quand même) */
+  aDecouvrir: "À découvrir",
   question: "❓ Question",
   maTele: "📺 Ma télé",
   absence: "Pendant ton absence",
