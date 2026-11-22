@@ -284,7 +284,7 @@ export const PHRASES_SALONS = {
   chez: (p: string) => `🏠 Chez ${p}`,
   inviter: "👥 Inviter",
   inviterTitre: "Inviter à regarder avec toi",
-  inviterChapo: `Jusqu’à ${INVITES_MAX} proches. Tu mènes la télé : tout le monde voit la même seconde.`,
+  inviterChapo: `Jusqu’à ${INVITES_MAX} proches.`,
   inviterEnvoyer: "Inviter",
   sansProches: "Pas encore de proches à inviter : ajoute-les depuis « Proches ».",
   invites: (n: number) => (n > 1 ? `Invitations envoyées à ${n} proches : chacun arrive en touchant « Venir »` : "Invitation envoyée : ton proche arrive en touchant « Venir »"),
@@ -301,7 +301,6 @@ export const PHRASES_SALONS = {
   invitation: (p: string) => `🎬 ${p} t’invite devant sa télé`,
   venir: "Venir",
   pasMaintenant: "Pas maintenant",
-  hote: "Tu mènes la télé : tout le monde voit la même seconde.",
   invite: (p: string) => `C’est ${p} qui mène la télé.`,
   // 🎞️ (21 novembre 2026, le propriétaire : « il garde sa vidéo ») l'invité garde la vidéo de son invitation
   tuGardes: (p: string) => `${p} regarde autre chose : tu gardes ta vidéo, à ton rythme.`,

@@ -1688,3 +1688,36 @@ aussi gagne ce qui n'était que dans l'écran d'avant de sa télé du jour.
   - la carte de la maquette, mot pour mot ; la pastille ;
   - la pastille éteint ; « 📷 » en haut rallume.
 - `navigateur/salons-seance.mjs`, mis à jour : la carte de la caméra, proposée une fois, se ferme (« Pas maintenant »).
+
+## 35. 📱✨💬 La séance tient dans l'écran (22 novembre 2026)
+
+Le propriétaire, captures à l'appui, chez lui (« Chez Marius ») :
+
+- « **je ne vois pas les boutons du bas sur mon écran**, il faut que je scrolle — alors qu'il y a beaucoup d'espace perdu
+  entre "Ta figurine fait ta tête" et les figurines » :
+  - sur un téléphone, **la pièce prend ce qui reste de l'écran**, sous la télé et au-dessus des boutons : entre 130
+    points et sa hauteur d'avant (mesurée à l'ouverture et à chaque changement de taille) ; les figurines rapetissent
+    avec elle. Sur un ordinateur (la colonne des boutons à droite), rien ne change ;
+  - les marges sous la télé se resserrent ; « ou touche une figurine » ne s'écrit plus dans la séance ;
+  - **la pastille « 📷 Ta figurine fait ta tête » dans la pièce est retirée** (« elle est en doublon avec l'info plus
+    bas ») : sa lumière rouge est désormais **dans le bouton « 📷 Ma figurine fait ma tête »**, en bas — visible tant
+    que la caméra marche, un toucher l'arrête (la maquette, point « 🔴 ») ;
+- « supprime cette phrase : **Tu mènes la télé : tout le monde voit la même seconde** » : l'hôte n'a plus de phrase sous
+  la pièce (ni dans l'invitation) ;
+- « quand je clique sur un des boutons, j'ai l'impression que rien ne se produit… **pas d'effet wow** » :
+  - une réaction : le bouton bondit, une onde rose en part ; l'emoji **vole jusqu'à ma figurine**, grandit, et y
+    **éclate en neuf petites copies** ; ma figurine sursaute ; le téléphone vibre (Android). Tout de suite, sans
+    attendre le serveur ;
+  - la caméra allumée : ma figurine s'illumine d'un anneau rose, « 📷 Allumée : ta figurine fait ta tête » ;
+  - en mouvement réduit : le bond seulement ;
+- « **la barre "Ce qui s'est dit" est trop discrète**, mal positionnée, pas bonne en UX » : ce n'est plus un petit
+  bouton au bout de la ligne du temps, mais **une bande sous la télé**, sur toute la largeur, rose : « 💬 Ce qui s'est
+  dit · 3 », **le dernier mot dit jusqu'où on en est** (« 0:04 Léa « trop drôle » », un vocal, une réaction ; la suite
+  reste cachée tant qu'on ne l'a pas vue), et « › ». Rien encore : « Écris, parle ou réagis : ça reste à la seconde de la
+  vidéo. » Un toucher ouvre « Ce qui s'est dit », comme avant.
+
+**Les essais** :
+- `navigateur/seance-pour-tous.mjs` : la bande et le dernier mot dit, sous la ligne du temps, sur toute la largeur ; sur
+  414 × 720, les réactions, le micro et l'écriture se voient sans défiler ; le 😂 bondit, vole et éclate, puis s'efface ;
+- `navigateur/visage-seance.mjs` : la pastille est dans le bouton de la caméra, plus dans la pièce ;
+- `navigateur/salons-seance.mjs` : plus de « Tu mènes la télé ».

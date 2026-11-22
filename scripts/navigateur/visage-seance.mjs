@@ -179,7 +179,8 @@ await p.locator("[data-allumer-camera]").click();
 ok((await propose.count()) === 0 && (await p.locator('[data-camera="on"]').count()) === 1 && (await p.locator('[data-camera-haut][aria-pressed="true"]').count()) === 1, "« Je l'allume » : la carte s'en va, « 📷 » en haut est allumé");
 const moi = p.locator(".so-fig[data-moi]");
 ok(await attendre(async () => (await moi.locator("[data-vivante]").count()) === 1 && /Je vois : 🙂/.test(await texte(p.locator("[data-etat-camera]"))), 15000), "sa figurine devient vivante ; « Je vois : 🙂 »");
-ok(/📷 Ta figurine fait ta tête/.test(await texte(p.locator("[data-pastille-camera]"))), "🔴 la pastille reste visible tant qu'elle marche");
+// (22 novembre 2026, le propriétaire : « on peut la supprimer, elle est en doublon » — la pastille rouge est dans le bouton)
+ok(/Ma figurine fait ma tête/.test(await texte(p.locator("[data-pastille-camera]"))) && (await p.locator("[data-pastille-camera] .so-rec").count()) === 1 && (await p.locator(".so-piece .so-pastille-cam").count()) === 0, "🔴 la pastille reste visible tant qu'elle marche : dans le bouton de la caméra (plus de doublon dans la pièce)");
 await visageDe(RIRE);
 ok(await attendre(async () => (await moi.locator("[data-vivante]").getAttribute("data-expression")) === "rire" && /Je vois : 😂/.test(await texte(p.locator("[data-etat-camera]")))), "elle rit : sa figurine rit (« Je vois : 😂 »)");
 await p.screenshot({ path: `${D}/visage-seance-2-lea-rit.png` });
