@@ -8,8 +8,7 @@
  * de son humeur du jour (`v.humeur`), si elle est prête ; sinon sa tête habituelle.
  */
 import type { CSSProperties } from "react";
-import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
-import { EXPRESSIONS_FIGURINE, type ExpressionFigurine } from "@/lib/direct/expressions-figurine";
+import { EXPRESSIONS_FIGURINE, type ExpressionFigurine, type FigurineVivante } from "@/lib/direct/expressions-figurine";
 
 const borne = (v: number, a: number) => Math.max(-a, Math.min(a, v));
 
