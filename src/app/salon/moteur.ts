@@ -864,8 +864,10 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     const k = PLACES_TABLE > 1 ? i / (PLACES_TABLE - 1) : 0.5;
     if (o.table) {
       const [x, y, w, h] = o.table;
-      // (22 novembre 2026, « le café est tout petit » : les objets sont plus grands — ils s'écartent un peu plus)
-      return { x: x + w * (0.12 + 0.76 * k), y: y + h * (0.4 + 0.04 * Math.sin(k * Math.PI)) };
+      // (22 novembre 2026, le propriétaire : « le café est sur mon épaule au lieu de la table » — aux bords de la table, il
+      // tombait sur l'accoudoir, devant la figurine : les places restent au milieu du plateau ; celles du milieu un peu
+      // devant, celles des côtés un peu derrière — ils se chevauchent comme sur une vraie table)
+      return { x: x + w * (0.26 + 0.48 * k), y: y + h * (0.46 + 0.1 * Math.sin(k * Math.PI)) };
     }
     const zs = (["moi", "autre"] as const).map((q) => CALQUES[q]?.c.corps.boite).filter((z): z is Zone => Boolean(z));
     const m = milieu();
@@ -907,6 +909,8 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     el.setAttribute("aria-label", ob.nom);
     el.style.left = pc(pt.x);
     el.style.top = pc(pt.y);
+    // (le plus devant passe devant)
+    el.style.zIndex = String(Math.round(pt.y * 1000));
     const corps = elt("span", "corps");
     corps.textContent = ob.e;
     el.append(corps);

@@ -14,13 +14,13 @@ import { assisesDe, emplacementsValides, hauteurDuo, momentDuoDe, pieceDuoDe, pi
 import { depotDans, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
 import type { CalqueFigurine, CataloguePieces, Flamme, OuvertureSalon, PieceDuSalon, SceneSalon } from "./salon";
-import { LA_MS, cheminLa, cheminLus, cheminReglages, filAvec, hDeCle, noter, nomsDuFil, pairDe, qui8, seParlent } from "./talkie-serveur";
+import { cheminLus, cheminReglages, filAvec, hDeCle, noter, nomsDuFil, pairDe, qui8, seParlent } from "./talkie-serveur";
 import { lireSaPiece } from "./ma-maison-serveur";
 import { ordreDuCatalogue } from "./ma-maison";
 import { sesDixHuitAns } from "./majorite-serveur";
 import { cheminGestes, cheminGestesVus, lireTable, vivantAvec } from "./vivant-serveur";
 import { chatDuSalon } from "./salon-chat-serveur";
-import { calquesDeFigurine } from "./calques-figurine-serveur";
+import { DECOUPE_TETE, calquesDeFigurine } from "./calques-figurine-serveur";
 import { poserFigurine, type FigurineLocale } from "./figurine-calques";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -101,8 +101,10 @@ export async function ouvrirSalon(
   if (!f.fil) return { error: f.error, statut: f.statut };
   // (posées aux deux places ; celles qui manquent sont découpées après la réponse)
   const calques = scene ? calquesPoses(scene, mienne, sienne) : null;
-  // (🧍 22 novembre 2026 : aussi celles d'avant, sans leur corps sans tête — il s'ajoute après la réponse)
-  const aDecouper = [...(mienne?.sansTete ? [] : [moi.id]), ...(sienne?.sansTete || !h ? [] : [h])];
+  // (🧍 22 novembre 2026 : aussi celles d'avant — sans leur corps sans tête, ou la tête dans une boîte trop étroite : leur
+  // tête se refait après la réponse)
+  const aJour = (f: FigurineLocale | null) => Boolean(f?.sansTete && f.decoupe === DECOUPE_TETE);
+  const aDecouper = [...(aJour(mienne) ? [] : [moi.id]), ...(aJour(sienne) || !h ? [] : [h])];
   const choisie = Boolean(scene && fiche.piece === scene.piece);
   const installe = choisie && fiche.par8 ? { installePar: fiche.par8 === qui8(moi.id) ? ("moi" as const) : ("autre" as const) } : {};
   const sceneVue = scene ? { ...scene, ...(calques ? { calques } : {}), choisie, ...installe } : null;
@@ -141,6 +143,15 @@ export type FichePieceDuo = { piece?: PieceDuo; le?: string; par8?: string; invi
 export const cheminPieceDuo = (pair: string) => `fils/${pair}/piece.json`;
 /** Une invitation vaut deux minutes ; son refus se montre une minute à celui qui l'a faite. */
 export const INVITATION_MS = 120_000;
+/**
+ * 👀 (22 novembre 2026, le propriétaire : « tu invites [ton proche]… mais rien ne se produit, on ne change pas de pièce »)
+ * Qui est DANS cette conversation, en ce moment : chacun y est noté par son pouls (`fils/<paire>/ici.json`, l'heure par
+ * personne, redite toutes les 15 s au plus). Être « là » (ClikMe ouvert, n'importe où) ne suffit plus pour qu'un
+ * changement de pièce soit une invitation : il ne la voyait pas, et rien ne changeait.
+ */
+export const cheminIci = (pair: string) => `fils/${pair}/ici.json`;
+export const ICI_MS = 40_000;
+export const estIci = (ici: Record<string, unknown>, h8: string, maintenant = Date.now()) => maintenant - (Number(ici[h8]) || 0) < ICI_MS;
 const REFUS_MS = 60_000;
 
 /** 🚪 Ce que le pouls dit de la pièce : celle du duo, l'invitation qui m'attend, le refus de la mienne. */
@@ -204,16 +215,17 @@ export async function choisirPieceDuo(supabase: Supabase, moi: Habitant, cle: un
   if (!pieceDuoValide(piece)) return { error: "Cette pièce n’existe pas.", statut: 400 };
   const d = await duoDe(supabase, moi, cle);
   if ("error" in d) return d;
-  const [fiche, prete, la, reglages] = await Promise.all([
+  const [fiche, prete, ici, reglages] = await Promise.all([
     lireJson<FichePieceDuo>(supabase, cheminPieceDuo(d.pair)),
     sceneDeLaPiece(supabase, piece, momentDuoDe(heureDeParis())).catch(() => null),
-    lireJson<{ le?: number }>(supabase, cheminLa(d.h)),
+    lireJson<Record<string, number>>(supabase, cheminIci(d.pair)),
     lireJson<{ presence?: boolean }>(supabase, cheminReglages(d.h)),
   ]);
   if (!prete) return { error: "Cette pièce n’est pas encore prête.", statut: 409 };
-  const estLa = reglages.presence !== false && Date.now() - (Number(la.le) || 0) < LA_MS;
+  // (une invitation seulement s'il est dans la conversation, en ce moment ; sinon la pièce change, il arrivera dedans)
+  const dedans = reglages.presence !== false && estIci(ici, qui8(d.h));
   const moi8 = qui8(moi.id);
-  if (pieceDuoValide(fiche.piece) && fiche.piece !== piece && estLa) {
+  if (pieceDuoValide(fiche.piece) && fiche.piece !== piece && dedans) {
     await ecrireJson(supabase, cheminPieceDuo(d.pair), { ...fiche, invitation: { piece, de8: moi8, le: Date.now() } } satisfies FichePieceDuo);
     return { invitation: true };
   }

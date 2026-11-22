@@ -9,11 +9,13 @@
  *
  * LE VERT RETIRÉ PAR LA CARTE GRAPHIQUE (section 7.3) : chaque image de la vidéo devient une texture, un petit programme
  * de la carte graphique (WebGL) rend le fond transparent — la même règle que l'essai C0 (`univers/compagnon-vivant.tsx` :
- * la couleur du fond mesurée sur le bord, les points à demi « démêlés », l'ombre gardée grise, le reflet vert éteint, le
- * bord resserré d'un point), sans rien demander au processeur. (Retours du 20 novembre 2026, le chat « pas totalement
- * détouré » en grand sur un ordinateur : la toile suit la taille où on la voit ; le vert du fond retiré aussi dans
- * l'ombre ; l'ombre grise gardée seulement sous ses pattes ; le bord de l'image effacé.) Sans WebGL (ou une vidéo qu'on ne peut pas lire) : pas de
- * chat — il n'est qu'un plus.
+ * la couleur du fond mesurée sur le bord, les points à demi « démêlés », le reflet vert éteint, le bord resserré d'un
+ * point), sans rien demander au processeur. (Retours du 20 novembre 2026, le chat « pas totalement détouré » en grand sur
+ * un ordinateur : la toile suit la taille où on la voit ; le bord de l'image effacé. Le 22 novembre 2026, « il reste une
+ * bordure verdâtre autour du chat » : l'ombre vert sombre, kaki, que la vidéo laisse autour de lui est du fond aussi — un
+ * point dont le vert passe nettement son rouge et son bleu, rapporté à sa propre lumière ; plus d'ombre grise gardée :
+ * une ombre douce est posée sous lui, dans son coin.) Sans WebGL (ou une vidéo qu'on ne peut pas lire) : pas de chat — il
+ * n'est qu'un plus.
  *
  * Une vidéo par boucle, créée à la première fois qu'elle sert, gardée dans la page (un iPhone ne décode pas une vidéo
  * cachée) ; seule celle qu'on montre joue. La page cachée : elle s'arrête. En mouvement réduit : il reste immobile.
@@ -49,7 +51,8 @@ const PIXELS = `precision mediump float;
 uniform sampler2D t;uniform vec3 fond;uniform float vf;uniform float vt;uniform vec2 px;varying vec2 uv;
 float partDe(vec3 c){return (c.g-(c.r+c.b)*.5)/vf;}
 float teinteDe(vec3 c){return smoothstep(.12,.28,c.g)*(c.g-max(c.r,c.b))/max(c.g,.001)/vt;}
-float alphaDe(vec3 c){return 1.-clamp((max(partDe(c),teinteDe(c))-.13)/.27,0.,1.);}
+float ombreDe(vec3 c){return smoothstep(.03,.1,c.g)*smoothstep(.04,.12,(c.g-max(c.r,c.b))/max(c.g,.001));}
+float alphaDe(vec3 c){return (1.-clamp((max(partDe(c),teinteDe(c))-.13)/.27,0.,1.))*(1.-ombreDe(c));}
 void main(){
   vec4 c=texture2D(t,uv);
   float part=partDe(c.rgb);
@@ -67,7 +70,7 @@ void main(){
   else{
     float f=max(1.-clamp((part-.16)/.34,0.,1.),.001);
     vec3 d=(c.rgb-(1.-f)*fond)/f;
-    if(d.g<0.){float n=min(c.r,c.b)*.5;col=vec3(n,n*.95,n*.9);a*=mix(.2,1.,smoothstep(.6,.8,uv.y));}
+    if(d.g<0.){a=0.;}
     else{col=vec3(d.r,min(d.g,max(d.r,d.b)),d.b);}
   }
   a*=smoothstep(0.,.035,uv.x)*smoothstep(0.,.035,1.-uv.x)*smoothstep(0.,.02,uv.y)*smoothstep(0.,.02,1.-uv.y);
@@ -174,7 +177,9 @@ function fondDe(v: HTMLVideoElement): readonly number[] {
 
 const STYLE = `
 .sc-chat{position:absolute;margin:0;padding:0;border:0;background:none;aspect-ratio:9/16;transform:translate(-50%,-100%);cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}
-.sc-chat canvas{display:block;width:100%;height:100%;pointer-events:none}
+.sc-chat canvas{position:relative;display:block;width:100%;height:100%;pointer-events:none}
+.sc-chat::before{content:"";position:absolute;left:24%;right:24%;bottom:${(PIED - 0.035) * 100}%;height:6%;border-radius:50%;background:radial-gradient(closest-side,rgba(30,12,5,.42),rgba(30,12,5,0));pointer-events:none}
+.sc-chat[data-lieu="genoux"]::before{opacity:.55}
 .sc-chat.retourne canvas{transform:scaleX(-1)}
 .sc-chat.marche{transition:left ${MARCHE_MS}ms linear,top ${MARCHE_MS}ms linear,height ${MARCHE_MS}ms linear}
 .sc-chat-videos{position:absolute;left:0;top:0;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none}

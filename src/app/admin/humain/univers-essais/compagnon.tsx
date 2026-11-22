@@ -178,6 +178,12 @@ export function CompagnonEssai() {
             {/* 🔊 son vrai son : un enregistrement (le ronronnement, sur les genoux) — jamais fabriqué */}
             <label className="ce-son" style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#555" }}>
               {b.son ? "🔊 Son son (enregistré)" : "🔊 Un son ? (un vrai enregistrement)"}
+              {/* (22 novembre 2026, « je n'entends pas son ronronnement » : sans enregistrement déposé ici, le chat reste muet) */}
+              {!b.son && b.cle === "genoux" && (
+                <b className="ce-sans-ronron" style={{ color: "#b0306a", fontSize: 12, lineHeight: 1.3 }}>
+                  🔇 Pas encore de ronron : dépose ici un vrai enregistrement (MP3, M4A). Le chat ronronnera quand on le touche, dans les conversations.
+                </b>
+              )}
               {b.son && <audio src={b.son} controls preload="none" style={{ width: "100%", height: 30 }} />}
               <input type="file" accept="audio/*" style={{ fontSize: 11, maxWidth: "100%" }} onChange={(e) => void deposerSon(b.cle, e.target.files?.[0] ?? null)} />
             </label>

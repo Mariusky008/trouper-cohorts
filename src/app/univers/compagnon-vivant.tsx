@@ -21,9 +21,18 @@ const HAUTEUR = 480;
  * plein ; au-delà de PART_PLEIN, transparent ; entre les deux, à demi. Un point à demi est « démêlé » : on lui retire la
  * part du fond (il retrouve la couleur de l'animal, sans liseré) ; plus sombre que le fond, c'est une ombre — elle reste
  * une ombre, grise et douce. Le reflet vert des points pleins s'éteint, et le bord se resserre d'un point.
+ * (22 novembre 2026, le propriétaire : « il reste une bordure verdâtre autour du chat », sur cette page aussi : l'ombre
+ * vert sombre, kaki, que la vidéo laisse autour de lui est du fond — un point dont le vert passe nettement son rouge et
+ * son bleu, rapporté à sa propre lumière (`OMBRE`) ; et l'ombre plus sombre que le fond n'est plus gardée grise.)
  */
 const PART_BORD = 0.16;
 const PART_PLEIN = 0.5;
+/** (l'ombre verte : à partir de quel vert, rapporté à sa lumière, un point sombre est du fond ; plein au-delà) */
+const OMBRE = [0.04, 0.12] as const;
+const lisse = (a: number, b: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
 /** (le fond qu'on attend, quand le bord ne dit rien de vert) */
 const FOND_PAR_DEFAUT = [20, 180, 60] as const;
 
@@ -87,30 +96,29 @@ export function CompagnonVivant({ src, titre, brut = false, className, style }: 
         const g = d[i + 1];
         const b = d[i + 2];
         const part = (g - (r + b) / 2) / vertDuFond;
+        // (l'ombre vert sombre, kaki : du fond aussi)
+        const garde = 1 - lisse(8, 26, g) * lisse(OMBRE[0], OMBRE[1], g > 0 ? (g - Math.max(r, b)) / g : 0);
         if (part <= PART_BORD) {
-          alpha[k] = 255;
+          alpha[k] = Math.round(255 * garde);
           // (le reflet vert d'un point plein : éteint)
           if (g > r && g > b) d[i + 1] = r > b ? r : b;
           continue;
         }
-        if (part >= PART_PLEIN) {
+        if (part >= PART_PLEIN || garde <= 0) {
           alpha[k] = 0;
           continue;
         }
         const f = 1 - (part - PART_BORD) / (PART_PLEIN - PART_BORD);
         const h = 1 - f;
-        alpha[k] = Math.round(255 * f);
-        // (à demi : on retire la part du fond ; plus sombre que le fond, c'est une ombre — grise et douce)
+        // (à demi : on retire la part du fond ; plus sombre que le fond, c'est une ombre — retirée aussi)
         const r2 = (r - h * fond[0]) / f;
         const g2 = (g - h * fond[1]) / f;
         const b2 = (b - h * fond[2]) / f;
         if (g2 < 0) {
-          const n = Math.min(r, b) * 0.5;
-          d[i] = n;
-          d[i + 1] = n * 0.95;
-          d[i + 2] = n * 0.9;
+          alpha[k] = 0;
           continue;
         }
+        alpha[k] = Math.round(255 * f * garde);
         d[i] = r2;
         d[i + 2] = b2;
         d[i + 1] = Math.min(g2, Math.max(r2, b2));

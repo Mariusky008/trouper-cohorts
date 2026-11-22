@@ -193,6 +193,61 @@ export async function boiteDuCorps(source: Buffer): Promise<[number, number, num
   return plusGrandeSilhouette(alpha, info.width, info.height)?.boite ?? null;
 }
 
+// ─── 🧍 la tête entière (22 novembre 2026) ───
+/** La règle de découpe de la tête d'aujourd'hui (`FigurineLocale.decoupe`) : des calques d'une autre règle se refont. */
+export const DECOUPE_TETE = 2;
+/**
+ * La boîte de la tête (en pixels du corps), élargie à sa silhouette. Le propriétaire, le 22 novembre 2026 : « on est
+ * toujours coupé… comme si la tête se détache des épaules » — le modèle qui voit rend parfois une boîte trop étroite
+ * (un côté du visage, des cheveux dehors) : ce qui dépassait restait sur le corps, et la tête qui bouge avait un bord coupé
+ * net. Sur les 60 % du haut de la tête (au-dessus de la main qui touche le visage), ce qui la continue d'un seul tenant
+ * au-delà d'un côté de sa boîte est repris — un tiers de sa largeur au plus : plus loin, ce n'est plus la tête (le dossier
+ * du fauteuil), la ligne ne compte pas ; au-dessus, les cheveux qui dépassent, dans sa largeur.
+ */
+export function elargirTete(alpha: Uint8Array, w: number, h: number, b: [number, number, number, number]): [number, number, number, number] {
+  const [x0, y0, lw, lh] = b;
+  const x1 = Math.min(w, x0 + lw);
+  const plein = (x: number, y: number) => x >= 0 && x < w && y >= 0 && y < h && alpha[y * w + x] > SEUIL;
+  let haut = y0;
+  for (let y = y0 - 1; y >= Math.max(0, y0 - Math.round(lh * 0.35)); y--) {
+    let a = false;
+    for (let x = x0; x < x1 && !a; x++) a = plein(x, y);
+    if (!a) break;
+    haut = y;
+  }
+  const max = Math.max(1, Math.round(lw / 3));
+  const fin = Math.min(h, y0 + Math.round(lh * 0.6));
+  let [g, d] = [x0, x1];
+  for (let y = haut; y < fin; y++) {
+    if (plein(x0, y)) {
+      let x = x0;
+      while (x0 - x < max && plein(x - 1, y)) x--;
+      if (x0 - x < max) g = Math.min(g, x);
+    }
+    if (plein(x1 - 1, y)) {
+      let x = x1 - 1;
+      while (x - (x1 - 1) < max && plein(x + 1, y)) x++;
+      if (x - (x1 - 1) < max) d = Math.max(d, x + 1);
+    }
+  }
+  return [g, haut, d - g, y0 + lh - haut];
+}
+/** La tête, découpée dans le corps (ses pixels bruts, RGBA) : ce que sa boîte contient, fondu sur deux points en bas. */
+async function teteDans(corps: Buffer, bw: number, b: [number, number, number, number]): Promise<Buffer> {
+  const [x0, y0, lw, lh] = b;
+  const brut = Buffer.alloc(lw * lh * 4);
+  for (let y = 0; y < lh; y++) {
+    const fondu = Math.min(1, (lh - y) / 2);
+    for (let x = 0; x < lw; x++) {
+      const o = ((y0 + y) * bw + x0 + x) * 4;
+      const t = (y * lw + x) * 4;
+      corps.copy(brut, t, o, o + 4);
+      brut[t + 3] = Math.round(brut[t + 3] * fondu);
+    }
+  }
+  return sharp(brut, { raw: { width: lw, height: lh, channels: 4 } }).png().toBuffer();
+}
+
 // ─── 🧍 le corps sans sa tête (V1 ; la messagerie aussi depuis le 22 novembre 2026) ───
 /** La part de la boîte de la tête effacée du corps (en partant du haut) : le cou reste, sous la tête qui penche. */
 export const PART_SANS_TETE = 0.88;
@@ -242,22 +297,12 @@ export async function decouperFigurine(source: Buffer): Promise<{ corps: Buffer;
     if (reperes) par = "regard";
   }
   reperes ??= estimerReperes(alphaCorps, bw, bh);
-  // (la tête : ce que sa boîte contient de la figurine, fondu sur deux points en bas)
+  // (la tête : ce que sa boîte, élargie à sa silhouette, contient de la figurine, fondu sur deux points en bas)
   const [tx, ty, tw, th] = reperes.tete;
-  const [x0, y0] = [Math.max(0, Math.floor(tx * bw)), Math.max(0, Math.floor(ty * bh))];
-  const [x1, y1] = [Math.min(bw, Math.ceil((tx + tw) * bw)), Math.min(bh, Math.ceil((ty + th) * bh))];
-  const [lw, lh] = [Math.max(1, x1 - x0), Math.max(1, y1 - y0)];
-  const teteBrut = Buffer.alloc(lw * lh * 4);
-  for (let y = 0; y < lh; y++) {
-    const fondu = Math.min(1, (lh - y) / 2);
-    for (let x = 0; x < lw; x++) {
-      const o = ((y0 + y) * bw + x0 + x) * 4;
-      const t = (y * lw + x) * 4;
-      corpsBrut.copy(teteBrut, t, o, o + 4);
-      teteBrut[t + 3] = Math.round(teteBrut[t + 3] * fondu);
-    }
-  }
-  const tete = await sharp(teteBrut, { raw: { width: lw, height: lh, channels: 4 } }).png().toBuffer();
+  const [ax, ay] = [Math.max(0, Math.floor(tx * bw)), Math.max(0, Math.floor(ty * bh))];
+  const [ax1, ay1] = [Math.min(bw, Math.ceil((tx + tw) * bw)), Math.min(bh, Math.ceil((ty + th) * bh))];
+  const [x0, y0, lw, lh] = elargirTete(alphaCorps, bw, bh, [ax, ay, Math.max(1, ax1 - ax), Math.max(1, ay1 - ay)]);
+  const tete = await teteDans(corpsBrut, bw, [x0, y0, lw, lh]);
   // (la boîte réelle de la tête, telle qu'elle est découpée)
   const reel: Reperes = { ...reperes, tete: [mille(x0 / bw), mille(y0 / bh), mille(lw / bw), mille(lh / bh)] };
   // (`boite` : où le corps a été découpé dans l'image d'origine ; `tetePx` : la tête dans le corps — en pixels, pour
@@ -275,9 +320,10 @@ export async function calquesDeFigurine(supabase: Supabase, h: string, o: { fabr
   const cle = empreinteDe(chemin);
   const deja = await lireJson<FigurineLocale>(supabase, `${dossier(h)}/${cle}.json`);
   if (deja.corps?.fichier && deja.tete?.fichier && Array.isArray(deja.tete.boite)) {
-    // (🧍 22 novembre 2026 : des calques d'avant, sans le corps sans tête — il s'ajoute une fois, quand on peut fabriquer)
-    if (deja.sansTete?.fichier || o.fabriquer === false) return deja as FigurineLocale;
-    return (await ajouterSansTete(supabase, h, cle, deja as FigurineLocale).catch(() => null)) ?? (deja as FigurineLocale);
+    // (🧍 22 novembre 2026 : des calques d'avant — sans le corps sans tête, ou la tête dans une boîte trop étroite —, leur
+    // tête se refait une fois, quand on peut fabriquer)
+    if ((deja.decoupe === DECOUPE_TETE && deja.sansTete?.fichier) || o.fabriquer === false) return deja as FigurineLocale;
+    return (await refaireLaTete(supabase, h, cle, deja as FigurineLocale).catch(() => null)) ?? (deja as FigurineLocale);
   }
   if (o.fabriquer === false) return null;
   const source = await telecharger(supabase, chemin);
@@ -299,30 +345,45 @@ export async function calquesDeFigurine(supabase: Supabase, h: string, o: { fabr
     bouche: c.reperes.bouche,
     joues: c.reperes.joues,
     par: c.par,
+    decoupe: DECOUPE_TETE,
   };
   await d.ecrire(`${cle}.json`, Buffer.from(JSON.stringify(f)), "application/json");
   return f;
 }
 
 /**
- * 🧍 (22 novembre 2026) Le corps sans sa tête, ajouté une fois à des calques d'avant : relu de leur corps, la tête effacée
- * là où leur boîte de tête la dit (la même règle que pour les nouveaux, `corpsSansTete`), publié à adresse stable.
+ * 🧍 (22 novembre 2026) La tête de calques d'avant, refaite une fois d'après leur corps (sans le modèle qui voit, sans le
+ * moteur d'image) : leur boîte de tête élargie à sa silhouette (`elargirTete`), la tête redécoupée, le corps sans sa tête
+ * refait au même endroit (`corpsSansTete`), publiés à adresse stable. Le pivot, la bouche et les joues ne bougent pas.
+ * (Ses expressions se redécoupent ensuite à la nouvelle boîte : `expressions-figurine-serveur.ts`.)
  */
-async function ajouterSansTete(supabase: Supabase, h: string, cle: string, f: FigurineLocale): Promise<FigurineLocale | null> {
-  const src = f.sources?.corps;
-  if (!src) return null;
+async function refaireLaTete(supabase: Supabase, h: string, cle: string, f: FigurineLocale): Promise<FigurineLocale | null> {
+  const src = f.sources?.corps ?? `${dossier(h)}/${cle}-corps.png`;
   const corps = await telecharger(supabase, src);
   if (!corps) return null;
-  const { width = 0, height = 0 } = await sharp(corps).metadata();
-  if (!width || !height) return null;
+  const { data, info } = await sharp(corps).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const [W, H] = [info.width, info.height];
+  if (!W || !H) return null;
+  const alpha = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) alpha[i] = data[i * 4 + 3];
   const [tx, ty, tw, th] = f.tete.boite;
-  const tetePx: [number, number, number, number] = [Math.max(0, Math.floor(tx * width)), Math.max(0, Math.floor(ty * height)), Math.ceil(tw * width), Math.ceil(th * height)];
-  const nom = `${cle}-corps-sans-tete.png`;
+  const [ax, ay] = [Math.max(0, Math.floor(tx * W)), Math.max(0, Math.floor(ty * H))];
+  const [ax1, ay1] = [Math.min(W, Math.ceil((tx + tw) * W)), Math.min(H, Math.ceil((ty + th) * H))];
+  const tetePx = elargirTete(alpha, W, H, [ax, ay, Math.max(1, ax1 - ax), Math.max(1, ay1 - ay)]);
+  const noms = { tete: `${cle}-tete.png`, sansTete: `${cle}-corps-sans-tete.png` };
   const d = depotDans(supabase, dossier(h));
-  if (!(await d.ecrire(nom, await corpsSansTete(corps, { tetePx }), "image/png"))) return null;
-  const img = await imageSalon(supabase, `${dossier(h)}/${nom}`, LARGEURS_CALQUES.corps);
-  if (!img) return null;
-  const neuf: FigurineLocale = { ...f, sansTete: { fichier: img.src }, sources: { ...f.sources!, sansTete: `${dossier(h)}/${nom}` } };
+  const [okTete, okCorps] = await Promise.all([d.ecrire(noms.tete, await teteDans(data, W, tetePx), "image/png"), d.ecrire(noms.sansTete, await corpsSansTete(corps, { tetePx }), "image/png")]);
+  if (!okTete || !okCorps) return null;
+  const [tete, sansTete] = await Promise.all([imageSalon(supabase, `${dossier(h)}/${noms.tete}`, LARGEURS_CALQUES.tete), imageSalon(supabase, `${dossier(h)}/${noms.sansTete}`, LARGEURS_CALQUES.corps)]);
+  if (!tete || !sansTete) return null;
+  const [x0, y0, lw, lh] = tetePx;
+  const neuf: FigurineLocale = {
+    ...f,
+    tete: { ...f.tete, fichier: tete.src, boite: [mille(x0 / W), mille(y0 / H), mille(lw / W), mille(lh / H)] },
+    sansTete: { fichier: sansTete.src },
+    sources: { corps: src, tete: `${dossier(h)}/${noms.tete}`, sansTete: `${dossier(h)}/${noms.sansTete}` },
+    decoupe: DECOUPE_TETE,
+  };
   await d.ecrire(`${cle}.json`, Buffer.from(JSON.stringify(neuf)), "application/json");
   return neuf;
 }

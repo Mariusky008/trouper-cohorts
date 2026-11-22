@@ -575,7 +575,10 @@ leur tête (la mission du jour : trois vœux), quelqu'un peut m'aider. Tout est 
 
 **🛠️ La messagerie, les retours du 22 novembre 2026 (`salon-du-duo.md`, section 11.27)** : la tête ne double plus quand
 elle bouge, la télé passe sous les bulles, le chat devant / sur les genoux / ronron au toucher / détourage net, les objets
-de la table à leur taille.
+de la table à leur taille. **Deuxième série (section 11.28)** : la tête entière (sa boîte élargie à sa silhouette, les
+calques d'avant et les expressions se refont une fois, sans le moteur), le masque de la télé en union, les objets au milieu
+de la table, l'invitation dans une autre pièce seulement si l'autre est dans la conversation, « ‹ Proches », le chat sans
+ombre kaki (le ronron : un enregistrement à déposer par le propriétaire, boucle « Sur les genoux »).
 
 ## 1. Lire d'abord
 
