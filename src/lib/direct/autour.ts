@@ -15,6 +15,8 @@
  * jour, au plus.
  */
 import type { MemePublic } from "@/lib/direct/ma-figurine";
+import type { ExpressionFigurine } from "@/lib/direct/expressions-figurine";
+import type { Zone } from "@/lib/direct/pieces-duo";
 
 export type Qui = "tous" | "proches" | "moi";
 export const QUIS: { cle: Qui; nom: string }[] = [
@@ -137,3 +139,47 @@ export function nomLieuPropre(nom: unknown): { nom?: string; refus?: string } {
   if (/https?:|www\.|@/.test(n)) return { refus: "Pas de lien ici : un petit nom suffit." };
   return { nom: n };
 }
+
+// ─── 🧍 LA FIGURINE POSÉE (22 novembre 2026, le nouvel « Autour » ; `docs/univers/autour.md`) ──────────────────────
+/**
+ * Le propriétaire : « c'est plus un mème, mais ma figurine que je dépose ». On pose SA FIGURINE — sa vraie tête du jour —
+ * là où l'on est, pour 24 heures, avec SON MOT DU JOUR (le cœur de la carte : « Qui vient prendre un café ? »). Les
+ * lieux sont ceux d'avant (un commerce, un lieu public placé par l'admin, une zone « Ailleurs » floue) : jamais un point
+ * précis. Trois par jour au plus ; une seule par lieu (la reposer au même endroit la remplace) ; « Retirer » à tout
+ * moment. « Répondre avec ma figurine » : la sienne s'assoit à côté, au même lieu.
+ */
+export const POSES_PAR_JOUR = 3;
+export const POSE_MS = 24 * 3600_000;
+export const MOT_DU_JOUR_MAX = 80;
+/** Quelques idées, pour que le mot du jour ne devienne pas un statut banal. */
+export const IDEES_MOT_DU_JOUR = ["Qui vient prendre un café ?", "Ce soir, je suis là", "Quelqu’un pour une balade ?", "Devinez ce que je fais", "Je garde une place", "Un conseil pour ce soir ?"] as const;
+/** La tête qu'elle fait : celle de son humeur du jour, ou une de ses expressions. */
+export type TeteChoisie = "humeur" | ExpressionFigurine;
+/**
+ * Une figurine posée, telle qu'on la voit : sa tête (`tete` : l'image de la tête qu'elle fait), assise (`corps` : son
+ * corps sans sa tête, son rapport largeur/hauteur, la boîte de sa tête — de 0 à 1) ; sans ses calques, `image` (sa
+ * figurine d'une seule image). `fin` : quand elle s'en va. `reponseA` : la figurine à côté de laquelle elle s'est assise.
+ */
+export type FigurinePosee = {
+  id: string;
+  lieu: string;
+  prenom: string;
+  profil: string;
+  mot: string;
+  le: string;
+  fin: string;
+  qui: Qui;
+  moi: boolean;
+  tete: string;
+  corps?: { src: string; ratio: number; boite: Zone };
+  image?: string;
+  reponseA?: string;
+  nomLieu?: string;
+};
+/** Ses têtes à choisir au moment de poser : son humeur du jour (s'il en a une), et ses expressions prêtes. */
+export type MesTetes = { humeur: { e: ExpressionFigurine; src: string; nom: string } | null; tetes: { cle: ExpressionFigurine; src: string; nom: string }[]; habituelle: string };
+/** L'identifiant d'une pose porte son heure (base 36, 8 signes) : elle s'en va 24 h après, sans ouvrir le fichier. */
+export const idDePose = (ms: number, hasard: string) => `${Math.floor(ms).toString(36).padStart(8, "0")}${hasard.replace(/[^a-z0-9]/g, "").slice(0, 4).padEnd(4, "0")}`;
+export const heureDePose = (id: string) => parseInt(id.slice(0, 8), 36) || 0;
+export const poseEnCours = (id: string, maintenant = Date.now()) => maintenant - heureDePose(id) < POSE_MS;
+

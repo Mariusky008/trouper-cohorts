@@ -12,7 +12,7 @@
  *
  * FICHIER SERVEUR.
  */
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
@@ -20,8 +20,21 @@ import { motInterdit } from "@/lib/direct/mots-interdits";
 import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { parleDAlcool } from "@/lib/direct/meme-surprise";
 import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, ajouterProche, cartesDeMemes, ecrireJson, lireJson, memeDeposable, memesCaches, prochesDe, retirerProche, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
+import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
+import { sesExpressions } from "@/lib/direct/expressions-figurine-serveur";
+import { EXPRESSIONS_FIGURINE, expressionDeLHumeur, expressionFigurineValide, type ExpressionFigurine } from "@/lib/direct/expressions-figurine";
+import { figurineDeLaMaison } from "@/lib/direct/ma-maison-serveur";
+import { humeurValide } from "@/lib/direct/rituel";
 import {
   EMOJIS_LIEUX_PUBLICS,
+  MOT_DU_JOUR_MAX,
+  POSES_PAR_JOUR,
+  heureDePose,
+  idDePose,
+  poseEnCours,
+  type FigurinePosee,
+  type MesTetes,
+  type TeteChoisie,
   MOT_MAX,
   NOM_LIEU_PUBLIC_MAX,
   PAR_LIEU_PAR_JOUR,
@@ -441,3 +454,290 @@ export async function devenirProche(supabase: Supabase, moi: Habitant, cle: unkn
   const ok = oui === true ? await ajouterProche(supabase, moi.id, h) : await retirerProche(supabase, moi.id, h);
   return ok ? { proche: oui === true } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
 }
+
+// ═══ 🧍 LA FIGURINE POSÉE (22 novembre 2026, le nouvel « Autour » ; `docs/univers/autour.md`) ═══════════════════════
+/*
+ * RANGÉ DANS LE SEAU, COMME LES MÈMES :
+ *   · `autour-fig/<ville>/<lieu>/<pose>.<qui>.<habitant>.json` = { id, h, le, qui, mot, tete, nomLieu?, reponseA? } — qui
+ *     la voit et de qui elle est sont dans le nom ; l'identifiant de la pose porte son heure (`idDePose`) : passées 24 h,
+ *     elle ne se montre plus, sans ouvrir un seul fichier ;
+ *   · `<habitant>/autour-fig/<pose>.json` = { ville, lieu, qui } : les siennes (la retirer) ;
+ *   · `<habitant>/autour-fig-jour/<jour>.json` = { n } : trois par jour, au plus ;
+ *   · `autour-fig-signal/<pose>.json` = { par: [habitants] } : trois signalements, elle s'en va ; et
+ *     `<habitant>/autour-fig-caches.json` = { ids } : celui qui la signale ne la voit plus.
+ */
+type DepotFig = { id: string; h: string; le: string; qui: Qui; mot: string; tete: TeteChoisie; nomLieu?: string; reponseA?: string };
+const dossierFig = (ville: string, lieu: string) => `autour-fig/${ville}/${lieu}`;
+type PoseFig = { id: string; qui: Qui; h: string };
+const humeurDe = async (supabase: Supabase, h: string) => {
+  const x = await lireJson<{ jour?: string; visage?: string }>(supabase, `${h}/humeur.json`);
+  return x.jour === jourParis() ? humeurValide(x.visage) : null;
+};
+const tetesCachees = async (supabase: Supabase, h: string | null) => (h ? new Set(((await lireJson<{ ids?: string[] }>(supabase, `${h}/autour-fig-caches.json`)).ids ?? []).map(s)) : new Set<string>());
+
+/** Les poses en cours d'un lieu (moins de 24 h) qu'il peut voir, les plus récentes d'abord. */
+async function posesFigVisibles(supabase: Supabase, ville: string, lieu: string, regard: Regard, caches: Set<string>, maintenant = Date.now()): Promise<PoseFig[]> {
+  const poses = (await lister(supabase, dossierFig(ville, lieu)))
+    .map((x) => lireNom(x.name))
+    .filter((x): x is PoseFig => Boolean(x) && poseEnCours(x!.id, maintenant) && !caches.has(x!.id))
+    .sort((a, b) => heureDePose(b.id) - heureDePose(a.id));
+  const vues = await Promise.all(poses.map((p) => visible(p, regard)));
+  return poses.filter((_, k) => vues[k]);
+}
+
+/**
+ * 🧍 SA FIGURINE POUR UNE POSE : la tête qu'elle fait (son humeur du jour, ou une de ses expressions — prête et découpée
+ * sur ses calques d'aujourd'hui ; sinon sa tête habituelle), et son corps sans sa tête pour la poser assise. Sans ses
+ * calques : sa figurine d'une seule image.
+ */
+type Silhouette = Pick<FigurinePosee, "tete" | "corps" | "image">;
+async function silhouetteDe(supabase: Supabase, h: string, tete: TeteChoisie): Promise<Silhouette> {
+  const [calques, expr, humeur] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), sesExpressions(supabase, h).catch(() => null), tete === "humeur" ? humeurDe(supabase, h).catch(() => null) : Promise.resolve(null)]);
+  const e: ExpressionFigurine | null = tete === "humeur" ? expressionDeLHumeur(humeur) : tete;
+  const memeDecoupe = Boolean(calques && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
+  const src = (e && memeDecoupe ? expr?.etat.tetes[e] : "") || calques?.tete.fichier || "";
+  if (calques?.sansTete && src) return { tete: src, corps: { src: calques.sansTete.fichier, ratio: calques.ratio, boite: calques.tete.boite } };
+  const image = (await figurineDeLaMaison(supabase, h).catch(() => null))?.src || (await saFigurineSignee(supabase, h).catch(() => ""));
+  return { tete: image, ...(image ? { image } : {}) };
+}
+function silhouettes(supabase: Supabase) {
+  const lus = new Map<string, Promise<Silhouette>>();
+  return (h: string, tete: TeteChoisie) => {
+    const k = `${h}:${tete}`;
+    if (!lus.has(k)) lus.set(k, silhouetteDe(supabase, h, tete));
+    return lus.get(k)!;
+  };
+}
+async function prenomsDe(supabase: Supabase, hs: string[]): Promise<Map<string, string>> {
+  const l = [...new Set(hs)];
+  if (!l.length) return new Map();
+  const { data } = await supabase.from("clik_ma_figurine").select("habitant_id, prenom").in("habitant_id", l);
+  return new Map(((Array.isArray(data) ? data : []) as Ligne[]).map((x) => [s(x.habitant_id), s(x.prenom) || "Quelqu’un"]));
+}
+
+/** Des poses en figurines vues : le dépôt (mot, tête, réponse), son prénom, sa silhouette. */
+async function enFigurines(supabase: Supabase, ville: string, lieu: string, poses: PoseFig[], moi: string | null, o: { silhouette?: ReturnType<typeof silhouettes>; prenoms?: Map<string, string> } = {}): Promise<FigurinePosee[]> {
+  const sil = o.silhouette ?? silhouettes(supabase);
+  const [depots, prenoms] = await Promise.all([Promise.all(poses.map((p) => lireJson<DepotFig>(supabase, `${dossierFig(ville, lieu)}/${nomFichier(p.id, p.qui, p.h)}`))), o.prenoms ?? prenomsDe(supabase, poses.map((p) => p.h))]);
+  const vues = await Promise.all(
+    poses.map(async (p, k): Promise<FigurinePosee | null> => {
+      const d = depots[k];
+      if (!s(d.mot)) return null;
+      const tete: TeteChoisie = d.tete === "humeur" || expressionFigurineValide(d.tete) ? d.tete : "humeur";
+      const v = await sil(p.h, tete);
+      const le = heureDePose(p.id);
+      return {
+        id: p.id,
+        lieu,
+        prenom: prenoms.get(p.h) ?? "Quelqu’un",
+        profil: cleProfil(p.h),
+        mot: s(d.mot),
+        le: new Date(le).toISOString(),
+        fin: new Date(le + 24 * 3600_000).toISOString(),
+        qui: p.qui,
+        moi: p.h === moi,
+        ...v,
+        ...(s(d.reponseA) ? { reponseA: s(d.reponseA) } : {}),
+        ...(s(d.nomLieu) ? { nomLieu: s(d.nomLieu) } : {}),
+      };
+    }),
+  );
+  return vues.filter((x): x is FigurinePosee => Boolean(x));
+}
+
+/**
+ * 🗺️ LA CARTE DES FIGURINES D'UNE VILLE : ses lieux (les têtes des figurines posées aujourd'hui, leur nombre), les zones
+ * qui en ont, et les dernières posées autour de lui. Une zone se montre à son CENTRE.
+ */
+export async function carteDesFigurines(supabase: Supabase, ville: string, moi: Habitant | null): Promise<{ ville: string; lieux: Lieu[]; derniers: FigurinePosee[] }> {
+  if (!ville) return { ville, lieux: [], derniers: [] };
+  const maintenant = Date.now();
+  const [fixes, dossiers, caches] = await Promise.all([lieuxFixesDe(supabase, ville), lister(supabase, `autour-fig/${ville}`), tetesCachees(supabase, moi?.id ?? null)]);
+  const ids = new Set([...fixes.map((c) => c.id), ...dossiers.map((d) => d.name).filter((n) => lieuIdValide(n))]);
+  const regard = regardDe(supabase, moi?.id ?? null);
+  const poses = new Map<string, PoseFig[]>();
+  await Promise.all([...ids].map(async (l) => poses.set(l, await posesFigVisibles(supabase, ville, l, regard, caches, maintenant))));
+  const sil = silhouettes(supabase);
+  const prenoms = await prenomsDe(supabase, [...poses.values()].flat().map((p) => p.h));
+  // (les plus récentes, tous lieux confondus : la feuille du bas — et les têtes des épingles)
+  const recentes = [...poses.entries()].flatMap(([l, ps]) => ps.map((p) => ({ l, p }))).sort((a, b) => heureDePose(b.p.id) - heureDePose(a.p.id));
+  const vues = new Map<string, FigurinePosee>();
+  await Promise.all(
+    recentes.slice(0, 40).map(async ({ l, p }) => {
+      const [v] = await enFigurines(supabase, ville, l, [p], moi?.id ?? null, { silhouette: sil, prenoms });
+      if (v) vues.set(v.id, v);
+    }),
+  );
+  const lieux: Lieu[] = [];
+  for (const id of ids) {
+    const ps = (poses.get(id) ?? []).filter((p) => vues.has(p.id));
+    const c = fixes.find((x) => x.id === id);
+    const centre = c ? { lat: c.lat, lng: c.lng } : centreDeZone(id);
+    if (!centre || (!c && !ps.length)) continue;
+    const premiere = ps[ps.length - 1] ? vues.get(ps[ps.length - 1].id) : undefined;
+    lieux.push({
+      id,
+      type: c ? (c.public ? "public" : "commerce") : "zone",
+      nom: c ? c.nom : premiere?.nomLieu || "Quelque part par ici",
+      emoji: c ? emojiDe(c) : "✨",
+      lat: centre.lat,
+      lng: centre.lng,
+      n: ps.length,
+      visages: ps
+        .slice(0, 3)
+        .map((p) => vues.get(p.id)?.tete ?? "")
+        .filter(Boolean),
+      ...(c?.activite ? { activite: c.activite } : {}),
+    });
+  }
+  const derniers = recentes
+    .slice(0, 8)
+    .map(({ p }) => vues.get(p.id))
+    .filter((x): x is FigurinePosee => Boolean(x))
+    // (la feuille du bas montre des têtes : pas besoin du corps)
+    .map((x) => ({ ...x, corps: undefined }));
+  return { ville, lieux: lieux.sort((a, b) => b.n - a.n), derniers };
+}
+
+/** 📍 Les figurines posées dans un lieu, aujourd'hui : assises, chacune avec son mot (les réponses à côté de la leur). */
+export async function figurinesDuLieu(supabase: Supabase, ville: string, lieu: string, moi: Habitant | null): Promise<{ lieu: Lieu | null; figurines: FigurinePosee[] }> {
+  if (!ville || !lieuIdValide(lieu)) return { lieu: null, figurines: [] };
+  const [caches, fixes] = await Promise.all([tetesCachees(supabase, moi?.id ?? null), estZone(lieu) ? Promise.resolve([] as Commerce[]) : lieuxFixesDe(supabase, ville)]);
+  const poses = await posesFigVisibles(supabase, ville, lieu, regardDe(supabase, moi?.id ?? null), caches);
+  const c = fixes.find((x) => x.id === lieu);
+  const centre = c ? { lat: c.lat, lng: c.lng } : centreDeZone(lieu);
+  if (!centre || (!c && !poses.length)) return { lieu: null, figurines: [] };
+  const [vues, photo] = await Promise.all([enFigurines(supabase, ville, lieu, poses.slice(0, 24), moi?.id ?? null), c && !c.public ? photoDuCommerce(supabase, lieu.slice(2)) : Promise.resolve("")]);
+  // (une réponse s'assoit juste après celle à côté de laquelle elle s'est posée)
+  const dansLOrdre: FigurinePosee[] = [];
+  const reponses = vues.filter((v) => v.reponseA && vues.some((o) => o.id === v.reponseA));
+  for (const v of vues) {
+    if (reponses.includes(v)) continue;
+    dansLOrdre.push(v, ...reponses.filter((r) => r.reponseA === v.id).reverse());
+  }
+  return {
+    lieu: {
+      id: lieu,
+      type: c ? (c.public ? "public" : "commerce") : "zone",
+      nom: c ? c.nom : [...vues].reverse().find((v) => v.nomLieu)?.nomLieu || "Quelque part par ici",
+      emoji: c ? emojiDe(c) : "✨",
+      lat: centre.lat,
+      lng: centre.lng,
+      n: vues.length,
+      visages: [],
+      ...(c?.activite ? { activite: c.activite } : {}),
+      ...(photo ? { photo } : {}),
+    },
+    figurines: dansLOrdre,
+  };
+}
+
+/** 😊 Ses têtes, au moment de poser : celle de son humeur du jour (si elle est prête), puis ses expressions prêtes. */
+export async function mesTetes(supabase: Supabase, h: string): Promise<MesTetes> {
+  const [calques, expr, humeur] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), sesExpressions(supabase, h).catch(() => null), humeurDe(supabase, h).catch(() => null)]);
+  const ok = Boolean(calques && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
+  const tetes = ok ? EXPRESSIONS_FIGURINE.filter((x) => expr!.etat.tetes[x.cle]).map((x) => ({ cle: x.cle, src: expr!.etat.tetes[x.cle]!, nom: x.nom })) : [];
+  const e = expressionDeLHumeur(humeur);
+  const t = e ? tetes.find((x) => x.cle === e) : undefined;
+  return { humeur: t ? { e: t.cle, src: t.src, nom: t.nom } : null, tetes, habituelle: calques?.tete.fichier || (await figurineDeLaMaison(supabase, h).catch(() => null))?.src || (await saFigurineSignee(supabase, h).catch(() => "")) };
+}
+
+export type DemandePose = { lieu?: unknown; ici?: unknown; qui?: unknown; mot?: unknown; tete?: unknown; nomLieu?: unknown; reponseA?: unknown };
+/**
+ * 🧍 POSER SA FIGURINE : dans un lieu de sa ville (`lieu` : un commerce, un lieu public, une zone qui a déjà des
+ * figurines — pour y répondre), ou « Ailleurs » (`ici` : sa position, ARRONDIE en une zone d'environ 500 m ; elle n'est
+ * gardée nulle part telle quelle). Son mot du jour, la tête qu'elle fait, qui la voit ; `reponseA` : la figurine du même
+ * lieu à côté de laquelle elle s'assoit. Trois par jour ; une seule par lieu (la reposer au même endroit la remplace).
+ */
+export async function poserSaFigurine(supabase: Supabase, habitant: Habitant, d: DemandePose): Promise<{ ok?: true; lieu?: string; id?: string; error?: string; statut?: number; age?: true; aPrevenir?: APrevenir }> {
+  if (!(await aConfirmeSonAge(supabase, habitant.id))) return SANS_AGE;
+  const ville = habitant.villeSlug;
+  if (!ville) return { error: "Il faut d’abord ta ville.", statut: 400 };
+  const qui = quiValide(d.qui ?? "tous");
+  if (!qui) return { error: "Qui la voit ? Tout le monde, tes proches, ou toi seul.", statut: 400 };
+  const mot = s(d.mot).replace(/\s+/g, " ").trim().slice(0, MOT_DU_JOUR_MAX);
+  if (!mot) return { error: "Écris ton mot du jour : c’est lui qu’on lit en premier.", statut: 400 };
+  if (motInterdit(mot) || parleDAlcool(mot)) return { error: "Ça, ta figurine ne le dit pas. Écris autre chose 🙂", statut: 400 };
+  const tete: TeteChoisie = d.tete === "humeur" || expressionFigurineValide(d.tete) ? (d.tete as TeteChoisie) : "humeur";
+  const [calques, figurine] = await Promise.all([calquesDeFigurine(supabase, habitant.id, { fabriquer: false }).catch(() => null), figurineDeLaMaison(supabase, habitant.id).catch(() => null)]);
+  // (une figurine de l'ancien style, d'une seule image, se pose aussi : on la montre entière)
+  if (!calques && !figurine && !(await saFigurineSignee(supabase, habitant.id).catch(() => ""))) return { error: "Crée d’abord ta figurine.", statut: 409 };
+  const maintenant = Date.now();
+  // LE LIEU
+  let lieu = "";
+  let zoneExistante = false;
+  if (d.lieu) {
+    const l = s(d.lieu);
+    const existe = !lieuIdValide(l) ? false : estZone(l) ? (await lister(supabase, dossierFig(ville, l))).some((x) => lireNom(x.name) && poseEnCours(lireNom(x.name)!.id, maintenant)) : (await lieuxFixesDe(supabase, ville)).some((c) => c.id === l);
+    if (!existe) return { error: "Ce lieu n’est pas à " + ville + ".", statut: 400 };
+    lieu = l;
+    zoneExistante = estZone(l);
+  } else {
+    const p = (d.ici && typeof d.ici === "object" ? d.ici : {}) as { lat?: unknown; lng?: unknown };
+    const z = zoneDe(Number(p.lat), Number(p.lng));
+    if (!z) return { error: "Choisis un lieu, ou laisse ton téléphone dire où tu es.", statut: 400 };
+    lieu = z.id;
+  }
+  const nl = estZone(lieu) && !zoneExistante ? nomLieuPropre(d.nomLieu) : {};
+  if (nl.refus) return { error: nl.refus, statut: 400 };
+  if (nl.nom && (motInterdit(nl.nom) || parleDAlcool(nl.nom))) return { error: "Ce petit nom ne passe pas. Écris autre chose 🙂", statut: 400 };
+  const dansLeLieu = (await lister(supabase, dossierFig(ville, lieu))).map((x) => lireNom(x.name)).filter((x): x is PoseFig => Boolean(x) && poseEnCours(x!.id, maintenant));
+  // À CÔTÉ DE QUELQU'UN : une figurine du même lieu, en cours, qu'il peut voir (pas la sienne)
+  const reponseA = s(d.reponseA);
+  let origine: PoseFig | null = null;
+  if (reponseA) {
+    const la = dansLeLieu.find((x) => x.id === reponseA);
+    if (!la || la.h === habitant.id || !(await visible(la, regardDe(supabase, habitant.id)))) return { error: "Cette figurine n’est plus là.", statut: 400 };
+    origine = la;
+  }
+  // UNE SEULE PAR LIEU (la sienne d'avant s'en va) ; TROIS PAR JOUR
+  const avant = dansLeLieu.filter((x) => x.h === habitant.id);
+  const jour = jourParis();
+  const cheminJour = `${habitant.id}/autour-fig-jour/${jour}.json`;
+  const n = Number((await lireJson<{ n?: number }>(supabase, cheminJour)).n) || 0;
+  if (!avant.length && n >= POSES_PAR_JOUR) return { error: "Trois figurines posées aujourd’hui, c’est le maximum. Reviens demain !", statut: 429 };
+  if (avant.length) await supabase.storage.from(SEAU_FIGURINES).remove(avant.flatMap((x) => [`${dossierFig(ville, lieu)}/${nomFichier(x.id, x.qui, x.h)}`, `${habitant.id}/autour-fig/${x.id}.json`]));
+  const id = idDePose(maintenant, randomBytes(4).toString("hex"));
+  const depot: DepotFig = { id, h: habitant.id, le: new Date(maintenant).toISOString(), qui, mot, tete, ...(nl.nom ? { nomLieu: nl.nom } : {}), ...(origine ? { reponseA } : {}) };
+  const ok =
+    (await ecrireJson(supabase, `${dossierFig(ville, lieu)}/${nomFichier(id, qui, habitant.id)}`, depot)) &&
+    (await ecrireJson(supabase, `${habitant.id}/autour-fig/${id}.json`, { ville, lieu, qui })) &&
+    (await ecrireJson(supabase, `profils/${cleProfil(habitant.id)}.json`, { h: habitant.id })) &&
+    (avant.length > 0 || (await ecrireJson(supabase, cheminJour, { n: n + 1 })));
+  if (!ok) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // (↩️ celui à côté de qui il s'assoit est prévenu, s'il peut voir la sienne)
+  if (origine && (await visible({ qui, h: habitant.id }, regardDe(supabase, origine.h)))) {
+    const c = estZone(lieu) ? null : (await lieuxFixesDe(supabase, ville)).find((x) => x.id === lieu);
+    const ou = c ? `${emojiDe(c)} ${c.nom}` : `✨ ${nl.nom || "Quelque part par ici"}`;
+    return { ok: true, lieu, id, aPrevenir: { auteur: origine.h, meme: id, ou, url: `/collection?autour=${encodeURIComponent(lieu)}&pose=${id}#autour` } };
+  }
+  return { ok: true, lieu, id };
+}
+
+/** ↩️ Il retire sa figurine (à tout moment). */
+export async function retirerSaFigurine(supabase: Supabase, habitant: Habitant, id: unknown): Promise<{ ok: true }> {
+  const i = s(id);
+  if (!/^[a-z0-9]{12}$/.test(i)) return { ok: true };
+  const f = await lireJson<{ ville?: string; lieu?: string; qui?: Qui }>(supabase, `${habitant.id}/autour-fig/${i}.json`);
+  if (f.ville && f.lieu) await supabase.storage.from(SEAU_FIGURINES).remove([`${dossierFig(s(f.ville), s(f.lieu))}/${nomFichier(i, quiValide(f.qui) ?? "tous", habitant.id)}`, `${habitant.id}/autour-fig/${i}.json`]);
+  return { ok: true };
+}
+
+/** 🚩 Signaler une figurine posée : il ne la voit plus ; trois signalements de trois personnes, elle s'en va. */
+export async function signalerUneFigurine(supabase: Supabase, habitant: Habitant, lieu: unknown, id: unknown): Promise<{ ok?: true; error?: string; statut?: number }> {
+  const ville = habitant.villeSlug;
+  const l = s(lieu);
+  const i = s(id);
+  if (!ville || !lieuIdValide(l) || !/^[a-z0-9]{12}$/.test(i)) return { error: "Cette figurine n’est plus là.", statut: 404 };
+  const la = (await lister(supabase, dossierFig(ville, l))).map((x) => lireNom(x.name)).find((x) => x?.id === i);
+  if (!la) return { error: "Cette figurine n’est plus là.", statut: 404 };
+  if (la.h === habitant.id) return { error: "C’est la tienne : retire-la plutôt.", statut: 400 };
+  const caches = await lireJson<{ ids?: string[] }>(supabase, `${habitant.id}/autour-fig-caches.json`);
+  await ecrireJson(supabase, `${habitant.id}/autour-fig-caches.json`, { ids: [...new Set([...(caches.ids ?? []).map(s), i])].slice(-200) });
+  const sig = await lireJson<{ par?: string[] }>(supabase, `autour-fig-signal/${i}.json`);
+  const par = [...new Set([...(sig.par ?? []).map(s), habitant.id])];
+  await ecrireJson(supabase, `autour-fig-signal/${i}.json`, { par, lieu: l, ville, h: la.h });
+  if (par.length >= 3) await supabase.storage.from(SEAU_FIGURINES).remove([`${dossierFig(ville, l)}/${nomFichier(la.id, la.qui, la.h)}`, `${la.h}/autour-fig/${la.id}.json`]);
+  return { ok: true };
+}
+
