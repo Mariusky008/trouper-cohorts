@@ -40,6 +40,8 @@ import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
+import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
+import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import {
   AIMES_POUR_ETAGERE,
   CONSERVE_MS,
@@ -197,6 +199,8 @@ export type OuvertureSalonOuvert = {
     seance?: TeleSeance | null;
     /** 🎞️ (21 novembre 2026, « il garde sa vidéo ») l'invité avec une vidéo : il la regarde depuis le début, à son rythme */
     gardee?: VideoSalon;
+    /** 🎵 (le lot M1) dans le salon de la musique : sa platine — le morceau qui passe, la file (sans : la radio) */
+    platine?: PlatineVue;
   };
 };
 
@@ -239,7 +243,10 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   // (en passant : les messages de plus de 48 h s'effacent ; 🏠 « Mes salons » retient celui-ci)
   void nettoyerMessages(supabase, m, id, maintenant);
   void noterMonSalon(supabase, moi.id, t.id, maintenant);
-  const messages = await derniersMessages(supabase, m, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches });
+  const [messages, platine] = await Promise.all([
+    derniersMessages(supabase, m, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches }),
+    estSalonMusique(t.id) ? platineAJour(supabase, m, id, maintenant).catch(() => null) : Promise.resolve(null),
+  ]);
   return {
     ouverture: {
       salon: { id, theme: t.id, n, nom: nomDuSalon(t.id, n), maison: m, ...(salons.length && !ou ? { plein: true } : {}) },
@@ -249,7 +256,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
       caches,
       decor,
       gradin,
-      tele: { videos, maintenant },
+      tele: { videos, maintenant, ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}) },
     },
   };
 }
@@ -307,6 +314,8 @@ export type PoulsSalonOuvert = {
   /** 📷 (21 novembre 2026, « tout pour tous ») dans la séance : la tête que fait en ce moment chacun de ceux dont la caméra
    * marche (`null` : neutre) — leur figurine la copie, en direct */
   tetes?: Record<string, ExpressionVisage | null>;
+  /** 🎵 (le lot M1) dans le salon de la musique : sa platine, à l'heure */
+  platine?: PlatineVue;
 };
 /**
  * 💓 Le pouls (toutes les quelques secondes) : les présents (`ici`, et le détail de ceux qu'il ne connaît pas encore),
@@ -335,15 +344,17 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
   }
   const deja = new Set(s(connus).split(",").filter(Boolean));
   const inconnus = presents.filter((p) => !deja.has(p.nom));
-  const [nouveaux, messages, seance, tetes] = await Promise.all([
+  const musique = !r.seance && m !== "prives" && estSalonMusique(salonDe(sid)?.theme);
+  const [nouveaux, messages, seance, tetes, platine] = await Promise.all([
     Promise.all(inconnus.map((p) => lirePresent(supabase, m, sid, p.nom))),
     derniersMessages(supabase, m, sid, { depuis: Math.max(Number(depuis) || 0, maintenant - CONSERVE_MS), limite: 30, caches }),
     r.seance ? lireTeleSeance(supabase, r.seance.qHote) : Promise.resolve(undefined),
     r.seance ? tetesDeLaSeance(supabase, r.seance.qHote, presents, q, maintenant) : Promise.resolve(null),
+    musique ? platineAJour(supabase, m, sid, maintenant).catch(() => null) : Promise.resolve(null),
   ]);
   // (🎬 « Regarder à deux » : vue ensemble, la vidéo devient un souvenir commun)
   const souvenir = r.seance && seance && presents.length >= 2 ? await souvenirSiEnsemble(supabase, r.seance.qHote, q, presents, seance, maintenant).catch(() => null) : null;
-  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}) } };
+  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}), ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}) } };
 }
 
 // ─── 📷 (21 novembre 2026, « tout pour tous ») LA TÊTE EN DIRECT, DANS LA SÉANCE ───
@@ -402,7 +413,8 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
     if (refus) return { error: PHRASES_SALONS.refus(refus), statut: 400, refus };
     corps = { sorte, texte: [...texte].slice(0, TEXTE_SALON_MAX).join("") };
   } else if (sorte === "reaction") {
-    const x = reactionDe(p.cle);
+    // (🎵 le lot M1 : dans le salon de la musique, 🔥 🎶 💃 aussi)
+    const x = reactionDe(p.cle) ?? (!r.seance && estSalonMusique(salonDe(sid)?.theme) ? reactionMusiqueDe(p.cle) : undefined);
     if (!x) return { error: "Quelle réaction ?", statut: 400 };
     corps = { sorte, cle: x.cle };
   } else {
@@ -420,6 +432,42 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   if (!(await ecrireJson(supabase, `${dossierMessages(m, sid)}/${id}.json`, message))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await ecrireJson(supabase, `${dossierPresents(m, sid)}/${q}.json`, { ...f, ecrits: [...ecrits, maintenant] });
   return { message: messagePublic(message) };
+}
+
+// ─── 🎵 (le lot M1) LA PLATINE DU SALON DE LA MUSIQUE ───
+/**
+ * 🎵 Proposer un morceau (`proposer-morceau` : un lien YouTube, ou un clip de la radio du jour), ❤️ en faire monter un
+ * (`coeur-morceau`, celui de `q`), ↩️ retirer le sien (`retirer-morceau`) — dans le salon de la musique, quand on y est.
+ */
+export async function actionDePlatine(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ platine?: PlatineVue; part?: boolean; titre?: string }>> {
+  const r = await sonSalon(supabase, moi, p.salon);
+  if (r.error || !r.m || !r.id) return { error: r.error, statut: r.statut };
+  if (r.seance || r.m === "prives" || !estSalonMusique(salonDe(r.id)?.theme)) return { error: PHRASES_PLATINE.pasMusique, statut: 400 };
+  const m = r.m;
+  const sid = r.id;
+  const q = qui8(moi.id);
+  const maintenant = Date.now();
+  if (await exclusion(supabase, q, maintenant)) return { error: PHRASES_SALONS.exclu, statut: 403 };
+  const presents = await presentsFrais(supabase, m, sid, maintenant);
+  if (!presents.some((x) => x.nom === q)) return { error: "Tu n’es plus dans ce salon : rentre d’abord.", statut: 409 };
+  if (p.action === "proposer-morceau") {
+    const [f, radio] = await Promise.all([lirePresent(supabase, m, sid, q), videosDuSalon(supabase, "musique", m).catch(() => [] as VideoSalon[])]);
+    const choisi = await morceauPropose({ id: p.id, lien: p.lien }, radio);
+    if (!choisi.video) return { error: choisi.error ?? PHRASES_PLATINE.pasIci, statut: 400 };
+    const x = await proposerMorceau(supabase, { m, salon: sid, q, prenom: s(f.prenom) || "Quelqu’un", video: choisi.video }, maintenant);
+    if (!x.platine) return { error: x.error, statut: x.statut };
+    return { platine: vueDeLaPlatine(x.platine, q), titre: choisi.video.titre, ...(x.part ? { part: true } : {}) };
+  }
+  if (p.action === "coeur-morceau") {
+    const de = s(p.q);
+    const x = await aimerMorceau(supabase, { m, salon: sid, q, de }, maintenant);
+    return x.platine ? { platine: vueDeLaPlatine(x.platine, q) } : { error: x.error, statut: x.statut };
+  }
+  if (p.action === "retirer-morceau") {
+    const x = await retirerMorceau(supabase, { m, salon: sid, q }, maintenant);
+    return x.platine ? { platine: vueDeLaPlatine(x.platine, q) } : { error: x.error, statut: x.statut };
+  }
+  return { error: "Demande incomplète.", statut: 400 };
 }
 
 /** 💬 La conversation du salon : tout ce qui s'est dit ces dernières 48 heures (les 80 derniers messages). */

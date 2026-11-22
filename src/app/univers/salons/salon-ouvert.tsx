@@ -42,6 +42,7 @@ import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/dire
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
+import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import {
   GESTES_SALON,
   INVITES_MAX,
@@ -195,6 +196,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // (🎬 lot D2 : une séance chez quelqu'un — entre proches)
   const seance = salon.seance;
   const prive = Boolean(seance);
+  // 🎵 (le lot M1, `decouvrir.md` section 36) LE SALON DE LA MUSIQUE : sa platine — le morceau proposé qui passe, la file ;
+  // sans rien de proposé, la radio du salon (la sélection du jour) ; on réagit en musique (💃 sa figurine danse)
+  const musique = !prive && estSalonMusique(salon.theme);
+  const [platine, setPlatine] = useState<PlatineVue | null>(o.tele.platine ?? null);
+  const [proposerMorceau, setProposerMorceau] = useState(false);
+  const [cetait, setCetait] = useState<{ q: string; prenom: string } | null>(null);
+  const [dansent, setDansent] = useState<Record<string, "danse" | "chante">>({});
+  const [radioTitre, setRadioTitre] = useState("");
+  const finVue = useRef(o.tele.platine?.dernier?.fin ?? 0);
+  const cetaitMinuteur = useRef(0);
+  const moiRef = useRef(o.moi);
   const nPlaces = prive ? PLACES_SEANCE : PLACES_DU_SALON.length;
   const [tele, setTele] = useState<TeleSeance | null>(o.tele.seance ?? null);
   // 🎞️ (21 novembre 2026, le propriétaire : « il garde sa vidéo ») L'INVITÉ AVEC UNE VIDÉO la regarde depuis le début, à son
@@ -522,7 +534,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const jouer = useCallback((m: MessageSalon) => {
     if (etatRef.current.caches.includes(m.de)) return;
     const fin = Date.now() + (m.sorte === "texte" ? BULLE_MS : 2200);
-    const e = m.sorte === "reaction" ? REACTIONS_SALON.find((r) => r.cle === m.cle)?.e : m.sorte === "geste" ? GESTES_SALON.find((g) => g.cle === m.cle)?.e : "";
+    const e = m.sorte === "reaction" ? (REACTIONS_SALON.find((r) => r.cle === m.cle)?.e ?? REACTIONS_MUSIQUE.find((r) => r.cle === m.cle)?.e) : m.sorte === "geste" ? GESTES_SALON.find((g) => g.cle === m.cle)?.e : "";
+    // (🎵 💃 sa figurine danse, 🎶 elle chante — quelques secondes, chez tout le monde)
+    if (m.sorte === "reaction" && (m.cle === "danse" || m.cle === "chante")) {
+      const cle = m.cle;
+      setDansent((d) => ({ ...d, [m.de]: cle }));
+      window.setTimeout(() => setDansent((d) => (d[m.de] === cle ? Object.fromEntries(Object.entries(d).filter(([q]) => q !== m.de)) : d)), 3600);
+    }
     const a: Anime =
       m.sorte === "texte"
         ? { id: m.id, q: m.de, sorte: "bulle", texte: m.texte ?? "", fin }
@@ -577,6 +595,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         if (neuf !== avant) suivreHote.current(avant, neuf);
       }
       setSouvenir(p.souvenir ?? "");
+      // (🎵 la platine à l'heure ; un morceau proposé vient de finir : « C'était le choix de Léa », quelques secondes)
+      if (p.platine) {
+        setPlatine(p.platine);
+        const d = p.platine.dernier;
+        if (d && d.fin > finVue.current) {
+          finVue.current = d.fin;
+          if (d.q !== moiRef.current && p.maintenant - d.fin < 20_000) {
+            setCetait({ q: d.q, prenom: d.prenom });
+            window.clearTimeout(cetaitMinuteur.current);
+            cetaitMinuteur.current = window.setTimeout(() => setCetait(null), 9000);
+          }
+        }
+      }
       // (👀 la tête de chacun, en ce moment ; sa figurine vivante, demandée une fois)
       setTetes(p.tetes ?? {});
       for (const q of Object.keys(p.tetes ?? {}))
@@ -598,6 +629,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       window.removeEventListener("pagehide", partir);
     };
   }, [salon.id, recevoir]);
+
+  // ─── 🎵 (le lot M1) la platine : ❤️ un morceau de la file, retirer le sien ───
+  async function actionMorceau(corps: Record<string, unknown>) {
+    const r = await poster({ salon: salon.id, ...corps });
+    if (r.ok && r.j.platine) setPlatine(r.j.platine as PlatineVue);
+    else if (!r.ok) dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
+  }
 
   // ─── ✍️ écrire, réagir, un geste ───
   async function envoyer(corps: Record<string, unknown>) {
@@ -885,7 +923,29 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             dire={dire}
           />
         ) : (
-          <TeleDuSalon videos={o.tele.videos} decalage={decalage} largeur={lTele} />
+          <TeleDuSalon
+            videos={o.tele.videos}
+            decalage={decalage}
+            largeur={lTele}
+            morceau={musique && platine?.enCours ? { id: platine.enCours.video.id, titre: platine.enCours.video.titre, duree: platine.enCours.video.duree, depart: platine.enCours.depart, n: platine.n } : null}
+            onCourant={musique ? setRadioTitre : undefined}
+          />
+        )}
+        {musique && (
+          <BandePlatine
+            platine={platine}
+            radioTitre={radioTitre}
+            cetait={cetait}
+            onProposer={() => setProposerMorceau(true)}
+            onCoeur={(q) => void actionMorceau({ action: "coeur-morceau", q })}
+            onRetirer={() => void actionMorceau({ action: "retirer-morceau" })}
+            onVoirFiche={(q) => {
+              const x = presents.find((y) => y.q === q);
+              if (x) setFiche(x);
+              else dire(PM.cetait(cetait?.prenom ?? ""));
+              setCetait(null);
+            }}
+          />
         )}
         {/* (⏱ « tout pour tous » : la ligne du temps — où on en est, les réactions de chacun en points — et « 💬 Ce qui
             s'est dit ») */}
@@ -966,8 +1026,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 <button
                   key={p.q}
                   type="button"
-                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}`}
+                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}`}
                   data-q={p.q}
+                  data-danse={dansent[p.q]}
+                  data-choix={musique && platine?.enCours?.q === p.q ? "1" : undefined}
                   data-moi={moi ? "1" : undefined}
                   data-souvenir={souvenir ? souvenir.cle : undefined}
                   data-en-direct={enDirect ? (tetes[p.q] ?? "neutre") : undefined}
@@ -978,6 +1040,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     if (!moi) setFiche(p);
                   }}
                 >
+                  {musique && platine?.enCours?.q === p.q && (
+                    <i className="so-note-choix" aria-hidden="true">
+                      🎵
+                    </i>
+                  )}
                   {moi && vivante && maTete.etat === "on" ? (
                     <FigurineVivanteVue v={vivante} hauteur={x.h} e={maTete.tete.e} roulis={maTete.tete.roulis} lacet={maTete.tete.lacet} />
                   ) : souvenir?.vivante ? (
@@ -1093,7 +1160,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         {/* (22 novembre 2026, le propriétaire : « supprime cette phrase : Tu mènes la télé… » — l'hôte n'a plus de phrase) */}
         {!seance?.hote && (
           <p className="so-info" data-info>
-            {seance ? (aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : P.tele}
+            {seance ? (aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : musique ? PM.info : P.tele}
           </p>
         )}
         {aPart && tele?.video.id === aPart.video.id && (
@@ -1132,7 +1199,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         )}
         <div className="so-reagir" data-reagir>
           <span>{P.reagis}</span>
-          {REACTIONS_SALON.map((r) => (
+          {(musique ? REACTIONS_MUSIQUE : REACTIONS_SALON).map((r) => (
             <button
               key={r.cle}
               type="button"
@@ -1151,8 +1218,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 const s = regarde;
                 if (prive && s) {
                   const tR = Math.round(positionSeance(s, Date.now() + (decalage.current ?? 0)) * 10) / 10;
-                  void posterTele({ action: "reagir", seance: salon.id, id: s.video.id, t: tR, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" });
-                  setMiennes((l) => [...l, { t: tR, sorte: SORTE_DE_REACTION[r.cle], source: "rangee" } as ReactionVideo].sort((a, b) => a.t - b.t));
+                  const sorte = SORTE_DE_REACTION[r.cle as CleReaction] ?? "coeur";
+                  void posterTele({ action: "reagir", seance: salon.id, id: s.video.id, t: tR, sorte, source: "rangee" });
+                  setMiennes((l) => [...l, { t: tR, sorte, source: "rangee" } as ReactionVideo].sort((a, b) => a.t - b.t));
                 }
               }}
             >
@@ -1367,6 +1435,18 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           </div>
         </Feuille>
       )}
+      {proposerMorceau && (
+        <FeuilleMorceau
+          salon={salon.id}
+          radio={o.tele.videos}
+          onFermer={() => setProposerMorceau(false)}
+          onFait={(pl, msg) => {
+            setPlatine(pl);
+            setProposerMorceau(false);
+            dire(msg, 4200);
+          }}
+        />
+      )}
       {inviter && <Inviter onFermer={() => setInviter(false)} dire={dire} chez={seance && !seance.hote ? { salon: salon.id, cle: seance.cle, prenom: seance.prenom, libres: libres.length } : undefined} />}
       <style>{STYLES}</style>
     </main>
@@ -1376,7 +1456,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
 function Conversation({ messages, depuis, moi, caches, aimes = [], onAimer }: { messages: MessageSalon[]; depuis: number; moi: string; caches: string[]; aimes?: string[]; onAimer?: (id: string) => void }) {
   const l = messages.filter((m) => !caches.includes(m.de));
   const ligne = (m: MessageSalon) => {
-    const e = m.sorte === "reaction" ? REACTIONS_SALON.find((r) => r.cle === m.cle)?.e : m.sorte === "geste" ? GESTES_SALON.find((g) => g.cle === m.cle)?.e : "";
+    const e = m.sorte === "reaction" ? (REACTIONS_SALON.find((r) => r.cle === m.cle)?.e ?? REACTIONS_MUSIQUE.find((r) => r.cle === m.cle)?.e) : m.sorte === "geste" ? GESTES_SALON.find((g) => g.cle === m.cle)?.e : "";
     return (
       <p key={m.id} className={m.de === moi ? "moi" : ""} data-ligne={m.id}>
         <b>{m.de === moi ? "Toi" : m.prenom}</b> : {m.sorte === "texte" ? m.texte : e}
@@ -1756,21 +1836,49 @@ function TeleDeLaSeance({
 }
 
 // ─── 📺 la télé du salon : la sélection du jour, à la même seconde pour tous ───
-function TeleDuSalon({ videos, decalage, largeur }: { videos: VideoSalon[]; decalage: React.RefObject<number>; largeur: number }) {
+/** (🎵 le lot M1) le morceau proposé qui passe, à l'heure du serveur ; `n` change à chaque morceau */
+type MorceauTele = { id: string; titre: string; duree: number; depart: number; n: number };
+type Courant = { id: string; t: number; titre: string; duree: number };
+
+function TeleDuSalon({ videos, decalage, largeur, morceau, onCourant }: { videos: VideoSalon[]; decalage: React.RefObject<number>; largeur: number; morceau?: MorceauTele | null; onCourant?: (titre: string) => void }) {
   // (🔊 21 novembre 2026 : la télé du salon part toute seule à l'arrivée, en silence ; un toucher met le son)
   const [son, setSon] = useState(false);
   const [simple, setSimple] = useState(false);
-  const [pos, setPos] = useState(() => positionTele(videos, Date.now() + (decalage.current ?? 0)));
   const hote = useRef<HTMLDivElement>(null);
   const lecteur = useRef<Lecteur | null>(null);
-  const maintenant = useCallback(() => positionTele(videos, Date.now() + (decalage.current ?? 0)), [videos, decalage]);
+  const morceauRef = useRef<MorceauTele | null>(morceau ?? null);
+  // (🎵 ce qui passe : le morceau proposé tant qu'il n'est pas fini, sinon la radio — la sélection du jour, à sa seconde)
+  const maintenant = useCallback((): Courant | null => {
+    const ms = Date.now() + (decalage.current ?? 0);
+    const m = morceauRef.current;
+    if (m) {
+      const d = m.duree >= 30 ? m.duree : 210;
+      const t = (ms - m.depart) / 1000;
+      if (t < d) return { id: m.id, t: Math.max(0, t), titre: m.titre, duree: d };
+    }
+    const p = positionTele(videos, ms);
+    return p ? { id: videos[p.i].id, t: p.t, titre: videos[p.i].titre, duree: videos[p.i].duree } : null;
+  }, [videos, decalage]);
+  const [pos, setPos] = useState<Courant | null>(() => maintenant());
+  // (🎵 un autre morceau, ou la radio qui reprend : la télé change, à la bonne seconde, sans se refaire)
+  const cleMorceau = morceau ? `${morceau.n}-${morceau.id}` : "radio";
+  useEffect(() => {
+    morceauRef.current = morceau ?? null;
+    const c = maintenant();
+    setPos(c);
+    if (c) lecteur.current?.loadVideoById?.({ videoId: c.id, startSeconds: c.t });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleMorceau]);
+  useEffect(() => {
+    onCourant?.(pos?.titre ?? "");
+  }, [pos?.titre, onCourant]);
   // (le lecteur tout simple : la suivante à la fin de celle-ci)
   useEffect(() => {
     if (!simple || !pos) return;
-    const reste = Math.max(2, (videos[pos.i]?.duree ?? 30) - pos.t);
+    const reste = Math.max(2, (pos.duree || 30) - pos.t);
     const id = window.setTimeout(() => setPos(maintenant()), reste * 1000 + 800);
     return () => window.clearTimeout(id);
-  }, [simple, pos, videos, maintenant]);
+  }, [simple, pos, maintenant]);
   // (le lecteur de YouTube : créé à l'arrivée, en silence et sans ses commandes ; il change de vidéo sans se refaire)
   useEffect(() => {
     if (simple) return;
@@ -1783,23 +1891,23 @@ function TeleDuSalon({ videos, decalage, largeur }: { videos: VideoSalon[]; deca
         const cible = document.createElement("div");
         hote.current.replaceChildren(cible);
         lecteur.current = new YT.Player(cible, {
-          videoId: videos[p0.i].id,
+          videoId: p0.id,
           host: "https://www.youtube-nocookie.com",
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, mute: 1, start: p0.t, playsinline: 1, rel: 0, modestbranding: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, origin: window.location.origin },
+          playerVars: { autoplay: 1, mute: 1, start: Math.floor(p0.t), playsinline: 1, rel: 0, modestbranding: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, origin: window.location.origin },
           events: {
             onReady: (e: { target?: Lecteur }) => {
               e.target?.mute?.();
               e.target?.playVideo?.();
             },
-            // (finie : la suivante, à sa seconde du moment)
+            // (finie : la suivante, à sa seconde du moment — la radio, ou le morceau suivant de la file)
             onStateChange: (e: { data?: number }) => {
               if (fini || e.data !== 0) return;
               const p = maintenant();
               if (p) {
                 setPos(p);
-                lecteur.current?.loadVideoById?.({ videoId: videos[p.i].id, startSeconds: p.t });
+                lecteur.current?.loadVideoById?.({ videoId: p.id, startSeconds: p.t });
               }
             },
           },
@@ -1823,7 +1931,6 @@ function TeleDuSalon({ videos, decalage, largeur }: { videos: VideoSalon[]; deca
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simple]);
 
-  const v = pos ? videos[pos.i] : undefined;
   const mettreLeSon = () => {
     const l = lecteur.current;
     l?.unMute?.();
@@ -1832,16 +1939,144 @@ function TeleDuSalon({ videos, decalage, largeur }: { videos: VideoSalon[]; deca
     setSon(true);
   };
   return (
-    <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={v?.id ?? ""} data-son={son ? "1" : "0"}>
-      {!v ? (
+    <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={pos?.id ?? ""} data-son={son ? "1" : "0"} data-morceau={morceau ? morceau.id : undefined}>
+      {!pos ? (
         <p className="so-tele-vide">{P.pasDeTele}</p>
-      ) : simple && pos ? (
-        <iframe key={`${pos.i}-${v.id}-${son ? "son" : "muet"}`} className="so-lecteur" data-simple title={v.titre} src={lecteurYouTube(v.id, { debut: pos.t, muet: !son, epure: true })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+      ) : simple ? (
+        <iframe key={`${pos.id}-${son ? "son" : "muet"}`} className="so-lecteur" data-simple title={pos.titre} src={lecteurYouTube(pos.id, { debut: pos.t, muet: !son, epure: true })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
       ) : (
         <div ref={hote} className="so-lecteur" />
       )}
-      {v && <Son actif={son} titre={v.titre} onSon={mettreLeSon} />}
+      {pos && <Son actif={son} titre={pos.titre} onSon={mettreLeSon} />}
     </div>
+  );
+}
+
+/**
+ * 🎵 (le lot M1) LA BANDE DE LA PLATINE, sous la télé du salon de la musique : ce qui passe (« 🎵 Le choix de Léa », ou
+ * « 📻 La radio du salon ») ; « Proposer un morceau » ; à suivre (le plus aimé d'abord) — un ❤️ fait monter celui d'un
+ * autre, « Retirer » le sien ; un morceau proposé vient de finir : « C'était le choix de Léa » et « Voir sa fiche ».
+ */
+function BandePlatine({
+  platine,
+  radioTitre,
+  cetait,
+  onProposer,
+  onCoeur,
+  onRetirer,
+  onVoirFiche,
+}: {
+  platine: PlatineVue | null;
+  radioTitre: string;
+  cetait: { q: string; prenom: string } | null;
+  onProposer: () => void;
+  onCoeur: (q: string) => void;
+  onRetirer: () => void;
+  onVoirFiche: (q: string) => void;
+}) {
+  const e = platine?.enCours;
+  const file = platine?.file ?? [];
+  return (
+    <section className="so-platine" data-platine={e ? "morceau" : "radio"} aria-label="La platine du salon">
+      <div className="so-pl-haut">
+        <p className="so-pl-qui" data-passe={e ? e.q : "radio"}>
+          <b>{e ? (e.mien ? PM.monChoix : PM.choix(e.prenom)) : PM.radio}</b>
+          <span>{e ? e.video.titre : radioTitre}</span>
+        </p>
+        <button type="button" className="so-pl-proposer" data-proposer onClick={onProposer}>
+          {e || file.length ? PM.proposer : PM.proposerSuivant}
+        </button>
+      </div>
+      {cetait && (
+        <p className="so-pl-cetait" role="status" data-cetait={cetait.q}>
+          {PM.cetait(cetait.prenom)}
+          <button type="button" onClick={() => onVoirFiche(cetait.q)}>
+            {PM.voirFiche}
+          </button>
+        </p>
+      )}
+      {file.length > 0 && (
+        <div className="so-pl-file" data-file={file.length}>
+          <small>{PM.aSuivre}</small>
+          <ol>
+            {file.slice(0, 3).map((m) => (
+              <li key={m.q} data-dans-file={m.q}>
+                <span>
+                  <b>{m.mien ? "Toi" : m.prenom}</b> · {m.video.titre}
+                </span>
+                {m.mien ? (
+                  <button type="button" className="so-pl-retirer" data-retirer onClick={onRetirer}>
+                    {PM.retirer}
+                  </button>
+                ) : (
+                  <button type="button" className={`so-pl-coeur${m.aime ? " aime" : ""}`} data-coeur={m.q} aria-pressed={m.aime} aria-label={PM.aimer} onClick={() => onCoeur(m.q)}>
+                    {m.aime ? "❤️" : "🤍"} {m.coeurs > 0 ? m.coeurs : ""}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ol>
+          {platine?.maPlace ? <small data-ma-place={platine.maPlace}>{PM.maPlace(platine.maPlace)}</small> : null}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** 🎵 (le lot M1) « Proposer un morceau » : un lien YouTube, ou un clip de la radio du jour. */
+function FeuilleMorceau({ salon, radio, onFermer, onFait }: { salon: string; radio: VideoSalon[]; onFermer: () => void; onFait: (p: PlatineVue, message: string) => void }) {
+  const [lien, setLien] = useState("");
+  const [erreur, setErreur] = useState("");
+  const [envoi, setEnvoi] = useState(false);
+  async function proposer(corps: { lien?: string; id?: string }) {
+    setEnvoi(true);
+    setErreur("");
+    const r = await poster({ action: "proposer-morceau", salon, ...corps });
+    setEnvoi(false);
+    if (!r.ok || !r.j.platine) return setErreur(String(r.j.error || "Ça n’a pas marché. Réessaie."));
+    const titre = String(r.j.titre ?? "");
+    onFait(r.j.platine as PlatineVue, r.j.part ? PM.partTout(titre) : PM.propose(titre));
+  }
+  return (
+    <Feuille onFermer={onFermer}>
+      <div data-feuille-morceau>
+        <h2>{PM.titreFeuille}</h2>
+        <p className="so-sous">{PM.chapo}</p>
+        <form
+          className="so-pl-lien"
+          onSubmit={(ev) => {
+            ev.preventDefault();
+            if (lien.trim()) void proposer({ lien: lien.trim() });
+          }}
+        >
+          <label htmlFor="so-lien-morceau">{PM.lien}</label>
+          <input id="so-lien-morceau" name="lien" value={lien} onChange={(ev) => setLien(ev.target.value)} placeholder={PM.lienAide} inputMode="url" autoComplete="off" maxLength={300} data-champ="lien-morceau" />
+          <button type="submit" disabled={envoi || !lien.trim()} data-envoyer-morceau>
+            {PM.envoyer}
+          </button>
+        </form>
+        {erreur && (
+          <p className="so-refus" role="alert" data-erreur-morceau>
+            {erreur}
+          </p>
+        )}
+        {radio.length > 0 && (
+          <>
+            <h3 className="so-pl-ou">{PM.ouRadio}</h3>
+            <ul className="so-pl-radio">
+              {radio.slice(0, 8).map((v) => (
+                <li key={v.id}>
+                  <button type="button" disabled={envoi} data-clip-radio={v.id} onClick={() => void proposer({ id: v.id })}>
+                    <b>{v.titre}</b>
+                    <small>{v.chaine}</small>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </Feuille>
   );
 }
 
@@ -2076,4 +2311,38 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-bas{grid-area:bas;align-self:start;position:sticky;top:16px;padding:6px 0 0;margin:0;max-width:none;min-width:0}
 }
 @media (prefers-reduced-motion: reduce){.so-pop,.so-vol,.so-bulle{animation:none!important}}
+.so-platine{box-sizing:border-box;width:calc(100% - 24px);margin:6px auto 4px;padding:8px 10px;border-radius:16px;background:linear-gradient(135deg,rgba(242,196,107,.18),rgba(255,46,154,.12));box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.45);display:flex;flex-direction:column;gap:6px}
+.so-pl-haut{display:flex;align-items:center;gap:8px}
+.so-pl-qui{flex:1;min-width:0;margin:0;display:flex;flex-direction:column;line-height:1.2}
+.so-pl-qui b{font-size:13px;font-weight:900;color:#F2C46B}
+.so-pl-qui span{font-size:12.5px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-pl-proposer{flex:none;min-height:40px;border:0;border-radius:999px;padding:8px 14px;background:#FF2E9A;color:#fff;font:inherit;font-size:13px;font-weight:900;cursor:pointer}
+.so-pl-cetait{margin:0;display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:13px;font-weight:800;padding:6px 10px;border-radius:12px;background:rgba(0,0,0,.25);animation:so-cetait .4s ease-out}
+.so-pl-cetait button{border:0;border-radius:999px;padding:6px 12px;background:rgba(255,255,255,.14);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+@keyframes so-cetait{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.so-pl-file small{font-size:11.5px;font-weight:800;opacity:.75}
+.so-pl-file ol{list-style:none;margin:2px 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.so-pl-file li{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.so-pl-file li span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-pl-coeur,.so-pl-retirer{flex:none;min-width:44px;min-height:32px;border:0;border-radius:999px;padding:4px 10px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.so-pl-coeur.aime{background:rgba(255,46,154,.28)}
+.so-sous{margin:0 0 12px;font-size:13.5px;opacity:.8;line-height:1.4}
+.so-pl-lien{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.so-pl-lien label{width:100%;font-size:13px;font-weight:800}
+.so-pl-lien input{flex:1;min-width:0;min-height:44px;box-sizing:border-box;border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.06);color:#FFF4E6;font:inherit;font-size:15px}
+.so-pl-lien button{min-height:44px;border:0;border-radius:999px;padding:8px 16px;background:#FF2E9A;color:#fff;font:inherit;font-weight:900;cursor:pointer}
+.so-pl-lien button:disabled{opacity:.5;cursor:default}
+.so-pl-ou{margin:16px 0 8px;font-size:14px;font-weight:900}
+.so-pl-radio{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.so-pl-radio button{width:100%;text-align:left;border:0;border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.07);color:#FFF4E6;font:inherit;display:flex;flex-direction:column;gap:2px;cursor:pointer}
+.so-pl-radio b{font-size:14px;font-weight:800}
+.so-pl-radio small{font-size:12px;opacity:.7}
+.so-note-choix{position:absolute;top:-6px;left:50%;font-size:22px;line-height:1;font-style:normal;transform:translateX(-50%);animation:so-note-choix 1.4s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));z-index:2}
+@keyframes so-note-choix{0%,100%{transform:translate(-50%,0) rotate(-8deg)}50%{transform:translate(-50%,-8px) rotate(8deg)}}
+.so-fig.danse > *:not(.so-note-choix):not(small){animation:so-danse .6s ease-in-out infinite;transform-origin:50% 100%}
+.so-fig.chante > *:not(.so-note-choix):not(small){animation:so-chante 1s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes so-danse{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(7deg) translateY(-6%)}}
+@keyframes so-chante{0%,100%{transform:scale(1)}50%{transform:scale(1.04) rotate(2deg)}}
+.so-fig.choix{filter:drop-shadow(0 0 10px rgba(242,196,107,.65))}
+@media (prefers-reduced-motion: reduce){.so-note-choix,.so-fig.danse > *,.so-fig.chante > *,.so-pl-cetait{animation:none!important}}
 `;
