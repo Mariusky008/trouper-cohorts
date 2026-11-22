@@ -22,8 +22,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const { chez, place } = await searchParams;
   if (!chez || chez === "moi" || !place) return { title: "Un salon ouvert — ClikMe" };
   const a = await apercuDeLaPlace(createAdminClient(), chez, place).catch(() => null);
-  const titre = a?.prenom ? `🎬 ${a.prenom} t’invite devant sa télé` : "🎬 Une place t’attend devant la télé";
-  const description = "Une place t’attend à côté de sa figurine : vous regardez des vidéos ensemble sur ClikMe.";
+  // (👥 une place réservée par un invité : « 🎬 Sam t'invite chez Léa »)
+  const titre = a?.prenom ? (a.chez ? `🎬 ${a.prenom} t’invite chez ${a.chez}` : `🎬 ${a.prenom} t’invite devant sa télé`) : "🎬 Une place t’attend devant la télé";
+  const description = a?.chez ? "Une place t’attend à côté de sa figurine, devant la télé : vous regardez des vidéos ensemble sur ClikMe." : "Une place t’attend à côté de sa figurine : vous regardez des vidéos ensemble sur ClikMe.";
   const image = { url: `/univers/salons/apercu?chez=${encodeURIComponent(chez)}&place=${encodeURIComponent(place)}`, width: 1200, height: 630, type: "image/jpeg", alt: titre };
   return {
     title: titre,

@@ -5,7 +5,7 @@
 // D2 : Léa ouvre la séance chez elle (sa pièce, sa télé du jour prête, la place du milieu) ; elle invite ses proches (pas
 // les autres, trois au plus) ; Sam voit l'invitation, vient ; Zoé (proche, pas invitée) n'entre pas. Léa mène la télé
 // (pause, reprise, suivante, une vidéo de sa télé du jour) ; Sam ne la mène pas, son pouls suit. Entre proches : rien
-// n'est relu, rien ne se signale. « Pas maintenant » : l'invitation s'en va.
+// n'est relu (on peut signaler : un proche de proche peut être là). « Pas maintenant » : l'invitation s'en va.
 // D5 : dans le salon du foot, trois personnes aiment la phrase d'Ana : elle monte sur l'étagère ; « Garder » la met chez
 // Ben. Ses passions et sa maison (ouverte à tous) sur sa fiche ; « Mes salons » retient le foot (Ma maison). « Ajouter en
 // proche » : la demande, l'accepter — proches des deux côtés ; deux demandes croisées : proches tout de suite ; dix par
@@ -115,9 +115,14 @@ ok(o2.tele?.seance?.video?.id === videos[0].id && (o2.tele.videos ?? []).length 
 ok(!JSON.stringify(o2).includes(LEA.id) && !JSON.stringify(o2).includes(SAM.id), "… aucun compte n'est montré");
 
 // la télé menée par l'hôte
-ok((await poster(SAM, { action: "tele", salon: SEANCE, quoi: "pause" })).statut === 403, "Sam ne mène pas la télé");
+// (🎞️ 21 novembre 2026, « tout pour tous » : ensemble, l'invité met aussi en pause et reprend ; choisir reste à l'hôte)
+ok((await poster(SAM, { action: "tele", salon: SEANCE, quoi: "suivante" })).statut === 403, "Sam ne choisit pas la vidéo (c'est Léa qui mène la télé)");
+const t0 = await poster(SAM, { action: "tele", salon: SEANCE, quoi: "jouer" });
+ok(t0.statut === 200 && t0.seance?.pause === undefined && t0.seance.n === o1.tele.seance.n && t0.seance.depart === o1.tele.seance.depart, "… « ▶ » sur une vidéo qui passe déjà : rien ne bouge (elle ne repart pas de zéro)");
 const t1 = await poster(LEA, { action: "tele", salon: SEANCE, quoi: "pause" });
-ok(t1.statut === 200 && typeof t1.seance?.pause === "number" && t1.seance.n === o1.tele.seance.n + 1, `Léa met en pause (à ${t1.seance?.pause?.toFixed(1)} s)`);
+ok(t1.statut === 200 && typeof t1.seance?.pause === "number" && t1.seance.n === t0.seance.n + 1, `Léa met en pause (à ${t1.seance?.pause?.toFixed(1)} s)`);
+const t1b = await poster(SAM, { action: "tele", salon: SEANCE, quoi: "pause" });
+ok(t1b.statut === 200 && t1b.seance?.pause === t1.seance.pause && t1b.seance.n === t1.seance.n, "… Sam touche « ❚❚ » en même temps : rien ne bouge");
 const ps = (await pouls(SAM, SEANCE)).pouls;
 ok(ps?.seance?.n === t1.seance.n && typeof ps.seance.pause === "number" && ps.ici.length === 2, "… le pouls de Sam suit (pause)");
 await pause(1200);
@@ -134,7 +139,8 @@ ok((await pouls(SAM, SEANCE)).pouls?.seance?.video?.id === videos[2].id, "… Sa
 await pause(1600);
 const m1 = await poster(SAM, { action: "ecrire", salon: SEANCE, sorte: "texte", texte: "regarde www.monsite.fr à 18 h" });
 ok(m1.statut === 200 && m1.message?.texte === "regarde www.monsite.fr à 18 h", "entre proches : rien n'est relu (un lien passe)");
-ok((await poster(LEA, { action: "signaler", salon: SEANCE, q: o2.moi, motif: "Autre chose" })).statut === 400, "… et rien ne se signale");
+// (👥 21 novembre 2026 : un proche de proche peut être là — devant une télé aussi, on peut signaler)
+ok((await poster(LEA, { action: "signaler", salon: SEANCE, q: o2.moi, motif: "Autre chose" })).statut === 200, "… et on peut signaler (un proche de proche peut être là)");
 ok((await poster(LEA, { action: "aimer", salon: SEANCE, message: m1.message.id })).statut === 400, "… l'étagère, c'est dans les salons ouverts");
 ok(((await appel(LEA, `${ROUTE}?conversation=${SEANCE}`)).messages ?? []).some((m) => m.id === m1.message.id), "💬 la conversation de la séance");
 ok((await poster(SAM, { action: "pas-maintenant", cle: CLE_LEA })).statut === 200 && !(await accueil(SAM)).invitations?.length, "« Pas maintenant » : l'invitation s'en va");

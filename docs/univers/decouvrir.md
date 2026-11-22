@@ -1480,3 +1480,122 @@ rangées, « À découvrir » défile sans élargir la page — la première car
 l'écran —, la vitrine, sa vignette et son titre ; puis Zoé, pendant que Léa et Sam sont au foot : la vitrine en direct,
 le point vert, leurs deux figurines, « 2 ici » ; captures `salons-ouverts-1-accueil.png`, `salons-ouverts-1b-vitrine.png`,
 `salons-ouverts-1c-vitrine-en-direct.png`).
+
+## 33. 🎞️👥 La séance entre amis : l'invitation garde sa vidéo, l'invité invite, la fiche pour tous (21 novembre 2026)
+
+Le propriétaire, après avoir essayé avec un second compte, a fait trois remarques. Puis il a répondu à nos questions.
+
+- **8** : « lorsque j'envoie une invitation pour voir une vidéo et que je passe à une autre, celui qui a reçu
+  l'invitation voit ce que je suis en train de voir et pas la vidéo que je voulais qu'il voie, et si j'appuie sur
+  pause, ça pause aussi sa vidéo ». Sa réponse : **« Il garde sa vidéo »**.
+- **5** : « s'il reste un siège de libre dans le salon entre amis, mon ami peut inviter un ami à lui aussi, juste en
+  cliquant sur le siège de libre ». Sa réponse : **« Non, juste invité »** : l'ami de l'ami devient le proche de celui qui
+  l'invite, pas de l'hôte.
+- **7** : l'invité n'avait ni la voix, ni la barre des réactions, ni la fiche entière, ni la carte de la caméra. Sa
+  réponse : **« Oui, tout pour tous »**.
+
+Ce lot fait le 8, le 5, et la fiche du 7. La suite du 7 (la voix à la seconde, la ligne du temps des réactions, « 💬 Ce
+qui s'est dit », la carte de la caméra pour l'invité) vient au lot suivant : section 33.4.
+
+### 33.1 🎞️ Il garde sa vidéo
+
+- **L'invitation porte la vidéo** (« 👥 Inviter » depuis ma télé du jour, ou « 🎬 Regarder à deux » en visite). Dans
+  Découvrir, la carte la montre sous « 🎬 Léa t'invite devant sa télé » (« « titre » »).
+- **Il arrive : il la regarde depuis le début, à son rythme.** Tant que Léa est sur la même vidéo, ils sont **ensemble,
+  en direct** : « Vous regardez ensemble, en direct, avec Léa. » Ensemble, chacun peut mettre en pause et reprendre, et
+  ça vaut pour tout le monde. Dans l'affiche en pause, « ▶ Lancer la vidéo » est chez les deux. Si deux personnes
+  touchent en même temps, rien ne bouge : déjà en pause, ou déjà partie, la vidéo ne repart pas de zéro. **Choisir la
+  vidéo (⏭, 📺) reste à Léa** : c'est sa télé du jour.
+- **Léa passe à une autre vidéo : il garde la sienne**, là où il en est. Une note le dit : « Léa regarde autre chose : tu
+  gardes ta vidéo, à ton rythme ». Il a sa pause à lui, qui n'arrête pas Léa, et « 👀 Rejoindre Léa ». **La figurine de
+  Léa, à côté de lui, devient un souvenir** (« Léa · l'a vue ») : elle rejoue ses réactions à cette vidéo, à leur
+  seconde, avec ses vraies têtes si sa figurine est vivante (section 28.7). Ses réactions à lui sautent sur sa figurine
+  sans partir au salon, puisque les autres regardent autre chose. Elles restent sur la vidéo, et ils les verront en la
+  regardant.
+- **Léa revient sur sa vidéo au même moment** (moins de quatre secondes d'écart) : ils sont de nouveau ensemble. Sinon,
+  le bouton « 👀 Léa est sur ta vidéo · Regarder ensemble » le propose. **Sa vidéo finie** : « Ta vidéo est finie : tu
+  rejoins Léa. »
+- **Tout le monde réagit à la seconde, chez Léa aussi** : les réactions de l'invité restent sur la vidéo qu'il regarde,
+  même si elle n'est pas à sa télé du jour. C'est la vidéo de la séance (celle de la télé de Léa, ou celle qu'il garde) :
+  rien d'autre. Et il y voit ses proches qui l'ont vue, Léa comprise : ce sont eux qui s'assoient en souvenir.
+
+### 33.2 👥 L'invité invite
+
+- **Chez Léa, Sam voit aussi les places libres « ＋ ».** Un toucher ouvre sa feuille d'invitation :
+  - **ses proches à lui** (pas Léa), autant que de places libres. Texte : « Un de tes proches s'assoit à côté de toi,
+    chez Léa. Léa est prévenue. »
+  - **« 📲 Inviter par WhatsApp »** : un lien qui réserve une place chez Léa. Message : « 🎬 Sam t'invite à regarder des
+    vidéos avec nous chez Léa sur ClikMe : une place t'attend 👉 ».
+- **Tom (le proche de Sam)** reçoit « 🎬 Sam t'invite devant la télé de Léa », par notification et sur la carte de
+  Découvrir. Il entre comme n'importe quel invité. **Léa est prévenue** : « 👥 Sam a invité un proche devant ta télé ».
+- **Celui qui prend la place WhatsApp de Sam devient le proche de Sam, pas celui de Léa.** Léa est prévenue (« 🎬 Zoé a
+  pris une place devant ta télé (invité par Sam) »), et Sam aussi.
+- **L'aperçu du lien** dans WhatsApp dit « 🎬 Sam t'invite chez Léa », avec la figurine de Sam (section 30).
+- Le compte de Léa ne passe jamais par le téléphone : l'écran envoie sa clé (`seance.cle`), et le serveur vérifie que
+  c'est bien celle de la séance.
+
+### 33.3 La fiche, pour tous (un proche de proche peut être là)
+
+Toucher une figurine dans la séance donne la même fiche que dans un salon ouvert : « Devant la télé · prénom et
+figurine », les gestes, **« 👯 Ajouter en proche »**, **« 🏠 Voir sa maison »**, **« 🙈 Ne plus voir »** et **« 🚩
+Signaler »**.
+
+- « 🏠 Voir sa maison » : c'est sa maison qui décide qui entre.
+- « 👯 Ajouter en proche » : la demande part (« devant la même télé »), ou bien « Vous êtes déjà proches 🙂 ».
+- « 🚩 Signaler » : c'est noté pour l'administrateur, avec le même seuil que dans les salons ouverts.
+
+Entre proches, rien n'est relu, comme avant.
+
+### 33.4 Le lot suivant : le reste de « tout pour tous »
+
+Pour l'invité comme pour l'hôte :
+
+- 🎙️ la voix à la seconde ;
+- la ligne du temps des réactions sous la télé ;
+- « 💬 Ce qui s'est dit » ;
+- la carte de la caméra, avec le texte de la maquette (« 📷 Ta figurine fait ta tête… Je l'allume / Pas maintenant »).
+
+La route sait déjà recevoir ces vocaux et ces réactions sur la vidéo de la séance (`seance`).
+
+### 33.5 Le code, les essais
+
+**Le rangement**
+- `…/prives/chez-<q>/invites/<q>.json` gagne `video` (la vidéo gardée) et `par` (l'invité qui a invité).
+- L'invitation chez l'invité gagne `video` et `par` (son prénom).
+- `places/<jeton>.json` gagne `par`.
+
+**La route `salons-ouverts`**
+- `entrer-chez` → `tele.gardee` ;
+- `tele` : un invité met en pause et reprend ;
+- `inviter` et `place` prennent `salon` et `chez` (« l'invité invite ») ;
+- `proche` rend `deja`.
+
+**La route `tele-du-jour`**
+- `reagir`, `ecrire`, `repondre`, `vocal` et `?reactions=` prennent `seance` (`videoDeLaSeance`).
+
+**Le code**
+- `salons-ouverts-serveur.ts` : `lireInvite`, `inviterALaSeance`, `hoteDeLaSeance`, `videoDeLaSeance`, `prendrePlace`
+  (proche de celui qui a invité) ;
+- `reactions-video-serveur.ts` : `saVideo` ;
+- `univers/salons/salon-ouvert.tsx` :
+  - `aPart` (la vidéo gardée), `suivreHote` ;
+  - `TeleDeLaSeance` en trois façons : `hote`, `ensemble`, `seul` ;
+  - le souvenir sur la figurine présente ;
+  - `Inviter` avec `chez`.
+
+**Les essais**
+- `essai-seance-entre-amis-route.mjs`, 39 vérifications :
+  - l'invitation porte la vidéo ;
+  - ensemble, la pause pour tous, le choix à l'hôte ;
+  - Sam réagit sur sa vidéo gardée et y retrouve le rire de Léa ; une vidéo d'ailleurs est refusée ;
+  - Sam invite Tom (pas Zoé) ; son lien WhatsApp, son aperçu ; Zoé devient proche de Sam, pas de Léa ; plus de place ;
+  - la demande de proche, « déjà », le signalement.
+- `navigateur/seance-entre-amis.mjs`, 28 vérifications :
+  - ensemble, puis Sam garde sa vidéo ; « Léa · l'a vue » rit à 0:08 ;
+  - sa pause n'arrête pas Léa ; « 👀 Rejoindre Léa » ;
+  - la place libre : ses proches, le WhatsApp « chez Léa » ; Tom reçoit l'invitation.
+- `navigateur/salons-seance.mjs`, mis à jour : l'invité a la pause, « ▶ Lancer » et la fiche entière.
+- `essai-salons-seance-route.mjs`, mis à jour :
+  - Sam ne choisit pas la vidéo ;
+  - « ▶ » sur une vidéo qui passe déjà, ou « ❚❚ » en même temps que Léa : rien ne bouge ;
+  - on peut signaler.

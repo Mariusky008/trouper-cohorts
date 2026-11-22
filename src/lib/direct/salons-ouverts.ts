@@ -112,7 +112,17 @@ export type TeleSeance = { video: VideoSalon; depart: number; pause?: number; n:
 /** Où en est la vidéo de la séance à cet instant (en secondes). */
 export const positionSeance = (t: TeleSeance, ms: number): number => Math.max(0, Math.min(t.video.duree || 1e6, t.pause ?? (ms - t.depart) / 1000));
 /** Une invitation reçue (« 🎬 Léa t'invite devant sa télé »). */
-export type InvitationTele = { cle: string; prenom: string; le: number; /** 🎬 (« Regarder à deux ») la vidéo qu'il propose */ titre?: string };
+export type InvitationTele = {
+  cle: string;
+  prenom: string;
+  le: number;
+  /** 🎬 (« Regarder à deux ») la vidéo qu'il propose */
+  titre?: string;
+  /** 🎞️ (21 novembre 2026, « il garde sa vidéo ») la vidéo elle-même : l'invité la regarde depuis le début */
+  video?: VideoSalon;
+  /** 👥 (21 novembre 2026) le prénom de l'invité qui l'invite à la place libre, chez l'hôte (`prenom`) */
+  par?: string;
+};
 /** 👯 (lot D5) une demande de proche reçue dans un salon ouvert. */
 export type DemandeProche = { q: string; prenom: string; salon: string; le: number };
 /** 🗄️ (lot D5) un moment de l'étagère d'un salon : un message aimé par trois personnes au moins. */
@@ -293,6 +303,24 @@ export const PHRASES_SALONS = {
   pasMaintenant: "Pas maintenant",
   hote: "Tu mènes la télé : tout le monde voit la même seconde.",
   invite: (p: string) => `C’est ${p} qui mène la télé.`,
+  // 🎞️ (21 novembre 2026, le propriétaire : « il garde sa vidéo ») l'invité garde la vidéo de son invitation
+  tuGardes: (p: string) => `${p} regarde autre chose : tu gardes ta vidéo, à ton rythme.`,
+  taVideo: (p: string) => `Ta vidéo, à ton rythme · ${p} regarde autre chose`,
+  ensemble: (p: string) => `Vous regardez ensemble, en direct, avec ${p}.`,
+  rejoindre: (p: string) => `👀 Rejoindre ${p}`,
+  aussi: (p: string) => `👀 ${p} est sur ta vidéo · Regarder ensemble`,
+  tuRejoins: (p: string) => `Ta vidéo est finie : tu rejoins ${p}.`,
+  invitePause: "Ensemble : une pause, et elle s’arrête pour tout le monde.",
+  // 👥 (21 novembre 2026, « l'invité invite ») une place libre chez un proche : j'y invite un de MES proches
+  inviterChapoChez: (hote: string) => `Un de tes proches s’assoit à côté de toi, chez ${hote}. ${hote} est prévenu.`,
+  whatsappPlaceDitChez: (hote: string) => `Pour quelqu’un qui n’est pas encore sur ClikMe : il s’assoit à côté de toi, chez ${hote}, et vous devenez proches (toi et lui).`,
+  textePlaceChez: (par: string, hote: string) => `🎬 ${par || "Je"} t’invite à regarder des vidéos avec nous chez ${hote} sur ClikMe : une place t’attend 👉`,
+  invitationPar: (par: string, hote: string) => `🎬 ${par} t’invite devant la télé de ${hote}`,
+  invitePar: (par: string, n: number) => (n > 1 ? `👥 ${par} a invité ${n} proches devant ta télé` : `👥 ${par} a invité un proche devant ta télé`),
+  inviteParCorps: "Ils arrivent à côté de vous : tu peux les ajouter en proches depuis leur fiche.",
+  placePriseChez: (prenom: string, par: string) => `🎬 ${prenom} a pris une place devant ta télé (invité par ${par})`,
+  placePriseChezCorps: "Touche sa figurine pour l’ajouter en proche.",
+  ficheSeance: "Devant la télé · prénom et figurine",
   pause: "❚❚ Pause",
   reprendre: "▶ Reprendre",
   suivante: "⏭ Suivante",

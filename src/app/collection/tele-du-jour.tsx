@@ -390,7 +390,9 @@ function EnAttente({ invitations, demandes, onFait }: { invitations: InvitationT
       {invitations.length > 0 && <h3>{PS.invitationsTitre}</h3>}
       {invitations.map((i) => (
         <div key={i.cle} className="td-invitation" data-invitation={i.cle}>
-          <p>{PS.invitation(i.prenom)}</p>
+          {/* (👥 invité par un invité : « 🎬 Sam t'invite devant la télé de Léa » ; 🎞️ la vidéo qu'il garde) */}
+          <p>{i.par ? PS.invitationPar(i.par, i.prenom) : PS.invitation(i.prenom)}</p>
+          {i.titre && <small className="td-invitation-titre">« {i.titre} »</small>}
           <div>
             <a className="td-venir" href={`/univers/salons?chez=${encodeURIComponent(i.cle)}`} data-venir>
               {PS.venir}
@@ -1674,6 +1676,7 @@ const STYLES = `
 .td-salon b{font-size:13.5px;font-weight:900;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .td-ici{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;opacity:.85;white-space:nowrap}
 .td-ici:not(.vif) i{background:#9a8a90;box-shadow:none}
+.td-invitation-titre{display:block;font-size:12px;font-weight:700;opacity:.7;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .td-ici i{flex:none}
 .td-vitrine-bas .td-ici{white-space:normal;align-items:flex-start;line-height:1.35;overflow:visible}
 .td-vitrine-bas .td-ici i{margin-top:4px}

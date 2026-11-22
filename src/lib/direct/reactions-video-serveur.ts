@@ -90,6 +90,13 @@ async function prochesQuiLontVue(supabase: Supabase, moi: string, video: string)
   return (await Promise.all(vus.map(async (x) => ((await prochesDe(supabase, x.h)).has(moi) ? x : null)))).filter((x): x is (typeof vus)[number] => Boolean(x));
 }
 
+/** 🎞️ (21 novembre 2026) la vidéo d'une séance où il est (`videoDeLaSeance`) : il y réagit même si elle n'est pas à sa télé. */
+export type VideoDeSeance = { id: string; titre: string; duree: number };
+async function saVideo(supabase: Supabase, h: string, id: unknown, autre?: VideoDeSeance | null): Promise<VideoDeSeance | null> {
+  const v = await maVideo(supabase, h, id);
+  if (v) return v;
+  return autre && autre.id === String(id ?? "").trim() ? autre : null;
+}
 /**
  * 😂 Une réaction à une vidéo de ma télé du jour, à sa seconde. `ignoree` : une rafale de la même sorte, les mêmes mots
  * deux fois, ou déjà 80. Avec `texte` (deuxième partie) : ce que j'écris à cette seconde (sa sorte se déduit des mots,
@@ -101,8 +108,9 @@ export async function noterReaction(
   moi: Habitant,
   id: unknown,
   x: Record<string, unknown>,
+  autre?: VideoDeSeance | null,
 ): Promise<Resultat<{ ok?: true; reaction?: ReactionVideo; ignoree?: true; prevenir?: { h: string; notif: Notif } }>> {
-  const v = await maVideo(supabase, moi.id, id);
+  const v = await saVideo(supabase, moi.id, id, autre);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const texte = x.texte === undefined ? null : texteValide(x.texte);
   if (x.texte !== undefined && !texte) return { error: "Écris quelques mots.", statut: 400 };
@@ -145,8 +153,8 @@ export async function noterReaction(
  * 🎙️ Un vocal à cette seconde : sa vraie voix (une minute au plus), rangée à part ; la réaction le dit (sa figurine bat,
  * « 🎙️ Léa t'a laissé un vocal — ▶ Écouter » chez ses proches). 20 par vidéo au plus.
  */
-export async function noterVocal(supabase: Supabase, moi: Habitant, id: unknown, x: { t?: unknown; son?: unknown; duree?: unknown }): Promise<Resultat<{ ok?: true; reaction?: ReactionVideo; ignoree?: true }>> {
-  const v = await maVideo(supabase, moi.id, id);
+export async function noterVocal(supabase: Supabase, moi: Habitant, id: unknown, x: { t?: unknown; son?: unknown; duree?: unknown }, autre?: VideoDeSeance | null): Promise<Resultat<{ ok?: true; reaction?: ReactionVideo; ignoree?: true }>> {
+  const v = await saVideo(supabase, moi.id, id, autre);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const son = sonDe(x.son);
   const duree = dureeVocal(x.duree);
@@ -204,8 +212,8 @@ export async function apresLaVue(supabase: Supabase, moi: Habitant, video: strin
  * qui sont pour moi seulement), quand ils l'ont vue ; la figurine assise des trois qui s'assoient à côté de moi (les
  * autres passent au bord de la télé). Et les miennes ; `vue` : je l'ai déjà vue (« 💬 Ce qui s'est dit » montre tout).
  */
-export async function reactionsDesProches(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean }>> {
-  const v = await maVideo(supabase, moi.id, id);
+export async function reactionsDesProches(supabase: Supabase, moi: Habitant, id: unknown, autre?: VideoDeSeance | null): Promise<Resultat<{ proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean }>> {
+  const v = await saVideo(supabase, moi.id, id, autre);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const maCle = cleProfil(moi.id);
   const [mutuels, mienne, vue] = await Promise.all([prochesQuiLontVue(supabase, moi.id, v.id), lireFiche(supabase, cheminReactions(v.id, moi.id)), dejaVue(supabase, moi.id, v.id), revue(supabase, moi.id, v.id).catch(() => undefined)]);
