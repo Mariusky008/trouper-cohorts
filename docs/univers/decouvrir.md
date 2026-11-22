@@ -1548,14 +1548,8 @@ Entre proches, rien n'est relu, comme avant.
 
 ### 33.4 Le lot suivant : le reste de « tout pour tous »
 
-Pour l'invité comme pour l'hôte :
-
-- 🎙️ la voix à la seconde ;
-- la ligne du temps des réactions sous la télé ;
-- « 💬 Ce qui s'est dit » ;
-- la carte de la caméra, avec le texte de la maquette (« 📷 Ta figurine fait ta tête… Je l'allume / Pas maintenant »).
-
-La route sait déjà recevoir ces vocaux et ces réactions sur la vidéo de la séance (`seance`).
+C'est la section 34 : la voix à la seconde, la ligne du temps, « 💬 Ce qui s'est dit » et la carte de la caméra, pour
+l'invité comme pour l'hôte.
 
 ### 33.5 Le code, les essais
 
@@ -1599,3 +1593,98 @@ La route sait déjà recevoir ces vocaux et ces réactions sur la vidéo de la s
   - Sam ne choisit pas la vidéo ;
   - « ▶ » sur une vidéo qui passe déjà, ou « ❚❚ » en même temps que Léa : rien ne bouge ;
   - on peut signaler.
+
+## 34. 📷⏱💬🎙️ « Tout pour tous » dans la séance (21 novembre 2026)
+
+Suite du point 7 du propriétaire : « Oui, tout pour tous ». Dans la séance, l'invité a tout ce qu'a l'hôte, et l'hôte
+aussi gagne ce qui n'était que dans l'écran d'avant de sa télé du jour.
+
+### 34.1 📷 La caméra, comme la maquette
+
+- **« 📷 » en haut de la séance**, pour chacun dont les cinq expressions sont faites (section 28.6). La première fois, un
+  toucher ouvre **la carte de la maquette**, mot pour mot (`docs/univers/maquettes/decouvrir.html`) :
+  - le titre : « 📷 Ta figurine fait ta tête » ;
+  - le chapeau : « Pendant la vidéo, ta caméra regarde ton visage… » ;
+  - les quatre points :
+    - « 🙈 Rien n'est filmé, rien n'est envoyé. »
+    - « 📝 On ne garde que « rire à 0:21 ». »
+    - « 🔴 Une pastille reste visible tant qu'elle marche ; un toucher l'arrête. »
+    - « 👀 Si tes proches regardent en même temps, ta figurine copie ta tête en direct. »
+  - la phrase : « Ton téléphone voit que tu ris. Il ne garde que ça. » ;
+  - les boutons : « Je l'allume » et « Pas maintenant ».
+- La carte est proposée **une fois** (comme celle du lot V2, qu'elle remplace). Après « Je l'allume » une fois, « 📷 »
+  l'allume ou l'éteint d'un toucher.
+- **🔴 La pastille** « 📷 Ta figurine fait ta tête » (un point rouge qui clignote) reste dans la pièce tant que la caméra
+  marche. Un toucher l'arrête : « 📷 Éteinte : ta caméra ne regarde plus ».
+- L'interrupteur du bas reste, avec « Je vois : 😂 ». Éteint, il ne dit plus rien de plus : la carte explique.
+
+### 34.2 👀 La tête en direct
+
+- Pendant que ma caméra marche, mon téléphone dit au serveur **la tête qu'il voit quand elle change** : un mot
+  (« rire »), au plus une fois par seconde, redit toutes les 15 secondes. Jamais une image.
+- Chacun l'écrit dans son propre fichier. **Le pouls des autres la rapporte** (`tetes`, toutes les 4 secondes au plus).
+  Chez eux, **ma figurine vivante copie ma tête**. Ils demandent ma figurine vivante une fois, à la route.
+- Seulement dans la séance, et seulement quand on regarde ensemble : seul sur sa vidéo gardée (section 33.1), on voit
+  le souvenir de chacun, pas sa tête en direct.
+- Une tête de plus de 20 secondes ne compte plus : la caméra a pu s'arrêter sans le dire. « off » quand je l'éteins.
+
+### 34.3 ⏱ La ligne du temps, 💬 Ce qui s'est dit
+
+- **Sous la télé de la séance** :
+  - où en est la vidéo (0:09 … 2:30) ;
+  - les réactions de chacun en points (une couleur par proche, un point blanc pour les miennes) ;
+  - à droite, **« 💬 Ce qui s'est dit · 2 »**.
+  Mes réactions (😂 de la rangée, ma voix) s'ajoutent tout de suite.
+- **« 💬 Ce qui s'est dit »** : les réactions de mes proches qui ont vu la vidéo, et les miennes, à leurs secondes. La liste
+  est relue à l'ouverture, donc un vocal laissé à l'instant y est. Ce qui vient plus loin dans la vidéo reste caché
+  (« 🔒 1 réaction plus loin »), sauf si je l'ai déjà vue.
+- **Toucher une ligne revoit le moment**, deux secondes avant. Ensemble, c'est pour tout le monde (`tele` : `quoi:
+  "aller"`). Seul sur ma vidéo gardée, c'est pour moi.
+- Un vocal se lit avec « ▶ Écouter ».
+
+### 34.4 🎙️ La voix à la seconde
+
+- Dans la barre d'écriture de la séance, **le micro** (le même que ma télé du jour) : je le garde appuyé et je parle. « 🎙️
+  Tu parles » s'affiche, avec la barre d'enregistrement.
+- Ma voix part à la seconde où j'ai commencé, sur la vidéo que je regarde (`vocal` + `seance`). Le message dit : « 🎙️ Ta
+  voix, à 0:12 : Léa l'écoutera à cette seconde ».
+- Ensemble, ceux qui sont là voient la bulle « 🎙️ Un vocal à 0:12 · dans « 💬 Ce qui s'est dit » » et l'écoutent depuis
+  la liste.
+- Ce n'est jamais une voix de synthèse : c'est ma vraie voix.
+
+### 34.5 Le code, les essais
+
+**Le rangement**
+- `…/prives/chez-<q>/tetes/<q>.json` : `{ e, le }` ou `{ off, le }`.
+
+**La route `salons-ouverts`**
+- `tete` : `salon`, `e` ;
+- `GET ?salon=<chez-…>&vivante=<q>` → `{ vivante }` ;
+- le pouls d'une séance rend `tetes` ;
+- `tele` prend `quoi: "aller"` avec `t`, pour l'hôte et ses invités.
+
+**Le code**
+- `salons-ouverts-serveur.ts` : `tetesDeLaSeance`, `poserMaTete`, `vivanteDeLaSeance` ;
+- `univers/salons/salon-ouvert.tsx` :
+  - « 📷 » en haut, la feuille de la caméra, la pastille ;
+  - la tête envoyée et reçue ;
+  - `.so-temps` (la ligne du temps), « Ce qui s'est dit » (`ceQuiSestDit`, `revoirMoment`) ;
+  - le micro (`BoutonMicro`, `finMicro`) ;
+- les phrases sont dans `salons-ouverts.ts` (`cameraTitre`… `vocalSalon`).
+
+**Les essais**
+- `navigateur/seance-pour-tous.mjs` (nouveau), du côté de Sam, l'invité :
+  - la ligne du temps (deux points de Léa), « 💬 Ce qui s'est dit · 2 » et la carte de la maquette ;
+  - les deux lignes ; toucher « trop drôle » revoit le moment chez Léa aussi ; son 😂 devient un point ;
+  - « 📷 » ouvre la carte ; « Je l'allume » : sa figurine fait sa tête, la pastille apparaît ; chez Léa, la figurine de
+    Sam rit en direct, puis revient à son visage habituel ;
+  - le micro : « Tu parles », la note, un point de plus ; chez Léa, la bulle et « ▶ Écouter ».
+- `essai-seance-entre-amis-route.mjs`, en plus :
+  - la tête de Sam au pouls de Léa (pas la sienne) ; une tête qui n'existe pas devient neutre ; « off » ; hors séance :
+    non ;
+  - sa figurine vivante ;
+  - « aller » à 0:10.
+- `navigateur/visage-seance.mjs`, mis à jour :
+  - la carte de la maquette, mot pour mot ; la pastille ;
+  - la pastille éteint ; « 📷 » en haut rallume.
+- `navigateur/salons-seance.mjs`, mis à jour : la carte de la caméra, proposée une fois, se ferme (« Pas maintenant »).

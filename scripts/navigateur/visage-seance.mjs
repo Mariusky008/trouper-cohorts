@@ -3,11 +3,12 @@
 // du visage (la même adresse que la vraie).
 //
 // Léa et Sam sont proches ; leurs cinq expressions sont faites (le lot V1). Sam a vu la première vidéo de leur télé du
-// jour, et y a ri à 3 s (vu sur son visage, pendant 4 s). Léa ouvre sa télé du jour : « 📷 Ma figurine fait ma tête »,
-// proposé une fois (« La caméra reste sur ton téléphone… »). Sam, assis en souvenir, fait sa vraie tête de rire à sa
+// jour, et y a ri à 3 s (vu sur son visage, pendant 4 s). Léa ouvre sa télé du jour : « 📷 Ta figurine fait ta tête »,
+// proposé une fois (la carte de la maquette, mot pour mot ; 21 novembre 2026). Sam, assis en souvenir, fait sa vraie tête de rire à sa
 // seconde (pas d'émoji : sa figurine). « Allumer la caméra » : la figurine de Léa est vivante ; elle rit, sa figurine rit
-// (« Je vois : 😂 ») ; son rire est noté à la seconde, avec sa durée — Sam le verra. Rouverte : plus de proposition, la
-// caméra revient seule ; éteinte : sa figurine d'une seule image. Par la route : une expression sans expression, ou qui
+// (« Je vois : 😂 ») ; la pastille reste visible ; son rire est noté à la seconde, avec sa durée — Sam le verra.
+// Rouverte : plus de proposition, la caméra revient seule ; la pastille l'éteint (sa figurine d'une seule image) ;
+// « 📷 » en haut la rallume d'un toucher. Par la route : une expression sans expression, ou qui
 // n'existe pas, refusée ; sa durée bornée ; la même deux fois de suite, une seule ; un 😂 de la rangée au même moment
 // compte quand même. Rien ne déborde, jamais le mot « exemple », aucune erreur.
 import crypto from "node:crypto";
@@ -160,8 +161,11 @@ const NEUTRE = { mouthSmileLeft: 0.05, mouthSmileRight: 0.05, jawOpen: 0.05 };
 await p.goto(`${BASE}/univers/salons?chez=moi`, { waitUntil: "domcontentloaded" });
 ok(await attendre(async () => (await p.locator(".so[data-salon]").getAttribute("data-hote")) === "1", 30000), "Léa ouvre sa télé du jour : sa séance");
 const propose = p.locator("[data-proposer-camera]");
-ok(await attendre(async () => (await propose.count()) === 1), "📷 « Ma figurine fait ma tête » : proposé une fois");
-ok(/Ma figurine fait ma tête/.test(await texte(propose)) && /La caméra reste sur ton téléphone : on ne garde que tes réactions, jamais ton image/.test(await texte(propose)) && (await p.locator("[data-allumer-camera]").count()) === 1 && (await p.locator("[data-plus-tard]").count()) === 1, "… avec sa phrase : « La caméra reste sur ton téléphone : on ne garde que tes réactions, jamais ton image. »");
+ok(await attendre(async () => (await propose.count()) === 1), "📷 « Ta figurine fait ta tête » : proposé une fois");
+// (📷 21 novembre 2026, « tout pour tous » : la carte, mot pour mot comme la maquette)
+const carte = await texte(propose);
+ok(/📷 Ta figurine fait ta tête/.test(carte) && /🙈 Rien n’est filmé, rien n’est envoyé/.test(carte) && /📝 On ne garde que « rire à 0:21 »/.test(carte) && /🔴 Une pastille reste visible tant qu’elle marche ; un toucher l’arrête/.test(carte) && /👀 Si tes proches regardent en même temps, ta figurine copie ta tête en direct/.test(carte) && /Ton téléphone voit que tu ris. Il ne garde que ça/.test(carte), "… la carte de la maquette, mot pour mot");
+ok(/Je l’allume/.test(await texte(p.locator("[data-allumer-camera]"))) && /Pas maintenant/.test(await texte(p.locator("[data-plus-tard]"))), "… « Je l'allume » / « Pas maintenant »");
 // (Sam, assis en souvenir : sa figurine vivante ; à 3 s, sa vraie tête de rire — pas d'émoji)
 const fantome = p.locator(`[data-fantome="${SAM.cle}"]`);
 ok(await attendre(async () => (await fantome.locator("[data-vivante]").count()) === 1), "Sam, en souvenir : sa figurine vivante (son corps, sa tête, ses cinq expressions)");
@@ -172,9 +176,10 @@ ok(await attendre(async () => (await fantome.locator("[data-vivante]").getAttrib
 
 // ═══ « ALLUMER LA CAMÉRA » ═══
 await p.locator("[data-allumer-camera]").click();
-ok((await propose.count()) === 0 && (await p.locator('[data-camera="on"]').count()) === 1, "« Allumer la caméra » : la proposition s'en va, l'interrupteur est allumé");
+ok((await propose.count()) === 0 && (await p.locator('[data-camera="on"]').count()) === 1 && (await p.locator('[data-camera-haut][aria-pressed="true"]').count()) === 1, "« Je l'allume » : la carte s'en va, « 📷 » en haut est allumé");
 const moi = p.locator(".so-fig[data-moi]");
 ok(await attendre(async () => (await moi.locator("[data-vivante]").count()) === 1 && /Je vois : 🙂/.test(await texte(p.locator("[data-etat-camera]"))), 15000), "sa figurine devient vivante ; « Je vois : 🙂 »");
+ok(/📷 Ta figurine fait ta tête/.test(await texte(p.locator("[data-pastille-camera]"))), "🔴 la pastille reste visible tant qu'elle marche");
 await visageDe(RIRE);
 ok(await attendre(async () => (await moi.locator("[data-vivante]").getAttribute("data-expression")) === "rire" && /Je vois : 😂/.test(await texte(p.locator("[data-etat-camera]")))), "elle rit : sa figurine rit (« Je vois : 😂 »)");
 await p.screenshot({ path: `${D}/visage-seance-2-lea-rit.png` });
@@ -196,8 +201,14 @@ ok(leaVue?.reactions?.some((r) => r.visage === "rire") && ADRESSE.test(leaVue.vi
 // ═══ ROUVERTE, ÉTEINTE ═══
 await p.reload({ waitUntil: "domcontentloaded" });
 ok(await attendre(async () => (await p.locator('[data-camera="on"]').count()) === 1 && (await moi.locator("[data-vivante]").count()) === 1, 20000) && (await propose.count()) === 0, "rouverte : plus de proposition, la caméra revient seule");
+ok(await attendre(async () => (await p.locator("[data-pastille-camera]").count()) === 1), "… la pastille aussi");
+await p.locator("[data-pastille-camera]").click();
+ok(await attendre(async () => (await p.locator('[data-camera="off"]').count()) === 1 && (await moi.locator("[data-vivante]").count()) === 0 && (await moi.locator("img").count()) === 1 && (await p.locator("[data-pastille-camera]").count()) === 0), "un toucher sur la pastille : éteinte — sa figurine d'une seule image, comme avant");
+ok(/Éteinte : ta caméra ne regarde plus/.test(await texte(p.locator("[data-note]"))), "… « 📷 Éteinte : ta caméra ne regarde plus »");
+await p.locator("[data-camera-haut]").click();
+ok(await attendre(async () => (await p.locator('[data-camera="on"]').count()) === 1 && (await moi.locator("[data-vivante]").count()) === 1, 15000) && (await propose.count()) === 0, "« 📷 » en haut : elle se rallume d'un toucher (la carte, une seule fois)");
 await p.locator('[data-camera="on"]').click();
-ok(await attendre(async () => (await p.locator('[data-camera="off"]').count()) === 1 && (await moi.locator("[data-vivante]").count()) === 0 && (await moi.locator("img").count()) === 1), "éteinte : sa figurine d'une seule image, comme avant");
+ok(await attendre(async () => (await p.locator('[data-camera="off"]').count()) === 1 && (await moi.locator("[data-vivante]").count()) === 0), "… et l'interrupteur du bas l'éteint");
 ok(!(await p.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1)), "rien ne déborde");
 ok(!/exemple/i.test(await p.locator("body").innerText()), "jamais le mot « exemple »");
 ok(!erreurs.length, `aucune erreur (${erreurs.slice(0, 3).join(" | ")})`);

@@ -33,6 +33,9 @@ import { videoYouTube } from "./tele";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
 import { maTeleDuJour, maVideo } from "./tele-du-jour-serveur";
 import { details, lireSelection } from "./selection-serveur";
+import { expressionValide, type ExpressionVisage } from "./visage-essai";
+import { figurineVivante } from "./expressions-figurine-serveur";
+import type { FigurineVivante } from "./expressions-figurine";
 import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
@@ -291,7 +294,20 @@ async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise
 }
 
 // ─── 💓 le pouls : qui est là, ce qui s'est dit depuis ───
-export type PoulsSalonOuvert = { ici: string[]; nouveaux: PresentSalon[]; messages: MessageSalon[]; maintenant: number; exclu?: true; dehors?: true; seance?: TeleSeance | null; /** 🎬 (« Regarder à deux ») le titre du souvenir commun qui vient de se poser */ souvenir?: string };
+export type PoulsSalonOuvert = {
+  ici: string[];
+  nouveaux: PresentSalon[];
+  messages: MessageSalon[];
+  maintenant: number;
+  exclu?: true;
+  dehors?: true;
+  seance?: TeleSeance | null;
+  /** 🎬 (« Regarder à deux ») le titre du souvenir commun qui vient de se poser */
+  souvenir?: string;
+  /** 📷 (21 novembre 2026, « tout pour tous ») dans la séance : la tête que fait en ce moment chacun de ceux dont la caméra
+   * marche (`null` : neutre) — leur figurine la copie, en direct */
+  tetes?: Record<string, ExpressionVisage | null>;
+};
 /**
  * 💓 Le pouls (toutes les quelques secondes) : les présents (`ici`, et le détail de ceux qu'il ne connaît pas encore),
  * les messages après `depuis` ; il redit qu'il est là (toutes les 30 s au plus).
@@ -319,14 +335,48 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
   }
   const deja = new Set(s(connus).split(",").filter(Boolean));
   const inconnus = presents.filter((p) => !deja.has(p.nom));
-  const [nouveaux, messages, seance] = await Promise.all([
+  const [nouveaux, messages, seance, tetes] = await Promise.all([
     Promise.all(inconnus.map((p) => lirePresent(supabase, m, sid, p.nom))),
     derniersMessages(supabase, m, sid, { depuis: Math.max(Number(depuis) || 0, maintenant - CONSERVE_MS), limite: 30, caches }),
     r.seance ? lireTeleSeance(supabase, r.seance.qHote) : Promise.resolve(undefined),
+    r.seance ? tetesDeLaSeance(supabase, r.seance.qHote, presents, q, maintenant) : Promise.resolve(null),
   ]);
   // (🎬 « Regarder à deux » : vue ensemble, la vidéo devient un souvenir commun)
   const souvenir = r.seance && seance && presents.length >= 2 ? await souvenirSiEnsemble(supabase, r.seance.qHote, q, presents, seance, maintenant).catch(() => null) : null;
-  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}) } };
+  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}) } };
+}
+
+// ─── 📷 (21 novembre 2026, « tout pour tous ») LA TÊTE EN DIRECT, DANS LA SÉANCE ───
+// La maquette : « 👀 Si tes proches regardent en même temps, ta figurine copie ta tête en direct. » Le téléphone dit au
+// serveur la tête qu'il voit quand elle change (un mot : « rire » — jamais une image) ; chacun l'écrit dans son propre
+// fichier (`…/chez-<q>/tetes/<q>.json`), le pouls des autres la rapporte (quatre secondes au plus). Une tête de plus de
+// vingt secondes ne compte plus (la caméra s'est arrêtée sans le dire).
+const TETE_MS = 20_000;
+const dossierTetes = (qHote: string) => `${dossierSalon("prives", idSeance(qHote))}/tetes`;
+async function tetesDeLaSeance(supabase: Supabase, qHote: string, presents: Entree[], q: string, maintenant: number): Promise<Record<string, ExpressionVisage | null> | null> {
+  const ici = new Set(presents.map((p) => p.nom));
+  const l = (await lister(supabase, dossierTetes(qHote))).filter((e) => maintenant - e.ms < TETE_MS && ici.has(e.nom.replace(/\.json$/, "")) && e.nom !== `${q}.json`);
+  if (!l.length) return null;
+  const lus = await Promise.all(l.map(async (e) => [e.nom.replace(/\.json$/, ""), await lireJson<{ e?: string; off?: boolean }>(supabase, `${dossierTetes(qHote)}/${e.nom}`).catch(() => ({}) as { e?: string; off?: boolean })] as const));
+  const tetes = Object.fromEntries(lus.filter(([, x]) => !x.off).map(([k, x]) => [k, expressionValide(x.e) ? x.e : null]));
+  return Object.keys(tetes).length ? tetes : null;
+}
+/** 📷 Ma tête, en ce moment (un mot ; `null` : neutre ; `off` : ma caméra s'arrête). Dans une séance seulement. */
+export async function poserMaTete(supabase: Supabase, moi: Habitant, salon: unknown, e: unknown): Promise<Resultat> {
+  const r = await sonSalon(supabase, moi, salon);
+  if (r.error || !r.seance) return { error: r.error ?? "Dans une séance seulement.", statut: r.statut ?? 400 };
+  const corps = e === "off" ? { off: true, le: Date.now() } : { e: expressionValide(e) ? e : null, le: Date.now() };
+  if (!(await ecrireJson(supabase, `${dossierTetes(r.seance.qHote)}/${qui8(moi.id)}.json`, corps))) return { error: "Ça n’a pas marché.", statut: 502 };
+  return {};
+}
+/** 📷 La figurine vivante de quelqu'un de la séance (ses calques et ses cinq têtes), pour copier sa tête ; sinon `null`. */
+export async function vivanteDeLaSeance(supabase: Supabase, moi: Habitant, salon: unknown, q: unknown): Promise<Resultat<{ vivante?: FigurineVivante | null }>> {
+  const r = await sonSalon(supabase, moi, salon);
+  if (r.error || !r.seance || !r.m || !r.id) return { error: r.error ?? "Dans une séance seulement.", statut: r.statut ?? 400 };
+  const x = s(q);
+  if (!/^[A-Za-z0-9_-]{4,16}$/.test(x)) return { error: "Qui ?", statut: 400 };
+  const f = await lirePresent(supabase, r.m, r.id, x);
+  return { vivante: s(f.h) ? await figurineVivante(supabase, s(f.h)).catch(() => null) : null };
 }
 
 // ─── ✍️ écrire, réagir, un geste ───
@@ -720,14 +770,18 @@ export async function teleDeLaSeance(supabase: Supabase, moi: Habitant, p: Recor
   // (🎞️ 21 novembre 2026 : ensemble sur la même vidéo, l'invité aussi la met en pause et la reprend — pour tout le monde ;
   // choisir la vidéo reste à l'hôte : c'est sa télé du jour)
   const hote = qHote === qui8(moi.id);
-  const pauseOuReprise = p.quoi === "pause" || p.quoi === "jouer";
+  const pauseOuReprise = p.quoi === "pause" || p.quoi === "jouer" || p.quoi === "aller";
   if (!qHote || (!hote && !(pauseOuReprise && (await invite(supabase, qHote, qui8(moi.id)))))) return { error: "C’est l’hôte qui mène la télé.", statut: 403 };
   const t = await lireTeleSeance(supabase, qHote);
   const maintenant = Date.now();
   let seance: TeleSeance | null = null;
   // (🎞️ à plusieurs, deux peuvent toucher en même temps : déjà en pause, ou déjà partie — rien ne bouge)
   if ((p.quoi === "pause" && t?.pause !== undefined) || (p.quoi === "jouer" && t && t.pause === undefined)) return { seance: t! };
-  if (p.quoi === "pause" && t) seance = { ...t, pause: (maintenant - t.depart) / 1000, n: t.n + 1 };
+  // (💬 « Ce qui s'est dit » : toucher une ligne revoit le moment — ensemble, pour tout le monde)
+  if (p.quoi === "aller" && t) {
+    const a = Math.max(0, Math.min(Number(p.t) || 0, Math.max(0, (t.video.duree || 1e6) - 1)));
+    seance = t.pause !== undefined ? { ...t, pause: a, depart: maintenant - a * 1000, n: t.n + 1 } : { ...t, depart: maintenant - a * 1000, n: t.n + 1 };
+  } else if (p.quoi === "pause" && t) seance = { ...t, pause: (maintenant - t.depart) / 1000, n: t.n + 1 };
   else if (p.quoi === "jouer" && t) seance = { ...t, depart: maintenant - (t.pause ?? 0) * 1000, pause: undefined, n: t.n + 1 };
   else if (p.quoi === "video" || p.quoi === "suivante") {
     const videos = (await maTeleDuJour(supabase, moi.id).catch(() => null))?.videos ?? [];

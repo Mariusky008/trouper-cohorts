@@ -162,5 +162,18 @@ ok(d2.proches === true && d2.deja === true, "Sam, déjà son proche : « Vous ê
 const sg = await salons(LEA, { action: "signaler", salon: SEANCE, q: qui8(TOM.id), motif: "Autre chose" });
 ok(sg.statut === 200 && sg.exclu === false, "elle signale Tom : c'est noté (l'administrateur le voit)");
 
+// ═══ 📷⏱ TOUT POUR TOUS (section 34) : LA TÊTE EN DIRECT, REVOIR UN MOMENT ═══
+ok((await salons(SAM, { action: "tete", salon: SEANCE, e: "rire" })).statut === 200, "📷 Sam dit sa tête (« rire » — un mot, jamais une image)");
+const pT = (await pouls(LEA, SEANCE)).pouls;
+ok(pT?.tetes?.[qui8(SAM.id)] === "rire" && !(qui8(LEA.id) in (pT.tetes ?? {})), "… le pouls de Léa la rapporte (pas la sienne)");
+ok((await salons(SAM, { action: "tete", salon: SEANCE, e: "colere" })).statut === 200 && (await pouls(LEA, SEANCE)).pouls?.tetes?.[qui8(SAM.id)] === null, "… une tête qui n'existe pas : neutre");
+await salons(SAM, { action: "tete", salon: SEANCE, e: "off" });
+ok(!(qui8(SAM.id) in ((await pouls(LEA, SEANCE)).pouls?.tetes ?? {})), "… sa caméra s'arrête : plus rien");
+ok((await salons(SAM, { action: "tete", salon: "foot-1", e: "rire" })).statut >= 400, "… hors d'une séance : non");
+const vv = await appel(LEA, `${SALONS}?salon=${SEANCE}&vivante=${qui8(SAM.id)}`);
+ok(vv.statut === 200 && vv.vivante === null, "sa figurine vivante, demandée par Léa : pas encore (ses expressions ne sont pas faites)");
+const al = await salons(SAM, { action: "tele", salon: SEANCE, quoi: "aller", t: 10 });
+ok(al.statut === 200 && Math.abs((Date.now() - al.seance.depart) / 1000 - 10) < 2, "⏱ Sam touche une ligne de « Ce qui s'est dit » : la vidéo revient à 0:10, pour tout le monde");
+
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nLa séance entre amis tient ✓");
 process.exit(echecs ? 1 : 0);
