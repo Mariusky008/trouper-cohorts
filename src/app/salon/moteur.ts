@@ -100,6 +100,7 @@ type PartVivante = Required<Pick<Particule, "t" | "vx" | "vy" | "ax" | "ay" | "r
 const STYLE = `
 .sc{position:absolute;inset:0;overflow:hidden;contain:strict;-webkit-tap-highlight-color:transparent}
 .sc-secoueur,.sc-camera{position:absolute;inset:0}
+.sc-fond{position:absolute;inset:-24px;background:#2a1820 center/cover no-repeat;filter:blur(22px) brightness(.55) saturate(1.1);pointer-events:none}
 .sc-camera{transform-origin:0 0;will-change:transform}
 .sc-stage{position:absolute;--sw:400px}
 .sc-stage>*{position:absolute}
@@ -182,6 +183,10 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
   // ─── le DOM : la scène, le secoueur, la caméra, la pièce (« stage ») et ses calques ───
   const racine = elt("div", "sc");
   if (reduit) racine.dataset.reduit = "1";
+  // (🖥️ 22 novembre 2026 : sur un écran large, la pièce n'est plus coupée de moitié — ses côtés, la même pièce, floue)
+  const fond = elt("div", "sc-fond");
+  fond.style.backgroundImage = `url("${o.plaque}")`;
+  racine.append(fond);
   const secoueur = elt("div", "sc-secoueur");
   const camera = elt("div", "sc-camera");
   const stage = elt("div", "sc-stage");
@@ -330,7 +335,10 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     const cw = racine.clientWidth;
     const ch = racine.clientHeight;
     if (!cw || !ch) return;
-    const k = Math.max(cw / IW, ch / IH);
+    // (la pièce couvre le cadre, comme avant — sauf sur un écran large, un ordinateur : le propriétaire, le 22 novembre
+    // 2026, « sur ordinateur ce n'est pas du tout responsive » ; la pièce en hauteur y était coupée de moitié, les
+    // figurines énormes. On n'en coupe plus que 20 % de la hauteur au plus ; les côtés montrent la même pièce, floue)
+    const k = Math.min(Math.max(cw / IW, ch / IH), ch / (IH * 0.8));
     const sw = IW * k;
     const sh = IH * k;
     Object.assign(L, { sw, sh, cw, ch, left: (cw - sw) / 2, top: (ch - sh) * cadrage });
