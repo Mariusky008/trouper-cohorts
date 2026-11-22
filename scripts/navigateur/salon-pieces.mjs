@@ -172,7 +172,8 @@ await sam.goto(`${BASE}/univers/salon?avec=${LEA.cle}`, { waitUntil: "domcontent
 ok(await attendre(sam, async () => (await plaque(sam)) === plaques.terrasse, 12000), "Sam ouvre : la terrasse");
 ok(await attendre(lea, async () => (await texte(lea, ".sd-qui span")) === "Là, maintenant", 13000), "chez Léa : Sam est là");
 await lea.locator(".sd-porte").click();
-ok(/est là : ce sera une invitation/.test(await texte(lea, ".sd-choix .sd-sous")), "« Sam est là : ce sera une invitation. »");
+// (👀 22 novembre 2026 : une invitation seulement s'il est dans la conversation — son pouls l'y note)
+ok(await attendre(lea, async () => /Sam est avec toi : ce sera une invitation/.test(await texte(lea, ".sd-choix .sd-sous")), 8000), "« Sam est avec toi : ce sera une invitation. »");
 await lea.locator('[data-choisir="cuisine"]').click();
 ok(await attendre(lea, async () => /Tu invites Sam · 🍳 La cuisine/.test(await texte(lea, ".sd-toast.vu"))), "« 🚪 Tu invites Sam · 🍳 La cuisine… »");
 ok((await plaque(lea)) === plaques.terrasse && (await pieceDuDuo()) === "terrasse", "… on reste sur la terrasse en attendant");
