@@ -32,7 +32,7 @@ export const STYLES_TALKIE = `
 .sc-talkie .led,.sc-talkie-table .led{fill:#5a1c22}
 .sc-talkie.emet .led{fill:#5dff8a;animation:sc-clignote .26s steps(2) infinite}
 .sc-talkie.ecoute .led{fill:#ffb347;animation:sc-clignote .5s steps(2) infinite}
-.sc-talkie-table{position:absolute;width:calc(var(--sw)*.056);padding:calc(var(--sw)*.012);margin:0;border:0;background:none;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;filter:drop-shadow(0 3px 2px rgba(30,10,5,.55));animation:sc-tremble 2.4s ease-in-out infinite;-webkit-tap-highlight-color:transparent}
+.sc .sc-talkie-table{position:absolute;width:calc(var(--sw)*.056);padding:calc(var(--sw)*.012);margin:0;border:0;background:none;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;filter:drop-shadow(0 3px 2px rgba(30,10,5,.55));animation:sc-tremble 2.4s ease-in-out infinite;-webkit-tap-highlight-color:transparent}
 .sc-talkie-table svg{position:relative;display:block;width:100%;height:auto;transform:translateY(30%) rotate(-72deg)}
 .sc-talkie-table::before{content:"";position:absolute;left:50%;top:50%;width:300%;height:90%;transform:translate(-50%,-10%);border-radius:50%;background:radial-gradient(closest-side,rgba(255,70,105,.85),rgba(255,70,105,0));animation:sc-halo 1.4s ease-in-out infinite;pointer-events:none}
 .sc-talkie-table .led{fill:#ff3b3b;animation:sc-clignote .7s steps(2) infinite}

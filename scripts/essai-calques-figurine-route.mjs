@@ -125,16 +125,23 @@ ok(c && dans(c.bouche, c.tete.boite) && c.joues.every((j) => dans(j, c.tete.boit
 
 // ═══ LES FICHIERS ═══
 const noms = (await lister(`${LEA.id}/calques`)).sort();
-ok(noms.length === 3 && noms.some((n) => n.endsWith("-corps.png")) && noms.some((n) => n.endsWith("-tete.png")) && noms.some((n) => /^[0-9a-f]{16}\.json$/.test(n)), `rangés chez Léa : le corps, la tête, leurs repères (${noms})`);
+ok(noms.length === 4 && noms.some((n) => n.endsWith("-corps.png")) && noms.some((n) => n.endsWith("-tete.png")) && noms.some((n) => n.endsWith("-corps-sans-tete.png")) && noms.some((n) => /^[0-9a-f]{16}\.json$/.test(n)), `rangés chez Léa : le corps, la tête, le corps sans tête, leurs repères (${noms})`);
 const corpsPng = await octets(`${LEA.id}/calques/${noms.find((n) => n.endsWith("-corps.png"))}`);
 const mc = corpsPng ? await sharp(corpsPng).metadata() : {};
 ok(Math.abs((mc.width ?? 0) - 640) <= 2 && Math.abs((mc.height ?? 0) - 1180) <= 2 && mc.hasAlpha, `le corps recadré au plus près, transparent (${mc.width}×${mc.height})`);
-const tetePng = await octets(`${LEA.id}/calques/${noms.find((n) => n.endsWith("-tete.png"))}`);
+const tetePng = await octets(`${LEA.id}/calques/${noms.find((n) => n.endsWith("-tete.png") && !n.endsWith("-sans-tete.png"))}`);
 const mt = tetePng ? await sharp(tetePng).metadata() : {};
 ok(Math.abs((mt.width ?? 0) - tw * 640) <= 2 && Math.abs((mt.height ?? 0) - th * 1180) <= 2, `la tête, à la taille de sa boîte (${mt.width}×${mt.height})`);
 // (rien du fauteuil dans la tête : son coin en bas à gauche est transparent)
 const { data: px0, info: it } = tetePng ? await sharp(tetePng).ensureAlpha().raw().toBuffer({ resolveWithObject: true }) : { data: Buffer.alloc(4), info: { width: 1, height: 1 } };
 ok(px0[((it.height - 1) * it.width + 1) * 4 + 3] === 0, "la tête n'emporte rien du fauteuil");
+// (🧍 22 novembre 2026, « quand la tête bouge, elle est en double » : le corps sans sa tête d'origine — le milieu du crâne
+// transparent, le corps et le cou gardés ; c'est lui que la scène pose sous la tête qui bouge)
+const sansTetePng = await octets(`${LEA.id}/calques/${noms.find((n) => n.endsWith("-corps-sans-tete.png"))}`);
+const { data: ps, info: is } = sansTetePng ? await sharp(sansTetePng).ensureAlpha().raw().toBuffer({ resolveWithObject: true }) : { data: Buffer.alloc(4), info: { width: 1, height: 1 } };
+const alphaA = (u, v) => ps[(Math.round(v * (is.height - 1)) * is.width + Math.round(u * (is.width - 1))) * 4 + 3];
+ok(is.width === 640 && alphaA(0.5, th * 0.3) === 0 && alphaA(0.5, 0.8) > 200, `le corps sans tête : le crâne effacé, le corps gardé (${is.width}×${is.height})`);
+ok(ADRESSE.test(c?.sansTete?.fichier ?? "") && c.sansTete.fichier !== c.corps.fichier, `… à adresse stable (${c?.sansTete?.fichier})`);
 const fc = await fetch(`${BASE}${c?.corps?.fichier}`, { headers: { cookie: `clikme_habitant=${SAM.jeton}` } });
 const wc = fc.ok ? await sharp(Buffer.from(await fc.arrayBuffer())).metadata() : {};
 ok(fc.status === 200 && wc.format === "webp" && wc.width === 640 && wc.hasAlpha && /immutable/.test(fc.headers.get("cache-control") ?? ""), `servi en WebP transparent, gardé un an (${fc.status}, ${wc.width} de large)`);
@@ -146,7 +153,15 @@ ok(ft.status === 200 && wt.length > 0 && wt.length < 80_000, `la tête aussi, pe
 const avant = (await lister("salon/fichiers")).length;
 r = await calques(LEA);
 ok(r.statut === 200 && r.corps?.calques?.corps?.fichier === c?.corps?.fichier && JSON.stringify(r.corps.calques.tete) === JSON.stringify(c?.tete), "redemandés : les mêmes calques, aux mêmes adresses");
-ok((await lister(`${LEA.id}/calques`)).length === 3 && (await lister("salon/fichiers")).length === avant, "… rien n'est refait");
+ok((await lister(`${LEA.id}/calques`)).length === 4 && (await lister("salon/fichiers")).length === avant, "… rien n'est refait");
+// (🧍 des calques d'avant, sans le corps sans tête : il s'ajoute une fois, et le reste ne bouge pas)
+const nomJson = noms.find((n) => /^[0-9a-f]{16}\.json$/.test(n));
+const fj = JSON.parse((await octets(`${LEA.id}/calques/${nomJson}`))?.toString() ?? "{}");
+const { sansTete: _st, ...dAvant } = fj;
+void _st;
+await json(`${LEA.id}/calques/${nomJson}`, { ...dAvant, sources: { corps: fj.sources?.corps, tete: fj.sources?.tete } });
+r = await calques(LEA);
+ok(r.statut === 200 && ADRESSE.test(r.corps?.calques?.sansTete?.fichier ?? "") && r.corps.calques.corps.fichier === c?.corps?.fichier && JSON.stringify(r.corps.calques.tete) === JSON.stringify(c?.tete), "des calques d'avant : le corps sans tête s'ajoute, le corps et la tête ne bougent pas");
 
 // ═══ À L'OUVERTURE D'UNE CONVERSATION ═══
 const piece = (rr, g, b) =>
@@ -161,18 +176,19 @@ ok((await lister(`${SAM.id}/calques`)).length === 0, "Sam n'a pas encore ses cal
 r = await ouvrir(LEA, SAM.cle);
 const sc0 = r.corps?.ouverture?.scene;
 // (retours du 20 novembre 2026 : chacune la sienne — celle de Léa est prête, elle est posée ; celle de Sam viendra)
-ok(r.statut === 200 && sc0?.plaque && sc0.calques?.a?.corps?.fichier === c?.corps?.fichier && sc0.calques.b === undefined, `Léa ouvre sa conversation avec Sam : la pièce et sa figurine à elle, pas encore celle de Sam (${r.statut})`);
+// (🧍 22 novembre 2026 : la scène pose le corps sans sa tête d'origine, sous la tête qui bouge — elle n'est plus en double)
+ok(r.statut === 200 && sc0?.plaque && sc0.calques?.a?.corps?.fichier === c?.sansTete?.fichier && sc0.calques.a.tete?.fichier === c?.tete?.fichier && sc0.calques.b === undefined, `Léa ouvre sa conversation avec Sam : la pièce et sa figurine à elle (son corps sans tête, sa tête), pas encore celle de Sam (${r.statut})`);
 let n = 0;
-for (let i = 0; i < 40 && n < 3; i++) {
+for (let i = 0; i < 40 && n < 4; i++) {
   await pause(250);
   n = (await lister(`${SAM.id}/calques`)).length;
 }
-ok(n === 3, `… les calques de Sam se découpent juste après la réponse (${n} fichiers)`);
+ok(n === 4, `… les calques de Sam se découpent juste après la réponse (${n} fichiers)`);
 r = await ouvrir(LEA, SAM.cle);
 const sc = r.corps?.ouverture?.scene;
 const a = sc?.calques?.a;
 const b = sc?.calques?.b;
-ok(a?.corps?.fichier === c?.corps?.fichier && b?.corps?.fichier && b.corps.fichier !== a.corps.fichier, "rouverte : les deux figurines — la mienne à gauche (`a`), celle de Sam à droite (`b`)");
+ok(a?.corps?.fichier === c?.sansTete?.fichier && b?.corps?.fichier && b.corps.fichier !== a.corps.fichier, "rouverte : les deux figurines — la mienne à gauche (`a`), celle de Sam à droite (`b`)");
 // (à la même taille : la hauteur du duo, celle de la plus grande place ; le point d'assise de chacune sur sa place)
 const H = 0.34;
 const [g, d] = [...(sc?.places ?? [])].sort((p, q) => p.x - q.x);
@@ -192,7 +208,7 @@ await json(`${LEA.id}/perso/v2/fiche.json`, fiche(LEA.id, 2));
 await json(`${LEA.id}/perso/fiche.json`, fiche(LEA.id, 2));
 r = await calques(LEA);
 ok(r.statut === 200 && ADRESSE.test(r.corps?.calques?.corps?.fichier ?? "") && r.corps.calques.corps.fichier !== c?.corps?.fichier, "sa nouvelle figurine : de nouveaux calques, à une nouvelle adresse");
-ok((await lister(`${LEA.id}/calques`)).length === 6, "… les anciens restent (un téléphone qui les a encore)");
+ok((await lister(`${LEA.id}/calques`)).length === 8, "… les anciens restent (un téléphone qui les a encore)");
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nles calques de chaque figurine (lot S1) : tout est bon");
 process.exit(echecs ? 1 : 0);

@@ -101,7 +101,8 @@ export async function ouvrirSalon(
   if (!f.fil) return { error: f.error, statut: f.statut };
   // (posées aux deux places ; celles qui manquent sont découpées après la réponse)
   const calques = scene ? calquesPoses(scene, mienne, sienne) : null;
-  const aDecouper = [...(mienne ? [] : [moi.id]), ...(sienne || !h ? [] : [h])];
+  // (🧍 22 novembre 2026 : aussi celles d'avant, sans leur corps sans tête — il s'ajoute après la réponse)
+  const aDecouper = [...(mienne?.sansTete ? [] : [moi.id]), ...(sienne?.sansTete || !h ? [] : [h])];
   const choisie = Boolean(scene && fiche.piece === scene.piece);
   const installe = choisie && fiche.par8 ? { installePar: fiche.par8 === qui8(moi.id) ? ("moi" as const) : ("autre" as const) } : {};
   const sceneVue = scene ? { ...scene, ...(calques ? { calques } : {}), choisie, ...installe } : null;

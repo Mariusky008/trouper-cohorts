@@ -122,7 +122,7 @@ const STYLE = `
 .sc-objets,.sc-couche{inset:0;pointer-events:none}
 .sc-stage[data-moment="soir"] .sc-couche .sc-teinte{filter:sepia(.16) saturate(1.12) brightness(.97)}
 .sc-stage[data-moment="nuit"] .sc-couche .sc-teinte{filter:brightness(.74) saturate(.82) hue-rotate(-8deg)}
-.sc-objet{position:absolute;transform:translate(-50%,-100%);margin:0;padding:0;border:0;background:none;font-family:${EMOJI};font-size:calc(var(--sw)*.058);line-height:1;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+.sc .sc-objet{position:absolute;transform:translate(-50%,-100%);margin:0;padding:0;border:0;background:none;font-family:${EMOJI};font-size:calc(var(--sw)*.07);line-height:1;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}
 .sc-objet .corps{display:inline-block;transform-origin:50% 100%;filter:drop-shadow(0 2px 2px rgba(40,15,5,.55))}
 .sc-objet.balance .corps{animation:sc-balance 3.6s ease-in-out infinite}
 @keyframes sc-balance{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
@@ -864,7 +864,8 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     const k = PLACES_TABLE > 1 ? i / (PLACES_TABLE - 1) : 0.5;
     if (o.table) {
       const [x, y, w, h] = o.table;
-      return { x: x + w * (0.2 + 0.6 * k), y: y + h * (0.4 + 0.04 * Math.sin(k * Math.PI)) };
+      // (22 novembre 2026, « le café est tout petit » : les objets sont plus grands — ils s'écartent un peu plus)
+      return { x: x + w * (0.12 + 0.76 * k), y: y + h * (0.4 + 0.04 * Math.sin(k * Math.PI)) };
     }
     const zs = (["moi", "autre"] as const).map((q) => CALQUES[q]?.c.corps.boite).filter((z): z is Zone => Boolean(z));
     const m = milieu();
@@ -898,6 +899,9 @@ export function creerScene(conteneur: HTMLElement, o: OptionsScene): Scene {
     const i = indiceLibre(de);
     if (POSES[i]) enlever(POSES[i]!);
     const pt = place(i);
+    // (22 novembre 2026, le propriétaire : « le café est tout petit au lieu d'être de taille normale » — la règle des boutons
+    // de la messagerie, `.sd button { font: inherit }`, passait devant la nôtre : l'objet restait à 16 points ; désormais
+    // `.sc .sc-objet`, à 7 % de la largeur de la pièce)
     const el = elt("button", "sc-objet");
     el.type = "button";
     el.setAttribute("aria-label", ob.nom);

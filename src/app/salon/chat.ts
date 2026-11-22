@@ -1,6 +1,7 @@
 /**
  * 🐾 LE CHAT DU SALON (`docs/univers/salon-du-duo.md`, section 4.5 ; le lot S3, deuxième partie) — celui de l'essai C0
- * (ses boucles vidéo sur fond vert, `ChatSalon`), dans la pièce du duo : il vit dans son coin (`emplacements.chat`), vient
+ * (ses boucles vidéo sur fond vert, `ChatSalon`), dans la pièce du duo : il vit dans son coin (`emplacements.chat`), devant
+ * les figurines (22 novembre 2026 : derrière un fauteuil, on ne pouvait plus le toucher), vient
  * parfois ronronner sur mes genoux (au-dessus de ma place) et y repart ; il dort, s'assoit, joue, renifle ; il dresse
  * les oreilles à chaque message, saute de joie à un fou rire ou à un check, renifle ce qu'on pose sur la table. On le
  * touche : quelques cœurs, il ronronne (son vrai son enregistré, s'il est déposé) — touché dans son coin, il vient sur mes
@@ -48,7 +49,7 @@ const PIXELS = `precision mediump float;
 uniform sampler2D t;uniform vec3 fond;uniform float vf;uniform float vt;uniform vec2 px;varying vec2 uv;
 float partDe(vec3 c){return (c.g-(c.r+c.b)*.5)/vf;}
 float teinteDe(vec3 c){return smoothstep(.12,.28,c.g)*(c.g-max(c.r,c.b))/max(c.g,.001)/vt;}
-float alphaDe(vec3 c){return 1.-clamp((max(partDe(c),teinteDe(c))-.16)/.34,0.,1.);}
+float alphaDe(vec3 c){return 1.-clamp((max(partDe(c),teinteDe(c))-.13)/.27,0.,1.);}
 void main(){
   vec4 c=texture2D(t,uv);
   float part=partDe(c.rgb);
@@ -57,6 +58,10 @@ void main(){
   a=min(a,alphaDe(texture2D(t,uv-vec2(px.x,0.)).rgb));
   a=min(a,alphaDe(texture2D(t,uv+vec2(0.,px.y)).rgb));
   a=min(a,alphaDe(texture2D(t,uv-vec2(0.,px.y)).rgb));
+  a=min(a,alphaDe(texture2D(t,uv+px*vec2(1.5,1.5)).rgb));
+  a=min(a,alphaDe(texture2D(t,uv+px*vec2(-1.5,1.5)).rgb));
+  a=min(a,alphaDe(texture2D(t,uv+px*vec2(1.5,-1.5)).rgb));
+  a=min(a,alphaDe(texture2D(t,uv-px*vec2(1.5,1.5)).rgb));
   vec3 col=c.rgb;
   if(part<=.16){col.g=min(col.g,max(col.r,col.b));}
   else{
@@ -66,6 +71,7 @@ void main(){
     else{col=vec3(d.r,min(d.g,max(d.r,d.b)),d.b);}
   }
   a*=smoothstep(0.,.035,uv.x)*smoothstep(0.,.035,1.-uv.x)*smoothstep(0.,.02,uv.y)*smoothstep(0.,.02,1.-uv.y);
+  if(a<.97){col.g=min(col.g,mix((col.r+col.b)*.5,max(col.r,col.b),a));}
   col=clamp(col,0.,1.);
   gl_FragColor=vec4(col*a,a);
 }`;
@@ -214,8 +220,9 @@ export function installerChat(
   const coin = o.coin ?? auSol;
   const lieux: Record<LieuChat, { x: number; y: number; h: number }> = {
     coin: { x: coin.x, y: coin.y, h: P.hauteur * 0.62 },
-    // (ses genoux : juste au-dessus du point où elle touche son siège)
-    genoux: { x: P.x, y: P.y - P.hauteur * 0.12, h: P.hauteur * 0.46 },
+    // (ses genoux : là où elle touche son siège — le 22 novembre 2026, le propriétaire : « il n'est pas vraiment assis sur
+    // mes genoux mais sur ma poitrine » ; il était 12 % plus haut, et un peu plus grand)
+    genoux: { x: P.x, y: P.y + P.hauteur * 0.03, h: P.hauteur * 0.4 },
   };
   function placer(l: LieuChat) {
     const z = lieux[l];
@@ -246,6 +253,7 @@ export function installerChat(
     return x;
   }
   let vivant = true;
+  let son: HTMLAudioElement | null = null;
   let lieu: LieuChat = "coin";
   let base: Boucle | null = repli(Math.random() < 0.6 ? "dort" : "assis");
   let montree: Boucle | null = null;
@@ -295,11 +303,13 @@ export function installerChat(
   }
   function aller(l: LieuChat) {
     if (l === lieu || enMarche) return;
+    // (il quitte mes genoux : il ne ronronne plus)
+    if (lieu === "genoux") son?.pause();
     const de = lieux[lieu];
     const vers = lieux[l];
     lieu = l;
     if (!dispo("marche") || reduit) {
-      (l === "genoux" ? scene.couche("devant") : scene.couche("derriere")).append(el);
+      scene.couche("devant").append(el);
       placer(l);
       base = repli(l === "genoux" ? "genoux" : "assis");
       montrer(base);
@@ -316,7 +326,7 @@ export function installerChat(
     setTimeout(() => {
       if (!vivant) return;
       el.classList.remove("marche", "retourne");
-      (l === "genoux" ? scene.couche("devant") : scene.couche("derriere")).append(el);
+      scene.couche("devant").append(el);
       enMarche = false;
       base = repli(l === "genoux" ? "genoux" : Math.random() < 0.5 ? "dort" : "assis");
       montrer(base);
@@ -343,7 +353,6 @@ export function installerChat(
   }
 
   // ─── on le touche : des cœurs, il ronronne ; dans son coin, il vient sur mes genoux ───
-  let son: HTMLAudioElement | null = null;
   const ronronner = () => {
     if (!c.son || !vivant) return;
     son ??= new Audio(c.son);
@@ -358,7 +367,9 @@ export function installerChat(
     scene.fx.eclatCoeurs({ x: z.x, y: z.y - z.h * 0.45 }, 5);
     if (lieu === "coin" && dispo("genoux")) {
       aller("genoux");
-      setTimeout(ronronner, reduit || !dispo("marche") ? 0 : MARCHE_MS);
+      // (22 novembre 2026, « j'entends pas son ronron » : un iPhone ne joue un son que pendant le toucher — après sa
+      // marche, c'était trop tard ; il ronronne donc dès qu'on le touche, en venant)
+      ronronner();
       plusTard(30_000, vivre);
       return;
     }
@@ -376,7 +387,9 @@ export function installerChat(
   };
   document.addEventListener("visibilitychange", surVisibilite);
 
-  scene.couche("derriere").append(el);
+  // (22 novembre 2026, le propriétaire : « le chat est derrière, je peux pas cliquer dessus » — son coin était derrière un
+  // fauteuil : il est désormais devant les figurines, là aussi)
+  scene.couche("devant").append(el);
   placer("coin");
   montrer(base);
   if (!reduit) plusTard(hasard(14_000, 26_000), vivre);

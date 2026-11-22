@@ -25,7 +25,12 @@ export type FigurineLocale = {
   ratio: number;
   corps: { fichier: string };
   tete: { fichier: string; boite: Zone; pivot: [number, number] };
-  sources?: { corps: string; tete: string };
+  /**
+   * 🧍 (22 novembre 2026, le propriétaire : « quand la tête bouge, elle est en double ») le corps sans sa tête d'origine
+   * (le cou reste) : c'est lui que la scène pose sous la tête qui bouge. Sans lui : le corps entier, comme avant.
+   */
+  sansTete?: { fichier: string };
+  sources?: { corps: string; tete: string; sansTete?: string };
   bouche: [number, number];
   joues: [[number, number], [number, number]];
   /** d'où viennent la tête et ses repères : le modèle qui voit, ou l'estimation par la silhouette */
@@ -57,7 +62,7 @@ export function poserFigurine(f: FigurineLocale, place: PlaceDuo, piece: { large
   const pt = ([u, v]: [number, number]): [number, number] => [gauche + u * W, haut + v * H];
   const [tx, ty, tw, th] = f.tete.boite;
   return {
-    corps: { fichier: f.corps.fichier, boite: [gauche, haut, W, H] },
+    corps: { fichier: f.sansTete?.fichier ?? f.corps.fichier, boite: [gauche, haut, W, H] },
     tete: { fichier: f.tete.fichier, boite: [gauche + tx * W, haut + ty * H, tw * W, th * H], pivot: pt(f.tete.pivot) },
     bouche: pt(f.bouche),
     joues: [pt(f.joues[0]), pt(f.joues[1])],

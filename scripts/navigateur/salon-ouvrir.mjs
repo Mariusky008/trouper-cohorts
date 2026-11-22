@@ -193,7 +193,8 @@ const p4 = await ctx.newPage();
 surveiller(p4);
 await p4.goto(`${BASE}/univers/salon?avec=${SAM.cle}`, { waitUntil: "networkidle" });
 ok(await attendre(async () => (await p4.locator('[data-calques="aucun"]').count()) === 1, 8000, p4), "leurs figurines du nouveau style, pas encore découpées : la pièce seule, et elles le seront juste après");
-ok(await attendre(async () => (await lister(`${LEA.id}/calques`)) === 3 && (await lister(`${SAM.id}/calques`)) === 3, 15000, p4), "… découpées après la réponse : le corps, la tête, leurs repères, pour chacun");
+// (🧍 22 novembre 2026 : et le corps sans sa tête d'origine, posé sous la tête qui bouge)
+ok(await attendre(async () => (await lister(`${LEA.id}/calques`)) === 4 && (await lister(`${SAM.id}/calques`)) === 4, 15000, p4), "… découpées après la réponse : le corps, la tête, le corps sans tête, leurs repères, pour chacun");
 await p4.close();
 const p5 = await ctx.newPage();
 surveiller(p5);
