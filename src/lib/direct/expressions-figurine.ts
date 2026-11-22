@@ -19,6 +19,11 @@ export type ExpressionsFigurine = {
   le?: string;
   rate?: string;
   erreur?: string;
+  /**
+   * 🧍 (22 novembre 2026) la règle de découpe de la tête des calques sur lesquels elles ont été découpées
+   * (`FigurineLocale.decoupe`, 1 sans) : une autre que celle des calques, elles se redécoupent (sans le moteur).
+   */
+  decoupe?: number;
 };
 
 /**

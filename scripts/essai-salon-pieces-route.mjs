@@ -124,6 +124,18 @@ ok(sc?.piece === "salon" && sc.choisie === true && sc.installePar === "autre", `
 ok((await ouvrir(LEA, SAM.cle)).corps?.ouverture?.scene?.installePar === "moi", "… pour Léa, installé par elle");
 ok((await pouls(SAM, LEA.cle)).corps?.piece === "salon", "le pouls dit la pièce du duo");
 
+// ═══ 👀 LÀ, MAIS PAS DANS LA CONVERSATION ═══
+// (22 novembre 2026, le propriétaire : « tu invites [ton proche]… mais rien ne se produit » — il avait ClikMe ouvert
+// ailleurs : l'invitation l'attendait dans une conversation qu'il ne regardait pas)
+await appel(SAM, "/api/direct/proches", { action: "la" });
+await json(`fils/${PAIRE}/ici.json`, { [qui8(SAM.id)]: Date.now() - 60_000 });
+ok((await pouls(LEA, SAM.cle)).corps?.ici !== true, "Sam a ClikMe ouvert, mais pas cette conversation : le pouls de Léa ne le dit pas avec elle");
+r = await choisir(LEA, SAM.cle, "terrasse");
+ok(r.statut === 200 && r.corps?.piece === "terrasse" && !r.corps.invitation, "… Léa change de pièce : c'est fait tout de suite (pas d'invitation qu'il ne verrait pas)");
+ok((await pouls(SAM, LEA.cle)).corps?.piece === "terrasse", "… Sam la trouvera en ouvrant la conversation");
+ok((await pouls(LEA, SAM.cle)).corps?.ici === true, "Sam ouvre la conversation : son pouls l'y note, Léa le voit avec elle");
+await json(`fils/${PAIRE}/piece.json`, { piece: "salon", le: maintenant, par8: qui8(LEA.id) });
+
 // ═══ L'INVITATION ═══
 await appel(SAM, "/api/direct/proches", { action: "la" });
 r = await choisir(LEA, SAM.cle, "cuisine");

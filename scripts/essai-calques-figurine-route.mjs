@@ -154,14 +154,33 @@ const avant = (await lister("salon/fichiers")).length;
 r = await calques(LEA);
 ok(r.statut === 200 && r.corps?.calques?.corps?.fichier === c?.corps?.fichier && JSON.stringify(r.corps.calques.tete) === JSON.stringify(c?.tete), "redemandés : les mêmes calques, aux mêmes adresses");
 ok((await lister(`${LEA.id}/calques`)).length === 4 && (await lister("salon/fichiers")).length === avant, "… rien n'est refait");
-// (🧍 des calques d'avant, sans le corps sans tête : il s'ajoute une fois, et le reste ne bouge pas)
+ok(c?.decoupe === 2, `… la tête découpée selon la règle d'aujourd'hui (découpe ${c?.decoupe})`);
+// (🧍 22 novembre 2026, le propriétaire : « on est toujours coupé… comme si la tête se détache des épaules » — des calques
+// d'avant : sans le corps sans tête, et la tête dans une boîte trop étroite (12 % de moins de chaque côté, un peu trop
+// basse — le modèle qui voit en rendait parfois de telles) : leur tête se refait une fois, élargie à sa silhouette)
 const nomJson = noms.find((n) => /^[0-9a-f]{16}\.json$/.test(n));
 const fj = JSON.parse((await octets(`${LEA.id}/calques/${nomJson}`))?.toString() ?? "{}");
-const { sansTete: _st, ...dAvant } = fj;
+const { sansTete: _st, decoupe: _dc, ...dAvant } = fj;
 void _st;
-await json(`${LEA.id}/calques/${nomJson}`, { ...dAvant, sources: { corps: fj.sources?.corps, tete: fj.sources?.tete } });
+void _dc;
+const etroite = [tx + tw * 0.12, ty + 0.04, tw * 0.76, th - 0.04].map((v) => Math.round(v * 1000) / 1000);
+await json(`${LEA.id}/calques/${nomJson}`, { ...dAvant, tete: { ...fj.tete, boite: etroite }, sources: { corps: fj.sources?.corps, tete: fj.sources?.tete } });
 r = await calques(LEA);
-ok(r.statut === 200 && ADRESSE.test(r.corps?.calques?.sansTete?.fichier ?? "") && r.corps.calques.corps.fichier === c?.corps?.fichier && JSON.stringify(r.corps.calques.tete) === JSON.stringify(c?.tete), "des calques d'avant : le corps sans tête s'ajoute, le corps et la tête ne bougent pas");
+const cr = r.corps?.calques;
+const [rx, ry, rw] = cr?.tete?.boite ?? [0, 0, 0];
+// (le crâne : 520 de large, de 60 à 580 sur les 640 du corps ; son haut en haut de la boîte du corps)
+ok(r.statut === 200 && cr?.decoupe === 2 && rx <= 60 / 640 + 0.006 && rx + rw >= 580 / 640 - 0.006 && ry < 0.01, `des calques d'avant, la tête trop étroite : sa boîte s'élargit à toute sa silhouette (${etroite} → ${cr?.tete?.boite})`);
+ok(cr?.corps?.fichier === c?.corps?.fichier && JSON.stringify(cr?.tete?.pivot) === JSON.stringify(c?.tete?.pivot) && JSON.stringify(cr?.bouche) === JSON.stringify(c?.bouche), "… le corps, le pivot, la bouche ne bougent pas");
+const tete2 = await octets(`${LEA.id}/calques/${noms.find((n) => n.endsWith("-tete.png") && !n.endsWith("-sans-tete.png"))}`);
+const mt2 = tete2 ? await sharp(tete2).metadata() : {};
+ok(ADRESSE.test(cr?.tete?.fichier ?? "") && Math.abs((mt2.width ?? 0) - rw * 640) <= 2, `… la tête redécoupée à sa nouvelle boîte (${mt2.width} de large)`);
+const sansTete2 = await octets(`${LEA.id}/calques/${noms.find((n) => n.endsWith("-corps-sans-tete.png"))}`);
+const { data: ps2, info: is2 } = sansTete2 ? await sharp(sansTete2).ensureAlpha().raw().toBuffer({ resolveWithObject: true }) : { data: Buffer.alloc(4), info: { width: 1, height: 1 } };
+const alphaB = (u, v) => ps2[(Math.round(v * (is2.height - 1)) * is2.width + Math.round(u * (is2.width - 1))) * 4 + 3];
+// (le côté du crâne, hors de la boîte trop étroite : effacé du corps aussi — plus rien ne reste derrière la tête qui bouge)
+ok(ADRESSE.test(cr?.sansTete?.fichier ?? "") && alphaB(0.14, th * 0.35) === 0 && alphaB(0.86, th * 0.35) === 0 && alphaB(0.5, 0.8) > 200, "… le corps sans tête refait : les côtés du crâne effacés aussi, le corps gardé");
+r = await calques(LEA);
+ok(JSON.stringify(r.corps?.calques?.tete) === JSON.stringify(cr?.tete), "redemandés : ils ne se refont plus");
 
 // ═══ À L'OUVERTURE D'UNE CONVERSATION ═══
 const piece = (rr, g, b) =>
@@ -177,7 +196,7 @@ r = await ouvrir(LEA, SAM.cle);
 const sc0 = r.corps?.ouverture?.scene;
 // (retours du 20 novembre 2026 : chacune la sienne — celle de Léa est prête, elle est posée ; celle de Sam viendra)
 // (🧍 22 novembre 2026 : la scène pose le corps sans sa tête d'origine, sous la tête qui bouge — elle n'est plus en double)
-ok(r.statut === 200 && sc0?.plaque && sc0.calques?.a?.corps?.fichier === c?.sansTete?.fichier && sc0.calques.a.tete?.fichier === c?.tete?.fichier && sc0.calques.b === undefined, `Léa ouvre sa conversation avec Sam : la pièce et sa figurine à elle (son corps sans tête, sa tête), pas encore celle de Sam (${r.statut})`);
+ok(r.statut === 200 && sc0?.plaque && sc0.calques?.a?.corps?.fichier === cr?.sansTete?.fichier && sc0.calques.a.tete?.fichier === cr?.tete?.fichier && sc0.calques.b === undefined, `Léa ouvre sa conversation avec Sam : la pièce et sa figurine à elle (son corps sans tête, sa tête), pas encore celle de Sam (${r.statut})`);
 let n = 0;
 for (let i = 0; i < 40 && n < 4; i++) {
   await pause(250);
@@ -188,7 +207,7 @@ r = await ouvrir(LEA, SAM.cle);
 const sc = r.corps?.ouverture?.scene;
 const a = sc?.calques?.a;
 const b = sc?.calques?.b;
-ok(a?.corps?.fichier === c?.sansTete?.fichier && b?.corps?.fichier && b.corps.fichier !== a.corps.fichier, "rouverte : les deux figurines — la mienne à gauche (`a`), celle de Sam à droite (`b`)");
+ok(a?.corps?.fichier === cr?.sansTete?.fichier && b?.corps?.fichier && b.corps.fichier !== a.corps.fichier, "rouverte : les deux figurines — la mienne à gauche (`a`), celle de Sam à droite (`b`)");
 // (à la même taille : la hauteur du duo, celle de la plus grande place ; le point d'assise de chacune sur sa place)
 const H = 0.34;
 const [g, d] = [...(sc?.places ?? [])].sort((p, q) => p.x - q.x);

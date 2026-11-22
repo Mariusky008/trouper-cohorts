@@ -31,6 +31,11 @@ export type FigurineLocale = {
    */
   sansTete?: { fichier: string };
   sources?: { corps: string; tete: string; sansTete?: string };
+  /**
+   * 🧍 (22 novembre 2026, « comme si la tête se détache des épaules ») la règle de découpe de la tête : 2, sa boîte élargie
+   * à sa silhouette (`elargirTete`) ; sans : celle d'avant, que le serveur refait une fois.
+   */
+  decoupe?: number;
   bouche: [number, number];
   joues: [[number, number], [number, number]];
   /** d'où viennent la tête et ses repères : le modèle qui voit, ou l'estimation par la silhouette */

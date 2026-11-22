@@ -1402,6 +1402,58 @@ Le propriétaire, dans sa conversation avec un proche (captures à l'appui), a f
 - `salon-chat.mjs` : devant les figurines, dans son coin ; il ronronne dès le toucher ; ses pattes sur ses genoux.
 - `salon-gestes.mjs` : la tulipe à 7 % de la largeur de la pièce.
 
+### 11.28 🛠️ Les retours du 22 novembre 2026, deuxième série
+
+Le propriétaire, le même jour, captures à l'appui, sur la messagerie (ses points 1, 2, 3 et 9).
+
+**1. « On est toujours coupé… comme si la tête se détache des épaules » ; « le café est sur mon épaule ».**
+- **La tête entière.** Le modèle qui voit rend parfois une boîte de tête trop étroite : un côté du visage, des cheveux
+  restaient dehors. Ils restaient sur le corps, et la tête qui bouge avait un bord coupé net, du côté de la télé chez lui.
+  - La boîte de la tête est désormais **élargie à sa silhouette** (`elargirTete`, `calques-figurine-serveur.ts`) : sur
+    les 60 % du haut de la tête, ce qui la continue d'un seul tenant au-delà d'un côté est repris, un tiers de sa largeur
+    au plus (plus loin, c'est le dossier du fauteuil : la ligne ne compte pas) ; au-dessus, les cheveux qui dépassent.
+  - La tête est découpée dans cette boîte ; le corps sans tête est effacé au même endroit.
+  - **Les calques d'avant se refont une fois** (`FigurineLocale.decoupe`, 2 aujourd'hui) : d'après leur corps, sans le
+    modèle qui voit ni le moteur d'image ; le pivot, la bouche et les joues ne bougent pas. À la prochaine ouverture
+    d'une conversation, après la réponse (`aDecouper`), ou quand ses expressions se rattrapent.
+  - **Ses cinq expressions se redécoupent** à la nouvelle boîte, d'après les expressions entières déjà faites : sans le
+    moteur (`ExpressionsFigurine.decoupe`). D'ici là, sa figurine s'affiche comme avant, d'une seule image.
+- **Le masque de la télé** (section 11.26) : chaque silhouette était « exclue » du fond à tour de rôle ; là où deux se
+  recouvrent (le corps et la tête qui bouge), la seconde rendait l'écran. Désormais l'écran entier moins **l'union** des
+  silhouettes (`subtract`, puis `add`).
+- **Les objets de la table** : aux bords du plateau, ils tombaient sur l'accoudoir, devant la figurine. Ils restent au
+  milieu du plateau ; ceux du milieu un peu devant, ceux des côtés un peu derrière (le plus devant passe devant).
+
+**2. « Tu invites [ton proche] dans la chambre musicale… mais rien ne se produit. »**
+- Changer de pièce était une invitation dès que l'autre avait ClikMe ouvert, n'importe où : il ne la voyait pas (elle
+  l'attendait dans une conversation qu'il ne regardait pas), et rien ne changeait. Avec un autre proche, absent, la pièce
+  changeait tout de suite.
+- Désormais **une invitation seulement s'il est dans cette conversation, en ce moment** : son pouls l'y note
+  (`fils/<paire>/ici.json`, l'heure par personne, une écriture toutes les 15 s au plus ; dans les 40 s, il est dedans).
+  Le pouls le dit (`ici`). Sinon, la pièce change tout de suite, et il arrivera dedans.
+- Sans réponse dans les deux minutes : « Sam n’a pas répondu : vous restez ici. »
+- Dans la feuille du choix : « Sam est avec toi : ce sera une invitation. »
+
+**3. « C'est difficile de revenir aux autres conversations. »**
+- Le retour était un « ‹ » de 26 points. C'est désormais un vrai bouton, grand, qui dit où il mène : **« ‹ Proches »**.
+
+**9. Le chat : « toujours les bordures vertes », « je n'entends pas son ronronnement », et sur la page de l'admin aussi.**
+- La vidéo laisse autour de lui une ombre vert sombre, kaki : elle restait à demi, et le retrait du reflet vert la
+  rendait brune. Désormais **un point dont le vert passe nettement son rouge et son bleu, rapporté à sa propre lumière,
+  est du fond**, même sombre ; et l'ombre plus sombre que le fond n'est plus gardée grise. Les mêmes règles dans la
+  messagerie (la carte graphique, `chat.ts`) et sur la page de l'essai du compagnon (`compagnon-vivant.tsx`).
+- Une ombre douce est posée sous lui (plus légère sur mes genoux).
+- **Le ronronnement est un vrai enregistrement, à déposer** sur la page de l'essai du compagnon, sur la boucle « Sur les
+  genoux, il ronronne » : sans lui, il reste muet. La carte le dit désormais (« 🔇 Pas encore de ronron… »).
+
+**Les essais**
+- `essai-calques-figurine-route.mjs` : la découpe d'aujourd'hui ; des calques d'avant, la tête trop étroite : sa boîte
+  s'élargit à toute sa silhouette, la tête redécoupée, le corps sans tête refait (les côtés du crâne effacés), puis rien
+  ne se refait.
+- `essai-salon-pieces-route.mjs` : là, mais pas dans la conversation : la pièce change tout de suite ; il ouvre la
+  conversation : le pouls le dit avec moi ; puis l'invitation, comme avant.
+- `salon-tele.mjs` : l'écran moins l'union des silhouettes.
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

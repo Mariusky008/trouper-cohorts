@@ -99,23 +99,28 @@ function silhouettesDevant(scene: HTMLElement | null, c: Cadre): Silhouette[] {
   }
   return l;
 }
-/** Le masque du lecteur : tout l'écran, moins les silhouettes (chacune « exclue » du fond). */
+/**
+ * Le masque du lecteur : tout l'écran, moins l'union des silhouettes. (22 novembre 2026 : chacune était « exclue » du
+ * fond à tour de rôle — là où deux se recouvrent, le corps et la tête qui bouge, la seconde rendait l'écran : la télé
+ * repassait sur le cou, et sur toute la tête quand le corps avait encore la sienne.) Le premier calque est l'écran entier,
+ * soustrait de ceux du dessous ; les silhouettes, dessous, s'ajoutent.
+ */
 function masqueDe(s: Silhouette[]): React.CSSProperties {
   if (!s.length) return {};
-  const images = [...s.map((x) => `url("${x.src}")`), "linear-gradient(#000,#000)"].join(",");
-  const positions = [...s.map((x) => `${x.x}px ${x.y}px`), "0 0"].join(",");
-  const tailles = [...s.map((x) => `${x.w}px ${x.h}px`), "100% 100%"].join(",");
+  const images = ["linear-gradient(#000,#000)", ...s.map((x) => `url("${x.src}")`)].join(",");
+  const positions = ["0 0", ...s.map((x) => `${x.x}px ${x.y}px`)].join(",");
+  const tailles = ["100% 100%", ...s.map((x) => `${x.w}px ${x.h}px`)].join(",");
   return {
     WebkitMaskImage: images,
     WebkitMaskPosition: positions,
     WebkitMaskSize: tailles,
     WebkitMaskRepeat: "no-repeat",
-    WebkitMaskComposite: [...s.map(() => "xor"), "source-over"].join(","),
+    WebkitMaskComposite: ["source-out", ...s.map(() => "source-over")].join(","),
     maskImage: images,
     maskPosition: positions,
     maskSize: tailles,
     maskRepeat: "no-repeat",
-    maskComposite: [...s.map(() => "exclude"), "add"].join(","),
+    maskComposite: ["subtract", ...s.map(() => "add")].join(","),
   } as React.CSSProperties;
 }
 const memesSilhouettes = (a: Silhouette[], b: Silhouette[]) => a.length === b.length && a.every((x, k) => x.src === b[k].src && x.x === b[k].x && x.y === b[k].y && x.w === b[k].w && x.h === b[k].h);

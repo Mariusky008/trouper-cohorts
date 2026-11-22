@@ -204,9 +204,13 @@ const devant = await p.evaluate(() => {
   }).length;
   const f = document.querySelector(".tv-flottant");
   const bulles = document.querySelector(".sd-bulles");
-  return { n, marque: Number(f?.getAttribute("data-silhouettes") ?? 0), masque: getComputedStyle(f).webkitMaskImage || getComputedStyle(f).maskImage || "", plan: Number(getComputedStyle(f).zIndex), planBulles: bulles ? Number(getComputedStyle(bulles).zIndex) : 0 };
+  const st = getComputedStyle(f);
+  return { n, marque: Number(f?.getAttribute("data-silhouettes") ?? 0), masque: st.webkitMaskImage || st.maskImage || "", compo: st.maskComposite || st.webkitMaskComposite || "", plan: Number(st.zIndex), planBulles: bulles ? Number(getComputedStyle(bulles).zIndex) : 0 };
 });
 ok(devant && devant.marque === devant.n && (devant.n === 0 || /url\(/.test(devant.masque)), `les figurines devant l'écran (leur corps et leur tête), découpées dans le lecteur (${devant?.n} images devant)`);
+// (22 novembre 2026, « coupé sur mon côté télé » : l'écran moins l'UNION des silhouettes — le corps et la tête qui se
+// recouvrent ne rendent plus l'écran sur le cou)
+ok(devant && (devant.n === 0 || /^(subtract|source-out)/.test(devant.compo)), `… l'écran entier, moins l'union des silhouettes (${devant?.compo})`);
 // (🧱 22 novembre 2026, « les textes et bulles et autres sont derrière la télé » : le lecteur passe sous les bulles)
 ok(devant && devant.plan === 3 && devant.planBulles > devant.plan, `le lecteur sous les bulles (plan ${devant?.plan}, bulles ${devant?.planBulles})`);
 await p.locator(".tv-eteindre").click();

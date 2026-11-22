@@ -22,7 +22,7 @@
  */
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { PART_SANS_TETE, boiteDuCorps, calquesDeFigurine, cheminFigurineAssise, corpsSansTete, empreinteDe } from "./calques-figurine-serveur";
+import { DECOUPE_TETE, PART_SANS_TETE, boiteDuCorps, calquesDeFigurine, cheminFigurineAssise, corpsSansTete, empreinteDe } from "./calques-figurine-serveur";
 import { LARGEURS_CALQUES } from "./figurine-calques";
 import { depotDans, telecharger } from "./ma-figurine-serveur";
 import { demanderUneImage } from "./moteur-images-serveur";
@@ -177,9 +177,12 @@ async function lireEtat(supabase: Supabase, h: string, k: string): Promise<Expre
   if (o.empreinte !== k) return { empreinte: k, tetes: {} };
   const tetes: ExpressionsFigurine["tetes"] = {};
   for (const e of lesCinq) if (s(o.tetes?.[e])) tetes[e] = s(o.tetes?.[e]);
-  return { empreinte: k, tetes, ...(s(o.corpsSansTete) ? { corpsSansTete: s(o.corpsSansTete) } : {}), ...(s(o.le) ? { le: s(o.le) } : {}), ...(s(o.rate) ? { rate: s(o.rate) } : {}), ...(s(o.erreur) ? { erreur: s(o.erreur) } : {}) };
+  return { empreinte: k, tetes, ...(s(o.corpsSansTete) ? { corpsSansTete: s(o.corpsSansTete) } : {}), ...(s(o.le) ? { le: s(o.le) } : {}), ...(s(o.rate) ? { rate: s(o.rate) } : {}), ...(s(o.erreur) ? { erreur: s(o.erreur) } : {}), ...(Number(o.decoupe) > 1 ? { decoupe: Number(o.decoupe) } : {}) };
 }
-const complet = (e: ExpressionsFigurine) => Boolean(e.corpsSansTete) && lesCinq.every((x) => e.tetes[x]);
+/** (les cinq et le corps sans sa tête, découpés sur des calques de la règle d'aujourd'hui) */
+const complet = (e: ExpressionsFigurine) => Boolean(e.corpsSansTete) && lesCinq.every((x) => e.tetes[x]) && (e.decoupe ?? 1) === DECOUPE_TETE;
+/** (🧍 22 novembre 2026 : découpées sur ces calques-là — la même règle de découpe de la tête) */
+const memeDecoupe = (e: ExpressionsFigurine, c: { decoupe?: number }) => (e.decoupe ?? 1) === (c.decoupe ?? 1);
 const enPause = (e: ExpressionsFigurine) => Boolean(e.rate) && Date.now() - Date.parse(e.rate ?? "") < RATTRAPAGE_EXPRESSIONS.recommencerApres;
 
 /**
@@ -201,7 +204,7 @@ export async function figurineVivante(supabase: Supabase, h: string): Promise<Fi
   const chemin = await cheminFigurineAssise(supabase, h);
   if (!chemin) return null;
   const [calques, etat] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), lireEtat(supabase, h, empreinteDe(chemin))]);
-  if (!calques || !complet(etat) || !etat.corpsSansTete) return null;
+  if (!calques || !etat.corpsSansTete || !lesCinq.every((x) => etat.tetes[x]) || !memeDecoupe(etat, calques)) return null;
   const e = etat.tetes as Record<ExpressionVisage, string>;
   return { ratio: calques.ratio, corps: etat.corpsSansTete, tete: { src: calques.tete.fichier, boite: calques.tete.boite, pivot: calques.tete.pivot }, expressions: { sourire: e.sourire, rire: e.rire, surprise: e.surprise, bof: e.bof, grimace: e.grimace } };
 }
@@ -235,6 +238,13 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
     // (ses calques d'abord — faits ici s'ils ne le sont pas encore : le cadrage de sa tête habituelle)
     const calques = await calquesDeFigurine(supabase, h).catch(() => null);
     if (!calques?.sources) return rater("Ses calques ne sont pas prêts.");
+    // (🧍 22 novembre 2026 : sa tête a été refaite dans une boîte plus juste — ses expressions et son corps sans tête se
+    // redécoupent à la nouvelle boîte, d'après les expressions entières déjà faites : sans le moteur)
+    if (!memeDecoupe(etat, calques)) {
+      etat.tetes = {};
+      delete etat.corpsSansTete;
+    }
+    etat.decoupe = calques.decoupe ?? 1;
     const [figurine, corps] = await Promise.all([telecharger(supabase, chemin), telecharger(supabase, calques.sources.corps)]);
     if (!figurine || !corps) return rater("Sa figurine est introuvable.");
     const [boite, m] = await Promise.all([boiteDuCorps(figurine), sharp(figurine).metadata()]);
@@ -273,7 +283,7 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
     const faites = rendus.filter((x) => x.src).map((x) => x.e);
     const rate = rendus.find((x) => x.erreur);
     if (rate?.erreur) return rater(rate.erreur, faites);
-    await ecrire({ empreinte: k, tetes: etat.tetes, corpsSansTete: etat.corpsSansTete, le: new Date().toISOString() });
+    await ecrire({ empreinte: k, tetes: etat.tetes, corpsSansTete: etat.corpsSansTete, le: new Date().toISOString(), ...(etat.decoupe && etat.decoupe > 1 ? { decoupe: etat.decoupe } : {}) });
     return { faites, manquent: [] };
   } catch {
     await d

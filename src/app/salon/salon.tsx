@@ -177,6 +177,8 @@ const reagissable = (id: string | undefined) => Boolean(id && !id.startsWith("me
 const dejaArrive = (m: MessageFil, x: MessageFil) => x.moi && (estVocal(m) ? estVocal(x) && Math.abs(x.duree - m.duree) < 0.02 && Date.parse(x.le) >= Date.parse(m.le) - 10_000 : x.texte === m.texte);
 /** (📻 un vocal sur la table : une semaine au plus) */
 const SUR_TABLE_MS = 7 * 86_400_000;
+/** (🚪 une invitation dans une autre pièce vaut deux minutes : `INVITATION_MS`, `salon-serveur.ts`) */
+const INVITATION_MS = 120_000;
 /** (📻 un vocal parti « en direct » : le temps que son téléphone le joue et le note écouté ; sinon, il va sur la table) */
 const DIRECT_MS = 15_000;
 
@@ -406,6 +408,8 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   const [memes, setMemes] = useState<MemeFil[]>([]);
   // 💓 (le pouls) l'autre est là ; sinon sa dernière visite ; il écrit
   const [la, setLa] = useState(false);
+  // 👀 (22 novembre 2026) il est dans cette conversation, en ce moment : changer de pièce est alors une invitation
+  const [dedans, setDedans] = useState(false);
   const [vu, setVu] = useState<string | undefined>(undefined);
   const [ecrit, setEcrit] = useState(false);
   // 🚪 (l'arrivée) ce qu'il a laissé depuis ma dernière visite, rejoué un à un
@@ -848,12 +852,13 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (fini || document.visibilityState !== "visible") return;
       const avant = mesChangements.current.n;
       const r = await fetch(`/api/direct/proches?pouls=${encodeURIComponent(cle)}`, { cache: "no-store" }).catch(() => null);
-      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ecrit?: boolean; parle?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: boolean } | null) : null;
+      const p = r?.ok ? ((await r.json().catch(() => null)) as { n?: number; la?: boolean; ici?: boolean; ecrit?: boolean; parle?: boolean; vu?: string; piece?: PieceDuo; invitation?: PieceDuo; invitationLe?: number; refus?: boolean } | null) : null;
       if (fini) return;
       if (p) {
         const n = Number(p.n) || 0;
         const estLa = Boolean(p.la);
         setLa(estLa);
+        setDedans(Boolean(p.ici));
         setVu(p.vu);
         setEcrit(Boolean(p.ecrit));
         const s = scene.current;
@@ -1719,7 +1724,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   }
   async function sInstaller(p: PieceDuSalon, depart: boolean) {
     if (!sceneVue) return;
-    const direct = depart || !la || sceneVue.choisie === false;
+    const direct = depart || !dedans || sceneVue.choisie === false;
     const avant = sceneVue;
     if (direct && p.cle !== sceneVue.piece) {
       await prechargerImage(p.scene.plaque);
@@ -1736,6 +1741,13 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       if (direct) setSceneVue(avant);
       monInvitation.current = p.cle;
       montrer(`🚪 Tu invites ${prenom} · ${p.emoji} ${p.nom}…`, 3600);
+      // (22 novembre 2026, « rien ne se produit » : sans réponse dans les deux minutes, on le dit)
+      const invite = p.cle;
+      setTimeout(() => {
+        if (monInvitation.current !== invite || sceneVueRef.current?.piece === invite) return;
+        monInvitation.current = null;
+        montrerRef.current(`${prenomRef.current} n’a pas répondu : vous restez ici.`, 3600);
+      }, INVITATION_MS + 3000);
       return;
     }
     if (!direct) {
@@ -1835,13 +1847,15 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       <style>{STYLES_MEME}</style>
       <style>{STYLES_LUMIERE}</style>
       <header className="sd-entete">
+        {/* (22 novembre 2026, le propriétaire : « difficile de revenir aux autres conversations » — le retour est un vrai
+            bouton, grand, qui dit où il mène) */}
         {onRetour ? (
-          <button type="button" className="sd-retour" aria-label="Retour" onClick={onRetour}>
-            ‹
+          <button type="button" className="sd-retour" aria-label="Retour à mes proches" onClick={onRetour}>
+            <span aria-hidden="true">‹</span> Proches
           </button>
         ) : (
-          <a className="sd-retour" aria-label="Retour" href="/collection#proches">
-            ‹
+          <a className="sd-retour" aria-label="Retour à mes proches" href="/collection#proches">
+            <span aria-hidden="true">‹</span> Proches
           </a>
         )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2191,7 +2205,7 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
           <h3>{choix === "depart" ? "Où vous installez-vous ?" : "Changer de pièce"}</h3>
         </button>
         <div className="sd-corps">
-          <p className="sd-sous">{la && sceneVue?.choisie ? `${prenom} est là : ce sera une invitation.` : `${prenom} vous retrouvera dans la pièce que tu choisis.`}</p>
+          <p className="sd-sous">{dedans && sceneVue?.choisie ? `${prenom} est avec toi : ce sera une invitation.` : `${prenom} vous retrouvera dans la pièce que tu choisis.`}</p>
           <div className="sd-pieces">
             {catalogue?.pieces.map((p) => (
               <button key={p.cle} type="button" className={`sd-piece-carte${p.cle === sceneVue?.piece ? " ici" : ""}`} data-choisir={p.cle} onClick={() => void choisir(p)}>
@@ -2363,7 +2377,9 @@ export const STYLES_SALON = `
 .sd button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 .sd button:focus-visible,.sd input:focus-visible{outline:2px solid var(--or);outline-offset:2px}
 .sd-entete{flex:none;height:54px;display:flex;align-items:center;gap:9px;padding:env(safe-area-inset-top,0px) 12px 0 8px}
-.sd-retour{width:26px;height:36px;display:grid;place-items:center;font-size:26px;line-height:1;color:var(--texte);text-decoration:none}
+.sd .sd-retour{flex:none;height:40px;min-width:44px;display:inline-flex;align-items:center;gap:3px;padding:0 13px 0 9px;margin:0;border:0;border-radius:20px;background:var(--carte);box-shadow:0 0 0 1.5px var(--trait);font:700 14px/1 system-ui,-apple-system,sans-serif;color:var(--texte);text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sd .sd-retour span{font-size:26px;line-height:.8;margin-top:-3px}
+.sd .sd-retour:active{transform:scale(.96)}
 .sd-avatar{width:38px;height:38px;border-radius:50%;flex:none;object-fit:cover;background:var(--carte);box-shadow:0 0 0 2px var(--or)}
 .sd-qui{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
 .sd-qui b{font-size:16.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
