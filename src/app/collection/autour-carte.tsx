@@ -60,7 +60,7 @@ function marqueur(l: Lieu, onLieu: (id: string) => void): HTMLElement {
   const b = document.createElement("button");
   b.type = "button";
   b.className = l.type === "zone" ? "auc-zone" : `auc-goutte${l.n ? "" : " vide"}`;
-  b.setAttribute("aria-label", `${l.nom}, ${l.n} mème${l.n > 1 ? "s" : ""}`);
+  b.setAttribute("aria-label", `${l.nom}, ${l.n} figurine${l.n > 1 ? "s" : ""}`);
   b.dataset.lieu = l.id;
   if (l.type === "zone") {
     b.innerHTML = `<b>✨ ${l.n}</b><small></small>`;
