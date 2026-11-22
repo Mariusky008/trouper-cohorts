@@ -49,6 +49,8 @@ import { themeDe } from "./decouvrir";
 import { INVITATION_MS, type MonSalon } from "./salons-ouverts";
 import type { PropositionRegarder } from "./regarder-a-deux";
 import { maBoiteARevoir } from "./revoir-serveur";
+import { calquesDeFigurine } from "./calques-figurine-serveur";
+import { teteDuJour } from "./expressions-figurine-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -164,13 +166,15 @@ export async function vignetteDeLaPiece(supabase: Supabase, p: PieceDuo): Promis
  * 🙂🚪🎁 (lot M5) CE QUI VIT DANS SA MAISON : son humeur du jour (`<habitant>/humeur.json`, celle du rituel) ; qui a
  * frappé depuis `depuis` (ms ; des prénoms, jamais un nombre) ; les cadeaux de ses proches sur la table basse (les
  * souvenirs du lot 6 : `<habitant>/monde/souvenirs.json`) — à ouvrir d'abord, puis gardés. `visiteur` : seulement ce
- * qui est posé (pas ce qui attend), et pas de « pendant ton absence ».
+ * qui est posé (pas ce qui attend), et pas de « pendant ton absence ». 🙂 (22 novembre 2026) Et sa figurine qui fait la
+ * tête de son humeur, quand elle est prête (`teteDeLaMaison`).
  */
-export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean; de?: string } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table">> {
-  const [hum, visites, souvenirs] = await Promise.all([
+export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean; de?: string } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table" | "tete">> {
+  const [hum, visites, souvenirs, tete] = await Promise.all([
     lireJson<{ jour?: string; visage?: string }>(supabase, `${h}/humeur.json`).catch(() => ({}) as { jour?: string; visage?: string }),
     o.visiteur ? Promise.resolve({} as { liste?: unknown }) : lireJson<{ liste?: unknown }>(supabase, `${h}/monde/visites.json`).catch(() => ({}) as { liste?: unknown }),
     lireJson<{ liste?: unknown }>(supabase, `${h}/monde/souvenirs.json`).catch(() => ({}) as { liste?: unknown }),
+    teteDeLaMaison(supabase, h).catch(() => null),
   ]);
   const visage = hum.jour === jourParis() ? humeurDe(s(hum.visage) as Sentiment) : null;
   type Brut = { id?: string; de?: string; objet?: string; mot?: string; le?: string; accepte_le?: string };
@@ -186,6 +190,7 @@ export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?:
   const absence = [...new Set(passes.reverse().map((v) => prenoms.get(s(v.de)) ?? "Quelqu’un"))].slice(0, 3);
   return {
     ...(visage ? { humeur: { emoji: visage.emoji, nom: visage.court } } : {}),
+    ...(visage && tete ? { tete } : {}),
     ...(absence.length ? { absence } : {}),
     ...(surTable.length
       ? {
@@ -196,6 +201,18 @@ export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?:
         }
       : {}),
   };
+}
+
+/**
+ * 🙂 (22 novembre 2026, le propriétaire : « mon humeur du jour devrait être la tête que je fais dans ma maison ») Sa
+ * figurine qui fait la tête de son humeur du jour : son corps sans sa tête (ses calques) et l'expression, dans la boîte
+ * de sa tête — seulement si l'expression a été découpée sur des calques de la même règle ; sinon rien (sa figurine
+ * habituelle, d'une seule image).
+ */
+export async function teteDeLaMaison(supabase: Supabase, h: string): Promise<MaMaisonVue["tete"] | null> {
+  const [c, t] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), teteDuJour(supabase, h).catch(() => null)]);
+  if (!c?.sansTete || !t || (c.decoupe ?? 1) !== t.decoupe) return null;
+  return { e: t.e, corps: c.sansTete.fichier, ratio: c.ratio, src: t.src, boite: c.tete.boite };
 }
 
 /** ✨ (lot M2) sa dernière visite chez lui (`<habitant>/ma-piece/vu.json`) : ce qui a été gardé depuis s'annonce à l'arrivée. */

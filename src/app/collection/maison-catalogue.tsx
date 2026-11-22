@@ -562,7 +562,7 @@ function Piece({
         {figurine && (
           <span className="mmc-medaillon" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={figurine.src} alt="" />
+            {maison.tete ? <img className="du-jour" src={maison.tete.src} alt="" /> : <img src={figurine.src} alt="" />}
           </span>
         )}
         <span className="mmc-titre">
@@ -705,8 +705,18 @@ function Piece({
                 setSaute((n) => n + 1);
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={figurine.src} srcSet={figurine.srcset} sizes={hauteur ? `${Math.round(hauteur * c.hauteur * (figurine.largeur / Math.max(1, figurine.hauteur)))}px` : "360px"} alt="" draggable={false} />
+              {maison.tete ? (
+                // 🙂 (22 novembre 2026) elle fait la tête de son humeur du jour : son corps sans sa tête, puis l'expression
+                <span className="mmc-fig-jour" data-tete-du-jour={maison.tete.e} style={{ aspectRatio: String(maison.tete.ratio) }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={maison.tete.corps} alt="" draggable={false} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="mmc-fig-tete" src={maison.tete.src} alt="" draggable={false} style={{ left: `${maison.tete.boite[0] * 100}%`, top: `${maison.tete.boite[1] * 100}%`, width: `${maison.tete.boite[2] * 100}%`, height: `${maison.tete.boite[3] * 100}%` }} />
+                </span>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={figurine.src} srcSet={figurine.srcset} sizes={hauteur ? `${Math.round(hauteur * c.hauteur * (figurine.largeur / Math.max(1, figurine.hauteur)))}px` : "360px"} alt="" draggable={false} />
+              )}
             </button>
           )}
           {/* 😊 (la maquette) en visite, la porte ouverte : sa figurine dit bonjour */}
@@ -949,7 +959,7 @@ function Piece({
             {figurine && (
               <span className="mmc-medaillon">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={figurine.src} alt="" />
+                {maison.tete ? <img className="du-jour" src={maison.tete.src} alt="" /> : <img src={figurine.src} alt="" />}
               </span>
             )}
           </span>
@@ -1393,6 +1403,7 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-retour{font-size:24px}
 .mmc-medaillon{position:relative;flex:none;width:42px;height:42px;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 50% 35%,#e0a26a,#a8683a);box-shadow:0 0 0 2px #ffb347}
 .mmc-medaillon img{position:absolute;left:50%;top:1%;width:210%;height:auto;max-width:none;transform:translateX(-50%);user-select:none;-webkit-user-drag:none}
+.mmc-medaillon img.du-jour{top:4%;width:100%}
 .mmc-titre{flex:1;min-width:0;display:flex;flex-direction:column}
 .mmc-nom{font-weight:900;font-size:18px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mmc-ou{font-weight:600;font-size:12px;line-height:1.3;color:#c9b29c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1442,6 +1453,11 @@ const STYLES_MAISON_CATALOGUE = `
 @keyframes mmc-saut2{0%,100%{transform:translateY(0)}35%{transform:translateY(-7%) rotate(2deg)}70%{transform:translateY(0) scale(1.02,.97)}}
 .moment-soir .mmc-fig img{filter:sepia(.12) saturate(1.06) brightness(.97)}
 .moment-nuit .mmc-fig img{filter:brightness(.8) saturate(.85) sepia(.1)}
+.mmc-fig-jour{position:relative;display:block;height:100%;transform-origin:50% 100%;animation:mmc-souffle 4.5s ease-in-out infinite}
+.mmc-fig[data-saute="1"] .mmc-fig-jour{animation:mmc-saut .5s ease-out,mmc-souffle 4.5s ease-in-out .5s infinite}
+.mmc-fig[data-saute="0"] .mmc-fig-jour{animation:mmc-saut2 .5s ease-out,mmc-souffle 4.5s ease-in-out .5s infinite}
+.mmc-fig .mmc-fig-jour img{position:absolute;inset:0;width:100%;height:100%;animation:none}
+.mmc-fig .mmc-fig-jour img.mmc-fig-tete{right:auto;bottom:auto}
 .mmc-fanions{position:absolute;left:10px;top:10px;display:flex;gap:6px;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none;z-index:5}
 .mmc-fanions a{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 7px 11px;min-width:42px;color:#2a1424;text-decoration:none;background:linear-gradient(180deg,#ffe3a8,#f2c46b);clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);box-shadow:0 4px 10px rgba(0,0,0,.3);transform-origin:top center;animation:mmc-fanion 4s ease-in-out infinite}
 .mmc-fanions a:nth-child(2n){animation-delay:-1.3s;background:linear-gradient(180deg,#ffc2df,#ff8fc8)}
@@ -1533,5 +1549,5 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-oui:disabled{opacity:.7;cursor:default}
 .mmc-non{background:rgba(255,255,255,.1);color:#FFF4E6}
 .mmc-erreur{color:#FFB4A9 !important}
-@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-indice,.mmc-scene.attente,.mmc-accueil,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe,.mmc-cadeau.tombe{animation:none!important}.mmc-objet{transition:none}}
+@media (prefers-reduced-motion: reduce){.mmc-fig img,.mmc-fig-jour,.mmc-indice,.mmc-scene.attente,.mmc-accueil,.mmc-carte.attente,.mmc-platine .mmc-disque,.mmc-arrivee,.mmc-cadeau.emballe,.mmc-cadeau.tombe{animation:none!important}.mmc-objet{transition:none}}
 `;

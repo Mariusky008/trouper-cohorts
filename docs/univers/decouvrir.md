@@ -1287,6 +1287,11 @@ expressions suivent) ; `essai-visage-essai-route.mjs` et `visage-essai.mjs` (l'e
 partagés). (`essai-bascule-route.mjs` et `ma-figurine.mjs` laissent de côté les demandes des expressions, qui se font
 après la réponse et peuvent tomber au milieu.)
 
+**😢😠 Sept depuis le 22 novembre 2026** (le propriétaire : « ajoute deux expressions effectivement ! ») : la tristesse
+et la colère s'ajoutent aux cinq, pour que l'humeur du jour soit la tête de sa figurine (`ma-maison.md`, section 27).
+La caméra ne les lit pas ; une figurine vivante n'attend que les cinq premières. Pour ceux qui en avaient cinq, seules
+les deux nouvelles se font (à l'ouverture de l'appli, ou la nuit). La page de l'administrateur montre les sept.
+
 ### 28.7 Le lot V2 : ma figurine fait ma tête, dans ma télé du jour (21 novembre 2026) — fait
 
 Le propriétaire : « Oui » (au lot V2, et à la phrase de l'interrupteur).

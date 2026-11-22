@@ -128,14 +128,14 @@ const ia = await consignes();
 ok(ia.some((c) => c.includes("Change ONLY this: its mouth is now open")) && ia.some((c) => c.includes("STANDING upright")), "ses deux autres images : la même figurine, la bouche ouverte, puis debout");
 const fiche = await lire(`${h}/perso/fiche.json`);
 ok(fiche?.version === 1 && fiche.style === "collection-1" && Boolean(fiche.validee_le) && fiche.retouches?.join() === "les cheveux plus courts" && fiche.fauteuil?.de === "depart" && fiche.photo?.chemin === brouillon.selfie, "sa fiche : le nouveau style, validée, sa retouche, son fauteuil de départ, son selfie");
-// (📷 le lot V1 : avec ses calques, ses cinq expressions — la tête seulement —, après la réponse)
+// (📷 le lot V1 : avec ses calques, ses sept expressions — la tête seulement —, après la réponse)
 const empreinteAssise = createHash("sha1").update(String(fiche?.references?.assise?.chemin ?? "")).digest("hex").slice(0, 16);
 let expressions = null;
 for (let k = 0; k < 120 && !expressions?.le; k++) {
   await new Promise((fini) => setTimeout(fini, 500));
   expressions = await lire(`${h}/calques/${empreinteAssise}-expressions.json`);
 }
-ok(Boolean(expressions?.le) && Object.keys(expressions.tetes ?? {}).length === 5 && Boolean(expressions.corpsSansTete), "📷 « C'est moi ! » : ses cinq expressions de visage suivent (la tête seulement), après la réponse");
+ok(Boolean(expressions?.le) && Object.keys(expressions.tetes ?? {}).length === 7 && Boolean(expressions.corpsSansTete), "📷 « C'est moi ! » : ses sept expressions de visage suivent (la tête seulement : la tristesse et la colère comprises), après la réponse");
 const perso = await (await fetch(`${BASE}/api/direct/perso`, { headers: { cookie: cookies } })).json();
 ok(perso.origine === "rangee" && perso.fiche?.complete === true && perso.fiche.style === "collection-1", "ce qu'il voit de sa fiche : complète, du nouveau style");
 const admin = await (await fetch(`${BASE}/api/admin/direct/fiches?h=${h}`, { headers: { cookie: COOKIE_ADMIN } })).json();

@@ -3,7 +3,8 @@
  * 28.6 ; l'essai du lot V0 : `visage-essai-serveur.ts`, qui se sert des mêmes outils).
  *
  * Pour chaque habitant qui a sa figurine assise du nouveau style : 😊 le sourire, 😂 le rire, 😮 la surprise, 😑 le bof,
- * 😝 la grimace — **la tête seulement**. Chacune est faite par le moteur sur la figurine entière (« la tête exactement à
+ * 😝 la grimace, et depuis le 22 novembre 2026 😢 la tristesse et 😠 la colère (pour son humeur du jour) — **la tête
+ * seulement**. Chacune est faite par le moteur sur la figurine entière (« la tête exactement à
  * la même place, de la même taille, sous le même angle : seul le visage change ») ; sa tête y est découpée là où elle
  * est vraiment (`recaler`), au cadrage de la tête habituelle (ses calques, le lot S1). Posée sur **le corps sans sa tête**
  * (le haut de la boîte de la tête effacé, le cou reste), elle remplace le visage sans que rien ne se double.
@@ -29,8 +30,9 @@ import { demanderUneImage } from "./moteur-images-serveur";
 import { consigneVisageAssiseLibre } from "./perso-consignes";
 import { prendre, rendre } from "./pieces-duo-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
-import { EXPRESSIONS_VISAGE, type ExpressionVisage } from "./visage-essai";
-import { RATTRAPAGE_EXPRESSIONS, type EtatExpressionsHabitants, type ExpressionsFigurine, type ExpressionsHabitantVue, type FigurineVivante } from "./expressions-figurine";
+import { EXPRESSIONS_VISAGE } from "./visage-essai";
+import { EXPRESSIONS_FIGURINE, RATTRAPAGE_EXPRESSIONS, expressionDeLHumeur, type EtatExpressionsHabitants, type ExpressionFigurine, type ExpressionsFigurine, type ExpressionsHabitantVue, type FigurineVivante, type TeteDuJour } from "./expressions-figurine";
+import { humeurDuJour } from "./talkie-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -40,17 +42,20 @@ const base = () => s(process.env.OPENAI_PERSO_BASE_URL) || s(process.env.OPENAI_
 // ═══ LES OUTILS (communs à l'essai du lot V0 et aux figurines des habitants) ═══
 
 /**
- * 🎭 Les cinq expressions, pour le moteur (en anglais) : le visage seulement, **la tête exactement à la même place, de
- * la même taille, sous le même angle** — sa tête est ensuite découpée au même endroit que la tête habituelle.
+ * 🎭 Les expressions, pour le moteur (en anglais) : le visage seulement, **la tête exactement à la même place, de la même
+ * taille, sous le même angle** — sa tête est ensuite découpée au même endroit que la tête habituelle. La tristesse et la
+ * colère restent tendres, comme des personnages de dessin animé : jamais de larmes qui coulent, jamais de méchanceté.
  */
-const VISAGES: Record<ExpressionVisage, string> = {
+const VISAGES: Record<ExpressionFigurine, string> = {
   sourire: "a big, warm, happy SMILE: cheeks raised, eyes slightly squinting with happiness, eyebrows relaxed and lifted",
   rire: "a big burst of LAUGHTER: eyes squeezed shut into happy crescents, cheeks pushed up, a wide open laughing mouth",
   surprise: "a big SURPRISE: eyes wide open, eyebrows raised very high, the mouth open in a round « oh! »",
   bof: "an UNIMPRESSED « meh »: eyelids half lowered, one eyebrow slightly raised, the mouth flat and pressed, a little sideways look",
   grimace: "a funny GRIMACE: tongue sticking out, one eye squeezed shut, nose wrinkled",
+  triste: "a SAD, downcast face, tender like a cartoon character: inner eyebrows raised and drawn together, eyes a little glossy looking slightly down, the corners of the mouth clearly turned down in a small pout (no tears running)",
+  fache: "a GRUMPY, cross face, comic like a cartoon character (never scary): eyebrows lowered and pulled together into a deep frown, eyes narrowed, lips pressed tight, cheeks slightly puffed",
 };
-export const consigneExpression = (e: ExpressionVisage) =>
+export const consigneExpression = (e: ExpressionFigurine) =>
   consigneVisageAssiseLibre(`${VISAGES[e]}. The head keeps EXACTLY the same position, size and angle (no tilt, no turn): only the face changes`);
 
 // (la part de la tête effacée du corps, et le corps sans sa tête : `calques-figurine-serveur.ts`, une seule règle — la
@@ -158,11 +163,14 @@ export async function teteAuMemeEndroit(image: Buffer, figurine: Buffer, r: Cadr
 const dossier = (h: string) => `${h}/calques`;
 const NOMS = {
   etat: (k: string) => `${k}-expressions.json`,
-  entiere: (k: string, e: ExpressionVisage) => `${k}-expression-${e}.png`,
-  tete: (k: string, e: ExpressionVisage) => `${k}-tete-${e}.png`,
+  entiere: (k: string, e: ExpressionFigurine) => `${k}-expression-${e}.png`,
+  tete: (k: string, e: ExpressionFigurine) => `${k}-tete-${e}.png`,
   sansTete: (k: string) => `${k}-corps-sans-tete.png`,
 };
+/** (les cinq que la caméra reconnaît : sans elles, pas de figurine vivante) */
 const lesCinq = EXPRESSIONS_VISAGE.map((x) => x.cle);
+/** (😢😠 22 novembre 2026 : les sept à faire, la tristesse et la colère comprises) */
+const lesSept = EXPRESSIONS_FIGURINE.map((x) => x.cle);
 
 async function lireEtat(supabase: Supabase, h: string, k: string): Promise<ExpressionsFigurine> {
   const b = await depotDans(supabase, dossier(h))
@@ -176,18 +184,18 @@ async function lireEtat(supabase: Supabase, h: string, k: string): Promise<Expre
   }
   if (o.empreinte !== k) return { empreinte: k, tetes: {} };
   const tetes: ExpressionsFigurine["tetes"] = {};
-  for (const e of lesCinq) if (s(o.tetes?.[e])) tetes[e] = s(o.tetes?.[e]);
+  for (const e of lesSept) if (s(o.tetes?.[e])) tetes[e] = s(o.tetes?.[e]);
   return { empreinte: k, tetes, ...(s(o.corpsSansTete) ? { corpsSansTete: s(o.corpsSansTete) } : {}), ...(s(o.le) ? { le: s(o.le) } : {}), ...(s(o.rate) ? { rate: s(o.rate) } : {}), ...(s(o.erreur) ? { erreur: s(o.erreur) } : {}), ...(Number(o.decoupe) > 1 ? { decoupe: Number(o.decoupe) } : {}) };
 }
-/** (les cinq et le corps sans sa tête, découpés sur des calques de la règle d'aujourd'hui) */
-const complet = (e: ExpressionsFigurine) => Boolean(e.corpsSansTete) && lesCinq.every((x) => e.tetes[x]) && (e.decoupe ?? 1) === DECOUPE_TETE;
+/** (les sept et le corps sans sa tête, découpés sur des calques de la règle d'aujourd'hui) */
+const complet = (e: ExpressionsFigurine) => Boolean(e.corpsSansTete) && lesSept.every((x) => e.tetes[x]) && (e.decoupe ?? 1) === DECOUPE_TETE;
 /** (🧍 22 novembre 2026 : découpées sur ces calques-là — la même règle de découpe de la tête) */
 const memeDecoupe = (e: ExpressionsFigurine, c: { decoupe?: number }) => (e.decoupe ?? 1) === (c.decoupe ?? 1);
 const enPause = (e: ExpressionsFigurine) => Boolean(e.rate) && Date.now() - Date.parse(e.rate ?? "") < RATTRAPAGE_EXPRESSIONS.recommencerApres;
 
 /**
  * 📷 Ses expressions, pour son image d'aujourd'hui (rien : pas de figurine assise du nouveau style). `completes` : les
- * cinq et le corps sans sa tête sont prêts.
+ * sept et le corps sans sa tête sont prêts.
  */
 export async function sesExpressions(supabase: Supabase, h: string): Promise<{ etat: ExpressionsFigurine; completes: boolean } | null> {
   const chemin = await cheminFigurineAssise(supabase, h);
@@ -197,19 +205,36 @@ export async function sesExpressions(supabase: Supabase, h: string): Promise<{ e
 }
 
 /**
- * 📷 SA FIGURINE VIVANTE (le lot V2) : ses calques et ses cinq expressions, s'ils sont prêts pour son image d'aujourd'hui
- * (rien n'est fabriqué ici) ; sinon `null` — elle s'affiche alors comme avant, d'une seule image.
+ * 📷 SA FIGURINE VIVANTE (le lot V2) : ses calques et ses expressions, si les cinq premières sont prêtes pour son image
+ * d'aujourd'hui (rien n'est fabriqué ici) ; sinon `null` — elle s'affiche alors comme avant, d'une seule image. 🙂 Avec
+ * l'expression de son humeur du jour, si elle est prête (lue en même temps : pas un aller-retour de plus).
  */
 export async function figurineVivante(supabase: Supabase, h: string): Promise<FigurineVivante | null> {
+  const humeurP = humeurDuJour(supabase, h).catch(() => null);
   const chemin = await cheminFigurineAssise(supabase, h);
   if (!chemin) return null;
-  const [calques, etat] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), lireEtat(supabase, h, empreinteDe(chemin))]);
+  const [calques, etat, humeur] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), lireEtat(supabase, h, empreinteDe(chemin)), humeurP]);
   if (!calques || !etat.corpsSansTete || !lesCinq.every((x) => etat.tetes[x]) || !memeDecoupe(etat, calques)) return null;
-  const e = etat.tetes as Record<ExpressionVisage, string>;
-  return { ratio: calques.ratio, corps: etat.corpsSansTete, tete: { src: calques.tete.fichier, boite: calques.tete.boite, pivot: calques.tete.pivot }, expressions: { sourire: e.sourire, rire: e.rire, surprise: e.surprise, bof: e.bof, grimace: e.grimace } };
+  const expressions = Object.fromEntries(lesSept.filter((x) => etat.tetes[x]).map((x) => [x, etat.tetes[x]])) as FigurineVivante["expressions"];
+  const du = expressionDeLHumeur(humeur);
+  return { ratio: calques.ratio, corps: etat.corpsSansTete, tete: { src: calques.tete.fichier, boite: calques.tete.boite, pivot: calques.tete.pivot }, expressions, ...(du && expressions[du] ? { humeur: du } : {}) };
 }
 
-export type PassageExpressions = { faites: ExpressionVisage[]; manquent: ExpressionVisage[]; rien?: "sans-figurine" | "deja" | "en-pause" | "en-cours"; erreur?: string };
+/**
+ * 🙂 SA TÊTE DU JOUR (22 novembre 2026) : l'expression de son humeur du jour, si elle est prête pour son image
+ * d'aujourd'hui (rien n'est fabriqué ici) ; sinon `null` — sa tête habituelle. La messagerie et sa maison la posent à la
+ * place de sa tête (le même cadrage, sur le même corps sans tête).
+ */
+export async function teteDuJour(supabase: Supabase, h: string): Promise<TeteDuJour | null> {
+  const [humeur, chemin] = await Promise.all([humeurDuJour(supabase, h).catch(() => null), cheminFigurineAssise(supabase, h).catch(() => null)]);
+  const e = expressionDeLHumeur(humeur);
+  if (!e || !chemin) return null;
+  const etat = await lireEtat(supabase, h, empreinteDe(chemin));
+  const src = etat.tetes[e];
+  return src ? { e, src, decoupe: etat.decoupe ?? 1 } : null;
+}
+
+export type PassageExpressions = { faites: ExpressionFigurine[]; manquent: ExpressionFigurine[]; rien?: "sans-figurine" | "deja" | "en-pause" | "en-cours"; erreur?: string };
 
 /**
  * 🛠️ Ce qui manque de ses expressions (le corps sans sa tête, puis les expressions qui manquent, toutes à la fois), avant
@@ -221,19 +246,19 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
   const k = empreinteDe(chemin);
   const avantTout = await lireEtat(supabase, h, k);
   if (complet(avantTout)) return { faites: [], manquent: [], rien: "deja" };
-  if (!o.force && enPause(avantTout)) return { faites: [], manquent: lesCinq.filter((e) => !avantTout.tetes[e]), rien: "en-pause" };
+  if (!o.force && enPause(avantTout)) return { faites: [], manquent: lesSept.filter((e) => !avantTout.tetes[e]), rien: "en-pause" };
   const verrou = depotDans(supabase, `${h}/expressions-verrou`);
   const qui = await prendre(verrou);
-  if (!qui) return { faites: [], manquent: lesCinq.filter((e) => !avantTout.tetes[e]), rien: "en-cours" };
+  if (!qui) return { faites: [], manquent: lesSept.filter((e) => !avantTout.tetes[e]), rien: "en-cours" };
   const d = depotDans(supabase, dossier(h));
   try {
     // (relue sous le verrou : un autre passage vient peut-être de finir)
     const etat = await lireEtat(supabase, h, k);
     if (complet(etat)) return { faites: [], manquent: [], rien: "deja" };
     const ecrire = (x: ExpressionsFigurine) => d.ecrire(NOMS.etat(k), Buffer.from(JSON.stringify(x)), "application/json");
-    const rater = async (erreur: string, faites: ExpressionVisage[] = []) => {
+    const rater = async (erreur: string, faites: ExpressionFigurine[] = []) => {
       await ecrire({ ...etat, rate: new Date().toISOString(), erreur });
-      return { faites, manquent: lesCinq.filter((e) => !etat.tetes[e]), erreur };
+      return { faites, manquent: lesSept.filter((e) => !etat.tetes[e]), erreur };
     };
     // (ses calques d'abord — faits ici s'ils ne le sont pas encore : le cadrage de sa tête habituelle)
     const calques = await calquesDeFigurine(supabase, h).catch(() => null);
@@ -259,9 +284,9 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
       etat.corpsSansTete = img.src;
     }
     // (les expressions qui manquent, toutes à la fois : une expression entière déjà faite se redécoupe sans le moteur)
-    const manquent = lesCinq.filter((e) => !etat.tetes[e]);
+    const manquent = lesSept.filter((e) => !etat.tetes[e]);
     const rendus = await Promise.all(
-      manquent.map(async (e): Promise<{ e: ExpressionVisage; src?: string; erreur?: string }> => {
+      manquent.map(async (e): Promise<{ e: ExpressionFigurine; src?: string; erreur?: string }> => {
         try {
           let entiere = await d.lire(NOMS.entiere(k, e)).catch(() => null);
           if (!entiere) {
@@ -289,7 +314,7 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
     await d
       .ecrire(NOMS.etat(k), Buffer.from(JSON.stringify({ ...avantTout, rate: new Date().toISOString(), erreur: "Ça n’a pas marché." })), "application/json")
       .catch(() => false);
-    return { faites: [], manquent: lesCinq.filter((e) => !avantTout.tetes[e]), erreur: "Ça n’a pas marché." };
+    return { faites: [], manquent: lesSept.filter((e) => !avantTout.tetes[e]), erreur: "Ça n’a pas marché." };
   } finally {
     await rendre(verrou, qui);
   }
