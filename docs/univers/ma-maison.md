@@ -812,3 +812,45 @@ n'apparaît pas sur sa table, est-ce normal ? »**
   s'ouvre en grand ;
 - toujours verts : `essai-visites-route.mjs`, `essai-ma-maison-route.mjs`, `ma-maison-question.mjs`,
   `ma-maison-remplie.mjs`, `ma-maison-catalogue.mjs`, `choisis-ta-piece.mjs`, `visite-univers.mjs`.
+
+## 27. 🙂 Mon humeur du jour, c'est la tête de ma figurine (22 novembre 2026)
+
+Le propriétaire : « Mon humeur du jour, lorsque je la renseigne, devrait être la tête que je fais dans ma maison, et un
+peu partout où on voit ma tête ; or c'est toujours la même tête. » Puis, à la proposition d'ajouter la tristesse et la
+colère (aucune des cinq expressions du lot V1 ne les disait) : « Ajoute deux expressions effectivement ! »
+
+**Deux expressions de plus, sept en tout** (`EXPRESSIONS_FIGURINE`, `lib/direct/expressions-figurine.ts`) : les cinq que
+la caméra reconnaît (😊 😂 😮 😑 😝), puis **😢 la tristesse** et **😠 la colère** — tendres, comme des personnages de
+dessin animé : jamais de larmes qui coulent, jamais de méchanceté. La caméra ne les lit pas : elles viennent de
+l'humeur. Faites comme les autres (la tête seulement, au cadrage de la tête habituelle) ; pour ceux qui en avaient déjà
+cinq, **seules les deux nouvelles se font**, à l'ouverture de l'appli ou la nuit (le rattrapage du lot V1 : deux
+images moyennes par figurine, une fois).
+
+**Quelle tête pour quelle humeur** (`expressionDeLHumeur`) :
+
+| L'humeur du jour (le rituel) | La tête de sa figurine |
+|---|---|
+| 😄 joie, 😍 amour | 😊 le sourire |
+| 😂 fou rire, 🤩 euphorie | 😂 le rire |
+| 😜 grimace | 😝 la grimace |
+| 🤦 la tête dans les mains, 😢 tristesse | 😢 la tristesse |
+| 😠 colère | 😠 la colère |
+
+**Où on la voit** (seulement si l'expression est prête ; sinon, sa tête habituelle — rien ne casse) :
+- **chez soi**, dans « Ma maison » : sa figurine au centre (son corps sans sa tête, l'expression dans la boîte de sa
+  tête : `MaMaisonVue.tete`, `teteDeLaMaison`), et le médaillon de l'en-tête ;
+- **en visite**, pour ses proches (comme son humeur) : la même tête, dès la porte ;
+- **dans la messagerie** : sa tête dans le salon du duo est celle de son humeur (`teteDuJour`, `avecTeteDuJour` : la
+  même boîte, sur le même corps sans tête — le contrat `salon.ts` ne change pas) ;
+- **sa figurine vivante** (la télé du jour, la séance, les souvenirs) : l'expression de son humeur quand rien d'autre ne
+  change sa tête (ni la caméra, ni une réaction — `FigurineVivante.humeur`).
+
+Lue en même temps que le reste : pas un aller-retour de plus. À minuit (l'heure de Paris), l'humeur s'efface, et sa
+figurine retrouve sa tête habituelle.
+
+**Les essais** : `navigateur/ma-maison-humeur.mjs` (Léa ouvre l'appli : sept expressions, la tristesse et la colère
+comprises ; son humeur, la tristesse : chez elle, la tête triste, le médaillon aussi ; Sam en visite, pareil ; dans leur
+messagerie, des deux côtés ; sa figurine vivante ; la colère : la tête fâchée ; son humeur d'hier : sa figurine
+habituelle ; une figurine qui n'en avait que cinq : seules les deux nouvelles se font) ;
+`essai-expressions-figurine-route.mjs` et `essai-nouvelle-figurine-route.mjs` (sept expressions).
+

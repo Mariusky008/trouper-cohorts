@@ -14,7 +14,8 @@
  *
  * FICHIER PARTAGÉ (l'écran et le serveur).
  */
-import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type PlaceDuo } from "./pieces-duo";
+import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type PlaceDuo, type Zone } from "./pieces-duo";
+import type { ExpressionFigurine } from "./expressions-figurine";
 import type { ImageSalon } from "./salon";
 import type { Visibilite } from "./monde";
 import type { MonSalon } from "./salons-ouverts";
@@ -57,6 +58,9 @@ export type ScenePiece = {
   emplacements: EmplacementsDuo | null;
   centre: PlaceDuo;
 };
+/** 🙂 Sa figurine qui fait la tête de son humeur du jour (`MaMaisonVue.tete`). */
+export type TeteMaison = { e: ExpressionFigurine; corps: string; ratio: number; src: string; boite: Zone };
+
 /** Ce que « Ma maison » reçoit : sa pièce (choisie, ou pas encore), sa scène si elle est prête, sa figurine. */
 export type MaMaisonVue = {
   piece: PieceDuo | null;
@@ -71,6 +75,11 @@ export type MaMaisonVue = {
   cle?: string;
   /** 🙂 (lot M5) mon humeur du jour, que ma figurine montre (mes proches la voient aussi) */
   humeur?: { emoji: string; nom: string };
+  /**
+   * 🙂 (22 novembre 2026) ma figurine fait la tête de mon humeur du jour : mon corps sans sa tête (`corps`), et
+   * l'expression (`src`) posée dans la boîte de ma tête (`boite`, de 0 à 1 dans le cadre du corps) — quand elle est prête.
+   */
+  tete?: TeteMaison;
   /** 🚪 (lot M5) qui a frappé pendant mon absence (des prénoms, jamais un nombre de visites) */
   absence?: string[];
   /** 🎁 (lot M5) sur la table basse : les cadeaux de mes proches — à ouvrir (`attente`), ou gardés */

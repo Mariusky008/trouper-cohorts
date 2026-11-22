@@ -15,6 +15,7 @@
  */
 import type { CalqueFigurine } from "./salon";
 import type { PlaceDuo, Zone } from "./pieces-duo";
+import type { TeteDuJour } from "./expressions-figurine";
 
 /**
  * Les calques d'une figurine, dans son propre cadre (de 0 à 1 sur la boîte du corps). `fichier` : leur adresse stable
@@ -72,4 +73,14 @@ export function poserFigurine(f: FigurineLocale, place: PlaceDuo, piece: { large
     bouche: pt(f.bouche),
     joues: [pt(f.joues[0]), pt(f.joues[1])],
   };
+}
+
+/**
+ * 🙂 (22 novembre 2026) SA TÊTE DU JOUR À LA PLACE DE SA TÊTE : l'expression de son humeur, découpée au même cadrage
+ * (`teteDuJour`, `expressions-figurine-serveur.ts`) — seulement si elle l'a été sur des calques de la même règle de
+ * découpe ; sinon, sa tête habituelle.
+ */
+export function avecTeteDuJour(f: FigurineLocale | null, t: TeteDuJour | null): FigurineLocale | null {
+  if (!f || !t || (f.decoupe ?? 1) !== t.decoupe) return f;
+  return { ...f, tete: { ...f.tete, fichier: t.src } };
 }

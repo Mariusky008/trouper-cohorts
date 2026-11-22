@@ -21,7 +21,8 @@ import { sesDixHuitAns } from "./majorite-serveur";
 import { cheminGestes, cheminGestesVus, lireTable, vivantAvec } from "./vivant-serveur";
 import { chatDuSalon } from "./salon-chat-serveur";
 import { DECOUPE_TETE, calquesDeFigurine } from "./calques-figurine-serveur";
-import { poserFigurine, type FigurineLocale } from "./figurine-calques";
+import { avecTeteDuJour, poserFigurine, type FigurineLocale } from "./figurine-calques";
+import { teteDuJour } from "./expressions-figurine-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 
@@ -89,8 +90,8 @@ export async function ouvrirSalon(
     vivantAvec(supabase, moi, cle, { marquer }).catch(() => null),
     sceneP,
     hP,
-    calquesDeFigurine(supabase, moi.id, { fabriquer: false }).catch(() => null),
-    hP.then((x) => (x ? calquesDeFigurine(supabase, x, { fabriquer: false }) : null)).catch(() => null),
+    calquesDuJour(supabase, moi.id),
+    hP.then((x) => (x ? calquesDuJour(supabase, x) : null)).catch(() => null),
     ficheP,
     hP.then((x) => (x ? nomsDuFil(supabase, pairDe(moi.id, x)) : [])).catch(() => []),
     // (🌷 lot S3 : ce qui est posé sur leur table)
@@ -190,8 +191,8 @@ export async function cataloguePieces(supabase: Supabase, moi: Habitant, cle: un
     lireJson<FichePieceDuo>(supabase, cheminPieceDuo(d.pair)),
     lireSaPiece(supabase, moi.id).catch(() => null),
     sesDixHuitAns(supabase, moi.id).catch(() => null),
-    calquesDeFigurine(supabase, moi.id, { fabriquer: false }).catch(() => null),
-    calquesDeFigurine(supabase, d.h, { fabriquer: false }).catch(() => null),
+    calquesDuJour(supabase, moi.id),
+    calquesDuJour(supabase, d.h),
   ]);
   const ordre = ordreDuCatalogue(adulte);
   const proposee: PieceDuo = sienne ?? PIECE_PAR_DEFAUT;
@@ -247,6 +248,14 @@ export async function repondreInvitation(supabase: Supabase, moi: Habitant, cle:
   await ecrireJson(supabase, cheminPieceDuo(d.pair), { ...fiche, invitation: { ...inv, non: Date.now() } } satisfies FichePieceDuo);
   return { ok: true };
 }
+
+/**
+ * 🙂 (22 novembre 2026, le propriétaire : « mon humeur du jour devrait être la tête que je fais un peu partout ») Ses
+ * calques, sa tête du jour à la place de sa tête habituelle quand son humeur du jour en a une de prête (lues en même
+ * temps : pas un aller-retour de plus).
+ */
+const calquesDuJour = (supabase: Supabase, h: string) =>
+  Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), teteDuJour(supabase, h).catch(() => null)]).then(([f, t]) => avecTeteDuJour(f, t));
 
 /**
  * 🪑 Les deux figurines posées aux deux places de la pièce, à la même taille (`hauteurDuo`) : `a`, la mienne, à gauche ;
