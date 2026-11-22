@@ -761,3 +761,54 @@ télé, un inconnu : refusés ; la séance calée à 42 s, en pause ; l'invitati
 Inviter » : la feuille sur place, Sam à cocher, son lien par WhatsApp, « 📺 Aller devant ma télé ») ;
 `ma-maison-visite.mjs` (le carnet : Sam, sa maison, leur conversation ; son lien par WhatsApp ; « 👀 Comme la voient tes
 proches » ouvre « Qui peut entrer chez moi ? ») ; `ma-maison-catalogue.mjs` (« 👯 Mes proches » en bas).
+
+## 26. ⚡🎁💬 La visite d'une maison : plus vite, la surprise sur sa table, « Votre salon », clip · photo · question (22 novembre 2026)
+
+Le propriétaire, le 22 novembre 2026 (ses points 5, 6 et 7).
+
+**5. « C'est toujours très lent… je vais découvrir la maison de quelqu'un, ça prend 3 à 4 secondes. »**
+- Mesuré contre le faux Supabase, à 80 ms par aller-retour (`FAUX_LATENCE`) : la page faisait **5 allers-retours** pour
+  savoir s'il s'agit d'une maison ou d'un univers, puis le téléphone demandait la visite, **11 allers-retours** à la
+  suite (`maisonVisitee` : la clé, la pièce, qui peut entrer, puis tout le reste). Soit 430 + 925 ms de serveur, plus le
+  chargement de la page entre les deux.
+- Désormais :
+  - **la visite est lue par la page elle-même** et servie avec elle (`VisiteDeLaMaison`, `initiale`) : le téléphone ne
+    la redemande plus ;
+  - **tout part en même temps** dans `maisonVisitee` : la pièce, qui peut entrer (sa visibilité, être son proche) et tout
+    ce qu'on montrera (la scène, la figurine, les objets, les visites, sa table, la question du jour). Ce qui n'est pas à
+    montrer — faute d'entrer, ou d'être un proche — n'est simplement pas rendu ;
+  - le visiteur et la clé se lisent ensemble ;
+  - sa pièce se lit directement (`lireSaPiece` : plus de liste du dossier avant — un aller-retour de moins sur chaque
+    écran qui la demande).
+- Résultat, à 80 ms par aller-retour : **la visite entière avec la page en 355 ms** (au lieu de 430 ms pour la page
+  seule, puis 925 ms pour la visite) ; la route seule, 437 ms.
+
+**6. « Quand je clique sur "Votre salon", je suis amené sur la messagerie » ; « quand je dépose une surprise, ça
+n'apparaît pas sur sa table, est-ce normal ? »**
+- « 💬 Votre salon » ouvre désormais **notre conversation**, directement (`/collection?parler=<sa clé>#proches`), au lieu
+  de la liste des conversations.
+- Non, ce n'était pas normal : en visite, les cadeaux pas encore ouverts étaient cachés — **le mien aussi**. Ma surprise
+  est désormais sur sa table, **emballée, pour moi seul** (celles des autres restent cachées), jusqu'à ce qu'il l'ouvre
+  (`vieDeLaMaison`, `de`). Posée, **elle y tombe** (la visite se relit). Touchée : « 🎁 Ta surprise attend qu'on
+  l'ouvre », « 💐 Un bouquet · « Pour toi » » — ni « Ouvrir » ni « Le garder » : c'est à lui.
+- Une pièce sans table relevée : les cadeaux se posent à ses pieds (ils ne disparaissent plus).
+
+**7. « Quand je visite la maison de quelqu'un, je n'ai pas comme sur la maquette : clip, photos, questions. »**
+- La maquette « Ma maison ClikMe » (en visite) montre toujours, en bas, « 🎬 Clip · 🖼️ Photo · ❓ Question ». Chez nous,
+  ces puces n'apparaissaient que pour un objet ajouté le jour même, et la question seulement s'il y avait répondu.
+- Désormais, en visite : **🎬 Clip** (la vidéo à sa télé : un toucher, elle passe à la télé et la caméra y va),
+  **🖼️ Photo** (sa dernière photo : un toucher, elle s'ouvre en grand), puis ce qui est nouveau aujourd'hui, puis
+  **❓ Question**. La rangée s'appelle « Nouveau aujourd'hui » s'il y a du neuf, sinon « À découvrir ».
+- **Sa question du jour est là même s'il n'y a pas encore répondu** (`attente`) : on répond, et l'on découvrira la
+  sienne en revenant (« Léa n'a pas encore répondu : tu découvriras sa réponse en revenant »). La sienne n'est jamais
+  envoyée avant.
+
+**Les essais** :
+- `navigateur/ma-maison-vie.mjs` : la surprise tombe sur sa table, emballée ; touchée, ce qu'elle contient, sans les
+  gestes de l'hôte ;
+- `navigateur/ma-maison-question.mjs` : elle n'a pas encore répondu — sa question est là, Sam y répond, « Léa n'a pas
+  encore répondu… », la sienne jamais envoyée ;
+- `navigateur/ma-maison-visite.mjs` : « Votre salon » ouvre leur conversation ; « 🖼️ Photo » en bas, sa dernière photo, qui
+  s'ouvre en grand ;
+- toujours verts : `essai-visites-route.mjs`, `essai-ma-maison-route.mjs`, `ma-maison-question.mjs`,
+  `ma-maison-remplie.mjs`, `ma-maison-catalogue.mjs`, `choisis-ta-piece.mjs`, `visite-univers.mjs`.

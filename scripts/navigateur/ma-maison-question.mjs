@@ -167,6 +167,22 @@ await lea.reload({ waitUntil: "domcontentloaded" });
 await lea.waitForTimeout(4000);
 ok(!/a répondu à ta question du jour/.test(await lea.evaluate(() => document.body.innerText)), "elle revient : déjà vu, plus d'annonce");
 
+// ═══ ❓ ELLE N'A PAS ENCORE RÉPONDU ═══
+// (22 novembre 2026, « je n'ai pas comme sur la maquette : … questions » — sa question est là même si elle n'y a pas
+// encore répondu : on répond, et l'on découvrira la sienne en revenant)
+await json(`${LEA.id}/journal/${mois}.json`, { entrees: [] });
+const sansElle = await sam.evaluate(async (cle) => (await (await fetch(`/api/direct/ma-piece?chez=${cle}`)).json()).visite?.question, LEA.cle);
+ok(Boolean(sansElle?.q) && sansElle.attente === true && !("maReponse" in sansElle) && !("saReponse" in sansElle), `elle n'a pas encore répondu : sa question du jour est là quand même (« ${sansElle?.q} »), la sienne absente`);
+const choix = sansElle?.choix?.[0] ?? "Des pâtes";
+const r2 = await repondre(sam, LEA.cle, choix);
+ok(r2.statut === 200, `… Sam peut y répondre (« ${choix} »)`);
+await sam.reload({ waitUntil: "domcontentloaded" });
+ok(await attendre(sam, async () => (await puce.count()) === 1), "… « ❓ Question » toujours en bas");
+await puce.click();
+ok(await attendre(sam, async () => new RegExp(`Toi : ${choix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(await texte(bulle)) && /Léa n’a pas encore répondu : tu découvriras sa réponse en revenant/.test(await texte(bulle.locator("[data-pas-encore]")))), "… « Toi : … », « Léa n'a pas encore répondu : tu découvriras sa réponse en revenant »");
+const apres = await sam.evaluate(async (cle) => (await (await fetch(`/api/direct/ma-piece?chez=${cle}`)).json()).visite?.question, LEA.cle);
+ok(apres?.maReponse === choix && !("saReponse" in apres), "… et la sienne n'est toujours pas envoyée");
+
 for (const p of [lea, sam]) ok(!/exemple/i.test(await p.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
 ok(!erreurs.length, `aucune erreur${erreurs.length ? ` : ${erreurs.slice(0, 3).join(" | ")}` : ""}`);
 

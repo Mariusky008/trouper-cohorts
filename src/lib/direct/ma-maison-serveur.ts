@@ -67,9 +67,9 @@ const heureDeParis = (d: Date) => Number(new Intl.DateTimeFormat("fr-FR", { hour
 
 /** Sa pièce ; `null` s'il n'en a pas encore choisi. */
 export async function lireSaPiece(supabase: Supabase, h: string): Promise<PieceDuo | null> {
-  const d = depotDans(supabase, dossierMaison(h));
-  if (!(await d.lister().catch(() => [] as string[])).includes("piece.json")) return null;
-  const p = json(await d.lire("piece.json").catch(() => null)).piece;
+  // (⚡ 22 novembre 2026 : lue directement — absente, rien ; plus de liste du dossier avant : un aller-retour de moins
+  // sur chaque écran qui la demande)
+  const p = json(await depotDans(supabase, dossierMaison(h)).lire("piece.json").catch(() => null)).piece;
   return pieceDuoValide(p) ? p : null;
 }
 
@@ -166,7 +166,7 @@ export async function vignetteDeLaPiece(supabase: Supabase, p: PieceDuo): Promis
  * souvenirs du lot 6 : `<habitant>/monde/souvenirs.json`) — à ouvrir d'abord, puis gardés. `visiteur` : seulement ce
  * qui est posé (pas ce qui attend), et pas de « pendant ton absence ».
  */
-export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table">> {
+export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean; de?: string } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table">> {
   const [hum, visites, souvenirs] = await Promise.all([
     lireJson<{ jour?: string; visage?: string }>(supabase, `${h}/humeur.json`).catch(() => ({}) as { jour?: string; visage?: string }),
     o.visiteur ? Promise.resolve({} as { liste?: unknown }) : lireJson<{ liste?: unknown }>(supabase, `${h}/monde/visites.json`).catch(() => ({}) as { liste?: unknown }),
@@ -175,7 +175,9 @@ export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?:
   const visage = hum.jour === jourParis() ? humeurDe(s(hum.visage) as Sentiment) : null;
   type Brut = { id?: string; de?: string; objet?: string; mot?: string; le?: string; accepte_le?: string };
   const l = (Array.isArray(souvenirs.liste) ? (souvenirs.liste as Brut[]) : []).filter((x) => s(x?.id) && s(x?.de) && objetDe(x.objet));
-  const attente = o.visiteur ? [] : l.filter((x) => !x.accepte_le).sort((a, b) => s(a.le).localeCompare(s(b.le)));
+  // (en visite, les cadeaux pas encore ouverts restent cachés — sauf les miens : 🎁 22 novembre 2026, le propriétaire, « quand
+  // je dépose une surprise, ça n'apparaît pas sur sa table » ; elle y est, emballée, jusqu'à ce qu'il l'ouvre)
+  const attente = l.filter((x) => !x.accepte_le && (!o.visiteur || (o.de && s(x.de) === o.de))).sort((a, b) => s(a.le).localeCompare(s(b.le)));
   const poses = l.filter((x) => x.accepte_le).sort((a, b) => s(b.accepte_le).localeCompare(s(a.accepte_le)));
   const surTable = [...attente, ...poses].slice(0, TABLE_MAX);
   const passes = (Array.isArray(visites.liste) ? (visites.liste as { de?: string; le?: string }[]) : []).filter((v) => s(v?.de) && s(v.de) !== h && (Date.parse(s(v.le)) || 0) > (o.depuis ?? Date.now()));

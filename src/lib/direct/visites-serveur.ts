@@ -400,44 +400,55 @@ export async function choisirVisibiliteMaison(supabase: Supabase, h: string, v: 
  * les autres seulement ce qu'il a ajouté lui-même (un cadre garde alors son tableau). Rien n'est noté : la visite se dit
  * en frappant.
  */
-export async function maisonVisitee(supabase: Supabase, visiteur: Habitant | null, cle: unknown): Promise<MaisonVisitee> {
-  const h = await hDeCle(supabase, cle);
+export async function maisonVisitee(supabase: Supabase, qui: Habitant | null | Promise<Habitant | null>, cle: unknown): Promise<MaisonVisitee> {
+  // (le visiteur peut encore être en train d'être lu — la page de la visite : les deux en même temps)
+  const [h, visiteur] = await Promise.all([hDeCle(supabase, cle), Promise.resolve(qui).catch(() => null)]);
   if (!h) return { etat: "absent" };
-  const piece = await lireSaPiece(supabase, h);
-  if (!piece) return { etat: "absent" };
-  const [visibilite, hote] = await Promise.all([visibiliteDeLaMaison(supabase, h), quiEst(supabase, h)]);
-  const acces = await peutEntrer(supabase, visiteur?.id ?? null, h, { visibilite });
-  if (!acces.ok) return { etat: visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
   const chezSoi = visiteur?.id === h;
-  const [scene, figurine, objets, visites, vie, souvenirs] = await Promise.all([
-    sceneDeLaMaison(supabase, piece),
+  const autre = Boolean(visiteur && !chezSoi);
+  // (⚡ 22 novembre 2026, le propriétaire : « 3 à 4 secondes quand je vais découvrir la maison de quelqu'un » — tout part
+  // en même temps : sa pièce, qui peut entrer, et tout ce qu'on montrera ; ce qui n'est pas à montrer, faute d'entrer ou
+  // d'être un proche, n'est simplement pas rendu. Onze allers-retours à la suite, il en reste quatre)
+  const pieceP = lireSaPiece(supabase, h).catch(() => null);
+  const [piece, visibilite, proche, hote, scene, figurine, objets, visites, vie, souvenirs, question] = await Promise.all([
+    pieceP,
+    visibiliteDeLaMaison(supabase, h),
+    visiteur ? (chezSoi ? Promise.resolve(true) : seParlent(supabase, visiteur.id, h).catch(() => false)) : Promise.resolve(false),
+    quiEst(supabase, h),
+    pieceP.then((p) => (p ? sceneDeLaMaison(supabase, p) : null)).catch(() => null),
     figurineDeLaMaison(supabase, h).catch(() => null),
     objetsDeMaMaison(supabase, h).catch(() => []),
-    lireVisites(supabase, h),
-    // (🙂🎁 lot M5 : son humeur et les cadeaux posés sur sa table — à ses proches seulement)
-    acces.proche ? vieDeLaMaison(supabase, h, { visiteur: true }).catch(() => ({})) : Promise.resolve({}),
-    visiteur && acces.proche && !chezSoi ? lireSouvenirs(supabase, h) : Promise.resolve([] as Souvenir[]),
+    lireVisites(supabase, h).catch(() => []),
+    // (🙂🎁 lot M5 : son humeur et les cadeaux posés sur sa table — à ses proches seulement ; 🎁 22 novembre 2026 : et
+    // la surprise que j'y ai laissée, emballée, tant qu'il ne l'a pas ouverte)
+    vieDeLaMaison(supabase, h, { visiteur: true, ...(autre ? { de: visiteur!.id } : {}) }).catch(() => ({})),
+    autre ? lireSouvenirs(supabase, h).catch(() => [] as Souvenir[]) : Promise.resolve([] as Souvenir[]),
+    // (💬 lot M5 : sa question du jour, à ses proches)
+    autre ? questionChezLui(supabase, h, visiteur!.id).catch(() => null) : Promise.resolve(null),
   ]);
-  // (💬 lot M5 : sa question du jour, à ses proches)
-  const question = visiteur && acces.proche && !chezSoi ? await questionChezLui(supabase, h, visiteur.id).catch(() => null) : null;
+  if (!piece) return { etat: "absent" };
+  // (qui peut entrer : lui ; ses proches, sauf « Moi seul » ; tout le monde, s'il l'ouvre à tous — `peutEntrer`)
+  const ok = chezSoi || (visibilite !== "moi" && (visibilite !== "proches" || proche));
+  if (!ok) return { etat: visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
   if (!scene) return { etat: "absent" };
-  const montres = acces.proche ? objets : objets.filter((o) => o.aMoi);
+  const montres = proche ? objets : objets.filter((o) => o.aMoi);
   const jour = jourParis();
   const contenu = placerChezMoi(montres, scene.emplacements?.cadres.length ?? 0);
   // (✨ lot M5 : ce qu'il a mis chez lui aujourd'hui, dans la pièce — la caméra passe dessus à l'arrivée du visiteur)
   const auj = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" });
   const nouveaux = chezSoi ? [] : objetsPlaces(contenu).filter((o) => auj.format(new Date(o.le)) === jour).map((o) => o.id);
+  const pourUnProche = autre && proche;
   return {
     etat: "ouvert",
     prenom: hote.prenom,
     cle: s(cle),
-    maison: { piece, scene, figurine, contenu, ...vie },
-    proche: acces.proche,
+    maison: { piece, scene, figurine, contenu, ...(proche ? vie : {}) },
+    proche,
     chezSoi,
     frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && jourParis(new Date(v.le)) === jour)),
-    ...(visiteur && acces.proche && !chezSoi ? { peutLaisser: true, mesCadeaux: souvenirs.filter((x) => x.de === visiteur.id && !x.accepte_le).length } : {}),
+    ...(pourUnProche ? { peutLaisser: true, mesCadeaux: souvenirs.filter((x) => x.de === visiteur!.id && !x.accepte_le).length } : {}),
     ...(nouveaux.length ? { nouveaux } : {}),
-    ...(question ? { question } : {}),
+    ...(pourUnProche && question ? { question } : {}),
   };
 }
 

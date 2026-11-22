@@ -204,8 +204,17 @@ await sam.goto(`${BASE}/univers/chez/${LEA.cle}?piece=1`, { waitUntil: "domconte
 const sceneSam = sam.locator('.mmc-visite[data-visite="ouvert"] .mmc-scene');
 ok(await attendre(sam, async () => (await sceneSam.locator(".mmc-objet").count()) === 3), "Sam : les trois (la photo au cadre, le livre, le mot)");
 await sceneSam.locator('[data-geste="frapper"]').click();
-ok(await attendre(sam, async () => (await sceneSam.locator("[data-porte]").count()) === 0 && /Une surprise/.test(await sceneSam.locator(".mmc-actions-visite").innerText()) && (await sceneSam.locator('[data-geste="salon"]').getAttribute("href")) === "/collection#proches"), "son proche, entré : « 🎁 Une surprise » et « 💬 Votre salon »");
+ok(await attendre(sam, async () => (await sceneSam.locator("[data-porte]").count()) === 0 && /Une surprise/.test(await sceneSam.locator(".mmc-actions-visite").innerText()) && (await sceneSam.locator('[data-geste="salon"]').getAttribute("href")) === `/collection?parler=${LEA.cle}#proches`), "son proche, entré : « 🎁 Une surprise » et « 💬 Votre salon » — qui ouvre leur conversation (22 novembre 2026)");
 await sam.screenshot({ path: `${D}/ma-maison-visite-4-sam.png` });
+// (🎬🖼️❓ 22 novembre 2026, le propriétaire : « je n'ai pas comme sur la maquette : clip, photos, questions » — sa
+// dernière photo a sa puce même si elle n'est pas d'aujourd'hui : « À découvrir », et elle s'ouvre en grand)
+const texte = async (loc) => (await loc.first().innerText({ timeout: 2000 }).catch(() => "")).replace(/\s+/g, " ").trim();
+const pucePhoto = sceneSam.locator('[data-decouvrir="photo"]');
+// (ici, d'autres choses sont nouvelles aujourd'hui : la rangée s'appelle « Nouveau aujourd'hui », comme la maquette)
+ok(await attendre(sam, async () => (await texte(pucePhoto)) === "🖼️ Photo" && /nouveau aujourd’hui/i.test(await texte(sceneSam.locator(".mmc-surtitre"))) && (await sceneSam.locator(".mmc-puces .mmc-puce").first().getAttribute("data-decouvrir")) === "photo"), `en bas, la première puce : « 🖼️ Photo », sa dernière photo (${await texte(sceneSam.locator(".mmc-puces"))})`);
+await pucePhoto.click();
+ok(await attendre(sam, async () => (await sam.locator("[data-photo-grand]").count()) === 1), "… un toucher : sa photo, en grand");
+await sam.locator("[data-photo-grand]").click();
 
 // ═══ « 🔒 MOI SEUL » ═══
 const r = await fetch(`${BASE}/api/direct/ma-piece`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${LEA.jeton}; sb-127-auth-token=base64-${b64(session)}` }, body: JSON.stringify({ action: "visibilite", v: "moi" }) });
