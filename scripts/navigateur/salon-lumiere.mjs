@@ -148,16 +148,26 @@ ok((await meteoDe(SAM)).meteo?.cle === "neige", "chez Sam (une autre ville) : so
 // ═══ LA PLUIE, DE JOUR ═══
 await ouvrir("matin");
 ok(await attendre(async () => (await texte(".sd-bulle.autre:not([data-ia])")) === "Coucou !", 15000), "le salon est ouvert");
-ok(await attendre(async () => (await texte('.sd-meteo[data-meteo="pluie"]')) === "🌧️ Pluie fine · 9°", 8000), `la puce : « ${await texte(".sd-meteo")} »`);
+// (🌦️ 22 novembre 2026, « pas très jolie » : l'emoji, la température en grand, le temps en petit)
+ok(await attendre(async () => (await texte('.sd-meteo[data-meteo="pluie"]')) === "🌧️ 9° Pluie fine" && (await p.locator(".sd-meteo").getAttribute("aria-label")) === "Pluie fine · 9°", 8000), `la puce : « ${await texte(".sd-meteo")} »`);
 ok(await attendre(async () => (await p.locator('canvas.sc-meteo[data-meteo="pluie"]').count()) === 1, 3000), "la pluie, à la fenêtre");
 const clip = await p.locator("canvas.sc-meteo").evaluate((c) => getComputedStyle(c).clipPath);
 ok(/polygon/.test(clip), "… dans les carreaux seulement (la toile découpée en polygone)");
 ok(await attendre(async () => (await dessinee()) > 20, 3000), "… elle tombe (la toile se dessine)");
 ok((await p.locator('.sc-ciel[data-ciel="gris"]').count()) === 1 && (await p.locator(".sc-halo, .sc-rai").count()) === 0, "un ciel gris derrière la vitre ; ni lampes allumées ni rayons de soleil");
 await p.locator(".sd-meteo").click();
-ok(await attendre(async () => /Il pleut chez toi/.test(await p.locator("body").innerText()), 3000), "un toucher sur la puce : « Il pleut chez toi… »");
+const carte = p.locator("[data-meteo-carte]");
+ok(await attendre(async () => /🌧️ Pluie fine · 9° chez toi/.test(await texte("[data-meteo-carte]")) && /Il pleut chez toi/.test(await texte("[data-meteo-carte]")) && /Matin : la lumière de la pièce suit l’heure/.test(await texte("[data-meteo-carte]")), 3000), `un toucher sur la puce : sa carte (« ${await texte("[data-meteo-carte]")} »)`);
+const sousLaPuce = await p.evaluate(() => {
+  const a = document.querySelector(".sd-meteo").getBoundingClientRect();
+  const b = document.querySelector("[data-meteo-carte]").getBoundingClientRect();
+  return b.top >= a.bottom - 1;
+});
+ok(sousLaPuce && !/Pas de fenêtre/.test(await texte("[data-meteo-carte]")), "… sous la puce (la pièce a sa fenêtre)");
 await p.waitForTimeout(500);
 await p.screenshot({ path: `${D}/salon-lumiere-1-pluie.png` });
+await carte.click();
+ok(await attendre(async () => (await carte.count()) === 0, 2000), "… un toucher la referme");
 
 // ═══ LA NUIT ═══
 await ouvrir("nuit");
@@ -171,7 +181,7 @@ await p.screenshot({ path: `${D}/salon-lumiere-2-nuit.png` });
 // ═══ LE SOLEIL, DE JOUR ═══
 await garder({ cle: "soleil", nom: "Grand soleil", emoji: "☀️", t: 14, jour: true });
 await ouvrir("soir");
-ok(await attendre(async () => (await texte('.sd-meteo[data-meteo="soleil"]')) === "☀️ Grand soleil · 14°", 15000), "la puce : « ☀️ Grand soleil · 14° »");
+ok(await attendre(async () => (await texte('.sd-meteo[data-meteo="soleil"]')) === "☀️ 14° Grand soleil", 15000), "la puce : « ☀️ 14° Grand soleil »");
 ok(await attendre(async () => (await p.locator(".sc-rai").count()) === 3 && (await p.locator(".sc-flaque").count()) === 1 && (await p.locator("canvas.sc-poussiere").count()) === 1, 3000), "trois rayons entrent par la fenêtre, une flaque de lumière au sol, la poussière qui danse");
 await p.waitForTimeout(800);
 await p.screenshot({ path: `${D}/salon-lumiere-3-soleil.png` });
@@ -185,10 +195,23 @@ ok(await attendre(() => p.evaluate(() => (document.querySelector(".sc-eclair")?.
 // ═══ LA NEIGE ═══
 await garder({ cle: "neige", nom: "Neige", emoji: "❄️", t: -1, jour: true });
 await ouvrir("matin");
-ok(await attendre(async () => (await texte('.sd-meteo[data-meteo="neige"]')) === "❄️ Neige · -1°", 15000), "la neige : « ❄️ Neige · -1° »");
+ok(await attendre(async () => (await texte('.sd-meteo[data-meteo="neige"]')) === "❄️ -1° Neige", 15000), "la neige : « ❄️ -1° Neige »");
 ok(await attendre(async () => (await dessinee()) > 20, 4000) && (await p.locator('.sc-ciel[data-ciel="neige"]').count()) === 1, "les flocons tombent derrière la vitre");
 await p.waitForTimeout(600);
 await p.screenshot({ path: `${D}/salon-lumiere-4-neige.png` });
+
+// ═══ 🪟 SANS CARREAUX TRACÉS : LA FENÊTRE RELEVÉE ═══
+// (22 novembre 2026, le propriétaire : « dehors, je n'ai pas le changement jour, nuit, pluie, soleil » — une pièce dont
+// les carreaux n'ont pas été tracés à la main montre le temps dans sa fenêtre relevée, un peu en dedans)
+await json("pieces-duo/salon/releve.json", { le: new Date().toISOString(), emplacements: { cadres: [], places: [{ x: 0.3, y: 0.72, hauteur: 0.3 }, { x: 0.7, y: 0.72, hauteur: 0.3 }], table: [0.33, 0.74, 0.34, 0.09], fenetre: [0.61, 0.135, 0.285, 0.16], lampes: [[0.06, 0.38, 0.06, 0.14]], tele: [0.12, 0.2, 0.3, 0.12] } });
+await ouvrir("matin");
+ok(await attendre(async () => (await p.locator('canvas.sc-meteo[data-meteo="neige"]').count()) === 1, 15000) && /polygon/.test(await p.locator("canvas.sc-meteo").evaluate((c) => getComputedStyle(c).clipPath)), "sans carreaux tracés : la neige tombe quand même, dans la fenêtre relevée");
+// (et une pièce sans fenêtre du tout : la carte le dit)
+await json("pieces-duo/salon/releve.json", { le: new Date().toISOString(), emplacements: { cadres: [], places: [{ x: 0.3, y: 0.72, hauteur: 0.3 }, { x: 0.7, y: 0.72, hauteur: 0.3 }], table: [0.33, 0.74, 0.34, 0.09], lampes: [[0.06, 0.38, 0.06, 0.14]], tele: [0.12, 0.2, 0.3, 0.12] } });
+await ouvrir("matin");
+ok(await attendre(async () => (await p.locator(".sd-meteo").count()) === 1, 15000), "… sans fenêtre : la puce reste");
+await p.locator(".sd-meteo").click();
+ok(await attendre(async () => /Pas de fenêtre dans cette pièce/.test(await texte("[data-meteo-carte]")), 3000) && (await p.locator("canvas.sc-meteo").count()) === 0, "… sa carte dit qu'il n'y a pas de fenêtre ici (et rien ne tombe dans la pièce)");
 
 // ═══ LA PAGE ═══
 const page = await p.evaluate(() => ({ deborde: document.documentElement.scrollWidth > window.innerWidth + 1, mot: /exemple/i.test(document.body.innerText) }));

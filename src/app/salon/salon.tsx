@@ -56,7 +56,7 @@ import { envoyerMesures, imagesDe, marquer, mesures, ouvrir, prechargerImage } f
 import { aRejouer, derniersDeChacun, dureeDuGeste, emojiDuGeste, gestesARejouer, heureDite, nomDuJour, OUVERTURE_SURPRISE_MS, parJour, phraseDuGeste, reactionAuTexte, surpriseDevoilee, tempsDeParole, texteDeBulle, type ARejouer } from "./bulles";
 import { autreQue, miseEnSceneDe, PLACES_TABLE, PUCES_GESTES, type CataloguePieces, type ChatSalon, type Flamme, type ObjetTable, type OptionsScene, type OuvertureSalon, type PieceDuSalon, type PuceGeste, type Qui, type Scene, type SceneSalon } from "@/lib/direct/salon";
 import { gesteDuSalon, objetDuGeste, reactionDe, REACTIONS, REACTIONS_MEME, SURPRISES, type GesteFil, type Vivant } from "@/lib/direct/vivant";
-import { PIECES_DUO, momentDuoValide, type MomentDuo, type PieceDuo } from "@/lib/direct/pieces-duo";
+import { MOMENTS_DUO, PIECES_DUO, momentDuoValide, type MomentDuo, type PieceDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_TELE, filmALaTele, passeALaTele, type ClipSecours, type ProgrammeTele } from "@/lib/direct/tele";
 import { CADRES_MAX, PHRASES_CADRES, cadreLibre, ditAccrochee, type CadreVu } from "@/lib/direct/cadres";
 import { PHRASES_FICHIER, tailleDite } from "@/lib/direct/fichier";
@@ -70,7 +70,7 @@ import { BoutonMicro, type FinMicro } from "./micro";
 import type { VoixEnregistree } from "./feuille-meme";
 import { STYLES_MEME, arreterMeme, jouerMeme } from "./memes";
 import { STYLES_LUMIERE, installerLumiere, type LumiereSalon } from "./lumiere";
-import { PHRASES_METEO, puceMeteo, type Meteo } from "@/lib/direct/meteo";
+import { CARTE_METEO, PHRASES_METEO, puceMeteo, type Meteo } from "@/lib/direct/meteo";
 import { PHRASES_MEME, duoDuFil, emojiDeTete, memesDuSalon, teteMeme, type MemeSalon } from "@/lib/direct/meme-salon";
 
 type Pret = Pick<OptionsScene, "plaque" | "largeur" | "hauteur" | "figurines">;
@@ -179,6 +179,13 @@ const dejaArrive = (m: MessageFil, x: MessageFil) => x.moi && (estVocal(m) ? est
 const SUR_TABLE_MS = 7 * 86_400_000;
 /** (🚪 une invitation dans une autre pièce vaut deux minutes : `INVITATION_MS`, `salon-serveur.ts`) */
 const INVITATION_MS = 120_000;
+/** 🪟 Les carreaux d'une fenêtre relevée (sa boîte), un peu en dedans : pour rester dans la vitre. */
+const carreauxDe = ([x, y, w, h]: Zone): [number, number][] => [
+  [x + w * 0.1, y + h * 0.1],
+  [x + w * 0.9, y + h * 0.1],
+  [x + w * 0.9, y + h * 0.9],
+  [x + w * 0.1, y + h * 0.9],
+];
 /** (📻 un vocal parti « en direct » : le temps que son téléphone le joue et le note écouté ; sinon, il va sur la table) */
 const DIRECT_MS = 15_000;
 
@@ -519,6 +526,13 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
   /** 🌙 (lot S7) la lumière de la pièce ; 🌦️ le temps qu'il fait chez moi (demandé après l'ouverture) */
   const lumiere = useRef<LumiereSalon | null>(null);
   const [meteo, setMeteo] = useState<Meteo | null>(null);
+  // 🌦️ (22 novembre 2026, « cette petite section en haut à droite n'est pas très jolie ») sa petite carte, au toucher
+  const [meteoOuverte, setMeteoOuverte] = useState(false);
+  useEffect(() => {
+    if (!meteoOuverte) return;
+    const t = window.setTimeout(() => setMeteoOuverte(false), 6000);
+    return () => window.clearTimeout(t);
+  }, [meteoOuverte]);
   const meteoRef = useRef<Meteo | null>(null);
   const meteoDemandee = useRef(false);
   /** (l'adresse d'essai : `?moment=nuit` essaie la lumière d'un autre moment — la pièce garde son image) */
@@ -624,7 +638,9 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
       moment: momentEssai ?? sceneVue.moment,
       largeur: sceneVue.plaque.largeur,
       hauteur: sceneVue.plaque.hauteur,
-      ...(em?.fenetreCoins ? { fenetre: em.fenetreCoins } : {}),
+      // (🪟 22 novembre 2026, « dehors, je n'ai pas le changement jour, nuit, pluie, soleil » : sans carreaux tracés à la
+      // main, la fenêtre relevée de la pièce, un peu en dedans — pour rester dans la vitre)
+      ...(em?.fenetreCoins ? { fenetre: em.fenetreCoins } : em?.fenetre ? { fenetre: carreauxDe(em.fenetre) } : {}),
       ...(em?.lampes ? { lampes: em.lampes } : {}),
       ...(em?.tele ? { tele: em.tele } : {}),
     });
@@ -1928,10 +1944,32 @@ export function SalonDuDuo({ cle, onRetour, essai = false }: { cle: string; onRe
             coucheHote,
           )}
         {meteo && !teleProche && (
-          <button type="button" className="sd-puce sd-meteo" data-meteo={meteo.cle} onPointerDown={(e) => e.stopPropagation()} onClick={() => montrer(`${meteo.emoji} ${PHRASES_METEO[meteo.cle]}`, 2800)}>
+          <button
+            type="button"
+            className="sd-puce sd-meteo"
+            data-meteo={meteo.cle}
+            aria-label={puceMeteo(meteo)}
+            aria-expanded={meteoOuverte}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setMeteoOuverte((x) => !x)}
+          >
             <span className="e">{meteo.emoji}</span>
-            <span>{puceMeteo(meteo)}</span>
+            <span className="sd-meteo-t">
+              <b>{meteo.t}°</b>
+              <small>{meteo.nom}</small>
+            </span>
           </button>
+        )}
+        {meteo && meteoOuverte && !teleProche && (
+          <div className="sd-meteo-carte" role="status" data-meteo-carte onPointerDown={(e) => e.stopPropagation()} onClick={() => setMeteoOuverte(false)}>
+            <b>{CARTE_METEO.titre(meteo)}</b>
+            <span>{PHRASES_METEO[meteo.cle]}</span>
+            {(() => {
+              const m = MOMENTS_DUO.find((x) => x.cle === (momentEssai ?? sceneVue?.moment));
+              return m ? <small>{CARTE_METEO.moment(m.emoji, m.nom)}</small> : null;
+            })()}
+            {!sceneVue?.emplacements?.fenetreCoins && !sceneVue?.emplacements?.fenetre && <small>{CARTE_METEO.sansFenetre}</small>}
+          </div>
         )}
         {teleProche && (
           <button type="button" className="sd-recul" data-recul onClick={() => approcherTele(false)}>
@@ -2411,7 +2449,17 @@ export const STYLES_SALON = `
 .sd-puce{position:absolute;z-index:5;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;font:700 13px var(--app);color:#fff;background:rgba(24,7,20,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .sd-puce .e{font-family:var(--emoji);font-size:16px}
 .sd-fil{bottom:10px;right:10px}
-.sd-meteo{top:10px;right:10px;height:32px;padding:0 12px;font-size:12.5px;background:rgba(255,246,234,.92)!important;color:var(--encre)!important}
+/* 🌦️ (22 novembre 2026, « pas très jolie ») la puce : l'emoji, la température en grand, le temps en petit ; un toucher,
+   sa carte */
+.sd .sd-meteo{top:10px;right:10px;height:42px;gap:7px;padding:0 12px 0 8px;border:0;border-radius:21px;background:linear-gradient(135deg,rgba(40,14,38,.62),rgba(24,7,20,.5));box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 4px 14px rgba(0,0,0,.28);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sd .sd-meteo .e{font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.sd-meteo-t{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05}
+.sd-meteo-t b{font-size:15px;font-weight:800}
+.sd-meteo-t small{font-size:10.5px;font-weight:600;opacity:.82;white-space:nowrap}
+.sd-meteo-carte{position:absolute;z-index:6;top:58px;right:10px;width:min(250px,calc(100% - 20px));box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:16px;background:rgba(24,7,20,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 10px 26px rgba(0,0,0,.35);color:#fff;font:600 12.5px/1.35 var(--app);animation:sd-meteo-entre .22s ease-out}
+.sd-meteo-carte b{font-size:14px;font-weight:800}
+.sd-meteo-carte small{font-size:11.5px;opacity:.78}
+@keyframes sd-meteo-entre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .sd-porte{top:10px;left:10px;height:32px;padding:0 12px;font-size:12.5px;max-width:calc(50% - 20px)}
 .sd-porte span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sd-rdv{top:10px;right:10px;height:32px;padding:0 12px;font-size:12.5px;max-width:calc(50% - 20px)}
@@ -2423,7 +2471,8 @@ export const STYLES_SALON = `
 .sd-invite button{height:38px;padding:0 16px!important;border-radius:19px;background:rgba(42,20,36,.08)!important;font:700 14px var(--app)!important;color:var(--encre)!important}
 .sd-invite button.oui{background:var(--rose)!important;color:#fff!important}
 .sd-badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--rose);font:800 11px/18px var(--app);text-align:center;box-sizing:border-box}
-.sd-toast{position:absolute;z-index:8;left:50%;top:12px;margin:0;transform:translate(-50%,-8px);width:max-content;max-width:88%;box-sizing:border-box;padding:9px 14px;border-radius:16px;background:rgba(255,246,234,.96);color:var(--encre);font:650 13px/1.3 var(--app);text-align:center;box-shadow:0 10px 26px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
+/* (22 novembre 2026 : sous la puce de la météo, plus par-dessus) */
+.sd-toast{position:absolute;z-index:8;left:50%;top:60px;margin:0;transform:translate(-50%,-8px);width:max-content;max-width:88%;box-sizing:border-box;padding:9px 14px;border-radius:16px;background:rgba(255,246,234,.96);color:var(--encre);font:650 13px/1.3 var(--app);text-align:center;box-shadow:0 10px 26px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease}
 .sd-toast.vu{opacity:1;transform:translate(-50%,0)}
 .sd-attente{position:absolute;inset:auto 16px 45%;margin:0;text-align:center;font-weight:600}
 .sd-temps{position:absolute;z-index:5;left:10px;bottom:10px;margin:0;max-width:calc(100% - 150px);padding:6px 9px;border-radius:12px;background:rgba(24,7,20,.62);font:600 11px/1.3 var(--app);font-variant-numeric:tabular-nums}

@@ -1454,6 +1454,34 @@ Le propriétaire, le même jour, captures à l'appui, sur la messagerie (ses poi
   conversation : le pouls le dit avec moi ; puis l'invitation, comme avant.
 - `salon-tele.mjs` : l'écran moins l'union des silhouettes.
 
+### 11.29 🌦️ La météo : une puce plus belle, sa carte, la fenêtre de repli (22 novembre 2026)
+
+Le propriétaire (son point 4) : « la météo, cette petite section en haut à droite, n'est pas très jolie, il faut
+améliorer l'UX. Et dehors je n'ai pas le changement jour, nuit, pluie, soleil ? Pour avoir matin, soir et nuit
+automatiquement, faut-il que j'aille sur la page des essais de l'univers et que je fasse toutes « faire ses
+lumières » ? »
+
+- **La puce** : l'emoji en grand, la température en gras, le temps en petit dessous (« 🌧️ 9° / Pluie fine »), sur un
+  verre sombre, comme les autres pastilles de la scène (au lieu d'une bande crème « Pluie fine · 9° »).
+- **Un toucher : sa carte**, sous la puce : « 🌧️ Pluie fine · 9° chez toi », ce que fait la pièce (« Il pleut chez
+  toi : la pluie coule sur la vitre »), le moment (« 🌇 Soir : la lumière de la pièce suit l'heure »), et, dans une pièce
+  sans fenêtre, « Pas de fenêtre dans cette pièce : le temps se voit à la fenêtre des autres ». Un toucher la referme ;
+  elle se referme seule après 6 s.
+- Les annonces de la scène passent **sous** la puce (elles la recouvraient).
+- **Dehors** : le temps ne se montre que dans les carreaux de la fenêtre (section 4.11). Ils se tracent à la main sur
+  l'adresse d'essai du salon ; une pièce dont les carreaux n'étaient pas tracés ne montrait rien. Désormais, **sans
+  carreaux tracés, la fenêtre relevée de la pièce** (la boîte « 🪟 La fenêtre » de la page des pièces), un peu en dedans
+  pour rester dans la vitre. Une pièce sans fenêtre relevée : rien dehors (la carte le dit).
+- **Matin, soir et nuit** : oui, il faut que chaque pièce ait ses lumières — mais **une fois pour toutes, pour tout le
+  monde**, pas par personne. Sur la page des essais de l'univers, « Faire ce qui manque » les fait toutes à la suite (les
+  pièces, leurs relevés et leurs lumières) : inutile de toucher chaque carte. Ensuite, chaque conversation prend toute
+  seule la lumière de l’heure de Paris (le matin de 7 h à 17 h, le soir jusqu’à 21 h, puis la nuit). Une carte dont les trois
+  boutons « 🌤️ Matin · 🌇 Soir · 🌙 Nuit » sont tous actifs a ses lumières.
+
+**L'essai** : `navigateur/salon-lumiere.mjs` — la puce (l'emoji, la température, le temps ; son nom entier pour les
+lecteurs d'écran) ; sa carte sous la puce, le moment, et un toucher la referme ; sans carreaux tracés, la neige tombe dans
+la fenêtre relevée ; sans fenêtre, la carte le dit et rien ne tombe dans la pièce.
+
 ## 12. Les décisions du 16 novembre 2026 au soir : un catalogue, des figurines posées, la maison de chacun
 
 Après les maquettes « Ma maison », le propriétaire a simplifié les univers. Le détail, et les mots du propriétaire :

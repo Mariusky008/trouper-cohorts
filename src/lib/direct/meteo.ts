@@ -44,6 +44,13 @@ export const PHRASES_METEO: Record<CleMeteo, string> = {
   orage: "Orage chez toi : le chat n’aime pas trop ça",
 };
 
+/** 🌦️ (22 novembre 2026) la petite carte de la puce, au toucher. */
+export const CARTE_METEO = {
+  titre: (m: Pick<Meteo, "emoji" | "nom" | "t">) => `${m.emoji} ${m.nom} · ${m.t}° chez toi`,
+  moment: (emoji: string, nom: string) => `${emoji} ${nom} : la lumière de la pièce suit l’heure`,
+  sansFenetre: "Pas de fenêtre dans cette pièce : le temps se voit à la fenêtre des autres.",
+} as const;
+
 /** Une ville (`ville_slug`) qu'on peut chercher. */
 export const villeValide = (x: unknown): string | null => (typeof x === "string" && /^[a-z0-9][a-z0-9-]{1,59}$/.test(x) ? x : null);
 /** La météo d'une ville se relit au plus une fois par heure. */
