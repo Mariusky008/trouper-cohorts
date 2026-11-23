@@ -84,15 +84,15 @@ ok((await pro({ action: "publier", id: essai.id, annonce: "menu", texte: "Le pla
 
 // ═══ NINA, DE DAX : « DÉCOUVRIR », SA TÉLÉ DU JOUR ; LE MÈME RANGÉ POUR DAX ═══
 const nina = await tel(NINA);
-await nina.goto(`${BASE}/collection#decouvrir`, { waitUntil: "networkidle" });
-await fermerPablito(nina, "#o-decouvrir");
-await nina.waitForSelector("#o-decouvrir:not([hidden]) .tp, #o-decouvrir:not([hidden]) .td, #o-decouvrir:not([hidden]) .td-accueil", { timeout: 60000 });
+await nina.goto(`${BASE}/collection#salons`, { waitUntil: "networkidle" });
+await fermerPablito(nina, "#o-salons");
+await nina.waitForSelector("#o-salons:not([hidden]) .tp, #o-salons:not([hidden]) .td, #o-salons:not([hidden]) .td-accueil", { timeout: 60000 });
 const menu = await texte(nina, ".mc-nav");
 ok((await nina.locator(".mc-nav button").count()) === 5 && /Découvrir.*Autour.*Créer.*Mes mèmes.*Proches/.test(menu) && (await nina.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), `le menu en bas : cinq onglets, « Créer » au milieu (${menu})`);
-ok((await nina.locator("#o-decouvrir .dv-carte").count()) === 0, "« Découvrir » : sa télé du jour (ses passions d'abord), plus le fil des mèmes de la ville");
+ok((await nina.locator("#o-salons .dv-carte").count()) === 0, "« Découvrir » : sa télé du jour (ses passions d'abord), plus le fil des mèmes de la ville");
 const pourDax = await nina.evaluate(async () => (await (await fetch("/api/direct/memes-commerces", { cache: "no-store" })).json()).memes ?? []);
 ok(pourDax.some((m) => m.id === id && m.nom === "Chez Bergine"), "le serveur range toujours son mème pour Dax");
-ok((await debordement(nina)) <= 0 && !/exemple/i.test(await texte(nina, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");
+ok((await debordement(nina)) <= 0 && !/exemple/i.test(await texte(nina, "#o-salons")), "« Découvrir » ne déborde pas, sans le mot interdit");
 await nina.screenshot({ path: `${D}/meme-commerce-4-decouvrir.png` });
 
 // ═══ UNE INCONNUE OUVRE SON LIEN ═══

@@ -1,0 +1,126 @@
+/**
+ * 🎞️ DÉCOUVRIR, LE FIL « DE PIÈCE EN PIÈCE » (le lot F1, 23 novembre 2026 ; `docs/univers/fil.md`) — partagé entre le
+ * serveur et l'écran.
+ *
+ * Le propriétaire, après trente minutes sur l'appli : « je n'ai pas ce sentiment de simplicité d'utilisation qui fait que
+ * dès la première seconde on sait quoi faire, et qu'après quelques secondes on ne veut plus en partir ». Puis, sur la
+ * première maquette (un fil de vidéos) : « c'est exactement la même chose que TikTok […] la différence pour nous, c'est
+ * que je vois quelque chose avec d'autres personnes, je vois leur réaction, je peux découvrir leur maison ».
+ *
+ * D'où le fil : on ne fait pas défiler des vidéos, on passe DE PIÈCE EN PIÈCE, et il y a toujours quelqu'un dedans. Un
+ * seul geste (glisser vers le haut) ; sa figurine est au bord de la pièce ; toucher deux fois : elle y réagit pour de vrai
+ * (dans un salon, ceux qui sont là la voient). Chaque bouton ouvre ce qui existe déjà.
+ *
+ * Les pièces du lot F1 : les salons où il y a quelqu'un en ce moment (jamais une pièce vide), le salon de la musique, les
+ * figurines posées dans Autour, l'humeur de ses proches. Les maisons ouvertes (F2), les séances entre proches en cours
+ * (F3) et l'ordre fin (F4) viendront après.
+ */
+import type { IdTheme } from "./decouvrir";
+import type { PlaceGradin } from "./salons-gradins";
+import type { FigurinePosee } from "./autour";
+import type { Zone } from "./pieces-duo";
+
+/** Une figurine telle que le fil la montre : assise (son corps sans sa tête, la tête qu'elle fait), sinon d'une image. */
+export type SilhouetteFil = { tete: string; corps?: { src: string; ratio: number; boite: Zone }; image?: string };
+
+/** Quelqu'un qui est dans un salon, en ce moment (jamais son compte : son identifiant court). */
+export type PresentFil = { q: string; prenom: string; src: string; place: number };
+/** Une bulle qui vient d'être dite dans le salon (un texte, une réaction, un geste). */
+export type BulleFil = { id: string; q: string; prenom: string; texte: string; le: number };
+
+/** 🛋️ Un salon où il y a quelqu'un : le plus rempli de son thème. */
+export type SalonFil = {
+  sorte: "salon";
+  id: string;
+  theme: IdTheme;
+  e: string;
+  nom: string;
+  /** une de ses passions */
+  mien: boolean;
+  presents: PresentFil[];
+  bulles: BulleFil[];
+  /** son gradin validé (l'image carrée, ses places) ; sinon le plan des places sur un fond sombre */
+  gradin: { src: string; flou: string; places: PlaceGradin[] } | null;
+  /** ce qui passe à sa télé, à la même seconde pour tous */
+  video: { id: string; titre: string } | null;
+  /** 🎵 le salon de la musique : le morceau proposé qui passe, et qui l'a choisi (sans : la radio du salon) */
+  morceau?: { titre: string; prenom: string } | null;
+};
+/** 📍 Une figurine posée dans Autour, avec son mot du jour. */
+export type AutourFil = { sorte: "autour"; lieu: string; nomLieu: string; figurine: FigurinePosee };
+/** ☀️ L'humeur du jour de ses proches (ceux qui l'ont dite aujourd'hui). */
+export type ProcheHumeurFil = { cle: string; prenom: string; humeur: string; emoji: string; nom: string; doux: boolean; figurine: SilhouetteFil };
+export type HumeurFil = { sorte: "humeur"; proches: ProcheHumeurFil[] };
+export type PieceFil = SalonFil | AutourFil | HumeurFil;
+
+export type FilVue = {
+  moi: { prenom: string; figurine: SilhouetteFil | null };
+  /** les salons ont besoin de savoir s'il a 18 ans ou plus (les 15-17 ans ont les leurs) */
+  age?: true;
+  pieces: PieceFil[];
+  /** 🎬 ce qui l'attend ailleurs : la première invitation devant la télé d'un proche, les demandes de proche reçues */
+  invitation?: { cle: string; prenom: string };
+  demandes?: number;
+};
+
+/** Combien de pièces au plus (le fil se recharge en revenant). */
+export const PIECES_MAX = 14;
+/** Les bulles d'un salon qu'on montre : celles des dix dernières minutes. */
+export const BULLES_FRAICHES_MS = 10 * 60_000;
+
+/**
+ * L'ordre du fil (F1, simple ; le lot F4 l'affinera) : les salons de ses passions, l'humeur de ses proches, Autour, les
+ * autres salons — un de chaque à tour de rôle, pour que deux pièces de la même sorte ne se suivent pas quand il y en a
+ * d'autres.
+ */
+export function ordreDuFil(groupes: PieceFil[][], max = PIECES_MAX): PieceFil[] {
+  const files = groupes.map((g) => [...g]);
+  const fil: PieceFil[] = [];
+  while (fil.length < max && files.some((f) => f.length)) {
+    for (const f of files) {
+      const x = f.shift();
+      if (x) fil.push(x);
+      if (fil.length >= max) break;
+    }
+  }
+  return fil;
+}
+
+/** La réaction de sa figurine quand il touche deux fois : 😂 dans un salon, 💃 dans celui de la musique. */
+export const reactionDuFil = (p: PieceFil): { cle: string; e: string } => (p.sorte === "salon" && p.theme === "musique" ? { cle: "danse", e: "💃" } : p.sorte === "salon" ? { cle: "rire", e: "😂" } : { cle: "coeur", e: "❤️" });
+
+export const PHRASES_FIL = {
+  indice: "Glisse : de pièce en pièce, il y a toujours quelqu’un",
+  indiceDouble: "Touche deux fois : ta figurine réagit, et on la voit",
+  tousLesSalons: "Tous les salons",
+  retourFil: "‹ Le fil",
+  enDirect: (n: number) => `${n} en direct`,
+  tesPassions: "ta passion",
+  places: (libres: number) => (libres > 0 ? `${libres} place${libres > 1 ? "s" : ""} libre${libres > 1 ? "s" : ""}` : "complet pour l’instant"),
+  asseoir: "M’asseoir",
+  entrerDanser: "Entrer danser",
+  radio: "📻 La radio du salon",
+  choix: (prenom: string) => `🎵 Le choix de ${prenom}`,
+  teVoient: (n: number) => (n > 1 ? `Les ${n} te voient` : "Il te voit"),
+  autourEtiquette: (nom: string) => nom,
+  autourTitre: (prenom: string) => `${prenom} a posé sa figurine ici`,
+  autourSous: (heures: number) => `Elle reste encore ${heures} h.`,
+  asseoirACote: "M’asseoir à côté",
+  humeurEtiquette: "Tes proches, aujourd’hui",
+  humeurTitre: (prenom: string, nom: string) => `${prenom} : ${nom.toLowerCase()}`,
+  humeurDouce: "Un mot de toi, et sa journée change.",
+  humeurSous: "Ils l’ont dit ce matin. Réponds-leur avec ta figurine.",
+  repondre: "Lui répondre",
+  repondreA: (prenom: string) => `Répondre à ${prenom}`,
+  invitation: (prenom: string) => `🎬 ${prenom} t’invite devant sa télé`,
+  demandes: (n: number) => (n > 1 ? `👯 ${n} demandes de proche` : "👯 Une demande de proche"),
+  voir: "Voir",
+  age: "Avant d’entrer dans les salons : as-tu 18 ans ou plus ?",
+  ageChapo: "Les 15-17 ans ont leurs salons à eux : ils n’y croisent jamais d’adulte.",
+  adulte: "J’ai 18 ans ou plus",
+  jeune: "J’ai entre 15 et 17 ans",
+  videTitre: "Personne en direct pour l’instant",
+  videSous: "Pose ta figurine dans Autour, ou entre le premier dans un salon : les suivants te verront.",
+  poserAutour: "📍 Poser ma figurine",
+  sansFigurine: "Pour réagir, il te faut ta figurine assise dans son fauteuil.",
+} as const;

@@ -147,9 +147,9 @@ await lea.screenshot({ path: `${D}/mes-chaines-2-tele.png` });
 ok((await lea.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0, "la télé : rien ne déborde");
 
 // ═══ L'ACCUEIL DE DÉCOUVRIR ═══
-await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(lea, "#o-decouvrir");
-const carte = lea.locator("#o-decouvrir [data-carte-tele]");
+await lea.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+await fermerPablito(lea, "#o-salons");
+const carte = lea.locator("#o-salons [data-carte-tele]");
 ok(await attendre(lea, async () => (await texte(carte.locator("[data-nouvelles]"))) === "🆕 3 nouvelles vidéos de tes chaînes"), `la carte « Ma télé du jour » : « ${await texte(carte.locator("[data-nouvelles]"))} »`);
 ok(!/exemple/i.test(await lea.evaluate(() => document.body.innerText)), "jamais le mot interdit");
 

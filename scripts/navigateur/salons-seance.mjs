@@ -130,12 +130,12 @@ await appelTele(SAM, { action: "vue", id: vSam, fin: true, secondes: 150 });
 
 // ═══ 🎬 LÉA : « 👥 REGARDER AVEC MES PROCHES » ═══
 const lea = await ouvrir(LEA);
-await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(lea, "#o-decouvrir");
-ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-carte-tele]").count()) === 1, 45000), "Découvrir : la carte « Ma télé du jour »");
+await lea.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+await fermerPablito(lea, "#o-salons");
+ok(await attendre(lea, async () => (await lea.locator("#o-salons [data-carte-tele]").count()) === 1, 45000), "Découvrir : la carte « Ma télé du jour »");
 // (⭐ le lot B, 21 novembre 2026 : « Ma télé du jour » est son salon à quatre places — la carte y mène tout droit)
 const vivanteLea = reponseVivante(lea);
-await lea.locator("#o-decouvrir [data-carte-tele]").click();
+await lea.locator("#o-salons [data-carte-tele]").click();
 await lea.waitForURL(/\/univers\/salons\?chez=moi/);
 const seance = lea.locator(".so[data-salon]");
 ok(await attendre(lea, async () => /^chez-/.test((await seance.getAttribute("data-salon")) ?? "") && (await seance.getAttribute("data-hote")) === "1"), "chez elle : la séance (elle en est l'hôte)");
@@ -172,13 +172,13 @@ ok(await attendre(lea, async () => /Invitation envoyée/.test(await texte(lea.lo
 
 // ═══ SAM : L'INVITATION, « VENIR » ═══
 const sam = await ouvrir(SAM);
-await sam.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(sam, "#o-decouvrir");
-const invitation = sam.locator(`#o-decouvrir [data-invitation="${LEA.cle}"]`);
+await sam.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+await fermerPablito(sam, "#o-salons");
+const invitation = sam.locator(`#o-salons [data-invitation="${LEA.cle}"]`);
 ok(await attendre(sam, async () => /Léa t’invite devant sa télé/.test(await texte(invitation)), 45000), "Découvrir de Sam : « 🎬 Léa t'invite devant sa télé »");
 const haut = await sam.evaluate(() => {
-  const a = document.querySelector("#o-decouvrir [data-attente]")?.getBoundingClientRect().top ?? 1e9;
-  const c = document.querySelector("#o-decouvrir [data-carte-tele]")?.getBoundingClientRect().top ?? 0;
+  const a = document.querySelector("#o-salons [data-attente]")?.getBoundingClientRect().top ?? 1e9;
+  const c = document.querySelector("#o-salons [data-carte-tele]")?.getBoundingClientRect().top ?? 0;
   return a < c;
 });
 ok(haut, "… tout en haut, avant sa télé du jour");
@@ -268,12 +268,12 @@ await ben.context().close();
 
 // ═══ ANA : LA DEMANDE, SES SALONS ═══
 const ana = await ouvrir(ANA);
-await ana.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(ana, "#o-decouvrir");
-const demande = ana.locator("#o-decouvrir [data-demande]");
+await ana.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+await fermerPablito(ana, "#o-salons");
+const demande = ana.locator("#o-salons [data-demande]");
 ok(await attendre(ana, async () => /Ben \(Le salon du foot\) veut t’ajouter en proche/.test(await texte(demande)), 45000), "Découvrir d'Ana : « 👯 Ben (Le salon du foot) veut t'ajouter en proche »");
 await demande.locator("[data-accepter]").click();
-ok(await attendre(ana, async () => /Ben et toi êtes proches/.test(await texte(ana.locator("[data-note-attente]"))) && (await ana.locator("#o-decouvrir [data-demande]").count()) === 0, 8000), "« Accepter » : « Ben et toi êtes proches »");
+ok(await attendre(ana, async () => /Ben et toi êtes proches/.test(await texte(ana.locator("[data-note-attente]"))) && (await ana.locator("#o-salons [data-demande]").count()) === 0, 8000), "« Accepter » : « Ben et toi êtes proches »");
 await ana.goto(`${BASE}/univers/maison`, { waitUntil: "domcontentloaded" });
 await fermerPablito(ana);
 ok(await attendre(ana, async () => (await ana.locator('[data-fanions] [data-fanion="foot"]').count()) === 1, 30000), "sa maison : le fanion ⚽ de « Mes salons »");

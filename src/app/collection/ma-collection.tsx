@@ -42,6 +42,7 @@ import { ProtegerFigurine, STYLES_CONNAITRE } from "./connaitre";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
 import { TeleDuJourEcran } from "./tele-du-jour";
+import { FilDecouvrir, STYLES_FIL } from "./fil-decouvrir";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
 import { themeDuJour } from "@/lib/direct/theme-du-jour";
@@ -51,7 +52,7 @@ import { Autour, STYLES_AUTOUR } from "./autour";
 import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
 import { RaccourcisMoi, STYLES_CHEZ_MOI } from "./chez-moi";
 import { STYLES_MEME_POUR } from "./meme-pour";
-import { MEMOIRE_ETAT, MEMOIRE_MAISON, MEMOIRE_PROCHES, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire, poserProprietaire, prechauffer } from "./memoire-locale";
+import { MEMOIRE_ETAT, MEMOIRE_FIL, MEMOIRE_MAISON, MEMOIRE_PROCHES, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire, poserProprietaire, prechauffer } from "./memoire-locale";
 import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } from "./rituel";
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
@@ -93,11 +94,17 @@ const MENU_UNIVERS = [
   { cle: "maison", nom: "Ma maison" },
   { cle: "autour", nom: "Autour" },
 ] as const;
-/** Les vues : les onglets du menu, et « Moi » (sous son prénom, en haut). */
-type Vue = Onglet | "personnage";
+/**
+ * Les vues : les onglets du menu, et « Moi » (sous son prénom, en haut) ; 🎞️ (lot F1, 23 novembre 2026) « Tous les
+ * salons » (`#salons`) : l'ancienne page de Découvrir — ma télé du jour, les salons par passion —, derrière le fil.
+ */
+type Vue = Onglet | "personnage" | "salons";
 /** Les adresses qui mènent à une vue (et, pour certaines, à un endroit dedans). */
 const ALIAS: Record<string, Vue> = {
   decouvrir: "decouvrir",
+  // (🎞️ lot F1 : l'ancienne page de Découvrir, derrière « Tous les salons »)
+  salons: "salons",
+  "tous-les-salons": "salons",
   autour: "autour",
   "autour-de-moi": "autour",
   moi: "personnage",
@@ -107,10 +114,10 @@ const ALIAS: Record<string, Vue> = {
   // « Découvrir » est partie : « Créer », ouvert sur le thème du jour — `lire`, plus bas)
   jour: "figurine",
   // (✨ « Mon vœu », sa mission et ses réponses du soir sont partis le 19 novembre 2026 : leurs anciens liens ouvrent
-  // « Découvrir », ma télé du jour)
-  voeu: "decouvrir",
-  mission: "decouvrir",
-  reponses: "decouvrir",
+  // ma télé du jour — depuis le lot F1, derrière « Tous les salons »)
+  voeu: "salons",
+  mission: "salons",
+  reponses: "salons",
   // (⚡ ses réactions, en haut de « Créer » : là où l'app installée pourra s'ouvrir)
   reactions: "figurine",
   personnage: "personnage",
@@ -273,7 +280,10 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
       const v = ALIAS[h];
       // (🔥 le mème du jour : le studio s'ouvre sur son thème ; l'adresse reste `#jour`)
       if (h === "jour") versLeStudio({ theme: themeDuJour().cle }, { garderAdresse: true });
-      if (v) aller(v, h, false);
+      // (🎞️ lot F1 : une vidéo à revoir — `?tele=<id>#decouvrir`, le lien d'une notification — s'ouvre dans ma télé du
+      // jour, sur l'ancienne page de Découvrir)
+      if (h === "decouvrir" && new URLSearchParams(window.location.search).get("tele")) aller("salons", "salons", false);
+      else if (v) aller(v, h, false);
       // 📲 la page s'est rechargée avec son jeton, juste avant d'installer (iPhone) : le geste à faire
       else if (h === "installer") ouvrirInstallation();
       // le lien d'un ami (`?ami=<code>`, du temps de « Rencontres ») : « Créer »
@@ -284,7 +294,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     return () => window.removeEventListener("hashchange", lire);
   }, [aller]);
 
-  const onglet = vue;
+  // (« Tous les salons » est dans Découvrir : son onglet reste allumé)
+  const onglet = vue === "salons" ? "decouvrir" : vue;
   const compte = charge ? Boolean(etat?.compte) : null;
   const prete = etat?.etape === "prete";
 
@@ -293,6 +304,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   useEffect(() => {
     if (!compte || !prete) return;
     const t = window.setTimeout(() => {
+      void prechauffer(MEMOIRE_FIL, "/api/direct/fil-decouvrir", (j) => j.fil);
       void prechauffer(MEMOIRE_TELE, "/api/direct/tele-du-jour", (j) => j.tele);
       void prechauffer(MEMOIRE_SALONS, "/api/direct/salons-ouverts?accueil=1", (j) => ({ cartes: j.cartes ?? [], vitrine: j.vitrine, age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes }));
       void prechauffer(MEMOIRE_PROCHES, "/api/direct/proches", (j) => (Array.isArray(j.proches) ? { proches: j.proches, presence: j.presence !== false, cle: j.cle ?? "" } : null));
@@ -371,10 +383,29 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
           </OngletVisible.Provider>
         </section>
 
-        {/* 🔥 DÉCOUVRIR */}
+        {/* 🎞️ DÉCOUVRIR, LE FIL « DE PIÈCE EN PIÈCE » (lot F1, 23 novembre 2026 ; `fil-decouvrir.tsx`) : plein écran, on
+            glisse de pièce en pièce ; « Tous les salons » ouvre l'ancienne page */}
         {ouverts.has("decouvrir") && (
-          <section className="mc-onglet" id="o-decouvrir" hidden={vue !== "decouvrir"} aria-label="Découvrir">
+          <section className="mc-onglet mc-fil" id="o-decouvrir" hidden={vue !== "decouvrir"} aria-label="Découvrir">
             <OngletVisible.Provider value={vue === "decouvrir"}>
+              <FilDecouvrir
+                onTousLesSalons={() => aller("salons", undefined, false, true)}
+                onAutour={() => aller("autour", undefined, false, true)}
+                onConversation={(cle) => {
+                  aller("proches", undefined, false, true);
+                  ouvrirConversation(cle);
+                }}
+              />
+            </OngletVisible.Provider>
+          </section>
+        )}
+        {/* 🔥 TOUS LES SALONS : l'ancienne page de Découvrir (ma télé du jour, les salons par passion) */}
+        {ouverts.has("salons") && (
+          <section className="mc-onglet" id="o-salons" hidden={vue !== "salons"} aria-label="Tous les salons">
+            <button type="button" className="mc-retour-fil" data-retour-fil onClick={() => aller("decouvrir", undefined, false, true)}>
+              ‹ Le fil
+            </button>
+            <OngletVisible.Provider value={vue === "salons"}>
               <TeleDuJourEcran onglet />
             </OngletVisible.Provider>
           </section>
@@ -510,7 +541,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
+      <style>{STYLES_MC + STYLES_FIL + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
     </main>
   );
 }
@@ -605,8 +636,9 @@ button.mc-moi i{position:absolute;right:-3px;top:-4px;display:grid;place-items:c
 .mc-onglets{padding:14px 16px 0}
 .mc-onglet{animation:mc-entre .35s cubic-bezier(.2,.9,.3,1)}
 .mc-onglet[hidden]{display:none}
-/* (« Autour » est en plein écran, en position fixe : pas d'entrée animée, qui ferait bouger la carte) */
-.mc-onglet.mc-autour{animation:none}
+/* (« Autour » est en plein écran, en position fixe : pas d'entrée animée, qui ferait bouger la carte ; 🎞️ le fil aussi) */
+.mc-onglet.mc-autour,.mc-onglet.mc-fil{animation:none}
+.mc-retour-fil{display:inline-flex;align-items:center;min-height:38px;margin:0 0 10px;padding:0 14px;border:0;border-radius:999px;background:rgba(255,255,255,.08);color:#FFF4E6;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
 .mc-attente{display:grid;margin:8px 0 0}
 .mc-attente i{height:420px;border-radius:30px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear infinite}
 .mc-vide{margin:28px 0 0;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);text-align:center;color:#D9C3CB}

@@ -89,7 +89,7 @@ const centreDe = (lieux: Lieu[]): Pos => (lieux.length ? { lat: lieux.reduce((a,
 const nomDeZone = (nom: string) => nomLieuPropre(nom).nom ?? "";
 
 /** 🧍 Une figurine assise : son corps sans sa tête, puis la tête qu'elle fait — ou sa figurine d'une seule image. */
-function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" | "corps" | "image">; hauteur: number }) {
+export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" | "corps" | "image">; hauteur: number }) {
   if (f.corps)
     return (
       <span className="afg-assise" style={{ height: hauteur, width: Math.round(hauteur * f.corps.ratio) }} data-assise="calques">

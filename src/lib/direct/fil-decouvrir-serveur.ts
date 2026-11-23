@@ -1,0 +1,92 @@
+/**
+ * 🎞️ DÉCOUVRIR, LE FIL « DE PIÈCE EN PIÈCE », CÔTÉ SERVEUR (le lot F1, 23 novembre 2026 ; `fil-decouvrir.ts`,
+ * `docs/univers/fil.md`). Rien de nouveau n'est rangé : le fil lit ce qui existe déjà.
+ *
+ * - 🛋️ les salons où il y a quelqu'un d'autre que lui, en ce moment (`salonsEnDirect`) — jamais une pièce vide ;
+ * - 📍 les figurines posées dans Autour, dans sa ville (les plus récentes, pas les siennes), assises avec leur mot ;
+ * - ☀️ l'humeur du jour de ses proches (ceux à qui il parle), leur figurine qui en fait la tête ;
+ * - sa figurine à lui, avec la tête de son humeur : elle est au bord de chaque pièce ;
+ * - ce qui l'attend ailleurs : une invitation devant la télé d'un proche, des demandes de proche.
+ *
+ * FICHIER SERVEUR.
+ */
+import type { createAdminClient } from "@/lib/supabase/admin";
+import type { Habitant } from "./habitant";
+import { salonsOuverts } from "./interrupteurs-serveur";
+import { mesDemandes, mesInvitations, salonsEnDirect } from "./salons-ouverts-serveur";
+import { carteDesFigurines, figurinesDuLieu } from "./autour-serveur";
+import { lireLigne, prenomDe, prochesDe, saFigurineSignee } from "./ma-figurine-serveur";
+import { humeurDuJour, poserProfil, seParlent } from "./talkie-serveur";
+import { figurineDeLaMaison, teteDeLaMaison } from "./ma-maison-serveur";
+import { humeurDe } from "./rituel";
+import { estDouce } from "./humeur-reponse";
+import { ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type PieceFil, type ProcheHumeurFil, type SilhouetteFil } from "./fil-decouvrir";
+
+type Supabase = ReturnType<typeof createAdminClient>;
+const s = (v: unknown) => (v == null ? "" : String(v)).trim();
+
+/** Sa figurine telle que le fil la montre : la tête de son humeur posée sur son corps, sinon sa figurine assise. */
+export async function silhouetteDuFil(supabase: Supabase, h: string): Promise<SilhouetteFil | null> {
+  const [tete, assise] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), figurineDeLaMaison(supabase, h).catch(() => null)]);
+  if (tete) return { tete: tete.src, corps: { src: tete.corps, ratio: tete.ratio, boite: tete.boite } };
+  const image = assise?.src || (await saFigurineSignee(supabase, h).catch(() => ""));
+  return image ? { tete: image, image } : null;
+}
+
+/** ☀️ Ses proches (ceux à qui il parle) qui ont dit leur humeur aujourd'hui — les plus doux d'abord : on leur répond. */
+async function humeursDesProches(supabase: Supabase, moi: Habitant): Promise<ProcheHumeurFil[]> {
+  const miens = [...(await prochesDe(supabase, moi.id))].filter((h) => h !== moi.id).slice(0, 30);
+  const vus = await Promise.all(
+    miens.map(async (h): Promise<ProcheHumeurFil | null> => {
+      const [humeur, parlent] = await Promise.all([humeurDuJour(supabase, h).catch(() => null), seParlent(supabase, moi.id, h).catch(() => false)]);
+      const v = humeur && parlent ? humeurDe(humeur) : null;
+      if (!humeur || !v) return null;
+      const [cle, ligne, figurine] = await Promise.all([poserProfil(supabase, h), lireLigne(supabase, h).catch(() => ({ ligne: null })), silhouetteDuFil(supabase, h)]);
+      if (!figurine) return null;
+      return { cle, prenom: s(ligne.ligne?.prenom) || "Ton proche", humeur, emoji: v.emoji, nom: v.court, doux: estDouce(humeur), figurine };
+    }),
+  );
+  return vus.filter((x): x is ProcheHumeurFil => Boolean(x)).sort((a, b) => Number(b.doux) - Number(a.doux)).slice(0, 4);
+}
+
+/** 📍 Les figurines posées dans sa ville (les plus récentes, pas les siennes), assises : deux au plus. */
+async function poseesAutour(supabase: Supabase, moi: Habitant): Promise<AutourFil[]> {
+  const ville = moi.villeSlug;
+  if (!ville) return [];
+  const carte = await carteDesFigurines(supabase, ville, moi);
+  const recentes = carte.derniers.filter((f) => !f.moi).slice(0, 2);
+  const vues = await Promise.all(
+    recentes.map(async (f): Promise<AutourFil | null> => {
+      const lieu = await figurinesDuLieu(supabase, ville, f.lieu, moi);
+      const assise = lieu.figurines.find((x) => x.id === f.id) ?? f;
+      return lieu.lieu ? { sorte: "autour", lieu: f.lieu, nomLieu: lieu.lieu.nom, figurine: assise } : null;
+    }),
+  );
+  return vues.filter((x): x is AutourFil => Boolean(x));
+}
+
+/** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`), et sa figurine. */
+export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<FilVue> {
+  const ouverts = salonsOuverts();
+  const [prenom, figurine, direct, autour, humeurs, invitations, demandes] = await Promise.all([
+    prenomDe(supabase, moi).catch(() => ""),
+    silhouetteDuFil(supabase, moi.id),
+    ouverts ? salonsEnDirect(supabase, moi).catch((): Awaited<ReturnType<typeof salonsEnDirect>> => ({ salons: [] })) : Promise.resolve<Awaited<ReturnType<typeof salonsEnDirect>>>({ salons: [] }),
+    poseesAutour(supabase, moi).catch(() => [] as AutourFil[]),
+    humeursDesProches(supabase, moi).catch(() => [] as ProcheHumeurFil[]),
+    mesInvitations(supabase, moi).catch(() => []),
+    ouverts ? mesDemandes(supabase, moi).catch(() => []) : Promise.resolve([]),
+  ]);
+  const passions = direct.salons.filter((x) => x.mien);
+  const autres = direct.salons.filter((x) => !x.mien);
+  const humeur: HumeurFil[] = humeurs.length ? [{ sorte: "humeur", proches: humeurs }] : [];
+  const groupes: PieceFil[][] = [passions, humeur, autour, autres];
+  const inv = invitations[0];
+  return {
+    moi: { prenom: prenom || "Toi", figurine },
+    ...(direct.age ? { age: true as const } : {}),
+    pieces: ordreDuFil(groupes),
+    ...(inv ? { invitation: { cle: inv.cle, prenom: inv.prenom } } : {}),
+    ...(demandes.length ? { demandes: demandes.length } : {}),
+  };
+}

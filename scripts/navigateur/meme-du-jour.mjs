@@ -103,14 +103,17 @@ await hugo.locator('#o-figurine #theme-du-jour button[aria-label="Ne pas répond
 await hugo.waitForTimeout(300);
 ok((await hugo.locator("#o-figurine #theme-du-jour").count()) === 0, "« ✕ » : il n'y répond pas, le thème s'en va");
 
-// ═══ LES ANCIENS LIENS (« Mon vœu », sa mission, ses réponses du soir) : « Découvrir », sa télé du jour ═══
-for (const ancre of ["voeu", "mission", "reponses", "decouvrir"]) {
+// ═══ LES ANCIENS LIENS (« Mon vœu », sa mission, ses réponses du soir) : « Tous les salons », sa télé du jour ═══
+// (🎞️ le lot F1, 23 novembre 2026 : `#decouvrir` ouvre le fil « de pièce en pièce » ; l'ancienne page est `#salons`)
+for (const ancre of ["voeu", "mission", "reponses", "salons"]) {
   await hugo.goto(`${BASE}/collection?v=${Date.now()}#${ancre}`, { waitUntil: "networkidle" });
-  await fermerPablito(hugo, "#o-decouvrir");
-  const vu = await hugo.waitForSelector("#o-decouvrir:not([hidden]) .tp, #o-decouvrir:not([hidden]) .td, #o-decouvrir:not([hidden]) .td-accueil", { timeout: 60000 }).then(() => true).catch(() => false);
-  ok(vu && (await hugo.locator("#o-decouvrir .dv-fil, #o-decouvrir .dv-jour, #o-decouvrir #voeu, #o-decouvrir .vx-accueil").count()) === 0, `#${ancre} : « Découvrir », sa télé du jour (ses passions d'abord) — plus de fil ni de vœu`);
+  await fermerPablito(hugo, "#o-salons");
+  const vu = await hugo.waitForSelector("#o-salons:not([hidden]) .tp, #o-salons:not([hidden]) .td, #o-salons:not([hidden]) .td-accueil", { timeout: 60000 }).then(() => true).catch(() => false);
+  ok(vu && (await hugo.locator("#o-salons .dv-fil, #o-salons .dv-jour, #o-salons #voeu, #o-salons .vx-accueil").count()) === 0, `#${ancre} : « Tous les salons », sa télé du jour (ses passions d'abord) — plus de vœu`);
 }
-ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-decouvrir")), "« Découvrir » ne déborde pas, sans le mot interdit");
+ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-salons")), "« Tous les salons » ne déborde pas, sans le mot interdit");
+await hugo.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "networkidle" });
+ok(await hugo.waitForSelector("#o-decouvrir:not([hidden]) [data-fil] .fd-boite", { timeout: 60000 }).then(() => true).catch(() => false), "#decouvrir : le fil de Découvrir");
 await hugo.screenshot({ path: `${D}/meme-du-jour-2-decouvrir.png` });
 
 const erreurs = [...hugo.err];

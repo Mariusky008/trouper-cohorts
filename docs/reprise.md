@@ -586,6 +586,13 @@ propriétaire : « pour qu'on sache où l'on est ; pour l'instant, on a l'impres
 (`ma-collection.tsx`, `mc-nav-centre` suit `onglet` ; essai : `bascule-univers.mjs`). **🖥️ La messagerie sur un
 ordinateur** : la pièce entière, ses côtés floutés (`salon-du-duo.md`, section 11.30).
 
+**🎞️ Découvrir devient un fil « de pièce en pièce » (23 novembre 2026, le lot F1 ; `docs/univers/fil.md`)** : le
+propriétaire ne trouvait pas « ce sentiment de simplicité […] dès la première seconde ». L'onglet Découvrir s'ouvre sur un
+fil plein écran : on glisse de pièce en pièce (les salons où il y a quelqu'un, la musique, les figurines posées dans
+Autour, l'humeur de ses proches), sa figurine au bord ; toucher deux fois, elle réagit (dans un salon, pour de vrai).
+L'ancienne page est derrière « Tous les salons » (`#salons`). Suivent F2 (les maisons ouvertes), F3 (mes proches en
+direct), F4 (l'ordre du fil).
+
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.
