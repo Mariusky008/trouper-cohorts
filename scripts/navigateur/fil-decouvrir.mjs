@@ -5,8 +5,10 @@
 // Sam, la télé) ; le seul mode d'emploi (« Glisse… », « Touche deux fois… ») ; sa figurine au bord. Elle touche deux fois
 // l'écran : sa figurine réagit (« 😂 », « Les 2 te voient »), elle s'assoit dans le gradin — et Sam la voit pour de vrai.
 // Elle glisse : l'humeur de ses proches (Sam, triste) ; sa figurine a quitté le salon. « Répondre à Sam » : Messages. Puis
-// la figurine de Hugo au Petit Bistrot, son mot du jour en grand ; puis le salon de la musique (la radio). « Tous les
-// salons » : l'ancienne page (sa télé du jour) ; « ‹ Le fil » : retour. Le lien d'une vidéo à revoir (`?tele=`) ouvre
+// la figurine de Hugo au Petit Bistrot, son mot du jour en grand ; puis le salon de la musique (la radio) ; puis les salons
+// sans personne, la cuisine d'abord (sa passion) : « Sois le premier », ce que Zoé y a dit tout à l'heure ; elle touche
+// deux fois : « Les suivants te verront », elle s'y assoit pour de vrai. « Tous les salons » : l'ancienne page (sa télé
+// du jour) ; « ‹ Le fil » : retour. Le lien d'une vidéo à revoir (`?tele=`) ouvre
 // « Tous les salons », comme les anciens liens (`#voeu`…) ; `#jour` (le mème du jour, parti) ouvre « Créer ». Tom, sans
 // âge dit : la question d'abord. Rien ne déborde, jamais le mot interdit, aucune erreur.
 import sharp from "sharp";
@@ -65,6 +67,10 @@ const SALONS = "/api/direct/salons-ouverts";
 await route(SAM, SALONS, { action: "entrer", theme: "foot" });
 await route(HUGO, SALONS, { action: "entrer", theme: "foot" });
 await route(SAM, SALONS, { action: "ecrire", salon: "foot-1", sorte: "texte", texte: "Quel but !" });
+// (Zoé est passée par le salon de la cuisine, y a dit un mot, et en est partie)
+await route(ZOE, SALONS, { action: "entrer", theme: "cuisine" });
+await route(ZOE, SALONS, { action: "ecrire", salon: "cuisine-1", sorte: "texte", texte: "Qui a une recette de crêpes ?" });
+await route(ZOE, SALONS, { action: "sortir", salon: "cuisine-1" });
 await route(ZOE, SALONS, { action: "entrer", theme: "musique" });
 const pose = await route(HUGO, "/api/direct/autour", { action: "poser", lieu: BISTROT, mot: "Qui vient prendre un café ?", tete: "humeur", qui: "tous" });
 ok(pose.statut === 200, "Sam et Hugo sont au salon du foot, Zoé à celui de la musique ; Hugo a posé sa figurine au Petit Bistrot");
@@ -111,7 +117,9 @@ await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "dom
 await fermerPablito(lea, "#o-decouvrir");
 const foot = lea.locator('#o-decouvrir [data-piece="salon"][data-theme="foot"]');
 ok(await attendre(lea, async () => (await foot.count()) === 1, 45000), "Découvrir s'ouvre sur le fil : le salon du foot d'abord");
-ok((await lea.locator("#o-decouvrir [data-piece]").evaluateAll((l) => l.map((x) => x.getAttribute("data-piece") + (x.getAttribute("data-theme") ? `:${x.getAttribute("data-theme")}` : "")))).join() === "salon:foot,humeur,autour,salon:musique", "les pièces : sa passion en direct, l'humeur de ses proches, Autour, la musique");
+const lesPieces = await lea.locator("#o-decouvrir [data-piece]").evaluateAll((l) => l.map((x) => x.getAttribute("data-piece") + (x.getAttribute("data-theme") ? `:${x.getAttribute("data-theme")}` : "")));
+ok(lesPieces.slice(0, 5).join() === "salon:foot,humeur,autour,salon:musique,salon:cuisine" && lesPieces.length === 14, `les pièces : sa passion en direct, l'humeur de ses proches, Autour, la musique ; puis tous les autres salons, sa passion d'abord (${lesPieces.length})`);
+ok((await lea.locator("#o-decouvrir [data-piece][data-vide]").count()) === 10, "… les dix salons sans personne en ce moment");
 ok(/2 en direct · ta passion/.test(await texte(foot.locator(".fd-etiquette"))), "« 2 en direct · ta passion »");
 ok((await foot.locator(".fd-fig img").count()) === 2 && (await foot.locator(".fd-fig small").allInnerTexts()).sort().join() === "Hugo,Sam", "le gradin : les figurines de Sam et Hugo");
 ok((await foot.locator('[data-q] [data-bulle]').allInnerTexts()).includes("Quel but !"), "… la bulle de Sam au-dessus de sa figurine");
@@ -164,6 +172,23 @@ const musique = lea.locator('#o-decouvrir [data-piece="salon"][data-theme="musiq
 ok(await attendre(lea, async () => (await courante(lea)) === "s:musique"), "puis le salon de la musique");
 ok(/La radio du salon/.test(await texte(musique.locator(".fd-tele-titre"))) && (await texte(musique.locator("[data-asseoir]"))) === "Entrer danser" && (await musique.locator(".fd-fig.danse").count()) === 1, "… la radio du salon, Zoé qui danse, « Entrer danser »");
 await lea.screenshot({ path: `${D}/fil-5-musique.png` });
+
+// ═══ LA CUISINE, SA PASSION, SANS PERSONNE : « SOIS LE PREMIER » ═══
+await glisser(lea);
+const cuisine = lea.locator('#o-decouvrir [data-piece="salon"][data-theme="cuisine"]');
+ok(await attendre(lea, async () => (await courante(lea)) === "s:cuisine"), "puis le salon de la cuisine, sa passion, même sans personne");
+ok(/Sois le premier · ta passion/.test(await texte(cuisine.locator(".fd-etiquette"))) && (await cuisine.locator(".fd-direct").count()) === 0 && (await cuisine.locator(".fd-fig").count()) === 0, "« ✨ Sois le premier · ta passion » : personne n'est montré assis");
+ok(/Zoé · il y a 1 min/.test(await texte(cuisine.locator("[data-trace]"))) && /Qui a une recette de crêpes \?/.test(await texte(cuisine.locator("[data-trace]"))), `… ce que Zoé y a dit tout à l'heure (« ${await texte(cuisine.locator("[data-trace]"))} »)`);
+ok(/Zoé y était aujourd’hui\. Assieds-toi : les suivants te verront\./.test(await texte(cuisine.locator("[data-sous]"))) && (await cuisine.locator("[data-asseoir]").getAttribute("href")) === "/univers/salons?theme=cuisine", "… « Zoé y était aujourd'hui. Assieds-toi : les suivants te verront. », « M'asseoir »");
+ok(/i\.ytimg\.com/.test((await cuisine.locator("[data-tele] img").getAttribute("src")) ?? ""), "… sa télé passe quand même");
+await lea.screenshot({ path: `${D}/fil-6-vide.png` });
+await cuisine.locator(".fd-scene").dblclick({ position: { x: 20, y: 20 } });
+ok(await attendre(lea, async () => /😂/.test(await texte(lea.locator("#o-decouvrir [data-reaction]"))) && /Les suivants te verront/.test(await texte(lea.locator("#o-decouvrir [data-vu-par]")))), "toucher deux fois : « 😂 », « Les suivants te verront »");
+ok(await attendre(lea, async () => (await cuisine.locator(".fd-fig").count()) === 1 && /1 en direct/.test(await texte(cuisine.locator(".fd-etiquette")))), "… elle s'assoit, la première : « 1 en direct »");
+const hugoEntre = (await route(HUGO, SALONS, { action: "entrer", theme: "cuisine" })).ouverture;
+ok(hugoEntre?.salon?.id === "cuisine-1" && hugoEntre.presents.some((x) => x.prenom === "Léa"), "… pour de vrai : Hugo entre dans la cuisine, et la voit");
+await route(HUGO, SALONS, { action: "sortir", salon: "cuisine-1" });
+await lea.screenshot({ path: `${D}/fil-7-premiere.png` });
 
 // ═══ « TOUS LES SALONS » : L'ANCIENNE PAGE ; « ‹ LE FIL » ═══
 await lea.locator("#o-decouvrir [data-tous-les-salons]").click();
