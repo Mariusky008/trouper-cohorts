@@ -62,8 +62,6 @@ import { EVT_VERS_LE_STUDIO, prendreVersLeStudio, type PourAutour, type VersLeSt
 import { oublierLeDepot, revenirAuDepot } from "./depot-autour";
 import { moisEnClair, type FigurineDuMois } from "@/lib/direct/figurine-du-mois";
 import { MesReactions } from "./mes-reactions";
-import { InviterAppli } from "./mon-telephone";
-import { themeDuJour, type Theme } from "@/lib/direct/theme-du-jour";
 
 type Reponse = { error?: string; etat?: EtatMaFigurine; lien?: string; son?: string; enCours?: boolean };
 
@@ -246,9 +244,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   const [surprise, setSurprise] = useState<Surprise | null>(null);
   const [surpriseCharge, setSurpriseCharge] = useState(false);
   const surprisesVues = useRef<string[]>([]);
-  // 🔥 LE MÈME DU JOUR : il y répond — le thème, ses idées (`postee` et `ville` : du temps du fil de sa ville, parti le
-  // 19 novembre 2026 avec l'ancien « Découvrir »)
-  const [themeJour, setThemeJour] = useState<{ theme: Theme; ville: string; postee: string } | null>(null);
   // 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : il y répond « avec sa tête » ; son dépôt l'attend (`depot-autour.ts`)
   const [pourAutour, setPourAutour] = useState<PourAutour | null>(null);
   useEffect(() => {
@@ -450,16 +445,9 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
         if (typeof x.texte !== "string" || !x.texte.trim()) setTexte("");
         setVisageVoulu(v);
       }
-      if (typeof x.theme === "string" && x.theme === themeDuJour().cle) {
-        setMode("ecrire");
-        setTexte("");
-        setPourAutour(null);
-        setThemeJour({ theme: themeDuJour(), ville: typeof x.ville === "string" ? x.ville : "", postee: "" });
-      }
       if (x.autour && typeof x.autour === "object") {
         const a = x.autour;
         setMode("ecrire");
-        setThemeJour(null);
         // (un mème pour la ville, pas un duo : le duo en cours, s'il y en avait un, est laissé)
         oublierLaReponse();
         setReponse(null);
@@ -553,7 +541,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
     setSurpriseCharge(true);
     setErreur("");
     try {
-      const j = (await demander({ action: "surprise", sauf: surprisesVues.current, ...(themeJour ? { theme: themeJour.theme.cle } : {}) })) as Reponse & Partial<Surprise>;
+      const j = (await demander({ action: "surprise", sauf: surprisesVues.current })) as Reponse & Partial<Surprise>;
       if (!j.texte) throw new Error("Pas de surprise cette fois. Réessaie.");
       surprisesVues.current = [...surprisesVues.current, j.texte].slice(-20);
       setSurprise({ texte: j.texte, sentiment: j.sentiment ?? "joie", danse: Boolean(j.danse), par: j.par ?? "local", carte: Boolean(j.carte) });
@@ -776,7 +764,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
   const memeIci = meme && sonCourant && meme.cle === `${sonCourant}|${sentiment ?? ""}|${look}` ? meme : null;
   // (la bulle, en haut : ce qu'elle va dire, en direct)
   const bulle = ecrit ? texte.trim() || "Salut ! Fais-moi dire quelque chose, et partage-le 😊" : enreg ? "🎙️ Je t’écoute…" : son && !son.texte ? "🎙️ Ta voix est prête" : "🎙️ Dis-le avec ta voix : c’est elle qui parlera";
-  // 🎲 « Pas d'idée ? » : le mème du jour à part, les phrases toutes prêtes ensemble ; choisir ferme la feuille
+  // 🎲 « Pas d'idée ? » : l'idée du jour à part, les phrases toutes prêtes ensemble ; choisir ferme la feuille
   const pretDuJour = prets.find((m) => m.cle === "du-jour") ?? null;
   const phrasesPretes = prets.filter((m) => m.cle !== "du-jour");
   function prendreUnPret(m: MemePret) {
@@ -851,31 +839,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
           >
             ✕
           </button>
-        </div>
-      )}
-      {/* 🔥 IL RÉPOND AU MÈME DU JOUR : le thème, et trois idées */}
-      {themeJour && (
-        <div className="tf-theme" id="theme-du-jour" role="group" aria-label="Le mème du jour">
-          <span className="tf-theme-tete">
-            <b>
-              🔥 Le mème du jour : {themeJour.theme.emoji} {themeJour.theme.titre}
-            </b>
-            <button type="button" aria-label="Ne pas répondre au mème du jour" onClick={() => setThemeJour(null)}>
-              ✕
-            </button>
-          </span>
-          {ecrit && (
-            <span className="tf-theme-idees">
-              {themeJour.theme.idees.map((t, k) => (
-                <button key={k} type="button" className={texte === t ? "pris" : undefined} onClick={() => choisirPret({ cle: `idee-${k}`, emoji: "💡", nom: "", texte: t, sentiment: "joie" })}>
-                  💡 {t}
-                </button>
-              ))}
-            </span>
-          )}
-          {/* 🔔 (l'appli posée sur l'écran d'accueil, à sa première ouverture : la notification de 11 h 30 — elle était
-              sur la carte du mème du jour de l'ancien « Découvrir », partie le 19 novembre 2026) */}
-          <InviterAppli apres="jour" repondu={false} />
         </div>
       )}
       {/* 📍 SON MÈME POUR UN LIEU D'« AUTOUR » : sa tête, sa phrase, puis il le dépose là-bas */}
@@ -1115,10 +1078,10 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
         )}
         {pretDuJour && (
           <button type="button" className="tf-idee du-jour" onClick={() => prendreUnPret(pretDuJour)}>
-            <span aria-hidden="true">🔥</span>
+            <span aria-hidden="true">💡</span>
             <span>
-              <b>Le mème du jour</b>
-              <small>Le même thème pour toute ta ville, aujourd’hui</small>
+              <b>L’idée du jour</b>
+              <small>Une phrase toute prête, qui change chaque jour</small>
             </span>
           </button>
         )}
@@ -1227,9 +1190,7 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
                   📍 {pourAutour.reponse ? "Répondre avec ce mème" : "Le déposer"}
                   {pourAutour.nom ? ` · ${pourAutour.nom}` : ""} ›
                 </button>
-              ) : (
-                envoye && !meme.duo && themeJour && <InviterAppli apres="postee" />
-              )}
+              ) : null}
               <button type="button" className="tf-changer" onClick={changerLaPhrase}>
                 ✏️ Changer la phrase
               </button>

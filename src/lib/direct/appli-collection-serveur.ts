@@ -1,5 +1,5 @@
 /**
- * 📲 CLIKME SUR SON ÉCRAN D'ACCUEIL, ET 🔔 LE MÈME DU JOUR À 11 H 30 (le lot 3, 7 novembre 2026) — le côté serveur.
+ * 📲 CLIKME SUR SON ÉCRAN D'ACCUEIL, ET 🔔 SES NOTIFICATIONS (le lot 3, 7 novembre 2026) — le côté serveur.
  * Le côté téléphone : `appli-collection.ts` ; l'écran : `app/collection/mon-telephone.tsx`.
  *
  * 1. LE JETON D'INSTALLATION. Sur iPhone, l'appli posée sur l'écran d'accueil a ses propres cookies : rien ne garantit
@@ -7,12 +7,11 @@
  *    donc sur `/collection?appli=<jeton>`, et son manifeste ouvre cette adresse-là. À la première ouverture de l'appli,
  *    le jeton pose le cookie de SA figurine. Un seul usage, valable 24 h ; rangé dans le seau (`appli/<jeton>.json`).
  *
- * 2. LA NOTIFICATION DU MÈME DU JOUR, chaque jour vers 11 h 30 (heure de Paris), à ceux qui l'ont demandée, et seulement
- *    à eux. On ne l'envoie pas à celui qui a déjà répondu. Le thème est en titre, c'est lui qui donne envie, et on n'ajoute
- *    le chiffre de sa ville que s'il est vrai (au moins `SEUIL_REPONSES`). Chacun la coupe dans « Moi ». Pas de table :
- *    `notif/abonnes/<habitant>.json` = { ville, abonnements } (cinq téléphones au plus) ; `notif/envois/<jour>.json` :
- *    la journée est faite, on ne recommence pas. Un téléphone qui a abandonné son abonnement (404, 410) est effacé.
- *
+ * 2. LES NOTIFICATIONS, à ceux qui les ont demandées, et seulement à eux : un proche lui parle, lui écrit, lui répond,
+ *    l'invite devant sa télé ; le mot du matin (`rituel-serveur.ts`). Chacun les coupe dans « Moi ». Pas de table :
+ *    `notif/abonnes/<habitant>.json` = { ville, abonnements } (cinq téléphones au plus). Un téléphone qui a abandonné son
+ *    abonnement (404, 410) est effacé. (Du 7 au 23 novembre 2026, il y avait aussi le mème du jour vers 11 h 30 : il est
+ *    parti, l'humeur du jour a pris sa place.)
  * 3. « ↩️ SAM T'A RÉPONDU ! » (7 novembre 2026) : quand on répond à un de ses mèmes (dans « Autour », ou en duo), à
  *    ceux qui ont les notifications — un second interrupteur dans « Moi », « Quand on répond à tes mèmes », allumé par
  *    défaut (anciens abonnés compris : la décision du propriétaire), que chacun coupe (`reponses: false` dans sa fiche).
@@ -30,8 +29,8 @@ import { randomBytes } from "node:crypto";
 import webpush from "web-push";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "@/lib/direct/habitant";
-import { SEAU_FIGURINES, ecrireJson, idsDuJour, lireJson, telecharger } from "@/lib/direct/ma-figurine-serveur";
-import { SEUIL_REPONSES, jourParis, nomVille, themeDuJour } from "@/lib/direct/theme-du-jour";
+import { SEAU_FIGURINES, ecrireJson, lireJson, telecharger } from "@/lib/direct/ma-figurine-serveur";
+import { jourParis } from "@/lib/direct/theme-du-jour";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v));
@@ -136,7 +135,7 @@ export async function choisirLesReponses(supabase: Supabase, habitant: Habitant,
   return ok ? { ok: true, reponses: oui !== false } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
 }
 
-// ─── 3. 🔥 l'envoi de 11 h 30 ──────────────────────────────────────────────────────────────────────────────────────
+// ─── 3. 🔔 l'envoi ─────────────────────────────────────────────────────────────────────────────────────────────────
 export type Notif = { titre: string; corps: string; url: string; tag: string };
 
 let vapidPose: boolean | null = null;
@@ -164,21 +163,13 @@ export function heureParis(d = new Date()): { h: number; m: number } {
   return { h, m };
 }
 
-/** Le texte du jour : le thème en titre, et le chiffre de sa ville seulement s'il est vrai. */
-export function notifDuJour(jour: string, ville: string, n: number): Notif {
-  const t = themeDuJour(jour);
-  const chiffre = n >= SEUIL_REPONSES && ville ? ` · déjà ${n} réponses à ${nomVille(ville)}` : "";
-  return { titre: `${t.emoji} ${t.titre}`, corps: `Le mème du jour : réponds avec ta figurine 🎭${chiffre}`, url: "/collection#jour", tag: "meme-du-jour" };
-}
-
+/** « C'est réglé ! » : la première notification, tout de suite, pour qu'il sache que ça marche. */
 function bienvenue(): Notif {
-  const { h, m } = heureParis();
-  const quand = h < 11 || (h === 11 && m < 30) ? "aujourd’hui" : "demain";
   return {
     titre: "🔔 C’est réglé !",
-    corps: `Le mème du jour arrivera ici ${quand} vers 11 h 30. Tu peux couper quand tu veux, dans « Moi ».`,
-    url: "/collection#jour",
-    tag: "meme-du-jour-bienvenue",
+    corps: "Je te préviendrai ici quand un proche te parle, te répond ou t’invite. Tu peux couper quand tu veux, dans « Moi ».",
+    url: "/collection#proches",
+    tag: "notif-bienvenue",
   };
 }
 
@@ -343,67 +334,8 @@ export async function prevenirUnHabitantAppli(supabase: Supabase, pour: string, 
   return issues.includes("ok") ? "envoye" : "rien";
 }
 
-export type BilanDuJour = { jour: string; personnes: number; envoyes: number; morts: number; dejaRepondu: number; deja?: boolean; sansCles?: boolean };
-
-/**
- * 🔥 LE MÈME DU JOUR, À CEUX QUI L'ONT DEMANDÉ. Une fois par jour (`notif/envois/<jour>.json`) ; `force` (les essais)
- * passe outre. Par paquets de vingt : une fonction a une minute, pas plus. `adapter` : la notification de chacun peut
- * être changée — même s'il a déjà répondu au mème du jour (on lui passe alors `null`) ; « Mon vœu » s'en servait pour
- * sa mission du jour (du 12 au 19 novembre 2026), plus personne aujourd'hui.
- */
-export async function envoyerLeMemeDuJour(supabase: Supabase, o: { force?: boolean; adapter?: (h: string, n: Notif | null) => Promise<Notif | null> } = {}): Promise<BilanDuJour> {
-  const jour = jourParis();
-  const bilan: BilanDuJour = { jour, personnes: 0, envoyes: 0, morts: 0, dejaRepondu: 0 };
-  if (!vapid()) return { ...bilan, sansCles: true };
-  const marque = `notif/envois/${jour}.json`;
-  if (!o.force) {
-    if (await telecharger(supabase, marque)) return { ...bilan, deja: true };
-    await ecrireJson(supabase, marque, { debut: new Date().toISOString() });
-  }
-  const noms: string[] = [];
-  for (let debut = 0; debut < 50_000; debut += 1000) {
-    const { data } = await supabase.storage.from(SEAU_FIGURINES).list(DOSSIER_ABONNES, { limit: 1000, offset: debut });
-    const lot = (Array.isArray(data) ? data : []) as { name?: string }[];
-    noms.push(...lot.map((x) => s(x.name)).filter((n) => /^[0-9a-f-]{36}\.json$/.test(n)));
-    if (lot.length < 1000) break;
-  }
-  // (combien de réponses dans chaque ville : une seule fois par ville)
-  const parVille = new Map<string, Promise<number>>();
-  const reponses = (ville: string) => {
-    if (!ville) return Promise.resolve(0);
-    if (!parVille.has(ville)) parVille.set(ville, idsDuJour(supabase, ville, jour).then((x) => x.length));
-    return parVille.get(ville) as Promise<number>;
-  };
-  for (let k = 0; k < noms.length; k += 20) {
-    await Promise.all(
-      noms.slice(k, k + 20).map(async (nom) => {
-        const f = await lireJson<FicheAbonne>(supabase, `${DOSSIER_ABONNES}/${nom}`);
-        const abs = sesAbonnements(f);
-        if (!s(f.h) || !abs.length) return;
-        bilan.personnes++;
-        // (il a déjà répondu aujourd'hui : rien à lui rappeler — sauf sa mission du jour, s'il en a une)
-        const dejaRepondu = Boolean(await telecharger(supabase, `${s(f.h)}/du-jour/${jour}.json`));
-        const base = dejaRepondu ? null : notifDuJour(jour, s(f.ville), await reponses(s(f.ville)));
-        const n = o.adapter ? await o.adapter(s(f.h), base).catch(() => base) : base;
-        if (dejaRepondu && !n) return void bilan.dejaRepondu++;
-        if (!n) return;
-        const issues = await Promise.all(abs.map((ab) => envoyer(ab, n)));
-        bilan.envoyes += issues.filter((x) => x === "ok").length;
-        const morts = abs.filter((_, i) => issues[i] === "mort");
-        if (!morts.length) return;
-        bilan.morts += morts.length;
-        const reste = abs.filter((_, i) => issues[i] !== "mort");
-        if (reste.length) await ecrireJson(supabase, `${DOSSIER_ABONNES}/${nom}`, { ...f, abonnements: reste });
-        else await supabase.storage.from(SEAU_FIGURINES).remove([`${DOSSIER_ABONNES}/${nom}`]);
-      }),
-    );
-  }
-  if (!o.force) await ecrireJson(supabase, marque, { fin: new Date().toISOString(), ...bilan });
-  return bilan;
-}
-
-/** 🔔 Pour la page admin des mèmes : combien d'abonnés, le dernier envoi, et si les clés sont là. */
-export type EtatNotifications = { cles: boolean; abonnes: number; dernier: (BilanDuJour & { fin?: string }) | null };
+/** 🔔 Pour la page admin des mèmes : combien d'abonnés aux notifications, et si les clés sont là. */
+export type EtatNotifications = { cles: boolean; abonnes: number };
 export async function etatNotifications(supabase: Supabase): Promise<EtatNotifications> {
   let abonnes = 0;
   for (let debut = 0; debut < 50_000; debut += 1000) {
@@ -412,8 +344,5 @@ export async function etatNotifications(supabase: Supabase): Promise<EtatNotific
     abonnes += lot.filter((x) => /^[0-9a-f-]{36}\.json$/.test(s(x.name))).length;
     if (lot.length < 1000) break;
   }
-  const { data } = await supabase.storage.from(SEAU_FIGURINES).list("notif/envois", { limit: 100, sortBy: { column: "name", order: "desc" } });
-  const nom = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((x) => s(x.name)).filter((n) => /^\d{4}-\d{2}-\d{2}\.json$/.test(n)).sort().pop();
-  const dernier = nom ? await lireJson<BilanDuJour & { fin?: string }>(supabase, `notif/envois/${nom}`) : null;
-  return { cles: vapid(), abonnes, dernier: dernier && dernier.jour ? (dernier as BilanDuJour & { fin?: string }) : null };
+  return { cles: vapid(), abonnes };
 }

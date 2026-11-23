@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const manifeste = {
     name: "ClikMe — ta figurine qui parle",
     short_name: "ClikMe",
-    description: "Ta figurine qui parle, tes mèmes, et le mème du jour à 11 h 30.",
+    description: "Ta figurine, ta maison, et tes proches qui te parlent.",
     id: "/collection",
     start_url: jetonValide(jeton) ? `/collection?appli=${jeton}` : "/collection",
     scope: "/collection",

@@ -7,7 +7,8 @@
 // Elle glisse : l'humeur de ses proches (Sam, triste) ; sa figurine a quitté le salon. « Répondre à Sam » : Messages. Puis
 // la figurine de Hugo au Petit Bistrot, son mot du jour en grand ; puis le salon de la musique (la radio). « Tous les
 // salons » : l'ancienne page (sa télé du jour) ; « ‹ Le fil » : retour. Le lien d'une vidéo à revoir (`?tele=`) ouvre
-// « Tous les salons ». Tom, sans âge dit : la question d'abord. Rien ne déborde, jamais le mot interdit, aucune erreur.
+// « Tous les salons », comme les anciens liens (`#voeu`…) ; `#jour` (le mème du jour, parti) ouvre « Créer ». Tom, sans
+// âge dit : la question d'abord. Rien ne déborde, jamais le mot interdit, aucune erreur.
 import sharp from "sharp";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
@@ -171,6 +172,14 @@ ok((await lea.locator(".mc-nav button.pris").innerText()).includes("Découvrir")
 await lea.locator("#o-salons [data-retour-fil]").click();
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir:not([hidden]) [data-fil]").count()) === 1), "« ‹ Le fil » : retour au fil");
 ok(await sansMotInterdit(lea), "jamais le mot « exemple »");
+
+// ═══ LES ANCIENS LIENS : « MON VŒU », SA MISSION, SES RÉPONSES → « TOUS LES SALONS » ; LE MÈME DU JOUR (PARTI) → « CRÉER » ═══
+for (const ancre of ["voeu", "mission", "reponses"]) {
+  await lea.goto(`${BASE}/collection?v=${Date.now()}#${ancre}`, { waitUntil: "domcontentloaded" });
+  ok(await attendre(lea, async () => (await lea.locator("#o-salons:not([hidden]) [data-carte-tele]").count()) === 1, 30000), `#${ancre} : « Tous les salons », sa télé du jour`);
+}
+await lea.goto(`${BASE}/collection?v=${Date.now()}#jour`, { waitUntil: "domcontentloaded" });
+ok(await attendre(lea, async () => (await lea.locator("#o-figurine:not([hidden])").count()) === 1, 30000) && (await lea.locator("#theme-du-jour").count()) === 0, "#jour (le lien d'une ancienne notification) : « Créer », sans le mème du jour (parti)");
 
 // ═══ LE LIEN D'UNE VIDÉO À REVOIR (UNE NOTIFICATION) : « TOUS LES SALONS » ═══
 const video = (await route(LEA, "/api/direct/tele-du-jour")).tele?.videos?.[0]?.id;

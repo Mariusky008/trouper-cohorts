@@ -593,6 +593,14 @@ Autour, l'humeur de ses proches), sa figurine au bord ; toucher deux fois, elle 
 L'ancienne page est derrière « Tous les salons » (`#salons`). Suivent F2 (les maisons ouvertes), F3 (mes proches en
 direct), F4 (l'ordre du fil).
 
+**🧹 Le mème du jour est parti (23 novembre 2026)** — le propriétaire : « le mème du jour n'existe plus, c'est l'humeur du
+jour maintenant ». Partis : la notification de 11 h 30 (ses deux tâches planifiées, `vercel.json`), le thème du jour en
+haut de « Créer », le lien « 🔥 Le mème du jour › » de « Moi » (il mène au fil), l'essai `meme-du-jour.mjs`. Restent les
+notifications des proches (paroles, écrits, réponses, invitations, le mot du matin) : elles se proposent à la première
+ouverture de l'appli posée, dans « Messages » (« Tes proches te parlent : je te préviens ? »), et se coupent dans « Moi ».
+`#jour` (le lien des notifications déjà reçues) ouvre « Créer ». La phrase qui change chaque jour, dans « Pas d'idée ? »,
+s'appelle « L'idée du jour ». Le « mème du jour » des commerçants (au comptoir) n'est pas touché.
+
 ## 1. Lire d'abord
 
 1. `CLAUDE.md` (racine) : les règles communes.

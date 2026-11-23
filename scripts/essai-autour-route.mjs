@@ -255,7 +255,7 @@ ok(r.statut === 200 && r.lieu === ZONE && zH?.n === 3 && zH.nom === "Soirée che
 await attendre(800);
 notifs = await reponsesRecues(telLea);
 ok(notifs.length === 2 && notifs[1].body.startsWith("✨ Soirée chez Max"), `et Léa est prévenue de nouveau : « ${notifs[1]?.body} »`);
-// elle coupe « Quand on répond à tes mèmes » : plus rien (le mème du jour, lui, reste allumé)
+// elle coupe « Quand on répond à tes mèmes » : plus rien (les autres notifications, elles, restent allumées)
 const coupe = await figurine(LEA, { action: "notif-reponses", oui: false });
 r = await appel(HUGO, { action: "deposer", meme: "autourhugo01", lieu: ZONE, qui: "tous", reponseA: L[1] });
 await attendre(800);

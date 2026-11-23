@@ -163,9 +163,10 @@ export function MaFigurineDuMois() {
             Encore {f.objectif - f.jours} jour{f.objectif - f.jours > 1 ? "s" : ""} : ta figurine de {nom} arrive, habillée « {f.edition.nom} » {f.edition.emoji}, avec un nouveau visage ({f.expression}) et ta
             phrase du mois.
           </p>
-          {/* (un jour compte dès qu'il ouvre ClikMe : le mème du jour, l'occasion de revenir) */}
-          <a className="fm-lien" href="#jour">
-            🔥 Le mème du jour ›
+          {/* (un jour compte dès qu'il ouvre ClikMe : ce qui se passe en ce moment, l'occasion de revenir — avant le 23 novembre
+              2026, le mème du jour, parti) */}
+          <a className="fm-lien" href="#decouvrir">
+            🎞️ Ce qui se passe en ce moment ›
           </a>
         </div>
       )}

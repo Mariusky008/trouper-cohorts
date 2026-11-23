@@ -1,10 +1,9 @@
 "use client";
 
 /**
- * 🔥 LE MÈME DU JOUR (le lot 2, 7 novembre 2026) — voir `lib/direct/theme-du-jour.ts`. Sa carte était dans l'ancien
- * « Découvrir » (`#jour`, là où mène la notification de 11 h 30) ; depuis le 19 novembre 2026 (l'ancienne page est
- * partie), `#jour` ouvre « Créer » sur ce thème (`ma-collection.tsx`) : ses trois idées, et la notification de demain.
- * Ici, ses styles.
+ * 🔥 LE MÈME DU JOUR (le lot 2, 7 novembre 2026), PARTI LE 23 NOVEMBRE 2026 (le propriétaire : « le mème du jour
+ * n'existe plus, c'est l'humeur du jour maintenant »). Restent ses styles : le bandeau de « Créer » (`.tf-theme`) sert
+ * aussi à « Ton mème pour Autour ».
  */
 export const STYLES_THEME_DU_JOUR = `
 .tj{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:16px;border-radius:24px;background:radial-gradient(100% 90% at 0% 0%,rgba(255,122,89,.32),transparent 60%),radial-gradient(90% 80% at 100% 100%,rgba(255,46,154,.28),transparent 60%),rgba(255,255,255,.05);border:1.5px solid rgba(255,122,89,.55)}
