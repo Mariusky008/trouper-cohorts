@@ -113,7 +113,7 @@ for (const ancre of ["voeu", "mission", "reponses", "salons"]) {
 }
 ok((await debordement(hugo)) <= 0 && !/exemple/i.test(await texte(hugo, "#o-salons")), "« Tous les salons » ne déborde pas, sans le mot interdit");
 await hugo.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "networkidle" });
-ok(await hugo.waitForSelector("#o-decouvrir:not([hidden]) [data-fil]", { timeout: 60000 }).then(() => true).catch(() => false), "#decouvrir : le fil de Découvrir");
+ok(await hugo.waitForSelector("#o-decouvrir:not([hidden]) [data-fil] .fd-boite", { timeout: 60000 }).then(() => true).catch(() => false), "#decouvrir : le fil de Découvrir");
 await hugo.screenshot({ path: `${D}/meme-du-jour-2-decouvrir.png` });
 
 const erreurs = [...hugo.err];
