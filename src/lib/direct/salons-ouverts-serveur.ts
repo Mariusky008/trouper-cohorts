@@ -42,7 +42,7 @@ import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
-import { BULLES_FRAICHES_MS, type SalonFil } from "./fil-decouvrir";
+import { BULLES_FRAICHES_MS, TRACES_MS, type BulleFil, type SalonFil } from "./fil-decouvrir";
 import {
   AIMES_POUR_ETAGERE,
   CONSERVE_MS,
@@ -612,7 +612,7 @@ export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promi
   return { maison: m, cartes: [...cartes.filter((c) => c.mien), ...cartes.filter((c) => !c.mien)], ...(vitrine ? { vitrine } : {}), ...enPlus };
 }
 
-// ─── 🎞️ (le lot F1, 23 novembre 2026 ; `docs/univers/fil.md`) LE FIL DE DÉCOUVRIR : LES SALONS OÙ IL Y A QUELQU'UN ───
+// ─── 🎞️ (le lot F1, 23 novembre 2026 ; `docs/univers/fil.md`) LE FIL DE DÉCOUVRIR : TOUS LES SALONS ───
 /** Une bulle, en quelques signes : le texte, ou l'emoji d'une réaction, d'un geste. */
 function texteDeBulle(x: MessageSalon): string {
   if (x.sorte === "texte") return s(x.texte);
@@ -620,39 +620,61 @@ function texteDeBulle(x: MessageSalon): string {
   return gesteDe(x.cle)?.e ?? "";
 }
 /**
- * 🎞️ Les salons où il y a quelqu'un d'autre que lui, en ce moment (jamais une pièce vide) : pour chaque thème, le plus
- * rempli — ses présents (prénom, figurine, place), les bulles des dix dernières minutes (sans ceux qu'il ne veut plus
- * voir), son gradin, ce qui passe à sa télé (🎵 le morceau proposé, et qui l'a choisi). Ses passions d'abord, puis les
- * plus remplis. `age` : il doit d'abord dire s'il a 18 ans.
+ * 🎞️ Les salons du fil : d'abord ceux où il y a quelqu'un d'autre que lui, en ce moment — pour chaque thème, le plus
+ * rempli : ses présents (prénom, figurine, place), les bulles des dix dernières minutes (sans ceux qu'il ne veut plus
+ * voir), ses passions d'abord, puis les plus remplis. Puis (le propriétaire, le 23 novembre 2026 : « on ne me propose pas
+ * de salon, même s'il est vide ? ») tous les autres, sans personne en ce moment : ses passions, la musique, puis le reste —
+ * avec ce qui s'y est dit aujourd'hui (`traces` : qui, quoi, quand ; jamais une fausse présence). Pour chacun : son
+ * gradin, ce qui passe à sa télé (🎵 le morceau proposé, et qui l'a choisi). `age` : il doit d'abord dire s'il a 18 ans.
  */
 export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintenant = Date.now()): Promise<{ age?: true; salons: SalonFil[] }> {
   const m = await maisonDeMoi(supabase, moi.id);
   if (!m) return { age: true, salons: [] };
   const q = qui8(moi.id);
-  const permis = new Set(themesDesSalons(m).map((t) => t.id));
+  const themes = themesDesSalons(m);
+  const permis = new Set(themes.map((t) => t.id));
   const noms = (await lister(supabase, base(m))).map((e) => e.nom).filter((n) => salonDe(n) && permis.has(salonDe(n)!.theme));
-  const l = await Promise.all(noms.map(async (id) => ({ id, theme: salonDe(id)!.theme, presents: (await presentsFrais(supabase, m, id, maintenant)).filter((p) => p.nom !== q) })));
+  const l = await Promise.all(noms.map(async (id) => ({ id, n: salonDe(id)!.n, theme: salonDe(id)!.theme, presents: (await presentsFrais(supabase, m, id, maintenant)).filter((p) => p.nom !== q) })));
   const parTheme = new Map<IdTheme, (typeof l)[number]>();
   for (const x of l) if (x.presents.length && x.presents.length > (parTheme.get(x.theme)?.presents.length ?? 0)) parTheme.set(x.theme, x);
-  if (!parTheme.size) return { salons: [] };
   const [passions, caches] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), mesCaches(supabase, moi.id)]);
   const miens = new Set(passions?.passions ?? []);
   const gradinsVus = new Map<IdGradin, Promise<GradinScene | null>>();
-  const choisis = [...parTheme.values()].sort((a, b) => Number(miens.has(b.theme)) - Number(miens.has(a.theme)) || b.presents.length - a.presents.length).slice(0, 8);
+  const enDirect = [...parTheme.values()].sort((a, b) => Number(miens.has(b.theme)) - Number(miens.has(a.theme)) || b.presents.length - a.presents.length).slice(0, 8);
+  // (🪑 les autres, sans personne : ses passions, la musique, puis le reste, dans l'ordre du catalogue ; leur premier salon)
+  const rang = (t: IdTheme) => (miens.has(t) ? 0 : estSalonMusique(t) ? 1 : 2);
+  const vides = themes
+    .map((t) => t.id)
+    .filter((t) => !parTheme.has(t))
+    .sort((a, b) => rang(a) - rang(b))
+    .map((theme) => {
+      const siens = l.filter((x) => x.theme === theme).sort((a, b) => a.n - b.n);
+      return { id: siens[0]?.id ?? idSalon(theme, 1), theme, presents: [] as Entree[], existe: siens.length > 0, ids: siens.map((x) => x.id) };
+    });
+  const bulleDuFil = (msg: MessageSalon): BulleFil => ({ id: msg.id, q: msg.de, prenom: msg.prenom, texte: texteDeBulle(msg), le: msg.le });
   const salons = await Promise.all(
-    choisis.map(async (x): Promise<SalonFil> => {
+    [...enDirect.map((x) => ({ ...x, existe: true, ids: [x.id] })), ...vides].map(async (x): Promise<SalonFil> => {
       const t = themeDe(x.theme)!;
+      const vide = !x.presents.length;
       const g = gradinDuTheme(x.theme);
       if (!gradinsVus.has(g)) gradinsVus.set(g, gradinDuSalon(supabase, x.theme).catch(() => null));
       const [fiches, messages, gradin, videos, platine] = await Promise.all([
         Promise.all(x.presents.slice(0, PLACES_SALON).map((p) => lirePresent(supabase, m, x.id, p.nom))),
-        derniersMessages(supabase, m, x.id, { depuis: maintenant - BULLES_FRAICHES_MS, limite: 8, caches }),
+        // (en direct : les bulles des dix dernières minutes ; vide : ce qui s'est dit aujourd'hui, dans ses salons)
+        vide
+          ? Promise.all(x.ids.slice(0, 3).map((id) => derniersMessages(supabase, m, id, { depuis: maintenant - TRACES_MS, limite: 6, caches }).catch(() => [] as MessageSalon[]))).then((ll) => ll.flat())
+          : derniersMessages(supabase, m, x.id, { depuis: maintenant - BULLES_FRAICHES_MS, limite: 8, caches }),
         gradinsVus.get(g)!,
         videosDuSalon(supabase, x.theme, m).catch(() => [] as VideoSalon[]),
-        estSalonMusique(x.theme) ? platineAJour(supabase, m, x.id, maintenant).catch(() => null) : Promise.resolve(null),
+        estSalonMusique(x.theme) && x.existe ? platineAJour(supabase, m, x.id, maintenant).catch(() => null) : Promise.resolve(null),
       ]);
       const pos = videos.length ? positionTele(videos, maintenant) : null;
       const v = platine?.enCours ? platine.enCours.video : pos ? videos[pos.i] : null;
+      const bulles = messages
+        .filter((msg) => msg.de !== q)
+        .sort((a, b) => a.le - b.le)
+        .map(bulleDuFil)
+        .filter((b) => b.texte);
       return {
         sorte: "salon",
         id: x.id,
@@ -661,18 +683,16 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
         nom: SALONS[x.theme].nom,
         mien: miens.has(x.theme),
         presents: fiches.filter((f) => f.q).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: s(f.figurine?.src), place: Number(f.place) || 0 })),
-        bulles: messages
-          .filter((msg) => msg.de !== q)
-          .map((msg) => ({ id: msg.id, q: msg.de, prenom: msg.prenom, texte: texteDeBulle(msg), le: msg.le }))
-          .filter((b) => b.texte)
-          .slice(-4),
+        bulles: vide ? [] : bulles.slice(-4),
+        ...(vide ? { traces: bulles.slice(-3) } : {}),
         gradin: gradin ? { src: gradin.image.src, flou: gradin.image.flou, places: gradin.places } : null,
         video: v ? { id: v.id, titre: v.titre } : null,
         ...(estSalonMusique(x.theme) ? { morceau: platine?.enCours ? { titre: platine.enCours.video.titre, prenom: platine.enCours.prenom } : null } : {}),
       };
     }),
   );
-  return { salons: salons.filter((x) => x.presents.length) };
+  // (un salon « en direct » dont les fiches ont disparu entre-temps n'est pas montré comme plein)
+  return { salons: salons.filter((x, i) => i >= enDirect.length || x.presents.length) };
 }
 
 // ─── 🛡️ l'administration (`/admin/humain/salons`) ───

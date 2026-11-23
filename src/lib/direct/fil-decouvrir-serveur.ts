@@ -2,11 +2,13 @@
  * 🎞️ DÉCOUVRIR, LE FIL « DE PIÈCE EN PIÈCE », CÔTÉ SERVEUR (le lot F1, 23 novembre 2026 ; `fil-decouvrir.ts`,
  * `docs/univers/fil.md`). Rien de nouveau n'est rangé : le fil lit ce qui existe déjà.
  *
- * - 🛋️ les salons où il y a quelqu'un d'autre que lui, en ce moment (`salonsEnDirect`) — jamais une pièce vide ;
+ * - 🛋️ les salons où il y a quelqu'un d'autre que lui, en ce moment (`salonsEnDirect`) ;
  * - 📍 les figurines posées dans Autour, dans sa ville (les plus récentes, pas les siennes), assises avec leur mot ;
  * - ☀️ l'humeur du jour de ses proches (ceux à qui il parle), leur figurine qui en fait la tête ;
  * - sa figurine à lui, avec la tête de son humeur : elle est au bord de chaque pièce ;
- * - ce qui l'attend ailleurs : une invitation devant la télé d'un proche, des demandes de proche.
+ * - ce qui l'attend ailleurs : une invitation devant la télé d'un proche, des demandes de proche ;
+ * - 🪑 à la fin, tous les autres salons, sans personne en ce moment (ses passions, la musique, le reste), avec ce qui s'y
+ *   est dit aujourd'hui : on peut s'y asseoir le premier sans passer par « Tous les salons ».
  *
  * FICHIER SERVEUR.
  */
@@ -20,7 +22,7 @@ import { humeurDuJour, poserProfil, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison, teteDeLaMaison } from "./ma-maison-serveur";
 import { humeurDe } from "./rituel";
 import { estDouce } from "./humeur-reponse";
-import { ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type PieceFil, type ProcheHumeurFil, type SilhouetteFil } from "./fil-decouvrir";
+import { PIECES_MAX, ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type PieceFil, type ProcheHumeurFil, type SilhouetteFil } from "./fil-decouvrir";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -65,7 +67,7 @@ async function poseesAutour(supabase: Supabase, moi: Habitant): Promise<AutourFi
   return vues.filter((x): x is AutourFil => Boolean(x));
 }
 
-/** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`), et sa figurine. */
+/** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`, puis les salons sans personne), et sa figurine. */
 export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<FilVue> {
   const ouverts = salonsOuverts();
   const [prenom, figurine, direct, autour, humeurs, invitations, demandes] = await Promise.all([
@@ -77,15 +79,17 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
     mesInvitations(supabase, moi).catch(() => []),
     ouverts ? mesDemandes(supabase, moi).catch(() => []) : Promise.resolve([]),
   ]);
-  const passions = direct.salons.filter((x) => x.mien);
-  const autres = direct.salons.filter((x) => !x.mien);
+  const vivants = direct.salons.filter((x) => x.presents.length);
+  const vides = direct.salons.filter((x) => !x.presents.length);
+  const passions = vivants.filter((x) => x.mien);
+  const autres = vivants.filter((x) => !x.mien);
   const humeur: HumeurFil[] = humeurs.length ? [{ sorte: "humeur", proches: humeurs }] : [];
   const groupes: PieceFil[][] = [passions, humeur, autour, autres];
   const inv = invitations[0];
   return {
     moi: { prenom: prenom || "Toi", figurine },
     ...(direct.age ? { age: true as const } : {}),
-    pieces: ordreDuFil(groupes),
+    pieces: [...ordreDuFil(groupes), ...vides].slice(0, PIECES_MAX),
     ...(inv ? { invitation: { cle: inv.cle, prenom: inv.prenom } } : {}),
     ...(demandes.length ? { demandes: demandes.length } : {}),
   };

@@ -7,13 +7,15 @@
  * première maquette (un fil de vidéos) : « c'est exactement la même chose que TikTok […] la différence pour nous, c'est
  * que je vois quelque chose avec d'autres personnes, je vois leur réaction, je peux découvrir leur maison ».
  *
- * D'où le fil : on ne fait pas défiler des vidéos, on passe DE PIÈCE EN PIÈCE, et il y a toujours quelqu'un dedans. Un
- * seul geste (glisser vers le haut) ; sa figurine est au bord de la pièce ; toucher deux fois : elle y réagit pour de vrai
- * (dans un salon, ceux qui sont là la voient). Chaque bouton ouvre ce qui existe déjà.
+ * D'où le fil : on ne fait pas défiler des vidéos, on passe DE PIÈCE EN PIÈCE, et on y voit des gens. Un seul geste
+ * (glisser vers le haut) ; sa figurine est au bord de la pièce ; toucher deux fois : elle y réagit pour de vrai (dans un
+ * salon, ceux qui sont là la voient). Chaque bouton ouvre ce qui existe déjà.
  *
- * Les pièces du lot F1 : les salons où il y a quelqu'un en ce moment (jamais une pièce vide), le salon de la musique, les
- * figurines posées dans Autour, l'humeur de ses proches. Les maisons ouvertes (F2), les séances entre proches en cours
- * (F3) et l'ordre fin (F4) viendront après.
+ * Les pièces du lot F1 : les salons où il y a quelqu'un en ce moment, le salon de la musique, les figurines posées dans
+ * Autour, l'humeur de ses proches ; puis (le propriétaire, le même jour : « on ne me propose pas de salon, même s'il est
+ * vide ? ») tous les autres salons, sans personne en ce moment, avec ce qui s'y est dit aujourd'hui — sans avoir à passer
+ * par « Tous les salons ». Les maisons ouvertes (F2), les séances entre proches en cours (F3) et l'ordre fin (F4)
+ * viendront après.
  */
 import type { IdTheme } from "./decouvrir";
 import type { PlaceGradin } from "./salons-gradins";
@@ -28,7 +30,10 @@ export type PresentFil = { q: string; prenom: string; src: string; place: number
 /** Une bulle qui vient d'être dite dans le salon (un texte, une réaction, un geste). */
 export type BulleFil = { id: string; q: string; prenom: string; texte: string; le: number };
 
-/** 🛋️ Un salon où il y a quelqu'un : le plus rempli de son thème. */
+/**
+ * 🛋️ Un salon : le plus rempli de son thème, s'il y a quelqu'un ; sinon (`presents` vide) son premier salon, avec ce qui
+ * s'y est dit aujourd'hui (`traces`). Jamais une fausse présence : on ne montre assis que ceux qui y sont.
+ */
 export type SalonFil = {
   sorte: "salon";
   id: string;
@@ -39,6 +44,8 @@ export type SalonFil = {
   mien: boolean;
   presents: PresentFil[];
   bulles: BulleFil[];
+  /** 🪑 personne en ce moment : les dernières bulles de la journée (qui, quoi, quand) */
+  traces?: BulleFil[];
   /** son gradin validé (l'image carrée, ses places) ; sinon le plan des places sur un fond sombre */
   gradin: { src: string; flou: string; places: PlaceGradin[] } | null;
   /** ce qui passe à sa télé, à la même seconde pour tous */
@@ -64,9 +71,11 @@ export type FilVue = {
 };
 
 /** Combien de pièces au plus (le fil se recharge en revenant). */
-export const PIECES_MAX = 14;
+export const PIECES_MAX = 16;
 /** Les bulles d'un salon qu'on montre : celles des dix dernières minutes. */
 export const BULLES_FRAICHES_MS = 10 * 60_000;
+/** Dans un salon où il n'y a personne : ce qui s'y est dit dans la journée (les dernières 24 h). */
+export const TRACES_MS = 24 * 3600_000;
 
 /**
  * L'ordre du fil (F1, simple ; le lot F4 l'affinera) : les salons de ses passions, l'humeur de ses proches, Autour, les
@@ -89,8 +98,11 @@ export function ordreDuFil(groupes: PieceFil[][], max = PIECES_MAX): PieceFil[] 
 /** La réaction de sa figurine quand il touche deux fois : 😂 dans un salon, 💃 dans celui de la musique. */
 export const reactionDuFil = (p: PieceFil): { cle: string; e: string } => (p.sorte === "salon" && p.theme === "musique" ? { cle: "danse", e: "💃" } : p.sorte === "salon" ? { cle: "rire", e: "😂" } : { cle: "coeur", e: "❤️" });
 
+/** « Sam », « Sam et Léa », « Sam, Léa et Hugo ». */
+export const listePrenoms = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}` : (l[0] ?? ""));
+
 export const PHRASES_FIL = {
-  indice: "Glisse : de pièce en pièce, il y a toujours quelqu’un",
+  indice: "Glisse : de pièce en pièce, de salon en salon",
   indiceDouble: "Touche deux fois : ta figurine réagit, et on la voit",
   tousLesSalons: "Tous les salons",
   retourFil: "‹ Le fil",
@@ -101,7 +113,12 @@ export const PHRASES_FIL = {
   entrerDanser: "Entrer danser",
   radio: "📻 La radio du salon",
   choix: (prenom: string) => `🎵 Le choix de ${prenom}`,
-  teVoient: (n: number) => (n > 1 ? `Les ${n} te voient` : "Il te voit"),
+  teVoient: (n: number, prenom?: string) => (n > 1 ? `Les ${n} te voient` : n === 1 ? `${prenom || "Quelqu’un"} te voit` : "Les suivants te verront"),
+  soisLePremier: "Sois le premier",
+  premier: "Personne pour l’instant. Assieds-toi : les suivants te verront.",
+  yEtaient: (prenoms: string[]) => `${listePrenoms(prenoms)} ${prenoms.length > 1 ? "y étaient" : "y était"} aujourd’hui. Assieds-toi : les suivants te verront.`,
+  radioTourne: "La radio tourne. Entre danser : les suivants te verront.",
+  ilYa: (ms: number) => (ms < 3600_000 ? `il y a ${Math.max(1, Math.round(ms / 60_000))} min` : `il y a ${Math.round(ms / 3600_000)} h`),
   autourEtiquette: (nom: string) => nom,
   autourTitre: (prenom: string) => `${prenom} a posé sa figurine ici`,
   autourSous: (heures: number) => `Elle reste encore ${heures} h.`,

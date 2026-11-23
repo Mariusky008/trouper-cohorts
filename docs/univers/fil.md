@@ -10,7 +10,7 @@ Une première maquette proposait un fil de vidéos. Sa réponse : « c'est exact
 différence pour nous, c'est que je vois quelque chose avec d'autres personnes, je vois leur réaction, et je peux
 découvrir leur maison ». La maquette refaite, « de pièce en pièce », est validée, ainsi que le découpage en quatre lots.
 
-**L'idée** : on ne fait pas défiler des vidéos. On passe de pièce en pièce, et il y a toujours quelqu'un dedans. La
+**L'idée** : on ne fait pas défiler des vidéos. On passe de pièce en pièce, et on y voit des gens (là, ou ce qu'ils y ont dit aujourd'hui). La
 vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens, leurs réactions, leur maison.
 
 ## 2. Les décisions du propriétaire
@@ -23,7 +23,11 @@ vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens
 - **Les maisons d'inconnus** (lot F2) : seulement celles des personnes qui l'acceptent, et chez ceux qui partagent une
   de leurs passions. La question se pose à l'inscription, juste après le choix de la pièce (« Qui peut venir voir ta
   pièce ? »), et un interrupteur dans Ma maison permet de changer d'avis. Les 15-17 ans restent entre eux.
-- **Jamais une pièce vide** : un salon n'apparaît que s'il y a quelqu'un dedans.
+- **Tous les salons sont dans le fil, même vides** (le propriétaire, le 23 novembre 2026, en ouvrant Découvrir sur
+  « Personne en direct pour l'instant » : « on ne me propose pas de salon, même s'il est vide, sur le même mode, sans
+  avoir à aller sur le bouton « Tous les salons », qui posait justement problème côté simplicité ? »). D'abord ceux où il
+  y a quelqu'un ; puis les autres, « Sois le premier ». On ne montre jamais assis quelqu'un qui n'y est pas : un salon
+  vide montre ce qui s'y est dit aujourd'hui, avec le prénom et l'heure.
 - **Jamais une fausse réponse** : dans la maquette, quelqu'un répondait tout seul (« Bienvenue ! ») ; en vrai, une
   réponse vient toujours d'une vraie personne.
 
@@ -32,12 +36,13 @@ vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens
 **L'écran** (`app/collection/fil-decouvrir.tsx`) :
 
 - L'onglet Découvrir s'ouvre sur un fil plein écran. On glisse vers le haut, et chaque écran s'arrête net sur une pièce.
-- La première fois, une seule consigne s'affiche : « Glisse : de pièce en pièce, il y a toujours quelqu'un » et
+- La première fois, une seule consigne s'affiche : « Glisse : de pièce en pièce, de salon en salon » et
   « Touche deux fois : ta figurine réagit, et on la voit ». Elle s'en va au premier geste.
 - **Sa figurine est au bord de la pièce**, en bas à droite (« Toi »), avec la tête de son humeur du jour.
 - **Toucher deux fois l'écran** (ou toucher sa figurine) : elle réagit.
   - Dans un salon, pour de vrai : elle s'assoit dans le gradin le temps qu'on y est, et sa réaction part au salon
-    (😂, ou 💃 dans celui de la musique). L'écran dit « Les 2 te voient ».
+    (😂, ou 💃 dans celui de la musique). L'écran dit « Les 2 te voient » (« Sam te voit » ; dans un salon vide, « Les
+    suivants te verront » : elle y est la première, et le prochain qui entre la voit).
   - Quand on glisse plus loin, elle quitte le salon.
   - Ailleurs, elle saute, et rien ne part.
 - **Les pièces** :
@@ -48,21 +53,24 @@ vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens
   | 🎵 Le salon de la musique | la même chose ; les figurines dansent ; « 🎵 Le choix de Léa » ou « 📻 La radio du salon » | « Entrer danser » |
   | 📍 Une figurine posée dans Autour | sa figurine assise, son mot du jour en grand, le lieu, combien d'heures il lui reste | « M'asseoir à côté » (le lieu, dans Autour) |
   | ☀️ L'humeur de ses proches | leurs figurines qui en font la tête ; les humeurs douces d'abord (« Un mot de toi, et sa journée change ») | « Répondre à Sam » (Messages, sa conversation) |
+  | 🪑 Un salon sans personne | « ✨ Sois le premier » ; sa télé (ce qui passe) ; son gradin vide ; les dernières bulles de la journée (« Zoé · il y a 2 h », « Qui a une recette de crêpes ? ») ; « Zoé y était aujourd'hui. Assieds-toi : les suivants te verront. » (musique : « La radio tourne. Entre danser… ») | « M'asseoir » |
 
 - **En haut** : « Tous les salons », c'est-à-dire l'ancienne page de Découvrir (ma télé du jour, les salons par
   passion, `#salons`), avec « ‹ Le fil » pour revenir. À gauche, s'il y en a : « 🎬 Sam t'invite devant sa télé », ou
   les demandes de proche.
 - **Sans âge dit** : la question « as-tu 18 ans ou plus ? » d'abord, puis les salons arrivent.
-- **Personne en direct** : « Personne en direct pour l'instant », avec « 📍 Poser ma figurine » et « Tous les salons ».
+- **Rien du tout** (les salons fermés par l'interrupteur) : « Personne en direct pour l'instant », avec « 📍 Poser ma
+  figurine » et « Tous les salons ». Avec les salons ouverts, cela n'arrive plus : il y a toujours les salons vides.
 - **Le fil vit** :
   - il se recharge toutes les 30 secondes, sans bouger sous le doigt : les pièces déjà là gardent leur place et se
     mettent à jour, les nouvelles s'ajoutent à la fin ;
   - dans un salon où sa figurine est entrée, les bulles arrivent toutes les 6 secondes ;
   - ce que le fil montrait il y a moins de dix minutes s'affiche tout de suite à l'ouverture.
 
-**L'ordre** (simple ; le lot F4 l'affinera) : les salons de ses passions, l'humeur de ses proches, Autour, les autres
-salons — un de chaque à tour de rôle (`ordreDuFil`), pour que deux pièces de la même sorte ne se suivent pas quand il y en
-a d'autres.
+**L'ordre** (simple ; le lot F4 l'affinera) : les salons de ses passions où il y a quelqu'un, l'humeur de ses proches,
+Autour, les autres salons où il y a quelqu'un — un de chaque à tour de rôle (`ordreDuFil`), pour que deux pièces de la même
+sorte ne se suivent pas quand il y en a d'autres. Puis les salons sans personne : ses passions, la musique, puis les autres
+dans l'ordre du catalogue (seize pièces au plus).
 
 **Les adresses** :
 
@@ -78,9 +86,12 @@ a d'autres.
 - `lib/direct/fil-decouvrir.ts` (partagé) : les types (`FilVue`, `PieceFil`, `SalonFil`, `AutourFil`, `HumeurFil`),
   `ordreDuFil`, `reactionDuFil`, les phrases (`PHRASES_FIL`).
 - `lib/direct/fil-decouvrir-serveur.ts` : `filDecouvrir`, qui lit ce qui existe déjà, sans rien ranger de nouveau.
-  - Les salons en direct viennent de `salonsEnDirect` (`salons-ouverts-serveur.ts`) : pour chaque thème, le plus
-    rempli ; ses présents, lui exclu ; les bulles des dix dernières minutes, sans ceux qu'il ne veut plus voir ; le
-    gradin, la télé, le morceau proposé.
+  - Les salons viennent de `salonsEnDirect` (`salons-ouverts-serveur.ts`) :
+    - en direct : pour chaque thème, le plus rempli ; ses présents, lui exclu ; les bulles des dix dernières minutes,
+      sans ceux qu'il ne veut plus voir ;
+    - sans personne (lui exclu) : le premier salon du thème, et ses `traces` (les trois dernières bulles des dernières
+      24 h, `TRACES_MS`, ni les siennes, ni celles de ceux qu'il ne veut plus voir) ;
+    - pour tous : le gradin, la télé, le morceau proposé.
   - Les figurines posées viennent d'Autour : les deux plus récentes de sa ville, pas les siennes, assises.
   - L'humeur des proches : ceux à qui il parle, qui l'ont dite aujourd'hui, avec la tête de leur humeur
     (`teteDeLaMaison`).
@@ -93,14 +104,18 @@ a d'autres.
 
 - `scripts/essai-fil-decouvrir-route.mjs` :
   - l'ordre et le contenu de chaque pièce ;
-  - jamais une pièce vide, jamais un salon des 15-17 ans, jamais un compte ;
+  - la cuisine (sa passion, elle y est seule) dans le fil, avec ce que Zoé y a dit ; puis tous les autres salons, vides ;
+  - jamais un salon des 15-17 ans chez les adultes (ni l'inverse), jamais un compte ;
   - réagir depuis le fil (Sam la voit) ;
   - « ne plus voir » ; l'invitation ; sans âge ; 401.
 - `scripts/navigateur/fil-decouvrir.mjs` (un iPhone) :
   - le salon en direct, la consigne, toucher deux fois (Sam la voit pour de vrai) ;
   - glisser : sa figurine quitte le salon ;
   - « Répondre à Sam » ouvre la conversation ;
-  - Autour, la musique, « Tous les salons » et « ‹ Le fil », le lien `?tele=`, sans âge.
+  - Autour, la musique ;
+  - la cuisine sans personne : « Sois le premier », la bulle de Zoé ; toucher deux fois : « Les suivants te verront »,
+    elle s'y assoit, et Hugo, qui entre, la voit ;
+  - « Tous les salons » et « ‹ Le fil », le lien `?tele=`, sans âge.
 - Les essais de l'ancienne page de Découvrir l'ouvrent maintenant par `#salons`, dans `#o-salons`.
 
 ## 5. Les lots suivants

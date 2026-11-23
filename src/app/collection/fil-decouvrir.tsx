@@ -4,9 +4,10 @@
  * 🎞️ DÉCOUVRIR, LE FIL « DE PIÈCE EN PIÈCE » (le lot F1, 23 novembre 2026 ; `lib/direct/fil-decouvrir.ts`,
  * `docs/univers/fil.md`).
  *
- * L'onglet Découvrir s'ouvre sur un fil plein écran : on glisse vers le haut, et chaque écran est UNE PIÈCE OÙ IL Y A
- * QUELQU'UN — un salon en direct (son gradin, ses figurines, leurs bulles), le salon de la musique, une figurine posée
- * dans Autour avec son mot du jour, l'humeur de ses proches. Sa figurine est au bord de la pièce (en bas à droite) :
+ * L'onglet Découvrir s'ouvre sur un fil plein écran : on glisse vers le haut, et chaque écran est UNE PIÈCE — un salon
+ * en direct (son gradin, ses figurines, leurs bulles), le salon de la musique, une figurine posée dans Autour avec son
+ * mot du jour, l'humeur de ses proches ; puis tous les autres salons, même sans personne (« Sois le premier » : sa télé,
+ * ce qui s'y est dit aujourd'hui, et on s'y assoit le premier). Sa figurine est au bord de la pièce (en bas à droite) :
  * toucher deux fois l'écran (ou la toucher, elle) et elle réagit — dans un salon, pour de vrai : elle s'y assoit le
  * temps qu'on y est, sa réaction part au salon, et ceux qui sont là la voient. Chaque bouton ouvre ce qui existe déjà.
  * L'ancienne page de Découvrir (ma télé du jour, tous les salons) est derrière « Tous les salons » (`#salons`).
@@ -58,6 +59,8 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
   const boite = useRef<HTMLDivElement>(null);
   /** les salons où sa figurine est entrée depuis le fil (thème → identifiant), et le dernier « je suis là » */
   const entres = useRef(new Map<string, string>());
+  /** son identifiant court dans les salons (pour ne pas se compter parmi ceux qui le voient) */
+  const monQ = useRef("");
   const tapes = useRef<{ k: string; t: number } | null>(null);
   const appui = useRef<{ x: number; y: number } | null>(null);
 
@@ -188,20 +191,21 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
       if (!p) return;
       if (indice) indiceVu();
       const r = reactionDuFil(p);
-      const n = p.sorte === "salon" ? p.presents.length : 0;
-      setReaction({ k, e: r.e, texte: p.sorte === "salon" ? P.teVoient(n) : "", n: Date.now() });
+      const autres = p.sorte === "salon" ? p.presents.filter((x) => x.q !== monQ.current) : [];
+      setReaction({ k, e: r.e, texte: p.sorte === "salon" ? P.teVoient(autres.length, autres[0]?.prenom) : "", n: Date.now() });
       if (p.sorte !== "salon") return;
       const poster = (corps: unknown) => fetch(SALONS, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) }).then(async (x) => ({ ok: x.ok, j: ((await x.json().catch(() => ({}))) ?? {}) as Record<string, unknown> }));
       let id = entres.current.get(p.theme);
       if (!id) {
         const e = await poster({ action: "entrer", theme: p.theme });
-        const o = e.j.ouverture as { salon?: { id?: string }; presents?: PresentSalon[] } | undefined;
+        const o = e.j.ouverture as { salon?: { id?: string }; moi?: string; presents?: PresentSalon[] } | undefined;
         if (!e.ok || !o?.salon?.id) {
           setReaction(null);
           if (e.j.age) return void setVersion((v) => v + 1);
           return dire(e.j.figurine ? P.sansFigurine : String(e.j.error ?? "Ça n’a pas marché."));
         }
         id = o.salon.id;
+        if (o.moi) monQ.current = o.moi;
         entres.current.set(p.theme, id);
         // (sa figurine s'assoit dans le gradin, à sa place)
         setPieces((l) => l.map((x) => (x.sorte === "salon" && x.theme === p.theme ? { ...x, id: id!, presents: (o.presents ?? []).map(enPresent) } : x)));
@@ -377,11 +381,23 @@ function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
   const bulles = new Map<string, BulleFil>();
   for (const b of p.bulles) bulles.set(b.q, b);
   const libres = Math.max(0, PLACES_SALON - p.presents.length);
+  // (🪑 personne en ce moment : « Sois le premier », et ce qui s'y est dit aujourd'hui)
+  const vide = !p.presents.length;
+  const traces = vide ? (p.traces ?? []) : [];
+  const passes = [...new Set(traces.map((t) => t.prenom))].slice(0, 3);
+  // (« il y a 2 h » : compté depuis l'arrivée de la pièce à l'écran)
+  const [maintenant] = useState(() => Date.now());
   return (
-    <section className="fd-carte fd-salon" data-k={k} data-piece="salon" data-theme={p.theme} data-salon={p.id}>
+    <section className={`fd-carte fd-salon${vide ? " vide" : ""}`} data-k={k} data-piece="salon" data-theme={p.theme} data-salon={p.id} data-vide={vide ? "1" : undefined}>
       <span className="fd-etiquette">
-        <i className="fd-direct" aria-hidden="true" />
-        {P.enDirect(p.presents.length)}
+        {vide ? (
+          <>✨ {P.soisLePremier}</>
+        ) : (
+          <>
+            <i className="fd-direct" aria-hidden="true" />
+            {P.enDirect(p.presents.length)}
+          </>
+        )}
         {p.mien ? ` · ${P.tesPassions}` : ""}
       </span>
       <div className="fd-tele" data-tele>
@@ -397,6 +413,18 @@ function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
         <div className="fd-gradin" style={p.gradin ? { backgroundImage: `url(${p.gradin.flou})` } : undefined} data-gradin={p.gradin ? "1" : "plan"}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {p.gradin && <img className="fd-gradin-img" src={p.gradin.src} alt="" draggable={false} loading="lazy" />}
+          {traces.length > 0 && (
+            <div className="fd-traces" data-traces>
+              {traces.map((t) => (
+                <span key={t.id} className="fd-trace" data-trace>
+                  <small>
+                    {t.prenom} · {P.ilYa(maintenant - t.le)}
+                  </small>
+                  <span>{t.texte}</span>
+                </span>
+              ))}
+            </div>
+          )}
           {p.presents.map((x, i) => {
             const g = plan[x.place % plan.length] ?? plan[i % plan.length];
             const b = bulles.get(x.q);
@@ -423,7 +451,7 @@ function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
         <h2>
           {p.e} {p.nom}
         </h2>
-        <p>{P.places(libres)}</p>
+        <p data-sous>{!vide ? P.places(libres) : musique ? P.radioTourne : passes.length ? P.yEtaient(passes) : P.premier}</p>
         <a className="fd-bouton" href={`/univers/salons?theme=${p.theme}`} data-asseoir>
           {musique ? P.entrerDanser : P.asseoir}
         </a>
@@ -459,6 +487,12 @@ export const STYLES_FIL = `
 .fd-sans{display:block;height:100%;aspect-ratio:.6;border-radius:40% 40% 14px 14px;background:rgba(255,255,255,.1)}
 .fd-bulle{position:absolute;bottom:calc(100% - 6px);left:50%;transform:translateX(-50%);z-index:2;max-width:170px;padding:6px 10px;border-radius:14px;background:#fff;color:#1A0D14;font-size:12.5px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   box-shadow:0 6px 16px rgba(0,0,0,.35);opacity:0;animation:fd-bulle 5s ease-in-out infinite}
+.fd-salon.vide .fd-gradin-img{opacity:.82}
+.fd-traces{position:absolute;left:50%;top:14%;z-index:1;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:7px;width:max-content;max-width:92%}
+.fd-trace{display:flex;flex-direction:column;align-items:flex-start;max-width:230px;padding:6px 11px 7px;border-radius:14px 14px 14px 4px;background:rgba(255,255,255,.9);color:#1A0D14;font-size:13px;font-weight:800;line-height:1.25;
+  box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.fd-trace span{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fd-trace small{font-size:10.5px;font-weight:700;color:#7A5A68}
 .fd-milieu{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
 .fd-milieu h2{margin:0;font-size:22px;font-weight:800;line-height:1.2}
 .fd-milieu p{margin:0;font-size:14.5px;color:#D9C3CB}

@@ -5,10 +5,12 @@
 // Léa (le foot dans ses passions) ouvre le fil : d'abord le salon du foot, où Sam et Hugo sont en ce moment (leurs
 // figurines, leurs bulles — jamais elle-même) ; puis l'humeur de ses proches (Sam, « tristesse », d'abord : on lui
 // répond ; Hugo ; pas Zoé, qui ne lui parle pas) ; puis la figurine que Hugo a posée au Petit Bistrot ; puis le salon de
-// la musique (Zoé y est, la radio passe). Jamais une pièce vide (seule dans le salon de la cuisine, elle ne le voit pas) ;
-// jamais un salon des 15-17 ans. Elle réagit depuis le fil (elle entre, sa réaction part) : Sam la voit. Ceux qu'elle ne
-// veut plus voir n'y ont plus de bulles. Une invitation devant la télé de Sam : le fil le dit. Sans âge dit : la
-// question d'abord. Sans compte : 401.
+// la musique (Zoé y est, la radio passe) ; puis (le propriétaire, le 23 novembre 2026 : « on ne me propose pas de salon,
+// même s'il est vide ? ») tous les autres salons, sans personne : la cuisine d'abord (sa passion ; elle y est seule, et ne
+// s'y voit pas), avec ce que Zoé y a dit tout à l'heure ; puis le reste, chacun avec sa télé. Jamais un salon des 15-17
+// ans. Elle réagit depuis le fil (elle entre, sa réaction part) : Sam la voit. Ceux qu'elle ne veut plus voir n'y ont
+// plus de bulles. Une invitation devant la télé de Sam : le fil le dit. Sans âge dit : la question d'abord. Noé (15 ans) :
+// les salons des 15-17 ans, jamais ceux des adultes. Sans compte : 401.
 import sharp from "sharp";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -84,6 +86,10 @@ ok(eSam?.salon?.id === "foot-1" && eHugo?.salon?.id === "foot-1", "Sam et Hugo s
 await salon(SAM, { action: "ecrire", salon: "foot-1", sorte: "texte", texte: "Quel but !" });
 await pause(1600);
 await salon(SAM, { action: "ecrire", salon: "foot-1", sorte: "reaction", cle: "rire" });
+// (Zoé est passée par le salon de la cuisine, y a dit un mot, et en est partie)
+ok((await salon(ZOE, { action: "entrer", theme: "cuisine" })).ouverture?.salon?.id === "cuisine-1", "Zoé passe par le salon de la cuisine");
+await salon(ZOE, { action: "ecrire", salon: "cuisine-1", sorte: "texte", texte: "Qui a une recette de crêpes ?" });
+await salon(ZOE, { action: "sortir", salon: "cuisine-1" });
 const eZoe = (await salon(ZOE, { action: "entrer", theme: "musique" })).ouverture;
 ok(eZoe?.salon?.id === "musique-1", "Zoé est dans le salon de la musique");
 ok((await salon(NOE, { action: "entrer", theme: "foot" })).ouverture?.salon?.maison === "jeunes", "Noé (15 ans) dans le salon du foot des 15-17 ans");
@@ -100,7 +106,8 @@ ok(fTom?.age === true && !fTom.pieces.some((p) => p.sorte === "salon"), "Tom, sa
 const f1 = garder(await fil(LEA));
 ok(f1?.moi?.prenom === "Léa" && Boolean(f1.moi.figurine?.tete), "sa figurine, au bord de chaque pièce");
 const ordre = f1.pieces.map((p) => (p.sorte === "salon" ? p.theme : p.sorte));
-ok(ordre.join() === "foot,humeur,autour,musique", `l'ordre : sa passion en direct, l'humeur de ses proches, Autour, les autres salons (${ordre.join()})`);
+const RESTE = ["series", "jeux", "tele", "humour", "mode", "manga", "animaux", "revisions", "parents"];
+ok(ordre.join() === ["foot", "humeur", "autour", "musique", "cuisine", ...RESTE].join(), `l'ordre : sa passion en direct, l'humeur de ses proches, Autour, les autres salons en direct ; puis les salons sans personne, sa passion d'abord (${ordre.join()})`);
 const foot = f1.pieces[0];
 ok(foot?.sorte === "salon" && foot.mien && foot.id === "foot-1" && foot.nom === "Le salon du foot" && foot.e === "⚽", "le salon du foot, sa passion");
 ok(foot.presents.length === 2 && foot.presents.map((p) => p.prenom).sort().join() === "Hugo,Sam" && foot.presents.every((p) => /\/api\/direct\/salon\/fichier\//.test(p.src)), "… Sam et Hugo, leurs figurines (pas elle)");
@@ -114,7 +121,13 @@ const autour = f1.pieces[2];
 ok(autour?.sorte === "autour" && autour.lieu === BISTROT && autour.nomLieu === "Le Petit Bistrot" && autour.figurine.mot === "Qui vient prendre un café ?" && autour.figurine.prenom === "Hugo", "la figurine posée par Hugo, avec son mot du jour");
 const musique = f1.pieces[3];
 ok(musique?.sorte === "salon" && musique.theme === "musique" && !musique.mien && musique.presents.map((p) => p.prenom).join() === "Zoé" && musique.morceau === null, "le salon de la musique : Zoé, la radio du salon");
-ok(!f1.pieces.some((p) => p.sorte === "salon" && p.theme === "cuisine"), "jamais une pièce vide : seule dans la cuisine, elle ne la voit pas");
+const cuisine = f1.pieces[4];
+ok(cuisine?.sorte === "salon" && cuisine.mien && cuisine.id === "cuisine-1" && cuisine.presents.length === 0 && cuisine.bulles.length === 0, "la cuisine, sa passion, même sans personne : elle y est seule, et ne s'y voit pas");
+ok(cuisine.traces?.length === 1 && cuisine.traces[0].prenom === "Zoé" && cuisine.traces[0].texte === "Qui a une recette de crêpes ?" && cuisine.traces[0].le > Date.now() - 120_000, "… ce que Zoé y a dit tout à l'heure (qui, quoi, quand)");
+ok(/^[A-Za-z0-9_-]{11}$/.test(cuisine.video?.id ?? ""), "… sa télé passe quand même");
+const reste = f1.pieces.slice(5);
+ok(reste.every((p) => p.sorte === "salon" && !p.mien && p.presents.length === 0 && /^[a-z]+-1$/.test(p.id) && Boolean(p.gradin || p.video !== undefined)), "… puis tous les autres salons, sans personne, chacun le sien");
+ok(!f1.pieces.some((p) => p.sorte === "salon" && p.traces?.some((t) => t.prenom === "Léa")), "… jamais ses propres bulles dans les traces");
 ok(!f1.pieces.some((p) => p.sorte === "salon" && p.presents.some((x) => x.prenom === "Noé")), "jamais un salon des 15-17 ans");
 
 // ═══ ELLE RÉAGIT DEPUIS LE FIL : ELLE ENTRE, SA RÉACTION PART, SAM LA VOIT ═══
@@ -143,7 +156,9 @@ ok(f4.invitation?.prenom === "Sam" && /^[a-f0-9]{16}$/.test(f4.invitation.cle), 
 
 // ═══ NOÉ (15 ANS) ═══
 const fNoe = garder(await fil(NOE));
-ok(!fNoe.age && !fNoe.pieces.some((p) => p.sorte === "salon"), "Noé : aucun salon des adultes (seul dans le sien, rien à montrer)");
+const salonsNoe = fNoe.pieces.filter((p) => p.sorte === "salon");
+ok(!fNoe.age && salonsNoe.length === 11 && salonsNoe.every((p) => p.presents.length === 0) && !salonsNoe.some((p) => p.theme === "parents"), "Noé : les salons des 15-17 ans (seul dans le sien, sans personne d'autre), jamais celui des jeunes parents");
+ok(!JSON.stringify(fNoe).includes("Quel but") && !JSON.stringify(fNoe).includes("crêpes") && !JSON.stringify(fNoe).includes("Sam"), "… jamais ce qui se dit chez les adultes");
 
 ok(!/exemple/i.test(JSON.stringify(tous)), "jamais le mot « exemple »");
 console.log(echecs ? `\n${echecs} échec(s)` : "\nle fil de Découvrir tient ✓");
