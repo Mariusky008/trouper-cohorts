@@ -1,0 +1,117 @@
+# 🎞️ Découvrir : le fil « de pièce en pièce »
+
+## 1. D'où ça vient
+
+Le 23 novembre 2026, après trente minutes sur l'appli, le propriétaire : « je n'ai pas ce sentiment de simplicité
+d'utilisation qui fait que dès la première seconde on sait quoi faire, et qu'après quelques secondes on ne veut plus en
+partir, comme sur le fil d'actualité de Facebook, TikTok ou Instagram ».
+
+Une première maquette proposait un fil de vidéos. Sa réponse : « c'est exactement la même chose que TikTok […] la
+différence pour nous, c'est que je vois quelque chose avec d'autres personnes, je vois leur réaction, et je peux
+découvrir leur maison ». La maquette refaite, « de pièce en pièce », est validée, ainsi que le découpage en quatre lots.
+
+**L'idée** : on ne fait pas défiler des vidéos. On passe de pièce en pièce, et il y a toujours quelqu'un dedans. La
+vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens, leurs réactions, leur maison.
+
+## 2. Les décisions du propriétaire
+
+- **Le fil remplace la page Découvrir** : l'onglet garde son nom, et c'est la forme de la page qui change.
+- **La figurine se fait à l'inscription**, avec le choix de sa pièce (« les gens adorent se voir en figurine »). Le fil
+  ne la demande pas.
+- **La séance entre proches et les salons existent déjà** : le fil les ouvre, il ne les refait pas.
+- **Le mème du jour n'existe plus** ; l'humeur du jour, oui.
+- **Les maisons d'inconnus** (lot F2) : seulement celles des personnes qui l'acceptent, et chez ceux qui partagent une
+  de leurs passions. La question se pose à l'inscription, juste après le choix de la pièce (« Qui peut venir voir ta
+  pièce ? »), et un interrupteur dans Ma maison permet de changer d'avis. Les 15-17 ans restent entre eux.
+- **Jamais une pièce vide** : un salon n'apparaît que s'il y a quelqu'un dedans.
+- **Jamais une fausse réponse** : dans la maquette, quelqu'un répondait tout seul (« Bienvenue ! ») ; en vrai, une
+  réponse vient toujours d'une vraie personne.
+
+## 3. Le lot F1 : ce qui est fait
+
+**L'écran** (`app/collection/fil-decouvrir.tsx`) :
+
+- L'onglet Découvrir s'ouvre sur un fil plein écran. On glisse vers le haut, et chaque écran s'arrête net sur une pièce.
+- La première fois, une seule consigne s'affiche : « Glisse : de pièce en pièce, il y a toujours quelqu'un » et
+  « Touche deux fois : ta figurine réagit, et on la voit ». Elle s'en va au premier geste.
+- **Sa figurine est au bord de la pièce**, en bas à droite (« Toi »), avec la tête de son humeur du jour.
+- **Toucher deux fois l'écran** (ou toucher sa figurine) : elle réagit.
+  - Dans un salon, pour de vrai : elle s'assoit dans le gradin le temps qu'on y est, et sa réaction part au salon
+    (😂, ou 💃 dans celui de la musique). L'écran dit « Les 2 te voient ».
+  - Quand on glisse plus loin, elle quitte le salon.
+  - Ailleurs, elle saute, et rien ne part.
+- **Les pièces** :
+
+  | Pièce | Ce qu'on y voit | Bouton |
+  | --- | --- | --- |
+  | 🛋️ Un salon en direct | sa télé (ce qui passe), son gradin, les figurines de ceux qui y sont, leurs dernières bulles | « M'asseoir » |
+  | 🎵 Le salon de la musique | la même chose ; les figurines dansent ; « 🎵 Le choix de Léa » ou « 📻 La radio du salon » | « Entrer danser » |
+  | 📍 Une figurine posée dans Autour | sa figurine assise, son mot du jour en grand, le lieu, combien d'heures il lui reste | « M'asseoir à côté » (le lieu, dans Autour) |
+  | ☀️ L'humeur de ses proches | leurs figurines qui en font la tête ; les humeurs douces d'abord (« Un mot de toi, et sa journée change ») | « Répondre à Sam » (Messages, sa conversation) |
+
+- **En haut** : « Tous les salons », c'est-à-dire l'ancienne page de Découvrir (ma télé du jour, les salons par
+  passion, `#salons`), avec « ‹ Le fil » pour revenir. À gauche, s'il y en a : « 🎬 Sam t'invite devant sa télé », ou
+  les demandes de proche.
+- **Sans âge dit** : la question « as-tu 18 ans ou plus ? » d'abord, puis les salons arrivent.
+- **Personne en direct** : « Personne en direct pour l'instant », avec « 📍 Poser ma figurine » et « Tous les salons ».
+- **Le fil vit** :
+  - il se recharge toutes les 30 secondes, sans bouger sous le doigt : les pièces déjà là gardent leur place et se
+    mettent à jour, les nouvelles s'ajoutent à la fin ;
+  - dans un salon où sa figurine est entrée, les bulles arrivent toutes les 6 secondes ;
+  - ce que le fil montrait il y a moins de dix minutes s'affiche tout de suite à l'ouverture.
+
+**L'ordre** (simple ; le lot F4 l'affinera) : les salons de ses passions, l'humeur de ses proches, Autour, les autres
+salons — un de chaque à tour de rôle (`ordreDuFil`), pour que deux pièces de la même sorte ne se suivent pas quand il y en
+a d'autres.
+
+**Les adresses** :
+
+- `#decouvrir` : le fil ;
+- `#salons` (et `#tous-les-salons`) : l'ancienne page ;
+- `?tele=<id>#decouvrir`, le lien d'une vidéo à revoir dans une notification : il s'ouvre dans ma télé du jour, donc
+  dans « Tous les salons » ;
+- les anciens liens `#voeu`, `#mission` et `#reponses`, le bouton « 📺 Ma télé » de Ma maison, l'étape « Choisir tes
+  passions », la page « Découvrir » de la visite guidée, la notification « demande de proche » : « Tous les salons ».
+
+## 4. Le code
+
+- `lib/direct/fil-decouvrir.ts` (partagé) : les types (`FilVue`, `PieceFil`, `SalonFil`, `AutourFil`, `HumeurFil`),
+  `ordreDuFil`, `reactionDuFil`, les phrases (`PHRASES_FIL`).
+- `lib/direct/fil-decouvrir-serveur.ts` : `filDecouvrir`, qui lit ce qui existe déjà, sans rien ranger de nouveau.
+  - Les salons en direct viennent de `salonsEnDirect` (`salons-ouverts-serveur.ts`) : pour chaque thème, le plus
+    rempli ; ses présents, lui exclu ; les bulles des dix dernières minutes, sans ceux qu'il ne veut plus voir ; le
+    gradin, la télé, le morceau proposé.
+  - Les figurines posées viennent d'Autour : les deux plus récentes de sa ville, pas les siennes, assises.
+  - L'humeur des proches : ceux à qui il parle, qui l'ont dite aujourd'hui, avec la tête de leur humeur
+    (`teteDeLaMaison`).
+  - Sa figurine (`silhouetteDuFil`), la première invitation devant une télé, le nombre de demandes de proche.
+- La route `GET /api/direct/fil-decouvrir` → `{ fil }`. Réagir passe par la route des salons : `entrer`, puis `ecrire`
+  une réaction ; `sortir` quand on glisse plus loin.
+- `ma-collection.tsx` : l'onglet Découvrir (le fil, `#o-decouvrir`) et la vue « Tous les salons » (`#o-salons`).
+
+**Les essais** :
+
+- `scripts/essai-fil-decouvrir-route.mjs` :
+  - l'ordre et le contenu de chaque pièce ;
+  - jamais une pièce vide, jamais un salon des 15-17 ans, jamais un compte ;
+  - réagir depuis le fil (Sam la voit) ;
+  - « ne plus voir » ; l'invitation ; sans âge ; 401.
+- `scripts/navigateur/fil-decouvrir.mjs` (un iPhone) :
+  - le salon en direct, la consigne, toucher deux fois (Sam la voit pour de vrai) ;
+  - glisser : sa figurine quitte le salon ;
+  - « Répondre à Sam » ouvre la conversation ;
+  - Autour, la musique, « Tous les salons » et « ‹ Le fil », le lien `?tele=`, sans âge.
+- Les essais de l'ancienne page de Découvrir l'ouvrent maintenant par `#salons`, dans `#o-salons`.
+
+## 5. Les lots suivants
+
+- **F2, les maisons ouvertes** : la question à l'inscription et l'interrupteur dans Ma maison ; les maisons des gens qui
+  ont une passion en commun dans le fil ; « Frapper à sa porte » (la visite, qui existe) ; « Lui faire coucou » (nouveau :
+  sa figurine apparaît dans sa maison, la personne répond si elle veut).
+- **F3, mes proches en direct** : une séance entre proches en cours dans le fil (« Léa et Sam regardent ensemble »,
+  « Demander à les rejoindre ») ; quand sa figurine entre quelque part, les présents peuvent lui faire signe en un
+  toucher (la vraie réponse).
+- **F4, l'ordre du fil** : d'abord ses proches en direct, puis ses passions, puis les maisons, puis Autour ; rien ne
+  revient deux fois de suite.
+- **À décider avec le propriétaire** : sur quel onglet l'appli s'ouvre. Aujourd'hui, c'est « Messages » (avec Ma
+  maison) ; le fil pourrait devenir le premier écran.

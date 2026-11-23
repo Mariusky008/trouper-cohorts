@@ -182,16 +182,16 @@ await lea.locator("[data-bascule]").click();
 ok(await attendre(lea, async () => (await main.getAttribute("data-mode")) === "grand" && (await enGrand())), "⛶ Grand écran : elle en ressort, toute la largeur");
 
 // ═══ 🔥 L'ONGLET « DÉCOUVRIR » DE L'APPLI (le lot D1b) : SA TÉLÉ DU JOUR ═══
-await lea.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(lea, "#o-decouvrir");
+await lea.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+await fermerPablito(lea, "#o-salons");
 // (🧭 le lot D1c : l'onglet s'ouvre sur l'accueil — la carte « Ma télé du jour », les salons ouverts)
-const carte = lea.locator("#o-decouvrir [data-carte-tele]");
+const carte = lea.locator("#o-salons [data-carte-tele]");
 ok(await attendre(lea, async () => (await carte.count()) === 1 && /vidéos t’attendent/.test(await texte(carte)) && /Ta télé est allumée/.test(await texte(carte))), `l'accueil de Découvrir : la carte « Ma télé du jour » (${await texte(carte)})`);
-ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir .td-carte-pano").evaluate((i) => i.complete && i.naturalWidth > 0)) === true && (await lea.locator("#o-decouvrir .td-carte-fig").count()) === 1), "… sa pièce et sa figurine dans la vignette");
-ok(/Regarde tes vidéos avec ceux que tu aimes/.test(await texte(lea.locator("#o-decouvrir .td-slogan"))), "la phrase de ClikMe");
-ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-salon]").count()) === 12), "les salons ouverts : douze, ses passions d'abord");
+ok(await attendre(lea, async () => (await lea.locator("#o-salons .td-carte-pano").evaluate((i) => i.complete && i.naturalWidth > 0)) === true && (await lea.locator("#o-salons .td-carte-fig").count()) === 1), "… sa pièce et sa figurine dans la vignette");
+ok(/Regarde tes vidéos avec ceux que tu aimes/.test(await texte(lea.locator("#o-salons .td-slogan"))), "la phrase de ClikMe");
+ok(await attendre(lea, async () => (await lea.locator("#o-salons [data-salon]").count()) === 12), "les salons ouverts : douze, ses passions d'abord");
 // (📼 section 31 : ses vidéos déjà vues, sous la carte — un toucher la rouvre dans son salon)
-const revoir = lea.locator(`#o-decouvrir [data-revoir] [data-revoir-video="${premiere}"]`);
+const revoir = lea.locator(`#o-salons [data-revoir] [data-revoir-video="${premiere}"]`);
 ok(await attendre(lea, async () => (await revoir.count()) === 1), "« 📼 Revoir » : la vidéo qu'elle a vue, sous sa télé du jour");
 ok((await revoir.getAttribute("href")) === `/univers/salons?chez=moi&video=${premiere}`, "… elle se rouvre dans son salon");
 await lea.screenshot({ path: `${D}/tele-du-jour-4a-accueil.png` });
@@ -201,19 +201,19 @@ await lea.waitForURL(/\/univers\/salons\?chez=moi/);
 ok(await attendre(lea, async () => /^chez-/.test((await lea.locator(".so[data-salon]").getAttribute("data-salon")) ?? "") && (await lea.locator(".so[data-salon]").getAttribute("data-hote")) === "1" && /4 places/.test(await texte(lea.locator("[data-places]")))), "« ▶ Regarder » : son salon à quatre places (elle en est l'hôte)");
 // (l'écran d'avant — celui des notifications « revois-la avec ses réactions » — par son adresse)
 await lea.goto(`${BASE}/collection?tele=${premiere}&v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(lea, "#o-decouvrir");
-const onglet = lea.locator("#o-decouvrir .td.onglet");
+await fermerPablito(lea, "#o-salons");
+const onglet = lea.locator("#o-salons .td.onglet");
 ok(await attendre(lea, async () => Boolean(await onglet.getAttribute("data-video").catch(() => ""))), "l'onglet « Découvrir » : sa télé du jour");
 const tailles = await lea.evaluate(() => {
-  const e = document.querySelector("#o-decouvrir .td-ecran")?.getBoundingClientRect();
-  const s = document.querySelector("#o-decouvrir .td-scene")?.getBoundingClientRect();
-  return { e: e ? Math.round(e.width) : 0, s: s ? Math.round(s.width) : 0, ratio: e ? e.width / Math.max(1, e.height) : 0, td: getComputedStyle(document.querySelector("#o-decouvrir .td")).minHeight };
+  const e = document.querySelector("#o-salons .td-ecran")?.getBoundingClientRect();
+  const s = document.querySelector("#o-salons .td-scene")?.getBoundingClientRect();
+  return { e: e ? Math.round(e.width) : 0, s: s ? Math.round(s.width) : 0, ratio: e ? e.width / Math.max(1, e.height) : 0, td: getComputedStyle(document.querySelector("#o-salons .td")).minHeight };
 });
 ok(tailles.e > 300 && tailles.e === tailles.s && Math.abs(tailles.ratio - 16 / 9) < 0.05 && tailles.td === "0px", `en grand écran dans l'onglet, toute la largeur (${tailles.e} points, 16/9), sans prendre tout l'écran`);
-await lea.locator("#o-decouvrir [data-garder]").click();
-ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-note]").count()) === 1), "la note s'affiche");
+await lea.locator("#o-salons [data-garder]").click();
+ok(await attendre(lea, async () => (await lea.locator("#o-salons [data-note]").count()) === 1), "la note s'affiche");
 const auDessus = await lea.evaluate(() => {
-  const n = document.querySelector("#o-decouvrir [data-note]")?.getBoundingClientRect();
+  const n = document.querySelector("#o-salons [data-note]")?.getBoundingClientRect();
   const m = document.querySelector(".mc-nav")?.getBoundingClientRect();
   return Boolean(n && m && n.bottom <= m.top + 1);
 });

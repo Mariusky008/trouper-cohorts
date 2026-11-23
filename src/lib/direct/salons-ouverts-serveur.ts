@@ -42,6 +42,7 @@ import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
+import { BULLES_FRAICHES_MS, type SalonFil } from "./fil-decouvrir";
 import {
   AIMES_POUR_ETAGERE,
   CONSERVE_MS,
@@ -609,6 +610,69 @@ export async function accueilDesSalons(supabase: Supabase, moi: Habitant): Promi
     vitrineDesSalons(supabase, m, plusVivant, premier).catch(() => undefined),
   ]);
   return { maison: m, cartes: [...cartes.filter((c) => c.mien), ...cartes.filter((c) => !c.mien)], ...(vitrine ? { vitrine } : {}), ...enPlus };
+}
+
+// ─── 🎞️ (le lot F1, 23 novembre 2026 ; `docs/univers/fil.md`) LE FIL DE DÉCOUVRIR : LES SALONS OÙ IL Y A QUELQU'UN ───
+/** Une bulle, en quelques signes : le texte, ou l'emoji d'une réaction, d'un geste. */
+function texteDeBulle(x: MessageSalon): string {
+  if (x.sorte === "texte") return s(x.texte);
+  if (x.sorte === "reaction") return (reactionDe(x.cle) ?? reactionMusiqueDe(x.cle))?.e ?? "";
+  return gesteDe(x.cle)?.e ?? "";
+}
+/**
+ * 🎞️ Les salons où il y a quelqu'un d'autre que lui, en ce moment (jamais une pièce vide) : pour chaque thème, le plus
+ * rempli — ses présents (prénom, figurine, place), les bulles des dix dernières minutes (sans ceux qu'il ne veut plus
+ * voir), son gradin, ce qui passe à sa télé (🎵 le morceau proposé, et qui l'a choisi). Ses passions d'abord, puis les
+ * plus remplis. `age` : il doit d'abord dire s'il a 18 ans.
+ */
+export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintenant = Date.now()): Promise<{ age?: true; salons: SalonFil[] }> {
+  const m = await maisonDeMoi(supabase, moi.id);
+  if (!m) return { age: true, salons: [] };
+  const q = qui8(moi.id);
+  const permis = new Set(themesDesSalons(m).map((t) => t.id));
+  const noms = (await lister(supabase, base(m))).map((e) => e.nom).filter((n) => salonDe(n) && permis.has(salonDe(n)!.theme));
+  const l = await Promise.all(noms.map(async (id) => ({ id, theme: salonDe(id)!.theme, presents: (await presentsFrais(supabase, m, id, maintenant)).filter((p) => p.nom !== q) })));
+  const parTheme = new Map<IdTheme, (typeof l)[number]>();
+  for (const x of l) if (x.presents.length && x.presents.length > (parTheme.get(x.theme)?.presents.length ?? 0)) parTheme.set(x.theme, x);
+  if (!parTheme.size) return { salons: [] };
+  const [passions, caches] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), mesCaches(supabase, moi.id)]);
+  const miens = new Set(passions?.passions ?? []);
+  const gradinsVus = new Map<IdGradin, Promise<GradinScene | null>>();
+  const choisis = [...parTheme.values()].sort((a, b) => Number(miens.has(b.theme)) - Number(miens.has(a.theme)) || b.presents.length - a.presents.length).slice(0, 8);
+  const salons = await Promise.all(
+    choisis.map(async (x): Promise<SalonFil> => {
+      const t = themeDe(x.theme)!;
+      const g = gradinDuTheme(x.theme);
+      if (!gradinsVus.has(g)) gradinsVus.set(g, gradinDuSalon(supabase, x.theme).catch(() => null));
+      const [fiches, messages, gradin, videos, platine] = await Promise.all([
+        Promise.all(x.presents.slice(0, PLACES_SALON).map((p) => lirePresent(supabase, m, x.id, p.nom))),
+        derniersMessages(supabase, m, x.id, { depuis: maintenant - BULLES_FRAICHES_MS, limite: 8, caches }),
+        gradinsVus.get(g)!,
+        videosDuSalon(supabase, x.theme, m).catch(() => [] as VideoSalon[]),
+        estSalonMusique(x.theme) ? platineAJour(supabase, m, x.id, maintenant).catch(() => null) : Promise.resolve(null),
+      ]);
+      const pos = videos.length ? positionTele(videos, maintenant) : null;
+      const v = platine?.enCours ? platine.enCours.video : pos ? videos[pos.i] : null;
+      return {
+        sorte: "salon",
+        id: x.id,
+        theme: x.theme,
+        e: t.e,
+        nom: SALONS[x.theme].nom,
+        mien: miens.has(x.theme),
+        presents: fiches.filter((f) => f.q).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: s(f.figurine?.src), place: Number(f.place) || 0 })),
+        bulles: messages
+          .filter((msg) => msg.de !== q)
+          .map((msg) => ({ id: msg.id, q: msg.de, prenom: msg.prenom, texte: texteDeBulle(msg), le: msg.le }))
+          .filter((b) => b.texte)
+          .slice(-4),
+        gradin: gradin ? { src: gradin.image.src, flou: gradin.image.flou, places: gradin.places } : null,
+        video: v ? { id: v.id, titre: v.titre } : null,
+        ...(estSalonMusique(x.theme) ? { morceau: platine?.enCours ? { titre: platine.enCours.video.titre, prenom: platine.enCours.prenom } : null } : {}),
+      };
+    }),
+  );
+  return { salons: salons.filter((x) => x.presents.length) };
 }
 
 // ─── 🛡️ l'administration (`/admin/humain/salons`) ───
@@ -1204,7 +1268,7 @@ export async function demanderProche(supabase: Supabase, moi: Habitant, p: Recor
   const deja = await lireJson<{ le?: number }>(supabase, `${dossierDemandes(h)}/${qMoi}.json`).catch(() => ({}) as { le?: number });
   await ecrireJson(supabase, `${dossierDemandes(h)}/${qMoi}.json`, { de: moi.id, q: qMoi, prenom: prenom || "Quelqu’un", salon: nomSalon, le: Date.now() });
   await ecrireJson(supabase, `${moi.id}/demandes-proche.json`, { jour, n: n + 1 });
-  if (!Number(deja.le)) await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.demandeProche(prenom || "Quelqu’un", nomSalon), corps: "Accepte-la dans Découvrir : votre conversation s’ouvrira.", url: "/collection#decouvrir", tag: `demande-${qMoi}` }).catch(() => "rien");
+  if (!Number(deja.le)) await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.demandeProche(prenom || "Quelqu’un", nomSalon), corps: "Accepte-la dans Découvrir : votre conversation s’ouvrira.", url: "/collection#salons", tag: `demande-${qMoi}` }).catch(() => "rien");
   return { envoyee: true };
 }
 

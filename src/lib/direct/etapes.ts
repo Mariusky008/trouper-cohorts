@@ -26,7 +26,7 @@ export const ETAPES = [
   // avaient déjà répondu à 3 questions la gardent. 19 novembre 2026 : « Mon vœu » part avec l'ancienne page de
   // Découvrir ; l'étape devient « Choisir tes passions », celles de sa télé du jour — ceux qui avaient fait un vœu la
   // gardent)
-  { cle: "questions", emoji: "📺", titre: "Choisir tes passions", onglet: "decouvrir" },
+  { cle: "questions", emoji: "📺", titre: "Choisir tes passions", onglet: "salons" },
   { cle: "fidele", emoji: "📅", titre: "Revenir 3 jours différents", onglet: "figurine" },
   // (7 novembre 2026, on resserre sur le mème : « Passer chez un commerçant partenaire » n'est plus une étape)
   { cle: "duo", emoji: "↩️", titre: "Répondre en duo à un mème", onglet: "memes" },

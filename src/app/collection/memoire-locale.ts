@@ -85,6 +85,8 @@ export const MEMOIRE_SALONS = "clikme-memoire-salons-1";
 export const MEMOIRE_MAISONS = "clikme-memoire-maisons-publiques-1";
 export const MEMOIRE_REVOIR = "clikme-memoire-revoir-1";
 export const MEMOIRE_MAISON = "clikme-memoire-ma-maison-1";
+/** 🎞️ (lot F1) le fil de Découvrir : ses pièces, la dernière fois */
+export const MEMOIRE_FIL = "clikme-memoire-fil-decouvrir-1";
 /** (ce qui montre des images signées : 20 heures ; le reste : trois jours) */
 const SIGNEES = new Set([MEMOIRE_ETAT, MEMOIRE_PROCHES]);
 function dureeDe(cle: string): number {

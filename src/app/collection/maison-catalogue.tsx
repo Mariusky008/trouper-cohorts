@@ -1010,7 +1010,7 @@ function Piece({
               </button>
             )}
             {!visite && (
-              <a className="mmc-puce" href="/collection#decouvrir" data-puce="tele">
+              <a className="mmc-puce" href="/collection#salons" data-puce="tele">
                 {PHRASES_BAS.maTele}
               </a>
             )}

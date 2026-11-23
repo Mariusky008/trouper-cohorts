@@ -24,7 +24,7 @@ import { Guide, useVoixBulle, type Visage } from "./guide";
 
 export type PageTuto = "creer" | "decouvrir" | "autour" | "memes" | "proches" | "moi";
 /** Les vues de `ma-collection.tsx` où vit chaque page. */
-export type VueTuto = "figurine" | "decouvrir" | "autour" | "memes" | "proches" | "personnage";
+export type VueTuto = "figurine" | "decouvrir" | "salons" | "autour" | "memes" | "proches" | "personnage";
 /** (`son` : l'enregistrement de cette bulle, s'il n'est pas « tuto-<page>-<rang> » — une bulle déplacée, ou réécrite et
  * pas encore enregistrée : elle s'écrit alors sans voix) */
 export type EtapeTuto = { t: string; v: Visage; cible?: string[]; sinon?: string[]; son?: string };
@@ -50,15 +50,16 @@ export const PAGES_TUTO: { cle: PageTuto; vue: VueTuto; nom: string; dit: string
   },
   {
     cle: "decouvrir",
-    vue: "decouvrir",
+    // (🎞️ le lot F1, 23 novembre 2026 : Découvrir s'ouvre sur le fil ; la télé du jour est derrière « Tous les salons »)
+    vue: "salons",
     nom: "Découvrir",
     dit: "Ta télé du jour : les vidéos de tes passions.",
     // (19 novembre 2026, le lot D1b : Découvrir devient « Ma télé du jour » ; les trois bulles sont réécrites, et pas
     // encore enregistrées — `tuto-decouvrir-tele-1` à `-3` : elles s'écrivent sans voix d'ici là)
     etapes: [
-      { t: "Ici, c’est ta télé du jour : les vidéos de tes passions, choisies pour toi chaque nuit.", v: "euphorie", cible: ["#o-decouvrir .td-ecran"], sinon: ["#o-decouvrir .tp-tuiles"], son: "tuto-decouvrir-tele-1" },
-      { t: "Pas pour toi ? « Suivante ». Elle te plaît ? « Garder » : elle va à la télé de ta maison.", v: "joie", cible: ["#o-decouvrir .td-gestes"], son: "tuto-decouvrir-tele-2" },
-      { t: "Et pour la partager, « Envoyer à… » un proche : elle passe sur votre télé, dans votre salon.", v: "rire", cible: ["#o-decouvrir [data-envoyer]"], son: "tuto-decouvrir-tele-3" },
+      { t: "Ici, c’est ta télé du jour : les vidéos de tes passions, choisies pour toi chaque nuit.", v: "euphorie", cible: ["#o-salons .td-ecran"], sinon: ["#o-salons .tp-tuiles"], son: "tuto-decouvrir-tele-1" },
+      { t: "Pas pour toi ? « Suivante ». Elle te plaît ? « Garder » : elle va à la télé de ta maison.", v: "joie", cible: ["#o-salons .td-gestes"], son: "tuto-decouvrir-tele-2" },
+      { t: "Et pour la partager, « Envoyer à… » un proche : elle passe sur votre télé, dans votre salon.", v: "rire", cible: ["#o-salons [data-envoyer]"], son: "tuto-decouvrir-tele-3" },
     ],
   },
   {

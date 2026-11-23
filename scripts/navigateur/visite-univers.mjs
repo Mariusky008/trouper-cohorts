@@ -171,11 +171,11 @@ await marc.screenshot({ path: `${D}/visite-univers-2-chez-moi.png`, fullPage: tr
 ok((await debordement(marc)) <= 0 && (await sansMotInterdit(marc)), "chez lui : rien ne déborde, sans le mot interdit");
 
 // ═══ 🏡 « DÉCOUVRIR » : LES MAISONS À VISITER (lot 7 ; sous la télé du jour depuis le 19 novembre 2026) ═══
-await ines.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "networkidle" });
+await ines.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "networkidle" });
 await fermerPablito(ines);
-await ines.waitForSelector("#o-decouvrir .td-maisons .td-maison", { timeout: 30000 }).catch(() => null);
+await ines.waitForSelector("#o-salons .td-maisons .td-maison", { timeout: 30000 }).catch(() => null);
 ok(
-  (await texte(ines, "#o-decouvrir .td-maisons")).includes("Les maisons à visiter") && (await ines.locator("#o-decouvrir .td-maison", { hasText: "Chez Marc" }).getAttribute("href")) === `/univers/chez/${MARC.cle}`,
+  (await texte(ines, "#o-salons .td-maisons")).includes("Les maisons à visiter") && (await ines.locator("#o-salons .td-maison", { hasText: "Chez Marc" }).getAttribute("href")) === `/univers/chez/${MARC.cle}`,
   "« Découvrir » : « 🏡 Les maisons à visiter » — Chez Marc, un toucher pour y entrer",
 );
 

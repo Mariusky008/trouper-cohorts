@@ -124,9 +124,9 @@ ok(await attendre(lea, async () => (await lea.locator(".so[data-hote='1']").coun
 
 // ═══ SAM ARRIVE : ENSEMBLE ═══
 const sam = await ouvrir(SAM);
-await sam.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(sam, "#o-decouvrir");
-const carte = sam.locator(`#o-decouvrir [data-invitation="${LEA.cle}"]`);
+await sam.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+await fermerPablito(sam, "#o-salons");
+const carte = sam.locator(`#o-salons [data-invitation="${LEA.cle}"]`);
 ok(await attendre(sam, async () => /Léa t’invite devant sa télé/.test(await texte(carte)) && (await texte(carte)).includes(V.titre), 45000), `Découvrir de Sam : l'invitation, et sa vidéo (« ${V.titre} »)`);
 await carte.locator("[data-venir]").click();
 await sam.waitForURL(/\/univers\/salons\?chez=/);
@@ -167,9 +167,9 @@ await sam.screenshot({ path: `${D}/seance-entre-amis-2-inviter.png` });
 await sam.locator("[data-envoyer-invitations]").click();
 ok(await attendre(sam, async () => /Invitation envoyée/.test(await texte(sam.locator("[data-note]"))), 6000), "« Invitation envoyée »");
 const tom = await ouvrir(TOM);
-await tom.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
-await fermerPablito(tom, "#o-decouvrir");
-ok(await attendre(tom, async () => /Sam t’invite devant la télé de Léa/.test(await texte(tom.locator(`#o-decouvrir [data-invitation="${LEA.cle}"]`))), 45000), "Tom : « 🎬 Sam t'invite devant la télé de Léa »");
+await tom.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+await fermerPablito(tom, "#o-salons");
+ok(await attendre(tom, async () => /Sam t’invite devant la télé de Léa/.test(await texte(tom.locator(`#o-salons [data-invitation="${LEA.cle}"]`))), 45000), "Tom : « 🎬 Sam t'invite devant la télé de Léa »");
 await tom.screenshot({ path: `${D}/seance-entre-amis-3-tom.png` });
 
 ok(!(await deborde(sam)) && !(await deborde(lea)), "rien ne déborde");

@@ -1787,3 +1787,9 @@ même seconde pour tous. Le lot M1 en fait **le salon musique** — les autres s
   `navigateur/salon-musique.mjs` (deux iPhone : la radio, proposer un lien, « Ton choix » et « Le choix de Léa », la
   même vidéo, la note ; un clip de la radio, « À suivre », le ❤️ ; 💃 chez l'autre ; fini : « C'était le choix de
   Léa », « Voir sa fiche »).
+
+## 37. 🎞️ Le fil « de pièce en pièce » (23 novembre 2026, le lot F1)
+
+L'onglet Découvrir s'ouvre désormais sur un fil plein écran : on glisse de pièce en pièce, sa figurine au bord. Tout ce
+qui précède (ma télé du jour, les salons par passion, la séance) reste là, derrière « Tous les salons » (`#salons`) — et
+le fil y mène. Le détail : `docs/univers/fil.md`.

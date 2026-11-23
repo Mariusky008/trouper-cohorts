@@ -107,7 +107,7 @@ const gros = scene.locator(".mmc-gros-bouton");
 ok((await gros.count()) === 3 && /Pendant ton absence/.test(await gros.nth(0).innerText()) && /Ajouter chez moi/.test(await gros.nth(1).innerText()) && /Mes proches/.test(await gros.nth(2).innerText()), "le bas : « Pendant ton absence », « Ajouter chez moi », « 👯 Mes proches »");
 const boites = await Promise.all([0, 1, 2].map((k) => gros.nth(k).boundingBox()));
 ok(boites.every((x) => x && x.y + x.height <= 844 + 1 && x.height >= 56 && x.height < 90), `… les trois à l'écran, de la même taille (${boites.map((x) => Math.round(x?.height)).join(", ")} pt)`);
-ok(/Aujourd’hui, si tu veux/i.test(await scene.locator(".mmc-puces").innerText()) && (await scene.locator('.mmc-puce[data-puce="tele"]').getAttribute("href")) === "/collection#decouvrir", "« Aujourd'hui, si tu veux » : « 📺 Ma télé »");
+ok(/Aujourd’hui, si tu veux/i.test(await scene.locator(".mmc-puces").innerText()) && (await scene.locator('.mmc-puce[data-puce="tele"]').getAttribute("href")) === "/collection#salons", "« Aujourd'hui, si tu veux » : « 📺 Ma télé » (« Tous les salons », sa télé du jour)");
 // (21 novembre 2026, le propriétaire : « des rectangles blancs autour de ce qui est cliquable » — plus de contours)
 ok((await scene.locator(".mmc-cadre.montre").count()) === 0 && (await scene.locator(".mmc-zone").evaluateAll((l) => l.every((z) => /none|rgba\([^)]*, 0\)/.test(getComputedStyle(z, "::after").boxShadow)))), "pas de rectangles blancs autour de ce qui se touche");
 // (sa figurine dans son fauteuil : la place de gauche du relevé, de la tête au sol, entière à l'écran)
