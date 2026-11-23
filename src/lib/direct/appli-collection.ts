@@ -1,5 +1,5 @@
 /**
- * 📲 CLIKME SUR SON TÉLÉPHONE, ET 🔔 LE MÈME DU JOUR À 11 H 30 (le lot 3, 7 novembre 2026) — le côté téléphone.
+ * 📲 CLIKME SUR SON TÉLÉPHONE, ET 🔔 SES NOTIFICATIONS (le lot 3, 7 novembre 2026) — le côté téléphone.
  * Le serveur : `appli-collection-serveur.ts` ; l'écran : `app/collection/mon-telephone.tsx`.
  *
  * L'INSTALLER :
@@ -9,8 +9,8 @@
  *   · Android (Chrome) : la vraie proposition du téléphone (`beforeinstallprompt`), gardée pour le bon moment.
  *   · Dans le navigateur d'Instagram, de TikTok… : rien ne s'installe ; on dit comment ouvrir la page dans le vrai.
  *
- * LA NOTIFICATION, DEMANDÉE AU BON MOMENT : juste après sa réponse au mème du jour (« demain, je te préviens ? »), ou à la
- * première ouverture de l'appli posée sur l'iPhone, qui n'a été installée que pour ça. Un refus du navigateur est
+ * LES NOTIFICATIONS, DEMANDÉES AU BON MOMENT : à la première ouverture de l'appli posée sur l'écran d'accueil, dans
+ * « Messages » (« Tes proches te parlent : je te préviens ? » ; avant le 23 novembre 2026, le mème du jour, parti). Un refus du navigateur est
  * définitif ; un « plus tard » est retenu une semaine. Il la coupe dans « Moi ». Sur iPhone, une notification n'existe
  * QUE dans l'appli posée sur l'écran d'accueil (`a-installer`).
  */
@@ -126,7 +126,8 @@ export async function preparerInstallation(): Promise<void> {
 
 /**
  * L'APPLI S'OUVRE POUR LA PREMIÈRE FOIS sur l'écran d'accueil, avec son jeton : il pose le cookie de SA figurine, puis la
- * page repart sur le mème du jour. Dans Safari (pas encore installée), le jeton attend.
+ * page repart sur « Messages » (là où on lui propose les notifications). Dans Safari (pas encore installée), le jeton
+ * attend.
  */
 export async function lierSiBesoin(): Promise<void> {
   if (typeof window === "undefined" || !estInstallee()) return;
@@ -135,12 +136,12 @@ export async function lierSiBesoin(): Promise<void> {
   if (!jeton) return;
   const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "appli-lier", jeton }) }).catch(() => null);
   u.searchParams.delete("appli");
-  u.hash = "jour";
+  u.hash = "proches";
   if (r?.ok) window.location.replace(u.toString());
   else window.history.replaceState(null, "", u.toString());
 }
 
-// ─── 🔔 la notification du mème du jour ────────────────────────────────────────────────────────────────────────────
+// ─── 🔔 les notifications ─────────────────────────────────────────────────────────────────────────────────────────
 export type EtatNotif = "indisponible" | "a-installer" | "refusee" | "a-demander" | "allumee" | "coupee";
 const clePublique = () => process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
@@ -215,7 +216,7 @@ export async function allumerNotif(): Promise<{ etat: EtatNotif; erreur?: string
   }
 }
 
-/** Il coupe : ce téléphone ne reçoit plus le mème du jour. */
+/** Il coupe : ce téléphone ne reçoit plus les notifications. */
 export async function couperNotif(): Promise<EtatNotif> {
   let endpoint = "";
   try {

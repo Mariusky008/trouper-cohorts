@@ -43,7 +43,7 @@ const FETES: { jour: string; meme: MemePret }[] = [
   { jour: "12-25", meme: { cle: "noel", emoji: "🎄", nom: "Joyeux Noël", texte: "Joyeux Noël ! J’ai été très sage cette année. Enfin… presque.", sentiment: "euphorie", danse: true } },
 ];
 
-/** Le mème du jour : une phrase qui change chaque matin (la même pour tout le monde ce jour-là). */
+/** L'idée du jour : une phrase qui change chaque matin (la même pour tout le monde ce jour-là). */
 const DU_JOUR: { texte: string; sentiment?: Sentiment; danse?: boolean }[] = [
   { texte: "Aujourd’hui, j’ai décidé de tout faire. Enfin… demain plutôt.", sentiment: "grimace" },
   { texte: "Je ne suis pas en retard. C’est le reste du monde qui est en avance.", sentiment: "joie" },
@@ -70,11 +70,12 @@ const hachage = (s: string) => {
 /** « 2026-11-06 » (heure de Paris). */
 const jourParis = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
 
-/** Les mèmes prêts du moment : le mème du jour, la fête qui approche, le jour de la semaine, puis les autres. */
+/** Les mèmes prêts du moment : l'idée du jour, la fête qui approche, le jour de la semaine, puis les autres. */
 export function memesDuMoment(d = new Date()): MemePret[] {
   const jour = jourParis(d);
   const l = DU_JOUR[hachage(jour) % DU_JOUR.length];
-  const duJour: MemePret = { cle: "du-jour", emoji: "🔥", nom: "Le mème du jour", texte: l.texte, ...(l.sentiment ? { sentiment: l.sentiment } : {}), ...(l.danse ? { danse: true } : {}) };
+  // (« L'idée du jour » : une phrase qui change chaque jour — elle s'appelait « le mème du jour », parti le 23 novembre 2026)
+  const duJour: MemePret = { cle: "du-jour", emoji: "💡", nom: "L’idée du jour", texte: l.texte, ...(l.sentiment ? { sentiment: l.sentiment } : {}), ...(l.danse ? { danse: true } : {}) };
   // (une fête : la semaine d'avant, et le jour même)
   const an = Number(jour.slice(0, 4));
   const t = new Date(`${jour}T12:00:00Z`).getTime();

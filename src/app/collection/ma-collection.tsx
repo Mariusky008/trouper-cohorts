@@ -23,8 +23,8 @@
  * de chaque commerçant, `/f/<slug>`) ; ses figurines du mois sont devenues des LOOKS de son studio.
  * Chaque onglet a son adresse (`#decouvrir`, `#autour`, `#figurine`, `#memes`, `#proches`, `#personnage`), et les anciens liens
  * retombent sur le bon (`#creer` → « Créer », `#mois` → sa figurine du mois, dans « Moi », `#album` → « Mes mèmes »).
- * 📲 LE LOT 3 : l'appli sur l'écran d'accueil et le mème du jour à 11 h 30 (`mon-telephone.tsx`) — `#jour` mène au mème
- * du jour (la notification), `#installer` ouvre le geste à faire (iPhone, après le rechargement avec son jeton).
+ * 📲 LE LOT 3 : l'appli sur l'écran d'accueil et ses notifications (`mon-telephone.tsx`) — `#installer` ouvre le geste
+ * à faire (iPhone, après le rechargement avec son jeton) ; `#jour` (le mème du jour, parti le 23 novembre 2026) : « Créer ».
  * 📍 « AUTOUR » REMPLACE « RENCONTRES » DANS LE MENU (7 novembre 2026, à la demande du propriétaire) : les mèmes laissés
  * dans la ville, sur une carte (`autour.tsx`, `#autour`). PUIS « RENCONTRES » EST EFFACÉ (le même jour, sa réponse :
  * « effacer ») : l'épisode du jour, les personnages, les membres, les impressions, les cartes souvenirs. Ses anciennes
@@ -45,9 +45,7 @@ import { TeleDuJourEcran } from "./tele-du-jour";
 import { FilDecouvrir, STYLES_FIL } from "./fil-decouvrir";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
-import { themeDuJour } from "@/lib/direct/theme-du-jour";
-import { versLeStudio } from "./vers-le-studio";
-import { FeuilleInstaller, MonTelephone, STYLES_MON_TELEPHONE } from "./mon-telephone";
+import { FeuilleInstaller, MonTelephone, ProposerLesNotifications, STYLES_MON_TELEPHONE } from "./mon-telephone";
 import { Autour, STYLES_AUTOUR } from "./autour";
 import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
 import { RaccourcisMoi, STYLES_CHEZ_MOI } from "./chez-moi";
@@ -110,8 +108,7 @@ const ALIAS: Record<string, Vue> = {
   moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
-  // (🔥 le mème du jour : là où mène la notification de 11 h 30. Depuis le 19 novembre 2026, l'ancienne page de
-  // « Découvrir » est partie : « Créer », ouvert sur le thème du jour — `lire`, plus bas)
+  // (🔥 l'ancien lien du mème du jour — parti le 23 novembre 2026 — et des notifications déjà reçues : « Créer »)
   jour: "figurine",
   // (✨ « Mon vœu », sa mission et ses réponses du soir sont partis le 19 novembre 2026 : leurs anciens liens ouvrent
   // ma télé du jour — depuis le lot F1, derrière « Tous les salons »)
@@ -278,8 +275,6 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     const lire = () => {
       const h = decodeURIComponent(window.location.hash.slice(1));
       const v = ALIAS[h];
-      // (🔥 le mème du jour : le studio s'ouvre sur son thème ; l'adresse reste `#jour`)
-      if (h === "jour") versLeStudio({ theme: themeDuJour().cle }, { garderAdresse: true });
       // (🎞️ lot F1 : une vidéo à revoir — `?tele=<id>#decouvrir`, le lien d'une notification — s'ouvre dans ma télé du
       // jour, sur l'ancienne page de Découvrir)
       if (h === "decouvrir" && new URLSearchParams(window.location.search).get("tele")) aller("salons", "salons", false);
@@ -433,7 +428,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
               />
               {/* 🗓️ sa figurine du mois : elle se mérite en 10 jours sur ClikMe (`#mois` mène ici) */}
               {compte && <MaFigurineDuMois />}
-              {/* 📱 l'appli sur son écran d'accueil, et le mème du jour à 11 h 30 (il le coupe ici) — le lot 3 */}
+              {/* 📱 l'appli sur son écran d'accueil, et les notifications de ses proches (il les coupe ici) — le lot 3 */}
               {compte && <MonTelephone />}
               {/* 🔁 la refaire (9 novembre 2026 : elle a quitté le dessous de sa figurine, dans « Créer ») ; faite, on va la voir */}
               {compte && prete && etat && <RefaireMaFigurine etat={etat} onEtat={poserEtat} onFait={() => allerA("figurine")} />}
@@ -460,6 +455,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
         {ouverts.has("proches") && (
           <section className="mc-onglet" id="o-proches" hidden={vue !== "proches"} aria-label="Proches">
             <OngletVisible.Provider value={vue === "proches"}>
+              {/* 🔔 l'appli tout juste posée sur l'écran d'accueil : « Tes proches te parlent : je te préviens ? » (une fois) */}
+              {compte && prete && <ProposerLesNotifications />}
               <Proches compte={compte} prete={prete} allerA={allerA} onNonLus={setNonLus} onNouveautes={setNouveautes} chezMoi={univers} salonPourTous={salon} />
             </OngletVisible.Provider>
           </section>

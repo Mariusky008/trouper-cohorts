@@ -1,21 +1,19 @@
-// 📲🔔 LE LOT 3 : CLIKME SUR L'ÉCRAN D'ACCUEIL, ET LE MÈME DU JOUR À 11 H 30 — contre le faux Supabase et son faux service
-// de notifications (`PUSH_ESSAI_ORIGINE`).
+// 📲🔔 LE LOT 3 : CLIKME SUR L'ÉCRAN D'ACCUEIL, ET SES NOTIFICATIONS — contre le faux Supabase et son faux service de
+// notifications (`PUSH_ESSAI_ORIGINE`). (Le mème du jour et sa notification de 11 h 30 sont partis le 23 novembre 2026.)
 //
-// Nina, sur iPhone, dans Safari : rien ne la dérange avant qu'elle ait répondu ; dans « Moi », « Installer ». La page se
-// recharge avec son jeton : le geste à faire (Partager, « Sur l'écran d'accueil »), et le manifeste ouvrira l'appli sur
-// ce jeton. L'appli posée (ses cookies à elle, vides) s'ouvre : le jeton lui rend SA figurine, une seule fois. « Dernière
-// étape : le mème du jour » → « Oui, préviens-moi » → « C'est réglé ! » arrive sur son téléphone (déchiffré ici comme le
-// téléphone le ferait). Tom (sur ordinateur) est abonné mais a déjà répondu : rien pour lui. Un troisième téléphone a
-// abandonné son abonnement : il est effacé. L'envoi de 11 h 30 (forcé) : le thème du jour en titre, sans faux chiffre.
-// Nina coupe dans « Moi » : plus rien ne lui arrive. Android : la vraie proposition d'installer. Instagram : « Ouvre
-// ClikMe dans ton navigateur ». Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// Nina, sur iPhone, dans Safari : rien ne la dérange dans « Messages » ; dans « Moi », « Installer ». La page se recharge
+// avec son jeton : le geste à faire (Partager, « Sur l'écran d'accueil »), et le manifeste ouvrira l'appli sur ce jeton.
+// L'appli posée (ses cookies à elle, vides) s'ouvre sur « Messages » : le jeton lui rend SA figurine, une seule fois.
+// « Tes proches te parlent : je te préviens ? » → « Oui, préviens-moi » → « C'est réglé ! » arrive sur son téléphone
+// (déchiffré ici comme le téléphone le ferait). Tom, son proche, lui écrit : elle est prévenue. Un téléphone qui a
+// abandonné son abonnement est effacé. Nina coupe dans « Moi » : plus rien ne lui arrive. Android : la vraie proposition
+// d'installer. Instagram : « Ouvre ClikMe dans ton navigateur ». Rien ne déborde, jamais le mot interdit, aucune erreur.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { BASE, D, F, fermerPablito, lancer } from "./commun.mjs";
 
 const FAUX = F.replace("/rest/v1", "");
 const STOCK = `${FAUX}/storage/v1/object`;
-const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
 const deposer = (seau, chemin, corps, type) => fetch(`${STOCK}/${seau}/${chemin}`, { method: "POST", headers: { "content-type": type }, body: corps });
 const json = (seau, chemin, x) => deposer(seau, chemin, JSON.stringify(x), "application/json");
@@ -75,13 +73,10 @@ await semer(
   "clik_ma_figurine",
   GENS.map((x) => ({ habitant_id: x.id, prenom: x.prenom, photo: `${x.id}/photo-essai.jpg`, accord_le: new Date().toISOString(), neutre: `${x.id}/neutre-essai.webp`, parle: `${x.id}/parle-essai.webp`, prete_le: new Date().toISOString() })),
 );
-// Tom a déjà répondu au mème du jour (comme le fait la route)
-const le = new Date().toISOString();
-await semer("clik_figurine_message", [{ id: "appli0tom001", habitant_id: TOM.id, son: `${TOM.id}/m-appli0tom001.mp3`, duree: 2, commerces: [], created_at: le }]);
-await deposer("figurines-clients", `${TOM.id}/meme-appli0tom001.mp4`, Buffer.alloc(2048, 1), "video/mp4");
-await json("figurines-clients", `${TOM.id}/m-appli0tom001.json`, { meme: `${TOM.id}/meme-appli0tom001.mp4`, memeType: "video/mp4", public: { ville: "dax", jour, le }, duJour: jour });
-await json("figurines-clients", `du-jour/dax/${jour}/appli0tom001.json`, { id: "appli0tom001", h: TOM.id, le });
-await json("figurines-clients", `${TOM.id}/du-jour/${jour}.json`, { id: "appli0tom001" });
+// (Tom, son proche, lui écrira ; et à Sacha, dont le téléphone a abandonné son abonnement)
+await json("figurines-clients", `${TOM.id}/proches.json`, { ids: [NINA.id, MORT.id] });
+await json("figurines-clients", `${NINA.id}/proches.json`, { ids: [TOM.id] });
+await json("figurines-clients", `${MORT.id}/proches.json`, { ids: [TOM.id] });
 
 const b = await lancer();
 let echecs = 0;
@@ -148,16 +143,17 @@ const api = (p, corps) =>
     const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(c) });
     return { statut: r.status, ...(await r.json().catch(() => ({}))) };
   }, corps);
-const cron = async (force) => (await fetch(`${BASE}/api/cron/meme-du-jour${force ? "?force=1" : ""}`)).json();
+const cleDe = async (x) => (await (await fetch(`${BASE}/api/direct/proches`, { headers: { cookie: `clikme_habitant=${x.jeton}` } })).json()).cle;
+const ecrireA = async (x, cle, texte) => (await fetch(`${BASE}/api/direct/proches`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify({ action: "ecrire", cle, texte }) })).status;
 
 // ═══ NINA, SUR IPHONE, DANS SAFARI ═══
 const telNina = telephone("nina");
 const safari = await tel(NINA, { ua: IPHONE });
-// (depuis le 19 novembre 2026, `#jour` ouvre « Créer » sur le thème du jour : l'ancienne page de « Découvrir » est partie)
-await safari.goto(`${BASE}/collection#jour`, { waitUntil: "networkidle" });
-await fermerPablito(safari, "#o-figurine");
-await safari.waitForSelector("#o-figurine #theme-du-jour", { timeout: 60000 });
-ok((await safari.locator("#o-figurine #theme-du-jour .ct-invite").count()) === 0, "dans Safari, pas encore répondu : rien ne la dérange sur le mème du jour (« Créer », ouvert sur son thème)");
+await safari.goto(`${BASE}/collection#proches`, { waitUntil: "networkidle" });
+await fermerPablito(safari, "#o-proches");
+await safari.waitForSelector("#o-proches:not([hidden])", { timeout: 60000 });
+await safari.waitForTimeout(800);
+ok((await safari.locator("#o-proches .ct-invite").count()) === 0, "dans Safari (l'appli pas encore posée) : rien ne la dérange dans « Messages »");
 await safari.goto(`${BASE}/collection#moi`, { waitUntil: "networkidle" });
 await fermerPablito(safari, "#o-personnage");
 await safari.waitForSelector("#o-personnage .ct-moi", { timeout: 60000 });
@@ -182,27 +178,27 @@ ok((await safari.locator(".ct-feuille").count()) === 0, "« J'ai compris » : la
 // ═══ L'APPLI POSÉE SUR SON ÉCRAN D'ACCUEIL : SES COOKIES À ELLE, VIDES ═══
 const appli = await tel(null, { ua: IPHONE, installee: true, faux: telNina });
 await appli.goto(new URL(manifeste.start_url, BASE).toString(), { waitUntil: "networkidle" });
-await appli.waitForURL((u) => !u.searchParams.has("appli") && u.hash === "#jour", { timeout: 30000 });
-await fermerPablito(appli, "#o-figurine");
-await appli.waitForSelector("#o-figurine #theme-du-jour", { timeout: 60000 });
+await appli.waitForURL((u) => !u.searchParams.has("appli") && u.hash === "#proches", { timeout: 30000 });
+await fermerPablito(appli, "#o-proches");
+await appli.waitForSelector("#o-proches:not([hidden])", { timeout: 60000 });
 ok((await texte(appli, ".mc-moi")).includes("Nina") && !(await lireStock(`appli/${jeton}.json`)), "l'appli s'ouvre avec SA figurine (le jeton a posé son cookie, et il est usé)");
 const reutilise = await api(appli, { action: "appli-lier", jeton });
 ok(reutilise.statut === 400 && /déjà servi/.test(reutilise.error ?? ""), "le même jeton ne sert pas deux fois");
-await appli.waitForSelector("#o-figurine #theme-du-jour .ct-invite", { timeout: 15000 });
-ok((await texte(appli, "#o-figurine #theme-du-jour .ct-invite")).includes("Dernière étape : le mème du jour"), "à sa première ouverture : « 🔔 Dernière étape : le mème du jour », sur le mème du jour de « Créer »");
+await appli.waitForSelector("#o-proches .ct-invite", { timeout: 15000 });
+ok((await texte(appli, "#o-proches .ct-invite")).includes("Tes proches te parlent : je te préviens ?"), "à sa première ouverture, dans « Messages » : « 🔔 Tes proches te parlent : je te préviens ? »");
 await appli.screenshot({ path: `${D}/appli-2-derniere-etape.png` });
-await toucher(appli, "#o-figurine #theme-du-jour .ct-invite .ct-principal");
-await appli.waitForSelector("#o-figurine #theme-du-jour .ct-fait", { timeout: 20000 });
-ok((await texte(appli, "#o-figurine #theme-du-jour .ct-fait")) === "✓ C’est réglé : le mème du jour arrivera vers 11 h 30.", "« Oui, préviens-moi » : c'est réglé");
+await toucher(appli, "#o-proches .ct-invite .ct-principal");
+await appli.waitForSelector("#o-proches .ct-fait", { timeout: 20000 });
+ok((await texte(appli, "#o-proches .ct-fait")) === "✓ C’est réglé : je te préviendrai quand un proche te parle.", "« Oui, préviens-moi » : c'est réglé");
 const fiche = await lireStock(`notif/abonnes/${NINA.id}.json`);
 ok(fiche?.ville === "dax" && fiche.abonnements?.[0]?.endpoint === telNina.endpoint, "le serveur garde son téléphone (dans le seau, pas de table)");
 const portee = await appli.evaluate(async () => (await navigator.serviceWorker.getRegistration("/collection"))?.scope ?? "");
 ok(portee.endsWith("/collection"), `le service worker de l'appli veille sur /collection (${portee.replace(BASE, "")})`);
 await appli.waitForTimeout(500);
 const bienvenue = (await recus(telNina))[0];
-ok(bienvenue?.n?.title === "🔔 C’est réglé !" && /arrivera ici (aujourd’hui|demain) vers 11 h 30/.test(bienvenue.n.body) && bienvenue.vapid && bienvenue.encodage === "aes128gcm", `« C'est réglé ! » arrive sur son téléphone, chiffré et signé (${bienvenue?.n?.body})`);
+ok(bienvenue?.n?.title === "🔔 C’est réglé !" && /quand un proche te parle/.test(bienvenue.n.body) && bienvenue.n.url === "/collection#proches" && bienvenue.vapid && bienvenue.encodage === "aes128gcm", `« C'est réglé ! » arrive sur son téléphone, chiffré et signé (${bienvenue?.n?.body})`);
 
-// ═══ TOM (ABONNÉ, MAIS IL A DÉJÀ RÉPONDU) ET UN TÉLÉPHONE QUI A ABANDONNÉ ═══
+// ═══ TOM (ABONNÉ, SUR ORDINATEUR) ; UN TÉLÉPHONE QUI A ABANDONNÉ ═══
 const telTom = telephone("tom");
 const telMort = telephone("sacha", true);
 const tom = await tel(TOM);
@@ -213,44 +209,51 @@ await mort.goto(`${BASE}/collection#figurine`, { waitUntil: "networkidle" });
 await api(mort, { action: "notif", abonnement: telMort.abonnement });
 ok((await api(tom, { action: "notif", abonnement: { endpoint: "http://ailleurs.invalid/x", keys: telTom.abonnement.keys } })).statut === 400, "une adresse qui n'est pas un service de notifications : refusée");
 
-// ═══ L'ENVOI DE 11 H 30 ═══
+// ═══ TOM LUI ÉCRIT : ELLE EST PRÉVENUE ; LE TÉLÉPHONE ABANDONNÉ EST EFFACÉ ═══
+const [cleNina, cleMort] = [await cleDe(NINA), await cleDe(MORT)];
 const avant = (await recus(telNina)).length;
-const bilan = await cron(true);
-const etatJour = await appli.evaluate(async () => (await (await fetch("/api/direct/ma-figurine?jour=1", { cache: "no-store" })).json()).jour);
-const memeDuJour = (await recus(telNina))[avant];
-ok(bilan.personnes === 3 && bilan.envoyes === 1 && bilan.dejaRepondu === 1 && bilan.morts === 1, `le bilan : trois abonnés, un envoi (Nina), Tom a déjà répondu, un téléphone abandonné (${JSON.stringify(bilan)})`);
-ok(
-  memeDuJour?.n?.title === `${etatJour.theme.emoji} ${etatJour.theme.titre}` && memeDuJour.n.body === "Le mème du jour : réponds avec ta figurine 🎭" && memeDuJour.n.url === "/collection#jour" && memeDuJour.topic === "meme-du-jour" && Number(memeDuJour.ttl) === 21600,
-  `chez Nina : « ${memeDuJour?.n?.title} » — ${memeDuJour?.n?.body} (une réponse à Dax : pas de chiffre)`,
-);
-ok((await recus(telTom)).filter((x) => x.n?.tag === "meme-du-jour").length === 0, "rien pour Tom : il a déjà répondu");
-ok(!(await lireStock(`notif/abonnes/${MORT.id}.json`)), "le téléphone abandonné est effacé");
+ok((await ecrireA(TOM, cleNina, "Coucou Nina, tu viens samedi ?")) === 200 && (await ecrireA(TOM, cleMort, "Coucou Sacha !")) === 200, "Tom écrit à Nina, et à Sacha");
+let deTom = null;
+for (let k = 0; k < 40 && !deTom; k++) {
+  await appli.waitForTimeout(250);
+  deTom = (await recus(telNina)).slice(avant).find((x) => /Tom/.test(x.n?.title ?? ""));
+}
+ok(Boolean(deTom) && /\/collection/.test(deTom.n.url ?? ""), `chez Nina : « ${deTom?.n?.title} » — ${deTom?.n?.body}`);
+let efface = false;
+for (let k = 0; k < 40 && !efface; k++) {
+  await appli.waitForTimeout(250);
+  efface = !(await lireStock(`notif/abonnes/${MORT.id}.json`));
+}
+ok(efface, "le téléphone abandonné de Sacha est effacé");
+ok(!(await pushs()).some((x) => x.topic === "meme-du-jour"), "plus jamais de mème du jour");
 
 // ═══ ELLE COUPE, DANS « MOI » ═══
 await appli.goto(`${BASE}/collection#moi`, { waitUntil: "networkidle" });
 await fermerPablito(appli, "#o-personnage");
 await appli.waitForSelector("#o-personnage .ct-notif .ct-interrupteur", { timeout: 60000 });
 const interrupteur = appli.locator("#o-personnage .ct-notif .ct-interrupteur");
-ok((await interrupteur.getAttribute("aria-checked")) === "true" && (await texte(appli, "#o-personnage .ct-installee")).includes("C’est fait"), "dans « Moi » : l'appli est posée, le mème du jour est activé");
+ok((await interrupteur.getAttribute("aria-checked")) === "true" && (await texte(appli, "#o-personnage .ct-installee")).includes("C’est fait") && (await texte(appli, "#o-personnage .ct-notif")).includes("Les notifications de tes proches"), "dans « Moi » : l'appli est posée, les notifications de ses proches sont activées");
 await appli.locator("#o-personnage .ct-moi").scrollIntoViewIfNeeded();
 await appli.screenshot({ path: `${D}/appli-3-moi.png` });
 await toucher(appli, interrupteur);
 await appli.waitForFunction(() => document.querySelector("#o-personnage .ct-notif .ct-interrupteur")?.getAttribute("aria-checked") === "false", null, { timeout: 15000 });
 ok((await texte(appli, "#o-personnage .ct-notif")).includes("Coupé") && !(await lireStock(`notif/abonnes/${NINA.id}.json`)), "elle coupe : le serveur l'oublie");
 const apres = (await recus(telNina)).length;
-const bilan2 = await cron(true);
-ok(bilan2.personnes === 1 && bilan2.envoyes === 0 && (await recus(telNina)).length === apres, "le lendemain (forcé) : plus rien pour elle");
+await appli.waitForTimeout(400);
+ok((await ecrireA(TOM, cleNina, "Tu dors ?")) === 200, "Tom lui écrit encore");
+await appli.waitForTimeout(2500);
+ok((await recus(telNina)).length === apres, "… plus rien n'arrive sur son téléphone");
 await toucher(appli, interrupteur);
 await appli.waitForFunction(() => document.querySelector("#o-personnage .ct-notif .ct-interrupteur")?.getAttribute("aria-checked") === "true", null, { timeout: 15000 });
 ok((await lireStock(`notif/abonnes/${NINA.id}.json`))?.abonnements?.length === 1, "et elle le rallume d'un toucher");
 // ↩️ « QUAND ON RÉPOND À TES MÈMES » : un second interrupteur, allumé d'office ; elle le coupe, puis le rallume
 await appli.waitForSelector("#o-personnage .ct-reponses .ct-interrupteur", { timeout: 15000 });
 const reponses = appli.locator("#o-personnage .ct-reponses .ct-interrupteur");
-ok((await reponses.getAttribute("aria-checked")) === "true" && (await texte(appli, "#o-personnage .ct-reponses")).includes("Quand on répond à tes mèmes"), "« Quand on répond à tes mèmes » : allumé d'office, à part du mème du jour");
+ok((await reponses.getAttribute("aria-checked")) === "true" && (await texte(appli, "#o-personnage .ct-reponses")).includes("Quand on répond à tes mèmes"), "« Quand on répond à tes mèmes » : allumé d'office, à part");
 await toucher(appli, reponses);
 await appli.waitForFunction(() => document.querySelector("#o-personnage .ct-reponses .ct-interrupteur")?.getAttribute("aria-checked") === "false", null, { timeout: 15000 });
 const ficheCoupee = await lireStock(`notif/abonnes/${NINA.id}.json`);
-ok(ficheCoupee?.reponses === false && ficheCoupee.abonnements?.length === 1 && (await texte(appli, "#o-personnage .ct-reponses")).includes("Coupé"), "elle le coupe : plus de « … t'a répondu ! » (le mème du jour, lui, reste allumé)");
+ok(ficheCoupee?.reponses === false && ficheCoupee.abonnements?.length === 1 && (await texte(appli, "#o-personnage .ct-reponses")).includes("Coupé"), "elle le coupe : plus de « … t'a répondu ! » (les autres notifications, elles, restent allumées)");
 await toucher(appli, reponses);
 await appli.waitForFunction(() => document.querySelector("#o-personnage .ct-reponses .ct-interrupteur")?.getAttribute("aria-checked") === "true", null, { timeout: 15000 });
 ok((await lireStock(`notif/abonnes/${NINA.id}.json`))?.reponses !== false, "et le rallume");
@@ -279,15 +282,6 @@ await insta.waitForSelector("#o-personnage .ct-installee .ct-installer", { timeo
 await toucher(insta, "#o-personnage .ct-installee .ct-installer");
 await insta.waitForSelector(".ct-feuille", { timeout: 15000 });
 ok((await texte(insta, ".ct-feuille h2")) === "Ouvre ClikMe dans ton navigateur" && (await texte(insta, "#o-personnage .ct-notif")).includes("Ouvre d’abord ClikMe dans ton navigateur"), "dans Instagram : « Ouvre ClikMe dans ton navigateur »");
-
-// ═══ SANS FORCER : L'HEURE DE PARIS DÉCIDE, ET JAMAIS DEUX FOIS LE MÊME JOUR ═══
-// (en dernier : entre 11 h et midi à Paris, cet appel envoie vraiment — la CI passe parfois à cette heure-là)
-const sansForcer = await cron(false);
-const encore = await cron(false);
-ok(
-  sansForcer.rien ? Boolean(encore.rien) : sansForcer.personnes >= 1 && encore.deja === true,
-  sansForcer.rien ? `sans forcer, l'heure de Paris décide (${sansForcer.rien})` : `à 11 h, l'envoi part (${sansForcer.envoyes} notification), et pas une deuxième fois le même jour`,
-);
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.join(" | ").slice(0, 300)})` : ""}`);
 await b.close();

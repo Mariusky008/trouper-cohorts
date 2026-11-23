@@ -245,19 +245,11 @@ export default async function PageMemes() {
               Les vocaux baissent : {msSemaine.vocaux} ces 7 derniers jours, contre {msAvant.vocaux} les 7 d’avant. Il faudra peut-être remettre la voix en avant.
             </p>
           )}
-          {/* 🔔 LE MÈME DU JOUR À 11 H 30 (le lot 3) : combien l'ont demandé, et ce qu'a donné le dernier envoi */}
-          <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>🔔 Le mème du jour à 11 h 30</h2>
+          {/* 🔔 LES NOTIFICATIONS (le lot 3) : combien les ont demandées (le mème du jour de 11 h 30 est parti le 23 novembre 2026) */}
+          <h2 style={{ margin: "26px 0 4px", fontSize: 18 }}>🔔 Les notifications</h2>
           {nf.cles ? (
             <p style={{ margin: "0 0 10px", color: "#444" }} data-notif="">
-              <b>{nf.abonnes}</b> personne{nf.abonnes > 1 ? "s l’ont demandé" : " l’a demandé"} ·{" "}
-              {nf.dernier ? (
-                <>
-                  dernier envoi le {nf.dernier.jour} : <b>{nf.dernier.envoyes}</b> notification{nf.dernier.envoyes > 1 ? "s parties" : " partie"}, {nf.dernier.dejaRepondu} déjà répondu, {nf.dernier.morts} téléphone
-                  {nf.dernier.morts > 1 ? "s" : ""} abandonné{nf.dernier.morts > 1 ? "s" : ""} (effacé{nf.dernier.morts > 1 ? "s" : ""})
-                </>
-              ) : (
-                "pas encore d’envoi."
-              )}
+              <b>{nf.abonnes}</b> personne{nf.abonnes > 1 ? "s les ont demandées" : " les a demandées"} (leurs proches, le mot du matin).
             </p>
           ) : (
             <p style={{ margin: "0 0 10px", padding: 12, borderRadius: 10, background: "#fff4e5" }}>

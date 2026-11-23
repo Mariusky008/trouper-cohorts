@@ -219,7 +219,7 @@ ok(
   `#mois mène à « Moi », où elle se mérite : neuf jours sur dix (${gagner.slice(0, 160)})`,
 );
 ok((await hugo.locator("#o-personnage").isVisible()) && (await hugo.locator(".mc-barre button.mc-moi.pris").count()) === 1 && (await hugo.locator(".mc-nav button.pris").count()) === 0 && (await hugo.locator("#o-rencontre").count()) === 0, "elle est dans « Moi », sous son prénom (« Rencontres » est effacé)");
-ok((await texte(hugo, "#o-personnage .fm a.fm-lien")).includes("Le mème du jour") && (await hugo.locator('#o-personnage .fm a.fm-lien[href="#jour"]').count()) === 1, "« 🔥 Le mème du jour › » : la raison de revenir aujourd'hui");
+ok((await texte(hugo, "#o-personnage .fm a.fm-lien")).includes("Ce qui se passe en ce moment") && (await hugo.locator('#o-personnage .fm a.fm-lien[href="#decouvrir"]').count()) === 1, "« 🎞️ Ce qui se passe en ce moment › » (le fil de Découvrir) : la raison de revenir aujourd'hui");
 await fermerPablito(hugo, "#o-personnage");
 await hugo.screenshot({ path: `${D}/ma-figurine-0c-mois-a-gagner.png` });
 // LE DIXIÈME JOUR : elle se fabrique toute seule (ici sans moteur d'image : sa figurine, avec le thème et sa phrase)
@@ -475,13 +475,13 @@ await hugo.waitForSelector(".tf-moi .tf-reponse", { timeout: 30000 });
 ok((await texte(hugo, ".tf-reponse")).includes("Tu réponds à Léa") && (await texte(hugo, ".tf-reponse")).includes("Coucou Camille"), "« ↩️ Tu réponds à Léa » : son mème, et ses mots");
 // 🎁 SON PREMIER MÈME, DÉJÀ ÉCRIT ; ✨ LES MÈMES PRÊTS
 ok((await hugo.locator(".tf-texte textarea").inputValue()).startsWith("Salut ! C’est moi… en figurine") && (await hugo.locator(".tf-premier").count()) === 0, "son premier mème est déjà écrit (le conseil se tait quand il répond)");
-// 🎲 « PAS D'IDÉE ? » (9 novembre 2026) : toutes les aides dans une feuille — Surprends-moi, le mème du jour, les phrases
+// 🎲 « PAS D'IDÉE ? » (9 novembre 2026) : toutes les aides dans une feuille — Surprends-moi, l'idée du jour, les phrases
 ok((await hugo.locator(".tf-moi .tf-dit .tf-prets, .tf-moi .tf-dit .tf-surprends, .tf-moi .tf-visages .tf-prets").count()) === 0, "les aides ne s'étalent plus dans la page");
 await hugo.locator(".tf-pas-idee").click();
 await hugo.waitForSelector(".tf-feuille-idee.ouverte", { timeout: 5000 });
 const prets = await hugo.locator(".tf-feuille-idee .tf-prets button").allInnerTexts();
 const aides = (await hugo.locator(".tf-feuille-idee .tf-idee").allInnerTexts()).map((x) => x.replace(/\s+/g, " "));
-ok(aides.length === 2 && aides[0].includes("Surprends-moi") && aides[1].includes("Le mème du jour") && prets.length >= 8 && prets.some((x) => x.includes("Joyeux anniversaire")) && prets.some((x) => x.includes("Bravo")), `« 🎲 Pas d’idée ? » : Surprends-moi, le mème du jour, puis les phrases toutes prêtes (${prets.slice(0, 4).join(" · ")}…)`);
+ok(aides.length === 2 && aides[0].includes("Surprends-moi") && aides[1].includes("L’idée du jour") && prets.length >= 8 && prets.some((x) => x.includes("Joyeux anniversaire")) && prets.some((x) => x.includes("Bravo")), `« 🎲 Pas d’idée ? » : Surprends-moi, l'idée du jour, puis les phrases toutes prêtes (${prets.slice(0, 4).join(" · ")}…)`);
 await hugo.screenshot({ path: `${D}/ma-figurine-3-pas-idee.png` });
 await hugo.locator(".tf-feuille-idee .tf-feuille-fermer").click();
 await hugo.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });

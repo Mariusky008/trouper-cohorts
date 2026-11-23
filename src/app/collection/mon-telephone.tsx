@@ -1,15 +1,16 @@
 "use client";
 
 /**
- * 📲 CLIKME SUR SON TÉLÉPHONE, ET 🔔 LE MÈME DU JOUR À 11 H 30 (le lot 3, 7 novembre 2026) — l'écran. La logique :
+ * 📲 CLIKME SUR SON TÉLÉPHONE, ET 🔔 SES NOTIFICATIONS (le lot 3, 7 novembre 2026) — l'écran. La logique :
  * `lib/direct/appli-collection.ts` (le téléphone) et `appli-collection-serveur.ts` (le serveur).
  *
  *   · `FeuilleInstaller` — « Comment la mettre sur ton écran d'accueil », selon son téléphone (iPhone : Partager, puis
  *     « Sur l'écran d'accueil » ; Android : ⋮, « Installer l'appli » ; Instagram & co : ouvrir dans le vrai navigateur).
- *   · `InviterAppli` — demandée AU BON MOMENT, une fois : juste après sa réponse au mème du jour, ou à la première
- *     ouverture de l'appli posée sur l'iPhone. « Plus tard » est retenu une semaine.
- *   · `MonTelephone` — dans « Moi », pour toujours : installée ou pas, et le mème du jour à 11 h 30, qu'il coupe ou
- *     rallume d'un toucher.
+ *   · `ProposerLesNotifications` — demandées AU BON MOMENT, une fois : à la première ouverture de l'appli posée sur
+ *     l'écran d'accueil, dans « Messages ». « Plus tard » est retenu une semaine.
+ *   · `MonTelephone` — dans « Moi », pour toujours : installée ou pas, et les notifications de ses proches, qu'il coupe
+ *     ou rallume d'un toucher.
+ * (Le mème du jour et sa notification de 11 h 30 sont partis le 23 novembre 2026 : l'humeur du jour a pris sa place.)
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
@@ -132,13 +133,11 @@ function texteRefus(e: EtatNotif) {
 }
 
 /**
- * 🔔📲 L'INVITATION, AU BON MOMENT. `apres` : « jour » (dans « Créer », sur le mème du jour, à la première ouverture de
- * l'appli posée — avant le 19 novembre 2026, sur sa carte dans « Découvrir »), « postee » (juste après avoir posté sa
- * réponse). Une
- * seule chose à la fois :
- * l'appli sur iPhone d'abord (sans elle, pas de notification), sinon la notification.
+ * 🔔 LES NOTIFICATIONS, DEMANDÉES AU BON MOMENT : l'appli vient d'être posée sur l'écran d'accueil, et elle s'ouvre sur
+ * « Messages » — là, une fois : « Tes proches te parlent : je te préviens ? ». « Plus tard » est retenu une semaine. (Avant
+ * le 23 novembre 2026, c'était « le mème du jour à 11 h 30 », dans « Créer » : le mème du jour est parti.)
  */
-export function InviterAppli({ apres, repondu = true }: { apres: "jour" | "postee"; repondu?: boolean }) {
+export function ProposerLesNotifications() {
   const i = useAppli();
   const [fait, setFait] = useState("");
   const [occupe, setOccupe] = useState(false);
@@ -149,52 +148,32 @@ export function InviterAppli({ apres, repondu = true }: { apres: "jour" | "poste
         {fait}
       </p>
     );
-  if (i.plusTard || !(repondu || i.installee)) return null;
-  const demander = i.notif === "a-demander";
-  const installer = !i.installee && (i.notif === "a-installer" || (i.plateforme === "android" && i.proposable && !demander));
-  if (!installer && !demander) return null;
+  if (i.plusTard || !i.installee || i.notif !== "a-demander") return null;
   const allumer = async () => {
     setOccupe(true);
     const r = await allumerNotif();
     setOccupe(false);
-    setFait(r.etat === "allumee" ? "✓ C’est réglé : le mème du jour arrivera vers 11 h 30." : r.erreur || texteRefus(r.etat) || "");
+    setFait(r.etat === "allumee" ? "✓ C’est réglé : je te préviendrai quand un proche te parle." : r.erreur || texteRefus(r.etat) || "");
   };
   return (
-    <aside className="ct-invite" aria-label={installer ? "Installer ClikMe" : "Le mème du jour à 11 h 30"}>
-      {installer ? (
-        <>
-          <b>📲 Mets ClikMe sur ton écran d’accueil</b>
-          <span>Ta figurine à un toucher, et le mème du jour qui t’attend chaque jour vers 11 h 30.</span>
-          <span className="ct-boutons">
-            <button type="button" className="ct-principal" onClick={() => void preparerInstallation()}>
-              📲 Installer ClikMe
-            </button>
-            <button type="button" className="ct-plus-tard" onClick={direPlusTard}>
-              Plus tard
-            </button>
-          </span>
-        </>
-      ) : (
-        <>
-          <b>{i.installee && apres === "jour" && !repondu ? "🔔 Dernière étape : le mème du jour" : "🔔 Demain, un nouveau thème"}</b>
-          <span>Je te préviens chaque jour vers 11 h 30 ? (Jamais si tu as déjà répondu.)</span>
-          <span className="ct-boutons">
-            <button type="button" className="ct-principal" disabled={occupe} onClick={() => void allumer()}>
-              🔔 Oui, préviens-moi
-            </button>
-            <button type="button" className="ct-plus-tard" onClick={direPlusTard}>
-              Plus tard
-            </button>
-          </span>
-        </>
-      )}
+    <aside className="ct-invite" aria-label="Les notifications de tes proches">
+      <b>🔔 Tes proches te parlent : je te préviens ?</b>
+      <span>Quand un proche te parle, te répond ou t’invite. Seulement quand c’est pour toi.</span>
+      <span className="ct-boutons">
+        <button type="button" className="ct-principal" disabled={occupe} onClick={() => void allumer()}>
+          🔔 Oui, préviens-moi
+        </button>
+        <button type="button" className="ct-plus-tard" onClick={direPlusTard}>
+          Plus tard
+        </button>
+      </span>
     </aside>
   );
 }
 
 /**
- * 📱 DANS « MOI », POUR TOUJOURS : l'appli sur son écran d'accueil, le mème du jour à 11 h 30 (il le coupe ici) ; et, les
- * notifications allumées, ↩️ « Quand on répond à tes mèmes » (allumé par défaut, gardé sur le serveur).
+ * 📱 DANS « MOI », POUR TOUJOURS : l'appli sur son écran d'accueil, les notifications de ses proches (il les coupe ici) ;
+ * et, les notifications allumées, ↩️ « Quand on répond à tes mèmes » (allumé par défaut, gardé sur le serveur).
  */
 export function MonTelephone() {
   const i = useAppli();
@@ -238,9 +217,9 @@ export function MonTelephone() {
     setOccupe(false);
   };
   const etatTexte: Record<EtatNotif, string> = {
-    allumee: "Activé sur ce téléphone. Jamais si tu as déjà répondu.",
+    allumee: "Activé sur ce téléphone : quand un proche te parle, te répond ou t’invite.",
     coupee: "Coupé. Tu peux le rallumer quand tu veux.",
-    "a-demander": "Un nouveau thème chaque jour : je te préviens ?",
+    "a-demander": "Quand un proche te parle : je te préviens ?",
     "a-installer": i.plateforme === "dans-une-appli" ? "Ouvre d’abord ClikMe dans ton navigateur." : "Sur iPhone, il faut d’abord ClikMe sur ton écran d’accueil.",
     refusee: texteRefus("refusee"),
     indisponible: "Ce navigateur ne reçoit pas de notifications.",
@@ -272,11 +251,11 @@ export function MonTelephone() {
           🔔
         </span>
         <span className="ct-quoi">
-          <b>Le mème du jour, vers 11 h 30</b>
+          <b>Les notifications de tes proches</b>
           <small>{erreur || etatTexte[i.notif]}</small>
         </span>
         {interrupteur ? (
-          <button type="button" role="switch" aria-checked={allumee} aria-label="Le mème du jour à 11 h 30" className={`ct-interrupteur${allumee ? " pris" : ""}`} disabled={occupe} onClick={() => void basculer()}>
+          <button type="button" role="switch" aria-checked={allumee} aria-label="Les notifications de tes proches" className={`ct-interrupteur${allumee ? " pris" : ""}`} disabled={occupe} onClick={() => void basculer()}>
             <i />
           </button>
         ) : i.notif === "a-installer" ? (
