@@ -110,7 +110,7 @@ export function FigurineAssise({ f, hauteur, bonjour }: { f: Pick<FigurinePosee,
         {/* (🗣️ sa tête « bouche ouverte », chargée d'avance : elle passe devant quand sa voix est forte) */}
         {f.parle && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="afg-tete" src={f.parle} alt="" draggable={false} data-tete-parle={bouche ? "1" : undefined} style={{ left: `${f.corps.boite[0] * 100}%`, top: `${f.corps.boite[1] * 100}%`, width: `${f.corps.boite[2] * 100}%`, height: `${f.corps.boite[3] * 100}%`, ...(bouche ? {} : { visibility: "hidden" }) }} />
+          <img className="afg-parle" src={f.parle} alt="" draggable={false} data-tete-parle={bouche ? "1" : undefined} style={{ left: `${f.corps.boite[0] * 100}%`, top: `${f.corps.boite[1] * 100}%`, width: `${f.corps.boite[2] * 100}%`, height: `${f.corps.boite[3] * 100}%`, ...(bouche ? {} : { visibility: "hidden" }) }} />
         )}
         {orn}
         {pancarte}
@@ -1004,7 +1004,7 @@ export const STYLES_AUTOUR =
 .afg-bulle.grande{font-size:16px;padding:10px 16px;max-width:300px}
 .afg-assise{position:relative;display:block;flex:none}
 .afg-assise img{position:absolute;inset:0;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
-.afg-assise img.afg-tete{right:auto;bottom:auto}
+.afg-assise img.afg-tete,.afg-assise img.afg-parle{right:auto;bottom:auto}
 .afg-assise.vide{border-radius:40% 40% 16px 16px;background:rgba(255,255,255,.08)}
 .afg-prenom{margin-top:-4px;padding:1px 8px;border-radius:8px;background:rgba(0,0,0,.6);font-size:11.5px;font-weight:800}
 .afg-fig.moi .afg-prenom{background:#FF2E9A}

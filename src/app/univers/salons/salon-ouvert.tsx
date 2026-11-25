@@ -2340,7 +2340,7 @@ function SaTeteDuJour({ p, tete, hauteur }: { p: PresentSalon; tete: NonNullable
       <img className="so-jour-tete" src={tete.src} alt="" draggable={false} style={{ ...pose, ...(bouche ? { visibility: "hidden" } : {}) }} />
       {tete.parle && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="so-jour-tete" src={tete.parle} alt="" draggable={false} data-tete-parle style={{ ...pose, ...(bouche ? {} : { visibility: "hidden" }) }} />
+        <img className="so-jour-parle" src={tete.parle} alt="" draggable={false} data-tete-parle style={{ ...pose, ...(bouche ? {} : { visibility: "hidden" }) }} />
       )}
       {/* (🔥🎧❤️ « Elle change toute seule » : ce qu'elle porte, par-dessus — sans étiquettes, c'est petit ici) */}
       <Ornements o={p.ornements ? { ...p.ornements, boite: tete.boite } : null} etiquettes={false} />
@@ -2455,7 +2455,7 @@ const STYLES = `
 .so-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));user-select:none}
 .so-jour{position:relative;display:block;flex:none}
 .so-jour img{position:absolute;left:0;top:0;width:100%;height:100%}
-.so-jour img.so-jour-tete{filter:none}
+.so-jour img.so-jour-tete,.so-jour img.so-jour-parle{filter:none}
 .so-fig small{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.6);white-space:nowrap;max-width:110%;overflow:hidden;text-overflow:ellipsis}
 .so-fig.moi small{background:#FF2E9A;color:#2a0f1f}
 .so-fig.fantome{cursor:default;pointer-events:none}
@@ -2519,7 +2519,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-halo{position:absolute;left:50%;bottom:-10%;width:min(170%,300px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(246,181,75,.5) 0%,rgba(255,46,154,.2) 38%,rgba(255,46,154,0) 68%);animation:so-brille 3.2s ease-in-out infinite;pointer-events:none;z-index:-1}
 @keyframes so-brille{0%,100%{opacity:.5;transform:translateX(-50%) scale(.94)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
 .so-grande .so-jour img{filter:drop-shadow(0 8px 12px rgba(0,0,0,.5))}
-.so-grande .so-jour img.so-jour-tete{filter:none}
+.so-grande .so-jour img.so-jour-tete,.so-grande .so-jour img.so-jour-parle{filter:none}
 .so-grande .so-une-image img{position:static;width:auto;height:100%}
 .so-souffle{transform-origin:50% 100%;animation:so-souffle 4.5s ease-in-out infinite}
 @keyframes so-souffle{0%,100%{transform:scale(1,1)}50%{transform:scale(1.006,1.012)}}
