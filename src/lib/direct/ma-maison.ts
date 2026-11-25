@@ -61,6 +61,25 @@ export type ScenePiece = {
 /** 🙂 Sa figurine qui fait la tête de son humeur du jour (`MaMaisonVue.tete`). */
 export type TeteMaison = { e: ExpressionFigurine; corps: string; ratio: number; src: string; boite: Zone };
 
+/** 👋 (lot F2) Un coucou reçu : de qui (son prénom, sa figurine, sa clé), quand. */
+export type CoucouVu = { id: string; prenom: string; image?: string; cle?: string; le: string };
+
+/** 🚪👋 (lot F2) Les mots des maisons ouvertes : la question à l'inscription, le coucou. */
+export const PHRASES_PORTE = {
+  titre: "Qui peut venir voir ta pièce ?",
+  chapo: "Tu pourras changer d’avis quand tu veux, dans Ma maison (🚪).",
+  proches: "👯 Mes proches seulement",
+  prochesDit: "Seuls tes proches entrent.",
+  passions: "🧭 Aussi ceux qui aiment ce que j’aime",
+  passionsDit: "Ta pièce passe dans le fil de ceux de ton âge qui partagent une de tes passions. Ils voient seulement ce que tu y as ajouté toi-même.",
+  coucouBulle: "👋 Coucou !",
+  coucouDe: (prenom: string) => `${prenom} te fait coucou`,
+  coucouSous: "Vous aimez les mêmes choses. Réponds si tu veux.",
+  repondre: "👋 Lui répondre",
+  pasMaintenant: "Pas maintenant",
+  repondu: (prenom: string) => `✓ ${prenom} voit ta réponse`,
+} as const;
+
 /** Ce que « Ma maison » reçoit : sa pièce (choisie, ou pas encore), sa scène si elle est prête, sa figurine. */
 export type MaMaisonVue = {
   piece: PieceDuo | null;
@@ -70,7 +89,9 @@ export type MaMaisonVue = {
   contenu?: ContenuMaison;
   vuLe?: number;
   /** 🚪 (lot M4) qui peut entrer chez moi ; j'ai déclaré 18 ans ou plus (pour l'ouvrir à tous) ; ma clé (mon lien) */
-  visibilite?: Visibilite;
+  visibilite?: VisibiliteMaison;
+  /** 👋 (lot F2) ceux qui m'ont fait coucou et attendent ma réponse : leur figurine apparaît dans ma pièce */
+  coucous?: CoucouVu[];
   adulte?: boolean;
   cle?: string;
   /** 🙂 (lot M5) mon humeur du jour, que ma figurine montre (mes proches la voient aussi) */
@@ -183,9 +204,19 @@ export const PHRASES_VISITE = {
   commeEux: "👀 Voir ma maison comme mes visiteurs",
   retour: "‹ Retour",
 } as const;
-/** 🚪 (lot M4) Les trois choix, pour sa maison. */
-export const VISIBILITES_MAISON: readonly { v: Visibilite; titre: string; dit: string }[] = [
+/**
+ * 🚪 QUI PEUT ENTRER DANS SA MAISON : les trois choix de l'univers (`Visibilite`), et 🧭 « passions » (le lot F2 du fil,
+ * 25 novembre 2026 ; `docs/univers/fil.md`) — ses proches, et ceux de son âge qui partagent une de ses passions : sa pièce
+ * passe dans leur fil de Découvrir. Les 15-17 ans peuvent la choisir : seuls d'autres 15-17 ans la voient.
+ */
+export type VisibiliteMaison = Visibilite | "passions";
+export const VISIBILITES_DE_MAISON = ["proches", "passions", "tous", "moi"] as const satisfies readonly VisibiliteMaison[];
+/** Sa pièce passe-t-elle dans le fil des autres ? (« passions », et « tous » qui le comprend) */
+export const ouverteAuFil = (v: VisibiliteMaison | undefined) => v === "passions" || v === "tous";
+/** 🚪 (lot M4) Les choix, pour sa maison (🧭 « passions » : le lot F2). */
+export const VISIBILITES_MAISON: readonly { v: VisibiliteMaison; titre: string; dit: string }[] = [
   { v: "proches", titre: "👯 Mes proches", dit: "Seuls tes proches entrent, et voient tout ce que tu as gardé." },
+  { v: "passions", titre: "🧭 Aussi ceux qui aiment ce que j’aime", dit: "Ta pièce passe dans le fil de ceux de ton âge qui partagent une de tes passions. Ils voient seulement ce que tu as ajouté toi-même." },
   { v: "tous", titre: "🌍 Tout le monde", dit: "Ta maison apparaît dans « Les univers à visiter ». Tes proches voient tout ; les autres, seulement ce que tu as ajouté toi-même." },
   { v: "moi", titre: "🔒 Moi seul", dit: "Personne n’entre chez toi." },
 ];

@@ -6,7 +6,10 @@
 // GET ?catalogue=1          → { catalogue: { pieces, piece } } : les neuf, dans l'ordre de son âge, et leurs vignettes
 // GET ?chez=<clé>           → { visite } : 🚪 (lot M4) sa maison, en visite (`MaisonVisitee`) — selon qui peut entrer ;
 //                              ouverte à tout visiteur (sans l'interrupteur : seuls ceux qui ont choisi une pièce en ont une)
-// POST { action: "visibilite", v, adulte? } → { maison } : 🚪 (lot M4) qui peut entrer chez lui
+// POST { action: "visibilite", v, adulte?, majeur? } → { maison } : 🚪 (lot M4) qui peut entrer chez lui ; 🧭 (lot F2)
+//                              « passions » demande son âge s'il ne l'a jamais dit (409 { age: true } ; `majeur` : oui / non)
+// POST { action: "coucou", id, oui } → { maison } : 👋 (lot F2) il répond à un coucou (`oui`), ou le laisse
+// (GET et POST : `maison.coucous`, 👋 ceux qui lui ont fait coucou et attendent sa réponse)
 // POST { action: "repondre", chez, texte } → { visite } : 💬 (lot M5) sa réponse à la question du jour d'un proche
 // POST { action: "choisir", piece } → { maison } : sa pièce (une pièce prête), ou en changer
 // POST { action: "vu" }     → { ok } : ✨ (lot M2) il est venu chez lui — ce qu'il a gardé jusqu'ici ne s'annonce plus
@@ -20,13 +23,20 @@ import { habitantCourant } from "@/lib/direct/habitant";
 import { maisonPourTous } from "@/lib/direct/interrupteurs-serveur";
 import { catalogueDeLaMaison, choisirSaPiece, maMaison, maMaisonVue } from "@/lib/direct/ma-maison-serveur";
 import { ajouterChezMoi, enleverDeChezMoi } from "@/lib/direct/etagere-serveur";
-import { choisirVisibiliteMaison, maisonVisitee } from "@/lib/direct/visites-serveur";
+import { choisirVisibiliteMaison, coucousRecus, maisonVisitee, repondreCoucou } from "@/lib/direct/visites-serveur";
 import { repondreChezLui } from "@/lib/direct/question-maison-serveur";
 
 export const dynamic = "force-dynamic";
 
 const sansCache = { "cache-control": "private, no-store" };
 const permise = async () => maisonPourTous() || (await isCurrentUserAdmin());
+
+type Supabase = ReturnType<typeof createAdminClient>;
+/** Sa maison, et 👋 (lot F2) les coucous qui attendent sa réponse. */
+async function saMaison(supabase: Supabase, h: string) {
+  const [m, coucous] = await Promise.all([maMaison(supabase, h), coucousRecus(supabase, h).catch(() => [])]);
+  return m.scene && coucous.length ? { ...m, coucous } : m;
+}
 
 async function habitant() {
   const supabase = createAdminClient();
@@ -44,7 +54,7 @@ export async function GET(request: Request) {
   const { supabase, moi } = await habitant();
   if (!moi) return NextResponse.json({ error: "Ta figurine n’est pas sur ce téléphone." }, { status: 401, headers: sansCache });
   if (new URL(request.url).searchParams.get("catalogue") === "1") return NextResponse.json({ ok: true, catalogue: await catalogueDeLaMaison(supabase, moi.id) }, { headers: sansCache });
-  return NextResponse.json({ ok: true, maison: await maMaison(supabase, moi.id) }, { headers: sansCache });
+  return NextResponse.json({ ok: true, maison: await saMaison(supabase, moi.id) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
@@ -65,17 +75,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { headers: sansCache });
   }
   if (p?.action === "visibilite") {
-    const r = await choisirVisibiliteMaison(supabase, moi.id, p.v, p.adulte);
+    const r = await choisirVisibiliteMaison(supabase, moi.id, p.v, p.adulte, p.majeur);
+    if (!r.ok) return NextResponse.json({ error: r.error, ...(r.age ? { age: true } : {}) }, { status: r.statut ?? 400, headers: sansCache });
+    return NextResponse.json({ ok: true, maison: await saMaison(supabase, moi.id) }, { headers: sansCache });
+  }
+  if (p?.action === "coucou") {
+    const r = await repondreCoucou(supabase, moi.id, p.id, p.oui);
     if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
-    return NextResponse.json({ ok: true, maison: await maMaison(supabase, moi.id) }, { headers: sansCache });
+    return NextResponse.json({ ok: true, maison: await saMaison(supabase, moi.id) }, { headers: sansCache });
   }
   if (p?.action === "ajouter" || p?.action === "enlever") {
     const r = p.action === "ajouter" ? await ajouterChezMoi(supabase, moi, p) : await enleverDeChezMoi(supabase, moi, p.id);
     if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
-    return NextResponse.json({ ok: true, ...("id" in r && r.id ? { id: r.id } : {}), maison: await maMaison(supabase, moi.id) }, { headers: sansCache });
+    return NextResponse.json({ ok: true, ...("id" in r && r.id ? { id: r.id } : {}), maison: await saMaison(supabase, moi.id) }, { headers: sansCache });
   }
   if (p?.action !== "choisir") return NextResponse.json({ error: "Action inconnue." }, { status: 400, headers: sansCache });
   const r = await choisirSaPiece(supabase, moi.id, p.piece);
   if (r.error) return NextResponse.json({ error: r.error }, { status: 400, headers: sansCache });
-  return NextResponse.json({ ok: true, maison: await maMaison(supabase, moi.id) }, { headers: sansCache });
+  return NextResponse.json({ ok: true, maison: await saMaison(supabase, moi.id) }, { headers: sansCache });
 }

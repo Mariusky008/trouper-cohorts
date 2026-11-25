@@ -29,7 +29,11 @@ import { completerMonde, lireFicheMonde } from "./fiches-serveur";
 import { cheminVisibiliteMaison, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vieDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { objetsDeMaMaison } from "./etagere-serveur";
 import { questionChezLui } from "./question-maison-serveur";
-import { objetsPlaces, placerChezMoi, type MaisonVisitee } from "./ma-maison";
+import { VISIBILITES_DE_MAISON, objetsPlaces, ouverteAuFil, placerChezMoi, type CoucouVu, type MaisonVisitee, type VisibiliteMaison } from "./ma-maison";
+import { lirePassions } from "./passions-serveur";
+import { direSesDixHuitAns, sesDixHuitAns } from "./majorite-serveur";
+import type { IdTheme } from "./decouvrir";
+import { coucouDe, ecrireCoucous, lireCoucous } from "./coucous-serveur";
 import { maisonPourTous } from "./interrupteurs-serveur";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
@@ -74,12 +78,31 @@ async function quiEst(supabase: Supabase, h: string): Promise<{ prenom: string; 
   return { prenom, ...(neutre ? { image: neutre } : {}) };
 }
 
-/** Peut-il entrer chez lui ? (« moi » : personne ; « proches » : ses proches ; « tous » : tout le monde). */
-async function peutEntrer(supabase: Supabase, visiteur: string | null, h: string, f: Pick<FicheMonde, "visibilite">): Promise<{ ok: boolean; proche: boolean }> {
+/**
+ * 🧭 (lot F2 du fil) Deux personnes de la même tranche d'âge (les 15-17 ans entre eux ; un âge jamais dit : personne) qui
+ * partagent une passion : la première en commun (dans l'ordre de celui qui reçoit), sinon `null`.
+ */
+export async function passionEnCommun(supabase: Supabase, visiteur: string, h: string): Promise<IdTheme | null> {
+  const [pv, ph, av, ah] = await Promise.all([
+    lirePassions(supabase, visiteur).catch(() => null),
+    lirePassions(supabase, h).catch(() => null),
+    sesDixHuitAns(supabase, visiteur).catch(() => null),
+    sesDixHuitAns(supabase, h).catch(() => null),
+  ]);
+  if (av === null || ah === null || av !== ah || !pv || !ph) return null;
+  return ph.passions.find((x) => pv.passions.includes(x)) ?? null;
+}
+
+/**
+ * Peut-il entrer chez lui ? (« moi » : personne ; « proches » : ses proches ; 🧭 « passions » : ses proches, et ceux de
+ * son âge qui partagent une de ses passions ; « tous » : tout le monde).
+ */
+async function peutEntrer(supabase: Supabase, visiteur: string | null, h: string, f: { visibilite: VisibiliteMaison }): Promise<{ ok: boolean; proche: boolean }> {
   if (visiteur === h) return { ok: true, proche: true };
   const proche = visiteur ? await seParlent(supabase, visiteur, h) : false;
   if (f.visibilite === "moi") return { ok: false, proche };
   if (f.visibilite === "proches") return { ok: proche, proche };
+  if (f.visibilite === "passions") return { ok: proche || Boolean(visiteur && (await passionEnCommun(supabase, visiteur, h))), proche };
   return { ok: true, proche };
 }
 
@@ -87,7 +110,7 @@ async function peutEntrer(supabase: Supabase, visiteur: string | null, h: string
  * 🏠 (lot M4) CHEZ QUI ENTRE-T-ON : sa pièce du catalogue (« Ma maison ») quand il en a une et que l'interrupteur est
  * allumé — ou qu'il n'a pas d'univers fabriqué —, sinon son univers d'avant. `null` : rien à visiter.
  */
-async function maisonOuUnivers(supabase: Supabase, h: string): Promise<{ piece: true; visibilite: Visibilite } | { piece: false; f: FicheMonde } | null> {
+async function maisonOuUnivers(supabase: Supabase, h: string): Promise<{ piece: true; visibilite: VisibiliteMaison } | { piece: false; f: FicheMonde } | null> {
   const [f, piece] = await Promise.all([lireFicheMonde(supabase, h).catch(() => null), lireSaPiece(supabase, h).catch(() => null)]);
   const univers = f?.references.decor ? f : null;
   if (piece && (maisonPourTous() || !univers)) return { piece: true, visibilite: await visibiliteDeLaMaison(supabase, h) };
@@ -382,17 +405,107 @@ async function publierDansDecouvrir(supabase: Supabase, h: string, oui: boolean)
  * 🚪 (lot M4, `ma-maison.md` section 8) QUI PEUT ENTRER DANS SA MAISON : ses proches (d'office), tout le monde (18 ans ou
  * plus déclarés : elle entre alors dans « 🏡 Les univers à visiter »), lui seul.
  */
-export async function choisirVisibiliteMaison(supabase: Supabase, h: string, v: unknown, adulte: unknown): Promise<Resultat> {
-  const choix = VISIBILITES.find((x) => x === v) as Visibilite | undefined;
+export async function choisirVisibiliteMaison(supabase: Supabase, h: string, v: unknown, adulte: unknown, majeur?: unknown): Promise<Resultat & { age?: true }> {
+  const choix = VISIBILITES_DE_MAISON.find((x) => x === v);
   if (!choix) return { error: "Qui peut entrer ?", statut: 400 };
   if (!(await lireSaPiece(supabase, h))) return { error: "Choisis d’abord ta pièce.", statut: 400 };
+  // (🧭 lot F2 : sa pièce passe dans le fil de ceux de son âge — il faut le savoir ; on ne le devine jamais)
+  if (choix === "passions" && (await sesDixHuitAns(supabase, h).catch(() => null)) === null) {
+    if (typeof majeur !== "boolean") return { error: "As-tu 18 ans ou plus ?", statut: 409, age: true };
+    const d = await direSesDixHuitAns(supabase, h, majeur);
+    if (d.error) return { error: d.error, statut: d.statut ?? 400 };
+  }
   if (choix === "tous" && !(await estAdulte(supabase, h))) {
     if (adulte !== true) return { error: "Pour l’ouvrir à tous, il faut avoir 18 ans ou plus.", statut: 403 };
     await ecrireJson(supabase, cheminAdulte(h), { le: new Date().toISOString() });
   }
   if (!(await ecrireJson(supabase, cheminVisibiliteMaison(h), { v: choix, le: new Date().toISOString() }))) return { error: "Ça n’a pas marché.", statut: 502 };
-  await publierDansDecouvrir(supabase, h, choix === "tous");
+  await Promise.all([publierDansDecouvrir(supabase, h, choix === "tous"), publierDansLeFil(supabase, h, ouverteAuFil(choix))]);
   return { ok: true };
+}
+
+// ─── 🧭 lot F2 du fil : les maisons ouvertes, le coucou ──────────────────────────────────────────────
+/**
+ * Les maisons ouvertes au fil (« passions » ou « tous ») : `maisons/ouvertes.json` = { liste: [{ h, le, m }] }, les plus
+ * récentes à la fin ; `m` : sa tranche d'âge au moment où il l'a ouverte (« adultes », « jeunes ») — un premier tri, la
+ * vraie règle (`passionEnCommun`) est revérifiée à chaque lecture.
+ */
+const CHEMIN_OUVERTES = "maisons/ouvertes.json";
+type Ouverte = { h: string; le: string; m: "adultes" | "jeunes" };
+async function publierDansLeFil(supabase: Supabase, h: string, oui: boolean): Promise<void> {
+  const p = await lireJson<{ liste?: Ouverte[] }>(supabase, CHEMIN_OUVERTES);
+  const sans = (Array.isArray(p.liste) ? p.liste : []).filter((x) => s(x?.h) && x.h !== h);
+  const age = oui ? await sesDixHuitAns(supabase, h).catch(() => null) : null;
+  const ajout: Ouverte[] = oui && age !== null ? [{ h, le: new Date().toISOString(), m: age ? "adultes" : "jeunes" }] : [];
+  if (!oui && sans.length === (Array.isArray(p.liste) ? p.liste.length : 0)) return;
+  await ecrireJson(supabase, CHEMIN_OUVERTES, { liste: [...sans, ...ajout].slice(-1000) });
+}
+
+/** Une maison ouverte, telle que le fil la reçoit (le fil y pose la figurine). */
+export type MaisonOuverte = { h: string; cle: string; prenom: string; image: string; passion: IdTheme; coucou?: "envoye" | "repondu" };
+
+/**
+ * 🧭 Les maisons ouvertes pour lui : ni la sienne ni celles de ses proches (il les a déjà), de sa tranche d'âge, avec une
+ * passion en commun ; les plus récemment ouvertes d'abord. Jamais une pièce vide : sans sa vignette, elle ne vient pas.
+ */
+export async function maisonsPourLeFil(supabase: Supabase, moi: string, max = 3): Promise<MaisonOuverte[]> {
+  const [p, age, miennes] = await Promise.all([lireJson<{ liste?: Ouverte[] }>(supabase, CHEMIN_OUVERTES), sesDixHuitAns(supabase, moi).catch(() => null), lirePassions(supabase, moi).catch(() => null)]);
+  if (age === null || !miennes) return [];
+  const m = age ? "adultes" : "jeunes";
+  const candidats = (Array.isArray(p.liste) ? p.liste : []).filter((x) => s(x?.h) && x.h !== moi && x.m === m).slice(-24).reverse();
+  const vus = await Promise.all(
+    candidats.map(async ({ h }): Promise<MaisonOuverte | null> => {
+      const [passion, proche, visibilite, piece] = await Promise.all([passionEnCommun(supabase, moi, h), seParlent(supabase, moi, h).catch(() => true), visibiliteDeLaMaison(supabase, h), lireSaPiece(supabase, h).catch(() => null)]);
+      if (!passion || proche || !ouverteAuFil(visibilite) || !piece) return null;
+      const [image, { prenom }, cle, coucous] = await Promise.all([vignetteDeLaPiece(supabase, piece).catch(() => ""), quiEst(supabase, h), poserProfil(supabase, h), lireCoucous(supabase, h).catch(() => [])]);
+      if (!image || !cle) return null;
+      const mien = coucous.filter((c) => c.de === moi).pop();
+      return { h, cle, prenom, image, passion, ...(mien ? { coucou: mien.repondu_le ? ("repondu" as const) : ("envoye" as const) } : {}) };
+    }),
+  );
+  return vus.filter((x): x is MaisonOuverte => Boolean(x)).slice(0, max);
+}
+
+/** 👋 Lui faire coucou : sa figurine apparaît dans sa pièce ; il est prévenu ; une fois par jour chez la même personne. */
+export async function faireCoucou(supabase: Supabase, visiteur: Habitant, cle: unknown): Promise<Resultat> {
+  const c = await chezQui(supabase, visiteur, cle);
+  if (!c.h) return { error: c.error, statut: c.statut };
+  const liste = await lireCoucous(supabase, c.h);
+  const jour = jourParis();
+  if (liste.some((x) => x.de === visiteur.id && jourParis(new Date(x.le)) === jour)) return { ok: true };
+  if (!(await ecrireCoucous(supabase, c.h, [...liste, coucouDe(visiteur.id)]))) return { error: "Ça n’a pas marché.", statut: 502 };
+  const { prenom } = await quiEst(supabase, visiteur.id);
+  await prevenirUneFoisParJour(supabase, c.h, "coucou", { titre: `👋 ${prenom} te fait coucou`, corps: "Sa figurine est chez toi. Réponds si tu veux.", url: "/collection#maison", tag: "coucou" }).catch(() => undefined);
+  return { ok: true };
+}
+
+/** 👋 Il répond à un coucou (`oui`), ou le laisse (il s'en va de sa pièce) ; celui qui l'a fait est prévenu de la réponse. */
+export async function repondreCoucou(supabase: Supabase, h: string, id: unknown, oui: unknown): Promise<Resultat> {
+  const liste = await lireCoucous(supabase, h);
+  const x = liste.find((c) => c.id === s(id));
+  if (!x) return { error: "Ce coucou n’est plus là.", statut: 404 };
+  if (x.repondu_le || x.laisse_le) return { ok: true };
+  const maj = liste.map((c) => (c.id === x.id ? { ...c, ...(oui === true ? { repondu_le: new Date().toISOString() } : { laisse_le: new Date().toISOString() }) } : c));
+  if (!(await ecrireCoucous(supabase, h, maj))) return { error: "Ça n’a pas marché.", statut: 502 };
+  if (oui === true) {
+    const { prenom } = await quiEst(supabase, h);
+    await prevenirUneFoisParJour(supabase, x.de, "coucou-reponse", { titre: `👋 ${prenom} t’a répondu`, corps: "Ton coucou est arrivé. Retrouve sa pièce dans Découvrir.", url: "/collection#decouvrir", tag: "coucou" }).catch(() => undefined);
+  }
+  return { ok: true };
+}
+
+/** 👋 Les coucous qui attendent sa réponse (les trois derniers jours) : qui, sa figurine, sa clé. */
+export async function coucousRecus(supabase: Supabase, h: string): Promise<CoucouVu[]> {
+  const liste = (await lireCoucous(supabase, h)).filter((c) => !c.repondu_le && !c.laisse_le && Date.now() - Date.parse(c.le) < 3 * 86400_000);
+  const vus = await Promise.all(
+    liste.slice(-3).reverse().map(async (c): Promise<CoucouVu> => {
+      // (sa figurine détourée, celle de sa maison, quand il en a une : à la même échelle que la mienne)
+      const [q, cle, maison] = await Promise.all([quiEst(supabase, c.de), poserProfil(supabase, c.de).catch(() => ""), figurineDeLaMaison(supabase, c.de).catch(() => null)]);
+      const image = maison?.src || q.image;
+      return { id: c.id, prenom: q.prenom, le: c.le, ...(image ? { image } : {}), ...(cle ? { cle } : {}) };
+    }),
+  );
+  return vus;
 }
 
 /**
@@ -428,7 +541,11 @@ export async function maisonVisitee(supabase: Supabase, qui: Habitant | null | P
   ]);
   if (!piece) return { etat: "absent" };
   // (qui peut entrer : lui ; ses proches, sauf « Moi seul » ; tout le monde, s'il l'ouvre à tous — `peutEntrer`)
-  const ok = chezSoi || (visibilite !== "moi" && (visibilite !== "proches" || proche));
+  // (🧭 lot F2 : « passions » — ses proches, et ceux de son âge qui partagent une de ses passions)
+  const ok =
+    chezSoi ||
+    (visibilite !== "moi" &&
+      (visibilite === "tous" || proche || (visibilite === "passions" && Boolean(visiteur && (await passionEnCommun(supabase, visiteur.id, h).catch(() => null))))));
   if (!ok) return { etat: visibilite === "moi" ? "ferme" : "reserve", prenom: hote.prenom };
   if (!scene) return { etat: "absent" };
   const montres = proche ? objets : objets.filter((o) => o.aMoi);

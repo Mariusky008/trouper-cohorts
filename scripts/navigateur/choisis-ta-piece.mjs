@@ -142,6 +142,10 @@ ok((await p.locator(".mmc-fermer").count()) === 0, "… sans ✕ (il faut choisi
 ok((await p.locator(".mmc-carte[data-piece]").first().getAttribute("data-piece")) === "hangar", "… le hangar d’abord (16 ans)");
 await p.locator('.mmc-carte[data-piece="hangar"]').click();
 await p.locator('button[data-geste="installer"]').click();
+// (🚪 lot F2 du fil : juste après son premier choix, « Qui peut venir voir ta pièce ? »)
+ok(await attendre(p, async () => (await p.locator("[data-question-porte]").count()) === 1 && (await p.locator("[data-question-porte] [data-porte]").count()) === 2), "« 🚪 Qui peut venir voir ta pièce ? » : ses proches seulement, ou aussi ceux qui aiment ce qu’elle aime");
+await p.locator('[data-question-porte] [data-porte="proches"]').click();
+ok(await attendre(p, async () => (await p.locator("[data-question-porte]").count()) === 0), "… « 👯 Mes proches seulement » : la question s’en va");
 ok(await attendre(p, async () => (await p.locator(".mmc-fig img").count()) === 1 && (await choix.count()) === 0), "« Je m’installe ici » : chez elle, sa figurine au centre");
 await p.screenshot({ path: `${D}/choisis-ta-piece-3-chez-elle.png` });
 await propre(p, "chez elle");
@@ -168,6 +172,7 @@ ok(await attendre(q, async () => (await lien.count()) === 1 && (await q.locator(
 await lien.click();
 await q.locator('.mmc-carte[data-piece="salon"]').click();
 await q.locator('button[data-geste="installer"]').click();
+await q.locator('[data-question-porte] [data-porte="proches"]').click({ timeout: 15000 });
 ok(await attendre(q, async () => (await q.locator(".mmc-fig img").count()) === 1 && (await q.locator(".mmc-choix").count()) === 0), "le salon : sa pièce");
 await q.reload({ waitUntil: "networkidle" });
 ok(await attendre(q, async () => (await q.locator(".mmc-fig img").count()) === 1 && (await q.locator("[data-carte-piece]").count()) === 0), "rechargé : sa pièce, plus de carte");
@@ -199,6 +204,7 @@ await z.screenshot({ path: `${D}/choisis-ta-piece-6-allume.png` });
 // (🎨 `ma-maison.md`, section 23 : dans l'onglet aussi, l'en-tête, la pièce en carte et les trois grands boutons)
 await z.locator("#o-maison .mmc-carte[data-piece]").first().click();
 await z.locator('#o-maison .mmc-apercu [data-geste="installer"]').click();
+await z.locator('[data-question-porte] [data-porte="proches"]').click({ timeout: 15000 });
 ok(await attendre(z, async () => (await z.locator("#o-maison .mmc-gros-bouton").count()) === 3 && /Ma maison/.test(await z.locator("#o-maison .mmc-entete").innerText())), "installée : dans l'onglet, « Ma maison », la pièce en carte, les trois grands boutons");
 const cadreZ = await z.locator("#o-maison .mmc-cadre").boundingBox();
 ok(cadreZ && cadreZ.height > 300 && cadreZ.width > 300, `… une vraie carte (${Math.round(cadreZ?.width)} × ${Math.round(cadreZ?.height)} pt)`);

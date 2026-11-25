@@ -11,6 +11,9 @@
  * toucher deux fois l'écran (ou la toucher, elle) et elle réagit — dans un salon, pour de vrai : elle s'y assoit le
  * temps qu'on y est, sa réaction part au salon, et ceux qui sont là la voient. Chaque bouton ouvre ce qui existe déjà.
  * L'ancienne page de Découvrir (ma télé du jour, tous les salons) est derrière « Tous les salons » (`#salons`).
+ * 🏡 Le lot F2 (25 novembre 2026) : les maisons ouvertes de ceux de son âge qui partagent une de ses passions — sa pièce,
+ * sa figurine ; « 🚪 Frapper à sa porte » (la visite), « 👋 Lui faire coucou » (toucher deux fois aussi) ; et, en haut,
+ * la surprise d'une visite qui l'attend dans « Messages » (🎁 un cadeau, 🚪 quelqu'un qui a frappé).
  */
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { OngletVisible } from "./guide";
@@ -20,15 +23,16 @@ import { vignetteYouTube } from "@/lib/direct/tele";
 import { PLAN_GRADIN, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import { GESTES_SALON, PLACES_SALON, REACTIONS_SALON, type MessageSalon, type PresentSalon } from "@/lib/direct/salons-ouverts";
 import { REACTIONS_MUSIQUE } from "@/lib/direct/platine";
-import { PHRASES_FIL as P, reactionDuFil, type BulleFil, type FilVue, type PieceFil, type SalonFil } from "@/lib/direct/fil-decouvrir";
+import { PHRASES_FIL as P, reactionDuFil, type BulleFil, type FilVue, type MaisonFil, type PieceFil, type SalonFil } from "@/lib/direct/fil-decouvrir";
 
 const ROUTE = "/api/direct/fil-decouvrir";
 const SALONS = "/api/direct/salons-ouverts";
+const VISITES = "/api/direct/visites";
 /** La mémoire du fil ne vaut que dix minutes : ce qui était en direct ne l'est plus. */
 const MEMOIRE_MS = 10 * 60_000;
 const CLE_INDICE = "clikme-fil-indice-vu";
 
-const cleDe = (p: PieceFil) => (p.sorte === "salon" ? `s:${p.theme}` : p.sorte === "autour" ? `a:${p.figurine.id}` : "h");
+const cleDe = (p: PieceFil) => (p.sorte === "salon" ? `s:${p.theme}` : p.sorte === "autour" ? `a:${p.figurine.id}` : p.sorte === "maison" ? `m:${p.cle}` : "h");
 const heuresRestantes = (fin: string) => Math.max(1, Math.round((Date.parse(fin) - Date.now()) / 3600_000));
 const texteDe = (m: MessageSalon) =>
   m.sorte === "texte" ? (m.texte ?? "") : m.sorte === "reaction" ? ([...REACTIONS_SALON, ...REACTIONS_MUSIQUE].find((r) => r.cle === m.cle)?.e ?? "") : (GESTES_SALON.find((g) => g.cle === m.cle)?.e ?? "");
@@ -191,6 +195,8 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
       if (!p) return;
       if (indice) indiceVu();
       const r = reactionDuFil(p);
+      // (🏡 lot F2 : dans une maison, c'est un vrai coucou)
+      if (p.sorte === "maison") return void coucou(p);
       const autres = p.sorte === "salon" ? p.presents.filter((x) => x.q !== monQ.current) : [];
       setReaction({ k, e: r.e, texte: p.sorte === "salon" ? P.teVoient(autres.length, autres[0]?.prenom) : "", n: Date.now() });
       if (p.sorte !== "salon") return;
@@ -212,8 +218,24 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
       }
       await poster({ action: "ecrire", salon: id, sorte: "reaction", cle: r.cle });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [piecesParCle, indice, indiceVu, dire],
   );
+
+  /** 👋 (lot F2) Lui faire coucou : sa figurine apparaît dans sa pièce, la personne est prévenue (une fois par jour). */
+  async function coucou(p: MaisonFil) {
+    const k = cleDe(p);
+    setReaction({ k, e: "👋", texte: P.coucouEnvoye(p.prenom), n: Date.now() });
+    if (p.coucou) return;
+    const r = await fetch(VISITES, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "coucou", cle: p.cle }) })
+      .then(async (x) => ({ ok: x.ok, j: ((await x.json().catch(() => ({}))) ?? {}) as { error?: string } }))
+      .catch(() => ({ ok: false, j: {} as { error?: string } }));
+    if (!r.ok) {
+      setReaction(null);
+      return dire(r.j.error || "Ça n’a pas marché.");
+    }
+    setPieces((l) => l.map((x) => (x.sorte === "maison" && x.cle === p.cle ? { ...x, coucou: "envoye" } : x)));
+  }
 
   // toucher deux fois l'écran (pas un bouton, pas un lien)
   const surAppui = (e: React.PointerEvent) => {
@@ -264,6 +286,36 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
           const k = cleDe(p);
           return p.sorte === "salon" ? (
             <PieceSalon key={k} k={k} p={p} />
+          ) : p.sorte === "maison" ? (
+            <section key={k} className="fd-carte fd-maison" data-k={k} data-piece="maison" data-maison={p.cle} data-coucou={p.coucou ?? undefined}>
+              <span className="fd-etiquette">{P.maisonEtiquette(p.passion.e, p.passion.nom)}</span>
+              <div className="fd-milieu fd-chez">
+                <div className="fd-chez-piece" style={{ backgroundImage: `url(${p.image})` }}>
+                  {p.coucou === "repondu" && (
+                    <span className="fd-bulle-fixe fd-chez-bulle" data-repondu>
+                      {P.coucouRepondu(p.prenom)}
+                    </span>
+                  )}
+                  <span className="fd-chez-fig">
+                    <FigurineAssise f={p.figurine} hauteur={190} />
+                  </span>
+                </div>
+              </div>
+              <div className="fd-bas">
+                <h2>{P.maisonTitre(p.prenom)}</h2>
+                <p>{p.coucou === "envoye" ? P.coucouEnvoye(p.prenom) : P.maisonSous(p.passion.court)}</p>
+                <span className="fd-boutons">
+                  <a className="fd-bouton" href={`/univers/chez/${encodeURIComponent(p.cle)}`} data-frapper>
+                    {P.frapper}
+                  </a>
+                  {!p.coucou && (
+                    <button type="button" className="fd-bouton fd-second" data-faire-coucou onClick={() => void coucou(p)}>
+                      {P.coucou}
+                    </button>
+                  )}
+                </span>
+              </div>
+            </section>
           ) : p.sorte === "autour" ? (
             <section key={k} className="fd-carte fd-autour" data-k={k} data-piece="autour" data-pose={p.figurine.id}>
               <span className="fd-etiquette">📍 {P.autourEtiquette(p.nomLieu)}</span>
@@ -326,6 +378,10 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
         {fil?.invitation ? (
           <a className="fd-pastille" href={`/univers/salons?chez=${encodeURIComponent(fil.invitation.cle)}`} data-invitation>
             {P.invitation(fil.invitation.prenom)}
+          </a>
+        ) : fil?.surprise ? (
+          <a className="fd-pastille" href="#proches" data-surprise={fil.surprise.genre}>
+            {fil.surprise.genre === "cadeau" ? P.surpriseCadeau(fil.surprise.prenom) : P.surpriseToc(fil.surprise.prenom)}
           </a>
         ) : fil?.demandes ? (
           <button type="button" className="fd-pastille" data-demandes onClick={onTousLesSalons}>
@@ -470,6 +526,12 @@ export const STYLES_FIL = `
 .fd-salon[data-theme="musique"]{background:radial-gradient(90% 50% at 50% 35%,rgba(122,92,255,.22),transparent 70%),#130A1E}
 .fd-autour{background:radial-gradient(80% 45% at 50% 40%,rgba(242,196,107,.2),transparent 70%),#1E120E}
 .fd-humeur{background:radial-gradient(80% 45% at 50% 40%,rgba(255,122,192,.18),transparent 70%),#1A0C18}
+.fd-maison{background:radial-gradient(80% 45% at 50% 40%,rgba(127,240,196,.16),transparent 70%),#0E1714}
+.fd-chez{justify-content:center}
+.fd-chez-piece{position:relative;width:100%;max-width:460px;height:100%;max-height:52dvh;border-radius:22px;background-size:cover;background-position:center;box-shadow:0 18px 40px -16px #000,inset 0 0 0 1px rgba(255,255,255,.12)}
+.fd-chez-fig{position:absolute;left:50%;bottom:6%;transform:translateX(-50%)}
+.fd-chez-bulle{position:absolute;left:50%;top:10%;transform:translateX(-50%);z-index:1;white-space:nowrap;animation:fd-surgit .35s cubic-bezier(.2,1.4,.4,1)}
+.fd-boutons{display:flex;flex-wrap:wrap;gap:8px}
 .fd-attente{background:linear-gradient(100deg,#0B0409 30%,#1A0D16 50%,#0B0409 70%);background-size:200% 100%;animation:mc-reflet 1.4s linear infinite}
 .fd-etiquette{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;max-width:calc(100% - 150px);padding:5px 12px 5px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fd-direct{width:8px;height:8px;border-radius:50%;background:#FF4D6D;animation:fd-direct 1.4s ease-in-out infinite}

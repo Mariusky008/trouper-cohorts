@@ -7,6 +7,8 @@
  * - ☀️ l'humeur du jour de ses proches (ceux à qui il parle), leur figurine qui en fait la tête ;
  * - sa figurine à lui, avec la tête de son humeur : elle est au bord de chaque pièce ;
  * - ce qui l'attend ailleurs : une invitation devant la télé d'un proche, des demandes de proche ;
+ * - 🏡 (lot F2) les maisons ouvertes de ceux de son âge qui partagent une de ses passions (`maisonsPourLeFil`) ;
+ * - 🎁🚪 (lot F2) la surprise d'une visite qui l'attend dans « Messages » (un cadeau, quelqu'un qui a frappé) ;
  * - 🪑 à la fin, tous les autres salons, sans personne en ce moment (ses passions, la musique, le reste), avec ce qui s'y
  *   est dit aujourd'hui : on peut s'y asseoir le premier sans passer par « Tous les salons ».
  *
@@ -22,7 +24,9 @@ import { humeurDuJour, poserProfil, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison, teteDeLaMaison } from "./ma-maison-serveur";
 import { humeurDe } from "./rituel";
 import { estDouce } from "./humeur-reponse";
-import { PIECES_MAX, ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type PieceFil, type ProcheHumeurFil, type SilhouetteFil } from "./fil-decouvrir";
+import { maisonsPourLeFil, mesVisites } from "./visites-serveur";
+import { themeDe } from "./decouvrir";
+import { PIECES_MAX, ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type MaisonFil, type PieceFil, type ProcheHumeurFil, type SilhouetteFil } from "./fil-decouvrir";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -67,10 +71,32 @@ async function poseesAutour(supabase: Supabase, moi: Habitant): Promise<AutourFi
   return vues.filter((x): x is AutourFil => Boolean(x));
 }
 
+/** 🏡 (lot F2) Les maisons ouvertes pour lui, avec la figurine de chacun (sans figurine, la maison ne vient pas). */
+async function maisonsOuvertes(supabase: Supabase, moi: Habitant): Promise<MaisonFil[]> {
+  const maisons = await maisonsPourLeFil(supabase, moi.id);
+  const vues = await Promise.all(
+    maisons.map(async (m): Promise<MaisonFil | null> => {
+      const [figurine, t] = [await silhouetteDuFil(supabase, m.h).catch(() => null), themeDe(m.passion)];
+      if (!figurine || !t) return null;
+      return { sorte: "maison", cle: m.cle, prenom: m.prenom, image: m.image, figurine, passion: { e: t.e, nom: t.nom, court: t.court }, ...(m.coucou ? { coucou: m.coucou } : {}) };
+    }),
+  );
+  return vues.filter((x): x is MaisonFil => Boolean(x));
+}
+
+/** 🎁🚪 (lot F2) La surprise d'une visite qui l'attend : un cadeau à ouvrir d'abord, sinon quelqu'un qui a frappé. */
+async function surpriseDeVisite(supabase: Supabase, moi: Habitant): Promise<FilVue["surprise"]> {
+  const v = await mesVisites(supabase, moi.id);
+  const cadeau = v?.enAttente[0];
+  if (cadeau) return { genre: "cadeau", prenom: cadeau.de };
+  const toc = v?.passes.find((x) => x.nouveau && !x.ignore);
+  return toc ? { genre: "toc", prenom: toc.prenom } : undefined;
+}
+
 /** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`, puis les salons sans personne), et sa figurine. */
 export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<FilVue> {
   const ouverts = salonsOuverts();
-  const [prenom, figurine, direct, autour, humeurs, invitations, demandes] = await Promise.all([
+  const [prenom, figurine, direct, autour, humeurs, invitations, demandes, maisons, surprise] = await Promise.all([
     prenomDe(supabase, moi).catch(() => ""),
     silhouetteDuFil(supabase, moi.id),
     ouverts ? salonsEnDirect(supabase, moi).catch((): Awaited<ReturnType<typeof salonsEnDirect>> => ({ salons: [] })) : Promise.resolve<Awaited<ReturnType<typeof salonsEnDirect>>>({ salons: [] }),
@@ -78,13 +104,15 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
     humeursDesProches(supabase, moi).catch(() => [] as ProcheHumeurFil[]),
     mesInvitations(supabase, moi).catch(() => []),
     ouverts ? mesDemandes(supabase, moi).catch(() => []) : Promise.resolve([]),
+    maisonsOuvertes(supabase, moi).catch(() => [] as MaisonFil[]),
+    surpriseDeVisite(supabase, moi).catch(() => undefined),
   ]);
   const vivants = direct.salons.filter((x) => x.presents.length);
   const vides = direct.salons.filter((x) => !x.presents.length);
   const passions = vivants.filter((x) => x.mien);
   const autres = vivants.filter((x) => !x.mien);
   const humeur: HumeurFil[] = humeurs.length ? [{ sorte: "humeur", proches: humeurs }] : [];
-  const groupes: PieceFil[][] = [passions, humeur, autour, autres];
+  const groupes: PieceFil[][] = [passions, humeur, maisons, autour, autres];
   const inv = invitations[0];
   return {
     moi: { prenom: prenom || "Toi", figurine },
@@ -92,5 +120,6 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
     pieces: [...ordreDuFil(groupes), ...vides].slice(0, PIECES_MAX),
     ...(inv ? { invitation: { cle: inv.cle, prenom: inv.prenom } } : {}),
     ...(demandes.length ? { demandes: demandes.length } : {}),
+    ...(surprise ? { surprise } : {}),
   };
 }

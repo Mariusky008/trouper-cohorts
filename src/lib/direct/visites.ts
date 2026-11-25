@@ -109,7 +109,8 @@ export type Passage = {
   ignore?: boolean;
 };
 export type MesVisites = {
-  visibilite: Visibilite;
+  /** (🧭 « passions » : sa maison du catalogue, le lot F2 du fil) */
+  visibilite: Visibilite | "passions";
   adulte: boolean;
   cle: string;
   passes: Passage[];

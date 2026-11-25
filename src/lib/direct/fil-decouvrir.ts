@@ -14,8 +14,9 @@
  * Les pièces du lot F1 : les salons où il y a quelqu'un en ce moment, le salon de la musique, les figurines posées dans
  * Autour, l'humeur de ses proches ; puis (le propriétaire, le même jour : « on ne me propose pas de salon, même s'il est
  * vide ? ») tous les autres salons, sans personne en ce moment, avec ce qui s'y est dit aujourd'hui — sans avoir à passer
- * par « Tous les salons ». Les maisons ouvertes (F2), les séances entre proches en cours (F3) et l'ordre fin (F4)
- * viendront après.
+ * par « Tous les salons ». 🏡 Le lot F2 (25 novembre 2026) : les maisons ouvertes de ceux de son âge qui partagent une de
+ * ses passions (frapper, faire coucou), et la surprise d'une visite. Les séances entre proches en cours (F3) et l'ordre
+ * fin (F4) viendront après.
  */
 import type { IdTheme } from "./decouvrir";
 import type { PlaceGradin } from "./salons-gradins";
@@ -58,7 +59,22 @@ export type AutourFil = { sorte: "autour"; lieu: string; nomLieu: string; figuri
 /** ☀️ L'humeur du jour de ses proches (ceux qui l'ont dite aujourd'hui). */
 export type ProcheHumeurFil = { cle: string; prenom: string; humeur: string; emoji: string; nom: string; doux: boolean; figurine: SilhouetteFil };
 export type HumeurFil = { sorte: "humeur"; proches: ProcheHumeurFil[] };
-export type PieceFil = SalonFil | AutourFil | HumeurFil;
+/**
+ * 🏡 (lot F2) La maison ouverte de quelqu'un de son âge qui partage une de ses passions : sa pièce, sa figurine, la
+ * passion en commun ; « 🚪 Frapper à sa porte » (la visite), « 👋 Lui faire coucou ».
+ */
+export type MaisonFil = {
+  sorte: "maison";
+  cle: string;
+  prenom: string;
+  /** la vignette de sa pièce */
+  image: string;
+  figurine: SilhouetteFil;
+  passion: { e: string; nom: string; court: string };
+  /** 👋 son coucou : envoyé, ou la personne a répondu (jamais une fausse réponse : c'est la sienne) */
+  coucou?: "envoye" | "repondu";
+};
+export type PieceFil = SalonFil | AutourFil | HumeurFil | MaisonFil;
 
 export type FilVue = {
   moi: { prenom: string; figurine: SilhouetteFil | null };
@@ -68,6 +84,8 @@ export type FilVue = {
   /** 🎬 ce qui l'attend ailleurs : la première invitation devant la télé d'un proche, les demandes de proche reçues */
   invitation?: { cle: string; prenom: string };
   demandes?: number;
+  /** 🎁🚪 (lot F2) la surprise d'une visite qui l'attend dans « Messages » : un cadeau, ou quelqu'un qui a frappé */
+  surprise?: { genre: "cadeau" | "toc"; prenom: string };
 };
 
 /** Combien de pièces au plus (le fil se recharge en revenant). */
@@ -95,8 +113,9 @@ export function ordreDuFil(groupes: PieceFil[][], max = PIECES_MAX): PieceFil[] 
   return fil;
 }
 
-/** La réaction de sa figurine quand il touche deux fois : 😂 dans un salon, 💃 dans celui de la musique. */
-export const reactionDuFil = (p: PieceFil): { cle: string; e: string } => (p.sorte === "salon" && p.theme === "musique" ? { cle: "danse", e: "💃" } : p.sorte === "salon" ? { cle: "rire", e: "😂" } : { cle: "coeur", e: "❤️" });
+/** La réaction de sa figurine quand il touche deux fois : 😂 dans un salon, 💃 dans celui de la musique, 👋 dans une maison. */
+export const reactionDuFil = (p: PieceFil): { cle: string; e: string } =>
+  p.sorte === "salon" && p.theme === "musique" ? { cle: "danse", e: "💃" } : p.sorte === "salon" ? { cle: "rire", e: "😂" } : p.sorte === "maison" ? { cle: "coucou", e: "👋" } : { cle: "coeur", e: "❤️" };
 
 /** « Sam », « Sam et Léa », « Sam, Léa et Hugo ». */
 export const listePrenoms = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}` : (l[0] ?? ""));
@@ -132,6 +151,15 @@ export const PHRASES_FIL = {
   invitation: (prenom: string) => `🎬 ${prenom} t’invite devant sa télé`,
   demandes: (n: number) => (n > 1 ? `👯 ${n} demandes de proche` : "👯 Une demande de proche"),
   voir: "Voir",
+  maisonEtiquette: (e: string, nom: string) => `${e} ${nom}, comme toi`,
+  maisonTitre: (prenom: string) => `Chez ${prenom}`,
+  maisonSous: (court: string) => `Vous aimez tous les deux : ${court}. Sa pièce est ouverte à ceux qui partagent ses passions.`,
+  frapper: "🚪 Frapper à sa porte",
+  coucou: "👋 Lui faire coucou",
+  coucouEnvoye: (prenom: string) => `👋 Ta figurine est chez ${prenom}`,
+  coucouRepondu: (prenom: string) => `👋 ${prenom} t’a répondu !`,
+  surpriseCadeau: (prenom: string) => `🎁 ${prenom} t’a laissé un cadeau`,
+  surpriseToc: (prenom: string) => `🚪 ${prenom} a frappé à ta porte`,
   age: "Avant d’entrer dans les salons : as-tu 18 ans ou plus ?",
   ageChapo: "Les 15-17 ans ont leurs salons à eux : ils n’y croisent jamais d’adulte.",
   adulte: "J’ai 18 ans ou plus",
