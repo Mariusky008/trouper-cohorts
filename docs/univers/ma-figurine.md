@@ -17,8 +17,8 @@ https://claude.ai/artifact/AAQV8sh6SN382BxzbLF31r
 | — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | ✓ fusionné le 25 novembre (#283) ; section 3 |
 | 2 | « Pendant ton absence » : sa figurine raconte sa journée, de vrais prénoms, de vrais chiffres | ✓ fusionné le 25 novembre (#284) ; section 4 |
 | 3 | L'image à partager : « Ma figurine du jour » | ✓ fusionné le 25 novembre (#286) ; section 5 |
-| 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | section 6 |
-| 5 | La collection | à faire |
+| 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | ✓ fusionné le 25 novembre (#287) ; section 6 |
+| 5 | La collection | section 7 |
 
 Les habits : plus tard. Chaque lot : une PR, ses essais route et navigateur, ce document, et le « oui » du propriétaire.
 
@@ -233,3 +233,30 @@ trop long ou pas un son ; Sam l'entend, et un morceau ; 401 sans cookie, 404 san
 Hugo, Autour ; le refaire, l'ancien effacé ; l'enlever) ; `scripts/navigateur/bonjour.mjs` (sur un iPhone, avec un faux
 micro : l'onglet, enregistrer, « C'est dit », garder ; au salon du foot, toucher Sam : son bonjour, sa voix servie,
 « 🔊 Le bonjour de Sam »).
+
+## 7. Lot 5 : « 🗂️ Ma collection », toutes ses figurines du mois en cartes (25 novembre 2026)
+
+Le propriétaire : « sa collection : toutes mes figurines du mois, alignées comme des cartes, avec les mois encore
+vides ».
+
+**Où** : « Mon double du jour », onglet « 🗓️ Du mois », sous sa figurine de ce mois-ci (`MaFigurineDuMois avecAlbum`,
+`app/collection/album-du-mois.tsx`). Pas dans « Moi » (l'ancienne page), où sa figurine du mois reste seule. Sans
+figurine, pas d'album (jamais une pièce vide) : il crée d'abord sa figurine.
+
+**Ce qu'on voit** : l'année en cours en douze cases, de janvier à décembre, quatre par ligne ; dessous, les années
+d'avant qui ont au moins une carte. Au-dessus de chaque année, un vrai compte : « 2 figurines sur 12 en 2026 » (ou
+« Pas encore de carte en 2026 »). Chaque case dit la vérité (`casesDeLAlbum`) :
+
+| La case | Ce qu'elle montre |
+|---|---|
+| une figurine du mois prête | sa carte : son image, l'emoji du thème et le mois ; on la touche, elle s'ouvre en grand (son thème, son visage du mois, sa phrase du mois, « 🎭 Fais-la parler », « Fermer ») |
+| le mois en cours, pas encore là | ses vrais jours (« 4/10 jours »), ou « ✨ En route » quand elle se fabrique |
+| un mois passé sans figurine | « Vide », l'emoji du thème en gris (rien d'inventé) |
+| un mois à venir | son thème (« Noël »), qui l'attend |
+
+**Aucune donnée nouvelle** : tout vient de `useMois()` (`/api/direct/ma-figurine?mois=1` : celle de ce mois-ci et
+celles d'avant). Le mois en cours est celui du serveur (heure de Paris), jamais l'horloge du téléphone.
+
+**Les essais** : `scripts/navigateur/album-du-mois.mjs` (sur un iPhone : trois figurines du mois semées, le mois
+dernier, celui d'avant et un mois de l'an dernier ; les deux années, chaque case à sa place, les vrais comptes, les
+images, les vrais jours, « Vide », un thème à venir, rien ne déborde ; une carte en grand avec sa phrase, « Fermer »).

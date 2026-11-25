@@ -20,6 +20,7 @@ import { IDEES_PANCARTE, ONGLETS_DOUBLE, PANCARTE_MAX, PHRASES_DOUBLE, PHRASES_I
 import { FigurineVivanteVue, STYLES_VIVANTE } from "@/app/univers/visage/figurine-vivante";
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
+import { STYLES_ALBUM } from "./album-du-mois";
 import { Pancarte } from "./pancarte";
 import { Ornements } from "./ornements";
 import { PHRASES_ORNEMENTS, SERIE_AUREOLE, SERIE_MIN, aDesOrnements } from "@/lib/direct/ornements";
@@ -343,7 +344,7 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
         ) : (
           <section data-panneau="mois">
             <h2>{PHRASES_DOUBLE.moisTitre}</h2>
-            <MaFigurineDuMois />
+            <MaFigurineDuMois avecAlbum />
           </section>
         )}
       </div>
@@ -366,7 +367,7 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
         <small>{PHRASES_DOUBLE.partout}</small>
       </div>
       {image && <ImageDuDouble onFermer={() => setImage(false)} />}
-      <style>{STYLES_MON_DOUBLE + STYLES_VIVANTE + STYLES_FIGURINE_DU_MOIS}</style>
+      <style>{STYLES_MON_DOUBLE + STYLES_VIVANTE + STYLES_FIGURINE_DU_MOIS + STYLES_ALBUM}</style>
     </div>
   );
 }
