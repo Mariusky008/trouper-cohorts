@@ -6,7 +6,7 @@
  * la colère), les dernières (leurs têtes), et « ▶ Rattraper maintenant » (le rattrapage de la nuit, tout de suite).
  */
 import { useCallback, useEffect, useState } from "react";
-import { EXPRESSIONS_FIGURINE, PHRASES_EXPRESSIONS as P, type EtatExpressionsHabitants } from "@/lib/direct/expressions-figurine";
+import { TETES_FIGURINE, PHRASES_EXPRESSIONS as P, type EtatExpressionsHabitants } from "@/lib/direct/expressions-figurine";
 
 const ROUTE = "/api/admin/direct/expressions-habitants";
 const carte = { border: "1px solid #e4e4e7", borderRadius: 12, padding: "12px 14px", margin: "10px 0", background: "#fff" } as const;
@@ -59,7 +59,7 @@ export function ExpressionsHabitants() {
           <b style={{ fontSize: 14 }}>{x.prenom}</b>
           {x.erreur && <span style={{ marginLeft: 8, color: "#b91c1c", fontSize: 13 }}>{x.erreur}</span>}
           <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-            {EXPRESSIONS_FIGURINE.map((e) =>
+            {TETES_FIGURINE.map((e) =>
               x.tetes[e.cle] ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img key={e.cle} src={x.tetes[e.cle]} alt={e.nom} title={e.nom} style={{ width: 64, height: 64, objectFit: "contain", background: "#f4f4f5", borderRadius: 8 }} data-tete={e.cle} />

@@ -126,7 +126,7 @@ const etat = await attendreQue(async () => {
 }, 90000);
 ok(SEPT.every((e) => ADRESSE.test(etat?.tetes?.[e] ?? "")), `ses sept expressions, à adresse stable (${Object.keys(etat?.tetes ?? {}).join(", ")})`);
 const faites = (await expressionsIA()).slice(avant);
-ok(faites.length === 7 && faites.some((c) => c.includes("SAD") && c.includes("no tears running")) && faites.some((c) => c.includes("GRUMPY") && c.includes("never scary")), `sept demandes au moteur : la tristesse et la colère comprises, tendres (${faites.length})`);
+ok(faites.length === 8 && faites.some((c) => c.includes("TALKING")) && faites.some((c) => c.includes("SAD") && c.includes("no tears running")) && faites.some((c) => c.includes("GRUMPY") && c.includes("never scary")), `huit demandes au moteur : la tristesse et la colère comprises, tendres, et la bouche ouverte (${faites.length})`);
 
 // ═══ SON HUMEUR DU JOUR : LA TRISTESSE ═══
 await humeur("tristesse");

@@ -1893,3 +1893,23 @@ salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce
   d'où, 404 ; Léa invitée : elle laisse un mot, Max l'entend ; Inès, pas invitée : 404) ;
   `scripts/navigateur/suite-salon.mjs` (la séance chez Léa : 20 s, « ⏭ Suivante », la carte, la feuille, « Fermer » ;
   une vidéo zappée : pas de carte).
+
+### 38.8 La bouche suit la voix (25 novembre 2026, le propriétaire : « fais le ») — fait
+
+- **Sa tête qui parle** : avec ses sept expressions, le moteur d'image fait une huitième tête, **la bouche ouverte**
+  (son visage habituel, au milieu d'un mot : « ah »), découpée au même endroit. Ce n'est pas une expression (ni la
+  caméra ni son humeur ne la choisissent). Les figurines faites avant (sept têtes) la reçoivent toute seule : une seule
+  demande au moteur, à l'ouverture de l'appli ou la nuit (huit figurines par nuit). La page de l'administrateur la montre.
+- **Quand elle dit un mot** : sa voix enregistrée est lue une fois dans le téléphone (son volume, vingt fois par seconde) ;
+  sa tête « bouche ouverte » passe devant quand la voix est forte, sa tête du moment revient dans les silences. Si le
+  téléphone ne sait pas lire le son, la bouche bat en rythme. Sans tête qui parle encore : elle bat seulement, comme avant.
+- **Au micro et à la réécoute** : ma figurine ouvre la bouche avec ma voix pendant que je parle (le volume du micro,
+  mesuré dans le téléphone : rien ne part), puis quand je réécoute mon mot.
+- **Jamais de voix de synthèse** : seulement sa voix enregistrée, mesurée.
+- **Pas encore** : le bonjour (« Mon bonjour », lot 4 de « Ma figurine ») se joue sans figurine vivante à l'écran ; la
+  même bouche pourra s'y brancher (`lib/direct/bouche.ts`).
+- **Le code** : `lib/direct/bouche.ts` (le volume, `boucheOuverte`), `TETE_PARLE` (`expressions-figurine.ts`, et sa
+  consigne dans `expressions-figurine-serveur.ts`), `FigurineVivanteVue` (`bouche`), `suite-de-la-video.tsx`.
+- **Les essais** : `scripts/essai-expressions-figurine-route.mjs` (huit têtes ; sept seulement : la bouche ouverte se fait,
+  une demande) ; `scripts/navigateur/suite-salon.mjs` (le mot de Sam : quatre syllabes, sa bouche s'ouvre et se ferme
+  dessus, pas en rythme ; fermée à la fin).

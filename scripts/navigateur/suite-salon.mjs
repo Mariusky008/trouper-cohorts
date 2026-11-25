@@ -4,6 +4,8 @@
 // Léa ouvre sa séance chez elle ; la première vidéo passe un moment (plus de 20 s) ; « ⏭ Suivante » : la télé continue,
 // une carte « 🎙️ La suite de la vidéo » reste là pour celle d'avant. Un toucher : la suite (personne encore ; « Laisser un
 // mot avec ma figurine » ; pas de compte à rebours : « Fermer »). « ✕ » la range. Une vidéo à peine vue : pas de carte.
+// 🗣️ (section 38.8) Sam y a laissé un mot (sa voix : des syllabes et des silences) : quand sa figurine le dit, sa bouche
+// s'ouvre sur les syllabes et se ferme dans les silences (sa tête « bouche ouverte », faite avec ses expressions).
 // Rien ne déborde, jamais le mot « exemple », aucune erreur.
 import crypto from "node:crypto";
 import sharp from "sharp";
@@ -118,6 +120,45 @@ const sansCarteCamera = async (p, attente) => {
 };
 
 
+// ═══ 🗣️ SAM : SES TÊTES (LA BOUCHE OUVERTE COMPRISE), PUIS SON MOT SUR LA PREMIÈRE VIDÉO DE LÉA ═══
+const lire = async (chemin) => {
+  const r = await fetch(`${STOCK}/figurines-clients/${chemin}`);
+  return r.status === 200 ? r.json().catch(() => null) : null;
+};
+const empreinte = (chemin) => crypto.createHash("sha1").update(chemin).digest("hex").slice(0, 16);
+const qui8 = (h) => crypto.createHash("sha256").update(`clikme-talkie:qui:${h}`).digest("hex").slice(0, 8);
+await fetch(`${BASE}/api/direct/ma-figurine`, { headers: { cookie: `clikme_habitant=${SAM.jeton}` } });
+const tetesSam = async () => (await lire(`${SAM.id}/calques/${empreinte(`${SAM.id}/perso/v1/assise.png`)}-expressions.json`)) ?? {};
+for (let k = 0; k < 150 && !(await tetesSam()).le; k++) await new Promise((fini) => setTimeout(fini, 400));
+ok(Boolean((await tetesSam()).tetes?.parle), "Sam : ses têtes sont faites, la bouche ouverte comprise");
+// (sa voix : quatre syllabes de 0,3 s, séparées de silences de 0,3 s — un vrai son, que le téléphone sait lire)
+const wav = (() => {
+  const f = 16000;
+  const n = Math.round(f * 2.4);
+  const b = Buffer.alloc(44 + n * 2);
+  b.write("RIFF", 0);
+  b.writeUInt32LE(36 + n * 2, 4);
+  b.write("WAVEfmt ", 8);
+  b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20);
+  b.writeUInt16LE(1, 22);
+  b.writeUInt32LE(f, 24);
+  b.writeUInt32LE(f * 2, 28);
+  b.writeUInt16LE(2, 32);
+  b.writeUInt16LE(16, 34);
+  b.write("data", 36);
+  b.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) {
+    const t = i / f;
+    const fort = Math.floor(t / 0.3) % 2 === 0;
+    b.writeInt16LE(fort ? Math.round(Math.sin(2 * Math.PI * 220 * t) * 18000) : 0, 44 + i * 2);
+  }
+  return b;
+})();
+const vLea = (await (await fetch(`${BASE}/api/direct/tele-du-jour`, { headers: { cookie: `clikme_habitant=${LEA.jeton}` } })).json()).tele?.videos?.[0]?.id;
+const motSam = await (await fetch(`${BASE}/api/direct/mots-video`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${SAM.jeton}` }, body: JSON.stringify({ action: "publier", id: vLea, son: `data:audio/wav;base64,${wav.toString("base64")}`, duree: 2.4, accord: true }) })).json();
+ok(motSam.ok === true, `Sam laisse un mot sur la première vidéo de Léa (${vLea})`);
+
 // ═══ LÉA OUVRE SA SÉANCE ═══
 const lea = await ouvrir(LEA);
 const vivanteLea = reponseVivante(lea);
@@ -141,13 +182,30 @@ ok(!(await deborde(lea)), "rien ne déborde");
 await lea.screenshot({ path: `${D}/suite-salon-0-carte.png` });
 await carte.locator("[data-ouvrir-suite]").click();
 const suite = lea.locator(`[data-suite-video="${v0}"]`);
-ok(await attendre(lea, async () => (await suite.locator("[data-suite-vide]").count()) === 1, 15000), "un toucher : sa suite (personne encore)");
+ok(await attendre(lea, async () => (await suite.locator(`[data-mot="${qui8(SAM.id)}"]`).count()) === 1, 15000), "un toucher : sa suite (le mot de Sam)");
 ok((await suite.locator("[data-laisser-mot]").count()) === 1, "… « Laisser un mot avec ma figurine »");
 ok((await texte(suite.locator("[data-suite-suivante]"))) === "Fermer", "… pas de compte à rebours : « Fermer »");
 await lea.waitForTimeout(1500);
 ok((await texte(suite.locator("[data-suite-suivante]"))) === "Fermer" && (await suite.count()) === 1, "… elle reste ouverte");
 ok(!(await deborde(lea)), "rien ne déborde");
 await lea.screenshot({ path: `${D}/suite-salon-1-suite.png` });
+
+// ═══ 🗣️ LA BOUCHE DE SAM SUIT SA VOIX ═══
+const figSam = suite.locator(`[data-mot="${qui8(SAM.id)}"] [data-vivante]`);
+ok((await figSam.count()) === 1 && (await figSam.locator('img[data-tete="parle"]').count()) === 1, "sa figurine vivante, avec sa tête « bouche ouverte » prête");
+await suite.locator(`[data-ecouter="${qui8(SAM.id)}"]`).click();
+const vues = [];
+const fin = Date.now() + 2600;
+while (Date.now() < fin) {
+  vues.push((await figSam.getAttribute("data-bouche").catch(() => null)) === "1");
+  await lea.waitForTimeout(40);
+}
+let changements = 0;
+for (let i = 1; i < vues.length; i++) if (vues[i] !== vues[i - 1]) changements++;
+ok(vues.some((x) => x) && vues.some((x) => !x), `pendant son mot : sa bouche s'ouvre et se ferme (${vues.filter((x) => x).length} ouverte sur ${vues.length})`);
+ok(changements >= 3 && changements <= 14, `… sur ses syllabes, pas en rythme (${changements} changements pour quatre syllabes)`);
+await lea.waitForTimeout(800);
+ok((await figSam.getAttribute("data-bouche")) !== "1", "son mot fini : la bouche fermée");
 await suite.locator("[data-suite-suivante]").click();
 ok(await attendre(lea, async () => (await lea.locator("[data-suite-video]").count()) === 0 && (await lea.locator("[data-carte-suite]").count()) === 0), "« Fermer » : la suite et la carte s'en vont");
 

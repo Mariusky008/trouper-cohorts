@@ -18,6 +18,7 @@ import { MOTS_VIDEO, PHRASES_MOTS as P, teteA, type MotVu, type SuiteVue, type T
 import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
 import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
 import { useMaTete } from "@/app/univers/visage/ma-tete";
+import { boucheOuverte, enveloppeDuSon } from "@/lib/direct/bouche";
 
 const ROUTE = "/api/direct/mots-video";
 /** (📷 le lot V2 : il a déjà dit « Je l'allume » une fois — rangé sur le téléphone, comme dans les salons) */
@@ -51,7 +52,7 @@ const horloge = () => performance.now();
 const TYPES_SON = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
 
 /** Ce qui joue : quel mot (sa clé), et la tête du moment. */
-type Joue = { q: string; tete: TeteMot | null };
+type Joue = { q: string; tete: TeteMot | null; bouche: boolean };
 
 /**
  * `mode` « fin » (ma télé du jour) : la vidéo vient de finir, « Suivante ⏭ » (seule après quelques secondes) ;
@@ -119,12 +120,16 @@ export function SuiteDeLaVideo({ video, onSuivante, mode = "fin", seance }: { vi
     window.cancelAnimationFrame(anim.current);
     a.pause();
     a.src = m.src;
-    setJoue({ q: m.q, tete: teteA(m.tetes, 0) });
+    setJoue({ q: m.q, tete: teteA(m.tetes, 0), bouche: false });
+    // (🗣️ sa voix, lue une fois : la bouche s'ouvre quand elle est forte — seulement si sa tête qui parle est prête)
+    let volume: number[] | null = null;
+    if (m.vivante?.parle) void enveloppeDuSon(m.src, `${m.q}-${m.le}`).then((x) => void (volume = x));
     const tour = () => {
       setJoue((j) => {
         if (!j || j.q !== m.q) return j;
         const t = teteA(m.tetes, a.currentTime || 0);
-        return t === j.tete ? j : { q: m.q, tete: t };
+        const b = Boolean(m.vivante?.parle) && !a.paused && boucheOuverte(volume, a.currentTime || 0);
+        return t === j.tete && b === j.bouche ? j : { q: m.q, tete: t, bouche: b };
       });
       anim.current = window.requestAnimationFrame(tour);
     };
@@ -236,7 +241,7 @@ export function SuiteDeLaVideo({ video, onSuivante, mode = "fin", seance }: { vi
                     <li key={m.q} className={`${m.repond ? "sv-reponse " : ""}${joue?.q === m.q ? "sv-dit" : ""}`} data-mot={m.q} data-mot-moi={m.moi ? "1" : undefined}>
                       {m.repond && <p className="sv-repond">{P.repondAPrenom(m.repond.prenom)}</p>}
                       <div className="sv-mot">
-                        <Figurine m={m} tete={joue?.q === m.q ? joue.tete : null} parle={joue?.q === m.q} hauteur={64} />
+                        <Figurine m={m} tete={joue?.q === m.q ? joue.tete : null} parle={joue?.q === m.q} bouche={joue?.q === m.q && joue.bouche} hauteur={64} />
                         <div className="sv-qui">
                           <b>{m.moi ? P.toi : m.prenom}</b>
                           <span>
@@ -297,12 +302,12 @@ export function SuiteDeLaVideo({ video, onSuivante, mode = "fin", seance }: { vi
   );
 }
 
-/** Sa figurine : vivante (ses têtes), sinon son image, sinon son initiale ; elle bat pendant qu'elle parle. */
-function Figurine({ m, tete, parle, hauteur }: { m: { prenom: string; vivante?: FigurineVivante | null; figurine: { src: string } | null }; tete: TeteMot | null; parle: boolean; hauteur: number }) {
+/** Sa figurine : vivante (ses têtes, sa bouche qui suit sa voix), sinon son image, sinon son initiale ; elle bat pendant qu'elle parle. */
+function Figurine({ m, tete, parle, bouche = false, hauteur }: { m: { prenom: string; vivante?: FigurineVivante | null; figurine: { src: string } | null }; tete: TeteMot | null; parle: boolean; bouche?: boolean; hauteur: number }) {
   return (
     <span className={`sv-fig${parle ? " parle" : ""}`} style={{ height: hauteur }} aria-hidden="true">
       {m.vivante ? (
-        <FigurineVivanteVue v={m.vivante} hauteur={hauteur} e={tete?.e ?? null} roulis={tete?.r ?? 0} lacet={tete?.l ?? 0} />
+        <FigurineVivanteVue v={m.vivante} hauteur={hauteur} e={tete?.e ?? null} roulis={tete?.r ?? 0} lacet={tete?.l ?? 0} bouche={bouche} />
       ) : m.figurine ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={m.figurine.src} alt="" draggable={false} />
@@ -313,7 +318,9 @@ function Figurine({ m, tete, parle, hauteur }: { m: { prenom: string; vivante?: 
   );
 }
 
-type Prise = { r: MediaRecorder; flux: MediaStream; t0: number; morceaux: Blob[]; fin: number; tic: number; tetes: TeteMot[] };
+/** 🗣️ Au micro : au-dessus de ce volume (le plus fort entendu : 1), ma bouche s'ouvre. */
+const SEUIL_BOUCHE_MICRO = 0.35;
+type Prise = { r: MediaRecorder; flux: MediaStream; t0: number; morceaux: Blob[]; fin: number; tic: number; tetes: TeteMot[]; oreille?: { ctx: AudioContext; n: AnalyserNode; raf: number } };
 type Pret = { blob: Blob; url: string; duree: number; tetes: TeteMot[] };
 
 /**
@@ -328,6 +335,8 @@ function Enregistreur({ video, seance, repondA, remplace, onFini, onAge }: { vid
   const [pret, setPret] = useState<Pret | null>(null);
   const [message, setMessage] = useState("");
   const [rejoue, setRejoue] = useState<TeteMot | null | false>(false);
+  // (🗣️ ma bouche : elle suit ma voix au micro, puis à la réécoute)
+  const [bouche, setBouche] = useState(false);
   const prise = useRef<Prise | null>(null);
   const ecoute = useRef<HTMLAudioElement | null>(null);
   const anim = useRef(0);
@@ -358,6 +367,12 @@ function Enregistreur({ video, seance, repondA, remplace, onFini, onAge }: { vid
     if (!p) return;
     window.clearTimeout(p.fin);
     window.clearInterval(p.tic);
+    if (p.oreille) {
+      window.cancelAnimationFrame(p.oreille.raf);
+      void p.oreille.ctx.close().catch(() => undefined);
+      p.oreille = undefined;
+    }
+    setBouche(false);
     p.flux.getTracks().forEach((t) => t.stop());
   };
   useEffect(
@@ -391,6 +406,7 @@ function Enregistreur({ video, seance, repondA, remplace, onFini, onAge }: { vid
         setPret({ blob, url: URL.createObjectURL(blob), duree: Math.round(duree * 100) / 100, tetes: p.tetes });
       };
       prise.current = p;
+      if (vivante?.parle) ecouterMaVoix(p);
       r.start(250);
       setReste(MOTS_VIDEO.max);
       setEtat("micro");
@@ -412,6 +428,32 @@ function Enregistreur({ video, seance, repondA, remplace, onFini, onAge }: { vid
       setMessage(P.refus);
     }
   }
+  /** 🗣️ Au micro, ma bouche suit ma voix (son volume, mesuré dans le téléphone : rien ne part). */
+  function ecouterMaVoix(p: Prise) {
+    try {
+      const C = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!C) return;
+      const ctx = new C();
+      const n = ctx.createAnalyser();
+      n.fftSize = 1024;
+      ctx.createMediaStreamSource(p.flux).connect(n);
+      const d = new Float32Array(n.fftSize);
+      let fort = 0.02;
+      const tour = () => {
+        n.getFloatTimeDomainData(d);
+        let somme = 0;
+        for (const v of d) somme += v * v;
+        const rms = Math.sqrt(somme / d.length);
+        // (le plus fort entendu jusqu'ici, qui retombe doucement : la bouche s'ouvre au-dessus du seuil)
+        fort = Math.max(fort * 0.995, rms, 0.02);
+        setBouche(rms / fort >= SEUIL_BOUCHE_MICRO);
+        if (p.oreille) p.oreille.raf = window.requestAnimationFrame(tour);
+      };
+      p.oreille = { ctx, n, raf: window.requestAnimationFrame(tour) };
+    } catch {
+      // (pas de mesure : la figurine bat seulement)
+    }
+  }
   function finir() {
     const p = prise.current;
     if (p && p.r.state !== "inactive") p.r.stop();
@@ -423,15 +465,20 @@ function Enregistreur({ video, seance, repondA, remplace, onFini, onAge }: { vid
     if (rejoue !== false) {
       a.pause();
       window.cancelAnimationFrame(anim.current);
+      setBouche(false);
       return setRejoue(false);
     }
     a.src = pret.url;
+    let volume: number[] | null = null;
+    if (vivante?.parle) void enveloppeDuSon(pret.blob, pret.url).then((x) => void (volume = x));
     const tour = () => {
       setRejoue(teteA(pret.tetes, a.currentTime || 0));
+      setBouche(Boolean(vivante?.parle) && !a.paused && boucheOuverte(volume, a.currentTime || 0));
       anim.current = window.requestAnimationFrame(tour);
     };
     const fin = () => {
       window.cancelAnimationFrame(anim.current);
+      setBouche(false);
       setRejoue(false);
     };
     a.onended = fin;
@@ -468,7 +515,7 @@ function Enregistreur({ video, seance, repondA, remplace, onFini, onAge }: { vid
     <div className="sv-enreg" data-enregistreur={etat}>
       {repondA && <p className="sv-doux">{P.turepondsA(repondA.prenom)}</p>}
       <div className="sv-moi">
-        {vivante ? <Figurine m={moi} tete={teteVue} parle={etat === "micro" || (Boolean(pret) && rejoue !== false)} hauteur={150} /> : <span className={`sv-micro-rond${etat === "micro" ? " on" : ""}`} aria-hidden="true">🎙️</span>}
+        {vivante ? <Figurine m={moi} tete={teteVue} parle={etat === "micro" || (Boolean(pret) && rejoue !== false)} bouche={bouche && (etat === "micro" || rejoue !== false)} hauteur={150} /> : <span className={`sv-micro-rond${etat === "micro" ? " on" : ""}`} aria-hidden="true">🎙️</span>}
         {/* (la caméra, petite : seulement pour lire ma tête — rien n'est filmé ni envoyé) */}
         <video ref={camVideo} className={`sv-miroir${tetes && camEtat === "on" && !pret ? " vue" : ""}`} playsInline muted aria-hidden="true" />
       </div>

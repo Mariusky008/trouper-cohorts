@@ -23,6 +23,17 @@ export const EXPRESSIONS_FIGURINE: readonly { cle: ExpressionFigurine; e: string
 export const expressionFigurineValide = (x: unknown): x is ExpressionFigurine => EXPRESSIONS_FIGURINE.some((e) => e.cle === x);
 
 /**
+ * 🗣️ (25 novembre 2026, le propriétaire : « fais le » — la bouche suit la voix) SA TÊTE QUI PARLE : son visage habituel,
+ * la bouche ouverte au milieu d'un mot. Ce n'est pas une expression (ni la caméra ni son humeur ne la choisissent) : elle
+ * remplace sa tête un instant, quand sa voix enregistrée est forte. Fabriquée avec ses expressions (et rattrapée la nuit
+ * pour les figurines qui n'en avaient que sept).
+ */
+export type TeteFigurine = ExpressionFigurine | "parle";
+export const TETE_PARLE = { cle: "parle", e: "🗣️", nom: "La bouche ouverte" } as const;
+/** Toutes les têtes fabriquées : les sept expressions, puis la bouche ouverte. */
+export const TETES_FIGURINE: readonly { cle: TeteFigurine; e: string; nom: string }[] = [...EXPRESSIONS_FIGURINE, TETE_PARLE];
+
+/**
  * 🙂 (22 novembre 2026, le propriétaire : « mon humeur du jour, lorsque je la renseigne, devrait être la tête que je fais
  * dans ma maison, et un peu partout où on voit ma tête ») L'EXPRESSION DE SON HUMEUR DU JOUR (celles du rituel,
  * `HUMEURS`) : la joie et l'amour, le sourire ; le fou rire et l'euphorie, le rire ; la grimace, la grimace ; la tête
@@ -48,7 +59,7 @@ export const expressionDeLHumeur = (h: Sentiment | null | undefined): Expression
  */
 export type ExpressionsFigurine = {
   empreinte: string;
-  tetes: Partial<Record<ExpressionFigurine, string>>;
+  tetes: Partial<Record<TeteFigurine, string>>;
   corpsSansTete?: string;
   le?: string;
   rate?: string;
@@ -75,6 +86,8 @@ export type FigurineVivante = {
   tete: { src: string; boite: Zone; pivot: [number, number] };
   expressions: Record<ExpressionVisage, string> & Partial<Record<ExpressionFigurine, string>>;
   humeur?: ExpressionFigurine;
+  /** 🗣️ sa tête la bouche ouverte, si elle est prête : la bouche suit sa voix (`bouche.ts`). */
+  parle?: string;
 };
 
 /**
@@ -88,13 +101,13 @@ export type TeteDuJour = { e: ExpressionFigurine; src: string; decoupe: number }
 export const RATTRAPAGE_EXPRESSIONS = { parNuit: 8, recommencerApres: 30 * 60_000, tempsParFigurine: 150_000 } as const;
 
 /** (la page de l'administrateur) une figurine d'habitant et ses expressions. */
-export type ExpressionsHabitantVue = { prenom: string; le: string; empreinte: string; tetes: Partial<Record<ExpressionFigurine, string>>; erreur?: string };
+export type ExpressionsHabitantVue = { prenom: string; le: string; empreinte: string; tetes: Partial<Record<TeteFigurine, string>>; erreur?: string };
 export type EtatExpressionsHabitants = { total: number; pretes: number; enCours: number; ratees: number; dernieres: ExpressionsHabitantVue[] };
 
 export const PHRASES_EXPRESSIONS = {
   titre: "📷 Les expressions des habitants",
   chapo:
-    "Sept expressions par figurine (la tête seulement : les cinq que la caméra reconnaît, puis la tristesse et la colère, pour l’humeur du jour), faites dès « C’est moi ! » ; s’il en manque, reprises à l’ouverture de l’appli et la nuit (huit figurines par nuit au plus).",
+    "Sept expressions par figurine (la tête seulement : les cinq que la caméra reconnaît, puis la tristesse et la colère, pour l’humeur du jour) et sa bouche ouverte (pour que sa bouche suive sa voix), faites dès « C’est moi ! » ; s’il en manque, reprises à l’ouverture de l’appli et la nuit (huit figurines par nuit au plus).",
   compte: (pretes: number, total: number) => `${pretes} sur ${total} prêtes`,
   enCours: (n: number) => `${n} en attente`,
   ratees: (n: number) => `${n} en reprise`,

@@ -1,11 +1,12 @@
-// 📷 LES EXPRESSIONS DE CHAQUE FIGURINE (le lot V1, cinq ; sept depuis le 22 novembre 2026 ; `docs/univers/decouvrir.md`, section 28.6) — par les routes,
+// 📷 LES EXPRESSIONS DE CHAQUE FIGURINE (le lot V1, cinq ; sept depuis le 22 novembre 2026 ; et sa bouche ouverte depuis le 25 ; `docs/univers/decouvrir.md`, section 28.6) — par les routes,
 // contre le faux Supabase et le faux moteur d'image, jamais la vraie base (`lib/direct/expressions-figurine-serveur.ts`,
 // `GET /api/direct/ma-figurine`, `/api/cron/expressions-figurines`, `/api/admin/direct/expressions-habitants`).
 //
 // Léa et Zoé ont leur figurine assise du nouveau style ; Max n'a que sa figurine d'aujourd'hui. Léa ouvre l'appli : après
-// la réponse, ses calques, son corps sans sa tête, puis ses sept expressions (la tête seulement, découpée de la taille de
+// la réponse, ses calques, son corps sans sa tête, puis ses sept expressions et sa bouche ouverte (la tête seulement, découpée de la taille de
 // sa tête habituelle, recalée : le faux moteur décale le cadrage de trois points et deux), rangés à côté de ses calques et
-// publiés à adresse stable. Rouverte : rien n'est refait. Une tête perdue : redécoupée sans le moteur. Une nouvelle image
+// publiés à adresse stable. Rouverte : rien n'est refait. Faite avant le 25 novembre (sept têtes) : seule sa bouche
+// ouverte se fait (une demande). Une tête perdue : redécoupée sans le moteur. Une nouvelle image
 // de sa figurine : de nouvelles expressions. Zoé, un passage raté il y a dix minutes : rien avant la demi-heure, même en
 // ouvrant l'appli ; il y a une heure : la nuit la rattrape (Max et Léa, rien à faire). La page de l'administrateur : les
 // comptes et les dernières, « Rattraper maintenant » ; sans session d'administrateur, refusé.
@@ -107,7 +108,7 @@ await poserFiche(LEA, 1, "#c8643c");
 await poserFiche(ZOE, 1, "#3c8cc8");
 const ouvrirAppli = (x) => fetch(`${BASE}/api/direct/ma-figurine`, { headers: { cookie: `clikme_habitant=${x.jeton}` } });
 const ADRESSE = /^\/api\/direct\/salon\/fichier\/[0-9a-f]{32}-\d+\.webp$/;
-const SEPT = ["sourire", "rire", "surprise", "bof", "grimace", "triste", "fache"];
+const SEPT = ["sourire", "rire", "surprise", "bof", "grimace", "triste", "fache", "parle"];
 const etatDe = (x, k) => lire(`${x.id}/calques/${k}-expressions.json`);
 
 // ═══ LÉA OUVRE L'APPLI : SES SEPT EXPRESSIONS, APRÈS LA RÉPONSE ═══
@@ -118,9 +119,9 @@ const e1 = await attendre(async () => {
   const e = await etatDe(LEA, K1);
   return e?.le ? e : null;
 }, 60000);
-ok(e1?.empreinte === K1 && SEPT.every((e) => ADRESSE.test(e1.tetes?.[e] ?? "")) && ADRESSE.test(e1.corpsSansTete ?? "") && !e1.rate, `après la réponse : ses sept expressions et son corps sans sa tête, à adresse stable (${JSON.stringify(e1?.tetes ?? null)})`);
+ok(e1?.empreinte === K1 && SEPT.every((e) => ADRESSE.test(e1.tetes?.[e] ?? "")) && ADRESSE.test(e1.corpsSansTete ?? "") && !e1.rate, `après la réponse : ses sept expressions, sa bouche ouverte et son corps sans sa tête, à adresse stable (${JSON.stringify(e1?.tetes ?? null)})`);
 const faites = (await expressionsIA()).slice(avant);
-ok(faites.length === 7 && ["SMILE", "LAUGHTER", "SURPRISE", "UNIMPRESSED", "GRIMACE", "SAD", "GRUMPY"].every((m) => faites.some((c) => c.includes(m))) && faites.every((c) => c.includes(" high ")), `sept demandes au moteur, une par expression, d'après sa figurine (fidélité haute) (${faites.length})`);
+ok(faites.length === 8 && ["SMILE", "LAUGHTER", "SURPRISE", "UNIMPRESSED", "GRIMACE", "SAD", "GRUMPY", "TALKING"].every((m) => faites.some((c) => c.includes(m))) && faites.every((c) => c.includes(" high ")), `huit demandes au moteur, une par tête (la bouche ouverte comprise), d'après sa figurine (fidélité haute) (${faites.length})`);
 const noms = await lister(`${LEA.id}/calques`);
 ok(
   SEPT.every((e) => noms.includes(`${K1}-expression-${e}.png`) && noms.includes(`${K1}-tete-${e}.png`)) && noms.includes(`${K1}-corps-sans-tete.png`) && noms.includes(`${K1}.json`),
@@ -140,14 +141,28 @@ if (sansTete && calques?.tete?.boite) {
 } else ok(false, "le corps sans sa tête et ses calques sont là");
 
 // ═══ ROUVERTE : RIEN N'EST REFAIT ═══
-const n1 = (await expressionsIA()).length;
+let n1 = (await expressionsIA()).length;
 await ouvrirAppli(LEA);
 await pause(2500);
 ok((await expressionsIA()).length === n1 && (await etatDe(LEA, K1))?.le === e1?.le, "rouverte : rien n'est refait");
 
+// ═══ 🗣️ FAITE AVANT LE 25 NOVEMBRE (SEPT TÊTES) : SEULE SA BOUCHE OUVERTE SE FAIT ═══
+const sansBouche = Object.fromEntries(Object.entries(e1?.tetes ?? {}).filter(([e]) => e !== "parle"));
+await json(`${LEA.id}/calques/${K1}-expressions.json`, { ...e1, tetes: sansBouche });
+await effacer([`${LEA.id}/calques/${K1}-tete-parle.png`, `${LEA.id}/calques/${K1}-expression-parle.png`]);
+await ouvrirAppli(LEA);
+const eb = await attendre(async () => {
+  const e = await etatDe(LEA, K1);
+  return e?.tetes?.parle && e.le !== e1?.le ? e : null;
+}, 60000);
+const bouche = (await expressionsIA()).slice(n1);
+ok(Boolean(eb) && ADRESSE.test(eb.tetes.parle) && bouche.length === 1 && bouche[0].includes("TALKING") && SEPT.every((e) => eb.tetes[e] === (e === "parle" ? eb.tetes.parle : e1.tetes[e])), `sept têtes seulement : sa bouche ouverte se fait (une demande au moteur), les autres restent (${bouche.length})`);
+n1 = (await expressionsIA()).length;
+const e1b = eb ?? e1;
+
 // ═══ UNE TÊTE PERDUE : REDÉCOUPÉE SANS LE MOTEUR ═══
-const sansRire = Object.fromEntries(Object.entries(e1?.tetes ?? {}).filter(([e]) => e !== "rire"));
-await json(`${LEA.id}/calques/${K1}-expressions.json`, { ...e1, tetes: sansRire, le: undefined });
+const sansRire = Object.fromEntries(Object.entries(e1b?.tetes ?? {}).filter(([e]) => e !== "rire"));
+await json(`${LEA.id}/calques/${K1}-expressions.json`, { ...e1b, tetes: sansRire, le: undefined });
 await effacer([`${LEA.id}/calques/${K1}-tete-rire.png`]);
 await ouvrirAppli(LEA);
 const e2 = await attendre(async () => {
@@ -166,8 +181,8 @@ const e3 = await attendre(async () => {
 }, 60000);
 const noms2 = await lister(`${LEA.id}/calques`);
 ok(
-  e3?.empreinte === K2 && SEPT.every((e) => ADRESSE.test(e3.tetes?.[e] ?? "") && noms2.includes(`${K2}-tete-${e}.png`)) && noms2.includes(`${K2}.json`) && (await expressionsIA()).length === n1 + 7,
-  "une nouvelle image (une nouvelle tenue) : ses calques et ses sept expressions se refont (sept nouvelles demandes au moteur)",
+  e3?.empreinte === K2 && SEPT.every((e) => ADRESSE.test(e3.tetes?.[e] ?? "") && noms2.includes(`${K2}-tete-${e}.png`)) && noms2.includes(`${K2}.json`) && (await expressionsIA()).length === n1 + 8,
+  "une nouvelle image (une nouvelle tenue) : ses calques et ses huit têtes se refont (huit nouvelles demandes au moteur)",
 );
 ok(Boolean(await etatDe(LEA, K1)), "… celles d'avant restent rangées");
 
@@ -181,7 +196,7 @@ ok((await expressionsIA()).length === n2 && !(await etatDe(ZOE, KZ))?.le, "un pa
 const refus = await fetch(`${BASE}/api/admin/direct/expressions-habitants`);
 ok(refus.status === 403, "la page des expressions : l'administrateur seulement");
 const a1 = await (await fetch(`${BASE}/api/admin/direct/expressions-habitants`, { headers: { cookie: COOKIE_ADMIN } })).json();
-ok(a1.etat?.total >= 2 && a1.etat.pretes >= 1 && a1.etat.ratees >= 1 && a1.etat.dernieres?.some((x) => x.prenom === "Léa" && SEPT.every((e) => ADRESSE.test(x.tetes?.[e] ?? ""))), `la page de l'administrateur : les comptes (${a1.etat?.pretes} sur ${a1.etat?.total}, ${a1.etat?.ratees} en reprise) et ses sept têtes`);
+ok(a1.etat?.total >= 2 && a1.etat.pretes >= 1 && a1.etat.ratees >= 1 && a1.etat.dernieres?.some((x) => x.prenom === "Léa" && SEPT.every((e) => ADRESSE.test(x.tetes?.[e] ?? ""))), `la page de l'administrateur : les comptes (${a1.etat?.pretes} sur ${a1.etat?.total}, ${a1.etat?.ratees} en reprise) et ses huit têtes`);
 ok(a1.etat?.dernieres?.some((x) => x.prenom === "Zoé" && x.erreur === "Le moteur ne répond pas."), "… et ce qui a raté");
 
 // ═══ LA NUIT ═══
