@@ -20,13 +20,14 @@
  * dans un salon, ceux qui y sont lui font signe d'un toucher. 🧭 Le lot F4 : l'ordre du fil (`ordreDuFil`).
  */
 import type { IdTheme } from "./decouvrir";
+import type { Ornements } from "./ornements";
 import type { PlaceGradin } from "./salons-gradins";
 import type { FigurinePosee } from "./autour";
 import type { Zone } from "./pieces-duo";
 
 /** Une figurine telle que le fil la montre : assise (son corps sans sa tête, la tête qu'elle fait), sinon d'une image. */
 /** (✨ « Ma figurine » : `pancarte`, la phrase qu'elle porte partout) */
-export type SilhouetteFil = { tete: string; corps?: { src: string; ratio: number; boite: Zone }; image?: string; pancarte?: string };
+export type SilhouetteFil = { tete: string; corps?: { src: string; ratio: number; boite: Zone }; image?: string; pancarte?: string; ornements?: Ornements };
 
 /** Quelqu'un qui est dans un salon, en ce moment (jamais son compte : son identifiant court). */
 export type PresentFil = { q: string; prenom: string; src: string; place: number };

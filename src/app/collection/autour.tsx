@@ -21,6 +21,8 @@
  *     mienne : « Retirer ma figurine ».
  */
 import { Pancarte } from "./pancarte";
+import { Ornements } from "./ornements";
+import type { Ornements as OrnementsVus } from "@/lib/direct/ornements";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { OngletVisible } from "./guide";
 import { ApercuOu, CarteAutour, STYLES_CARTE_AUTOUR } from "./autour-carte";
@@ -91,7 +93,9 @@ const nomDeZone = (nom: string) => nomLieuPropre(nom).nom ?? "";
 
 /** 🧍 Une figurine assise : son corps sans sa tête, puis la tête qu'elle fait — ou sa figurine d'une seule image. */
 /** (🪧 « Ma figurine », 25 novembre 2026 : `f.pancarte`, la phrase qu'elle porte partout, au-dessus de sa tête) */
-export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" | "corps" | "image"> & { pancarte?: string }; hauteur: number }) {
+export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" | "corps" | "image"> & { pancarte?: string; ornements?: OrnementsVus }; hauteur: number }) {
+  // (🔥🎧❤️ « Elle change toute seule » : ce qu'elle porte, par-dessus ; les étiquettes quand elle est assez grande)
+  const orn = f.ornements ? <Ornements o={f.corps ? { ...f.ornements, boite: f.corps.boite } : { ...f.ornements, boite: undefined }} taille={Math.max(9, Math.min(12, hauteur / 16))} etiquettes={hauteur >= 120} /> : null;
   const pancarte = f.pancarte ? <Pancarte texte={f.pancarte} taille={Math.max(9, Math.min(15, hauteur / 11))} bas={f.corps ? `${(1 - f.corps.boite[1]) * 100 + 2}%` : "92%"} /> : null;
   if (f.corps)
     return (
@@ -100,6 +104,7 @@ export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" |
         <img src={f.corps.src} alt="" draggable={false} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="afg-tete" src={f.tete} alt="" draggable={false} style={{ left: `${f.corps.boite[0] * 100}%`, top: `${f.corps.boite[1] * 100}%`, width: `${f.corps.boite[2] * 100}%`, height: `${f.corps.boite[3] * 100}%` }} />
+        {orn}
         {pancarte}
       </span>
     );
@@ -108,6 +113,7 @@ export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" |
       <span className="afg-assise" style={{ height: hauteur }} data-assise="image">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={f.image} alt="" draggable={false} style={{ height: "100%", width: "auto", position: "static" }} />
+        {orn}
         {pancarte}
       </span>
     );

@@ -16,6 +16,7 @@
  */
 import { EXPRESSIONS_FIGURINE, type ExpressionFigurine } from "./expressions-figurine";
 import { IDEES_MOT_DU_JOUR, MOT_DU_JOUR_MAX } from "./autour";
+import type { Ornements } from "./ornements";
 
 /** La pancarte : la longueur du mot du jour d'Autour (c'est la même phrase), et ses idées toutes prêtes. */
 export const PANCARTE_MAX = MOT_DU_JOUR_MAX;
@@ -42,6 +43,8 @@ export type MonDoubleVue = {
   pancarte: string;
   /** il a préparé son double aujourd'hui (la pastille s'en va) */
   pret: boolean;
+  /** 🔥🎧❤️ ce qu'elle porte toute seule (« Elle change toute seule ») */
+  ornements?: Ornements;
 };
 
 /** Ce que les autres voient de mon double, partout : ma pancarte (rien s'il n'y en a pas). */

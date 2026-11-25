@@ -15,6 +15,7 @@
  * FICHIER PARTAGÉ (l'écran et le serveur).
  */
 import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type PlaceDuo, type Zone } from "./pieces-duo";
+import type { Ornements } from "./ornements";
 import type { ExpressionFigurine } from "./expressions-figurine";
 import type { ImageSalon } from "./salon";
 import type { Visibilite } from "./monde";
@@ -102,7 +103,7 @@ export type MaMaisonVue = {
    */
   tete?: TeteMaison;
   /** ✨ (« Ma figurine », 25 novembre 2026) ma pancarte (partout), et si j'ai préparé mon double aujourd'hui (chez moi) */
-  double?: { pancarte?: string; pret?: boolean };
+  double?: { pancarte?: string; pret?: boolean; ornements?: Ornements };
   /** 🚪 (lot M5) qui a frappé pendant mon absence (des prénoms, jamais un nombre de visites) */
   absence?: string[];
   /** 🎁 (lot M5) sur la table basse : les cadeaux de mes proches — à ouvrir (`attente`), ou gardés */

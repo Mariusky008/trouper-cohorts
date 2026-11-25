@@ -52,6 +52,7 @@ import type { PropositionRegarder } from "./regarder-a-deux";
 import { maBoiteARevoir } from "./revoir-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";
 import { teteDuJour } from "./expressions-figurine-serveur";
+import { ornementsDe } from "./ornements-serveur";
 import { sonDouble } from "./mon-double-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -172,12 +173,14 @@ export async function vignetteDeLaPiece(supabase: Supabase, p: PieceDuo): Promis
  * tête de son humeur, quand elle est prête (`teteDeLaMaison`).
  */
 export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean; de?: string } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table" | "tete" | "double">> {
-  const [hum, visites, souvenirs, tete, double] = await Promise.all([
+  const [hum, visites, souvenirs, tete, double, ornements] = await Promise.all([
     lireJson<{ jour?: string; visage?: string }>(supabase, `${h}/humeur.json`).catch(() => ({}) as { jour?: string; visage?: string }),
     o.visiteur ? Promise.resolve({} as { liste?: unknown }) : lireJson<{ liste?: unknown }>(supabase, `${h}/monde/visites.json`).catch(() => ({}) as { liste?: unknown }),
     lireJson<{ liste?: unknown }>(supabase, `${h}/monde/souvenirs.json`).catch(() => ({}) as { liste?: unknown }),
     teteDeLaMaison(supabase, h).catch(() => null),
     sonDouble(supabase, h).catch(() => null),
+    // (🔥🎧❤️ « Elle change toute seule » : sa série, sa passion du moment, son dernier souvenir)
+    ornementsDe(supabase, h).catch(() => null),
   ]);
   const visage = hum.jour === jourParis() ? humeurDe(s(hum.visage) as Sentiment) : null;
   type Brut = { id?: string; de?: string; objet?: string; mot?: string; le?: string; accepte_le?: string };
@@ -197,7 +200,7 @@ export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?:
     // ni l'autre)
     ...(tete ? { tete } : {}),
     // (✨ sa pancarte, chez lui comme en visite ; chez lui, s'il a préparé son double aujourd'hui)
-    ...(double ? { double: { ...(double.pancarte ? { pancarte: double.pancarte } : {}), ...(o.visiteur ? {} : { pret: double.pret }) } } : {}),
+    ...(double ? { double: { ...(double.pancarte ? { pancarte: double.pancarte } : {}), ...(o.visiteur ? {} : { pret: double.pret }), ...(ornements ? { ornements } : {}) } } : {}),
     ...(absence.length ? { absence } : {}),
     ...(surTable.length
       ? {

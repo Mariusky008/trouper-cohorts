@@ -21,6 +21,9 @@ import { FigurineVivanteVue, STYLES_VIVANTE } from "@/app/univers/visage/figurin
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { Pancarte } from "./pancarte";
+import { Ornements } from "./ornements";
+import { PHRASES_ORNEMENTS, SERIE_AUREOLE, SERIE_MIN, aDesOrnements } from "@/lib/direct/ornements";
+import { themeDe } from "@/lib/direct/decouvrir";
 
 const ROUTE = "/api/direct/mon-double";
 type Reponse = { double?: MonDoubleVue; vivante?: FigurineVivante | null; error?: string };
@@ -55,6 +58,8 @@ export function FigurineDuDouble({ d, e, hauteur }: { d: MonDoubleVue; e: Expres
           // eslint-disable-next-line @next/next/no-img-element
           <img key={x.cle} className={`md-tete${t?.cle === x.cle ? " vue" : ""}`} src={x.src} alt="" draggable={false} style={pose} />
         ))}
+        {/* 🔥🎧❤️ (« Elle change toute seule ») ce qu'elle porte toute seule, par-dessus */}
+        <Ornements o={d.ornements ? { ...d.ornements, boite: d.corps.boite } : null} taille={12} />
       </span>
     );
   }
@@ -62,6 +67,7 @@ export function FigurineDuDouble({ d, e, hauteur }: { d: MonDoubleVue; e: Expres
     <span className="md-fig" style={{ height: hauteur }} data-tete-du-jour="image">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={d.image} alt="" draggable={false} style={{ position: "static", height: "100%", width: "auto" }} />
+      <Ornements o={d.ornements ? { ...d.ornements, boite: undefined } : null} taille={12} />
     </span>
   ) : null;
 }
@@ -200,6 +206,34 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
               </div>
             ) : (
               <p className="md-attente">{PHRASES_DOUBLE.sansTetes}</p>
+            )}
+            {/* 🔥🎧❤️ (« Elle change toute seule ») ce qu'elle porte toute seule, et pourquoi — de vraies données */}
+            <h2 className="md-sous">{PHRASES_ORNEMENTS.titre}</h2>
+            {aDesOrnements(d.ornements) ? (
+              <ul className="md-orn" data-ornements-liste>
+                {(d.ornements.serie ?? 0) >= SERIE_MIN && (
+                  <li data-ligne-orn="serie">
+                    <b>{(d.ornements.serie ?? 0) >= SERIE_AUREOLE ? PHRASES_ORNEMENTS.aureole : PHRASES_ORNEMENTS.serie(d.ornements.serie ?? 0)}</b>
+                    <small>{PHRASES_ORNEMENTS.serieDit(d.ornements.serie ?? 0)}</small>
+                  </li>
+                )}
+                {d.ornements.accessoire && (
+                  <li data-ligne-orn="passion">
+                    <b>
+                      {d.ornements.accessoire.e} {d.ornements.accessoire.nom}
+                    </b>
+                    <small>{PHRASES_ORNEMENTS.passionDit(themeDe(d.ornements.accessoire.theme)?.nom.toLowerCase() ?? d.ornements.accessoire.theme)}</small>
+                  </li>
+                )}
+                {d.ornements.coeur && (
+                  <li data-ligne-orn="coeur">
+                    <b>{PHRASES_ORNEMENTS.coeur(d.ornements.coeur)}</b>
+                    <small>{PHRASES_ORNEMENTS.coeurDit(d.ornements.coeur)}</small>
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p data-ornements-rien>{PHRASES_ORNEMENTS.rien}</p>
             )}
           </section>
         ) : onglet === "pancarte" ? (
@@ -383,6 +417,11 @@ const STYLES_MON_DOUBLE = `
 .md-fort{margin:0 0 10px;font-family:var(--font-clikme),Poppins,system-ui,sans-serif;font-weight:600;font-size:15px}
 .md-attente{color:#cdb8a4;font-size:14px}
 .md-erreur{margin:0 0 10px;padding:10px 12px;border-radius:14px;background:rgba(255,123,138,.14);color:#ffb3bc;font-size:13.5px}
+.md-sous{margin-top:14px!important;font-size:15px!important}
+.md-orn{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.md-orn li{display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:14px;background:#1c1411;box-shadow:inset 0 0 0 1px rgba(255,196,140,.14)}
+.md-orn b{font-family:var(--font-clikme),Poppins,system-ui,sans-serif;font-weight:700;font-size:14px;color:#fff4e6}
+.md-orn small{font-size:12.5px;color:#cdb8a4}
 .md-reactions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .md-reactions button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:70px;border:1px solid rgba(255,196,140,.14);border-radius:16px;background:#1c1411;font-family:var(--font-clikme),Poppins,system-ui,sans-serif;font-weight:600;font-size:13px}
 .md-reactions b{font-size:26px;line-height:1}
