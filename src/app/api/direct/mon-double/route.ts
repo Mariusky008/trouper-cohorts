@@ -10,47 +10,14 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
-import { figurineVivante, sesExpressions } from "@/lib/direct/expressions-figurine-serveur";
-import { figurineDeLaMaison } from "@/lib/direct/ma-maison-serveur";
-import { humeurDuJour } from "@/lib/direct/talkie-serveur";
-import { humeurDe } from "@/lib/direct/rituel";
-import { EXPRESSIONS_FIGURINE, expressionDeLHumeur } from "@/lib/direct/expressions-figurine";
-import { choisirSaTete, ecrireSaPancarte, marquerPret, sonDouble } from "@/lib/direct/mon-double-serveur";
-import { ornementsDe } from "@/lib/direct/ornements-serveur";
-import type { MonDoubleVue } from "@/lib/direct/mon-double";
+import { choisirSaTete, ecrireSaPancarte, marquerPret } from "@/lib/direct/mon-double-serveur";
+import { figurineVivante } from "@/lib/direct/expressions-figurine-serveur";
+import { vueDuDouble } from "@/lib/direct/image-du-double-serveur";
 
 export const dynamic = "force-dynamic";
 
-type Supabase = ReturnType<typeof createAdminClient>;
 const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
-
-async function vueDuDouble(supabase: Supabase, h: string): Promise<MonDoubleVue> {
-  const [calques, expr, humeur, double, assise, ornements] = await Promise.all([
-    calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null),
-    sesExpressions(supabase, h).catch(() => null),
-    humeurDuJour(supabase, h).catch(() => null),
-    sonDouble(supabase, h),
-    figurineDeLaMaison(supabase, h).catch(() => null),
-    ornementsDe(supabase, h).catch(() => null),
-  ]);
-  // (ses têtes : seulement découpées sur ses calques d'aujourd'hui — la même règle de découpe)
-  const memeDecoupe = Boolean(calques?.sansTete && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
-  const tetes = memeDecoupe ? EXPRESSIONS_FIGURINE.filter((x) => expr!.etat.tetes[x.cle]).map((x) => ({ cle: x.cle, e: x.e, nom: x.nom, src: expr!.etat.tetes[x.cle]! })) : [];
-  const eH = expressionDeLHumeur(humeur);
-  const v = humeurDe(humeur);
-  return {
-    ...(calques?.sansTete ? { corps: { src: calques.sansTete.fichier, ratio: calques.ratio, boite: calques.tete.boite }, habituelle: calques.tete.fichier } : {}),
-    ...(!calques?.sansTete && assise?.src ? { image: assise.src } : {}),
-    tetes,
-    ...(eH && v ? { humeur: { e: eH, emoji: v.emoji, nom: v.court } } : {}),
-    ...(double.choisie && tetes.some((t) => t.cle === double.choisie) ? { choisie: double.choisie } : {}),
-    pancarte: double.pancarte,
-    pret: double.pret,
-    ...(ornements ? { ornements } : {}),
-  };
-}
 
 export async function GET() {
   const supabase = createAdminClient();

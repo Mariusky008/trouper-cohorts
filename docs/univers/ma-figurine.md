@@ -14,9 +14,9 @@ https://claude.ai/artifact/AAQV8sh6SN382BxzbLF31r
 |---|---|---|
 | 0 | La maquette | ✓ validée le 25 novembre |
 | 1 | Ma maison épurée, le bouton « ✨ Ma figurine », l'écran « Mon double du jour », la même figurine partout | ✓ fusionné le 25 novembre (#282) ; section 2 |
-| — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | section 3 |
-| 2 | « Pendant ton absence » : sa figurine raconte sa journée, de vrais prénoms, de vrais chiffres | section 4 |
-| 3 | L'image à partager | à faire |
+| — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | ✓ fusionné le 25 novembre (#283) ; section 3 |
+| 2 | « Pendant ton absence » : sa figurine raconte sa journée, de vrais prénoms, de vrais chiffres | ✓ fusionné le 25 novembre (#284) ; section 4 |
+| 3 | L'image à partager : « Ma figurine du jour » | section 5 |
 | 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | à faire |
 | 5 | La collection | à faire |
 
@@ -158,3 +158,39 @@ passé. »
 coucou compté une fois, une visite ; au salon du foot, Léa, Hugo et Zoé se voient tous, Léa rerentre sans que personne
 compte deux fois ; jamais un compte) ; `scripts/navigateur/journee-figurine.mjs` (la bulle, sa figurine, les trois
 lignes) ; `ma-maison-vie.mjs` (« Visite de Sam chez toi »).
+
+## 5. Lot 3 : l'image à partager, « Ma figurine du jour » (25 novembre 2026)
+
+Le propriétaire : « 📸 l'image à partager "Ma figurine du jour" (tête du jour, pancarte, "Mon double sur ClikMe") ».
+
+**Où** : dans « Mon double du jour », en bas à gauche de sa figurine, « 📸 Mon image du jour ». Une feuille monte :
+« Ton image se prépare… », puis l'image, et « 📲 Partager » (la feuille de partage du téléphone : WhatsApp, Instagram,
+SMS… avec le fichier `ma-figurine-du-jour.png` et « Mon double du jour, sur ClikMe ✨ ») ou « ⬇️ Enregistrer » (le
+fichier se télécharge ; c'est aussi ce que fait « Partager » sur un téléphone qui ne partage pas de fichiers).
+`app/collection/image-du-double.tsx`.
+
+**L'image** (`GET /api/direct/mon-double/image`, la sienne seulement ; PNG, 1080 × 1350, le format d'une publication ;
+jamais gardée en cache) :
+
+- en haut, « Ma figurine du jour » et la date en mots (« Mercredi 25 novembre », l'heure de Paris) ;
+- au milieu, sur son halo doré, sa figurine avec **sa tête du jour** (celle choisie, sinon celle de son humeur) : son
+  corps sans sa tête et la tête posée dans la boîte de sa tête, exactement comme l'écran (`figurineDuJourEnImage`,
+  `image-du-double-serveur.ts`) ; une figurine de l'ancien style : son image entière ;
+- **sa pancarte** au-dessus de sa tête, la planchette crème penchée et son bâton (en Poppins : l'écriture à la main de
+  l'écran n'existe pas côté serveur) ;
+- **ce qu'elle porte toute seule** (section 3) : l'auréole, l'accessoire de sa passion, le cœur — les mêmes dessins que
+  l'écran (`piecesDesOrnements`, `app/collection/ornements.tsx`), sauf le petit badge emoji ; dessous, « 7 jours de
+  suite » et « offert par Sam » / « vu avec Sam » s'il les a (de vraies données) ;
+- en bas, « Mon double sur ClikMe ».
+
+Sans compte : 401. Sans figurine : 404 et « Ta figurine n'est pas encore prête : ton image arrive avec elle. » (jamais
+une image vide). La même image à chaque fois pour la même journée (rien de tiré au hasard).
+
+`vueDuDouble` (ce que l'écran montre) est passé de la route `/api/direct/mon-double` à `image-du-double-serveur.ts`,
+pour servir aux deux.
+
+**Les essais** : `scripts/essai-image-du-double-route.mjs` (401, 404, le PNG 1080 × 1350, le même deux fois ; le rire
+change l'image, revenir à son humeur la redonne ; la pancarte se voit au-dessus de sa tête ; sept jours de suite :
+l'auréole et « 7 jours de suite » ; le cœur, plus après quinze jours ; l'ancienne figurine) ;
+`scripts/navigateur/image-du-double.mjs` (sur un iPhone : le bouton, l'aperçu, « Partager » avec le fichier,
+« Enregistrer », « Fermer »).
