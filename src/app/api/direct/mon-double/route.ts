@@ -6,13 +6,15 @@
 //        pour le miroir (rien tant que ses expressions ne sont pas prêtes).
 // POST { action: "tete", e }         → choisir sa tête du jour (« humeur » : revenir à celle de son humeur) ;
 //      { action: "pancarte", texte }  → écrire sa pancarte (vide : l'enlever) — c'est aussi son mot du jour d'Autour ;
-//      { action: "pret" }             → « C'est moi aujourd'hui » : la pastille s'en va jusqu'à demain.
+//      { action: "pret" }             → « C'est moi aujourd'hui » : la pastille s'en va jusqu'à demain ;
+//      { action: "bonjour", son, duree } → 🎙️ garder son bonjour, avec sa voix (lot 4 ; `son` vide : l'enlever).
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { choisirSaTete, ecrireSaPancarte, marquerPret } from "@/lib/direct/mon-double-serveur";
 import { figurineVivante } from "@/lib/direct/expressions-figurine-serveur";
 import { vueDuDouble } from "@/lib/direct/image-du-double-serveur";
+import { enleverBonjour, garderBonjour } from "@/lib/direct/bonjour-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +33,15 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
-  const corps = (await request.json().catch(() => ({}))) as { action?: unknown; e?: unknown; texte?: unknown };
+  const corps = (await request.json().catch(() => ({}))) as { action?: unknown; e?: unknown; texte?: unknown; son?: unknown; duree?: unknown };
   let r: { ok?: true; error?: string } = { ok: true };
   if (corps.action === "tete") r = await choisirSaTete(supabase, moi.id, corps.e ?? "humeur");
   else if (corps.action === "pancarte") r = await ecrireSaPancarte(supabase, moi.id, corps.texte);
   else if (corps.action === "pret") await marquerPret(supabase, moi.id);
+  else if (corps.action === "bonjour") {
+    if (corps.son) r = await garderBonjour(supabase, moi.id, corps.son, corps.duree);
+    else await enleverBonjour(supabase, moi.id);
+  }
   else return NextResponse.json({ error: "Je ne sais pas faire ça." }, { status: 400, headers: sansCache });
   if (r.error) return NextResponse.json({ error: r.error }, { status: 400, headers: sansCache });
   return NextResponse.json({ ok: true, double: await vueDuDouble(supabase, moi.id) }, { headers: sansCache });

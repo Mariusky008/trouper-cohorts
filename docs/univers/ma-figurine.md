@@ -16,8 +16,8 @@ https://claude.ai/artifact/AAQV8sh6SN382BxzbLF31r
 | 1 | Ma maison épurée, le bouton « ✨ Ma figurine », l'écran « Mon double du jour », la même figurine partout | ✓ fusionné le 25 novembre (#282) ; section 2 |
 | — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | ✓ fusionné le 25 novembre (#283) ; section 3 |
 | 2 | « Pendant ton absence » : sa figurine raconte sa journée, de vrais prénoms, de vrais chiffres | ✓ fusionné le 25 novembre (#284) ; section 4 |
-| 3 | L'image à partager : « Ma figurine du jour » | section 5 |
-| 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | à faire |
+| 3 | L'image à partager : « Ma figurine du jour » | ✓ fusionné le 25 novembre (#286) ; section 5 |
+| 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | section 6 |
 | 5 | La collection | à faire |
 
 Les habits : plus tard. Chaque lot : une PR, ses essais route et navigateur, ce document, et le « oui » du propriétaire.
@@ -194,3 +194,42 @@ change l'image, revenir à son humeur la redonne ; la pancarte se voit au-dessus
 l'auréole et « 7 jours de suite » ; le cœur, plus après quinze jours ; l'ancienne figurine) ;
 `scripts/navigateur/image-du-double.mjs` (sur un iPhone : le bouton, l'aperçu, « Partager » avec le fichier,
 « Enregistrer », « Fermer »).
+
+## 6. Lot 4 : « Mon bonjour », avec sa voix (25 novembre 2026)
+
+Le propriétaire : « 🎙️ bonjour avec SA voix, entendu quand on touche la figurine dans le fil, un salon ou Autour ».
+Jamais de voix de synthèse : sa propre voix, au micro.
+
+**L'enregistrer** : « Mon double du jour », un sixième onglet, « 🎙️ Bonjour » (`app/collection/bonjour.tsx`,
+`MonBonjour`). « 🎙️ Enregistrer mon bonjour » : le micro s'allume, les secondes qui restent défilent (cinq au plus :
+il s'arrête tout seul) ; « ■ C'est dit » pour finir avant. Puis « ▶️ Écouter », « ✓ Garder ce bonjour » ou
+« Refaire ». Gardé : « ▶️ Écouter · Ton bonjour », « 🎙️ Refaire mon bonjour », « Enlever mon bonjour ». Moins de
+0,7 s : « Garde le micro appuyé un peu plus longtemps. » Le micro refusé : la phrase pour l'autoriser.
+
+**Rangé** (`bonjour-serveur.ts`) : `<habitant>/bonjour.json` = { chemin, type, duree, le } et le son dans
+`<habitant>/bonjour/<le>.<ext>` (un nouveau bonjour : un nouveau fichier, l'ancien s'efface ; l'enlever : plus rien).
+La route `/api/direct/mon-double` : `{ action: "bonjour", son, duree }` (le son en `data:audio/…`, comme le
+talkie ; `son` vide : l'enlever). `MonDoubleVue.bonjour` = { src, duree }.
+
+**L'entendre** : `GET /api/direct/bonjour/<clé de profil>?v=<quand>` — sa voix, telle quelle ; seulement pour quelqu'un
+de ClikMe (le cookie d'habitant) ; jamais son compte ; les morceaux (`Range`, ce que demande l'iPhone) servis. Le `v`
+change à chaque nouveau bonjour : on n'entend jamais l'ancien.
+
+**Où on l'entend** (toucher sa figurine, `jouerBonjour` : un seul bonjour à la fois ; sa figurine dit « 👋 » un
+instant) :
+
+- **un salon ouvert ou une séance** : toucher sa figurine ouvre sa fiche (comme avant) et fait entendre son bonjour ;
+  dans la fiche, « 🔊 Le bonjour de Sam » pour le réécouter (`PresentSalon.bonjour`, noté à son entrée, comme sa tête du
+  jour : un bonjour enregistré après son entrée s'entend à sa prochaine entrée) ;
+- **le fil** : les figurines des salons, des séances de ses proches, des maisons ouvertes et d'Autour se touchent
+  (`PresentFil.bonjour`, `MaisonFil.bonjour`, `FigurinePosee.bonjour`) ;
+- **Autour** : toucher une figurine posée ouvre sa fiche et fait entendre son bonjour ; « 🔊 Le bonjour de … » dans la
+  fiche (`FigurinePosee.bonjour`, lu à chaque fois ; pas sur la carte, qui ne montre que des têtes).
+
+Sa propre figurine ne se dit pas bonjour à elle-même (dans Ma maison, la toucher ouvre son double).
+
+**Les essais** : `scripts/essai-bonjour-route.mjs` (sans compte, rien ; garder, refusé s'il est illisible, trop court,
+trop long ou pas un son ; Sam l'entend, et un morceau ; 401 sans cookie, 404 sans bonjour ; au salon, dans le fil de
+Hugo, Autour ; le refaire, l'ancien effacé ; l'enlever) ; `scripts/navigateur/bonjour.mjs` (sur un iPhone, avec un faux
+micro : l'onglet, enregistrer, « C'est dit », garder ; au salon du foot, toucher Sam : son bonjour, sa voix servie,
+« 🔊 Le bonjour de Sam »).

@@ -31,6 +31,7 @@ import { humeurDe } from "./rituel";
 import { estDouce } from "./humeur-reponse";
 import { maisonsPourLeFil, mesVisites } from "./visites-serveur";
 import { themeDe } from "./decouvrir";
+import { bonjourDe } from "./bonjour-serveur";
 import { ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type MaisonFil, type PieceFil, type ProcheHumeurFil, type SalonFil, type SeanceFil, type SilhouetteFil } from "./fil-decouvrir";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -85,9 +86,9 @@ async function maisonsOuvertes(supabase: Supabase, moi: Habitant): Promise<Maiso
   const maisons = await maisonsPourLeFil(supabase, moi.id);
   const vues = await Promise.all(
     maisons.map(async (m): Promise<MaisonFil | null> => {
-      const [figurine, t] = [await silhouetteDuFil(supabase, m.h).catch(() => null), themeDe(m.passion)];
+      const [[figurine, bonjour], t] = [await Promise.all([silhouetteDuFil(supabase, m.h).catch(() => null), bonjourDe(supabase, m.h).catch(() => null)]), themeDe(m.passion)];
       if (!figurine || !t) return null;
-      return { sorte: "maison", cle: m.cle, prenom: m.prenom, image: m.image, figurine, passion: { e: t.e, nom: t.nom, court: t.court }, ...(m.coucou ? { coucou: m.coucou } : {}) };
+      return { sorte: "maison", cle: m.cle, prenom: m.prenom, image: m.image, figurine, passion: { e: t.e, nom: t.nom, court: t.court }, ...(m.coucou ? { coucou: m.coucou } : {}), ...(bonjour ? { bonjour: bonjour.src } : {}) };
     }),
   );
   return vues.filter((x): x is MaisonFil => Boolean(x));

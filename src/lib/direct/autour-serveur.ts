@@ -12,6 +12,7 @@
  *
  * FICHIER SERVEUR.
  */
+import { bonjourDe } from "./bonjour-serveur";
 import { createHash, randomBytes } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "@/lib/direct/habitant";
@@ -513,7 +514,7 @@ async function prenomsDe(supabase: Supabase, hs: string[]): Promise<Map<string, 
 }
 
 /** Des poses en figurines vues : le dépôt (mot, tête, réponse), son prénom, sa silhouette. */
-async function enFigurines(supabase: Supabase, ville: string, lieu: string, poses: PoseFig[], moi: string | null, o: { silhouette?: ReturnType<typeof silhouettes>; prenoms?: Map<string, string> } = {}): Promise<FigurinePosee[]> {
+async function enFigurines(supabase: Supabase, ville: string, lieu: string, poses: PoseFig[], moi: string | null, o: { silhouette?: ReturnType<typeof silhouettes>; prenoms?: Map<string, string>; sansBonjour?: boolean } = {}): Promise<FigurinePosee[]> {
   const sil = o.silhouette ?? silhouettes(supabase);
   const [depots, prenoms] = await Promise.all([Promise.all(poses.map((p) => lireJson<DepotFig>(supabase, `${dossierFig(ville, lieu)}/${nomFichier(p.id, p.qui, p.h)}`))), o.prenoms ?? prenomsDe(supabase, poses.map((p) => p.h))]);
   const vues = await Promise.all(
@@ -521,7 +522,8 @@ async function enFigurines(supabase: Supabase, ville: string, lieu: string, pose
       const d = depots[k];
       if (!s(d.mot)) return null;
       const tete: TeteChoisie = d.tete === "humeur" || expressionFigurineValide(d.tete) ? d.tete : "humeur";
-      const v = await sil(p.h, tete);
+      // (🎙️ « Ma figurine », lot 4 : son bonjour, entendu quand on touche sa figurine)
+      const [v, bonjour] = await Promise.all([sil(p.h, tete), o.sansBonjour ? Promise.resolve(null) : bonjourDe(supabase, p.h).catch(() => null)]);
       const le = heureDePose(p.id);
       return {
         id: p.id,
@@ -536,6 +538,7 @@ async function enFigurines(supabase: Supabase, ville: string, lieu: string, pose
         ...v,
         ...(s(d.reponseA) ? { reponseA: s(d.reponseA) } : {}),
         ...(s(d.nomLieu) ? { nomLieu: s(d.nomLieu) } : {}),
+        ...(bonjour ? { bonjour: bonjour.src } : {}),
       };
     }),
   );
@@ -561,7 +564,7 @@ export async function carteDesFigurines(supabase: Supabase, ville: string, moi: 
   const vues = new Map<string, FigurinePosee>();
   await Promise.all(
     recentes.slice(0, 40).map(async ({ l, p }) => {
-      const [v] = await enFigurines(supabase, ville, l, [p], moi?.id ?? null, { silhouette: sil, prenoms });
+      const [v] = await enFigurines(supabase, ville, l, [p], moi?.id ?? null, { silhouette: sil, prenoms, sansBonjour: true });
       if (v) vues.set(v.id, v);
     }),
   );

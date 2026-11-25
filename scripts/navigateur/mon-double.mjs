@@ -172,7 +172,7 @@ const md = lea.locator("[data-mon-double]");
 ok(await attendre(lea, async () => /Mon double du jour/.test(await texte(md.locator(".md-haut"))) && /C’est elle que tout le monde voit/.test(await texte(md.locator(".md-haut")))), "toucher sa figurine : « Mon double du jour — C'est elle que tout le monde voit »");
 ok(await attendre(lea, async () => /triste/i.test(await texte(md.locator("[data-etiquette]"))) && (await md.locator('.md-scene [data-tete-du-jour="triste"]').count()) === 1), `… sa tête : celle de son humeur (${await texte(md.locator("[data-etiquette]"))})`);
 const onglets = await md.locator("[data-onglet]").evaluateAll((l) => l.map((x) => x.getAttribute("data-onglet")).join());
-ok(onglets === "tete,pancarte,miroir,reactions,mois", `ses cinq onglets (${onglets})`);
+ok(onglets === "tete,pancarte,miroir,reactions,bonjour,mois", `ses six onglets (${onglets})`);
 ok(/Mon humeur \(triste/i.test(await texte(md.locator('[data-tete="humeur"]'))) && (await md.locator('[data-panneau="tete"] [data-tete]').count()) === 8, "😊 « Sa tête du jour » : « Mon humeur (…) », puis ses sept têtes");
 await md.locator('[data-tete="rire"]').click();
 ok(await attendre(lea, async () => (await md.locator('[data-tete="rire"]').getAttribute("aria-pressed")) === "true" && /Partout aujourd’hui : .*rire/i.test(await texte(md.locator("[data-dit]")))), `😂 le rire : « ✓ Partout aujourd’hui : … » (${await texte(md.locator("[data-dit]"))})`);

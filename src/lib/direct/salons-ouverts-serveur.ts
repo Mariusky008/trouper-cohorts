@@ -20,6 +20,7 @@
 import { randomBytes } from "node:crypto";
 import { ornementsDe } from "./ornements-serveur";
 import { noterVusAuSalon } from "./journee-figurine-serveur";
+import { bonjourDe } from "./bonjour-serveur";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
@@ -136,6 +137,7 @@ const publicDe = (f: Partial<FichePresent>): PresentSalon => ({
   ...(f.tete && s(f.tete.src) && s(f.tete.corps) ? { tete: f.tete } : {}),
   ...(s(f.pancarte) ? { pancarte: s(f.pancarte) } : {}),
   ...(f.ornements && typeof f.ornements === "object" ? { ornements: f.ornements } : {}),
+  ...(s(f.bonjour).startsWith("/api/direct/bonjour/") ? { bonjour: s(f.bonjour) } : {}),
 });
 /** (lot D5) ce que sa fiche montre en plus : ses passions, sa maison si elle est ouverte à tous. */
 async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passions?: string[]; maison?: string }> {
@@ -147,9 +149,9 @@ async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passio
  * ✨ (« Ma figurine », 25 novembre 2026) sa figurine telle qu'elle est aujourd'hui, partout : sa tête du jour posée sur son
  * corps sans sa tête (quand elle est prête) et sa pancarte.
  */
-async function sonDoubleDeSalon(supabase: Supabase, h: string): Promise<Pick<PresentSalon, "tete" | "pancarte" | "ornements">> {
-  const [t, pancarte, ornements] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => ""), ornementsDe(supabase, h).catch(() => null)]);
-  return { ...(t ? { tete: { src: t.src, corps: t.corps, ratio: t.ratio, boite: t.boite } } : {}), ...(pancarte ? { pancarte } : {}), ...(ornements ? { ornements } : {}) };
+async function sonDoubleDeSalon(supabase: Supabase, h: string): Promise<Pick<PresentSalon, "tete" | "pancarte" | "ornements" | "bonjour">> {
+  const [t, pancarte, ornements, bonjour] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => ""), ornementsDe(supabase, h).catch(() => null), bonjourDe(supabase, h).catch(() => null)]);
+  return { ...(t ? { tete: { src: t.src, corps: t.corps, ratio: t.ratio, boite: t.boite } } : {}), ...(pancarte ? { pancarte } : {}), ...(ornements ? { ornements } : {}), ...(bonjour ? { bonjour: bonjour.src } : {}) };
 }
 const messagePublic = (f: Partial<FicheMessage>): MessageSalon => {
   const { h: _h, ...m } = f as FicheMessage;
@@ -703,7 +705,7 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
         e: t.e,
         nom: SALONS[x.theme].nom,
         mien: miens.has(x.theme),
-        presents: fiches.filter((f) => f.q).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: s(f.figurine?.src), place: Number(f.place) || 0 })),
+        presents: fiches.filter((f) => f.q).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: s(f.figurine?.src), place: Number(f.place) || 0, ...(s(f.bonjour).startsWith("/api/direct/bonjour/") ? { bonjour: s(f.bonjour) } : {}) })),
         bulles: vide ? [] : bulles.slice(-4),
         ...(vide ? { traces: bulles.slice(-3) } : {}),
         gradin: gradin ? { src: gradin.image.src, flou: gradin.image.flou, places: gradin.places } : null,
@@ -1371,7 +1373,7 @@ export async function seancesDesProches(supabase: Supabase, moi: Habitant, maint
         lireJson<FicheRejoindre>(supabase, cheminDemandeRejoindre(qHote, q)).catch(() => ({}) as FicheRejoindre),
         lireSaPiece(supabase, h).catch(() => null),
       ]);
-      const vus = fiches.filter((f) => s(f.q)).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: f.figurine?.src ?? "", place: Number(f.place) || 0 }));
+      const vus = fiches.filter((f) => s(f.q)).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: f.figurine?.src ?? "", place: Number(f.place) || 0, ...(s(f.bonjour).startsWith("/api/direct/bonjour/") ? { bonjour: s(f.bonjour) } : {}) }));
       if (!cle || !vus.length) return null;
       const image = piece ? await vignetteDeLaPiece(supabase, piece).catch(() => "") : "";
       const enAttente = maintenant - (Number(demande.le) || 0) < REJOINDRE_MS;

@@ -23,6 +23,7 @@
  * plus au bord de la pièce dans un salon, elle y a sa place. En bas : « M'asseoir », « Inviter ». Sur un ordinateur : la
  * pièce à gauche, le salon et ses boutons à droite.
  */
+import { DitBonjour, useBonjour } from "./bonjour";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { OngletVisible } from "./guide";
 import { FigurineAssise } from "./autour";
@@ -44,7 +45,7 @@ const cleDe = (p: PieceFil) => (p.sorte === "salon" ? `s:${p.theme}` : p.sorte =
 const heuresRestantes = (fin: string) => Math.max(1, Math.round((Date.parse(fin) - Date.now()) / 3600_000));
 const texteDe = (m: MessageSalon) =>
   m.sorte === "texte" ? (m.texte ?? "") : m.sorte === "reaction" ? ([...REACTIONS_SALON, ...REACTIONS_MUSIQUE].find((r) => r.cle === m.cle)?.e ?? "") : (GESTES_SALON.find((g) => g.cle === m.cle)?.e ?? "");
-const enPresent = (p: PresentSalon) => ({ q: p.q, prenom: p.prenom, src: p.figurine?.src ?? "", place: p.place });
+const enPresent = (p: PresentSalon) => ({ q: p.q, prenom: p.prenom, src: p.figurine?.src ?? "", place: p.place, ...(p.bonjour ? { bonjour: p.bonjour } : {}) });
 
 /**
  * Les nouvelles du serveur : les pièces déjà là gardent leur place (on ne bouge pas sous son doigt) — seulement leur
@@ -74,6 +75,8 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
   /** son identifiant court dans les salons (pour ne pas se compter parmi ceux qui le voient) */
   const monQ = useRef("");
   const [moiQ, setMoiQ] = useState("");
+  // (🎙️ « Ma figurine », lot 4 : toucher une figurine, c'est entendre son bonjour)
+  const [bonjourVu, toucherBonjour] = useBonjour();
   const tapes = useRef<{ k: string; t: number } | null>(null);
   const appui = useRef<{ x: number; y: number } | null>(null);
 
@@ -345,8 +348,9 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
                       {P.coucouRepondu(p.prenom)}
                     </span>
                   )}
-                  <span className="fd-chez-fig">
+                  <span className="fd-chez-fig" data-bonjour={p.bonjour ? "1" : undefined} onClick={p.bonjour ? () => toucherBonjour(p.bonjour, `m:${p.cle}`) : undefined}>
                     <FigurineAssise f={p.figurine} hauteur={190} />
+                    {bonjourVu === `m:${p.cle}` && <DitBonjour />}
                   </span>
                 </div>
               </div>
@@ -374,7 +378,10 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
                 <p className="fd-mot" data-mot>
                   {p.figurine.mot}
                 </p>
-                <FigurineAssise f={p.figurine} hauteur={230} />
+                <span className="fd-pose-fig" data-bonjour={p.figurine.bonjour ? "1" : undefined} onClick={p.figurine.bonjour ? () => toucherBonjour(p.figurine.bonjour, `a:${p.figurine.id}`) : undefined}>
+                  <FigurineAssise f={p.figurine} hauteur={230} />
+                  {bonjourVu === `a:${p.figurine.id}` && <DitBonjour />}
+                </span>
               </div>
               <div className="fd-bas">
                 <h2>{P.autourTitre(p.figurine.prenom)}</h2>
@@ -482,6 +489,7 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
 
 /** 🎬 (lot F3) Une séance chez un proche : sa télé, sa pièce, ceux qui y sont ; s'asseoir (invité) ou demander. */
 function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoindre: () => void }) {
+  const [bonjourVu, toucherBonjour] = useBonjour();
   const n = p.presents.length;
   return (
     <section className="fd-carte fd-seance" data-k={k} data-piece="seance" data-seance={p.cle} data-invite={p.invite ? "1" : undefined} data-demande={p.demande ? "1" : undefined}>
@@ -501,7 +509,8 @@ function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoind
       <div className="fd-scene">
         <div className="fd-seance-piece" style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>
           {p.presents.map((x, i) => (
-            <span key={x.q} className="fd-seance-fig" data-q={x.q} style={{ left: `${((i + 1) / (n + 1)) * 100}%`, animationDelay: `${(i % 4) * 0.18}s` }}>
+            <span key={x.q} className="fd-seance-fig" data-q={x.q} data-bonjour={x.bonjour ? "1" : undefined} onClick={x.bonjour ? () => toucherBonjour(x.bonjour, x.q) : undefined} style={{ left: `${((i + 1) / (n + 1)) * 100}%`, animationDelay: `${(i % 4) * 0.18}s` }}>
+              {bonjourVu === x.q && <DitBonjour />}
               {x.src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={x.src} alt="" draggable={false} />
@@ -547,6 +556,7 @@ const partir = (e: React.MouseEvent<HTMLElement>) => {
  * personne, ce qui s'y est dit aujourd'hui. En bas : « M'asseoir », « Inviter ».
  */
 function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil; moi: string; reaction: Reaction | null; onInviter: () => void }) {
+  const [bonjourVu, toucherBonjour] = useBonjour();
   const plan: readonly PlaceGradin[] = p.gradin?.places.length ? p.gradin.places : PLAN_GRADIN;
   const musique = p.theme === "musique";
   // (la dernière bulle de chacun de ceux qui sont là)
@@ -628,7 +638,8 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
               const g = plan[x.place % plan.length] ?? plan[i % plan.length];
               const b = bulles.get(x.q);
               return (
-                <span key={x.q} className={`fd-fig${musique ? " danse" : ""}${x.q === moi ? " moi" : ""}`} data-q={x.q} style={{ left: pc(g.x), top: pc(g.y), height: pc(g.hauteur), animationDelay: `${(i % 4) * 0.18}s` }}>
+                <span key={x.q} className={`fd-fig${musique ? " danse" : ""}${x.q === moi ? " moi" : ""}`} data-q={x.q} data-bonjour={x.bonjour && x.q !== moi ? "1" : undefined} onClick={x.bonjour && x.q !== moi ? () => toucherBonjour(x.bonjour, x.q) : undefined} style={{ left: pc(g.x), top: pc(g.y), height: pc(g.hauteur), animationDelay: `${(i % 4) * 0.18}s` }}>
+                  {bonjourVu === x.q && <DitBonjour />}
                   {b && (
                     <span className="fd-bulle" key={b.id} data-bulle style={{ animationDelay: `${(i % 3) * 1.6}s` }}>
                       {b.texte}
@@ -742,6 +753,8 @@ export const STYLES_FIL = `
 .fd-milieu h2{margin:0;font-size:22px;font-weight:800;line-height:1.2}
 .fd-milieu p{margin:0;font-size:14.5px;color:#D9C3CB}
 .fd-pose{gap:10px}
+.fd-pose-fig{position:relative;display:inline-block}
+[data-bonjour="1"]{cursor:pointer;pointer-events:auto}
 .fd-milieu .fd-mot{position:relative;margin:0;max-width:300px;padding:16px 20px;border-radius:22px;background:#fff;color:#1A0D14;font-size:22px;font-weight:900;line-height:1.2;box-shadow:0 14px 30px rgba(0,0,0,.45)}
 .fd-mot::after{content:"";position:absolute;left:50%;bottom:-12px;margin-left:-10px;border:12px solid transparent;border-bottom:0;border-top-color:#fff}
 .fd-proches{flex-direction:row;flex-wrap:wrap;align-items:center;align-content:center;gap:10px 16px}
