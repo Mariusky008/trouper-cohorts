@@ -200,6 +200,12 @@ await md.locator("[data-retour-maison]").click();
 await lea.goto(`${BASE}/univers/salons?theme=foot`, { waitUntil: "domcontentloaded" });
 const figSam = lea.locator(`.so-fig[data-q="${qSam}"]`);
 ok(await attendre(async () => (await figSam.count()) === 1, 30000), "Léa entre : Sam est là");
+// (sa figurine se pose dans la pièce une fois la pièce dessinée : on attend qu'elle soit à l'écran avant de la toucher)
+const posee = (e) => {
+  const r = e.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
+};
+ok(await attendre(async () => figSam.evaluate(posee)), "… sa figurine est posée, à l'écran");
 const reponse = lea.waitForResponse((r) => r.url().includes(`/api/direct/bonjour/${SAM.cle}`), { timeout: 10000 }).catch(() => null);
 await figSam.click({ force: true });
 ok(await attendre(async () => (await lea.evaluate(() => window.__bonjours)).includes(srcSam)), "toucher sa figurine : on entend le bonjour de Sam");
