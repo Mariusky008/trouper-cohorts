@@ -15,8 +15,9 @@
  * Autour, l'humeur de ses proches ; puis (le propriétaire, le même jour : « on ne me propose pas de salon, même s'il est
  * vide ? ») tous les autres salons, sans personne en ce moment, avec ce qui s'y est dit aujourd'hui — sans avoir à passer
  * par « Tous les salons ». 🏡 Le lot F2 (25 novembre 2026) : les maisons ouvertes de ceux de son âge qui partagent une de
- * ses passions (frapper, faire coucou), et la surprise d'une visite. Les séances entre proches en cours (F3) et l'ordre
- * fin (F4) viendront après.
+ * ses passions (frapper, faire coucou), et la surprise d'une visite. 🎬 Le lot F3 (25 novembre 2026) : les séances en
+ * cours chez ses proches (« Léa et Sam regardent ensemble », « Demander à les rejoindre ») ; et, quand sa figurine entre
+ * dans un salon, ceux qui y sont lui font signe d'un toucher. L'ordre fin (F4) viendra après.
  */
 import type { IdTheme } from "./decouvrir";
 import type { PlaceGradin } from "./salons-gradins";
@@ -74,7 +75,27 @@ export type MaisonFil = {
   /** 👋 son coucou : envoyé, ou la personne a répondu (jamais une fausse réponse : c'est la sienne) */
   coucou?: "envoye" | "repondu";
 };
-export type PieceFil = SalonFil | AutourFil | HumeurFil | MaisonFil;
+/**
+ * 🎬 (lot F3) Une séance en cours chez un proche (il n'y est pas) : ceux qui y sont (l'hôte d'abord), ce qui passe à sa
+ * télé, sa pièce. Déjà invité : il s'assoit ; sinon il demande à les rejoindre, et seul l'hôte ouvre la porte.
+ */
+export type SeanceFil = {
+  sorte: "seance";
+  /** la clé de l'hôte (`/univers/salons?chez=<clé>`) */
+  cle: string;
+  /** le prénom de l'hôte */
+  hote: string;
+  hoteLa: boolean;
+  presents: PresentFil[];
+  video: { id: string; titre: string } | null;
+  /** la vignette de sa pièce */
+  image?: string;
+  /** invité (une invitation de moins de six heures) : sa place l'attend */
+  invite?: true;
+  /** sa demande est partie (moins d'une heure) : on attend l'hôte */
+  demande?: true;
+};
+export type PieceFil = SalonFil | AutourFil | HumeurFil | MaisonFil | SeanceFil;
 
 export type FilVue = {
   moi: { prenom: string; figurine: SilhouetteFil | null };
@@ -113,9 +134,16 @@ export function ordreDuFil(groupes: PieceFil[][], max = PIECES_MAX): PieceFil[] 
   return fil;
 }
 
-/** La réaction de sa figurine quand il touche deux fois : 😂 dans un salon, 💃 dans celui de la musique, 👋 dans une maison. */
+/** La réaction de sa figurine quand il touche deux fois : 😂 dans un salon, 💃 dans celui de la musique, 👋 dans une maison ou chez un proche. */
 export const reactionDuFil = (p: PieceFil): { cle: string; e: string } =>
-  p.sorte === "salon" && p.theme === "musique" ? { cle: "danse", e: "💃" } : p.sorte === "salon" ? { cle: "rire", e: "😂" } : p.sorte === "maison" ? { cle: "coucou", e: "👋" } : { cle: "coeur", e: "❤️" };
+  p.sorte === "salon" && p.theme === "musique" ? { cle: "danse", e: "💃" } : p.sorte === "salon" ? { cle: "rire", e: "😂" } : p.sorte === "maison" || p.sorte === "seance" ? { cle: "coucou", e: "👋" } : { cle: "coeur", e: "❤️" };
+
+/** 🎬 (lot F3) Le titre d'une séance : « Léa et Sam regardent ensemble », « Léa regarde sa télé », « Sam regarde chez Léa ». */
+export function titreDeSeance(p: Pick<SeanceFil, "hote" | "hoteLa" | "presents">): string {
+  const prenoms = p.presents.map((x) => x.prenom);
+  if (prenoms.length > 1) return `${listePrenoms(prenoms)} regardent ensemble`;
+  return p.hoteLa ? `${p.hote} regarde sa télé` : `${prenoms[0] ?? "Quelqu’un"} regarde chez ${p.hote}`;
+}
 
 /** « Sam », « Sam et Léa », « Sam, Léa et Hugo ». */
 export const listePrenoms = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}` : (l[0] ?? ""));
@@ -168,4 +196,17 @@ export const PHRASES_FIL = {
   videSous: "Pose ta figurine dans Autour, ou entre le premier dans un salon : les suivants te verront.",
   poserAutour: "📍 Poser ma figurine",
   sansFigurine: "Pour réagir, il te faut ta figurine assise dans son fauteuil.",
+  // 🎬 (lot F3) mes proches en direct
+  seanceEtiquette: (hote: string) => `Chez ${hote}, en direct`,
+  seanceSous: (hote: string) => `Demande à les rejoindre : ${hote} te fait entrer d’un toucher.`,
+  seanceInvite: "Tu es invité : ta place t’attend.",
+  seanceDemande: (hote: string) => `🙋 Demande envoyée à ${hote}. Tu es prévenu dès qu’on t’ouvre.`,
+  rejoindre: (n: number, prenom: string) => (n > 1 ? "🙋 Demander à les rejoindre" : `🙋 Demander à rejoindre ${prenom}`),
+  asseoirAvecEux: (n: number) => (n > 1 ? "🛋️ M’asseoir avec eux" : "🛋️ M’asseoir à côté"),
+  demandeEnvoyee: "🙋 Demande envoyée",
+  seanceFinie: "La séance vient de finir.",
+  rejoindreNotif: (prenom: string) => `🙋 ${prenom} aimerait vous rejoindre`,
+  rejoindreNotifCorps: "Fais-lui une place d’un toucher, depuis ta télé.",
+  // 👋 (lot F3) faire signe à celui qui arrive
+  teFaitSigne: (prenom: string) => `👋 ${prenom} te fait signe`,
 } as const;

@@ -28,6 +28,10 @@
 //                                                 ma séance se cale sur cette vidéo (à cette seconde, en pause), mes
 //                                                 proches sont invités avec elle (`ma-maison.md`, section 25)
 // POST { action: "pas-maintenant", cle }       → { ok } : l'invitation de cet hôte s'en va
+// POST { action: "rejoindre", chez }           → { invite? | demande? } : 🙋 (lot F3) demander à rejoindre la séance d'un
+//                                                 proche ; l'hôte la voit dans son pouls (`rejoindre`), la fait entrer
+//                                                 (« inviter ») ou la laisse :
+// POST { action: "laisser-demande", cle }      → { ok }
 // 📷 (21 novembre 2026, « tout pour tous » ; `decouvrir.md` section 34) DANS LA SÉANCE :
 // POST { action: "tete", salon, e }            → { ok } : la tête que ma caméra voit (un mot, `null` neutre, « off »)
 // GET ?salon=<chez-…>&vivante=<q>              → { vivante } : sa figurine vivante, pour copier sa tête en direct
@@ -68,6 +72,8 @@ import {
   reserverUnePlace,
   nePlusVoir,
   poulsDuSalon,
+  demanderARejoindre,
+  laisserLaDemande,
   refuserInvitation,
   repondreDemande,
   signalerAuSalon,
@@ -81,7 +87,7 @@ const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
 const FERMES = { error: "Les salons ouverts sont fermés pour l’instant." };
 // (les séances entre proches ne passent pas par l'interrupteur des salons ouverts)
-const SEANCE = new Set(["entrer-chez", "tele", "inviter", "inviter-video", "place", "pas-maintenant"]);
+const SEANCE = new Set(["entrer-chez", "tele", "inviter", "inviter-video", "place", "pas-maintenant", "rejoindre", "laisser-demande"]);
 const enSeance = (salon: unknown) => String(salon ?? "").startsWith("chez-");
 
 export async function GET(request: Request) {
@@ -163,6 +169,12 @@ export async function POST(request: Request) {
     return repondre(r, { invites: r.invites, titre: r.titre, cle: r.cle });
   }
   if (p.action === "pas-maintenant") return repondre(await refuserInvitation(supabase, moi, p.cle));
+  // 🙋 (lot F3) depuis le fil : demander à rejoindre la séance d'un proche ; l'hôte laisse une demande
+  if (p.action === "rejoindre") {
+    const r = await demanderARejoindre(supabase, moi, p.chez);
+    return repondre(r, { ...(r.invite ? { invite: true } : {}), ...(r.demande ? { demande: true } : {}) });
+  }
+  if (p.action === "laisser-demande") return repondre(await laisserLaDemande(supabase, moi, p.cle));
   // 🗄️ l'étagère, 👯 les proches
   if (p.action === "aimer") {
     const r = await aimerMessage(supabase, moi, p);

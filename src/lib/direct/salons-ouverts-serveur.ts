@@ -21,10 +21,10 @@ import { randomBytes } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
-import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe, telecharger } from "./ma-figurine-serveur";
+import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe, prochesDe, telecharger } from "./ma-figurine-serveur";
 import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
-import { cheminMesSalons, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, visibiliteDeLaMaison } from "./ma-maison-serveur";
+import { cheminMesSalons, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { gradinDuSalon } from "./salons-gradins-serveur";
 import { gradinDuTheme, type GradinScene, type IdGradin } from "./salons-gradins";
 import { ajouterChezMoi, poserSouvenirCommun } from "./etagere-serveur";
@@ -42,7 +42,7 @@ import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
-import { BULLES_FRAICHES_MS, TRACES_MS, type BulleFil, type SalonFil } from "./fil-decouvrir";
+import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
 import {
   AIMES_POUR_ETAGERE,
   CONSERVE_MS,
@@ -72,6 +72,7 @@ import {
   themesDesSalons,
   type CarteSalon,
   type DemandeProche,
+  type DemandeRejoindre,
   type InvitationTele,
   type MaisonSalons,
   type MomentSalon,
@@ -317,6 +318,8 @@ export type PoulsSalonOuvert = {
   tetes?: Record<string, ExpressionVisage | null>;
   /** 🎵 (le lot M1) dans le salon de la musique : sa platine, à l'heure */
   platine?: PlatineVue;
+  /** 🙋 (lot F3) l'hôte, dans sa séance : ses proches qui demandent à les rejoindre, depuis le fil */
+  rejoindre?: DemandeRejoindre[];
 };
 /**
  * 💓 Le pouls (toutes les quelques secondes) : les présents (`ici`, et le détail de ceux qu'il ne connaît pas encore),
@@ -353,9 +356,10 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
     r.seance ? tetesDeLaSeance(supabase, r.seance.qHote, presents, q, maintenant) : Promise.resolve(null),
     musique ? platineAJour(supabase, m, sid, maintenant).catch(() => null) : Promise.resolve(null),
   ]);
+  const rejoindre = r.seance?.hote ? await demandesARejoindre(supabase, r.seance.qHote, maintenant).catch(() => []) : [];
   // (🎬 « Regarder à deux » : vue ensemble, la vidéo devient un souvenir commun)
   const souvenir = r.seance && seance && presents.length >= 2 ? await souvenirSiEnsemble(supabase, r.seance.qHote, q, presents, seance, maintenant).catch(() => null) : null;
-  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}), ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}) } };
+  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}), ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}), ...(rejoindre.length ? { rejoindre } : {}) } };
 }
 
 // ─── 📷 (21 novembre 2026, « tout pour tous ») LA TÊTE EN DIRECT, DANS LA SÉANCE ───
@@ -951,6 +955,8 @@ export async function inviterChezMoi(supabase: Supabase, moi: Habitant, cles: un
     const avec = { ...(o.titre ? { titre: o.titre } : {}), ...(o.video ? { video: o.video } : {}) };
     await ecrireJson(supabase, cheminInvite(qMoi, q), { h, le: maintenant, ...avec });
     await ecrireJson(supabase, `${dossierInvitations(h)}/${qMoi}.json`, { cle: maCle, prenom: prenom || "Ton proche", le: maintenant, ...avec });
+    // (🙋 lot F3 : il avait demandé à nous rejoindre depuis le fil — c'est fait, sa demande s'en va)
+    await effacer(supabase, [cheminDemandeRejoindre(qMoi, q)]);
     // (🎬 « Regarder à deux » : une vidéo proposée se dit — une autre vidéo passe même après une invitation récente ; la
     // même, non : pas de pluie de notifications)
     const notif = o.titre
@@ -1311,4 +1317,105 @@ export async function repondreDemande(supabase: Supabase, moi: Habitant, p: Reco
   const prenom = await prenomDe(supabase, moi).catch(() => "");
   await prevenirUnHabitantAppli(supabase, h, { titre: PHRASES_SALONS.procheFait(prenom || "Ton nouveau proche"), corps: "Votre conversation est ouverte dans « Proches ».", url: "/collection#proches", tag: `proche-${qui8(moi.id)}` }).catch(() => "rien");
   return { proches: true };
+}
+
+// ═══ 🎬 LE LOT F3 : MES PROCHES EN DIRECT, DANS LE FIL (`docs/univers/fil.md`, section 6) ══════════════════════════
+// Une séance chez un proche, en cours : le fil la montre (« Léa et Sam regardent ensemble »). Déjà invité, on s'assoit ;
+// sinon « 🙋 Demander à les rejoindre » : l'hôte est prévenu, et la demande l'attend dans sa séance
+// (`…/chez-<q de l'hôte>/rejoindre/<q>.json`) — « Lui faire une place » (l'invitation habituelle) ou « Pas maintenant ».
+// Jamais une fausse réponse : seule l'invitation de l'hôte ouvre la porte.
+const cheminDemandeRejoindre = (qHote: string, q: string) => `${dossierSalon("prives", idSeance(qHote))}/rejoindre/${q}.json`;
+/** Une demande tient une heure. */
+const REJOINDRE_MS = 3600_000;
+/** Deux séances au plus dans le fil. */
+const SEANCES_FIL_MAX = 2;
+type FicheRejoindre = { h?: string; cle?: string; prenom?: string; le?: number };
+
+/** 🎬 Les séances en cours chez ses proches (il n'y est pas) : qui y est, ce qui passe, s'il est invité ou a demandé. */
+export async function seancesDesProches(supabase: Supabase, moi: Habitant, maintenant = Date.now()): Promise<SeanceFil[]> {
+  const q = qui8(moi.id);
+  const miens = [...(await prochesDe(supabase, moi.id))].filter((h) => h !== moi.id).slice(0, 30);
+  const vues = await Promise.all(
+    miens.map(async (h): Promise<SeanceFil | null> => {
+      const qHote = qui8(h);
+      const id = idSeance(qHote);
+      const presents = await presentsFrais(supabase, "prives", id, maintenant).catch(() => [] as Entree[]);
+      if (!presents.length || presents.some((p) => p.nom === q)) return null;
+      if (!(await seParlent(supabase, moi.id, h).catch(() => false))) return null;
+      const [fiches, tele, hote, cle, monInvite, demande, piece] = await Promise.all([
+        Promise.all(presents.map((p) => lirePresent(supabase, "prives", id, p.nom).catch(() => ({}) as Partial<FichePresent>))),
+        lireTeleSeance(supabase, qHote),
+        prenomDuCompte(supabase, h),
+        poserProfil(supabase, h).catch(() => ""),
+        lireInvite(supabase, qHote, q),
+        lireJson<FicheRejoindre>(supabase, cheminDemandeRejoindre(qHote, q)).catch(() => ({}) as FicheRejoindre),
+        lireSaPiece(supabase, h).catch(() => null),
+      ]);
+      const vus = fiches.filter((f) => s(f.q)).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: f.figurine?.src ?? "", place: Number(f.place) || 0 }));
+      if (!cle || !vus.length) return null;
+      const image = piece ? await vignetteDeLaPiece(supabase, piece).catch(() => "") : "";
+      const enAttente = maintenant - (Number(demande.le) || 0) < REJOINDRE_MS;
+      return {
+        sorte: "seance",
+        cle,
+        hote,
+        hoteLa: presents.some((p) => p.nom === qHote),
+        presents: vus.sort((a, b) => Number(b.q === qHote) - Number(a.q === qHote)),
+        video: tele ? { id: tele.video.id, titre: tele.video.titre } : null,
+        ...(image ? { image } : {}),
+        ...(monInvite ? { invite: true as const } : enAttente ? { demande: true as const } : {}),
+      };
+    }),
+  );
+  return vues
+    .filter((x): x is SeanceFil => Boolean(x))
+    .sort((a, b) => b.presents.length - a.presents.length)
+    .slice(0, SEANCES_FIL_MAX);
+}
+
+/** 🙋 Demander à rejoindre la séance d'un proche (depuis le fil) : l'hôte est prévenu, une fois par heure. */
+export async function demanderARejoindre(supabase: Supabase, moi: Habitant, chez: unknown): Promise<Resultat<{ invite?: true; demande?: true }>> {
+  const hHote = await hDeCle(supabase, chez).catch(() => null);
+  if (!hHote) return { error: "Cette maison n’existe pas.", statut: 404 };
+  if (hHote === moi.id) return { error: "C’est chez toi 🙂", statut: 400 };
+  if (!(await seParlent(supabase, moi.id, hHote).catch(() => false))) return { error: PHRASES_REGARDER.pasProche, statut: 403 };
+  const qHote = qui8(hHote);
+  const q = qui8(moi.id);
+  const maintenant = Date.now();
+  // (déjà invité : il entre, rien à demander)
+  if (await invite(supabase, qHote, q)) return { invite: true };
+  const presents = await presentsFrais(supabase, "prives", idSeance(qHote), maintenant);
+  if (!presents.length) return { error: PHRASES_FIL.seanceFinie, statut: 409 };
+  if (presents.length >= PLACES_SEANCE) return { error: "Toutes les places sont prises.", statut: 409 };
+  const avant = await lireJson<FicheRejoindre>(supabase, cheminDemandeRejoindre(qHote, q)).catch(() => ({}) as FicheRejoindre);
+  if (maintenant - (Number(avant.le) || 0) < REJOINDRE_MS) return { demande: true };
+  const [prenom, cle] = await Promise.all([prenomDe(supabase, moi).catch(() => ""), poserProfil(supabase, moi.id).catch(() => "")]);
+  if (!cle) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  if (!(await ecrireJson(supabase, cheminDemandeRejoindre(qHote, q), { h: moi.id, cle, prenom: prenom || "Ton proche", le: maintenant }))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  await prevenirUnHabitantAppli(supabase, hHote, { titre: PHRASES_FIL.rejoindreNotif(prenom || "Ton proche"), corps: PHRASES_FIL.rejoindreNotifCorps, url: "/univers/salons?chez=moi", tag: `tele-${qHote}` }).catch(() => "rien");
+  return { demande: true };
+}
+
+/** 🙋 Les demandes à rejoindre ma séance (de moins d'une heure ; pas ceux déjà invités). */
+async function demandesARejoindre(supabase: Supabase, qHote: string, maintenant: number): Promise<DemandeRejoindre[]> {
+  const dossier = `${dossierSalon("prives", idSeance(qHote))}/rejoindre`;
+  const l = (await lister(supabase, dossier)).filter((e) => e.nom.endsWith(".json") && maintenant - e.ms < REJOINDRE_MS).slice(0, 6);
+  const vues = await Promise.all(
+    l.map(async (e): Promise<DemandeRejoindre | null> => {
+      const f = await lireJson<FicheRejoindre>(supabase, `${dossier}/${e.nom}`).catch(() => ({}) as FicheRejoindre);
+      const q = e.nom.replace(/\.json$/, "");
+      if (!s(f.h) || !s(f.cle) || maintenant - (Number(f.le) || 0) > REJOINDRE_MS || (await invite(supabase, qHote, q))) return null;
+      const fig = await figurineDeLaMaison(supabase, s(f.h)).catch(() => null);
+      return { cle: s(f.cle), prenom: s(f.prenom) || "Ton proche", ...(fig?.src ? { figurine: fig.src } : {}) };
+    }),
+  );
+  return vues.filter((x): x is DemandeRejoindre => Boolean(x));
+}
+
+/** 🙋 « Pas maintenant » : l'hôte laisse la demande (rien n'est dit à l'autre : jamais une fausse réponse). */
+export async function laisserLaDemande(supabase: Supabase, moi: Habitant, cle: unknown): Promise<Resultat> {
+  const h = await hDeCle(supabase, cle).catch(() => null);
+  if (!h) return { error: "Qui ?", statut: 400 };
+  await effacer(supabase, [cheminDemandeRejoindre(qui8(moi.id), qui8(h))]);
+  return {};
 }

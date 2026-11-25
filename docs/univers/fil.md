@@ -165,11 +165,37 @@ on la découvre.
 **L'essai** : `scripts/essai-maisons-ouvertes-route.mjs` (qui voit quelle maison, les 15-17 ans, la porte, le coucou et
 sa réponse, la pièce refermée, la surprise).
 
-## 6. Les lots suivants
+## 6. Le lot F3 : mes proches en direct (25 novembre 2026)
 
-- **F3, mes proches en direct** : une séance entre proches en cours dans le fil (« Léa et Sam regardent ensemble »,
-  « Demander à les rejoindre ») ; quand sa figurine entre quelque part, les présents peuvent lui faire signe en un
-  toucher (la vraie réponse).
+**Dans le fil** :
+
+- **La séance en cours chez un proche** (il n'y est pas ; deux au plus) arrive en premier : « Chez Léa, en direct »,
+  ce qui passe à sa télé, sa pièce avec les figurines de ceux qui y sont (l'hôte d'abord), « Léa et Sam regardent
+  ensemble » (seul : « Léa regarde sa télé », « Sam regarde chez Léa »).
+- **Déjà invité** : « 🛋️ M'asseoir avec eux ». **Sinon** : « 🙋 Demander à les rejoindre ». L'hôte reçoit une
+  notification (« 🙋 Zoé aimerait vous rejoindre ») ; la carte dit « Demande envoyée à Léa » (une demande par heure).
+- **Chez l'hôte, devant sa télé** : « 🙋 Zoé aimerait vous rejoindre », avec sa figurine ; « Lui faire une place »
+  (l'invitation habituelle : notification, « Venir », la carte du fil devient « M'asseoir avec eux ») ou « Pas
+  maintenant » (la demande s'en va, rien n'est dit à l'autre : jamais une fausse réponse).
+- **Seulement chez ses proches** (des deux côtés) ; tous partis, la séance quitte le fil et on ne peut plus demander.
+
+**Faire signe** : dans un salon ou une séance, au-dessus de la figurine de celui qui vient d'arriver (après moi, depuis
+moins d'une minute et demie), un 👋 ; un toucher, et le geste « coucou » part vers lui (une fois). Celui qui est entré
+depuis le fil (en touchant deux fois l'écran) le voit sur sa figurine : « 👋 Sam te fait signe ».
+
+**Le code** :
+
+- `salons-ouverts-serveur.ts` : `seancesDesProches`, `demanderARejoindre`, `laisserLaDemande` ; le pouls de l'hôte rend
+  `rejoindre` ; `inviterChezMoi` efface la demande. La demande : `decouvrir/salons/prives/chez-<q>/rejoindre/<q>.json`.
+- les routes : `POST /api/direct/salons-ouverts { action: "rejoindre", chez }` → `{ invite? | demande? }` ;
+  `{ action: "laisser-demande", cle }`.
+- l'écran : `fil-decouvrir.tsx` (`PieceSeance`, « 👋 Sam te fait signe »), `salon-ouvert.tsx` (la demande chez l'hôte,
+  le 👋 au-dessus de celui qui arrive).
+
+**Les essais** : `scripts/essai-proches-en-direct-route.mjs`, `scripts/navigateur/proches-en-direct.mjs`.
+
+## 7. Les lots suivants
+
 - **F4, l'ordre du fil** : d'abord ses proches en direct, puis ses passions, puis les maisons, puis Autour ; rien ne
   revient deux fois de suite.
 - **Décidé par le propriétaire (25 novembre 2026) : l'appli s'ouvre sur le fil de Découvrir**, plus sur « Messages »

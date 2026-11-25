@@ -14,6 +14,9 @@
  * 🏡 Le lot F2 (25 novembre 2026) : les maisons ouvertes de ceux de son âge qui partagent une de ses passions — sa pièce,
  * sa figurine ; « 🚪 Frapper à sa porte » (la visite), « 👋 Lui faire coucou » (toucher deux fois aussi) ; et, en haut,
  * la surprise d'une visite qui l'attend dans « Messages » (🎁 un cadeau, 🚪 quelqu'un qui a frappé).
+ * 🎬 Le lot F3 (25 novembre 2026) : la séance en cours chez un proche (« Léa et Sam regardent ensemble ») — « M'asseoir
+ * avec eux » s'il est invité, sinon « 🙋 Demander à les rejoindre » (l'hôte lui fait une place d'un toucher) ; et dans un
+ * salon où sa figurine est entrée, « 👋 Sam te fait signe » quand quelqu'un lui fait signe pour de vrai.
  */
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { OngletVisible } from "./guide";
@@ -23,7 +26,7 @@ import { vignetteYouTube } from "@/lib/direct/tele";
 import { PLAN_GRADIN, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import { GESTES_SALON, PLACES_SALON, REACTIONS_SALON, type MessageSalon, type PresentSalon } from "@/lib/direct/salons-ouverts";
 import { REACTIONS_MUSIQUE } from "@/lib/direct/platine";
-import { PHRASES_FIL as P, reactionDuFil, type BulleFil, type FilVue, type MaisonFil, type PieceFil, type SalonFil } from "@/lib/direct/fil-decouvrir";
+import { PHRASES_FIL as P, reactionDuFil, titreDeSeance, type BulleFil, type FilVue, type MaisonFil, type PieceFil, type SalonFil, type SeanceFil } from "@/lib/direct/fil-decouvrir";
 
 const ROUTE = "/api/direct/fil-decouvrir";
 const SALONS = "/api/direct/salons-ouverts";
@@ -32,7 +35,7 @@ const VISITES = "/api/direct/visites";
 const MEMOIRE_MS = 10 * 60_000;
 const CLE_INDICE = "clikme-fil-indice-vu";
 
-const cleDe = (p: PieceFil) => (p.sorte === "salon" ? `s:${p.theme}` : p.sorte === "autour" ? `a:${p.figurine.id}` : p.sorte === "maison" ? `m:${p.cle}` : "h");
+const cleDe = (p: PieceFil) => (p.sorte === "salon" ? `s:${p.theme}` : p.sorte === "autour" ? `a:${p.figurine.id}` : p.sorte === "maison" ? `m:${p.cle}` : p.sorte === "seance" ? `e:${p.cle}` : "h");
 const heuresRestantes = (fin: string) => Math.max(1, Math.round((Date.parse(fin) - Date.now()) / 3600_000));
 const texteDe = (m: MessageSalon) =>
   m.sorte === "texte" ? (m.texte ?? "") : m.sorte === "reaction" ? ([...REACTIONS_SALON, ...REACTIONS_MUSIQUE].find((r) => r.cle === m.cle)?.e ?? "") : (GESTES_SALON.find((g) => g.cle === m.cle)?.e ?? "");
@@ -170,6 +173,9 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
           const p = j?.pouls;
           if (!p) return;
           depuis = Math.max(depuis, ...p.messages.map((m) => m.le));
+          // (👋 lot F3 : quelqu'un lui fait signe, pour de vrai — sa figurine le dit)
+          const signe = p.messages.find((m) => m.sorte === "geste" && m.a && m.a === monQ.current && m.de !== monQ.current);
+          if (signe) setReaction({ k: `s:${theme}`, e: "👋", texte: P.teFaitSigne(signe.prenom), n: Date.now() });
           setPieces((l) =>
             l.map((x) => {
               if (x.sorte !== "salon" || x.theme !== theme) return x;
@@ -235,6 +241,16 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
       return dire(r.j.error || "Ça n’a pas marché.");
     }
     setPieces((l) => l.map((x) => (x.sorte === "maison" && x.cle === p.cle ? { ...x, coucou: "envoye" } : x)));
+  }
+
+  /** 🙋 (lot F3) Demander à rejoindre la séance d'un proche : l'hôte est prévenu ; invité déjà, on y va. */
+  async function rejoindre(p: SeanceFil) {
+    const r = await fetch(SALONS, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "rejoindre", chez: p.cle }) })
+      .then(async (x) => ({ ok: x.ok, j: ((await x.json().catch(() => ({}))) ?? {}) as { error?: string; invite?: boolean; demande?: boolean } }))
+      .catch(() => ({ ok: false, j: {} as { error?: string; invite?: boolean; demande?: boolean } }));
+    if (!r.ok) return dire(r.j.error || "Ça n’a pas marché.");
+    if (r.j.invite) return void window.location.assign(`/univers/salons?chez=${encodeURIComponent(p.cle)}`);
+    setPieces((l) => l.map((x) => (x.sorte === "seance" && x.cle === p.cle ? { ...x, demande: true } : x)));
   }
 
   // toucher deux fois l'écran (pas un bouton, pas un lien)
@@ -316,6 +332,8 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
                 </span>
               </div>
             </section>
+          ) : p.sorte === "seance" ? (
+            <PieceSeance key={k} k={k} p={p} onRejoindre={() => void rejoindre(p)} />
           ) : p.sorte === "autour" ? (
             <section key={k} className="fd-carte fd-autour" data-k={k} data-piece="autour" data-pose={p.figurine.id}>
               <span className="fd-etiquette">📍 {P.autourEtiquette(p.nomLieu)}</span>
@@ -429,6 +447,60 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
   );
 }
 
+/** 🎬 (lot F3) Une séance chez un proche : sa télé, sa pièce, ceux qui y sont ; s'asseoir (invité) ou demander. */
+function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoindre: () => void }) {
+  const n = p.presents.length;
+  return (
+    <section className="fd-carte fd-seance" data-k={k} data-piece="seance" data-seance={p.cle} data-invite={p.invite ? "1" : undefined} data-demande={p.demande ? "1" : undefined}>
+      <span className="fd-etiquette">
+        <i className="fd-direct" aria-hidden="true" />
+        {P.seanceEtiquette(p.hote)}
+      </span>
+      <div className="fd-tele" data-tele>
+        {p.video ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={vignetteYouTube(p.video.id)} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />
+        ) : (
+          <span className="fd-neige" aria-hidden="true" />
+        )}
+        <span className="fd-tele-titre">{p.video?.titre ?? ""}</span>
+      </div>
+      <div className="fd-scene">
+        <div className="fd-seance-piece" style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>
+          {p.presents.map((x, i) => (
+            <span key={x.q} className="fd-seance-fig" data-q={x.q} style={{ left: `${((i + 1) / (n + 1)) * 100}%`, animationDelay: `${(i % 4) * 0.18}s` }}>
+              {x.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={x.src} alt="" draggable={false} />
+              ) : (
+                <span className="fd-sans" aria-hidden="true" />
+              )}
+              <small>{x.prenom}</small>
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="fd-bas">
+        <h2 data-titre-seance>{titreDeSeance(p)}</h2>
+        <p>{p.invite ? P.seanceInvite : p.demande ? P.seanceDemande(p.hote) : P.seanceSous(p.hote)}</p>
+        {p.invite ? (
+          <a className="fd-bouton" href={`/univers/salons?chez=${encodeURIComponent(p.cle)}`} data-asseoir-seance>
+            {P.asseoirAvecEux(n)}
+          </a>
+        ) : p.demande ? (
+          <span className="fd-bouton fd-second" data-demande-envoyee>
+            {P.demandeEnvoyee}
+          </span>
+        ) : (
+          <button type="button" className="fd-bouton" data-rejoindre onClick={onRejoindre}>
+            {P.rejoindre(n, p.presents[0]?.prenom ?? p.hote)}
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /** 🛋️ Un salon en direct : sa télé, son gradin, ceux qui y sont, leurs dernières bulles. */
 function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
   const plan: readonly PlaceGradin[] = p.gradin?.places.length ? p.gradin.places : PLAN_GRADIN;
@@ -526,6 +598,11 @@ export const STYLES_FIL = `
 .fd-salon[data-theme="musique"]{background:radial-gradient(90% 50% at 50% 35%,rgba(122,92,255,.22),transparent 70%),#130A1E}
 .fd-autour{background:radial-gradient(80% 45% at 50% 40%,rgba(242,196,107,.2),transparent 70%),#1E120E}
 .fd-humeur{background:radial-gradient(80% 45% at 50% 40%,rgba(255,122,192,.18),transparent 70%),#1A0C18}
+.fd-seance{background:radial-gradient(80% 45% at 50% 40%,rgba(255,170,90,.18),transparent 70%),#1A0F0A}
+.fd-seance-piece{position:relative;width:100%;max-width:520px;height:100%;border-radius:20px;background:#22140E center/cover;box-shadow:0 18px 40px -16px #000,inset 0 0 0 1px rgba(255,255,255,.12)}
+.fd-seance-fig{position:absolute;bottom:6%;height:62%;translate:-50% 0;display:flex;flex-direction:column;align-items:center;animation:fd-flotte 3.2s ease-in-out infinite}
+.fd-seance-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));-webkit-user-drag:none}
+.fd-seance-fig small{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.62);font-size:10.5px;font-weight:800;white-space:nowrap}
 .fd-maison{background:radial-gradient(80% 45% at 50% 40%,rgba(127,240,196,.16),transparent 70%),#0E1714}
 .fd-chez{justify-content:center}
 .fd-chez-piece{position:relative;width:100%;max-width:460px;height:100%;max-height:52dvh;border-radius:22px;background-size:cover;background-position:center;box-shadow:0 18px 40px -16px #000,inset 0 0 0 1px rgba(255,255,255,.12)}

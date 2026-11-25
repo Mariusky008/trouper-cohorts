@@ -51,11 +51,13 @@ import {
   PLACES_DU_SALON,
   PLACES_SEANCE,
   REACTIONS_SALON,
+  SIGNE_MS,
   TEXTE_SALON_MAX,
   positionSeance,
   positionTele,
   refusDuMessage,
   type CleReaction,
+  type DemandeRejoindre,
   type MessageSalon,
   type MomentSalon,
   type PresentSalon,
@@ -219,6 +221,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   /** ce que je regarde : ma vidéo gardée, ou la télé de l'hôte */
   const regarde = aPart ?? tele;
   const [inviter, setInviter] = useState(false);
+  // (🙋 lot F3 : chez moi, mes proches qui demandent depuis le fil à nous rejoindre ; 👋 ceux à qui j'ai fait signe)
+  const [demandesRejoindre, setDemandesRejoindre] = useState<DemandeRejoindre[]>([]);
+  const [signes, setSignes] = useState<string[]>([]);
   // (🗄️ lot D5 : l'étagère ouverte ; les messages que j'ai aimés)
   const [etagere, setEtagere] = useState<MomentSalon[] | null>(null);
   const [aimes, setAimes] = useState<string[]>([]);
@@ -587,6 +592,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         return [...garde, ...neufs];
       });
       recevoir(p.messages, true);
+      setDemandesRejoindre(p.rejoindre ?? []);
       // (🎬 la télé de la séance : ce que l'hôte vient de faire)
       if (p.seance !== undefined) {
         const avant = hoteRef.current;
@@ -635,6 +641,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const r = await poster({ salon: salon.id, ...corps });
     if (r.ok && r.j.platine) setPlatine(r.j.platine as PlatineVue);
     else if (!r.ok) dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
+  }
+
+  // ─── 🙋 (lot F3) lui faire une place (l'invitation habituelle), ou laisser sa demande ───
+  async function repondreRejoindre(d: DemandeRejoindre, oui: boolean) {
+    setDemandesRejoindre((l) => l.filter((x) => x.cle !== d.cle));
+    const r = await poster(oui ? { action: "inviter", cles: [d.cle] } : { action: "laisser-demande", cle: d.cle });
+    if (!r.ok) return dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
+    if (oui) dire(P.entre(d.prenom), 5200);
+  }
+  // ─── 👋 (lot F3) faire signe, d'un toucher, à celui qui vient d'arriver ───
+  async function faireSigne(q: string) {
+    setSignes((l) => [...l, q]);
+    if (!(await envoyer({ sorte: "geste", cle: "coucou", a: q }))) setSignes((l) => l.filter((x) => x !== q));
   }
 
   // ─── ✍️ écrire, réagir, un geste ───
@@ -906,6 +925,21 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           💬
         </button>
       </header>
+      {seance?.hote && demandesRejoindre[0] && (
+        <div className="so-rejoindre" data-rejoindre-demande={demandesRejoindre[0].cle} role="status">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {demandesRejoindre[0].figurine && <img src={demandesRejoindre[0].figurine} alt="" draggable={false} />}
+          <b>{P.rejoindreDemande(demandesRejoindre[0].prenom)}</b>
+          <span>
+            <button type="button" data-faire-entrer onClick={() => void repondreRejoindre(demandesRejoindre[0], true)}>
+              {P.faireEntrer}
+            </button>
+            <button type="button" className="second" data-laisser-demande onClick={() => void repondreRejoindre(demandesRejoindre[0], false)}>
+              {P.pasMaintenant}
+            </button>
+          </span>
+        </div>
+      )}
 
       <div className="so-scene" ref={boite}>
         {seance ? (
@@ -1022,9 +1056,16 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               // (👀 ensemble sur la même vidéo : sa caméra marche, sa figurine copie sa tête en direct)
               const enDirect = !moi && !souvenir && !aPart && p.q in tetes ? vivantesDe[p.q] : undefined;
               const popsS = souvenir ? popsF.filter((x) => x.cle === souvenir.cle) : [];
+              // (👋 lot F3 : il vient d'arriver, après moi — un toucher pour lui faire signe, une fois)
+              const signe = !moi && !cache && !souvenir && p.arrive > moiArrive && Date.now() + decalage.current - p.arrive < SIGNE_MS && !signes.includes(p.q);
               return (
+                <span key={p.q} className="so-fig-et">
+                  {signe && (
+                    <button type="button" className="so-signe" data-faire-signe={p.q} aria-label={P.faireSigne(p.prenom)} style={{ left: x.x, bottom: H - x.y + x.h + 4, zIndex: Math.round(x.y) + 1 }} onClick={() => void faireSigne(p.q)}>
+                      👋
+                    </button>
+                  )}
                 <button
-                  key={p.q}
                   type="button"
                   className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}`}
                   data-q={p.q}
@@ -1070,6 +1111,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     ),
                   )}
                 </button>
+                </span>
               );
             })}
           {L > 0 &&
@@ -2265,6 +2307,15 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-fiche{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .so-fiche img{width:64px;height:64px;object-fit:contain}
 .so-fiche small{opacity:.7;font-size:12.5px}
+.so-fig-et{display:contents}
+.so-signe{position:absolute;transform:translateX(-50%);width:44px;height:44px;border:0;border-radius:50%;background:#fff;font-size:22px;line-height:44px;padding:0;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.45);animation:so-signe 1.2s ease-in-out infinite}
+@keyframes so-signe{0%,100%{rotate:-12deg}50%{rotate:14deg}}
+.so-rejoindre{position:fixed;left:12px;right:12px;top:calc(64px + env(safe-area-inset-top));z-index:60;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;max-width:520px;margin:0 auto;padding:10px 12px;border-radius:18px;background:#1E0F18;color:#FFF4E6;box-shadow:0 14px 34px -10px #000,inset 0 0 0 1px rgba(255,255,255,.14)}
+.so-rejoindre img{height:46px;width:auto}
+.so-rejoindre b{flex:1 1 160px;font-size:14.5px}
+.so-rejoindre span{display:flex;gap:8px}
+.so-rejoindre button{min-height:40px;padding:0 14px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.so-rejoindre button.second{background:rgba(255,255,255,.12)}
 .so-gestes,.so-motifs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .so-gestes button,.so-motifs button{border:0;border-radius:999px;padding:10px 14px;font:inherit;font-weight:800;font-size:14px;background:rgba(255,255,255,.1);color:#FFF4E6;cursor:pointer}
 .so-motifs{flex-direction:column}
