@@ -128,5 +128,8 @@ dans l'ordre du catalogue (seize pièces au plus).
   toucher (la vraie réponse).
 - **F4, l'ordre du fil** : d'abord ses proches en direct, puis ses passions, puis les maisons, puis Autour ; rien ne
   revient deux fois de suite.
-- **À décider avec le propriétaire** : sur quel onglet l'appli s'ouvre. Aujourd'hui, c'est « Messages » (avec Ma
-  maison) ; le fil pourrait devenir le premier écran.
+- **Décidé par le propriétaire (25 novembre 2026) : l'appli s'ouvre sur le fil de Découvrir**, plus sur « Messages »
+  (`ma-collection.tsx`, à l'ouverture sans adresse). Deux exceptions : pendant que sa figurine se fabrique, rien ne
+  change ; l'appli tout juste posée sur l'écran d'accueil s'ouvre sur « Messages », pour proposer les notifications de
+  ses proches (une fois ; « Plus tard » est retenu une semaine). Les surprises des visites (un cadeau, un toc toc) se
+  découvrent en ouvrant « Messages ». Essai : `scripts/navigateur/bascule-univers.mjs`.

@@ -60,7 +60,7 @@ import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
 import { BienvenueSelonPablito, STYLES_BIENVENUE_CHEZ } from "./bienvenue-chez";
 import { BIENVENUE_CHEZ_PABLITO } from "@/lib/direct/bienvenue";
 import { MaMaison, STYLES_MA_MAISON } from "./ma-maison";
-import { capterLaProposition, lierSiBesoin, ouvrirInstallation } from "@/lib/direct/appli-collection";
+import { capterLaProposition, instantane, lierSiBesoin, lireInstantane, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
 /** Le menu du bas : cinq boutons, « Créer » au milieu ; « Proches » a pris la place de « Moi » (8 novembre 2026). */
@@ -245,9 +245,14 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     if (!charge || !premiereArrivee.current) return;
     premiereArrivee.current = false;
     const sansAdresse = !window.location.hash && !new URLSearchParams(window.location.search).get("ami");
-    // 🏡 (l'interrupteur « Univers pour tous » allumé) l'appli s'ouvre sur « Chez moi » — sauf pendant que sa figurine
-    // d'aujourd'hui se fabrique
-    if (univers && sansAdresse && etat?.etape !== "fabrication") return aller("proches");
+    // 🎞️ (l'interrupteur « Univers pour tous » allumé) L'APPLI S'OUVRE SUR LE FIL DE DÉCOUVRIR (décision du propriétaire,
+    // 25 novembre 2026 ; avant : « Messages ») — sauf pendant que sa figurine d'aujourd'hui se fabrique (rien n'est
+    // touché), et l'appli tout juste posée sur l'écran d'accueil : elle s'ouvre sur « Messages », qui propose les
+    // notifications de ses proches (`ProposerLesNotifications`, une fois)
+    if (univers && sansAdresse && etat?.etape !== "fabrication") {
+      const tel = lireInstantane(instantane());
+      return aller(tel.installee && !tel.plusTard && tel.notif === "a-demander" ? "proches" : "decouvrir");
+    }
     if (etat?.etape === "prete" && etat.messages.length > 0 && sansAdresse) aller("decouvrir");
   }, [charge, etat, aller, univers]);
 
