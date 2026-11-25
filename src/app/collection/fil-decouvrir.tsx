@@ -17,6 +17,11 @@
  * 🎬 Le lot F3 (25 novembre 2026) : la séance en cours chez un proche (« Léa et Sam regardent ensemble ») — « M'asseoir
  * avec eux » s'il est invité, sinon « 🙋 Demander à les rejoindre » (l'hôte lui fait une place d'un toucher) ; et dans un
  * salon où sa figurine est entrée, « 👋 Sam te fait signe » quand quelqu'un lui fait signe pour de vrai.
+ * 🪑 La pièce du salon (25 novembre 2026, la maquette validée : « la vidéo et les sièges vides ou remplis, avec le siège
+ * qui m'est destiné, c'est suffisant ») : la télé et les fauteuils dans une même pièce ; chaque place libre est un
+ * fauteuil vide (sans gradin validé) ; la sienne brille, « Ta place » — la toucher, c'est s'asseoir ; sa figurine n'est
+ * plus au bord de la pièce dans un salon, elle y a sa place. En bas : « M'asseoir », « Inviter ». Sur un ordinateur : la
+ * pièce à gauche, le salon et ses boutons à droite.
  */
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { OngletVisible } from "./guide";
@@ -68,6 +73,7 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
   const entres = useRef(new Map<string, string>());
   /** son identifiant court dans les salons (pour ne pas se compter parmi ceux qui le voient) */
   const monQ = useRef("");
+  const [moiQ, setMoiQ] = useState("");
   const tapes = useRef<{ k: string; t: number } | null>(null);
   const appui = useRef<{ x: number; y: number } | null>(null);
 
@@ -217,7 +223,10 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
           return dire(e.j.figurine ? P.sansFigurine : String(e.j.error ?? "Ça n’a pas marché."));
         }
         id = o.salon.id;
-        if (o.moi) monQ.current = o.moi;
+        if (o.moi) {
+          monQ.current = o.moi;
+          setMoiQ(o.moi);
+        }
         entres.current.set(p.theme, id);
         // (sa figurine s'assoit dans le gradin, à sa place)
         setPieces((l) => l.map((x) => (x.sorte === "salon" && x.theme === p.theme ? { ...x, id: id!, presents: (o.presents ?? []).map(enPresent) } : x)));
@@ -241,6 +250,23 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
       return dire(r.j.error || "Ça n’a pas marché.");
     }
     setPieces((l) => l.map((x) => (x.sorte === "maison" && x.cle === p.cle ? { ...x, coucou: "envoye" } : x)));
+  }
+
+  /** 🪑 Inviter quelqu'un à s'asseoir dans ce salon : le lien du salon (le partage du téléphone, sinon copié). */
+  async function inviter(p: SalonFil) {
+    const url = `${window.location.origin}/univers/salons?theme=${p.theme}`;
+    const texte = P.invitationSalon(p.nom);
+    try {
+      if (navigator.share) return void (await navigator.share({ title: "ClikMe", text: texte, url }));
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${texte} ${url}`);
+      dire(P.lienCopie);
+    } catch {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`${texte} ${url}`)}`, "_blank", "noopener");
+    }
   }
 
   /** 🙋 (lot F3) Demander à rejoindre la séance d'un proche : l'hôte est prévenu ; invité déjà, on y va. */
@@ -301,7 +327,7 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
         {pieces.map((p) => {
           const k = cleDe(p);
           return p.sorte === "salon" ? (
-            <PieceSalon key={k} k={k} p={p} />
+            <PieceSalon key={k} k={k} p={p} moi={moiQ} reaction={reaction && reaction.k === k ? reaction : null} onInviter={() => void inviter(p)} />
           ) : p.sorte === "maison" ? (
             <section key={k} className="fd-carte fd-maison" data-k={k} data-piece="maison" data-maison={p.cle} data-coucou={p.coucou ?? undefined}>
               <span className="fd-etiquette">{P.maisonEtiquette(p.passion.e, p.passion.nom)}</span>
@@ -414,7 +440,7 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
       </div>
 
       {/* 🧍 sa figurine, au bord de la pièce : la toucher, c'est réagir */}
-      {moi?.figurine && (
+      {moi?.figurine && !courante.startsWith("s:") && (
         <div className="fd-moi" data-moi>
           {reaction && reaction.k === courante && (
             <span className="fd-reaction" key={reaction.n} data-reaction>
@@ -501,8 +527,15 @@ function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoind
   );
 }
 
-/** 🛋️ Un salon en direct : sa télé, son gradin, ceux qui y sont, leurs dernières bulles. */
-function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
+/** Une fraction (0 à 1) en pourcentage, pour placer dans la pièce. */
+const pc = (x: number) => `${(x * 100).toFixed(2)}%`;
+
+/**
+ * 🛋️ Un salon : sa pièce — la télé, et devant elle les places (celles qui sont prises : leurs figurines ; les autres :
+ * un fauteuil vide) ; la sienne brille (« Ta place » : la toucher, c'est s'asseoir) ; leurs dernières bulles, ou, sans
+ * personne, ce qui s'y est dit aujourd'hui. En bas : « M'asseoir », « Inviter ».
+ */
+function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil; moi: string; reaction: Reaction | null; onInviter: () => void }) {
   const plan: readonly PlaceGradin[] = p.gradin?.places.length ? p.gradin.places : PLAN_GRADIN;
   const musique = p.theme === "musique";
   // (la dernière bulle de chacun de ceux qui sont là)
@@ -515,6 +548,13 @@ function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
   const passes = [...new Set(traces.map((t) => t.prenom))].slice(0, 3);
   // (« il y a 2 h » : compté depuis l'arrivée de la pièce à l'écran)
   const [maintenant] = useState(() => Date.now());
+  // (les places libres, dans l'ordre du salon : la première est la sienne — celle que le salon lui donnera)
+  const prises = new Set(p.presents.map((x) => x.place % plan.length));
+  const placesLibres = plan.map((_, i) => i).filter((i) => !prises.has(i));
+  const assis = moi ? p.presents.find((x) => x.q === moi) : undefined;
+  const sienne = assis ? assis.place % plan.length : placesLibres[0];
+  const ici = sienne === undefined ? undefined : plan[sienne];
+  const salon = `/univers/salons?theme=${p.theme}`;
   return (
     <section className={`fd-carte fd-salon${vide ? " vide" : ""}`} data-k={k} data-piece="salon" data-theme={p.theme} data-salon={p.id} data-vide={vide ? "1" : undefined}>
       <span className="fd-etiquette">
@@ -528,51 +568,89 @@ function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
         )}
         {p.mien ? ` · ${P.tesPassions}` : ""}
       </span>
-      <div className="fd-tele" data-tele>
-        {p.video ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={vignetteYouTube(p.video.id)} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />
-        ) : (
-          <span className="fd-neige" aria-hidden="true" />
-        )}
-        <span className="fd-tele-titre">{musique ? (p.morceau ? P.choix(p.morceau.prenom) : P.radio) : p.video?.titre ?? ""}</span>
-      </div>
-      <div className="fd-scene">
-        <div className="fd-gradin" style={p.gradin ? { backgroundImage: `url(${p.gradin.flou})` } : undefined} data-gradin={p.gradin ? "1" : "plan"}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {p.gradin && <img className="fd-gradin-img" src={p.gradin.src} alt="" draggable={false} loading="lazy" />}
-          {traces.length > 0 && (
-            <div className="fd-traces" data-traces>
-              {traces.map((t) => (
-                <span key={t.id} className="fd-trace" data-trace>
-                  <small>
-                    {t.prenom} · {P.ilYa(maintenant - t.le)}
-                  </small>
-                  <span>{t.texte}</span>
-                </span>
-              ))}
-            </div>
+      <div className="fd-salle">
+        <div className="fd-tele" data-tele>
+          {p.video ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={vignetteYouTube(p.video.id)} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />
+          ) : (
+            <span className="fd-neige" aria-hidden="true" />
           )}
-          {p.presents.map((x, i) => {
-            const g = plan[x.place % plan.length] ?? plan[i % plan.length];
-            const b = bulles.get(x.q);
-            return (
-              <span key={x.q} className={`fd-fig${musique ? " danse" : ""}`} data-q={x.q} style={{ left: `${g.x * 100}%`, top: `${g.y * 100}%`, height: `${g.hauteur * 100}%`, animationDelay: `${(i % 4) * 0.18}s` }}>
-                {b && (
-                  <span className="fd-bulle" key={b.id} data-bulle style={{ animationDelay: `${(i % 3) * 1.6}s` }}>
-                    {b.texte}
+          <span className="fd-tele-titre">{musique ? (p.morceau ? P.choix(p.morceau.prenom) : P.radio) : p.video?.titre ?? ""}</span>
+        </div>
+        <div className="fd-scene">
+          <div className="fd-gradin" style={p.gradin ? { backgroundImage: `url(${p.gradin.flou})` } : undefined} data-gradin={p.gradin ? "1" : "plan"}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {p.gradin && <img className="fd-gradin-img" src={p.gradin.src} alt="" draggable={false} loading="lazy" />}
+            {/* (sans gradin validé : chaque place libre est un fauteuil vide) */}
+            {!p.gradin &&
+              placesLibres.map((i) => {
+                const g = plan[i];
+                return (
+                  <span
+                    key={`f${i}`}
+                    className={`fd-fauteuil${i === sienne && !assis ? " sienne" : ""}`}
+                    data-fauteuil={i}
+                    style={{ left: pc(g.x), top: pc(g.y - g.hauteur * 0.6), width: pc(g.hauteur * 0.92), height: pc(g.hauteur * 0.6) }}
+                    aria-hidden="true"
+                  >
+                    <i className="dos" />
+                    <i className="assise" />
+                    <i className="bras g" />
+                    <i className="bras d" />
                   </span>
-                )}
-                {x.src ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={x.src} alt="" draggable={false} />
-                ) : (
-                  <span className="fd-sans" aria-hidden="true" />
-                )}
-                <small>{x.prenom}</small>
+                );
+              })}
+            {traces.length > 0 && (
+              <div className="fd-traces" data-traces>
+                {traces.map((t) => (
+                  <span key={t.id} className="fd-trace" data-trace>
+                    <small>
+                      {t.prenom} · {P.ilYa(maintenant - t.le)}
+                    </small>
+                    <span>{t.texte}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+            {p.presents.map((x, i) => {
+              const g = plan[x.place % plan.length] ?? plan[i % plan.length];
+              const b = bulles.get(x.q);
+              return (
+                <span key={x.q} className={`fd-fig${musique ? " danse" : ""}${x.q === moi ? " moi" : ""}`} data-q={x.q} style={{ left: pc(g.x), top: pc(g.y), height: pc(g.hauteur), animationDelay: `${(i % 4) * 0.18}s` }}>
+                  {b && (
+                    <span className="fd-bulle" key={b.id} data-bulle style={{ animationDelay: `${(i % 3) * 1.6}s` }}>
+                      {b.texte}
+                    </span>
+                  )}
+                  {x.src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={x.src} alt="" draggable={false} />
+                  ) : (
+                    <span className="fd-sans" aria-hidden="true" />
+                  )}
+                  <small>{x.q === moi ? P.toi : x.prenom}</small>
+                </span>
+              );
+            })}
+            {/* ✨ sa place : elle brille, la toucher, c'est s'asseoir */}
+            {!assis && ici && (
+              <a className="fd-ta-place" href={salon} data-ta-place style={{ left: pc(ici.x), top: pc(ici.y), height: pc(ici.hauteur) }} aria-label={P.asseoirIci}>
+                <svg viewBox="0 0 64 88" aria-hidden="true">
+                  <circle cx="32" cy="24" r="20" />
+                  <rect x="11" y="47" width="42" height="38" rx="17" />
+                </svg>
+                <small>{P.taPlace}</small>
+              </a>
+            )}
+            {/* (sa réaction, au-dessus de sa place) */}
+            {reaction && ici && (
+              <span className="fd-reaction fd-reaction-ici" key={reaction.n} data-reaction style={{ left: pc(ici.x), top: pc(ici.y - ici.hauteur) }}>
+                <b>{reaction.e}</b>
+                {reaction.texte && <small data-vu-par>{reaction.texte}</small>}
               </span>
-            );
-          })}
+            )}
+          </div>
         </div>
       </div>
       <div className="fd-bas">
@@ -585,9 +663,20 @@ function PieceSalon({ k, p }: { k: string; p: SalonFil }) {
           {p.e} {p.nom}
         </h2>
         <p data-sous>{!vide ? P.places(libres) : musique ? P.radioTourne : passes.length ? P.yEtaient(passes) : P.premier}</p>
-        <a className="fd-bouton" href={`/univers/salons?theme=${p.theme}`} data-asseoir>
-          {musique ? P.entrerDanser : P.asseoir}
-        </a>
+        <span className="fd-boutons">
+          <a className="fd-bouton" href={salon} data-asseoir>
+            {musique ? P.entrerDanser : P.asseoir}
+          </a>
+          <button type="button" className="fd-bouton fd-second" data-inviter onClick={onInviter}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="9" cy="8" r="4" />
+              <path d="M2 21c.8-4 3.6-6 7-6s6.2 2 7 6" />
+              <path d="M19 8v6" />
+              <path d="M16 11h6" />
+            </svg>
+            {P.inviter}
+          </button>
+        </span>
       </div>
     </section>
   );
@@ -672,6 +761,43 @@ export const STYLES_FIL = `
 .fd-fleche{font-size:34px;line-height:1;animation:fd-flotte 1.6s ease-in-out infinite}
 .fd-toast{position:fixed;left:50%;top:calc(104px + env(safe-area-inset-top));z-index:6;transform:translateX(-50%);margin:0;padding:10px 16px;border-radius:14px;background:rgba(20,6,14,.95);color:#fff;font-size:14px;max-width:calc(100vw - 32px);text-align:center;box-shadow:0 10px 30px -10px #000}
 @media (min-width:860px){.fd-carte{padding-left:max(16px,calc(50vw - 300px));padding-right:max(16px,calc(50vw - 300px))}}
+/* 🪑 la pièce du salon : la télé et les fauteuils, ensemble */
+.fd-salle{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;padding:12px 12px 6px;border-radius:26px;overflow:hidden;
+  background:radial-gradient(55% 30% at 8% 12%,rgba(245,162,58,.22),transparent 70%),radial-gradient(55% 30% at 92% 12%,rgba(245,162,58,.18),transparent 70%),linear-gradient(180deg,#3a2418 0%,#2c1b12 44%,#3b2316 44.4%,#22130b 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,196,140,.14)}
+.fd-salon[data-theme="musique"] .fd-salle{background:radial-gradient(55% 30% at 8% 12%,rgba(255,46,154,.2),transparent 70%),radial-gradient(55% 30% at 92% 12%,rgba(245,162,58,.18),transparent 70%),linear-gradient(180deg,#2e1a2a 0%,#24131f 44%,#33202a 44.4%,#1c0f17 100%)}
+.fd-salle .fd-tele{box-shadow:0 18px 30px -14px rgba(0,0,0,.85),0 0 40px rgba(245,162,58,.18),inset 0 0 0 6px #0b0806}
+.fd-salle .fd-gradin{background-color:transparent}
+.fd-fauteuil{position:absolute;transform:translateX(-50%);pointer-events:none}
+.fd-fauteuil i{position:absolute;display:block}
+.fd-fauteuil .dos{left:12%;right:12%;top:0;height:64%;border-radius:16px 16px 8px 8px;background:linear-gradient(180deg,#7d3654,#5a2239)}
+.fd-fauteuil .assise{left:6%;right:6%;bottom:0;height:44%;border-radius:10px;background:linear-gradient(180deg,#8e4062,#612641)}
+.fd-fauteuil .bras{bottom:0;width:20%;height:62%;border-radius:10px;background:linear-gradient(180deg,#6a2a45,#4a1b30)}
+.fd-fauteuil .bras.g{left:0}.fd-fauteuil .bras.d{right:0}
+.fd-fauteuil.sienne::before{content:"";position:absolute;left:-40%;right:-40%;bottom:-30%;height:80%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,46,154,.6),rgba(255,46,154,0));animation:fd-brille 2.2s ease-in-out infinite}
+.fd-ta-place{position:absolute;z-index:2;translate:-50% -100%;display:flex;flex-direction:column;align-items:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.fd-ta-place svg{height:100%;width:auto;overflow:visible}
+.fd-ta-place circle,.fd-ta-place rect{fill:rgba(255,46,154,.16);stroke:#FF2E9A;stroke-width:2.5;stroke-dasharray:5 4}
+.fd-ta-place small{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);padding:3px 10px;border-radius:999px;background:#FF2E9A;color:#120c09;font-size:12px;font-weight:900;white-space:nowrap}
+.fd-ta-place:focus-visible{outline:3px solid #F5A23A;outline-offset:4px;border-radius:12px}
+.fd-fig.moi small{background:#FF2E9A;color:#fff}
+.fd-reaction-ici{right:auto;bottom:auto;translate:-50% -100%;align-items:center;z-index:3;pointer-events:none}
+.fd-salon .fd-bas{padding-right:0;align-self:stretch}
+.fd-salon .fd-boutons{width:100%;flex-wrap:nowrap}
+.fd-salon .fd-boutons .fd-bouton{gap:7px}
+.fd-salon .fd-boutons>a.fd-bouton{flex:1 1 auto}
+@keyframes fd-brille{0%,100%{opacity:.5}50%{opacity:1}}
+/* sur un ordinateur : la pièce à gauche, le salon et ses boutons à droite */
+@media (min-width:1000px){
+  .fd-salon{display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto minmax(0,1fr);column-gap:28px;row-gap:12px;padding-top:calc(104px + env(safe-area-inset-top));padding-left:max(24px,calc(50vw - 600px));padding-right:max(24px,calc(50vw - 600px))}
+  .fd-salon>.fd-etiquette{grid-column:1;grid-row:1;justify-self:start}
+  .fd-salon>.fd-salle{grid-column:1;grid-row:2}
+  .fd-salon>.fd-bas{grid-column:2;grid-row:1 / span 2;align-self:center;gap:10px}
+  .fd-salon .fd-bas h2{font-size:31px;line-height:1.08;letter-spacing:-.03em}
+  .fd-salon .fd-bas p{font-size:15px}
+  .fd-salon .fd-boutons{flex-direction:column;align-items:stretch}
+  .fd-salon .fd-tele{max-height:36dvh}
+}
 @keyframes fd-direct{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes fd-bulle{0%,8%{opacity:0;transform:translate(-50%,6px) scale(.85)}14%,72%{opacity:1;transform:translate(-50%,0)}86%,100%{opacity:0;transform:translate(-50%,-4px)}}
 @keyframes fd-danse{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg) translateY(-4px)}}

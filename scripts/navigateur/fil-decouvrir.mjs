@@ -127,7 +127,10 @@ ok((await foot.locator('[data-q] [data-bulle]').allInnerTexts()).includes("Quel 
 ok(/i\.ytimg\.com/.test((await foot.locator("[data-tele] img").getAttribute("src")) ?? ""), "… ce qui passe à la télé du salon");
 ok((await foot.locator("[data-asseoir]").getAttribute("href")) === "/univers/salons?theme=foot", "« M'asseoir » ouvre le salon");
 ok(/Glisse : de pièce en pièce/.test(await texte(lea.locator("#o-decouvrir [data-indice]"))) && /Touche deux fois/.test(await texte(lea.locator("#o-decouvrir [data-indice]"))), "la première fois, le seul mode d'emploi : « Glisse… », « Touche deux fois… »");
-ok((await lea.locator("#o-decouvrir [data-moi] img").count()) >= 1, "sa figurine, au bord de la pièce (« Toi »)");
+// (🪑 la pièce du salon refaite, 25 novembre 2026 : la télé et les fauteuils ; sa place brille, sa figurine n'est plus au bord)
+ok((await foot.locator("[data-ta-place]").count()) === 1 && (await texte(foot.locator("[data-ta-place]"))) === "Ta place" && (await foot.locator("[data-ta-place]").getAttribute("href")) === "/univers/salons?theme=foot", "« Ta place » brille dans la pièce : la toucher, c'est s'asseoir");
+ok((await foot.locator(".fd-gradin").getAttribute("data-gradin")) !== "plan" || (await foot.locator("[data-fauteuil]").count()) === 6, "… chaque place libre est un fauteuil vide (six : Sam et Hugo occupent les deux autres)");
+ok((await lea.locator("#o-decouvrir [data-moi]").count()) === 0 && (await texte(foot.locator("[data-inviter]"))) === "Inviter", "dans un salon, sa figurine n'est plus au bord : elle y a sa place ; « M'asseoir », « Inviter »");
 ok((await lea.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), "le menu : « Découvrir », l'onglet où l'on est");
 await lea.waitForTimeout(600);
 await lea.screenshot({ path: `${D}/fil-1-salon.png` });
@@ -137,6 +140,7 @@ ok(!(await deborde(lea)), "le fil ne déborde pas");
 await foot.locator(".fd-scene").dblclick({ position: { x: 20, y: 20 } });
 ok(await attendre(lea, async () => /😂/.test(await texte(lea.locator("#o-decouvrir [data-reaction]"))) && /Les 2 te voient/.test(await texte(lea.locator("#o-decouvrir [data-vu-par]")))), "toucher deux fois : sa figurine réagit (« 😂 », « Les 2 te voient »)");
 ok(await attendre(lea, async () => (await foot.locator(".fd-fig").count()) === 3), "… elle s'assoit dans le gradin, avec eux");
+ok(await attendre(lea, async () => (await foot.locator("[data-ta-place]").count()) === 0 && (await foot.locator(".fd-fig.moi small").innerText().catch(() => "")) === "Toi"), "… à sa place : « Toi » (la place qui brillait n'attend plus)");
 ok((await lea.locator("#o-decouvrir [data-indice]").count()) === 0, "… le mode d'emploi s'en va");
 const vu = await attendre(lea, async () => {
   const p = (await route(SAM, `${SALONS}?salon=foot-1&depuis=${Date.now() - 60_000}`)).pouls;
@@ -167,6 +171,7 @@ await lea.waitForTimeout(600);
 const autour = lea.locator('#o-decouvrir [data-piece="autour"]');
 ok((await texte(autour.locator("[data-mot]"))) === "Qui vient prendre un café ?" && /Hugo a posé sa figurine ici/.test(await texte(autour.locator("h2"))) && /Le Petit Bistrot/.test(await texte(autour.locator(".fd-etiquette"))), "la figurine de Hugo au Petit Bistrot, son mot du jour en grand");
 ok(((await autour.locator("[data-asseoir-a-cote]").getAttribute("href")) ?? "").startsWith(`/collection?autour=${BISTROT}&pose=`), "« M'asseoir à côté » ouvre le lieu, dans Autour");
+ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir [data-moi] img").count()) >= 1), "hors des salons, sa figurine est au bord de la pièce (« Toi »)");
 await lea.screenshot({ path: `${D}/fil-4-autour.png` });
 await glisser(lea);
 const musique = lea.locator('#o-decouvrir [data-piece="salon"][data-theme="musique"]');
@@ -182,6 +187,7 @@ ok(/Sois le premier · ta passion/.test(await texte(cuisine.locator(".fd-etiquet
 ok(/Zoé · il y a 1 min/.test(await texte(cuisine.locator("[data-trace]"))) && /Qui a une recette de crêpes \?/.test(await texte(cuisine.locator("[data-trace]"))), `… ce que Zoé y a dit tout à l'heure (« ${await texte(cuisine.locator("[data-trace]"))} »)`);
 ok(/Zoé y était aujourd’hui\. Assieds-toi : les suivants te verront\./.test(await texte(cuisine.locator("[data-sous]"))) && (await cuisine.locator("[data-asseoir]").getAttribute("href")) === "/univers/salons?theme=cuisine", "… « Zoé y était aujourd'hui. Assieds-toi : les suivants te verront. », « M'asseoir »");
 ok(/i\.ytimg\.com/.test((await cuisine.locator("[data-tele] img").getAttribute("src")) ?? ""), "… sa télé passe quand même");
+ok((await cuisine.locator("[data-ta-place]").count()) === 1 && ((await cuisine.locator(".fd-gradin").getAttribute("data-gradin")) !== "plan" || (await cuisine.locator("[data-fauteuil]").count()) === 8), "… huit fauteuils vides, et sa place qui brille : jamais une pièce vide");
 await lea.screenshot({ path: `${D}/fil-6-vide.png` });
 await cuisine.locator(".fd-scene").dblclick({ position: { x: 20, y: 20 } });
 ok(await attendre(lea, async () => /😂/.test(await texte(lea.locator("#o-decouvrir [data-reaction]"))) && /Les suivants te verront/.test(await texte(lea.locator("#o-decouvrir [data-vu-par]")))), "toucher deux fois : « 😂 », « Les suivants te verront »");
@@ -190,6 +196,19 @@ const hugoEntre = (await route(HUGO, SALONS, { action: "entrer", theme: "cuisine
 ok(hugoEntre?.salon?.id === "cuisine-1" && hugoEntre.presents.some((x) => x.prenom === "Léa"), "… pour de vrai : Hugo entre dans la cuisine, et la voit");
 await route(HUGO, SALONS, { action: "sortir", salon: "cuisine-1" });
 await lea.screenshot({ path: `${D}/fil-7-premiere.png` });
+
+// ═══ SUR UN ORDINATEUR : LA PIÈCE À GAUCHE, LE SALON ET SES BOUTONS À DROITE ═══
+await lea.setViewportSize({ width: 1280, height: 860 });
+await lea.waitForTimeout(500);
+await lea.evaluate(() => document.querySelector('#o-decouvrir [data-piece="salon"][data-theme="cuisine"]').scrollIntoView());
+await lea.waitForTimeout(500);
+const salle = await cuisine.locator(".fd-salle").boundingBox();
+const bas = await cuisine.locator(".fd-bas").boundingBox();
+ok(salle && bas && bas.x >= salle.x + salle.width && salle.width > 560, `sur un ordinateur : la pièce à gauche (${Math.round(salle?.width ?? 0)} px), le salon à droite`);
+ok(!(await deborde(lea)), "… rien ne déborde");
+await lea.screenshot({ path: `${D}/fil-8-ordinateur.png` });
+await lea.setViewportSize({ width: 390, height: 844 });
+await lea.waitForTimeout(400);
 
 // ═══ « TOUS LES SALONS » : L'ANCIENNE PAGE ; « ‹ LE FIL » ═══
 await lea.locator("#o-decouvrir [data-tous-les-salons]").click();
