@@ -111,6 +111,10 @@ export const INVITATION_MS = 6 * 3600_000;
 export type TeleSeance = { video: VideoSalon; depart: number; pause?: number; n: number };
 /** Où en est la vidéo de la séance à cet instant (en secondes). */
 export const positionSeance = (t: TeleSeance, ms: number): number => Math.max(0, Math.min(t.video.duree || 1e6, t.pause ?? (ms - t.depart) / 1000));
+/** 🙋 (lot F3) Un proche qui demande, depuis le fil, à rejoindre ma séance : sa clé, son prénom, sa figurine. */
+export type DemandeRejoindre = { cle: string; prenom: string; figurine?: string };
+/** 👋 (lot F3) Celui qui vient d'arriver : on peut lui faire signe d'un toucher pendant une minute et demie. */
+export const SIGNE_MS = 90_000;
 /** Une invitation reçue (« 🎬 Léa t'invite devant sa télé »). */
 export type InvitationTele = {
   cle: string;
@@ -301,6 +305,12 @@ export const PHRASES_SALONS = {
   invitation: (p: string) => `🎬 ${p} t’invite devant sa télé`,
   venir: "Venir",
   pasMaintenant: "Pas maintenant",
+  // 🙋 (lot F3) un proche demande, depuis le fil, à rejoindre ma séance
+  rejoindreDemande: (prenom: string) => `🙋 ${prenom} aimerait vous rejoindre`,
+  faireEntrer: "Lui faire une place",
+  entre: (prenom: string) => `Invitation envoyée à ${prenom} : sa place l’attend`,
+  // 👋 (lot F3) faire signe, d'un toucher, à celui qui vient d'arriver
+  faireSigne: (prenom: string) => `Faire signe à ${prenom}`,
   invite: (p: string) => `C’est ${p} qui mène la télé.`,
   // 🎞️ (21 novembre 2026, le propriétaire : « il garde sa vidéo ») l'invité garde la vidéo de son invitation
   tuGardes: (p: string) => `${p} regarde autre chose : tu gardes ta vidéo, à ton rythme.`,
