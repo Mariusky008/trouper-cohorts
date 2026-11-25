@@ -157,6 +157,13 @@ export const PHRASES_FIL = {
   tesPassions: "ta passion",
   places: (libres: number) => (libres > 0 ? `${libres} place${libres > 1 ? "s" : ""} libre${libres > 1 ? "s" : ""}` : "complet pour l’instant"),
   asseoir: "M’asseoir",
+  // 🪑 (25 novembre 2026, la pièce du salon refaite : la télé, les fauteuils, ta place)
+  taPlace: "Ta place",
+  asseoirIci: "M’asseoir à ma place",
+  toi: "Toi",
+  inviter: "Inviter",
+  invitationSalon: (nom: string) => `Viens t’asseoir avec moi dans ${nom.replace(/^(Le|La|Les) /, (m) => m.toLowerCase())}, sur ClikMe 🛋️`,
+  lienCopie: "Lien copié : envoie-le à qui tu veux",
   entrerDanser: "Entrer danser",
   radio: "📻 La radio du salon",
   choix: (prenom: string) => `🎵 Le choix de ${prenom}`,

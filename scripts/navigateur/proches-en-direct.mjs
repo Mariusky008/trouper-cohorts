@@ -183,9 +183,10 @@ await cuisine.scrollIntoViewIfNeeded();
 await zoe3.waitForTimeout(800);
 await cuisine.locator(".fd-scene").dblclick({ position: { x: 20, y: 20 } });
 ok(await attendre(zoe3, async () => /Sam te voit/.test(await texte(zoe3.locator("#o-decouvrir [data-vu-par]")))), "toucher deux fois : sa figurine s'assoit (« Sam te voit »)");
-const moiQ = await attendre(zoe3, async () => (await cuisine.locator('.fd-fig:has(small:text-is("Zoé"))').count()) === 1);
-const qZoe3 = moiQ ? await cuisine.locator('.fd-fig:has(small:text-is("Zoé"))').getAttribute("data-q") : "";
-ok(Boolean(qZoe3), "… elle est dans le gradin");
+// (sa figurine, dans la pièce du salon : « Toi »)
+const moiQ = await attendre(zoe3, async () => (await cuisine.locator('.fd-fig.moi:has(small:text-is("Toi"))').count()) === 1);
+const qZoe3 = moiQ ? await cuisine.locator(".fd-fig.moi").getAttribute("data-q") : "";
+ok(Boolean(qZoe3), "… elle est dans le gradin (« Toi »)");
 await new Promise((r) => setTimeout(r, 1600));
 ok((await route(SAM, ROUTE, { action: "ecrire", salon: SALON, sorte: "geste", cle: "coucou", a: qZoe3 })).statut === 200, "Sam lui fait signe");
 ok(await attendre(zoe3, async () => (await texte(zoe3.locator("#o-decouvrir [data-reaction] b"))) === "👋" && (await texte(zoe3.locator("#o-decouvrir [data-vu-par]"))) === "👋 Sam te fait signe", 20000), "« 👋 Sam te fait signe » (le vrai signe de Sam)");

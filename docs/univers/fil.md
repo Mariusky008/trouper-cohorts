@@ -194,7 +194,35 @@ depuis le fil (en touchant deux fois l'écran) le voit sur sa figurine : « 👋
 
 **Les essais** : `scripts/essai-proches-en-direct-route.mjs`, `scripts/navigateur/proches-en-direct.mjs`.
 
-## 7. Les lots suivants
+## 7. La pièce du salon refaite (25 novembre 2026)
+
+**Le constat du propriétaire, captures à l'appui** (téléphone et ordinateur) : en glissant, on voit la vidéo, puis plus
+rien jusqu'au bouton « M'asseoir ». Le gradin d'un salon n'a pas encore d'image validée : le plan des places s'affichait
+sur un fond vide. La maquette « Découvrir, le fil repensé » est validée (« ok let's go »), avec une consigne : « il faut
+éviter trop d'infos avant qu'on rentre dans le salon : la vidéo et les sièges vides ou remplis, avec le siège qui m'est
+destiné, c'est suffisant » (la rangée « À suivre sur la télé » de la maquette est donc retirée).
+
+- **La pièce** (`.fd-salle`) : un mur, un sol, la télé du salon en haut ; devant elle, les huit places (`PLAN_GRADIN`).
+- **Sans gradin validé, chaque place libre est un fauteuil vide** (`data-fauteuil`). Les places prises montrent leurs
+  figurines, et on ne montre jamais assis quelqu'un qui n'y est pas. Avec un gradin validé, c'est son image qui donne
+  les places, comme avant.
+- **« Ta place »** (`data-ta-place`) : la première place libre, dans l'ordre du salon (celle que le salon lui donnera).
+  Sa silhouette y est dessinée en pointillés roses, au-dessus d'un fauteuil qui brille. La toucher ouvre le salon,
+  comme « M'asseoir ». Une fois sa figurine entrée (toucher deux fois l'écran), elle s'y assoit (« Toi ») ; sa
+  réaction et « Les 2 te voient » s'affichent au-dessus de sa place.
+- **Dans un salon, sa figurine n'est plus au bord de l'écran** : elle a sa place dans la pièce. Ailleurs (Autour,
+  l'humeur des proches, une maison, une séance), elle reste en bas à droite.
+- **En bas** : le nom du salon, une ligne (« 6 places libres », « Zoé y était aujourd'hui… »), « M'asseoir », et
+  « Inviter » : le lien du salon par le partage du téléphone, sinon copié (« Lien copié : envoie-le à qui tu veux »).
+- **Sur un ordinateur (1 000 points et plus)** : la pièce à gauche, en grand ; à droite, le nom du salon, sa ligne et
+  les deux boutons, l'un sous l'autre.
+- Les bulles de ce qui s'est dit aujourd'hui restent (la décision du 23 novembre).
+
+**Les essais** : `scripts/navigateur/fil-decouvrir.mjs` (« Ta place », les six fauteuils libres du salon du foot, les
+huit de la cuisine vide, « Inviter », « Toi » après s'être assise, sa figurine au bord seulement hors des salons, et sur
+un ordinateur la pièce à gauche et le salon à droite) ; `proches-en-direct.mjs` trouve sa figurine par « Toi ».
+
+## 8. Les lots suivants
 
 - **F4, l'ordre du fil** : d'abord ses proches en direct, puis ses passions, puis les maisons, puis Autour ; rien ne
   revient deux fois de suite.
