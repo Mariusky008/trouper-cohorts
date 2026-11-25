@@ -177,6 +177,7 @@ export type FigurinePosee = {
   nomLieu?: string;
   /** 🎙️ son bonjour, avec sa voix (lot 4 de « Ma figurine ») */
   bonjour?: string;
+  /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string;
 };
 /** Ses têtes à choisir au moment de poser : son humeur du jour (s'il en a une), et ses expressions prêtes. */
 /** (✨ 25 novembre 2026) `pancarte` : la phrase de sa figurine (« Ma figurine »), qui est son mot du jour — préremplie. */

@@ -1906,10 +1906,22 @@ salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce
 - **Au micro et à la réécoute** : ma figurine ouvre la bouche avec ma voix pendant que je parle (le volume du micro,
   mesuré dans le téléphone : rien ne part), puis quand je réécoute mon mot.
 - **Jamais de voix de synthèse** : seulement sa voix enregistrée, mesurée.
-- **Pas encore** : le bonjour (« Mon bonjour », lot 4 de « Ma figurine ») se joue sans figurine vivante à l'écran ; la
-  même bouche pourra s'y brancher (`lib/direct/bouche.ts`).
+- **Le bonjour** : fait aussi (38.9).
 - **Le code** : `lib/direct/bouche.ts` (le volume, `boucheOuverte`), `TETE_PARLE` (`expressions-figurine.ts`, et sa
   consigne dans `expressions-figurine-serveur.ts`), `FigurineVivanteVue` (`bouche`), `suite-de-la-video.tsx`.
 - **Les essais** : `scripts/essai-expressions-figurine-route.mjs` (huit têtes ; sept seulement : la bouche ouverte se fait,
   une demande) ; `scripts/navigateur/suite-salon.mjs` (le mot de Sam : quatre syllabes, sa bouche s'ouvre et se ferme
   dessus, pas en rythme ; fermée à la fin).
+
+### 38.9 La bouche suit aussi le bonjour (25 novembre 2026, le propriétaire : « oui ») — fait
+
+- **Où** : quand on touche une figurine qui a un bonjour (« Mon bonjour », lot 4 de « Ma figurine ») — dans un salon,
+  dans le fil (sa maison ouverte, sa figurine posée Autour) et dans Autour (la scène du lieu, sa fiche) —, sa bouche suit
+  sa voix pendant son bonjour, comme pour un mot (38.8).
+- **Comment** : sa tête « bouche ouverte » arrive avec sa tête du jour (`teteDuJour`, `teteDeLaMaison`, la silhouette
+  d'Autour) et attend, cachée ; `useBoucheDuBonjour` (`app/collection/bonjour.tsx`) lit le volume du bonjour qui joue et
+  la fait passer devant quand la voix est forte.
+- **Seulement là où sa tête est posée à part** (sa tête du jour sur son corps sans tête, ou sa figurine vivante en
+  direct) : une figurine montrée d'une seule image ne peut pas ouvrir la bouche — elle dit « 👋 », comme avant.
+- **Les essais** : `scripts/navigateur/bonjour.mjs` (Sam, son sourire du jour, son bonjour de quatre syllabes : au salon,
+  sa bouche s'ouvre et se ferme dessus, puis se referme).

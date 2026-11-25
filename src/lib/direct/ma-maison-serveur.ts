@@ -223,7 +223,7 @@ export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?:
 export async function teteDeLaMaison(supabase: Supabase, h: string): Promise<MaMaisonVue["tete"] | null> {
   const [c, t] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), teteDuJour(supabase, h).catch(() => null)]);
   if (!c?.sansTete || !t || (c.decoupe ?? 1) !== t.decoupe) return null;
-  return { e: t.e, corps: c.sansTete.fichier, ratio: c.ratio, src: t.src, boite: c.tete.boite };
+  return { e: t.e, corps: c.sansTete.fichier, ratio: c.ratio, src: t.src, boite: c.tete.boite, ...(t.parle ? { parle: t.parle } : {}) };
 }
 
 /** ✨ (lot M2) sa dernière visite chez lui (`<habitant>/ma-piece/vu.json`) : ce qui a été gardé depuis s'annonce à l'arrivée. */

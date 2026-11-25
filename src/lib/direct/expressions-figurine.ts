@@ -95,7 +95,7 @@ export type FigurineVivante = {
  * cadrage de sa tête habituelle — elle prend sa place, sur le même corps sans tête. `decoupe` : la règle de découpe de
  * ses calques d'alors (une autre que celle de ses calques : on garde la tête habituelle).
  */
-export type TeteDuJour = { e: ExpressionFigurine; src: string; decoupe: number };
+export type TeteDuJour = { e: ExpressionFigurine; src: string; decoupe: number; /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string };
 
 /** Le rattrapage : pas plus de huit figurines par nuit, et une demi-heure entre deux passages ratés. */
 export const RATTRAPAGE_EXPRESSIONS = { parNuit: 8, recommencerApres: 30 * 60_000, tempsParFigurine: 150_000 } as const;

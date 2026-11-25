@@ -20,7 +20,7 @@
  *   · SA FICHE : son mot, « Répondre avec ma figurine », « 🏠 Voir sa maison », « 👯 L'ajouter en proche », signaler ; la
  *     mienne : « Retirer ma figurine ».
  */
-import { jouerBonjour } from "./bonjour";
+import { jouerBonjour, useBoucheDuBonjour } from "./bonjour";
 import { PHRASES_BONJOUR } from "@/lib/direct/bonjour";
 import { Pancarte } from "./pancarte";
 import { Ornements } from "./ornements";
@@ -95,7 +95,8 @@ const nomDeZone = (nom: string) => nomLieuPropre(nom).nom ?? "";
 
 /** 🧍 Une figurine assise : son corps sans sa tête, puis la tête qu'elle fait — ou sa figurine d'une seule image. */
 /** (🪧 « Ma figurine », 25 novembre 2026 : `f.pancarte`, la phrase qu'elle porte partout, au-dessus de sa tête) */
-export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" | "corps" | "image"> & { pancarte?: string; ornements?: OrnementsVus }; hauteur: number }) {
+export function FigurineAssise({ f, hauteur, bonjour }: { f: Pick<FigurinePosee, "tete" | "corps" | "image" | "parle"> & { pancarte?: string; ornements?: OrnementsVus }; hauteur: number; /** 🗣️ son bonjour : sa bouche le suit */ bonjour?: string }) {
+  const bouche = useBoucheDuBonjour(f.corps && f.parle ? bonjour : null);
   // (🔥🎧❤️ « Elle change toute seule » : ce qu'elle porte, par-dessus ; les étiquettes quand elle est assez grande)
   const orn = f.ornements ? <Ornements o={f.corps ? { ...f.ornements, boite: f.corps.boite } : { ...f.ornements, boite: undefined }} taille={Math.max(9, Math.min(12, hauteur / 16))} etiquettes={hauteur >= 120} /> : null;
   const pancarte = f.pancarte ? <Pancarte texte={f.pancarte} taille={Math.max(9, Math.min(15, hauteur / 11))} bas={f.corps ? `${(1 - f.corps.boite[1]) * 100 + 2}%` : "92%"} /> : null;
@@ -105,7 +106,12 @@ export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" |
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={f.corps.src} alt="" draggable={false} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="afg-tete" src={f.tete} alt="" draggable={false} style={{ left: `${f.corps.boite[0] * 100}%`, top: `${f.corps.boite[1] * 100}%`, width: `${f.corps.boite[2] * 100}%`, height: `${f.corps.boite[3] * 100}%` }} />
+        <img className="afg-tete" src={f.tete} alt="" draggable={false} style={{ left: `${f.corps.boite[0] * 100}%`, top: `${f.corps.boite[1] * 100}%`, width: `${f.corps.boite[2] * 100}%`, height: `${f.corps.boite[3] * 100}%`, ...(bouche ? { visibility: "hidden" } : {}) }} />
+        {/* (🗣️ sa tête « bouche ouverte », chargée d'avance : elle passe devant quand sa voix est forte) */}
+        {f.parle && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="afg-parle" src={f.parle} alt="" draggable={false} data-tete-parle={bouche ? "1" : undefined} style={{ left: `${f.corps.boite[0] * 100}%`, top: `${f.corps.boite[1] * 100}%`, width: `${f.corps.boite[2] * 100}%`, height: `${f.corps.boite[3] * 100}%`, ...(bouche ? {} : { visibility: "hidden" }) }} />
+        )}
         {orn}
         {pancarte}
       </span>
@@ -435,7 +441,7 @@ function VueLieu({ id, ville, onFermer, onPoser, onFiche }: { id: string; ville:
                 onFiche(f, nom);
               }}>
               <span className="afg-bulle">{f.mot}</span>
-              <FigurineAssise f={f} hauteur={120} />
+              <FigurineAssise f={f} hauteur={120} bonjour={f.moi ? undefined : f.bonjour} />
               <small className="afg-prenom">{f.moi ? "Toi" : f.prenom}</small>
               {aCote && <small className="afg-a-cote">↳ à côté de {aCote.moi ? "toi" : aCote.prenom}</small>}
             </button>
@@ -727,7 +733,7 @@ function Fiche({ f, lieuNom, compte, onFermer, onRepondre, onRetiree, onSignalee
       </button>
       <div className="afg-fiche-haut">
         <span className="afg-bulle grande">{f.mot}</span>
-        <FigurineAssise f={f} hauteur={170} />
+        <FigurineAssise f={f} hauteur={170} bonjour={f.moi ? undefined : f.bonjour} />
         <h2>{f.moi ? "Ta figurine" : f.prenom}</h2>
         <p>
           Posée à {lieuNom} · {quand(f.le)} · {reste(f.fin)}
@@ -998,7 +1004,7 @@ export const STYLES_AUTOUR =
 .afg-bulle.grande{font-size:16px;padding:10px 16px;max-width:300px}
 .afg-assise{position:relative;display:block;flex:none}
 .afg-assise img{position:absolute;inset:0;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
-.afg-assise img.afg-tete{right:auto;bottom:auto}
+.afg-assise img.afg-tete,.afg-assise img.afg-parle{right:auto;bottom:auto}
 .afg-assise.vide{border-radius:40% 40% 16px 16px;background:rgba(255,255,255,.08)}
 .afg-prenom{margin-top:-4px;padding:1px 8px;border-radius:8px;background:rgba(0,0,0,.6);font-size:11.5px;font-weight:800}
 .afg-fig.moi .afg-prenom{background:#FF2E9A}

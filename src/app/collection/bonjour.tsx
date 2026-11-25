@@ -8,12 +8,17 @@
  *     fois (le suivant coupe le précédent). Il prévient la page (`clikme:bonjour`) : sa figurine dit « 👋 ».
  *   · `MonBonjour` : l'enregistrer dans « Mon double du jour » — « 🎙️ Enregistrer » (cinq secondes au plus, « ■ C'est
  *     dit » pour finir avant), l'écouter, le garder ou le refaire ; l'enlever.
+ *   · 🗣️ (25 novembre 2026, le propriétaire : « oui ») `useBoucheDuBonjour(src)` : pendant son bonjour, la bouche de sa
+ *     figurine suit sa voix (sa tête « bouche ouverte », `lib/direct/bouche.ts`) — là où sa tête est posée à part.
  * Jamais de voix de synthèse : seulement la sienne, au micro.
  */
 import { useEffect, useRef, useState } from "react";
 import { BONJOUR, PHRASES_BONJOUR as P, type BonjourVu } from "@/lib/direct/bonjour";
+import { boucheOuverte, enveloppeDuSon } from "@/lib/direct/bouche";
 
 let lecteur: HTMLAudioElement | null = null;
+/** 🗣️ le bonjour qui joue : son adresse, son volume (lu une fois), quand il a été lancé. */
+let enCours: { src: string; volume: number[] | null; t0: number } | null = null;
 
 /** Faire entendre le bonjour de quelqu'un (rien : il n'en a pas — `false`). À appeler dans le toucher lui-même. */
 export function jouerBonjour(src: string | null | undefined): boolean {
@@ -22,12 +27,49 @@ export function jouerBonjour(src: string | null | undefined): boolean {
     if (!lecteur) lecteur = new Audio();
     lecteur.pause();
     lecteur.src = src;
+    const ici = { src, volume: null as number[] | null, t0: performance.now() };
+    enCours = ici;
+    void enveloppeDuSon(src).then((v) => void (ici.volume = v));
     void lecteur.play().catch(() => undefined);
     window.dispatchEvent(new CustomEvent("clikme:bonjour", { detail: { src } }));
     return true;
   } catch {
     return false;
   }
+}
+
+/**
+ * 🗣️ La bouche de sa figurine pendant son bonjour (`src` : l'adresse de son bonjour ; rien : jamais) — ouverte quand sa voix
+ * est forte. Seulement le temps qu'il joue.
+ */
+export function useBoucheDuBonjour(src: string | null | undefined): boolean {
+  const [ouverte, setOuverte] = useState(false);
+  useEffect(() => {
+    if (!src) return;
+    let raf = 0;
+    const tour = () => {
+      const a = lecteur;
+      const x = enCours;
+      // (un autre bonjour, ou le sien fini — ou qui n'a jamais pu partir : la bouche se ferme)
+      if (!a || !x || x.src !== src || a.ended || (a.paused && (a.currentTime > 0 || performance.now() - x.t0 > 3000))) {
+        raf = 0;
+        return setOuverte(false);
+      }
+      setOuverte(!a.paused && boucheOuverte(x.volume, a.currentTime || 0));
+      raf = window.requestAnimationFrame(tour);
+    };
+    const debut = (e: Event) => {
+      if ((e as CustomEvent<{ src?: string }>).detail?.src !== src) return;
+      window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(tour);
+    };
+    window.addEventListener("clikme:bonjour", debut);
+    return () => {
+      window.removeEventListener("clikme:bonjour", debut);
+      window.cancelAnimationFrame(raf);
+    };
+  }, [src]);
+  return Boolean(src) && ouverte;
 }
 
 /**

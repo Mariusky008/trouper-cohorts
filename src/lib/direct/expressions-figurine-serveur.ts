@@ -234,7 +234,7 @@ export async function teteDuJour(supabase: Supabase, h: string): Promise<TeteDuJ
   if (!e || !chemin) return null;
   const etat = await lireEtat(supabase, h, empreinteDe(chemin));
   const src = etat.tetes[e];
-  return src ? { e, src, decoupe: etat.decoupe ?? 1 } : null;
+  return src ? { e, src, decoupe: etat.decoupe ?? 1, ...(etat.tetes.parle ? { parle: etat.tetes.parle } : {}) } : null;
 }
 
 export type PassageExpressions = { faites: TeteFigurine[]; manquent: TeteFigurine[]; rien?: "sans-figurine" | "deja" | "en-pause" | "en-cours"; erreur?: string };

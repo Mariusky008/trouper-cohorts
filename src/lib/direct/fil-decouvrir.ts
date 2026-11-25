@@ -27,7 +27,7 @@ import type { Zone } from "./pieces-duo";
 
 /** Une figurine telle que le fil la montre : assise (son corps sans sa tête, la tête qu'elle fait), sinon d'une image. */
 /** (✨ « Ma figurine » : `pancarte`, la phrase qu'elle porte partout) */
-export type SilhouetteFil = { tete: string; corps?: { src: string; ratio: number; boite: Zone }; image?: string; pancarte?: string; ornements?: Ornements };
+export type SilhouetteFil = { tete: string; corps?: { src: string; ratio: number; boite: Zone }; image?: string; /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string; pancarte?: string; ornements?: Ornements };
 
 /** Quelqu'un qui est dans un salon, en ce moment (jamais son compte : son identifiant court). */
 export type PresentFil = { q: string; prenom: string; src: string; place: number; /** 🎙️ son bonjour (lot 4 de « Ma figurine ») */ bonjour?: string };

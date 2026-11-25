@@ -151,7 +151,7 @@ async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passio
  */
 async function sonDoubleDeSalon(supabase: Supabase, h: string): Promise<Pick<PresentSalon, "tete" | "pancarte" | "ornements" | "bonjour">> {
   const [t, pancarte, ornements, bonjour] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => ""), ornementsDe(supabase, h).catch(() => null), bonjourDe(supabase, h).catch(() => null)]);
-  return { ...(t ? { tete: { src: t.src, corps: t.corps, ratio: t.ratio, boite: t.boite } } : {}), ...(pancarte ? { pancarte } : {}), ...(ornements ? { ornements } : {}), ...(bonjour ? { bonjour: bonjour.src } : {}) };
+  return { ...(t ? { tete: { src: t.src, corps: t.corps, ratio: t.ratio, boite: t.boite, ...(t.parle ? { parle: t.parle } : {}) } } : {}), ...(pancarte ? { pancarte } : {}), ...(ornements ? { ornements } : {}), ...(bonjour ? { bonjour: bonjour.src } : {}) };
 }
 const messagePublic = (f: Partial<FicheMessage>): MessageSalon => {
   const { h: _h, ...m } = f as FicheMessage;
