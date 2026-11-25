@@ -17,17 +17,19 @@ import { ornementsDe } from "./ornements-serveur";
 import { telecharger } from "./ma-figurine-serveur";
 import { NOM_FICHIER_SALON, cheminFichierSalon } from "./salon-fichiers-serveur";
 import type { MonDoubleVue } from "./mon-double";
+import { bonjourDe } from "./bonjour-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 
 export async function vueDuDouble(supabase: Supabase, h: string): Promise<MonDoubleVue> {
-  const [calques, expr, humeur, double, assise, ornements] = await Promise.all([
+  const [calques, expr, humeur, double, assise, ornements, bonjour] = await Promise.all([
     calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null),
     sesExpressions(supabase, h).catch(() => null),
     humeurDuJour(supabase, h).catch(() => null),
     sonDouble(supabase, h),
     figurineDeLaMaison(supabase, h).catch(() => null),
     ornementsDe(supabase, h).catch(() => null),
+    bonjourDe(supabase, h).catch(() => null),
   ]);
   // (ses têtes : seulement découpées sur ses calques d'aujourd'hui — la même règle de découpe)
   const memeDecoupe = Boolean(calques?.sansTete && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
@@ -43,6 +45,7 @@ export async function vueDuDouble(supabase: Supabase, h: string): Promise<MonDou
     pancarte: double.pancarte,
     pret: double.pret,
     ...(ornements ? { ornements } : {}),
+    ...(bonjour ? { bonjour } : {}),
   };
 }
 
