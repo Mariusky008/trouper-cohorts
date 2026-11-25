@@ -22,6 +22,8 @@ import { qui8, sonDe } from "./talkie-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
 import { maisonDe } from "./salons-ouverts";
 import { maVideo } from "./tele-du-jour-serveur";
+import { videoDeLaSeance, videosDuSalon } from "./salons-ouverts-serveur";
+import { IDS_THEMES } from "./decouvrir";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { figurineVivante } from "./expressions-figurine-serveur";
 import { MOTS_VIDEO, ordonnerMots, tetesValides, type MotVu, type SuiteVue, type TeteMot } from "./mots-video";
@@ -53,12 +55,24 @@ async function saTranche(supabase: Supabase, h: string): Promise<Tranche | null>
   return maisonDe(await sesDixHuitAns(supabase, h).catch(() => null));
 }
 
-/** La vidéo : une de sa télé du jour (même déjà vue). */
-async function laVideo(supabase: Supabase, h: string, id: unknown): Promise<{ id: string } | null> {
+/**
+ * La vidéo : une de sa télé du jour (même déjà vue) ; (lot 2) celle de la séance où il est (`seance` : « chez-<q> ») ;
+ * ou une de la sélection du jour d'un salon de sa tranche (les salons ouverts, et la vidéo d'une séance que l'hôte vient
+ * de quitter).
+ */
+async function laVideo(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown): Promise<{ id: string } | null> {
   const x = s(id);
   if (!ID_VIDEO.test(x)) return null;
-  const v = await maVideo(supabase, h, x).catch(() => null);
-  return v ? { id: v.id } : null;
+  const v = await maVideo(supabase, moi.id, x).catch(() => null);
+  if (v) return { id: v.id };
+  if (s(seance) && (await videoDeLaSeance(supabase, moi, seance, x).catch(() => null))) return { id: x };
+  const m = await saTranche(supabase, moi.id);
+  if (!m) return null;
+  for (const theme of IDS_THEMES) {
+    const l = await videosDuSalon(supabase, theme, m).catch(() => []);
+    if (l.some((y) => y.id === x)) return { id: x };
+  }
+  return null;
 }
 
 async function lireMot(supabase: Supabase, m: Tranche, video: string, q: string): Promise<FicheMot | null> {
@@ -89,8 +103,8 @@ async function prenomDu(supabase: Supabase, h: string): Promise<string> {
  * 🎬 LA SUITE D'UNE VIDÉO : les mots de ma tranche (sans ceux qu'on a cachés ni les trop vieux), mes proches d'abord,
  * chaque réponse après le mot auquel elle répond ; leur son (signé, une heure), leurs têtes, leur figurine.
  */
-export async function suiteDeLaVideo(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ suite?: SuiteVue }>> {
-  const v = await laVideo(supabase, moi.id, id);
+export async function suiteDeLaVideo(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown): Promise<Resultat<{ suite?: SuiteVue }>> {
+  const v = await laVideo(supabase, moi, id, seance);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const m = await saTranche(supabase, moi.id);
   if (!m) return { error: "Dis-nous d’abord si tu as 18 ans.", statut: 403, age: true };
@@ -159,9 +173,9 @@ export async function suiteDeLaVideo(supabase: Supabase, moi: Habitant, id: unkn
 export async function publierMot(
   supabase: Supabase,
   moi: Habitant,
-  p: { id?: unknown; son?: unknown; duree?: unknown; tetes?: unknown; repond?: unknown; accord?: unknown },
+  p: { id?: unknown; son?: unknown; duree?: unknown; tetes?: unknown; repond?: unknown; accord?: unknown; seance?: unknown },
 ): Promise<Resultat<{ ok?: true }>> {
-  const v = await laVideo(supabase, moi.id, p.id);
+  const v = await laVideo(supabase, moi, p.id, p.seance);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const m = await saTranche(supabase, moi.id);
   if (!m) return { error: "Dis-nous d’abord si tu as 18 ans.", statut: 403, age: true };
@@ -187,8 +201,8 @@ export async function publierMot(
 }
 
 /** 🗑️ Effacer mon mot : il disparaît partout, tout de suite (et son son). */
-export async function effacerMot(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ ok?: true }>> {
-  const v = await laVideo(supabase, moi.id, id);
+export async function effacerMot(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown): Promise<Resultat<{ ok?: true }>> {
+  const v = await laVideo(supabase, moi, id, seance);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const m = await saTranche(supabase, moi.id);
   if (!m) return { ok: true };
@@ -202,8 +216,8 @@ export async function effacerMot(supabase: Supabase, moi: Habitant, id: unknown)
  * 🚩 Signaler un mot : il ne passe plus chez moi ; signalé par trois personnes différentes, il ne passe plus chez
  * personne. L'administrateur le voit avec les signalements des salons.
  */
-export async function signalerMot(supabase: Supabase, moi: Habitant, id: unknown, cible: unknown): Promise<Resultat<{ ok?: true; cache?: boolean }>> {
-  const v = await laVideo(supabase, moi.id, id);
+export async function signalerMot(supabase: Supabase, moi: Habitant, id: unknown, cible: unknown, seance?: unknown): Promise<Resultat<{ ok?: true; cache?: boolean }>> {
+  const v = await laVideo(supabase, moi, id, seance);
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const m = await saTranche(supabase, moi.id);
   if (!m) return { error: "Dis-nous d’abord si tu as 18 ans.", statut: 403, age: true };

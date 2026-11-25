@@ -53,7 +53,12 @@ const TYPES_SON = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs
 /** Ce qui joue : quel mot (sa clé), et la tête du moment. */
 type Joue = { q: string; tete: TeteMot | null };
 
-export function SuiteDeLaVideo({ video, onSuivante }: { video: { id: string; titre: string }; onSuivante: () => void }) {
+/**
+ * `mode` « fin » (ma télé du jour) : la vidéo vient de finir, « Suivante ⏭ » (seule après quelques secondes) ;
+ * « carte » (lot 2 : une séance, un salon ouvert — la télé y continue pour tout le monde) : ouverte d'un toucher,
+ * « Fermer ». `seance` : la séance où l'on est (« chez-<q> »), pour une vidéo qui n'est pas à ma télé du jour.
+ */
+export function SuiteDeLaVideo({ video, onSuivante, mode = "fin", seance }: { video: { id: string; titre: string }; onSuivante: () => void; mode?: "fin" | "carte"; seance?: string }) {
   const [suite, setSuite] = useState<SuiteVue | null>(null);
   const [age, setAge] = useState(false);
   const [tous, setTous] = useState(false);
@@ -68,12 +73,12 @@ export function SuiteDeLaVideo({ video, onSuivante }: { video: { id: string; tit
   const anim = useRef(0);
 
   const charger = useCallback(async () => {
-    const r = await fetch(`${ROUTE}?video=${encodeURIComponent(video.id)}`, { cache: "no-store" }).catch(() => null);
+    const r = await fetch(`${ROUTE}?video=${encodeURIComponent(video.id)}${seance ? `&seance=${encodeURIComponent(seance)}` : ""}`, { cache: "no-store" }).catch(() => null);
     const j = ((await r?.json().catch(() => null)) ?? {}) as { suite?: SuiteVue; age?: boolean };
     setAge(j.age === true);
     setSuite(j.suite ?? { mots: [], montres: MOTS_VIDEO.montres, tranche: "adultes" });
     return j.suite ?? null;
-  }, [video.id]);
+  }, [video.id, seance]);
   useEffect(() => {
     void Promise.resolve().then(charger);
   }, [charger]);
@@ -83,7 +88,7 @@ export function SuiteDeLaVideo({ video, onSuivante }: { video: { id: string; tit
   useEffect(() => {
     suivanteRef.current = onSuivante;
   });
-  const attend = touche || Boolean(enregistrer) || Boolean(joue);
+  const attend = mode === "carte" || touche || Boolean(enregistrer) || Boolean(joue);
   useEffect(() => {
     if (attend) return;
     const t0 = Date.now();
@@ -152,14 +157,14 @@ export function SuiteDeLaVideo({ video, onSuivante }: { video: { id: string; tit
   };
   async function signaler(m: MotVu) {
     arreter();
-    const r = await poster({ action: "signaler", id: video.id, q: m.q });
+    const r = await poster({ action: "signaler", id: video.id, q: m.q, ...(seance ? { seance } : {}) });
     if (!r.ok) return dit(r.j.error || P.rate);
     setSuite((s) => (s ? { ...s, mots: s.mots.filter((x) => x.q !== m.q) } : s));
     dit(P.signale);
   }
   async function effacer() {
     arreter();
-    const r = await poster({ action: "effacer", id: video.id });
+    const r = await poster({ action: "effacer", id: video.id, ...(seance ? { seance } : {}) });
     if (!r.ok) return dit(r.j.error || P.rate);
     setSuite((s) => (s ? { ...s, mots: s.mots.filter((x) => !x.moi) } : s));
     dit(P.efface);
@@ -182,6 +187,7 @@ export function SuiteDeLaVideo({ video, onSuivante }: { video: { id: string; tit
         {enregistrer ? (
           <Enregistreur
             video={video.id}
+            seance={seance}
             repondA={enregistrer.repondA}
             remplace={Boolean(mien)}
             onFini={async (publie) => {
@@ -277,7 +283,7 @@ export function SuiteDeLaVideo({ video, onSuivante }: { video: { id: string; tit
 
         {!enregistrer && (
           <button type="button" className="sv-suivante" onClick={() => (arreter(), onSuivante())} data-suite-suivante>
-            {touche || joue ? P.suivante : P.suivanteDans(reste)}
+            {mode === "carte" ? P.fermer : touche || joue ? P.suivante : P.suivanteDans(reste)}
           </button>
         )}
         {note && (
@@ -314,7 +320,7 @@ type Pret = { blob: Blob; url: string; duree: number; tetes: TeteMot[] };
  * 🎙️ LAISSER UN MOT : la caméra (si on la veut) lit mes têtes pendant que je parle ; dix secondes au plus ; je le
  * réécoute, dit par ma figurine ; l'accord ; « Recommencer » ou « Publier ».
  */
-function Enregistreur({ video, repondA, remplace, onFini, onAge }: { video: string; repondA?: { q: string; prenom: string }; remplace: boolean; onFini: (publie: boolean) => void; onAge: () => void }) {
+function Enregistreur({ video, seance, repondA, remplace, onFini, onAge }: { video: string; seance?: string; repondA?: { q: string; prenom: string }; remplace: boolean; onFini: (publie: boolean) => void; onAge: () => void }) {
   const [vivante, setVivante] = useState<FigurineVivante | null>(null);
   const [tetes, setTetes] = useState(false);
   const [etat, setEtat] = useState<"rien" | "micro" | "envoi">("rien");
@@ -441,7 +447,7 @@ function Enregistreur({ video, repondA, remplace, onFini, onAge }: { video: stri
     setEtat("envoi");
     try {
       const son = await enDataUrl(pret.blob);
-      const r = await poster({ action: "publier", id: video, son, duree: pret.duree, tetes: pret.tetes, ...(repondA ? { repond: repondA.q } : {}), accord: true });
+      const r = await poster({ action: "publier", id: video, son, duree: pret.duree, tetes: pret.tetes, ...(repondA ? { repond: repondA.q } : {}), ...(seance ? { seance } : {}), accord: true });
       setEtat("rien");
       if (r.j.age) return onAge();
       if (!r.ok) return setMessage(r.j.error || P.rate);
