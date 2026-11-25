@@ -19,6 +19,7 @@
  */
 import { randomBytes } from "node:crypto";
 import { ornementsDe } from "./ornements-serveur";
+import { noterVusAuSalon } from "./journee-figurine-serveur";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
@@ -256,6 +257,8 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   const maintenant = Date.now();
   const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [], ...profil, ...double };
   if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // (👀 « Ma figurine », lot 2 : ceux qui sont là voient sa figurine, et il les voit — leur journée, et la sienne)
+  await noterVusAuSalon(supabase, { h: moi.id, prenom: fiche.prenom }, fiches);
   // (en passant : les messages de plus de 48 h s'effacent ; 🏠 « Mes salons » retient celui-ci)
   void nettoyerMessages(supabase, m, id, maintenant);
   void noterMonSalon(supabase, moi.id, t.id, maintenant);
@@ -856,6 +859,8 @@ export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknow
   const double = await sonDoubleDeSalon(supabase, moi.id);
   const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: maintenant, ecrits: [], ...(maCle ? { maison: maCle } : {}), ...double };
   if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // (👀 « Ma figurine », lot 2 : ceux de la séance voient sa figurine, et il les voit)
+  await noterVusAuSalon(supabase, { h: moi.id, prenom: fiche.prenom }, fiches);
   void nettoyerMessages(supabase, m, id, maintenant);
   // (🎬 « Regarder à deux » : son proche arrive pour la vidéo proposée, et l'hôte n'est pas là — il est prévenu, une fois)
   if (!hote && !presents.some((p) => p.nom === qHote)) await prevenirLHote(supabase, hHote, qHote, moi.id, prenom, maintenant).catch(() => undefined);

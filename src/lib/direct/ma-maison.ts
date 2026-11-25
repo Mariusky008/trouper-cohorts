@@ -16,6 +16,7 @@
  */
 import { PIECES_DUO, type EmplacementsDuo, type MomentDuo, type PieceDuo, type PlaceDuo, type Zone } from "./pieces-duo";
 import type { Ornements } from "./ornements";
+import type { JourneeFigurine } from "./journee-figurine";
 import type { ExpressionFigurine } from "./expressions-figurine";
 import type { ImageSalon } from "./salon";
 import type { Visibilite } from "./monde";
@@ -106,6 +107,8 @@ export type MaMaisonVue = {
   double?: { pancarte?: string; pret?: boolean; ornements?: Ornements };
   /** 🚪 (lot M5) qui a frappé pendant mon absence (des prénoms, jamais un nombre de visites) */
   absence?: string[];
+  /** 👀 (« Ma figurine », lot 2) ma journée, racontée par ma figurine : coucous, visites, ceux qui l'ont vue dans les salons */
+  journee?: JourneeFigurine;
   /** 🎁 (lot M5) sur la table basse : les cadeaux de mes proches — à ouvrir (`attente`), ou gardés */
   table?: CadeauMaison[];
   /** 💬 (lot M5) ma question du jour, et ce que mes proches y ont répondu */
@@ -332,7 +335,7 @@ export const PHRASES_BAS = {
   absence: "Pendant ton absence",
   absenceChapo: "Ce qu’on a laissé chez toi",
   absenceVide: "Rien de neuf pour l’instant : tes proches passeront bientôt.",
-  absencePied: "Pas de compteur de visites : seulement ce que tes proches ont laissé.",
+  absencePied: "Des prénoms et de vrais chiffres, rien d’inventé : seulement ce qui s’est passé.",
   ajouter: "Ajouter chez moi",
   commeEux: "Comme la voient tes proches",
   surprise: "Une surprise",

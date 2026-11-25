@@ -198,7 +198,9 @@ await absence.click();
 const feuille = lea.locator("[data-absence]");
 ok(await attendre(lea, async () => /Sam a frappé à ta porte/.test(await texte(feuille.locator('[data-ligne-absence="frappe-0"]'))) && /Sam t’a laissé une surprise/.test(await texte(feuille.locator('[data-ligne-absence^="cadeau-"]')))), "… « 🚪 Sam a frappé à ta porte », « 🎁 Sam t'a laissé une surprise »");
 ok(/Sam te propose de regarder « Vidéo d’essai Rg4kZ2pQ71x » ensemble/.test(await texte(feuille.locator('[data-ligne-absence^="regarder-"]'))), "… « 🎬 Sam te propose de regarder « … » ensemble »");
-ok(/Pas de compteur de visites/.test(await texte(feuille)) && !/\d+ visite/.test(await texte(feuille)), "… « Pas de compteur de visites : seulement ce que tes proches ont laissé »");
+ok(/rien d’inventé/.test(await texte(feuille)) && !/\d+ visite/.test(await texte(feuille)), "… « Des prénoms et de vrais chiffres, rien d'inventé » (jamais un nombre de visites)");
+// (👀 « Ma figurine », lot 2 : sa figurine raconte sa journée — Sam est passé chez elle aujourd'hui)
+ok(/Visite de Sam chez toi/.test(await texte(feuille.locator('[data-journee-ligne="visites"]'))), `… sa figurine raconte sa journée : « Visite de Sam chez toi » (${await texte(feuille.locator("[data-journee]"))})`);
 await lea.waitForTimeout(350);
 await lea.screenshot({ path: `${D}/ma-maison-vie-3-absence.png` });
 await feuille.locator('[data-ligne-absence^="cadeau-"] button').click();

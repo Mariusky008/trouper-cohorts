@@ -15,7 +15,7 @@ https://claude.ai/artifact/AAQV8sh6SN382BxzbLF31r
 | 0 | La maquette | ✓ validée le 25 novembre |
 | 1 | Ma maison épurée, le bouton « ✨ Ma figurine », l'écran « Mon double du jour », la même figurine partout | ✓ fusionné le 25 novembre (#282) ; section 2 |
 | — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | section 3 |
-| 2 | « Pendant ton absence » : de vrais noms, de vrais chiffres | à faire |
+| 2 | « Pendant ton absence » : sa figurine raconte sa journée, de vrais prénoms, de vrais chiffres | section 4 |
 | 3 | L'image à partager | à faire |
 | 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | à faire |
 | 5 | La collection | à faire |
@@ -130,3 +130,31 @@ la surprise de Sam ouverte : le cœur partout — son double, sa maison, la visi
 passion déclarée, l'écharpe, un salon trop ancien ne compte plus ; Hugo : rien ; un cœur de seize jours, un jour
 manqué) ; `scripts/navigateur/ornements.mjs` (chez elle : l'auréole au-dessus de sa tête, le casque dessus, le cœur sur sa
 poitrine, « 🔥 8 », « 🎁 offert par Sam » ; son double dit pourquoi ; Sam la voit pareille).
+
+## 4. Lot 2 : « Pendant ton absence », sa figurine raconte sa journée (25 novembre 2026)
+
+Le propriétaire : « Sa figurine raconte sa journée : qui m'a fait coucou, qui est passé chez moi, combien m'ont vue dans
+les salons. Des prénoms, des vrais chiffres, jamais inventés. »
+
+**Où** : en haut de la feuille « 🛎️ Pendant ton absence » (le bouton de Ma maison), sa figurine, et à côté sa bulle,
+« 👀 Ma journée, racontée par ta figurine ». Elle parle à la première personne, de la journée (l'heure de Paris) :
+
+- 👋 « Sam et Hugo m'ont fait coucou » (`<habitant>/monde/coucous.json` ; une personne une fois) ;
+- 🚪 « Visite de Sam chez toi » (`<habitant>/monde/visites.json` ; des prénoms, jamais un nombre de visites, comme la
+  règle de la section 7 de `ma-maison.md`) ;
+- 👀 « 12 personnes m'ont vue dans les salons », et dessous « Dont Hugo, Zoé et Nina » (les trois derniers).
+- Rien : « Aujourd'hui, personne ne m'a encore vue. Assieds-toi dans un salon : on me verra. »
+
+**Ceux qui l'ont vue dans les salons** (nouveau : `<habitant>/ma-journee.json` = { jour, salons: { <identifiant court> :
+prénom } }) : à chaque entrée dans un salon ouvert ou une séance (`entrerAuSalon`, `entrerChez`), celui qui entre voit
+ceux qui sont là, et ils le voient — noté des deux côtés (`noterVusAuSalon`, `journee-figurine-serveur.ts`). Une
+personne compte une fois par jour ; à minuit, on repart de zéro. Jamais un compte : l'identifiant court des salons et
+le prénom.
+
+Le pied de la feuille dit maintenant : « Des prénoms et de vrais chiffres, rien d'inventé : seulement ce qui s'est
+passé. »
+
+**Les essais** : `scripts/essai-journee-figurine-route.mjs` (d'abord rien, ce qu'il restait d'hier ne compte pas ; un
+coucou compté une fois, une visite ; au salon du foot, Léa, Hugo et Zoé se voient tous, Léa rerentre sans que personne
+compte deux fois ; jamais un compte) ; `scripts/navigateur/journee-figurine.mjs` (la bulle, sa figurine, les trois
+lignes) ; `ma-maison-vie.mjs` (« Visite de Sam chez toi »).
