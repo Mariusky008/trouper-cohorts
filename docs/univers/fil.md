@@ -118,11 +118,55 @@ dans l'ordre du catalogue (seize pièces au plus).
   - « Tous les salons » et « ‹ Le fil », le lien `?tele=`, sans âge.
 - Les essais de l'ancienne page de Découvrir l'ouvrent maintenant par `#salons`, dans `#o-salons`.
 
-## 5. Les lots suivants
+## 5. Le lot F2 : les maisons ouvertes (25 novembre 2026)
 
-- **F2, les maisons ouvertes** : la question à l'inscription et l'interrupteur dans Ma maison ; les maisons des gens qui
-  ont une passion en commun dans le fil ; « Frapper à sa porte » (la visite, qui existe) ; « Lui faire coucou » (nouveau :
-  sa figurine apparaît dans sa maison, la personne répond si elle veut).
+**Qui peut venir voir ta pièce ?** Un quatrième choix s'ajoute à ceux de Ma maison (👯 Mes proches, 🌍 Tout le monde, 🔒
+Moi seul) : **🧭 « Aussi ceux qui aiment ce que j'aime »** (`passions`, `ma-maison.ts` : `VISIBILITES_DE_MAISON`). Sa
+pièce entre alors dans le fil de ceux qui :
+
+- ne sont pas ses proches (ils l'ont déjà) ;
+- sont de **sa tranche d'âge** : les 15-17 ans entre eux, les adultes entre eux. Un âge jamais dit : la question
+  d'abord, jamais devinée ;
+- partagent **au moins une de ses passions**.
+
+« Tout le monde » (adultes seulement, le lien) comprend ce choix-là. Ils voient seulement ce qu'il a ajouté lui-même,
+jamais ce qui vient de ses conversations, et ne peuvent pas lui laisser de surprise (réservé aux proches, comme avant).
+
+**À l'inscription**, juste après le premier choix de sa pièce, la feuille « 🚪 Qui peut venir voir ta pièce ? » : « 👯
+Mes proches seulement » ou « 🧭 Aussi ceux qui aiment ce que j'aime » (`QuestionPorte`, `ajouter-chez-moi.tsx`). Il
+change d'avis dans Ma maison, 🚪 « Qui peut entrer » : c'est l'interrupteur.
+
+**Dans le fil**, une pièce « maison » (`MaisonFil`) : sa pièce, sa figurine, « ⚽ Foot et sport, comme toi », « Chez Zoé ».
+
+- **🚪 Frapper à sa porte** : la visite, qui existe (`/univers/chez/<clé>`).
+- **👋 Lui faire coucou** (ou toucher deux fois) : sa figurine apparaît dans la pièce de l'autre (« 👋 Coucou ! »), qui
+  est prévenu. Une fois par jour chez la même personne. Il répond (« 👋 Lui répondre ») ou la laisse (« Pas
+  maintenant ») : la figurine s'en va. S'il répond, celui qui a fait coucou est prévenu, et son fil dit « 👋 Zoé t'a
+  répondu ! ». Jamais une fausse réponse : rien ne répond à sa place.
+
+**La surprise d'une visite** (décidé avec le propriétaire le 25 novembre 2026, quand l'appli s'est mise à s'ouvrir sur
+le fil) : en haut du fil, « 🎁 Sam t'a laissé un cadeau » ou « 🚪 Léa a frappé à ta porte », qui ouvre « Messages », où
+on la découvre.
+
+**Le code** :
+
+- `ma-maison.ts` : `VisibiliteMaison`, `ouverteAuFil`, `PHRASES_PORTE`, `CoucouVu` ;
+- `visites-serveur.ts` : `passionEnCommun` (la règle), `peutEntrer` et `maisonVisitee` (qui entre),
+  `choisirVisibiliteMaison` (409 `{ age }` sans âge dit ; `majeur` : sa réponse), `maisonsPourLeFil`, `faireCoucou`,
+  `repondreCoucou`, `coucousRecus` ;
+- le seau : `maisons/ouvertes.json` (`{ liste: [{ h, le, m }] }`, `m` : « adultes » ou « jeunes », un premier tri ; la
+  règle est revérifiée à chaque lecture) ; `<h>/monde/coucous.json` (`coucous-serveur.ts`) ;
+- les routes : `POST /api/direct/visites { action: "coucou", cle }` ; `POST /api/direct/ma-piece { action: "coucou",
+  id, oui }` ; `maison.coucous` dans ce que rend `ma-piece` ;
+- l'écran : `fil-decouvrir.tsx` (la pièce « maison », la surprise en haut), `maison-catalogue.tsx` (la figurine du
+  coucou dans sa pièce, sa carte ; la question après le premier choix), `ajouter-chez-moi.tsx` (`QuestionPorte`, l'âge
+  dans « Qui peut entrer »).
+
+**L'essai** : `scripts/essai-maisons-ouvertes-route.mjs` (qui voit quelle maison, les 15-17 ans, la porte, le coucou et
+sa réponse, la pièce refermée, la surprise).
+
+## 6. Les lots suivants
+
 - **F3, mes proches en direct** : une séance entre proches en cours dans le fil (« Léa et Sam regardent ensemble »,
   « Demander à les rejoindre ») ; quand sa figurine entre quelque part, les présents peuvent lui faire signe en un
   toucher (la vraie réponse).

@@ -150,7 +150,7 @@ await lea.screenshot({ path: `${D}/ma-maison-visite-0-carnet.png` });
 await carnet.locator('[data-geste="qui"]').click();
 ok(await attendre(lea, async () => (await carnet.count()) === 0), "« 👀 Comme la voient tes proches » : le carnet laisse la place à « Qui peut entrer chez moi ? »");
 const feuille = lea.locator("[data-qui-entre]");
-ok(await attendre(lea, async () => (await feuille.locator("[data-visibilite]").count()) === 3 && (await feuille.locator('[data-visibilite="proches"]').getAttribute("aria-pressed")) === "true"), "« Qui peut entrer chez moi ? » : trois choix, « Mes proches » coché");
+ok(await attendre(lea, async () => (await feuille.locator("[data-visibilite]").count()) === 4 && (await feuille.locator('[data-visibilite="proches"]').getAttribute("aria-pressed")) === "true"), "« Qui peut entrer chez moi ? » : quatre choix (🧭 « Aussi ceux qui aiment ce que j'aime », lot F2), « Mes proches » coché");
 await feuille.locator('[data-visibilite="tous"]').click();
 ok((await feuille.locator("[data-adulte]").count()) === 1, "« Tout le monde » : « J'ai 18 ans ou plus » à cocher");
 await feuille.locator("[data-garder]").click();

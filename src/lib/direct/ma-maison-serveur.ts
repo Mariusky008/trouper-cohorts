@@ -28,7 +28,6 @@ import type { Sentiment } from "./ma-figurine";
 import { objetsDeMaMaison } from "./etagere-serveur";
 import { questionChezMoi } from "./question-maison-serveur";
 import { poserProfil } from "./talkie-serveur";
-import { VISIBILITES, type Visibilite } from "./monde";
 import {
   CENTRE_PAR_DEFAUT,
   LARGEURS_FIGURINE,
@@ -37,10 +36,12 @@ import {
   piecesDansLOrdre,
   placerChezMoi,
   TABLE_MAX,
+  VISIBILITES_DE_MAISON,
   type CadeauMaison,
   type CatalogueMaison,
   type MaMaisonVue,
   type ScenePiece,
+  type VisibiliteMaison,
 } from "./ma-maison";
 import { emplacementsValides, momentDuoDe, pieceDuoDe, pieceDuoValide, type MomentDuo, type PieceDuo } from "./pieces-duo";
 import { imageSalon } from "./salon-fichiers-serveur";
@@ -151,9 +152,9 @@ export async function figurineDeLaMaison(supabase: Supabase, h: string): Promise
 
 /** 🚪 (lot M4) qui peut entrer chez lui (`<habitant>/ma-piece/visibilite.json`) : ses proches, d'office. */
 export const cheminVisibiliteMaison = (h: string) => `${dossierMaison(h)}/visibilite.json`;
-export async function visibiliteDeLaMaison(supabase: Supabase, h: string): Promise<Visibilite> {
+export async function visibiliteDeLaMaison(supabase: Supabase, h: string): Promise<VisibiliteMaison> {
   const v = (await lireJson<{ v?: string }>(supabase, cheminVisibiliteMaison(h)).catch(() => ({}) as { v?: string })).v;
-  return (VISIBILITES as readonly string[]).includes(s(v)) ? (v as Visibilite) : "proches";
+  return (VISIBILITES_DE_MAISON as readonly string[]).includes(s(v)) ? (v as VisibiliteMaison) : "proches";
 }
 /** Il a déclaré 18 ans ou plus (`<habitant>/adulte.json`, le lot 6 des visites). */
 const aDitSesDixHuitAns = async (supabase: Supabase, h: string) => Boolean(s((await lireJson<{ le?: string }>(supabase, `${h}/adulte.json`).catch(() => ({}) as { le?: string })).le));

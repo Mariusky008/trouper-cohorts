@@ -32,6 +32,7 @@ import {
   phraseNouveautes,
   puceDeLObjet,
   PHRASES_CADEAU,
+  PHRASES_PORTE,
   PHRASES_QUESTION,
   type CadeauMaison,
   type QuestionChezLui,
@@ -44,7 +45,7 @@ import {
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
 import { createPortal } from "react-dom";
-import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuiPeutEntrer, RegarderADeux, type LigneAbsence } from "./ajouter-chez-moi";
+import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuestionPorte, QuiPeutEntrer, RegarderADeux, type LigneAbsence } from "./ajouter-chez-moi";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import { PHRASES_CARNET } from "@/lib/direct/carnet-proches";
 import { CarnetDesProches } from "./carnet-proches";
@@ -240,6 +241,22 @@ function Piece({
   // ＋🗑️ (lot M2, deuxième partie) ajouter chez moi ; l'objet à enlever (un appui long) ; ce qui vient d'être fait
   const [ajout, setAjout] = useState(false);
   const [qui, setQui] = useState(false);
+  // 👋 (lot F2 du fil) le coucou qui attend ma réponse (le plus récent) ; ce que je viens d'en faire
+  const coucou = visite ? null : (maison.coucous?.[0] ?? null);
+  const [coucouFait, setCoucouFait] = useState("");
+  const [coucouEnCours, setCoucouEnCours] = useState(false);
+  async function repondreAuCoucou(oui: boolean) {
+    if (!coucou) return;
+    setCoucouEnCours(true);
+    const r = await lire(ROUTE, { action: "coucou", id: coucou.id, oui });
+    setCoucouEnCours(false);
+    if (!r.maison) return;
+    if (oui) {
+      setCoucouFait(PHRASES_PORTE.repondu(coucou.prenom));
+      window.setTimeout(() => setCoucouFait(""), 2600);
+    }
+    onMaison(r.maison);
+  }
   // 👯 (21 novembre 2026, section 25) le carnet de mes proches
   const [carnet, setCarnet] = useState(false);
   // 📼 (section 31 de Découvrir) mes vidéos déjà vues
@@ -719,6 +736,14 @@ function Piece({
               )}
             </button>
           )}
+          {/* 👋 (lot F2 du fil) chez moi : la figurine de qui m'a fait coucou, à côté de la mienne */}
+          {!visite && coucou?.image && (
+            <span className="mmc-coucou" data-coucou-de={coucou.id} style={{ left: `${Math.min(0.9, c.x + 0.2) * 100}%`, bottom: `${(1 - c.y) * 100}%`, height: `${c.hauteur * 0.9 * 100}%` }}>
+              <span className="mmc-coucou-bulle">{PHRASES_PORTE.coucouBulle}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={coucou.image} alt="" draggable={false} />
+            </span>
+          )}
           {/* 😊 (la maquette) en visite, la porte ouverte : sa figurine dit bonjour */}
           {accueil && (
             <span className="mmc-accueil" role="status" data-accueil style={{ left: `${c.x * 100}%`, bottom: `${(1 - c.y + c.hauteur) * 100}%` }}>
@@ -1138,6 +1163,30 @@ function Piece({
           />,
           document.body,
         )}
+      {/* 👋 (lot F2 du fil) qui m'a fait coucou : lui répondre, ou pas maintenant */}
+      {coucou &&
+        createPortal(
+          <div className="mmc-coucou-carte" role="dialog" aria-label={PHRASES_PORTE.coucouDe(coucou.prenom)} data-coucou-carte>
+            <b>👋 {PHRASES_PORTE.coucouDe(coucou.prenom)}</b>
+            <small>{PHRASES_PORTE.coucouSous}</small>
+            <span>
+              <button type="button" className="mmc-coucou-oui" data-coucou-repondre disabled={coucouEnCours} onClick={() => void repondreAuCoucou(true)}>
+                {PHRASES_PORTE.repondre}
+              </button>
+              <button type="button" className="mmc-coucou-non" data-coucou-laisser disabled={coucouEnCours} onClick={() => void repondreAuCoucou(false)}>
+                {PHRASES_PORTE.pasMaintenant}
+              </button>
+            </span>
+          </div>,
+          document.body,
+        )}
+      {coucouFait &&
+        createPortal(
+          <p className="mmc-coucou-fait" role="status" data-coucou-fait>
+            {coucouFait}
+          </p>,
+          document.body,
+        )}
       {qui &&
         createPortal(
           <QuiPeutEntrer
@@ -1305,12 +1354,16 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
       fini = true;
     };
   }, [ouvert, catalogue]);
+  // 🚪 (lot F2 du fil) « Qui peut venir voir ta pièce ? » — juste après le premier choix de sa pièce (l'inscription)
+  const [porte, setPorte] = useState(false);
   async function choisir(p: PieceAuCatalogue): Promise<string | null> {
+    const premiere = !maison?.scene;
     const r = await lire(ROUTE, { action: "choisir", piece: p.cle });
     if (!r.maison) return r.error || "Ça n’a pas marché : réessaie.";
     setMaison(r.maison);
     setCatalogue(null);
     setChoix(false);
+    if (premiere) setPorte(true);
     return null;
   }
   return (
@@ -1326,6 +1379,16 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
         </>
       ) : null}
       {ouvert && maison && <Choix catalogue={catalogue} actuelle={maison.scene ? maison.piece : null} onChoisir={choisir} onFermer={maison.scene ? () => setChoix(false) : onRenoncer} />}
+      {porte &&
+        createPortal(
+          <QuestionPorte
+            onFini={(m) => {
+              setPorte(false);
+              if (m) setMaison(m);
+            }}
+          />,
+          document.body,
+        )}
       <style>{STYLES_MAISON_CATALOGUE}</style>
     </div>
   );
@@ -1444,6 +1507,18 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-lueur{position:absolute;left:50%;top:40%;width:420%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,214,150,.55),rgba(255,180,90,.18) 45%,rgba(255,160,80,0) 70%);opacity:0;transition:opacity .5s ease;pointer-events:none;mix-blend-mode:screen}
 .mmc-lueur.allumee{opacity:1}
 .mmc-ombre{position:absolute;aspect-ratio:4/1;transform:translate(-50%,-55%);border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.5),rgba(0,0,0,0));pointer-events:none}
+.mmc-coucou{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none;animation:mmc-coucou-arrive .6s cubic-bezier(.2,1.4,.4,1)}
+.mmc-coucou img{display:block;height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45))}
+.mmc-coucou-bulle{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);padding:6px 11px;border-radius:14px;background:#fff;color:#1A0D14;font-size:13px;font-weight:900;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.mmc-coucou-carte{position:fixed;left:12px;right:12px;bottom:calc(100px + env(safe-area-inset-bottom));z-index:70;display:flex;flex-direction:column;gap:6px;max-width:420px;margin:0 auto;padding:14px;border-radius:20px;background:#1A0D14;color:#FFF4E6;box-shadow:0 18px 40px -12px #000,inset 0 0 0 1px rgba(255,255,255,.1)}
+.mmc-coucou-carte b{font-size:16px}
+.mmc-coucou-carte small{font-size:13px;opacity:.85}
+.mmc-coucou-carte span{display:flex;gap:8px;margin-top:4px}
+.mmc-coucou-oui,.mmc-coucou-non{flex:1;min-height:44px;border-radius:999px;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
+.mmc-coucou-oui{border:0;background:#FF2E9A;color:#fff}
+.mmc-coucou-non{border:1px solid rgba(255,255,255,.25);background:none;color:#FFF4E6}
+.mmc-coucou-fait{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));z-index:70;transform:translateX(-50%);margin:0;padding:10px 16px;border-radius:14px;background:rgba(20,6,14,.95);color:#fff;font-size:14px}
+@keyframes mmc-coucou-arrive{from{opacity:0;transform:translate(-50%,20px) scale(.7)}}
 .mmc-fig{position:absolute;transform:translateX(-50%);padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mmc-fig img{display:block;height:100%;width:auto;max-width:none;transform-origin:50% 100%;animation:mmc-souffle 4.5s ease-in-out infinite;user-select:none;-webkit-user-drag:none}
 .mmc-fig[data-saute="1"] img{animation:mmc-saut .5s ease-out,mmc-souffle 4.5s ease-in-out .5s infinite}

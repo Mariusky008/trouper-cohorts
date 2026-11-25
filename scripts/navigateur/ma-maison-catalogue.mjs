@@ -92,6 +92,12 @@ const apercu = p.locator('.mmc-apercu[aria-label="Le hangar"]');
 ok(await attendre(async () => (await apercu.locator("img").evaluate((i) => i.complete && i.naturalWidth > 0)) === true), "un toucher : le hangar en grand");
 await p.screenshot({ path: `${D}/ma-maison-2-apercu.png` });
 await apercu.locator('[data-geste="installer"]').click();
+// (🚪 lot F2 du fil : « Qui peut venir voir ta pièce ? » — elle l'ouvre à ceux de son âge qui aiment ce qu'elle aime)
+const porte = p.locator("[data-question-porte]");
+ok(await attendre(async () => (await porte.count()) === 1 && /Qui peut venir voir ta pièce/.test(await porte.innerText())), "juste après son premier choix : « 🚪 Qui peut venir voir ta pièce ? »");
+await p.screenshot({ path: `${D}/ma-maison-2b-qui-peut-venir.png` });
+await porte.locator('[data-porte="passions"]').click();
+ok(await attendre(async () => (await porte.count()) === 0), "« 🧭 Aussi ceux qui aiment ce que j’aime » : c’est noté (son âge est déjà connu, rien de plus à demander)");
 
 // ─── chez soi ───
 const scene = p.locator('.mmc-scene[data-piece="hangar"]');

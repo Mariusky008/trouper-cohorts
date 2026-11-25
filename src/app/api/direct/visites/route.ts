@@ -4,6 +4,7 @@
 // GET ?moi=1                                       → { visites } : chez moi — qui est passé, les souvenirs, qui entre
 // GET ?publics=1                                   → { publics } : les univers ouverts à tous (« Découvrir », lot 7)
 // POST { action: "frapper", cle }                  → frapper à la porte (il est prévenu, une fois par jour)
+// POST { action: "coucou", cle }                   → 👋 (lot F2 du fil) lui faire coucou : sa figurine apparaît chez lui
 // POST { action: "souvenir", cle, objet, mot? }    → laisser un souvenir (ses proches seulement ; il l'accepte ou non)
 // POST { action: "signaler", cle }                 → signaler un univers (pour l'équipe)
 // POST { action: "decider", id, oui }              → chez moi : accepter (il se pose) ou refuser un souvenir
@@ -17,7 +18,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { choisirVisibilite, deciderSouvenir, frapper, ignorerDemande, laisserSouvenir, marquerVisitesVues, mesVisites, retirerSouvenir, signalerUnivers, universPublics, visiterUnivers } from "@/lib/direct/visites-serveur";
+import { choisirVisibilite, deciderSouvenir, faireCoucou, frapper, ignorerDemande, laisserSouvenir, marquerVisitesVues, mesVisites, retirerSouvenir, signalerUnivers, universPublics, visiterUnivers } from "@/lib/direct/visites-serveur";
 import { proposerDeRegarder } from "@/lib/direct/salons-ouverts-serveur";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,9 @@ export async function POST(request: Request) {
   const r =
     p?.action === "frapper"
       ? await frapper(supabase, moi, p.cle)
-      : p?.action === "souvenir"
+      : p?.action === "coucou"
+        ? await faireCoucou(supabase, moi, p.cle)
+        : p?.action === "souvenir"
         ? await laisserSouvenir(supabase, moi, p.cle, p.objet, p.mot)
         : p?.action === "signaler"
           ? await signalerUnivers(supabase, moi, p.cle)

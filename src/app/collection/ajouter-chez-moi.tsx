@@ -24,24 +24,26 @@ import {
   PHRASES_AJOUT,
   PHRASES_BAS,
   PHRASES_CADEAU,
+  PHRASES_PORTE,
   PHRASES_VISITE,
   VISIBILITES_MAISON,
   type MaMaisonVue,
   type ObjetMaison,
   type QuoiAjout,
+  type VisibiliteMaison,
 } from "@/lib/direct/ma-maison";
-import type { Visibilite } from "@/lib/direct/monde";
+import { PHRASES_FIL } from "@/lib/direct/fil-decouvrir";
 import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR } from "@/lib/direct/visites";
 import { LIEN_REGARDER_MAX, PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import { vignetteYouTube } from "@/lib/direct/tele";
 
 const ROUTE = "/api/direct/ma-piece";
-type Reponse = { ok?: boolean; id?: string; maison?: MaMaisonVue; error?: string };
+type Reponse = { ok?: boolean; id?: string; maison?: MaMaisonVue; error?: string; age?: boolean };
 async function envoyer(corps: Record<string, unknown>): Promise<Reponse> {
   try {
     const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) });
     const j = (await r.json().catch(() => ({}))) as Reponse;
-    return r.ok ? j : { error: j.error || "Ça n’a pas marché : réessaie." };
+    return r.ok ? j : { error: j.error || "Ça n’a pas marché : réessaie.", ...(j.age ? { age: true } : {}) };
   } catch {
     return { error: "Pas de réseau : réessaie dans un instant." };
   }
@@ -213,18 +215,87 @@ export function EnleverDeChezMoi({ objet, onFermer, onEnleve }: { objet: ObjetMa
   );
 }
 
+/** 🧭 (lot F2) Son âge, une fois, avant d'ouvrir sa pièce à ceux de son âge qui partagent ses passions. */
+function AgeDeLaPorte({ enCours, onAge }: { enCours: boolean; onAge: (majeur: boolean) => void }) {
+  return (
+    <div className="acm-age" data-age-porte>
+      <b>{PHRASES_FIL.age}</b>
+      <small>{PHRASES_FIL.ageChapo}</small>
+      <button type="button" className="acm-principal" data-majeur="oui" disabled={enCours} onClick={() => onAge(true)}>
+        {PHRASES_FIL.adulte}
+      </button>
+      <button type="button" className="acm-secondaire" data-majeur="non" disabled={enCours} onClick={() => onAge(false)}>
+        {PHRASES_FIL.jeune}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * 🚪 (lot F2, `docs/univers/fil.md`) « QUI PEUT VENIR VOIR TA PIÈCE ? » — à l'inscription, juste après le choix de sa
+ * pièce : ses proches seulement, ou aussi ceux de son âge qui partagent une de ses passions. Il change d'avis dans Ma
+ * maison (🚪 « Qui peut entrer »).
+ */
+export function QuestionPorte({ onFini }: { onFini: (m?: MaMaisonVue) => void }) {
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const [age, setAge] = useState(false);
+  async function choisir(v: VisibiliteMaison, majeur?: boolean) {
+    setEnCours(true);
+    setErreur("");
+    const r = await envoyer({ action: "visibilite", v, ...(typeof majeur === "boolean" ? { majeur } : {}) });
+    setEnCours(false);
+    if (r.age) return setAge(true);
+    if (!r.maison) return setErreur(r.error || "Ça n’a pas marché : réessaie.");
+    onFini(r.maison);
+  }
+  return (
+    <div className="acm" role="dialog" aria-modal="true" aria-label={PHRASES_PORTE.titre} data-question-porte>
+      <div className="acm-feuille">
+        <div className="acm-tete">
+          <b>🚪 {PHRASES_PORTE.titre}</b>
+        </div>
+        <p className="acm-chapo">{PHRASES_PORTE.chapo}</p>
+        {age ? (
+          <AgeDeLaPorte enCours={enCours} onAge={(m) => void choisir("passions", m)} />
+        ) : (
+          <div className="acm-qui">
+            <button type="button" data-porte="proches" disabled={enCours} onClick={() => void choisir("proches")}>
+              <b>{PHRASES_PORTE.proches}</b>
+              <span>{PHRASES_PORTE.prochesDit}</span>
+            </button>
+            <button type="button" data-porte="passions" disabled={enCours} onClick={() => void choisir("passions")}>
+              <b>{PHRASES_PORTE.passions}</b>
+              <span>{PHRASES_PORTE.passionsDit}</span>
+            </button>
+          </div>
+        )}
+        {erreur && (
+          <p className="acm-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+      </div>
+      <style>{STYLES_AJOUTER}</style>
+    </div>
+  );
+}
+
 export function QuiPeutEntrer({ maison, onFermer, onChoisi }: { maison: MaMaisonVue; onFermer: () => void; onChoisi: (m: MaMaisonVue) => void }) {
-  const [choix, setChoix] = useState<Visibilite>(maison.visibilite ?? "proches");
+  const [choix, setChoix] = useState<VisibiliteMaison>(maison.visibilite ?? "proches");
   const [adulte, setAdulte] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
+  // (🧭 lot F2 : « passions » demande son âge s'il ne l'a jamais dit)
+  const [age, setAge] = useState(false);
   const dejaAdulte = maison.adulte === true;
-  async function garder() {
+  async function garder(majeur?: boolean) {
     if (choix === "tous" && !dejaAdulte && !adulte) return setErreur(PHRASES_VISITE.adulteDit);
     setEnCours(true);
     setErreur("");
-    const r = await envoyer({ action: "visibilite", v: choix, ...(choix === "tous" && !dejaAdulte ? { adulte: true } : {}) });
+    const r = await envoyer({ action: "visibilite", v: choix, ...(choix === "tous" && !dejaAdulte ? { adulte: true } : {}), ...(typeof majeur === "boolean" ? { majeur } : {}) });
     setEnCours(false);
+    if (r.age) return setAge(true);
     if (!r.maison) return setErreur(r.error || "Ça n’a pas marché : réessaie.");
     onChoisi(r.maison);
   }
@@ -274,9 +345,13 @@ export function QuiPeutEntrer({ maison, onFermer, onChoisi }: { maison: MaMaison
             {erreur}
           </p>
         )}
-        <button type="button" className="acm-principal" data-garder disabled={enCours} onClick={() => void garder()}>
-          {enCours ? "…" : "C’est bon"}
-        </button>
+        {age && choix === "passions" ? (
+          <AgeDeLaPorte enCours={enCours} onAge={(m) => void garder(m)} />
+        ) : (
+          <button type="button" className="acm-principal" data-garder disabled={enCours} onClick={() => void garder()}>
+            {enCours ? "…" : "C’est bon"}
+          </button>
+        )}
         {maison.cle && (
           <a className="acm-secondaire acm-lien" href={`/univers/chez/${maison.cle}?piece=1`} data-comme-eux>
             {PHRASES_VISITE.commeEux}
@@ -550,6 +625,9 @@ const STYLES_AJOUTER = `
 .acm-qui b{font-size:15.5px}
 .acm-qui span{font-size:13.5px;color:#eee0d0;line-height:1.4}
 .acm-adulte{display:flex;align-items:center;gap:10px;font-size:15px}
+.acm-age{display:flex;flex-direction:column;gap:8px}
+.acm-age b{font-size:16px}
+.acm-age small{font-size:13px;opacity:.8}
 .acm-adulte input{width:20px;height:20px}
 .acm-lien{text-align:center;text-decoration:none;display:block}
 @keyframes acm-voile{from{opacity:0}}
