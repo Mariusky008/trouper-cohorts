@@ -349,7 +349,7 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
                     </span>
                   )}
                   <span className="fd-chez-fig" data-bonjour={p.bonjour ? "1" : undefined} onClick={p.bonjour ? () => toucherBonjour(p.bonjour, `m:${p.cle}`) : undefined}>
-                    <FigurineAssise f={p.figurine} hauteur={190} />
+                    <FigurineAssise f={p.figurine} hauteur={190} bonjour={p.bonjour} />
                     {bonjourVu === `m:${p.cle}` && <DitBonjour />}
                   </span>
                 </div>
@@ -379,7 +379,7 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
                   {p.figurine.mot}
                 </p>
                 <span className="fd-pose-fig" data-bonjour={p.figurine.bonjour ? "1" : undefined} onClick={p.figurine.bonjour ? () => toucherBonjour(p.figurine.bonjour, `a:${p.figurine.id}`) : undefined}>
-                  <FigurineAssise f={p.figurine} hauteur={230} />
+                  <FigurineAssise f={p.figurine} hauteur={230} bonjour={p.figurine.bonjour} />
                   {bonjourVu === `a:${p.figurine.id}` && <DitBonjour />}
                 </span>
               </div>

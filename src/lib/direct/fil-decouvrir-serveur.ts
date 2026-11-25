@@ -44,7 +44,7 @@ const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 export async function silhouetteDuFil(supabase: Supabase, h: string): Promise<SilhouetteFil | null> {
   const [tete, assise, pancarte, ornements] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), figurineDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => ""), ornementsDe(supabase, h).catch(() => null)]);
   const p = { ...(pancarte ? { pancarte } : {}), ...(ornements ? { ornements } : {}) };
-  if (tete) return { tete: tete.src, corps: { src: tete.corps, ratio: tete.ratio, boite: tete.boite }, ...p };
+  if (tete) return { tete: tete.src, corps: { src: tete.corps, ratio: tete.ratio, boite: tete.boite }, ...(tete.parle ? { parle: tete.parle } : {}), ...p };
   const image = assise?.src || (await saFigurineSignee(supabase, h).catch(() => ""));
   return image ? { tete: image, image, ...p } : null;
 }

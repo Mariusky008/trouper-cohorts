@@ -32,7 +32,7 @@
  * pastille), sa tête copiée en direct chez ceux qui regardent avec lui, la ligne du temps sous la télé, « 💬 Ce qui s'est
  * dit » (toucher une ligne revoit le moment), et sa vraie voix à la seconde (le micro de la barre d'écriture).
  */
-import { jouerBonjour } from "@/app/collection/bonjour";
+import { jouerBonjour, useBoucheDuBonjour } from "@/app/collection/bonjour";
 import { PHRASES_BONJOUR } from "@/lib/direct/bonjour";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { chargerYouTube } from "@/app/univers/tele-duo";
@@ -1167,17 +1167,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   ) : souvenir?.vivante ? (
                     <FigurineVivanteVue v={souvenir.vivante} hauteur={x.h} e={exprF[souvenir.cle] ?? null} />
                   ) : enDirect ? (
-                    <FigurineVivanteVue v={enDirect} hauteur={x.h} e={tetes[p.q] ?? null} />
+                    <VivanteQuiParle v={enDirect} hauteur={x.h} e={tetes[p.q] ?? null} bonjour={p.bonjour} />
                   ) : p.tete ? (
                     // (✨ « Ma figurine » : sa tête du jour, posée sur son corps sans sa tête — la même que partout)
-                    <span className="so-jour" style={{ height: x.h, width: Math.round(x.h * p.tete.ratio) }} data-tete-du-jour>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.tete.corps} alt="" draggable={false} />
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="so-jour-tete" src={p.tete.src} alt="" draggable={false} style={{ left: `${p.tete.boite[0] * 100}%`, top: `${p.tete.boite[1] * 100}%`, width: `${p.tete.boite[2] * 100}%`, height: `${p.tete.boite[3] * 100}%` }} />
-                      {/* (🔥🎧❤️ « Elle change toute seule » : ce qu'elle porte, par-dessus — sans étiquettes, c'est petit ici) */}
-                      <Ornements o={p.ornements ? { ...p.ornements, boite: p.tete.boite } : null} etiquettes={false} />
-                    </span>
+                    <SaTeteDuJour p={p} tete={p.tete} hauteur={x.h} />
                   ) : p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${Math.round(x.h)}px`} alt="" draggable={false} />
@@ -2323,6 +2316,35 @@ function Affiche({ v, action, attente }: { v: VideoSalon; action?: { nom: string
         attente && <span className="so-attente">{attente}</span>
       )}
     </div>
+  );
+}
+
+/** 🗣️ Sa figurine vivante (en direct) : pendant son bonjour, sa bouche suit sa voix. */
+function VivanteQuiParle({ v, hauteur, e, bonjour }: { v: FigurineVivante; hauteur: number; e: ExpressionVisage | null; bonjour?: string }) {
+  const bouche = useBoucheDuBonjour(v.parle ? bonjour : null);
+  return <FigurineVivanteVue v={v} hauteur={hauteur} e={e} bouche={bouche} />;
+}
+
+/**
+ * ✨ (« Ma figurine ») Sa tête du jour, posée sur son corps sans sa tête — la même que partout. 🗣️ Pendant son bonjour, sa
+ * tête « bouche ouverte » (chargée d'avance) passe devant quand sa voix est forte.
+ */
+function SaTeteDuJour({ p, tete, hauteur }: { p: PresentSalon; tete: NonNullable<PresentSalon["tete"]>; hauteur: number }) {
+  const bouche = useBoucheDuBonjour(tete.parle ? p.bonjour : null);
+  const pose = { left: `${tete.boite[0] * 100}%`, top: `${tete.boite[1] * 100}%`, width: `${tete.boite[2] * 100}%`, height: `${tete.boite[3] * 100}%` };
+  return (
+    <span className="so-jour" style={{ height: hauteur, width: Math.round(hauteur * tete.ratio) }} data-tete-du-jour data-bouche={bouche ? "1" : undefined}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={tete.corps} alt="" draggable={false} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="so-jour-tete" src={tete.src} alt="" draggable={false} style={{ ...pose, ...(bouche ? { visibility: "hidden" } : {}) }} />
+      {tete.parle && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="so-jour-tete" src={tete.parle} alt="" draggable={false} data-tete-parle style={{ ...pose, ...(bouche ? {} : { visibility: "hidden" }) }} />
+      )}
+      {/* (🔥🎧❤️ « Elle change toute seule » : ce qu'elle porte, par-dessus — sans étiquettes, c'est petit ici) */}
+      <Ornements o={p.ornements ? { ...p.ornements, boite: tete.boite } : null} etiquettes={false} />
+    </span>
   );
 }
 

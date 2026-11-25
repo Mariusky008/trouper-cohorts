@@ -6,7 +6,9 @@
 // micro s'allume, les secondes défilent ; « ■ C'est dit » : elle peut l'écouter, puis « ✓ Garder ce bonjour ». Rangé :
 // sa voix, servie à quelqu'un de ClikMe par sa clé (jamais son compte). Sam a enregistré le sien ; il est au salon du
 // foot. Léa y entre et touche sa figurine : on entend le bonjour de Sam (sa vraie adresse, le son servi), sa fiche dit
-// « 🔊 Le bonjour de Sam », qu'on peut réécouter. Rien ne déborde, ni erreur, ni le mot « exemple ».
+// « 🔊 Le bonjour de Sam », qu'on peut réécouter. 🗣️ (25 novembre 2026) Sam a sa tête du jour (le sourire) et sa tête
+// « bouche ouverte » : pendant son bonjour (des syllabes et des silences), sa bouche s'ouvre et se ferme dessus, puis
+// se referme. Rien ne déborde, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
 import crypto from "node:crypto";
 import { poserPiece } from "../piece-en-hauteur.mjs";
@@ -122,9 +124,35 @@ ok((await get("/api/direct/ma-figurine", LEA)).statut === 200, "Léa ouvre l'app
 const K = empreinte(`${LEA.id}/perso/v1/assise.png`);
 ok(Boolean(await attendreQue(async () => (await lire(`${LEA.id}/calques/${K}-expressions.json`))?.le, 90000)), "ses expressions sont prêtes");
 
-// ═══ SAM : SON BONJOUR, ET IL EST AU SALON DU FOOT ═══
-const SON_SAM = Buffer.concat([Buffer.from("1a45dfa3", "hex"), Buffer.alloc(3000, 7)]);
-const gardeSam = await appel(SAM, "/api/direct/mon-double", { action: "bonjour", son: `data:audio/webm;base64,${SON_SAM.toString("base64")}`, duree: 2.2 });
+// ═══ SAM : SES TÊTES (LA BOUCHE OUVERTE COMPRISE), SA TÊTE DU JOUR, SON BONJOUR, ET IL EST AU SALON DU FOOT ═══
+ok((await get("/api/direct/ma-figurine", SAM)).statut === 200, "Sam ouvre l'appli");
+const KS = empreinte(`${SAM.id}/perso/v1/assise.png`);
+ok(Boolean((await attendreQue(async () => (await lire(`${SAM.id}/calques/${KS}-expressions.json`))?.le, 90000)) && (await lire(`${SAM.id}/calques/${KS}-expressions.json`))?.tetes?.parle), "ses têtes sont prêtes, la bouche ouverte comprise");
+ok((await appel(SAM, "/api/direct/mon-double", { action: "tete", e: "sourire" })).statut === 200, "Sam choisit sa tête du jour : le sourire");
+// (sa voix : quatre syllabes de 0,3 s, séparées de silences de 0,3 s — un vrai son, que le téléphone sait lire)
+const SON_SAM = (() => {
+  const f = 16000;
+  const n = Math.round(f * 2.4);
+  const b = Buffer.alloc(44 + n * 2);
+  b.write("RIFF", 0);
+  b.writeUInt32LE(36 + n * 2, 4);
+  b.write("WAVEfmt ", 8);
+  b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20);
+  b.writeUInt16LE(1, 22);
+  b.writeUInt32LE(f, 24);
+  b.writeUInt32LE(f * 2, 28);
+  b.writeUInt16LE(2, 32);
+  b.writeUInt16LE(16, 34);
+  b.write("data", 36);
+  b.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) {
+    const t = i / f;
+    b.writeInt16LE(Math.floor(t / 0.3) % 2 === 0 ? Math.round(Math.sin(2 * Math.PI * 220 * t) * 18000) : 0, 44 + i * 2);
+  }
+  return b;
+})();
+const gardeSam = await appel(SAM, "/api/direct/mon-double", { action: "bonjour", son: `data:audio/wav;base64,${SON_SAM.toString("base64")}`, duree: 2.4 });
 ok(gardeSam.statut === 200 && gardeSam.corps?.double?.bonjour?.src?.startsWith(`/api/direct/bonjour/${SAM.cle}?v=`), "Sam a gardé son bonjour");
 const srcSam = gardeSam.corps?.double?.bonjour?.src ?? "";
 const entree = await appel(SAM, "/api/direct/salons-ouverts", { action: "entrer", theme: "foot" });
@@ -206,8 +234,22 @@ const posee = (e) => {
   return r.width > 0 && r.height > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
 };
 ok(await attendre(async () => figSam.evaluate(posee)), "… sa figurine est posée, à l'écran");
+const teteSam = figSam.locator("[data-tete-du-jour]");
+ok((await teteSam.count()) === 1 && (await teteSam.locator("img[data-tete-parle]").count()) === 1 && (await teteSam.getAttribute("data-bouche")) === null, "… sa tête du jour, sa tête « bouche ouverte » prête (cachée), la bouche fermée");
 const reponse = lea.waitForResponse((r) => r.url().includes(`/api/direct/bonjour/${SAM.cle}`), { timeout: 10000 }).catch(() => null);
 await figSam.click({ force: true });
+// (🗣️ pendant son bonjour : sa bouche, mesurée toutes les 40 ms)
+const vues = [];
+const finB = Date.now() + 2600;
+while (Date.now() < finB) {
+  vues.push((await teteSam.getAttribute("data-bouche").catch(() => null)) === "1");
+  await lea.waitForTimeout(40);
+}
+let changements = 0;
+for (let i = 1; i < vues.length; i++) if (vues[i] !== vues[i - 1]) changements++;
+ok(vues.some((x) => x) && vues.some((x) => !x) && changements >= 3 && changements <= 14, `🗣️ pendant son bonjour, sa bouche s'ouvre et se ferme sur ses syllabes (${changements} changements, ${vues.filter((x) => x).length} ouverte sur ${vues.length})`);
+await lea.waitForTimeout(600);
+ok((await teteSam.getAttribute("data-bouche")) === null, "… son bonjour fini : la bouche fermée");
 ok(await attendre(async () => (await lea.evaluate(() => window.__bonjours)).includes(srcSam)), "toucher sa figurine : on entend le bonjour de Sam");
 const r = await reponse;
 ok(r && [200, 206].includes(r.status()), `… sa voix arrive (${r?.status()})`);

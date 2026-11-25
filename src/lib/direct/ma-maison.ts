@@ -61,7 +61,7 @@ export type ScenePiece = {
   centre: PlaceDuo;
 };
 /** 🙂 Sa figurine qui fait la tête de son humeur du jour (`MaMaisonVue.tete`). */
-export type TeteMaison = { e: ExpressionFigurine; corps: string; ratio: number; src: string; boite: Zone };
+export type TeteMaison = { e: ExpressionFigurine; corps: string; ratio: number; src: string; boite: Zone; /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string };
 
 /** 👋 (lot F2) Un coucou reçu : de qui (son prénom, sa figurine, sa clé), quand. */
 export type CoucouVu = { id: string; prenom: string; image?: string; cle?: string; le: string };

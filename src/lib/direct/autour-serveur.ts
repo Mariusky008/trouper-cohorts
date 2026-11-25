@@ -487,14 +487,15 @@ async function posesFigVisibles(supabase: Supabase, ville: string, lieu: string,
  * sur ses calques d'aujourd'hui ; sinon sa tête habituelle), et son corps sans sa tête pour la poser assise. Sans ses
  * calques : sa figurine d'une seule image.
  */
-type Silhouette = Pick<FigurinePosee, "tete" | "corps" | "image">;
+type Silhouette = Pick<FigurinePosee, "tete" | "corps" | "image" | "parle">;
 async function silhouetteDe(supabase: Supabase, h: string, tete: TeteChoisie): Promise<Silhouette> {
   // (✨ « humeur », c'est sa tête du jour : celle qu'il a choisie dans « Ma figurine », sinon celle de son humeur)
   const [calques, expr, duJour] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), sesExpressions(supabase, h).catch(() => null), tete === "humeur" ? teteChoisieDuJour(supabase, h).catch(() => null) : Promise.resolve(null)]);
   const e: ExpressionFigurine | null = tete === "humeur" ? duJour : tete;
   const memeDecoupe = Boolean(calques && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
   const src = (e && memeDecoupe ? expr?.etat.tetes[e] : "") || calques?.tete.fichier || "";
-  if (calques?.sansTete && src) return { tete: src, corps: { src: calques.sansTete.fichier, ratio: calques.ratio, boite: calques.tete.boite } };
+  const parle = memeDecoupe ? expr?.etat.tetes.parle : undefined;
+  if (calques?.sansTete && src) return { tete: src, corps: { src: calques.sansTete.fichier, ratio: calques.ratio, boite: calques.tete.boite }, ...(parle ? { parle } : {}) };
   const image = (await figurineDeLaMaison(supabase, h).catch(() => null))?.src || (await saFigurineSignee(supabase, h).catch(() => ""));
   return { tete: image, ...(image ? { image } : {}) };
 }
