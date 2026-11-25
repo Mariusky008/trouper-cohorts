@@ -1793,3 +1793,88 @@ même seconde pour tous. Le lot M1 en fait **le salon musique** — les autres s
 L'onglet Découvrir s'ouvre désormais sur un fil plein écran : on glisse de pièce en pièce, sa figurine au bord. Tout ce
 qui précède (ma télé du jour, les salons par passion, la séance) reste là, derrière « Tous les salons » (`#salons`) — et
 le fil y mène. Le détail : `docs/univers/fil.md`.
+
+## 38. 🎙️ « Laisser un mot avec ma figurine » : la suite de la vidéo (25 novembre 2026 ; le lot 1, dans ma télé du jour : fait)
+
+Le propriétaire : « À la fin de la vidéo, j'aimerais que les utilisateurs puissent laisser un message vidéo avec leur
+figurine. » Les réactions à la seconde (4.5) disent ce qu'on a ressenti **pendant** la vidéo ; personne ne dit rien
+**à la fin**. Le mot, c'est ce qu'on dit après : « Moi, je suis sûr que j'aurais réussi ! » — « Mais
+absolument pas, tu serais tombé ! ». La maquette (https://claude.ai/artifact/FmRYBZo9fpep68HmiWyocr) : le propriétaire a demandé
+le code le 25 novembre 2026 (« tu peux attaquer la vidéo figurine à la fin de la vidéo ? »), après le Lot 5.
+
+### 38.1 Ce qui est enregistré : sa voix et sa tête, jamais son visage
+
+- **Rien n'est filmé.** On enregistre **sa vraie voix** (le micro du talkie, `src/app/salon/micro.tsx`, comme le
+  bonjour du Lot 4 de « Ma figurine ») et, si la caméra est acceptée, **la piste de ses têtes** lue sur le téléphone
+  (`src/app/univers/visage/ma-tete.ts` : l'expression, la tête penchée et tournée, à quelques images par seconde) —
+  `[{ t, e, roulis, lacet }]`. Jamais de voix de synthèse.
+- **Rejoué par sa figurine** : la bouche s'ouvre au volume de sa voix (`figurine-qui-parle.tsx`), elle fait ses têtes
+  à la bonne seconde (`figurine-vivante.tsx`). Sans caméra : la bouche seule, avec sa tête du jour.
+- **10 s au plus**, une réécoute avant d'envoyer (« Recommencer » / « Envoyer »).
+
+### 38.2 À la fin de la vidéo, sans rien imposer
+
+- À la fin, sous la télé, un bouton discret : **« 🎙️ Laisser un mot avec ma figurine »**, et dessous « Il passera à la suite de la vidéo » (libellé choisi par le propriétaire le 25 novembre 2026). Rien ne bloque « Suivante ».
+- **Un seul mot par personne et par vidéo** (on peut le refaire, ou l'effacer). On peut **répondre à un
+  mot** (« ↩️ Répondre à Paul ») : sa réponse est son mot, posé à la suite de celui de Paul.
+- Pas de texte écrit sous le mot au départ (il faudrait transcrire la voix) : le prénom, la durée, la tête.
+
+### 38.3 Regarder ensuite : la vidéo, puis sa suite
+
+- La vidéo, puis, à la fin : **« ▶ La suite de la vidéo · Paul, Léa »**. On les écoute, ou on passe à la suivante. Leur ordre :
+  celui de l'enregistrement, chaque réponse juste après le mot auquel elle répond.
+- **📌 Garder** met la capsule (la vidéo et ses mots) sur l'étagère de sa maison.
+
+### 38.4 Qui les voit (décidé par le propriétaire le 25 novembre 2026 : tout le monde qui regarde la vidéo)
+
+Le propriétaire : « ces vidéos viendront se placer à la fin de la vidéo qui aura été vue […] et je veux que tout le monde
+puisse la voir à partir du moment où ils regarderont cette vidéo, pas seulement mes proches. » Les mots sont donc
+**attachés à la vidéo**, pas au salon : quiconque regarde cette vidéo dans ClikMe (chez lui, dans une séance, dans un
+salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce qu'il faut pour que ça tienne :
+
+- **Les 15-17 ans entre eux** (la règle de toute l'appli) : une vidéo a **deux suites séparées**, celle des adultes et
+  celle des 15-17 ans. Un adulte n'entend jamais le mot d'un 15-17 ans, ni l'inverse.
+- **L'accord avant de publier**, la première fois : « Tout le monde qui regarde cette vidéo verra ta figurine et
+  entendra ta voix. » Le bouton dit **« Publier »**, jamais « Envoyer », pour que ce soit clair à chaque fois.
+- **Le prénom et la figurine seulement** : pas de message privé depuis un mot d'inconnu (comme les salons
+  ouverts) ; « 👯 Ajouter en proche » et « 🏠 Voir sa maison » suivent leurs règles habituelles.
+- **Signaler** sur chaque mot : il disparaît pour celui qui signale, et part dans l'admin. Le nombre de
+  signalements qui la cache pour tous en attendant une décision : à fixer à la maquette.
+- **Effacer mon mot**, quand je veux : il disparaît partout, tout de suite (une voix est une donnée personnelle).
+- **L'ordre** : d'abord mes proches, puis les autres dans l'ordre d'enregistrement, chaque réponse juste après la
+  mot auquel elle répond. Quand il y en a beaucoup : les premiers, puis « Tous ».
+- **Les droits** : dans l'appli, la vidéo passe par le lecteur officiel (YouTube) ; une capsule partagée hors de
+  l'appli ne montre **jamais ses images** (le titre et la chaîne sur un carton, comme « 🎬 Nos réactions »), et n'y
+  paraissent que ceux qui l'acceptent (le réglage « Mes réactions peuvent apparaître dans les clips de mes proches »,
+  éteint pour les 15-17 ans).
+
+### 38.5 À décider à la maquette
+
+- Combien de temps un mot reste attaché à la vidéo.
+- Le nombre de signalements qui cache un mot pour tous.
+- Le nombre de mots montrées d'office à la fin, avant « Tous ».
+
+### 38.6 Le lot 1 : dans ma télé du jour (25 novembre 2026) — fait
+
+- **Où** : ma télé du jour (l'onglet Découvrir → « Ma télé », `/univers/tele`, et « 📼 Revoir », qui rouvre une vidéo
+  déjà vue). La vidéo finie ne s'en va plus tout de suite : « La suite de la vidéo » monte (une feuille, comme « Envoyer
+  à… ») ; sans un geste, la suivante arrive après 8 s (« Suivante dans 8 s ») ; un geste, et elle attend.
+- **Pas encore** : la séance chez un proche et les salons ouverts (la vidéo y avance pour tout le monde en même temps :
+  la suite ne peut pas l'arrêter ; à faire dans un lot 2, peut-être une carte « La suite de la vidéo » posée pendant
+  que la suivante démarre).
+- **Les réglages** (`MOTS_VIDEO`, `lib/direct/mots-video.ts` ; à confirmer par le propriétaire) : 10 s au plus, 1 s au
+  moins ; gardé **30 jours** ; caché pour tous à **3 signalements** de personnes différentes ; **6** mots montrés avant
+  « Tous » ; 8 s avant la suivante sans un geste.
+- **La figurine** : la sienne, vivante (ses cinq expressions, le lot V2) si elles sont prêtes : elle fait les têtes
+  notées pendant le mot, à leur seconde, et elle bat pendant qu'elle parle (sa bouche ne suit pas la voix : sa figurine
+  vivante n'a pas d'image « bouche ouverte ») ; sinon sa figurine assise ; sinon son initiale. Les têtes ne sont notées
+  que si l'on a déjà dit « Je l'allume » à la caméra une fois (« 📷 Avec mes têtes » / « Ta voix seulement »).
+- **L'âge** : sans réponse à « As-tu 18 ans ? », la suite le demande d'abord (`direSesDixHuitAns`), et ne montre rien.
+- **Le code** : `lib/direct/mots-video.ts` (les réglages, l'ordre, les têtes, les phrases), `mots-video-serveur.ts`,
+  la route `/api/direct/mots-video` (GET `?video=`, POST `publier`, `effacer`, `signaler`, `age`),
+  `app/collection/suite-de-la-video.tsx` (la feuille, l'enregistreur), `app/collection/tele-du-jour.tsx` (la fin).
+- **Les essais** : `scripts/essai-mots-video-route.mjs` (sans compte, sans âge ; ce qui ne part pas ; un mot, une
+  réponse, l'ordre ; refaire ; signaler, trois signalements, l'administrateur ; 30 jours ; effacer ; les 15-17 ans) ;
+  `scripts/navigateur/suite-de-la-video.mjs` (la fin d'une vidéo, le mot de Sam, un geste qui arrête le compte, parler
+  au faux micro, l'accord, « Publier », effacer, signaler, « Suivante »).
+

@@ -51,6 +51,7 @@ import { TesPassions } from "./tes-passions";
 import { createPortal } from "react-dom";
 import { InviterSurLaVideo } from "./carnet-proches";
 import { RangeeRevoir } from "./revoir";
+import { SuiteDeLaVideo } from "./suite-de-la-video";
 import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele, type VitrineSalon } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 import {
@@ -500,6 +501,8 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
   const [proches, setProches] = useState<Proche[] | null>(null);
   const [gardees, setGardees] = useState<string[]>([]);
   const [occupe, setOccupe] = useState(false);
+  // 🎙️ (section 38) la vidéo finie, en attendant la suivante : « La suite de la vidéo »
+  const [finie, setFinie] = useState<{ id: string; titre: string; k: number } | null>(null);
   // (📺 les chaînes que je suis : « Suivre cette chaîne » disparaît pour elles)
   const [suivies, setSuivies] = useState<string[]>(() => (tele.chaines ?? []).map((c) => c.id));
   const hote = useRef<HTMLDivElement>(null);
@@ -596,10 +599,24 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
     window.setTimeout(() => setNote((x) => (x === t ? "" : x)), 3500);
   };
 
+  // (la vidéo numéro `k` de ma télé, dans le lecteur qui est là)
+  const aller = useCallback((k: number) => {
+    const prochaine = videos[k];
+    setI(k);
+    if (prochaine && lecteur.current?.loadVideoById) {
+      try {
+        lecteur.current.loadVideoById(prochaine.id);
+      } catch {
+        /* (le lecteur se refera) */
+      }
+    }
+  }, [videos]);
   // ⏭ la suivante (après une vue jusqu'au bout, un « Suivante », ou une vidéo illisible)
-  const suivante = useCallback((o: { fin?: boolean; illisible?: boolean } = {}) => {
+  // (🎙️ section 38 : finie, elle ne s'en va pas tout de suite — « La suite de la vidéo » monte ; la suivante après)
+  const suivante = useCallback((o: { fin?: boolean; illisible?: boolean; rester?: boolean } = {}) => {
     const { v: actuelle, i: k } = ref.current;
     if (!actuelle) return;
+    setFinie(null);
     let secondes = -1;
     try {
       secondes = Math.round(lecteur.current?.getCurrentTime?.() ?? -1);
@@ -612,16 +629,9 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
       if (seul) await poster({ action: "reagir", id: actuelle.id, t: seul.t, sorte: seul.sorte, source: "implicite" });
       await poster({ action: "vue", id: actuelle.id, ...(o.fin ? { fin: true } : {}), ...(o.illisible ? { illisible: true } : {}), ...(secondes >= 0 ? { secondes } : {}) });
     })();
-    const prochaine = videos[k + 1];
-    setI(k + 1);
-    if (prochaine && lecteur.current?.loadVideoById) {
-      try {
-        lecteur.current.loadVideoById(prochaine.id);
-      } catch {
-        /* (le lecteur se refera) */
-      }
-    }
-  }, [videos]);
+    if (o.rester) return setFinie({ id: actuelle.id, titre: actuelle.titre, k });
+    aller(k + 1);
+  }, [aller]);
 
   // ▶ LE LECTEUR DE YOUTUBE : créé à l'allumage (le geste qui donne le son), puis il change de vidéo sans se refaire
   const allumer = allumee && Boolean(v);
@@ -653,7 +663,7 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
               if (fini) return;
               if (e.data === 1) setJoue(true);
               else if (e.data === 2 || e.data === 0) setJoue(false);
-              if (e.data === 0) suivante({ fin: true });
+              if (e.data === 0) suivante({ fin: true, rester: true });
             },
             // (101, 150 : elle refuse d'être lue hors de YouTube ; 100 : partie ; 2, 5 : illisible ici)
             onError: () => {
@@ -1428,6 +1438,18 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
             </button>
           </div>
         </div>
+      )}
+
+      {finie && (
+        <SuiteDeLaVideo
+          key={finie.id}
+          video={{ id: finie.id, titre: finie.titre }}
+          onSuivante={() => {
+            const k = finie.k;
+            setFinie(null);
+            aller(k + 1);
+          }}
+        />
       )}
 
       {feuille && (
