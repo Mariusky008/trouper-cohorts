@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { moisEnClair, type FigurineDuMois, type MesFigurinesDuMois } from "@/lib/direct/figurine-du-mois";
 import { versLeStudio } from "./vers-le-studio";
+import { AlbumDuMois } from "./album-du-mois";
 
 async function chargerMois(): Promise<MesFigurinesDuMois | null> {
   try {
@@ -70,8 +71,11 @@ function CarteDuMois({ f, nouvelle = false }: { f: FigurineDuMois; nouvelle?: bo
   );
 }
 
-/** Dans « Ce mois-ci » : sa figurine du mois — à mériter, en fabrication, ou là. */
-export function MaFigurineDuMois() {
+/**
+ * Dans « Ce mois-ci » : sa figurine du mois — à mériter, en fabrication, ou là. `avecAlbum` (« Mon double du jour ») :
+ * dessous, « 🗂️ Ma collection », toutes ses figurines du mois en cartes (`album-du-mois.tsx`).
+ */
+export function MaFigurineDuMois({ avecAlbum = false }: { avecAlbum?: boolean }) {
   const [m, setM] = useMois();
   const [erreur, setErreur] = useState("");
   const [essai, setEssai] = useState(0);
@@ -101,76 +105,79 @@ export function MaFigurineDuMois() {
   const f = m.courante;
   const nom = moisEnClair(f.mois).replace(/\s\d{4}$/, "");
   return (
-    <section className="fm" id="mois" aria-label="Ta figurine du mois">
-      <header className="fm-tete">
-        <small>🗓️ TA FIGURINE DU MOIS</small>
-        <b>
-          Ta figurine de {nom} {f.edition.emoji}
-        </b>
-      </header>
-      {f.etat === "prete" ? (
-        <>
-          <CarteDuMois f={f} nouvelle />
-          {f.phrase && (
-            <p className="fm-phrase">
-              <small>🔮 TA PHRASE DU MOIS</small>« {f.phrase} »
-            </p>
-          )}
-          {/* 🎭 ELLE DEVIENT UN LOOK : c'est elle qui parle dans son prochain mème */}
-          <button type="button" className="og-go fm-parler" onClick={() => versLeStudio({ look: f.mois })}>
-            🎭 Fais-la parler
-          </button>
-        </>
-      ) : f.etat === "a-fabriquer" ? (
-        <div className="fm-fab" aria-live="polite">
-          <b>✨ Méritée ! On l’habille pour « {f.edition.nom} »…</b>
-          <span className="fm-fab-jauge">
-            <i />
-          </span>
-          <small>Une minute environ : sa tenue du mois, son visage du mois ({f.expression}), et ta phrase du mois.</small>
-          {erreur && (
-            <>
-              <p className="tf-erreur" role="alert">
-                {erreur}
-              </p>
-              <button
-                type="button"
-                className="mp-bouton"
-                onClick={() => {
-                  setErreur("");
-                  setEssai((n) => n + 1);
-                }}
-              >
-                🔁 Réessayer
-              </button>
-            </>
-          )}
-        </div>
-      ) : f.sansFigurine ? (
-        <div className="fm-gagner">
-          <p>Crée d’abord ta figurine : ensuite, chaque mois vécu t’en donne une nouvelle.</p>
-          <a className="og-go" href="#figurine">
-            📸 Je crée ma figurine
-          </a>
-        </div>
-      ) : (
-        <div className="fm-gagner">
-          <Jours f={f} />
+    <>
+      <section className="fm" id="mois" aria-label="Ta figurine du mois">
+        <header className="fm-tete">
+          <small>🗓️ TA FIGURINE DU MOIS</small>
           <b>
-            {Math.min(f.jours, f.objectif)}/{f.objectif} jours sur ClikMe ce mois-ci
+            Ta figurine de {nom} {f.edition.emoji}
           </b>
-          <p>
-            Encore {f.objectif - f.jours} jour{f.objectif - f.jours > 1 ? "s" : ""} : ta figurine de {nom} arrive, habillée « {f.edition.nom} » {f.edition.emoji}, avec un nouveau visage ({f.expression}) et ta
-            phrase du mois.
-          </p>
-          {/* (un jour compte dès qu'il ouvre ClikMe : ce qui se passe en ce moment, l'occasion de revenir — avant le 23 novembre
-              2026, le mème du jour, parti) */}
-          <a className="fm-lien" href="#decouvrir">
-            🎞️ Ce qui se passe en ce moment ›
-          </a>
-        </div>
-      )}
-    </section>
+        </header>
+        {f.etat === "prete" ? (
+          <>
+            <CarteDuMois f={f} nouvelle />
+            {f.phrase && (
+              <p className="fm-phrase">
+                <small>🔮 TA PHRASE DU MOIS</small>« {f.phrase} »
+              </p>
+            )}
+            {/* 🎭 ELLE DEVIENT UN LOOK : c'est elle qui parle dans son prochain mème */}
+            <button type="button" className="og-go fm-parler" onClick={() => versLeStudio({ look: f.mois })}>
+              🎭 Fais-la parler
+            </button>
+          </>
+        ) : f.etat === "a-fabriquer" ? (
+          <div className="fm-fab" aria-live="polite">
+            <b>✨ Méritée ! On l’habille pour « {f.edition.nom} »…</b>
+            <span className="fm-fab-jauge">
+              <i />
+            </span>
+            <small>Une minute environ : sa tenue du mois, son visage du mois ({f.expression}), et ta phrase du mois.</small>
+            {erreur && (
+              <>
+                <p className="tf-erreur" role="alert">
+                  {erreur}
+                </p>
+                <button
+                  type="button"
+                  className="mp-bouton"
+                  onClick={() => {
+                    setErreur("");
+                    setEssai((n) => n + 1);
+                  }}
+                >
+                  🔁 Réessayer
+                </button>
+              </>
+            )}
+          </div>
+        ) : f.sansFigurine ? (
+          <div className="fm-gagner">
+            <p>Crée d’abord ta figurine : ensuite, chaque mois vécu t’en donne une nouvelle.</p>
+            <a className="og-go" href="#figurine">
+              📸 Je crée ma figurine
+            </a>
+          </div>
+        ) : (
+          <div className="fm-gagner">
+            <Jours f={f} />
+            <b>
+              {Math.min(f.jours, f.objectif)}/{f.objectif} jours sur ClikMe ce mois-ci
+            </b>
+            <p>
+              Encore {f.objectif - f.jours} jour{f.objectif - f.jours > 1 ? "s" : ""} : ta figurine de {nom} arrive, habillée « {f.edition.nom} » {f.edition.emoji}, avec un nouveau visage ({f.expression}) et ta
+              phrase du mois.
+            </p>
+            {/* (un jour compte dès qu'il ouvre ClikMe : ce qui se passe en ce moment, l'occasion de revenir — avant le 23 novembre
+                2026, le mème du jour, parti) */}
+            <a className="fm-lien" href="#decouvrir">
+              🎞️ Ce qui se passe en ce moment ›
+            </a>
+          </div>
+        )}
+      </section>
+      {avecAlbum && !f.sansFigurine && <AlbumDuMois m={m} />}
+    </>
   );
 }
 
