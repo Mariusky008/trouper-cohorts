@@ -17,6 +17,9 @@
  * salon** (🗄️ en haut) — « 📌 Garder » la met dans ma maison. Sa fiche montre ses passions, « 👯 Ajouter en proche » et,
  * si sa maison est ouverte à tous, « 🏠 Voir sa maison ».
  *
+ * ✨ (25 novembre 2026, `docs/univers/fil.md`, section 10) Sa fiche s'ouvre sur sa figurine en grand, comme dans Ma
+ * maison : sa tête du jour, ce qu'elle porte, sa pancarte, le halo (`FigurineEnGrand`).
+ *
  * 🎬 (lot D2, section 19) **La séance chez moi** (`chez`) : le même écran, dans ma pièce, quatre places. L'hôte mène la
  * télé (sa télé du jour : ❚❚, ⏭, 📺 Choisir) ; chez ses proches, le lecteur suit la même seconde (recalé au-delà de
  * deux secondes d'écart). « 👥 Inviter » : jusqu'à trois proches. Entre proches : rien n'est relu.
@@ -44,6 +47,7 @@ import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
 import { Pancarte } from "@/app/collection/pancarte";
 import { Ornements } from "@/app/collection/ornements";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
+import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import {
   GESTES_SALON,
@@ -1358,11 +1362,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
 
       {fiche && (
         <Feuille onFermer={() => setFiche(null)}>
-          <div className="so-fiche" data-fiche={fiche.q}>
-            {fiche.figurine && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={fiche.figurine.src} alt="" />
-            )}
+          <div className={`so-fiche${fiche.pancarte ? " a-pancarte" : ""}${fiche.ornements?.coeur ? " a-coeur" : ""}`} data-fiche={fiche.q}>
+            <FigurineEnGrand p={fiche} hauteur={170} />
             <div>
               <h2>{fiche.prenom}</h2>
               <small>{prive ? P.ficheSeance : P.fiche}</small>
@@ -1583,6 +1584,41 @@ function Conversation({ messages, depuis, moi, caches, aimes = [], onAimer }: { 
       <p className="so-groupe">{P.depuis}</p>
       {apres.length ? apres.map(ligne) : <p className="vide">{P.rien}</p>}
     </div>
+  );
+}
+
+/**
+ * ✨ (25 novembre 2026, le propriétaire : « quand on clique sur une figurine dans le salon et que les options s'ouvrent, je
+ * veux qu'on voie la figurine telle qu'elle a été faite dans Ma maison, avec pancarte s'il y en a une ») sa figurine en
+ * grand, en haut de sa fiche, comme au centre de sa maison (`docs/univers/ma-figurine.md`) : sa tête du jour sur son
+ * corps, ce qu'elle porte toute seule (avec ses étiquettes, « 🔥 8 », « 🎁 offert par Sam »), sa pancarte au-dessus, le
+ * halo qui brille et le souffle. Une figurine de l'ancien style (une seule image) : l'image, sa pancarte, ses étiquettes.
+ */
+function FigurineEnGrand({ p, hauteur }: { p: PresentSalon; hauteur: number }) {
+  const t = p.tete;
+  const orn = (boite: Zone | undefined) => (p.ornements ? <Ornements o={{ ...p.ornements, boite }} taille={Math.max(10, Math.min(13, hauteur / 14))} /> : null);
+  return (
+    <span className="so-grande" data-figurine-fiche={t ? "calques" : p.figurine ? "image" : "vide"} style={{ height: hauteur }}>
+      <span className="so-halo" aria-hidden="true" />
+      {t ? (
+        <span className="so-jour so-souffle" style={{ height: hauteur, width: Math.round(hauteur * t.ratio) }} data-tete-du-jour>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={t.corps} alt="" draggable={false} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="so-jour-tete" src={t.src} alt="" draggable={false} style={{ left: `${t.boite[0] * 100}%`, top: `${t.boite[1] * 100}%`, width: `${t.boite[2] * 100}%`, height: `${t.boite[3] * 100}%` }} />
+          {orn(t.boite)}
+        </span>
+      ) : p.figurine ? (
+        <span className="so-jour so-souffle so-une-image" style={{ height: hauteur }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${hauteur}px`} alt="" draggable={false} />
+          {orn(undefined)}
+        </span>
+      ) : (
+        <span className="so-sans">🪑</span>
+      )}
+      {p.pancarte && <Pancarte texte={p.pancarte} taille={Math.max(11, Math.min(16, hauteur / 11))} bas={t ? `${(1 - t.boite[1]) * 100 + 2}%` : "92%"} />}
+    </span>
   );
 }
 
@@ -2371,9 +2407,20 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-feuille h2{margin:0 0 6px;font-size:19px;font-weight:900}
 .so-fermer{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:#FFF4E6;font-size:16px;cursor:pointer}
 .so-chapo{margin:0 0 12px;opacity:.75;font-size:14px}
-.so-fiche{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.so-fiche img{width:64px;height:64px;object-fit:contain}
+.so-fiche{display:flex;flex-direction:column;align-items:center;gap:10px;margin:0 0 14px;padding-top:6px;text-align:center}
+.so-fiche.a-pancarte{padding-top:58px}
+.so-fiche.a-coeur .so-grande{margin-bottom:24px}
+.so-fiche h2{margin:0 0 2px}
 .so-fiche small{opacity:.7;font-size:12.5px}
+.so-grande{position:relative;isolation:isolate;display:flex;justify-content:center;align-items:flex-end;flex:none}
+.so-halo{position:absolute;left:50%;bottom:-10%;width:min(170%,300px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(246,181,75,.5) 0%,rgba(255,46,154,.2) 38%,rgba(255,46,154,0) 68%);animation:so-brille 3.2s ease-in-out infinite;pointer-events:none;z-index:-1}
+@keyframes so-brille{0%,100%{opacity:.5;transform:translateX(-50%) scale(.94)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
+.so-grande .so-jour img{filter:drop-shadow(0 8px 12px rgba(0,0,0,.5))}
+.so-grande .so-jour img.so-jour-tete{filter:none}
+.so-grande .so-une-image img{position:static;width:auto;height:100%}
+.so-souffle{transform-origin:50% 100%;animation:so-souffle 4.5s ease-in-out infinite}
+@keyframes so-souffle{0%,100%{transform:scale(1,1)}50%{transform:scale(1.006,1.012)}}
+@media (prefers-reduced-motion: reduce){.so-halo,.so-souffle{animation:none}}
 .so-fig-et{display:contents}
 .so-signe{position:absolute;transform:translateX(-50%);width:44px;height:44px;border:0;border-radius:50%;background:#fff;font-size:22px;line-height:44px;padding:0;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.45);animation:so-signe 1.2s ease-in-out infinite}
 @keyframes so-signe{0%,100%{rotate:-12deg}50%{rotate:14deg}}
