@@ -116,7 +116,7 @@ const p = await tel(ALLUME, SAM);
 await p.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
 await fermerPablito(p, "#o-decouvrir");
 await p.waitForFunction(() => location.hash === "#decouvrir", null, { timeout: 20000 }).catch(() => null);
-ok(new URL(p.url()).hash === "#decouvrir" && !(await p.locator("#o-decouvrir").isHidden()) && (await p.locator(".mc-nav-decouvrir.pris.mc-nav-centre").count()) === 1, `🎞️ l'appli s'ouvre sur le fil de Découvrir, son gros bouton au milieu (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
+ok(new URL(p.url()).hash === "#decouvrir" && (await p.locator("#o-decouvrir [data-fil] .fd-boite").isVisible()) && (await p.locator(".mc-nav-decouvrir.pris.mc-nav-centre").count()) === 1, `🎞️ l'appli s'ouvre sur le fil de Découvrir, son gros bouton au milieu (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
 // 💬 « Messages », d'un toucher
 await p.locator(".mc-nav-proches").click();
 await p.waitForSelector(".cm-tete", { timeout: 20000 }).catch(() => null);

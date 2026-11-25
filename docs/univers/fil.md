@@ -129,7 +129,8 @@ dans l'ordre du catalogue (seize pièces au plus).
 - **F4, l'ordre du fil** : d'abord ses proches en direct, puis ses passions, puis les maisons, puis Autour ; rien ne
   revient deux fois de suite.
 - **Décidé par le propriétaire (25 novembre 2026) : l'appli s'ouvre sur le fil de Découvrir**, plus sur « Messages »
-  (`ma-collection.tsx`, à l'ouverture sans adresse). Deux exceptions : pendant que sa figurine se fabrique, rien ne
+  (`ma-collection.tsx`, à l'ouverture sans adresse). Trois exceptions : pendant que sa figurine se fabrique, rien ne
   change ; l'appli tout juste posée sur l'écran d'accueil s'ouvre sur « Messages », pour proposer les notifications de
-  ses proches (une fois ; « Plus tard » est retenu une semaine). Les surprises des visites (un cadeau, un toc toc) se
+  ses proches (une fois ; « Plus tard » est retenu une semaine) ; un nouveau venu, sans figurine encore, arrive sur
+  « Messages », où la bienvenue l'accueille. Les surprises des visites (un cadeau, un toc toc) se
   découvrent en ouvrant « Messages ». Essai : `scripts/navigateur/bascule-univers.mjs`.

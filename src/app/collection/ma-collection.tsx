@@ -247,11 +247,12 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     const sansAdresse = !window.location.hash && !new URLSearchParams(window.location.search).get("ami");
     // 🎞️ (l'interrupteur « Univers pour tous » allumé) L'APPLI S'OUVRE SUR LE FIL DE DÉCOUVRIR (décision du propriétaire,
     // 25 novembre 2026 ; avant : « Messages ») — sauf pendant que sa figurine d'aujourd'hui se fabrique (rien n'est
-    // touché), et l'appli tout juste posée sur l'écran d'accueil : elle s'ouvre sur « Messages », qui propose les
-    // notifications de ses proches (`ProposerLesNotifications`, une fois)
+    // touché), l'appli tout juste posée sur l'écran d'accueil : elle s'ouvre sur « Messages », qui propose les
+    // notifications de ses proches (`ProposerLesNotifications`, une fois) ; et un nouveau venu, sans figurine encore :
+    // « Messages » aussi, où la bienvenue l'accueille
     if (univers && sansAdresse && etat?.etape !== "fabrication") {
       const tel = lireInstantane(instantane());
-      return aller(tel.installee && !tel.plusTard && tel.notif === "a-demander" ? "proches" : "decouvrir");
+      return aller(!etat?.compte || (tel.installee && !tel.plusTard && tel.notif === "a-demander") ? "proches" : "decouvrir");
     }
     if (etat?.etape === "prete" && etat.messages.length > 0 && sansAdresse) aller("decouvrir");
   }, [charge, etat, aller, univers]);
