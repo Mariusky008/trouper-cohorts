@@ -95,15 +95,20 @@ const rien = () => () => {};
 /**
  * ⚡ (l'entrée faite par le serveur) son heure (`tele.maintenant`) date d'avant l'arrivée de la page : on l'avance du
  * temps passé depuis que la réponse est arrivée — sinon la télé partirait en retard du temps qu'a mis la page à venir
- * (comme avant, l'écart restant est celui du réseau, que le pouls corrige ensuite).
+ * (comme avant, l'écart restant est celui du réseau, que le pouls corrige ensuite). Seulement si le navigateur a chargé
+ * cette page-ci : arrivé sans recharger (une navigation de Next), son minutage est celui de la page d'avant — et le délai
+ * est déjà court. (On compare à l'adresse attendue, pas à `location` : pendant une navigation de Next, l'écran du salon
+ * s'affiche avant que l'adresse ne change.)
  */
-function aCetteHeure(o: OuvertureSalonOuvert): OuvertureSalonOuvert {
+function aCetteHeure(o: OuvertureSalonOuvert, cle: { theme?: string; chez?: string }): OuvertureSalonOuvert {
   try {
     const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
     const fin = nav ? nav.responseEnd || nav.responseStart : 0;
-    if (!fin) return o;
+    const ici = nav ? new URL(nav.name, location.href) : null;
+    const cettePage = ici?.pathname === "/univers/salons" && (cle.chez ? ici.searchParams.get("chez") === cle.chez : ici.searchParams.get("theme") === cle.theme);
+    if (!fin || !cettePage) return o;
     const passe = Date.now() - (performance.timeOrigin + fin);
-    return passe > 0 && passe < 120_000 ? { ...o, tele: { ...o.tele, maintenant: o.tele.maintenant + passe } } : o;
+    return passe > 0 && passe < 60_000 ? { ...o, tele: { ...o.tele, maintenant: o.tele.maintenant + passe } } : o;
   } catch {
     return o;
   }
@@ -185,7 +190,7 @@ export function SalonOuvert({ theme, chez, place, video, initial }: { theme?: st
   }, [entrer]);
 
   // (l'entrée faite par le serveur, remise à l'heure une fois sur le téléphone ; celles du téléphone sont à l'heure)
-  const o = useMemo(() => (etat.etat !== "pret" || !monte ? null : etat === initial ? aCetteHeure(etat.o) : etat.o), [etat, initial, monte]);
+  const o = useMemo(() => (etat.etat !== "pret" || !monte ? null : etat === initial ? aCetteHeure(etat.o, { theme, chez }) : etat.o), [etat, initial, monte, theme, chez]);
   const t = themeDe(theme);
   if (etat.etat === "pret" && o) return <Salon key={o.salon.id} o={o} onDehors={() => void entrer()} onExclu={() => setEtat({ etat: "exclu" })} />;
   if (etat.etat === "pret" || etat.etat === "chargement")

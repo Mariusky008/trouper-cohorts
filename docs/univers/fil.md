@@ -256,6 +256,9 @@ attendait que le téléphone ait chargé la page, puis demandé au serveur de fa
   salon et la télé noire, jamais le thème en grand (`SalonOuvert`, `initial`).
 - Les autres écrans ne changent pas : son âge à dire, sa figurine à créer (sans compte, arrivé par un lien), exclu.
   Si l'entrée échoue côté serveur, le téléphone la refait lui-même, comme avant.
+- **L'heure de la télé** : l'heure du serveur (`tele.maintenant`) date d'avant l'arrivée de la page. Quand le navigateur
+  a chargé cette page-ci, on l'avance du temps écoulé depuis la réponse (`aCetteHeure`), pour que tout le monde reste
+  à la même seconde. Arrivé par une navigation de Next (sans recharger), le délai est court et on n'y touche pas.
 - **Dans le fil**, « M'asseoir », « Ta place » et « M'asseoir avec eux » d'une séance réagissent tout de suite au toucher : ils
   battent doucement pendant que le serveur fait entrer sa figurine (`data-part`).
 
