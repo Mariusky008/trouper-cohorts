@@ -12,6 +12,18 @@ import path from "node:path";
 
 export const BASE = process.env.ESSAI_BASE ?? "http://localhost:3821";
 export const F = process.env.ESSAI_SUPABASE ?? "http://127.0.0.1:54321/rest/v1";
+/**
+ * 📊 Les mesures des messages d'un jour, comme la page des mesures les lit (`statsMessages`) : la table
+ * `clik_stats_messages` (un ajout en une requête) plus l'ancien fichier `stats/messages/<jour>.json`.
+ * `lire(chemin)` lit un fichier JSON du seau (chaque essai a le sien).
+ */
+export async function statsMessagesDuJour(jour, lire) {
+  const x = { ...((await lire(`stats/messages/${jour}.json`)) ?? {}) };
+  const r = await fetch(`${F}/clik_stats_messages?jour=eq.${jour}`).catch(() => null);
+  const lignes = r?.ok ? await r.json() : [];
+  for (const l of Array.isArray(lignes) ? lignes : []) x[l.cle] = (Number(x[l.cle]) || 0) + (Number(l.n) || 0);
+  return x;
+}
 export const D = process.env.ESSAI_CAPTURES ?? path.join(os.tmpdir(), "clikme-captures");
 fs.mkdirSync(D, { recursive: true });
 

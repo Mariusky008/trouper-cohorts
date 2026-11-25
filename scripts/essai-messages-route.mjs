@@ -20,7 +20,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import sharp from "sharp";
 import { lancerSecondeApp } from "./seconde-app.mjs";
-import { recus, telephone } from "./navigateur/commun.mjs";
+import { recus, telephone, statsMessagesDuJour } from "./navigateur/commun.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const FAUX = F.replace("/rest/v1", "");
@@ -240,7 +240,10 @@ const sg = await ecrire(LEA, SAM, "Un message que Sam ne veut plus voir");
 ok((await poster(SAM, { action: "signaler", cle: LEA.cle, id: sg.message.id })).statut === 200 && !(await fil(SAM, LEA))?.messages?.some((x) => x.id === sg.message.id) && (await fil(LEA, SAM))?.messages?.some((x) => x.id === sg.message.id), "Sam le signale : il disparaît chez lui (l'équipe le regarde)");
 
 // ═══ 📊 LA MESURE ═══
-const st = await lire(`stats/messages/${jourParis}.json`);
+const st = await statsMessagesDuJour(jourParis, lire);
+// (un ajout en une requête, dans la table : plus de fichier du jour relu puis réécrit, où deux ajouts en même temps
+// en perdaient un)
+ok(!(await lire(`stats/messages/${jourParis}.json`)) && (await (await fetch(`${F}/clik_stats_messages?jour=eq.${jourParis}&cle=eq.effaces`)).json())[0]?.n >= 3, "les compteurs vont dans la table (plus dans l'ancien fichier du jour)");
 ok(st?.ecrits >= 10 && st.liens >= 8 && st.apercus >= 2 && st.sansApercu >= 2 && st.effaces >= 3 && st.ecrivains >= 1, `les compteurs du jour : ${st?.ecrits} écrits, ${st?.liens} liens, ${st?.apercus} aperçus, ${st?.sansApercu} sans aperçu, ${st?.effaces} effacés`);
 
 // ═══ LE FREIN ═══

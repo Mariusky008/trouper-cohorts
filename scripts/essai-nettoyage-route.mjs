@@ -14,6 +14,7 @@
 //   node scripts/essai-nettoyage-route.mjs
 import crypto from "node:crypto";
 import { lancerSecondeApp } from "./seconde-app.mjs";
+import { statsMessagesDuJour } from "./navigateur/commun.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const FAUX = F.replace("/rest/v1", "");
@@ -114,7 +115,7 @@ ok((await presents(PARTENT)) === 0, "les dépôts (la vraie photo aussi) et les 
 ok((await presents(GARDES)) === GARDES.length, "les fichiers des messages restent (la photo, la vidéo et sa vignette, l'aperçu du lien)");
 ok((await presents(JAMAIS)) === JAMAIS.length, "un nom inattendu, une voix, l'étagère : jamais touchés");
 ok(b1.ko >= 40, `la place rendue : ${b1.ko} Ko`);
-const st = await lire(`stats/messages/${jourParis}.json`);
+const st = await statsMessagesDuJour(jourParis, lire);
 ok(st?.nettoyes >= 8 && st.nettoyesKo >= 40, `la mesure du jour (page admin des mèmes) : ${st?.nettoyes} fichiers, ${st?.nettoyesKo} Ko`);
 
 // ═══ UNE SECONDE FOIS : PLUS RIEN ═══

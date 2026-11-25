@@ -1159,6 +1159,20 @@ http
         l[quoi] = (l[quoi] || 0) + 1;
         return repondre(res, 204, undefined);
       }
+      // LES MESURES DES MESSAGES, comme la fonction SQL `compter_stats_messages` (migration
+      // `20261125170000_clik_stats_messages.sql`) : chaque compteur, de plus, sur la ligne du jour.
+      if (url.pathname === "/rest/v1/rpc/compter_stats_messages" && req.method === "POST") {
+        const { plus } = JSON.parse((await corps(req)).toString() || "{}");
+        const jour = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+        const t = lignes("clik_stats_messages");
+        for (const [cle, v] of Object.entries(plus && typeof plus === "object" && !Array.isArray(plus) ? plus : {})) {
+          if (!/^[a-zA-Z]{1,40}$/.test(cle) || typeof v !== "number" || !(v > 0) || v > 1_000_000) continue;
+          let l = t.find((r) => r.jour === jour && r.cle === cle);
+          if (!l) t.push((l = { jour, cle, n: 0 }));
+          l.n += Math.round(v);
+        }
+        return repondre(res, 204, undefined);
+      }
       // L'ÉCHANGE ENTRE COMMERÇANTS : les mêmes règles que les fonctions SQL
       // (`echanges_expirer`, `echanges_prendre`, `echanges_offrir`), sans les verrous.
       const rpc = /^\/rest\/v1\/rpc\/(echanges_[a-z_]+)$/.exec(url.pathname);

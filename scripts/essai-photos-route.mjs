@@ -20,7 +20,7 @@
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { lancerSecondeApp } from "./seconde-app.mjs";
-import { recus, telephone } from "./navigateur/commun.mjs";
+import { recus, telephone, statsMessagesDuJour } from "./navigateur/commun.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const FAUX = F.replace("/rest/v1", "");
@@ -209,7 +209,7 @@ ok(
 ok((await moderer({ action: "moderer-message", id: m1.id, geste: "retirer" })).statut === 400, "une deuxième fois : le signalement n'existe plus");
 
 // ═══ 📊 LA MESURE ═══
-const st = await lire(`stats/messages/${jourParis}.json`);
+const st = await statsMessagesDuJour(jourParis, lire);
 ok(st?.photos >= 2 && st.photosRefusees >= 1 && st.photosNonVerifiees >= 2 && st.photosKo > 0 && st.effaces >= 1, `les compteurs du jour : ${st?.photos} photos, ${st?.photosRefusees} refusée(s), ${st?.photosNonVerifiees} non vérifiée(s), ${st?.photosKo} Ko`);
 
 // ═══ LE FREIN ═══
