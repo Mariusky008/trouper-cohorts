@@ -54,6 +54,7 @@ import { PHRASES_REVOIR, lienRevoir } from "@/lib/direct/revoir";
 import { PHRASES_DOUBLE } from "@/lib/direct/mon-double";
 import { MonDouble } from "./mon-double";
 import { Pancarte } from "./pancarte";
+import { Ornements } from "./ornements";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
@@ -740,10 +741,16 @@ function Piece({
                   <img src={maison.tete.corps} alt="" draggable={false} />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className="mmc-fig-tete" src={maison.tete.src} alt="" draggable={false} style={{ left: `${maison.tete.boite[0] * 100}%`, top: `${maison.tete.boite[1] * 100}%`, width: `${maison.tete.boite[2] * 100}%`, height: `${maison.tete.boite[3] * 100}%` }} />
+                  {/* 🔥🎧❤️ (« Elle change toute seule ») ce qu'elle porte toute seule, par-dessus — chez moi comme en visite ; dans
+                      le même cadre que sa tête, qui respire avec elle */}
+                  <Ornements o={maison.double?.ornements ? { ...maison.double.ornements, boite: maison.tete.boite } : null} taille={Math.max(9, Math.min(12, ((hauteur || 400) * c.hauteur) / 16))} />
                 </span>
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={figurine.src} srcSet={figurine.srcset} sizes={hauteur ? `${Math.round(hauteur * c.hauteur * (figurine.largeur / Math.max(1, figurine.hauteur)))}px` : "360px"} alt="" draggable={false} />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={figurine.src} srcSet={figurine.srcset} sizes={hauteur ? `${Math.round(hauteur * c.hauteur * (figurine.largeur / Math.max(1, figurine.hauteur)))}px` : "360px"} alt="" draggable={false} />
+                  <Ornements o={maison.double?.ornements} taille={Math.max(9, Math.min(12, ((hauteur || 400) * c.hauteur) / 16))} />
+                </>
               )}
             </button>
           )}
