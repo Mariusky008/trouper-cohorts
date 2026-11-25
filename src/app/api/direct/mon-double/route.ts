@@ -17,6 +17,7 @@ import { humeurDuJour } from "@/lib/direct/talkie-serveur";
 import { humeurDe } from "@/lib/direct/rituel";
 import { EXPRESSIONS_FIGURINE, expressionDeLHumeur } from "@/lib/direct/expressions-figurine";
 import { choisirSaTete, ecrireSaPancarte, marquerPret, sonDouble } from "@/lib/direct/mon-double-serveur";
+import { ornementsDe } from "@/lib/direct/ornements-serveur";
 import type { MonDoubleVue } from "@/lib/direct/mon-double";
 
 export const dynamic = "force-dynamic";
@@ -26,12 +27,13 @@ const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
 
 async function vueDuDouble(supabase: Supabase, h: string): Promise<MonDoubleVue> {
-  const [calques, expr, humeur, double, assise] = await Promise.all([
+  const [calques, expr, humeur, double, assise, ornements] = await Promise.all([
     calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null),
     sesExpressions(supabase, h).catch(() => null),
     humeurDuJour(supabase, h).catch(() => null),
     sonDouble(supabase, h),
     figurineDeLaMaison(supabase, h).catch(() => null),
+    ornementsDe(supabase, h).catch(() => null),
   ]);
   // (ses têtes : seulement découpées sur ses calques d'aujourd'hui — la même règle de découpe)
   const memeDecoupe = Boolean(calques?.sansTete && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
@@ -46,6 +48,7 @@ async function vueDuDouble(supabase: Supabase, h: string): Promise<MonDoubleVue>
     ...(double.choisie && tetes.some((t) => t.cle === double.choisie) ? { choisie: double.choisie } : {}),
     pancarte: double.pancarte,
     pret: double.pret,
+    ...(ornements ? { ornements } : {}),
   };
 }
 

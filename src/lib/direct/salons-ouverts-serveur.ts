@@ -18,6 +18,7 @@
  * FICHIER SERVEUR.
  */
 import { randomBytes } from "node:crypto";
+import { ornementsDe } from "./ornements-serveur";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "./habitant";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
@@ -133,6 +134,7 @@ const publicDe = (f: Partial<FichePresent>): PresentSalon => ({
   ...(s(f.maison) ? { maison: s(f.maison) } : {}),
   ...(f.tete && s(f.tete.src) && s(f.tete.corps) ? { tete: f.tete } : {}),
   ...(s(f.pancarte) ? { pancarte: s(f.pancarte) } : {}),
+  ...(f.ornements && typeof f.ornements === "object" ? { ornements: f.ornements } : {}),
 });
 /** (lot D5) ce que sa fiche montre en plus : ses passions, sa maison si elle est ouverte à tous. */
 async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passions?: string[]; maison?: string }> {
@@ -144,9 +146,9 @@ async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passio
  * ✨ (« Ma figurine », 25 novembre 2026) sa figurine telle qu'elle est aujourd'hui, partout : sa tête du jour posée sur son
  * corps sans sa tête (quand elle est prête) et sa pancarte.
  */
-async function sonDoubleDeSalon(supabase: Supabase, h: string): Promise<Pick<PresentSalon, "tete" | "pancarte">> {
-  const [t, pancarte] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => "")]);
-  return { ...(t ? { tete: { src: t.src, corps: t.corps, ratio: t.ratio, boite: t.boite } } : {}), ...(pancarte ? { pancarte } : {}) };
+async function sonDoubleDeSalon(supabase: Supabase, h: string): Promise<Pick<PresentSalon, "tete" | "pancarte" | "ornements">> {
+  const [t, pancarte, ornements] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => ""), ornementsDe(supabase, h).catch(() => null)]);
+  return { ...(t ? { tete: { src: t.src, corps: t.corps, ratio: t.ratio, boite: t.boite } } : {}), ...(pancarte ? { pancarte } : {}), ...(ornements ? { ornements } : {}) };
 }
 const messagePublic = (f: Partial<FicheMessage>): MessageSalon => {
   const { h: _h, ...m } = f as FicheMessage;

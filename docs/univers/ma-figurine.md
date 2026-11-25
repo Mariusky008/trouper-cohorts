@@ -13,8 +13,8 @@ https://claude.ai/artifact/AAQV8sh6SN382BxzbLF31r
 | Lot | Ce qu'il fait | État |
 |---|---|---|
 | 0 | La maquette | ✓ validée le 25 novembre |
-| 1 | Ma maison épurée, le bouton « ✨ Ma figurine », l'écran « Mon double du jour », la même figurine partout | ce document, section 2 |
-| — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | juste après le lot 1 |
+| 1 | Ma maison épurée, le bouton « ✨ Ma figurine », l'écran « Mon double du jour », la même figurine partout | ✓ fusionné le 25 novembre (#282) ; section 2 |
+| — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | section 3 |
 | 2 | « Pendant ton absence » : de vrais noms, de vrais chiffres | à faire |
 | 3 | L'image à partager | à faire |
 | 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | à faire |
@@ -98,3 +98,35 @@ La route : `GET /api/direct/mon-double` (son double, sa figurine vivante pour le
 - Mis à jour : `ma-maison-catalogue.mjs` (plus de fanions ni de rangée « Aujourd'hui » ; « 📼 Revoir » dans « Pendant
   ton absence » ; toucher sa figurine ouvre son double), `ma-maison-question.mjs` (sa question du jour, chez soi, dans
   « Pendant ton absence »), `salons-seance.mjs` (plus de fanions : « Mes salons » reste retenu).
+
+## 3. « Elle change toute seule » (25 novembre 2026)
+
+Le propriétaire, devant la maquette (« Comment je fais évoluer ma figurine ») : « qu'elle change toute seule avec le
+temps ? », puis « oui ok si c'est pas trop coûteux ». **Rien ne se fabrique** : des détails dessinés par-dessus sa
+figurine, posés dans la boîte de sa tête (`boite`, celle de ses calques), comme sa tête du jour. Toujours d'après de
+vraies données (`lib/direct/ornements.ts`, `ornements-serveur.ts`, l'écran `app/collection/ornements.tsx`) :
+
+| Ce qu'elle porte | D'après | Quand |
+|---|---|---|
+| 🔥 sa flamme, « 🔥 5 » | ses jours de suite sur ClikMe (`presence.json`, noté à l'ouverture de l'appli, déjà compté pour la figurine du mois) | à partir de 2 jours ; un jour manqué, elle repart (tant qu'il n'est pas encore venu aujourd'hui, celle d'hier compte encore) |
+| 😇 son auréole dorée, au-dessus de sa tête | la même série | à partir de 7 jours de suite |
+| 🎧 l'accessoire de sa passion du moment | le salon ouvert où il va le plus ces trente derniers jours (`mes-salons.json`), sinon sa première passion (`passions.json`) | il change quand sa passion du moment change |
+| ❤️ un petit cœur sur sa poitrine, « 🎁 offert par Sam » ou « ❤️ vu avec Sam » | son dernier souvenir avec un proche : une surprise ouverte (`deciderSouvenir`), une vidéo vue ensemble (`poserSouvenirCommun`) — rangé dans `<habitant>/coeur.json` (le prénom, jamais le compte) | quinze jours |
+
+**Les accessoires** (`ACCESSOIRES`) : sur sa tête, 🎧 le casque (musique), 🎮 le casque à micro (jeux vidéo), 👨‍🍳 la
+toque (cuisine), 🐾 des oreilles (animaux), 👑 une couronne (mode), 🍥 un bandeau (manga) ; à son cou, ⚽ l'écharpe
+(foot) ; sinon un badge épinglé : 🍿 séries, ⭐ télé-réalité, 😂 humour, 📚 révisions, 👶 jeunes parents.
+
+**Partout** : sa maison (chez lui et en visite, avec les étiquettes « 🔥 8 » et « 🎁 offert par Sam »), son double du
+jour (et, sous ses têtes, « ✨ Ce qu'elle porte toute seule » : pourquoi, en une ligne chacun), le fil (`FigurineAssise` :
+les étiquettes quand elle est assez grande), les salons ouverts (sans étiquettes, c'est petit). Une figurine de
+l'ancien style (sans calques) : seules les étiquettes.
+
+**Ce qui attend** : Autour (les figurines posées dans la ville) ne les porte pas encore ; une passion « à soi » (le lot
+D9) n'a pas d'accessoire.
+
+**Les essais** : `scripts/essai-ornements-route.mjs` (8 jours de suite, l'auréole et le casque dans la boîte de sa tête ;
+la surprise de Sam ouverte : le cœur partout — son double, sa maison, la visite, le fil, un salon ; Sam : un jour, sa
+passion déclarée, l'écharpe, un salon trop ancien ne compte plus ; Hugo : rien ; un cœur de seize jours, un jour
+manqué) ; `scripts/navigateur/ornements.mjs` (chez elle : l'auréole au-dessus de sa tête, le casque dessus, le cœur sur sa
+poitrine, « 🔥 8 », « 🎁 offert par Sam » ; son double dit pourquoi ; Sam la voit pareille).

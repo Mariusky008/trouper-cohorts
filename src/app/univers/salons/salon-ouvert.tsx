@@ -42,6 +42,7 @@ import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/dire
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
 import { Pancarte } from "@/app/collection/pancarte";
+import { Ornements } from "@/app/collection/ornements";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import {
@@ -1149,6 +1150,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                       <img src={p.tete.corps} alt="" draggable={false} />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img className="so-jour-tete" src={p.tete.src} alt="" draggable={false} style={{ left: `${p.tete.boite[0] * 100}%`, top: `${p.tete.boite[1] * 100}%`, width: `${p.tete.boite[2] * 100}%`, height: `${p.tete.boite[3] * 100}%` }} />
+                      {/* (🔥🎧❤️ « Elle change toute seule » : ce qu'elle porte, par-dessus — sans étiquettes, c'est petit ici) */}
+                      <Ornements o={p.ornements ? { ...p.ornements, boite: p.tete.boite } : null} etiquettes={false} />
                     </span>
                   ) : p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element

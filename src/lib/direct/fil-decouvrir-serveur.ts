@@ -18,6 +18,7 @@
  * FICHIER SERVEUR.
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
+import { ornementsDe } from "./ornements-serveur";
 import type { Habitant } from "./habitant";
 import { salonsOuverts } from "./interrupteurs-serveur";
 import { mesDemandes, mesInvitations, salonsEnDirect, seancesDesProches } from "./salons-ouverts-serveur";
@@ -40,8 +41,8 @@ const s = (v: unknown) => (v == null ? "" : String(v)).trim();
  * posée sur son corps, sinon sa figurine assise ; ✨ et sa pancarte, s'il en a une.
  */
 export async function silhouetteDuFil(supabase: Supabase, h: string): Promise<SilhouetteFil | null> {
-  const [tete, assise, pancarte] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), figurineDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => "")]);
-  const p = pancarte ? { pancarte } : {};
+  const [tete, assise, pancarte, ornements] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), figurineDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => ""), ornementsDe(supabase, h).catch(() => null)]);
+  const p = { ...(pancarte ? { pancarte } : {}), ...(ornements ? { ornements } : {}) };
   if (tete) return { tete: tete.src, corps: { src: tete.corps, ratio: tete.ratio, boite: tete.boite }, ...p };
   const image = assise?.src || (await saFigurineSignee(supabase, h).catch(() => ""));
   return image ? { tete: image, image, ...p } : null;

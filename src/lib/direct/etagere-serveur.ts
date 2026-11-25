@@ -51,6 +51,7 @@ import { texteLuDuMessage } from "./talkie";
 import { DUO_MS, titreDuDuo } from "./meme-salon";
 import { AJOUT_MOT_MAX, AJOUT_PHOTO, AJOUT_TITRE_MAX, ajoutDe, type ObjetMaison } from "./ma-maison";
 import { APERCU, apercuDuHtml, urlLisible } from "./ecrit";
+import { noterCoeur } from "./ornements-serveur";
 import { lireLeWeb } from "./ecrit-serveur";
 import { PHRASES_REGARDER, jourDuSouvenir } from "./regarder-a-deux";
 import { videoYouTube, vignetteYouTube } from "./tele";
@@ -1244,7 +1245,11 @@ export async function poserSouvenirCommun(supabase: Supabase, a: string, b: stri
       ensemble: autre,
       media: { sorte: "video", lien },
     };
-    if (await ecrirePerso(supabase, moi, { ...perso, objets: [...perso.objets, o].slice(-200) })) poses++;
+    if (await ecrirePerso(supabase, moi, { ...perso, objets: [...perso.objets, o].slice(-200) })) {
+      poses++;
+      // (❤️ « Elle change toute seule » : sa figurine porte le cœur de ce moment, « vu avec … », quinze jours)
+      await noterCoeur(supabase, moi, autre, "ensemble");
+    }
   }
   return poses;
 }

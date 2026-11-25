@@ -39,6 +39,7 @@ import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { VISIBILITES, type FicheMonde, type Visibilite } from "./monde";
 import { motInterdit } from "./mots-interdits";
+import { noterCoeur } from "./ornements-serveur";
 import { decorDuMoment, tenueDuMois } from "./saison-serveur";
 import { assiseDe, hDeCle, poserProfil, seParlent } from "./talkie-serveur";
 import { cleValide } from "./talkie";
@@ -357,6 +358,8 @@ export async function deciderSouvenir(supabase: Supabase, h: string, id: unknown
   const posesApres = acceptes.filter((y) => y.accepte_le);
   const enTrop = new Set(posesApres.slice(0, Math.max(0, posesApres.length - SOUVENIRS_POSES_MAX)).map((y) => y.id));
   await ecrireJson(supabase, cheminSouvenirs(h), { liste: acceptes.filter((y) => !enTrop.has(y.id)) });
+  // (❤️ « Elle change toute seule » : sa figurine porte le cœur de cette surprise, « offert par … », quinze jours)
+  await noterCoeur(supabase, h, s(x.de), "surprise");
   return { ok: true };
 }
 
