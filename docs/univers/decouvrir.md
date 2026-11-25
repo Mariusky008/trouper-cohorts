@@ -1808,7 +1808,7 @@ maquette est validée par le propriétaire avant tout code.
   bonjour du Lot 4 de « Ma figurine ») et, si la caméra est acceptée, **la piste de ses têtes** lue sur le téléphone
   (`src/app/univers/visage/ma-tete.ts` : l'expression, la tête penchée et tournée, à quelques images par seconde) —
   `[{ t, e, roulis, lacet }]`. Jamais de voix de synthèse.
-- **Rejouée par sa figurine** : la bouche s'ouvre au volume de sa voix (`figurine-qui-parle.tsx`), elle fait ses têtes
+- **Rejoué par sa figurine** : la bouche s'ouvre au volume de sa voix (`figurine-qui-parle.tsx`), elle fait ses têtes
   à la bonne seconde (`figurine-vivante.tsx`). Sans caméra : la bouche seule, avec sa tête du jour.
 - **10 s au plus**, une réécoute avant d'envoyer (« Recommencer » / « Envoyer »).
 
@@ -1829,7 +1829,7 @@ maquette est validée par le propriétaire avant tout code.
 
 Le propriétaire : « ces vidéos viendront se placer à la fin de la vidéo qui aura été vue […] et je veux que tout le monde
 puisse la voir à partir du moment où ils regarderont cette vidéo, pas seulement mes proches. » Les mots sont donc
-**attachées à la vidéo**, pas au salon : quiconque regarde cette vidéo dans ClikMe (chez lui, dans une séance, dans un
+**attachés à la vidéo**, pas au salon : quiconque regarde cette vidéo dans ClikMe (chez lui, dans une séance, dans un
 salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce qu'il faut pour que ça tienne :
 
 - **Les 15-17 ans entre eux** (la règle de toute l'appli) : une vidéo a **deux suites séparées**, celle des adultes et
@@ -1840,9 +1840,9 @@ salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce
   ouverts) ; « 👯 Ajouter en proche » et « 🏠 Voir sa maison » suivent leurs règles habituelles.
 - **Signaler** sur chaque mot : il disparaît pour celui qui signale, et part dans l'admin. Le nombre de
   signalements qui la cache pour tous en attendant une décision : à fixer à la maquette.
-- **Effacer mon mot**, quand je veux : elle disparaît partout, tout de suite (une voix est une donnée personnelle).
+- **Effacer mon mot**, quand je veux : il disparaît partout, tout de suite (une voix est une donnée personnelle).
 - **L'ordre** : d'abord mes proches, puis les autres dans l'ordre d'enregistrement, chaque réponse juste après la
-  mot à laquelle elle répond. Quand il y en a beaucoup : les premières, puis « Toutes ».
+  mot auquel elle répond. Quand il y en a beaucoup : les premiers, puis « Tous ».
 - **Les droits** : dans l'appli, la vidéo passe par le lecteur officiel (YouTube) ; une capsule partagée hors de
   l'appli ne montre **jamais ses images** (le titre et la chaîne sur un carton, comme « 🎬 Nos réactions »), et n'y
   paraissent que ceux qui l'acceptent (le réglage « Mes réactions peuvent apparaître dans les clips de mes proches »,
@@ -1852,4 +1852,4 @@ salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce
 
 - Combien de temps un mot reste attaché à la vidéo.
 - Le nombre de signalements qui cache un mot pour tous.
-- Le nombre de mots montrées d'office à la fin, avant « Toutes ».
+- Le nombre de mots montrées d'office à la fin, avant « Tous ».
