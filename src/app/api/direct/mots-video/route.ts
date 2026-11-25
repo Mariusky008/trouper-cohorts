@@ -1,6 +1,6 @@
 // 🎙️ « LAISSER UN MOT AVEC MA FIGURINE » : LA SUITE DE LA VIDÉO (`lib/direct/mots-video.ts`, `mots-video-serveur.ts` ;
 // `docs/univers/decouvrir.md`, section 38). Seulement pour quelqu'un de ClikMe (le cookie d'habitant), sur une vidéo de
-// sa télé du jour (même déjà vue).
+// sa télé du jour (même déjà vue) ; (lot 2) celle de sa séance (`seance`), ou de la sélection d'un salon de sa tranche.
 //
 // GET ?video=<id>                               → { suite } : les mots de sa tranche (adultes, ou 15-17 ans), ses proches
 //                                                 d'abord ; 403 `age` : il n'a pas encore dit s'il a 18 ans
@@ -26,7 +26,8 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
-  const r = await suiteDeLaVideo(supabase, moi, new URL(request.url).searchParams.get("video"));
+  const q = new URL(request.url).searchParams;
+  const r = await suiteDeLaVideo(supabase, moi, q.get("video"), q.get("seance"));
   return repondre(r, { suite: r.suite });
 }
 
@@ -36,9 +37,9 @@ export async function POST(request: Request) {
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   const p = ((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   if (p.action === "publier") return repondre(await publierMot(supabase, moi, p));
-  if (p.action === "effacer") return repondre(await effacerMot(supabase, moi, p.id));
+  if (p.action === "effacer") return repondre(await effacerMot(supabase, moi, p.id, p.seance));
   if (p.action === "signaler") {
-    const r = await signalerMot(supabase, moi, p.id, p.q);
+    const r = await signalerMot(supabase, moi, p.id, p.q, p.seance);
     return repondre(r, { cache: r.cache === true });
   }
   if (p.action === "age") {

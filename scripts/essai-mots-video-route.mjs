@@ -9,7 +9,8 @@
 // réponse juste après, puis Inès — jamais un compte. Sam refait son mot : l'ancien son s'efface. Léa signale Inès : elle
 // ne passe plus chez Léa, toujours chez Sam ; signalée par trois personnes : chez personne ; l'administrateur le voit.
 // Un mot de plus de 30 jours ne passe plus. Sam efface son mot : la réponse de Léa reste, seule. Jade (15-17 ans) : sa
-// suite à elle, jamais celle des adultes. Jamais le mot « exemple ».
+// suite à elle, jamais celle des adultes. (Lot 2) La vidéo d'un salon ouvert de sa tranche, celle d'une séance où l'on
+// est (l'hôte ou un invité) : leur suite aussi. Jamais le mot « exemple ».
 import crypto from "node:crypto";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -169,6 +170,32 @@ ok((await poster(JADE, { action: "publier", id: VJ, son: enData(VOIX()), duree: 
 ok((await existe(`decouvrir/mots/jeunes/${VJ}/${JADE.q}.json`)) && !(await existe(`decouvrir/mots/adultes/${VJ}/${JADE.q}.json`)), "… rangé dans la suite des 15-17 ans");
 const surLaSienne = await voir(LEA, VJ);
 ok(surLaSienne.statut === 404 || !ordre(surLaSienne).includes("Jade"), "… un adulte ne l'entend jamais");
+
+// ═══ LOT 2 : LA VIDÉO D'UN SALON OUVERT, CELLE D'UNE SÉANCE ═══
+const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+const idsTele = new Set((tele.tele?.videos ?? []).map((v) => v.id));
+let VS = null;
+for (const theme of ["cuisine", "animaux", "musique", "jeux", "series", "humour", "mode", "manga"]) {
+  const sel = await lire(`decouvrir/selection/${jour}/${theme}.json`);
+  VS = (sel?.videos ?? []).map((v) => v.id).find((id) => !idsTele.has(id)) ?? null;
+  if (VS) break;
+}
+ok(Boolean(VS), `une vidéo d'un salon ouvert, pas à la télé de Léa (${VS})`);
+ok((await voir(LEA, VS)).statut === 200, "… Léa ouvre sa suite (le salon continue pour tout le monde)");
+ok((await poster(LEA, { action: "publier", id: VS, son: enData(VOIX()), duree: 2, accord: true })).statut === 200, "… et y laisse un mot");
+ok(await existe(`decouvrir/mots/adultes/${VS}/${LEA.q}.json`), "… rangé dans la suite des adultes");
+// (la séance chez Max : il regarde une vidéo qui n'est à la télé de personne d'autre ; Léa est invitée, Inès non)
+const VSE = "BBBBBBBBBBB";
+const chezMax = `decouvrir/salons/prives/chez-${MAX.q}`;
+await json(`${chezMax}/tele.json`, { video: { id: VSE, titre: "La séance de Max", chaine: "", duree: 60 }, depart: Date.now(), n: 1 });
+await json(`${chezMax}/invites/${LEA.q}.json`, { h: LEA.id, le: Date.now() });
+ok((await voir(LEA, VSE)).statut === 404, "la vidéo de la séance, sans dire d'où : 404");
+const enSeance = await fetch(`${route}?video=${VSE}&seance=chez-${MAX.q}`, { headers: { cookie: `clikme_habitant=${LEA.jeton}` } });
+ok(enSeance.status === 200, "… dans la séance chez Max, où Léa est invitée : sa suite s'ouvre");
+ok((await poster(LEA, { action: "publier", id: VSE, seance: `chez-${MAX.q}`, son: enData(VOIX()), duree: 2, accord: true })).statut === 200, "… elle y laisse un mot");
+ok((await (await fetch(`${route}?video=${VSE}&seance=chez-${MAX.q}`, { headers: { cookie: `clikme_habitant=${MAX.jeton}` } })).json()).suite?.mots?.some((m) => m.prenom === "Léa"), "… Max, l'hôte, l'entend");
+ok((await fetch(`${route}?video=${VSE}&seance=chez-${MAX.q}`, { headers: { cookie: `clikme_habitant=${INES.jeton}` } })).status === 404, "… Inès, pas invitée : 404");
+ok((await poster(LEA, { action: "effacer", id: VSE, seance: `chez-${MAX.q}` })).statut === 200, "… Léa l'efface");
 
 // ═══ JAMAIS UN COMPTE, JAMAIS LE MOT « EXEMPLE » ═══
 const tout = JSON.stringify(tous);

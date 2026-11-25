@@ -51,6 +51,8 @@ import { Ornements } from "@/app/collection/ornements";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
+import { PHRASES_MOTS as PMOTS } from "@/lib/direct/mots-video";
+import { SuiteDeLaVideo } from "@/app/collection/suite-de-la-video";
 import {
   GESTES_SALON,
   INVITES_MAX,
@@ -315,6 +317,15 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // (🎞️ 21 novembre 2026 : chez un proche aussi — sur la vidéo que je regarde, l'hôte compris s'il l'a vue)
   const idVideo = prive ? regarde?.video.id : undefined;
   const [fantomes, setFantomes] = useState<ProcheDevantVideo[]>([]);
+  // 🎙️ (lot 2 de « Laisser un mot avec ma figurine », `decouvrir.md` section 38) LA VIDÉO D'AVANT : la télé continue pour
+  // tout le monde ; une carte « La suite de la vidéo » reste là, un toucher l'ouvre (ses mots, laisser le mien)
+  const [suiteDe, setSuiteDe] = useState<{ id: string; titre: string } | null>(null);
+  const [suiteOuverte, setSuiteOuverte] = useState(false);
+  const vueSuite = useRef<{ id: string; titre: string; depuis: number } | null>(null);
+  const finieAuSalon = useCallback((v: { id: string; titre: string }) => {
+    setSuiteOuverte(false);
+    setSuiteDe(v);
+  }, []);
   // (📷 « tout pour tous » : la ligne du temps et « 💬 Ce qui s'est dit » — tous mes proches qui l'ont vue, et les miennes)
   const [devant, setDevant] = useState<ProcheDevantVideo[]>([]);
   const [miennes, setMiennes] = useState<ReactionVideo[]>([]);
@@ -402,6 +413,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const vuJusqua = useRef<{ id: string; duree: number; t: number } | null>(null);
   useEffect(() => {
     let fini = false;
+    // (🎙️ la précédente, regardée un moment : sa suite, en carte)
+    const precedente = vueSuite.current;
+    if (precedente && precedente.id !== idVideo && Date.now() - precedente.depuis >= SUITE_APRES_MS) finieAuSalon({ id: precedente.id, titre: precedente.titre });
+    vueSuite.current = idVideo && regarde ? { id: idVideo, titre: regarde.video.titre, depuis: Date.now() } : null;
     // (la précédente, vue jusqu'où ? ma télé du jour la note — elle ne reviendra plus)
     const avant = vuJusqua.current;
     if (avant && avant.id !== idVideo && avant.t > 0) void posterTele({ action: "vue", id: avant.id, secondes: Math.round(avant.t), fin: avant.t >= (avant.duree || 1e6) - 3 });
@@ -1020,6 +1035,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             largeur={lTele}
             morceau={musique && platine?.enCours ? { id: platine.enCours.video.id, titre: platine.enCours.video.titre, duree: platine.enCours.video.duree, depart: platine.enCours.depart, n: platine.n } : null}
             onCourant={musique ? setRadioTitre : undefined}
+            onFinie={musique ? undefined : finieAuSalon}
           />
         )}
         {musique && (
@@ -1564,6 +1580,29 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         />
       )}
       {inviter && <Inviter onFermer={() => setInviter(false)} dire={dire} chez={seance && !seance.hote ? { salon: salon.id, cle: seance.cle, prenom: seance.prenom, libres: libres.length } : undefined} />}
+      {suiteDe && !suiteOuverte && (
+        <div className="so-suite" data-carte-suite={suiteDe.id}>
+          <button type="button" className="so-suite-ouvrir" onClick={() => setSuiteOuverte(true)} data-ouvrir-suite>
+            <b>{PMOTS.carte}</b>
+            <span>{PMOTS.carteSous(suiteDe.titre)}</span>
+          </button>
+          <button type="button" className="so-suite-fermer" aria-label={PMOTS.fermer} onClick={() => setSuiteDe(null)} data-fermer-carte-suite>
+            ✕
+          </button>
+        </div>
+      )}
+      {suiteDe && suiteOuverte && (
+        <SuiteDeLaVideo
+          key={suiteDe.id}
+          video={suiteDe}
+          mode="carte"
+          {...(prive ? { seance: salon.id } : {})}
+          onSuivante={() => {
+            setSuiteOuverte(false);
+            setSuiteDe(null);
+          }}
+        />
+      )}
       <style>{STYLES}</style>
     </main>
   );
@@ -1991,7 +2030,21 @@ function TeleDeLaSeance({
 type MorceauTele = { id: string; titre: string; duree: number; depart: number; n: number };
 type Courant = { id: string; t: number; titre: string; duree: number };
 
-function TeleDuSalon({ videos, decalage, largeur, morceau, onCourant }: { videos: VideoSalon[]; decalage: React.RefObject<number>; largeur: number; morceau?: MorceauTele | null; onCourant?: (titre: string) => void }) {
+function TeleDuSalon({
+  videos,
+  decalage,
+  largeur,
+  morceau,
+  onCourant,
+  onFinie,
+}: {
+  videos: VideoSalon[];
+  decalage: React.RefObject<number>;
+  largeur: number;
+  morceau?: MorceauTele | null;
+  onCourant?: (titre: string) => void;
+  onFinie?: (v: { id: string; titre: string }) => void;
+}) {
   // (🔊 21 novembre 2026 : la télé du salon part toute seule à l'arrivée, en silence ; un toucher met le son)
   const [son, setSon] = useState(false);
   const [simple, setSimple] = useState(false);
@@ -2023,6 +2076,15 @@ function TeleDuSalon({ videos, decalage, largeur, morceau, onCourant }: { videos
   useEffect(() => {
     onCourant?.(pos?.titre ?? "");
   }, [pos?.titre, onCourant]);
+  // (🎙️ lot 2 : une vidéo regardée un moment vient de finir — sa suite, en carte)
+  const avantSuite = useRef<{ id: string; titre: string; depuis: number } | null>(null);
+  useEffect(() => {
+    const a = avantSuite.current;
+    if (pos && a && a.id !== pos.id && Date.now() - a.depuis >= SUITE_APRES_MS) onFinie?.({ id: a.id, titre: a.titre });
+    avantSuite.current = pos ? { id: pos.id, titre: pos.titre, depuis: Date.now() } : null;
+    // (seulement quand la vidéo change)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pos?.id]);
   // (le lecteur tout simple : la suivante à la fin de celle-ci)
   useEffect(() => {
     if (!simple || !pos) return;
@@ -2264,7 +2326,15 @@ function Affiche({ v, action, attente }: { v: VideoSalon; action?: { nom: string
   );
 }
 
+/** 🎙️ (lot 2) une vidéo regardée au moins ce temps-là : sa suite, en carte, quand elle finit. */
+const SUITE_APRES_MS = 20_000;
+
 const STYLES = `
+.so-suite{position:fixed;left:16px;right:16px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:30;margin:0 auto;max-width:488px;display:flex;align-items:stretch;gap:6px;border-radius:18px;padding:6px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.so-suite-ouvrir{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;border-radius:14px;padding:8px 12px;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);color:#2a0f1f;font:inherit;text-align:left;cursor:pointer}
+.so-suite-ouvrir b{font-size:15px;font-weight:900}
+.so-suite-ouvrir span{max-width:100%;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-suite-fermer{flex:none;width:44px;border:0;border-radius:14px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
 .so{min-height:100dvh;max-width:820px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 0 calc(16px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;overflow-x:hidden;position:relative}
 .so-centre{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 20px;text-align:center}
 .so-tele-attente{width:100%;aspect-ratio:16/9}

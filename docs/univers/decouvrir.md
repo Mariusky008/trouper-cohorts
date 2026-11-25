@@ -1794,7 +1794,7 @@ L'onglet Découvrir s'ouvre désormais sur un fil plein écran : on glisse de pi
 qui précède (ma télé du jour, les salons par passion, la séance) reste là, derrière « Tous les salons » (`#salons`) — et
 le fil y mène. Le détail : `docs/univers/fil.md`.
 
-## 38. 🎙️ « Laisser un mot avec ma figurine » : la suite de la vidéo (25 novembre 2026 ; le lot 1, dans ma télé du jour : fait)
+## 38. 🎙️ « Laisser un mot avec ma figurine » : la suite de la vidéo (25 novembre 2026 ; le lot 1, dans ma télé du jour : fait ; le lot 2, la séance et les salons ouverts : fait)
 
 Le propriétaire : « À la fin de la vidéo, j'aimerais que les utilisateurs puissent laisser un message vidéo avec leur
 figurine. » Les réactions à la seconde (4.5) disent ce qu'on a ressenti **pendant** la vidéo ; personne ne dit rien
@@ -1859,9 +1859,7 @@ salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce
 - **Où** : ma télé du jour (l'onglet Découvrir → « Ma télé », `/univers/tele`, et « 📼 Revoir », qui rouvre une vidéo
   déjà vue). La vidéo finie ne s'en va plus tout de suite : « La suite de la vidéo » monte (une feuille, comme « Envoyer
   à… ») ; sans un geste, la suivante arrive après 8 s (« Suivante dans 8 s ») ; un geste, et elle attend.
-- **Pas encore** : la séance chez un proche et les salons ouverts (la vidéo y avance pour tout le monde en même temps :
-  la suite ne peut pas l'arrêter ; à faire dans un lot 2, peut-être une carte « La suite de la vidéo » posée pendant
-  que la suivante démarre).
+- **Pas encore** (fait au lot 2, 38.7) : la séance chez un proche et les salons ouverts.
 - **Les réglages** (`MOTS_VIDEO`, `lib/direct/mots-video.ts` ; à confirmer par le propriétaire) : 10 s au plus, 1 s au
   moins ; gardé **30 jours** ; caché pour tous à **3 signalements** de personnes différentes ; **6** mots montrés avant
   « Tous » ; 8 s avant la suivante sans un geste.
@@ -1878,3 +1876,20 @@ salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce
   `scripts/navigateur/suite-de-la-video.mjs` (la fin d'une vidéo, le mot de Sam, un geste qui arrête le compte, parler
   au faux micro, l'accord, « Publier », effacer, signaler, « Suivante »).
 
+### 38.7 Le lot 2 : la séance chez moi ou chez un proche, les salons ouverts (25 novembre 2026) — fait
+
+- **Pourquoi une carte** : là, la vidéo avance pour tout le monde en même temps ; la suite ne peut pas l'arrêter. Quand
+  une vidéo regardée **au moins 20 s** laisse la place à la suivante (la fin, « ⏭ Suivante », « 📺 Choisir »), une carte
+  « 🎙️ La suite de la vidéo » se pose en bas (« « titre » : écoute leurs mots, laisse le tien », ✕ pour la ranger). La
+  télé continue. Une vidéo à peine vue (zappée) : pas de carte. Pas dans le salon de la musique.
+- **Un toucher** : la même feuille qu'au lot 1, sans compte à rebours (« Fermer » au lieu de « Suivante dans 8 s ») :
+  écouter leurs mots, laisser le sien, répondre, signaler, effacer.
+- **Qui peut** : le serveur accepte, en plus de sa télé du jour, la vidéo de la séance où l'on est (l'hôte, ou un invité
+  — `videoDeLaSeance`, le paramètre `seance`), et toute vidéo de la sélection du jour d'un salon ouvert de sa tranche
+  (`videosDuSalon`). La suite reste celle de la vidéo : la même pour tous ceux qui la regardent, où qu'ils l'aient vue.
+- **Le code** : `app/univers/salons/salon-ouvert.tsx` (la carte, `SUITE_APRES_MS`), `suite-de-la-video.tsx`
+  (`mode="carte"`, `seance`), `mots-video-serveur.ts` (`laVideo`).
+- **Les essais** : `scripts/essai-mots-video-route.mjs` (une vidéo d'un salon ouvert ; la séance chez Max : sans dire
+  d'où, 404 ; Léa invitée : elle laisse un mot, Max l'entend ; Inès, pas invitée : 404) ;
+  `scripts/navigateur/suite-salon.mjs` (la séance chez Léa : 20 s, « ⏭ Suivante », la carte, la feuille, « Fermer » ;
+  une vidéo zappée : pas de carte).

@@ -125,6 +125,10 @@ export const PHRASES_MOTS = {
   toutEcouter: "▶ Tout écouter",
   tous: (n: number) => `Tous (${n})`,
   suivante: "Suivante ⏭",
+  fermer: "Fermer",
+  // (lot 2 : dans une séance, un salon ouvert — la vidéo d'avant)
+  carte: "🎙️ La suite de la vidéo",
+  carteSous: (titre: string) => `« ${titre} » : écoute leurs mots, laisse le tien`,
   suivanteDans: (n: number) => `Suivante dans ${n} s`,
   ecouter: (prenom: string) => `Écouter ${prenom}`,
   duree: (d: number) => secondes(d),
