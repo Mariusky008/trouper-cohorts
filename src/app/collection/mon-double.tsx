@@ -16,7 +16,7 @@
  */
 import { useEffect, useState, type CSSProperties } from "react";
 import type { ExpressionFigurine, FigurineVivante } from "@/lib/direct/expressions-figurine";
-import { IDEES_PANCARTE, ONGLETS_DOUBLE, PANCARTE_MAX, PHRASES_DOUBLE, REACTIONS_A_ESSAYER, expressionDe, type MonDoubleVue, type OngletDouble, type ReactionAEssayer } from "@/lib/direct/mon-double";
+import { IDEES_PANCARTE, ONGLETS_DOUBLE, PANCARTE_MAX, PHRASES_DOUBLE, PHRASES_IMAGE_DOUBLE, REACTIONS_A_ESSAYER, expressionDe, type MonDoubleVue, type OngletDouble, type ReactionAEssayer } from "@/lib/direct/mon-double";
 import { FigurineVivanteVue, STYLES_VIVANTE } from "@/app/univers/visage/figurine-vivante";
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
@@ -24,6 +24,7 @@ import { Pancarte } from "./pancarte";
 import { Ornements } from "./ornements";
 import { PHRASES_ORNEMENTS, SERIE_AUREOLE, SERIE_MIN, aDesOrnements } from "@/lib/direct/ornements";
 import { themeDe } from "@/lib/direct/decouvrir";
+import { ImageDuDouble } from "./image-du-double";
 
 const ROUTE = "/api/direct/mon-double";
 type Reponse = { double?: MonDoubleVue; vivante?: FigurineVivante | null; error?: string };
@@ -82,6 +83,7 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
   const [reaction, setReaction] = useState<{ r: ReactionAEssayer; n: number } | null>(null);
   const [miroir, setMiroir] = useState(false);
   const [change, setChange] = useState(false);
+  const [image, setImage] = useState(false);
   const { etat: camEtat, tete: camTete, video: camVideo } = useMaTete(miroir && onglet === "miroir");
 
   useEffect(() => {
@@ -166,6 +168,11 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
           {pancarte && <Pancarte texte={pancarte} taille={17} bas={d?.corps ? `${Math.round((1 - d.corps.boite[1]) * 230) + 4}px` : "222px"} />}
           {enDirect && vivante ? <FigurineVivanteVue v={vivante} hauteur={230} e={camTete.e} roulis={camTete.roulis} lacet={camTete.lacet} /> : d ? <FigurineDuDouble d={d} e={teteScene} hauteur={230} /> : null}
         </span>
+        {d && (d.corps || d.image) && (
+          <button type="button" className="md-image" onClick={() => setImage(true)} data-image-du-double>
+            {PHRASES_IMAGE_DOUBLE.bouton}
+          </button>
+        )}
         {miroir && onglet === "miroir" && (
           <span className="md-camera" aria-hidden="true">
             <video ref={camVideo} muted playsInline />
@@ -355,6 +362,7 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
         </button>
         <small>{PHRASES_DOUBLE.partout}</small>
       </div>
+      {image && <ImageDuDouble onFermer={() => setImage(false)} />}
       <style>{STYLES_MON_DOUBLE + STYLES_VIVANTE + STYLES_FIGURINE_DU_MOIS}</style>
     </div>
   );
@@ -392,6 +400,7 @@ const STYLES_MON_DOUBLE = `
 @keyframes md-monte{0%{opacity:0;transform:translateY(20px) scale(.6)}20%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-90px)}}
 .md-etiquette{position:absolute;right:12px;top:12px;z-index:5;padding:5px 10px;border-radius:999px;background:rgba(18,12,9,.75);font-weight:600;font-size:12px}
 .md-dit{position:absolute;left:12px;right:12px;top:12px;z-index:6;margin:0;padding:10px 12px;border-radius:16px;background:#fff4e6;color:#2a1a10;font-weight:600;font-size:13.5px;line-height:1.3;box-shadow:0 14px 30px -12px rgba(0,0,0,.6);animation:md-entre .3s ease-out}
+.md-image{position:absolute;left:10px;bottom:10px;z-index:5;min-height:36px;padding:0 12px;border:0;border-radius:999px;background:rgba(18,12,9,.78);box-shadow:inset 0 0 0 1px rgba(255,196,140,.28);font-weight:700;font-size:12.5px}
 .md-camera{position:absolute;left:12px;top:12px;z-index:5;width:84px;height:110px;border-radius:18px;overflow:hidden;background:#15151b;box-shadow:0 0 0 2px #fff4e6}
 .md-camera video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 .md-camera i{position:absolute;left:7px;top:6px;font-style:normal;font-weight:700;font-size:10px;color:#fff4e6;text-shadow:0 1px 2px #000}

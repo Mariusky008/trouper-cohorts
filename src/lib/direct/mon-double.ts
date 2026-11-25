@@ -115,3 +115,24 @@ export const PHRASES_DOUBLE = {
   pret: "✓ Ton double est prêt : on le voit partout aujourd’hui.",
   refus: "Ça, ta figurine ne le dit pas. Écris autre chose 🙂",
 } as const;
+
+/**
+ * 📸 L'IMAGE À PARTAGER (lot 3 ; `image-du-double-serveur.ts`, la route `/api/direct/mon-double/image`) : « Ma figurine
+ * du jour », sa tête du jour, sa pancarte, ce qu'elle porte toute seule, « Mon double sur ClikMe ». 1080 × 1350, le
+ * format d'une publication.
+ */
+export const IMAGE_DOUBLE = { largeur: 1080, hauteur: 1350, nom: "ma-figurine-du-jour.png" } as const;
+export const PHRASES_IMAGE_DOUBLE = {
+  bouton: "📸 Mon image du jour",
+  titre: "Ma figurine du jour",
+  signature: "Mon double sur ClikMe",
+  fabrique: "Ton image se prépare…",
+  pret: "Ton image du jour",
+  partager: "📲 Partager",
+  enregistrer: "⬇️ Enregistrer",
+  fermer: "Fermer",
+  texte: "Mon double du jour, sur ClikMe ✨",
+  rate: "Ton image ne s’est pas faite. Réessaie dans un instant.",
+  sansFigurine: "Ta figurine n’est pas encore prête : ton image arrive avec elle.",
+  serie: (n: number) => `${n} jours de suite`,
+} as const;

@@ -60,48 +60,105 @@ const SUR_LA_TETE: Partial<Record<SorteAccessoire, ReactNode>> = {
   ),
 };
 
-export function Ornements({ o, taille = 11, etiquettes = true }: { o: O | null | undefined; taille?: number; etiquettes?: boolean }) {
-  if (!aDesOrnements(o)) return null;
+/**
+ * Les détails posés sur sa figurine (l'auréole, l'accessoire, le cœur), chacun dans son cadre : `vue` (le viewBox),
+ * `ajuste` (comme `preserveAspectRatio`), `boite` (en fractions du cadre de sa figurine, d'après la boîte de sa tête).
+ * Les mêmes pour l'écran (`Ornements`) et pour l'image à partager (`/api/direct/mon-double/image`).
+ */
+export type PieceOrnement = {
+  cle: "aureole" | "tete" | "echarpe" | "badge" | "coeur";
+  vue: [number, number, number, number];
+  ajuste: "none" | "xMidYMid meet" | "xMidYMin meet";
+  boite: [number, number, number, number];
+  contenu: ReactNode;
+  classe?: string;
+  data: Record<string, string>;
+};
+
+export function piecesDesOrnements(o: O | null | undefined): PieceOrnement[] {
+  if (!aDesOrnements(o) || !o.boite) return [];
   const serie = o.serie ?? 0;
   const b = o.boite;
   const a = o.accessoire;
   const surLaTete = a ? SUR_LA_TETE[a.sorte] : null;
-  // (la boîte de sa tête, en pourcentages du cadre de sa figurine)
-  const dans = (x: number, y: number, l: number, h: number): CSSProperties => ({ left: `${x * 100}%`, top: `${y * 100}%`, width: `${l * 100}%`, height: `${h * 100}%` });
-  return (
-    <span className="orn" aria-hidden="true" data-ornements={[serie >= SERIE_AUREOLE ? "aureole" : "", a?.theme ?? "", o.coeur ? "coeur" : ""].filter(Boolean).join(" ")}>
-      {b && serie >= SERIE_AUREOLE && (
-        <svg className="orn-svg orn-aureole" viewBox="0 0 100 30" preserveAspectRatio="none" style={dans(b[0] + b[2] * 0.08, b[1] - b[3] * 0.2, b[2] * 0.84, b[3] * 0.22)} data-aureole>
+  const p: PieceOrnement[] = [];
+  if (serie >= SERIE_AUREOLE)
+    p.push({
+      cle: "aureole",
+      vue: [0, 0, 100, 30],
+      ajuste: "none",
+      boite: [b[0] + b[2] * 0.08, b[1] - b[3] * 0.2, b[2] * 0.84, b[3] * 0.22],
+      classe: "orn-aureole",
+      data: { "data-aureole": "" },
+      contenu: (
+        <>
           <ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="#ffd36e" strokeWidth="5" />
           <ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="#fff4c2" strokeWidth="1.6" />
-        </svg>
-      )}
-      {b && surLaTete && (
-        <svg className="orn-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={dans(b[0], b[1], b[2], b[3])} data-accessoire={a!.sorte}>
-          {surLaTete}
-        </svg>
-      )}
-      {b && a?.sorte === "echarpe" && (
-        <svg className="orn-svg" viewBox="0 0 100 60" preserveAspectRatio="xMidYMin meet" style={dans(b[0] + b[2] * 0.05, b[1] + b[3] * 0.84, b[2] * 0.9, b[3] * 0.55)} data-accessoire="echarpe">
+        </>
+      ),
+    });
+  if (a && surLaTete) p.push({ cle: "tete", vue: [0, 0, 100, 100], ajuste: "xMidYMid meet", boite: [b[0], b[1], b[2], b[3]], data: { "data-accessoire": a.sorte }, contenu: surLaTete });
+  if (a?.sorte === "echarpe")
+    p.push({
+      cle: "echarpe",
+      vue: [0, 0, 100, 60],
+      ajuste: "xMidYMin meet",
+      boite: [b[0] + b[2] * 0.05, b[1] + b[3] * 0.84, b[2] * 0.9, b[3] * 0.55],
+      data: { "data-accessoire": "echarpe" },
+      contenu: (
+        <>
           <path d="M6 8Q50 30 94 8L94 24Q50 46 6 24Z" fill="#2f5fd0" />
           <path d="M26 17L28 30M50 22V36M74 17L72 30" stroke="#fff" strokeWidth="4" />
           <path d="M64 26L70 58L82 55L74 24Z" fill="#2f5fd0" />
           <path d="M68 40h11M70 47h11" stroke="#fff" strokeWidth="3" />
-        </svg>
-      )}
-      {b && a?.sorte === "badge" && (
-        <svg className="orn-svg" viewBox="0 0 40 40" style={dans(b[0] + b[2] * 0.62, b[1] + b[3] * 1.2, b[2] * 0.3, b[3] * 0.3)} data-accessoire="badge">
+        </>
+      ),
+    });
+  if (a?.sorte === "badge")
+    p.push({
+      cle: "badge",
+      vue: [0, 0, 40, 40],
+      ajuste: "xMidYMid meet",
+      boite: [b[0] + b[2] * 0.62, b[1] + b[3] * 1.2, b[2] * 0.3, b[3] * 0.3],
+      data: { "data-accessoire": "badge" },
+      contenu: (
+        <>
           <circle cx="20" cy="20" r="18" fill="#fff4e6" stroke="#f6b54b" strokeWidth="3" />
           <text x="20" y="27" textAnchor="middle" fontSize="20">
             {a.e}
           </text>
+        </>
+      ),
+    });
+  if (o.coeur)
+    p.push({
+      cle: "coeur",
+      vue: [0, 0, 24, 22],
+      ajuste: "xMidYMid meet",
+      boite: [b[0] + b[2] * 0.14, b[1] + b[3] * 1.24, b[2] * 0.22, b[3] * 0.2],
+      classe: "orn-coeur",
+      data: { "data-coeur": "" },
+      contenu: <path d={COEUR_TRACE} fill="#ff2e9a" stroke="#fff4e6" strokeWidth="1.6" />,
+    });
+  return p;
+}
+
+/** Le tracé du petit cœur (24 × 22). */
+export const COEUR_TRACE = "M12 21L2.5 11.5C-1 8 1.5 1.5 6.5 1.5C9 1.5 10.8 3 12 5C13.2 3 15 1.5 17.5 1.5C22.5 1.5 25 8 21.5 11.5Z";
+
+export function Ornements({ o, taille = 11, etiquettes = true }: { o: O | null | undefined; taille?: number; etiquettes?: boolean }) {
+  if (!aDesOrnements(o)) return null;
+  const serie = o.serie ?? 0;
+  const a = o.accessoire;
+  // (la boîte de sa tête, en pourcentages du cadre de sa figurine)
+  const dans = ([x, y, l, h]: [number, number, number, number]): CSSProperties => ({ left: `${x * 100}%`, top: `${y * 100}%`, width: `${l * 100}%`, height: `${h * 100}%` });
+  return (
+    <span className="orn" aria-hidden="true" data-ornements={[serie >= SERIE_AUREOLE ? "aureole" : "", a?.theme ?? "", o.coeur ? "coeur" : ""].filter(Boolean).join(" ")}>
+      {piecesDesOrnements(o).map((p) => (
+        <svg key={p.cle} className={`orn-svg${p.classe ? ` ${p.classe}` : ""}`} viewBox={p.vue.join(" ")} preserveAspectRatio={p.ajuste} style={dans(p.boite)} {...p.data}>
+          {p.contenu}
         </svg>
-      )}
-      {b && o.coeur && (
-        <svg className="orn-svg orn-coeur" viewBox="0 0 24 22" style={dans(b[0] + b[2] * 0.14, b[1] + b[3] * 1.24, b[2] * 0.22, b[3] * 0.2)} data-coeur>
-          <path d="M12 21L2.5 11.5C-1 8 1.5 1.5 6.5 1.5C9 1.5 10.8 3 12 5C13.2 3 15 1.5 17.5 1.5C22.5 1.5 25 8 21.5 11.5Z" fill="#ff2e9a" stroke="#fff4e6" strokeWidth="1.6" />
-        </svg>
-      )}
+      ))}
       {etiquettes && serie >= SERIE_MIN && (
         <i className="orn-serie" style={{ fontSize: taille }} data-serie={serie}>
           🔥 {serie}
