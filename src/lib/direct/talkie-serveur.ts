@@ -1093,11 +1093,26 @@ export async function modererMessage(supabase: Supabase, id: unknown, geste: unk
 }
 
 // ─── ✍️ (lot M1) ce qu'on mesure des messages, jour par jour ───────────────────────────────────────
+/**
+ * DEUX RANGEMENTS, ET CHAQUE AJOUT DANS UN SEUL (25 novembre 2026) :
+ *   · `clik_stats_messages` (migration `20261125170000_clik_stats_messages.sql`) : une ligne par jour et par compteur,
+ *     ajoutée en une requête (`compter_stats_messages`), sans relire avant d'écrire : deux ajouts en même temps
+ *     comptent bien deux (l'aperçu d'un lien se prépare en arrière-plan, pendant qu'on efface : l'un des deux se
+ *     perdait) ;
+ *   · `stats/messages/<jour>.json` : l'ancien fichier (relire, puis écrire), seulement tant que la migration n'est pas
+ *     appliquée — et les jours d'avant.
+ * La lecture additionne les deux : rien n'est compté deux fois, puisque chaque ajout ne va que dans l'un.
+ */
 const cheminStatsMessages = (jour: string) => `stats/messages/${jour}.json`;
-/** Des compteurs du jour, de plus, en une seule écriture (relire, puis écrire : la dernière gagne, accepté pour une mesure). */
+const CLES_STATS_MESSAGES = Object.keys(STATS_MESSAGES_VIDES) as (keyof StatsJourMessages)[];
+/** Des compteurs du jour, de plus. */
 export async function noterStatsMessages(supabase: Supabase, plus: Partial<StatsJourMessages>): Promise<void> {
-  const cles = (Object.keys(plus) as (keyof StatsJourMessages)[]).filter((k) => plus[k]);
+  const cles = CLES_STATS_MESSAGES.filter((k) => Number.isFinite(plus[k]) && (plus[k] ?? 0) > 0);
   if (!cles.length) return;
+  const ajout = Object.fromEntries(cles.map((k) => [k, Math.round(plus[k] ?? 0)]));
+  const { error } = await Promise.resolve(supabase.rpc("compter_stats_messages", { plus: ajout })).catch((e: unknown) => ({ error: e }));
+  if (!error) return;
+  // (la migration n'est pas encore appliquée : l'ancien fichier)
   const jour = jourParis();
   const x = await lireJson<Partial<StatsJourMessages>>(supabase, cheminStatsMessages(jour));
   const neuf: StatsJourMessages = { ...STATS_MESSAGES_VIDES, ...x };
@@ -1107,10 +1122,24 @@ export async function noterStatsMessages(supabase: Supabase, plus: Partial<Stats
 /** 📊 Les messages, jour par jour (la page des mesures) : écrits, vocaux, liens avec et sans aperçu, effacés. */
 export async function statsMessages(supabase: Supabase, jours = 14): Promise<{ jour: string; stats: StatsJourMessages }[]> {
   const aujourdhui = jourParis();
+  const liste = Array.from({ length: jours }, (_, k) => new Date(Date.parse(`${aujourdhui}T12:00:00Z`) - k * 86_400_000).toISOString().slice(0, 10));
+  const { data } = await Promise.resolve(
+    supabase
+      .from("clik_stats_messages")
+      .select("jour, cle, n")
+      .gte("jour", liste[liste.length - 1] ?? aujourdhui),
+  ).catch(() => ({ data: null }));
+  const lignes = (Array.isArray(data) ? data : []) as { jour?: unknown; cle?: unknown; n?: unknown }[];
   return Promise.all(
-    Array.from({ length: jours }, async (_, k) => {
-      const jour = new Date(Date.parse(`${aujourdhui}T12:00:00Z`) - k * 86_400_000).toISOString().slice(0, 10);
-      return { jour, stats: { ...STATS_MESSAGES_VIDES, ...(await lireJson<Partial<StatsJourMessages>>(supabase, cheminStatsMessages(jour))) } };
+    liste.map(async (jour) => {
+      const x = await lireJson<Partial<StatsJourMessages>>(supabase, cheminStatsMessages(jour));
+      const stats: StatsJourMessages = { ...STATS_MESSAGES_VIDES };
+      for (const k of CLES_STATS_MESSAGES) stats[k] = Number(x[k]) || 0;
+      for (const l of lignes) {
+        const k = String(l.cle) as keyof StatsJourMessages;
+        if (String(l.jour).slice(0, 10) === jour && CLES_STATS_MESSAGES.includes(k)) stats[k] += Number(l.n) || 0;
+      }
+      return { jour, stats };
     }),
   );
 }

@@ -20,7 +20,7 @@
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { lancerSecondeApp } from "./seconde-app.mjs";
-import { recus, telephone } from "./navigateur/commun.mjs";
+import { recus, telephone, statsMessagesDuJour } from "./navigateur/commun.mjs";
 import { mp4Essai, webmEssai } from "./fixtures/videos-essai.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -207,7 +207,7 @@ ok(
 );
 
 // ═══ 📊 LA MESURE ═══
-const st = await lire(`stats/messages/${jourParis}.json`);
+const st = await statsMessagesDuJour(jourParis, lire);
 ok(st?.videos >= 4 && st.videosRefusees >= 1 && st.videosNonVerifiees >= 1 && st.videosKo > 200, `les compteurs du jour : ${st?.videos} vidéos, ${st?.videosRefusees} refusée(s), ${st?.videosNonVerifiees} non vérifiée(s), ${st?.videosKo} Ko`);
 
 // ═══ LE FREIN ═══
