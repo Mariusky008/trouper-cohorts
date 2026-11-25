@@ -29,7 +29,7 @@
  * pastille), sa tête copiée en direct chez ceux qui regardent avec lui, la ligne du temps sous la télé, « 💬 Ce qui s'est
  * dit » (toucher une ligne revoit le moment), et sa vraie voix à la seconde (le micro de la barre d'écriture).
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
@@ -89,6 +89,9 @@ type Etat =
   | { etat: "exclu" }
   | { etat: "erreur"; message: string }
   | { etat: "pret"; o: OuvertureSalonOuvert };
+/** ⚡ (25 novembre 2026) l'entrée faite par le serveur avant d'envoyer la page (`page.tsx`) : l'écran arrive prêt. */
+export type EtatSalonOuvert = Exclude<Etat, { etat: "chargement" }>;
+const rien = () => () => {};
 
 /** ⭐ (le lot B) ma télé du jour : une vidéo vue, une réaction gardée (`/api/direct/tele-du-jour`). */
 const posterTele = (corps: Record<string, unknown>) =>
@@ -140,8 +143,15 @@ function sortir(salon: string) {
   }
 }
 
-export function SalonOuvert({ theme, chez, place, video }: { theme?: string; chez?: string; place?: string; video?: string }) {
-  const [etat, setEtat] = useState<Etat>({ etat: "chargement" });
+export function SalonOuvert({ theme, chez, place, video, initial }: { theme?: string; chez?: string; place?: string; video?: string; initial?: EtatSalonOuvert }) {
+  // ⚡ (25 novembre 2026, le propriétaire : « quand on clique sur M'asseoir, j'ai d'abord un écran complètement inutile
+  // qui stipule le thème […] et qui fait perdre du temps pour rien ») le serveur est déjà entré (`initial`) : plus
+  // d'écran du thème, plus d'aller-retour. Sans `initial` (une panne côté serveur), l'écran entre lui-même, comme avant.
+  const [etat, setEtat] = useState<Etat>(initial ?? { etat: "chargement" });
+  const dejaEntre = useRef(Boolean(initial));
+  // (le salon lit l'heure, l'écran et le stockage du téléphone : il se monte une fois la page reprise par le téléphone —
+  // d'ici là, la même pièce, vide : la télé noire, le titre du salon)
+  const monte = useSyncExternalStore(rien, () => true, () => false);
   const entrer = useCallback(async () => {
     // (🎬 lot D2 : chez moi, ou chez un proche qui m'a invité ; ➕ le lot B : la place libre d'un lien WhatsApp)
     const r = await poster(chez ? { action: "entrer-chez", chez, ...(place ? { place } : {}), ...(video ? { video } : {}) } : { action: "entrer", theme });
@@ -153,18 +163,34 @@ export function SalonOuvert({ theme, chez, place, video }: { theme?: string; che
     setEtat({ etat: "erreur", message: String(r.j.error || "Ça n’a pas marché. Réessaie.") });
   }, [theme, chez, place, video]);
   useEffect(() => {
+    if (dejaEntre.current) return;
+    dejaEntre.current = true;
     void Promise.resolve().then(entrer);
   }, [entrer]);
 
   const t = themeDe(theme);
-  if (etat.etat === "pret") return <Salon key={etat.o.salon.id} o={etat.o} onDehors={() => void entrer()} onExclu={() => setEtat({ etat: "exclu" })} />;
+  if (etat.etat === "pret" && monte) return <Salon key={etat.o.salon.id} o={etat.o} onDehors={() => void entrer()} onExclu={() => setEtat({ etat: "exclu" })} />;
+  if (etat.etat === "pret" || etat.etat === "chargement")
+    return (
+      <main className="so so-arrivee" data-etat={etat.etat === "pret" ? "arrivee" : "chargement"} aria-busy="true">
+        <header className="so-haut">
+          <a className="so-rond" href="/collection#decouvrir" aria-label="Revenir à Découvrir">
+            ‹
+          </a>
+          <div className="so-titre">{etat.etat === "pret" && <b>{etat.o.salon.nom}</b>}</div>
+        </header>
+        <div className="so-scene">
+          <div className="so-tele so-tele-attente" />
+        </div>
+        <style>{STYLES}</style>
+      </main>
+    );
   return (
     <main className="so so-centre" data-etat={etat.etat}>
       <a className="so-retour" href="/collection#decouvrir" aria-label="Revenir à Découvrir">
         ‹
       </a>
       <p className="so-grand">{chez ? "🎬" : t ? `${t.e} ${t.nom}` : "🛋️"}</p>
-      {etat.etat === "chargement" && <p>…</p>}
       {etat.etat === "age" && (
         <div className="so-age" data-age>
           <p>{P.age}</p>
@@ -2169,6 +2195,7 @@ function Affiche({ v, action, attente }: { v: VideoSalon; action?: { nom: string
 const STYLES = `
 .so{min-height:100dvh;max-width:820px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 0 calc(16px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;overflow-x:hidden;position:relative}
 .so-centre{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 20px;text-align:center}
+.so-tele-attente{width:100%;aspect-ratio:16/9}
 .so-grand{font-size:22px;font-weight:900;margin:0}
 .so-retour{position:absolute;left:14px;top:calc(12px + env(safe-area-inset-top));color:#FFF4E6;text-decoration:none;font-size:28px;font-weight:900}
 .so-age{display:flex;flex-direction:column;gap:10px;max-width:340px}

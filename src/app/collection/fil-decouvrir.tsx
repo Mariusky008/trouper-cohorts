@@ -165,6 +165,13 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
     }
   }, [courante, visible]);
 
+  // (⚡ revenu par « ‹ Retour » du navigateur, la page gardée telle quelle : « M'asseoir » ne clignote plus)
+  useEffect(() => {
+    const revenu = () => document.querySelectorAll("[data-part]").forEach((x) => x.removeAttribute("data-part"));
+    window.addEventListener("pageshow", revenu);
+    return () => window.removeEventListener("pageshow", revenu);
+  }, []);
+
   // 💓 dans le salon où elle est entrée : il redit qu'il est là, et les nouvelles bulles arrivent (toutes les 6 s)
   useEffect(() => {
     if (!visible || !courante.startsWith("s:")) return;
@@ -510,7 +517,7 @@ function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoind
         <h2 data-titre-seance>{titreDeSeance(p)}</h2>
         <p>{p.invite ? P.seanceInvite : p.demande ? P.seanceDemande(p.hote) : P.seanceSous(p.hote)}</p>
         {p.invite ? (
-          <a className="fd-bouton" href={`/univers/salons?chez=${encodeURIComponent(p.cle)}`} data-asseoir-seance>
+          <a className="fd-bouton" href={`/univers/salons?chez=${encodeURIComponent(p.cle)}`} data-asseoir-seance onClick={partir}>
             {P.asseoirAvecEux(n)}
           </a>
         ) : p.demande ? (
@@ -529,6 +536,10 @@ function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoind
 
 /** Une fraction (0 à 1) en pourcentage, pour placer dans la pièce. */
 const pc = (x: number) => `${(x * 100).toFixed(2)}%`;
+/** ⚡ (25 novembre 2026) le toucher de « M'asseoir » se voit tout de suite : le serveur entre pendant ce temps */
+const partir = (e: React.MouseEvent<HTMLElement>) => {
+  if (!e.metaKey && !e.ctrlKey && !e.shiftKey) e.currentTarget.setAttribute("data-part", "");
+};
 
 /**
  * 🛋️ Un salon : sa pièce — la télé, et devant elle les places (celles qui sont prises : leurs figurines ; les autres :
@@ -635,7 +646,7 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
             })}
             {/* ✨ sa place : elle brille, la toucher, c'est s'asseoir */}
             {!assis && ici && (
-              <a className="fd-ta-place" href={salon} data-ta-place style={{ left: pc(ici.x), top: pc(ici.y), height: pc(ici.hauteur) }} aria-label={P.asseoirIci}>
+              <a className="fd-ta-place" href={salon} data-ta-place onClick={partir} style={{ left: pc(ici.x), top: pc(ici.y), height: pc(ici.hauteur) }} aria-label={P.asseoirIci}>
                 <svg viewBox="0 0 64 88" aria-hidden="true">
                   <circle cx="32" cy="24" r="20" />
                   <rect x="11" y="47" width="42" height="38" rx="17" />
@@ -664,7 +675,7 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
         </h2>
         <p data-sous>{!vide ? P.places(libres) : musique ? P.radioTourne : passes.length ? P.yEtaient(passes) : P.premier}</p>
         <span className="fd-boutons">
-          <a className="fd-bouton" href={salon} data-asseoir>
+          <a className="fd-bouton" href={salon} data-asseoir onClick={partir}>
             {musique ? P.entrerDanser : P.asseoir}
           </a>
           <button type="button" className="fd-bouton fd-second" data-inviter onClick={onInviter}>
@@ -775,6 +786,8 @@ export const STYLES_FIL = `
 .fd-fauteuil .bras{bottom:0;width:20%;height:62%;border-radius:10px;background:linear-gradient(180deg,#6a2a45,#4a1b30)}
 .fd-fauteuil .bras.g{left:0}.fd-fauteuil .bras.d{right:0}
 .fd-fauteuil.sienne::before{content:"";position:absolute;left:-40%;right:-40%;bottom:-30%;height:80%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,46,154,.6),rgba(255,46,154,0));animation:fd-brille 2.2s ease-in-out infinite}
+[data-part]{animation:fd-part .9s ease-in-out infinite;pointer-events:none}
+@keyframes fd-part{50%{opacity:.55;transform:scale(.97)}}
 .fd-ta-place{position:absolute;z-index:2;translate:-50% -100%;display:flex;flex-direction:column;align-items:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
 .fd-ta-place svg{height:100%;width:auto;overflow:visible}
 .fd-ta-place circle,.fd-ta-place rect{fill:rgba(255,46,154,.16);stroke:#FF2E9A;stroke-width:2.5;stroke-dasharray:5 4}

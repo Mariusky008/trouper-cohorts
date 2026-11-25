@@ -243,7 +243,26 @@ destiné, c'est suffisant » (la rangée « À suivre sur la télé » de la maq
 huit de la cuisine vide, « Inviter », « Toi » après s'être assise, sa figurine au bord seulement hors des salons, et sur
 un ordinateur la pièce à gauche et le salon à droite) ; `proches-en-direct.mjs` trouve sa figurine par « Toi ».
 
-## 9. Décidé aussi
+## 9. Plus d'écran entre « M'asseoir » et le salon (25 novembre 2026)
+
+**Le constat du propriétaire** : « quand on clique sur M'asseoir, j'ai d'abord un écran complètement inutile qui
+stipule le thème, comme Séries et films, et qui fait perdre du temps pour rien. » Cet écran (« 🎬 Séries et films … »)
+attendait que le téléphone ait chargé la page, puis demandé au serveur de faire entrer sa figurine.
+
+- **Le serveur entre avant d'envoyer la page** (`src/app/univers/salons/page.tsx`, `entreeDuServeur`) : la même
+  entrée que l'action `entrer` (un salon) ou `entrer-chez` (une séance). La page arrive avec le salon prêt et sa place
+  prise. Il n'y a plus d'aller-retour en plus.
+- **Le temps que le téléphone reprenne la page** (une fraction de seconde), on voit la pièce encore vide : le titre du
+  salon et la télé noire, jamais le thème en grand (`SalonOuvert`, `initial`).
+- Les autres écrans ne changent pas : son âge à dire, sa figurine à créer (sans compte, arrivé par un lien), exclu.
+  Si l'entrée échoue côté serveur, le téléphone la refait lui-même, comme avant.
+- **Dans le fil**, « M'asseoir », « Ta place » et « M'asseoir avec eux » d'une séance réagissent tout de suite au toucher : ils
+  battent doucement pendant que le serveur fait entrer sa figurine (`data-part`).
+
+**L'essai** : `scripts/navigateur/salons-ouverts.mjs` vérifie qu'en entrant dans le salon du foot, on ne voit jamais
+l'écran du thème et que le téléphone n'envoie aucune demande d'entrée. Sans ce changement, l'essai échoue.
+
+## 10. Décidé aussi
 
 - **Décidé par le propriétaire (25 novembre 2026) : l'appli s'ouvre sur le fil de Découvrir**, plus sur « Messages »
   (`ma-collection.tsx`, à l'ouverture sans adresse). Trois exceptions : pendant que sa figurine se fabrique, rien ne
