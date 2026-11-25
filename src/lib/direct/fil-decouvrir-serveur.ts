@@ -8,7 +8,9 @@
  * - sa figurine à lui, avec la tête de son humeur : elle est au bord de chaque pièce ;
  * - ce qui l'attend ailleurs : une invitation devant la télé d'un proche, des demandes de proche ;
  * - 🏡 (lot F2) les maisons ouvertes de ceux de son âge qui partagent une de ses passions (`maisonsPourLeFil`) ;
- * - 🎬 (lot F3) les séances en cours chez ses proches (`seancesDesProches`) : d'abord dans le fil ;
+ * - 🎬 (lot F3) les séances en cours chez ses proches (`seancesDesProches`) ;
+ * - 🧭 (lot F4) l'ordre (`ordreDuFil`) : ses proches en direct (leurs séances, les salons où ils sont), l'humeur de ses
+ *   proches, ses passions, les maisons, Autour, les autres salons, puis ceux sans personne ; jamais deux fois de suite ;
  * - 🎁🚪 (lot F2) la surprise d'une visite qui l'attend dans « Messages » (un cadeau, quelqu'un qui a frappé) ;
  * - 🪑 à la fin, tous les autres salons, sans personne en ce moment (ses passions, la musique, le reste), avec ce qui s'y
  *   est dit aujourd'hui : on peut s'y asseoir le premier sans passer par « Tous les salons ».
@@ -21,14 +23,14 @@ import { salonsOuverts } from "./interrupteurs-serveur";
 import { mesDemandes, mesInvitations, salonsEnDirect, seancesDesProches } from "./salons-ouverts-serveur";
 import { carteDesFigurines, figurinesDuLieu } from "./autour-serveur";
 import { lireLigne, prenomDe, prochesDe, saFigurineSignee } from "./ma-figurine-serveur";
-import { humeurDuJour, poserProfil, seParlent } from "./talkie-serveur";
+import { humeurDuJour, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison, teteDeLaMaison } from "./ma-maison-serveur";
 import { pancarteDe } from "./mon-double-serveur";
 import { humeurDe } from "./rituel";
 import { estDouce } from "./humeur-reponse";
 import { maisonsPourLeFil, mesVisites } from "./visites-serveur";
 import { themeDe } from "./decouvrir";
-import { PIECES_MAX, ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type MaisonFil, type PieceFil, type ProcheHumeurFil, type SeanceFil, type SilhouetteFil } from "./fil-decouvrir";
+import { ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type MaisonFil, type PieceFil, type ProcheHumeurFil, type SalonFil, type SeanceFil, type SilhouetteFil } from "./fil-decouvrir";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -99,7 +101,16 @@ async function surpriseDeVisite(supabase: Supabase, moi: Habitant): Promise<FilV
   return toc ? { genre: "toc", prenom: toc.prenom } : undefined;
 }
 
-/** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`, puis les salons sans personne), et sa figurine. */
+/** 🧭 (lot F4) Ses proches (des deux côtés) qui sont dans ces salons en ce moment : leurs identifiants courts. */
+async function prochesDansLesSalons(supabase: Supabase, moi: Habitant, salons: SalonFil[]): Promise<Set<string>> {
+  const ici = new Set(salons.flatMap((x) => x.presents.map((p) => p.q)));
+  if (!ici.size) return new Set();
+  const miens = [...(await prochesDe(supabase, moi.id))].filter((h) => h !== moi.id && ici.has(qui8(h))).slice(0, 30);
+  const parlent = await Promise.all(miens.map((h) => seParlent(supabase, moi.id, h).catch(() => false)));
+  return new Set(miens.filter((_, i) => parlent[i]).map(qui8));
+}
+
+/** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`, lot F4), et sa figurine. */
 export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<FilVue> {
   const ouverts = salonsOuverts();
   const [prenom, figurine, direct, autour, humeurs, invitations, demandes, maisons, surprise, seances] = await Promise.all([
@@ -114,17 +125,26 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
     surpriseDeVisite(supabase, moi).catch(() => undefined),
     seancesDesProches(supabase, moi).catch(() => [] as SeanceFil[]),
   ]);
-  const vivants = direct.salons.filter((x) => x.presents.length);
+  const proches = await prochesDansLesSalons(supabase, moi, direct.salons).catch(() => new Set<string>());
+  const vivants = direct.salons
+    .filter((x) => x.presents.length)
+    .map((x): SalonFil => {
+      const la = x.presents.filter((p) => proches.has(p.q)).map((p) => p.prenom);
+      return la.length ? { ...x, proches: la } : x;
+    });
   const vides = direct.salons.filter((x) => !x.presents.length);
-  const passions = vivants.filter((x) => x.mien);
-  const autres = vivants.filter((x) => !x.mien);
+  // (🧭 lot F4 : ses proches en direct — leurs séances, les salons où ils sont —, l'humeur de ses proches, ses passions,
+  // les maisons, Autour, les autres salons ; puis ceux sans personne)
+  const avecProches = vivants.filter((x) => x.proches);
+  const passions = vivants.filter((x) => !x.proches && x.mien);
+  const autres = vivants.filter((x) => !x.proches && !x.mien);
   const humeur: HumeurFil[] = humeurs.length ? [{ sorte: "humeur", proches: humeurs }] : [];
-  const groupes: PieceFil[][] = [seances, passions, humeur, maisons, autour, autres];
+  const groupes: PieceFil[][] = [seances, avecProches, humeur, passions, maisons, autour, autres, vides];
   const inv = invitations[0];
   return {
     moi: { prenom: prenom || "Toi", figurine },
     ...(direct.age ? { age: true as const } : {}),
-    pieces: [...ordreDuFil(groupes), ...vides].slice(0, PIECES_MAX),
+    pieces: ordreDuFil(groupes),
     ...(inv ? { invitation: { cle: inv.cle, prenom: inv.prenom } } : {}),
     ...(demandes.length ? { demandes: demandes.length } : {}),
     ...(surprise ? { surprise } : {}),

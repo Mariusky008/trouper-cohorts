@@ -17,7 +17,7 @@
  * par « Tous les salons ». 🏡 Le lot F2 (25 novembre 2026) : les maisons ouvertes de ceux de son âge qui partagent une de
  * ses passions (frapper, faire coucou), et la surprise d'une visite. 🎬 Le lot F3 (25 novembre 2026) : les séances en
  * cours chez ses proches (« Léa et Sam regardent ensemble », « Demander à les rejoindre ») ; et, quand sa figurine entre
- * dans un salon, ceux qui y sont lui font signe d'un toucher. L'ordre fin (F4) viendra après.
+ * dans un salon, ceux qui y sont lui font signe d'un toucher. 🧭 Le lot F4 : l'ordre du fil (`ordreDuFil`).
  */
 import type { IdTheme } from "./decouvrir";
 import type { PlaceGradin } from "./salons-gradins";
@@ -53,6 +53,8 @@ export type SalonFil = {
   gradin: { src: string; flou: string; places: PlaceGradin[] } | null;
   /** ce qui passe à sa télé, à la même seconde pour tous */
   video: { id: string; titre: string } | null;
+  /** 🧭 (lot F4) ses proches qui y sont en ce moment (leur prénom) : le salon vient en premier dans son fil */
+  proches?: string[];
   /** 🎵 le salon de la musique : le morceau proposé qui passe, et qui l'a choisi (sans : la radio du salon) */
   morceau?: { titre: string; prenom: string } | null;
 };
@@ -118,19 +120,19 @@ export const BULLES_FRAICHES_MS = 10 * 60_000;
 export const TRACES_MS = 24 * 3600_000;
 
 /**
- * L'ordre du fil (F1, simple ; le lot F4 l'affinera) : les salons de ses passions, l'humeur de ses proches, Autour, les
- * autres salons — un de chaque à tour de rôle, pour que deux pièces de la même sorte ne se suivent pas quand il y en a
- * d'autres.
+ * 🧭 L'ORDRE DU FIL (le lot F4, 25 novembre 2026 ; `docs/univers/fil.md`, section 7). Les groupes arrivent dans l'ordre
+ * voulu par le propriétaire : d'abord ses proches en direct (leurs séances, les salons où ils sont), l'humeur de ses
+ * proches, puis ses passions, puis les maisons, puis Autour, puis les autres salons où il y a quelqu'un, et enfin les
+ * salons sans personne. « Rien ne revient deux fois de suite » : à chaque pas, la première pièce (dans cet ordre) d'une
+ * autre sorte que la précédente ; s'il n'en reste que de la même sorte, la suivante.
  */
 export function ordreDuFil(groupes: PieceFil[][], max = PIECES_MAX): PieceFil[] {
-  const files = groupes.map((g) => [...g]);
+  const reste = groupes.flat();
   const fil: PieceFil[] = [];
-  while (fil.length < max && files.some((f) => f.length)) {
-    for (const f of files) {
-      const x = f.shift();
-      if (x) fil.push(x);
-      if (fil.length >= max) break;
-    }
+  while (fil.length < max && reste.length) {
+    const avant = fil[fil.length - 1];
+    const k = avant ? reste.findIndex((p) => p.sorte !== avant.sorte) : 0;
+    fil.push(reste.splice(Math.max(0, k), 1)[0]);
   }
   return fil;
 }
@@ -210,4 +212,6 @@ export const PHRASES_FIL = {
   rejoindreNotifCorps: "Fais-lui une place d’un toucher, depuis ta télé.",
   // 👋 (lot F3) faire signe à celui qui arrive
   teFaitSigne: (prenom: string) => `👋 ${prenom} te fait signe`,
+  // 🧭 (lot F4) ses proches dans un salon ouvert
+  prochesLa: (prenoms: string[]) => `👋 ${listePrenoms(prenoms)} ${prenoms.length > 1 ? "sont là" : "est là"}`,
 } as const;
