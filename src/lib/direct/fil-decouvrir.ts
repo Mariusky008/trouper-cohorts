@@ -164,7 +164,7 @@ export const PHRASES_FIL = {
   asseoirIci: "M’asseoir à ma place",
   toi: "Toi",
   inviter: "Inviter",
-  invitationSalon: (nom: string) => `Viens t’asseoir avec moi dans ${nom.replace(/^(Le|La|Les) /, (m) => m.toLowerCase())}, sur ClikMe 🛋️`,
+  invitationSalon: (nom: string) => `Viens t’asseoir avec moi dans ${String(nom).replace(/^(Le|La|Les) /, (m) => m.toLowerCase())}, sur ClikMe 🛋️`,
   lienCopie: "Lien copié : envoie-le à qui tu veux",
   entrerDanser: "Entrer danser",
   radio: "📻 La radio du salon",
