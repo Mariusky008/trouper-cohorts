@@ -22,6 +22,9 @@ les gestes, le talkie-walkie, les mèmes dans la pièce, la télé, les cadres, 
 **Si vous travaillez sur « Ma maison »** (la pièce de chacun, le catalogue des neuf pièces, l'inscription « Choisis ta
 pièce », la maison qui se remplit avec ce qu'on garde), lisez d'abord `docs/univers/ma-maison.md`.
 
+**Si vous travaillez sur « Ma figurine »** (mon double du jour : sa tête du jour, sa pancarte, le miroir, la même
+figurine partout ; le bouton « ✨ Ma figurine » de Ma maison), lisez d'abord `docs/univers/ma-figurine.md`.
+
 **Si vous travaillez sur « Découvrir »** (ma télé du jour dans ma pièce, les passions, les salons ouverts par thème),
 lisez d'abord `docs/univers/decouvrir.md`. **Le fil « de pièce en pièce »** (l'onglet Découvrir depuis le 23 novembre
 2026 : on glisse de pièce en pièce, sa figurine au bord) : `docs/univers/fil.md`.

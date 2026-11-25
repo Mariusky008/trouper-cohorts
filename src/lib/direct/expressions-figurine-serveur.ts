@@ -31,8 +31,8 @@ import { consigneVisageAssiseLibre } from "./perso-consignes";
 import { prendre, rendre } from "./pieces-duo-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
 import { EXPRESSIONS_VISAGE } from "./visage-essai";
-import { EXPRESSIONS_FIGURINE, RATTRAPAGE_EXPRESSIONS, expressionDeLHumeur, type EtatExpressionsHabitants, type ExpressionFigurine, type ExpressionsFigurine, type ExpressionsHabitantVue, type FigurineVivante, type TeteDuJour } from "./expressions-figurine";
-import { humeurDuJour } from "./talkie-serveur";
+import { EXPRESSIONS_FIGURINE, RATTRAPAGE_EXPRESSIONS, type EtatExpressionsHabitants, type ExpressionFigurine, type ExpressionsFigurine, type ExpressionsHabitantVue, type FigurineVivante, type TeteDuJour } from "./expressions-figurine";
+import { teteChoisieDuJour } from "./mon-double-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -210,24 +210,23 @@ export async function sesExpressions(supabase: Supabase, h: string): Promise<{ e
  * l'expression de son humeur du jour, si elle est prête (lue en même temps : pas un aller-retour de plus).
  */
 export async function figurineVivante(supabase: Supabase, h: string): Promise<FigurineVivante | null> {
-  const humeurP = humeurDuJour(supabase, h).catch(() => null);
+  const humeurP = teteChoisieDuJour(supabase, h).catch(() => null);
   const chemin = await cheminFigurineAssise(supabase, h);
   if (!chemin) return null;
-  const [calques, etat, humeur] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), lireEtat(supabase, h, empreinteDe(chemin)), humeurP]);
+  const [calques, etat, du] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), lireEtat(supabase, h, empreinteDe(chemin)), humeurP]);
   if (!calques || !etat.corpsSansTete || !lesCinq.every((x) => etat.tetes[x]) || !memeDecoupe(etat, calques)) return null;
   const expressions = Object.fromEntries(lesSept.filter((x) => etat.tetes[x]).map((x) => [x, etat.tetes[x]])) as FigurineVivante["expressions"];
-  const du = expressionDeLHumeur(humeur);
   return { ratio: calques.ratio, corps: etat.corpsSansTete, tete: { src: calques.tete.fichier, boite: calques.tete.boite, pivot: calques.tete.pivot }, expressions, ...(du && expressions[du] ? { humeur: du } : {}) };
 }
 
 /**
  * 🙂 SA TÊTE DU JOUR (22 novembre 2026) : l'expression de son humeur du jour, si elle est prête pour son image
  * d'aujourd'hui (rien n'est fabriqué ici) ; sinon `null` — sa tête habituelle. La messagerie et sa maison la posent à la
- * place de sa tête (le même cadrage, sur le même corps sans tête).
+ * place de sa tête (le même cadrage, sur le même corps sans tête). ✨ (25 novembre 2026, « Ma figurine ») La tête qu'il a
+ * choisie aujourd'hui passe avant celle de son humeur (`teteChoisieDuJour`).
  */
 export async function teteDuJour(supabase: Supabase, h: string): Promise<TeteDuJour | null> {
-  const [humeur, chemin] = await Promise.all([humeurDuJour(supabase, h).catch(() => null), cheminFigurineAssise(supabase, h).catch(() => null)]);
-  const e = expressionDeLHumeur(humeur);
+  const [e, chemin] = await Promise.all([teteChoisieDuJour(supabase, h).catch(() => null), cheminFigurineAssise(supabase, h).catch(() => null)]);
   if (!e || !chemin) return null;
   const etat = await lireEtat(supabase, h, empreinteDe(chemin));
   const src = etat.tetes[e];

@@ -25,6 +25,7 @@ import { carteDesFigurines, figurinesDuLieu } from "./autour-serveur";
 import { lireLigne, prenomDe, prochesDe, saFigurineSignee } from "./ma-figurine-serveur";
 import { humeurDuJour, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison, teteDeLaMaison } from "./ma-maison-serveur";
+import { pancarteDe } from "./mon-double-serveur";
 import { humeurDe } from "./rituel";
 import { estDouce } from "./humeur-reponse";
 import { maisonsPourLeFil, mesVisites } from "./visites-serveur";
@@ -34,12 +35,16 @@ import { ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type MaisonFil
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
-/** Sa figurine telle que le fil la montre : la tête de son humeur posée sur son corps, sinon sa figurine assise. */
+/**
+ * Sa figurine telle que le fil la montre : sa tête du jour (✨ choisie dans « Ma figurine », sinon celle de son humeur)
+ * posée sur son corps, sinon sa figurine assise ; ✨ et sa pancarte, s'il en a une.
+ */
 export async function silhouetteDuFil(supabase: Supabase, h: string): Promise<SilhouetteFil | null> {
-  const [tete, assise] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), figurineDeLaMaison(supabase, h).catch(() => null)]);
-  if (tete) return { tete: tete.src, corps: { src: tete.corps, ratio: tete.ratio, boite: tete.boite } };
+  const [tete, assise, pancarte] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), figurineDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => "")]);
+  const p = pancarte ? { pancarte } : {};
+  if (tete) return { tete: tete.src, corps: { src: tete.corps, ratio: tete.ratio, boite: tete.boite }, ...p };
   const image = assise?.src || (await saFigurineSignee(supabase, h).catch(() => ""));
-  return image ? { tete: image, image } : null;
+  return image ? { tete: image, image, ...p } : null;
 }
 
 /** ☀️ Ses proches (ceux à qui il parle) qui ont dit leur humeur aujourd'hui — les plus doux d'abord : on leur répond. */

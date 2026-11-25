@@ -101,6 +101,8 @@ export type MaMaisonVue = {
    * l'expression (`src`) posée dans la boîte de ma tête (`boite`, de 0 à 1 dans le cadre du corps) — quand elle est prête.
    */
   tete?: TeteMaison;
+  /** ✨ (« Ma figurine », 25 novembre 2026) ma pancarte (partout), et si j'ai préparé mon double aujourd'hui (chez moi) */
+  double?: { pancarte?: string; pret?: boolean };
   /** 🚪 (lot M5) qui a frappé pendant mon absence (des prénoms, jamais un nombre de visites) */
   absence?: string[];
   /** 🎁 (lot M5) sur la table basse : les cadeaux de mes proches — à ouvrir (`attente`), ou gardés */

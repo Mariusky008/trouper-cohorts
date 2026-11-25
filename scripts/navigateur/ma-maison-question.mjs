@@ -157,8 +157,10 @@ const chez = lea.locator('.mmc-scene[data-piece="salon"]');
 ok(await attendre(lea, async () => /Sam a répondu à ta question du jour/.test(await texte(chez.locator("[data-arrivee]"))), 10000), "💬 « Sam a répondu à ta question du jour »");
 await lea.screenshot({ path: `${D}/ma-maison-question-4-arrivee.png` });
 ok(await attendre(lea, async () => (await chez.locator("[data-arrivee]").count()) === 0, 12000), "… l'arrivée finie");
-const sienne = chez.locator('[data-geste="question"]');
-ok(await attendre(lea, async () => /❓ Question/.test(await texte(sienne)) && (await sienne.getAttribute("title")) === "💬 Ta question du jour"), "« ❓ Question » (« Ta question du jour »)");
+// (✨ « Ma figurine », 25 novembre 2026 : chez elle, la page s'épure — sa question du jour est dans « Pendant ton absence »)
+await chez.locator('[data-geste="absence"]').click();
+const sienne = lea.locator('.acm-toujours [data-geste="question"]');
+ok(await attendre(lea, async () => /❓ Question/.test(await texte(sienne))), "« Pendant ton absence » : « ❓ Question », sa question du jour");
 await sienne.click();
 const reponses = chez.locator('.mmc-bulle[data-bulle="question"]');
 ok(await attendre(lea, async () => /En vacances, tu es plutôt…/.test(await texte(reponses)) && /Sam : 🏖️ Plage/.test(await texte(reponses.locator("[data-reponse]")))), "… « Sam : 🏖️ Plage »");

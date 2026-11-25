@@ -177,7 +177,8 @@ export type FigurinePosee = {
   nomLieu?: string;
 };
 /** Ses têtes à choisir au moment de poser : son humeur du jour (s'il en a une), et ses expressions prêtes. */
-export type MesTetes = { humeur: { e: ExpressionFigurine; src: string; nom: string } | null; tetes: { cle: ExpressionFigurine; src: string; nom: string }[]; habituelle: string };
+/** (✨ 25 novembre 2026) `pancarte` : la phrase de sa figurine (« Ma figurine »), qui est son mot du jour — préremplie. */
+export type MesTetes = { humeur: { e: ExpressionFigurine; src: string; nom: string } | null; tetes: { cle: ExpressionFigurine; src: string; nom: string }[]; habituelle: string; pancarte?: string };
 /** L'identifiant d'une pose porte son heure (base 36, 8 signes) : elle s'en va 24 h après, sans ouvrir le fichier. */
 export const idDePose = (ms: number, hasard: string) => `${Math.floor(ms).toString(36).padStart(8, "0")}${hasard.replace(/[^a-z0-9]/g, "").slice(0, 4).padEnd(4, "0")}`;
 export const heureDePose = (id: string) => parseInt(id.slice(0, 8), 36) || 0;

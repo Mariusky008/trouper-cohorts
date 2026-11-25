@@ -540,7 +540,11 @@ export type LigneAbsence = { cle: string; e: string; texte: string; detail?: str
  * surprises sur la table, les réponses à sa question, ce qui est arrivé chez lui — chacun avec « Voir » ; jamais un compte
  * de visites.
  */
-export function PendantTonAbsence({ lignes, onFermer }: { lignes: LigneAbsence[]; onFermer: () => void }) {
+/**
+ * (✨ « Ma figurine », 25 novembre 2026 : `toujours` — ce qui était dans « Aujourd'hui, si tu veux », en bas de Ma maison :
+ * ma question du jour, mes vidéos à revoir ; toujours là, en puces, sous ce qu'on m'a laissé)
+ */
+export function PendantTonAbsence({ lignes, onFermer, toujours = [] }: { lignes: LigneAbsence[]; onFermer: () => void; toujours?: { cle: string; nom: string; faire: () => void }[] }) {
   return (
     <div className="acm" role="dialog" aria-modal="true" aria-label={PHRASES_BAS.absence} data-absence onClick={onFermer}>
       <div className="acm-feuille" onClick={(e) => e.stopPropagation()}>
@@ -573,6 +577,15 @@ export function PendantTonAbsence({ lignes, onFermer }: { lignes: LigneAbsence[]
             {PHRASES_BAS.absenceVide}
           </p>
         )}
+        {toujours.length > 0 && (
+          <div className="acm-toujours">
+            {toujours.map((t) => (
+              <button key={t.cle} type="button" data-geste={t.cle} onClick={t.faire}>
+                {t.nom}
+              </button>
+            ))}
+          </div>
+        )}
         <p className="acm-pied">{PHRASES_BAS.absencePied}</p>
       </div>
       <style>{STYLES_AJOUTER}</style>
@@ -589,6 +602,8 @@ const STYLES_AJOUTER = `
 .acm-videos span{padding:0 8px;font-size:12.5px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .acm-regarde-fait{margin:0;padding:12px 14px;border-radius:14px;background:rgba(69,212,131,.14);color:#c9f5dc;font-weight:800;font-size:15px;line-height:1.4}
 .acm-lien{display:block;text-align:center;text-decoration:none}
+.acm-toujours{display:flex;flex-wrap:wrap;gap:8px}
+.acm-toujours button{min-height:40px;padding:8px 13px;border:0;border-radius:14px;background:#33241a;box-shadow:inset 0 0 0 1px rgba(255,211,110,.35);color:#fbf3ea;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
 .acm-pied{margin:4px 0 0;color:#c9b29c;font-size:12.5px;line-height:1.4}
 .acm-absence{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .acm-absence li{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.07)}

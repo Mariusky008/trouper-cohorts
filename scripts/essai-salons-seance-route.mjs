@@ -159,7 +159,7 @@ ok(oB.presents.find((p) => p.q === oB.moi)?.maison === undefined, "… celle de 
 const mesSalons = await lire(`${ANA.id}/mes-salons.json`);
 ok(mesSalons.themes?.foot?.dernier > 0, "🏠 « Mes salons » d'Ana retient le foot");
 const maison = await appel(ANA, "/api/direct/ma-piece", null, COOKIE_ADMIN);
-ok(maison.maison?.salons?.[0]?.theme === "foot" && maison.maison.salons[0].e === "⚽", "… et sa maison le montre (un fanion ⚽)");
+ok(maison.maison?.salons?.[0]?.theme === "foot" && maison.maison.salons[0].e === "⚽", "… et sa maison le retient (⚽)");
 const mA = await poster(ANA, { action: "ecrire", salon: "foot-1", sorte: "texte", texte: "Quel but de Mbappé !" });
 const ID = mA.message?.id;
 ok(mA.statut === 200 && ID, "Ana : « Quel but de Mbappé ! »");

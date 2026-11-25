@@ -8,7 +8,7 @@
 // la suivante : le lecteur de Sam suit. Sa fiche est entière (« tout pour tous »). Entre proches, un lien part (rien n'est relu).
 // D5 : dans le salon du foot, Ben touche la bulle d'Ana : ❤️ ; trois cœurs, elle monte sur l'étagère (🗄️) ; « 📌
 // Garder ». La fiche d'Ana : ses passions, « 👯 Ajouter en proche », « 🏠 Voir sa maison ». Ana accepte dans Découvrir ;
-// sa maison montre le fanion ⚽ (« Mes salons »). Rien ne déborde, jamais le mot « exemple », aucune erreur.
+// sa maison retient le foot (« Mes salons » ; plus de fanions depuis « Ma figurine »). Rien ne déborde, jamais le mot « exemple », aucune erreur.
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { poserPiece } from "../piece-en-hauteur.mjs";
@@ -276,10 +276,14 @@ await demande.locator("[data-accepter]").click();
 ok(await attendre(ana, async () => /Ben et toi êtes proches/.test(await texte(ana.locator("[data-note-attente]"))) && (await ana.locator("#o-salons [data-demande]").count()) === 0, 8000), "« Accepter » : « Ben et toi êtes proches »");
 await ana.goto(`${BASE}/univers/maison`, { waitUntil: "domcontentloaded" });
 await fermerPablito(ana);
-ok(await attendre(ana, async () => (await ana.locator('[data-fanions] [data-fanion="foot"]').count()) === 1, 30000), "sa maison : le fanion ⚽ de « Mes salons »");
-ok(((await ana.locator('[data-fanion="foot"]').getAttribute("href")) ?? "") === "/univers/salons?theme=foot", "… qui ramène au salon du foot");
+// (✨ « Ma figurine », 25 novembre 2026 : sa maison s'épure — plus de fanions ; « Mes salons » reste retenu, et sa
+// figurine, au centre, porte son double du jour)
+ok(await attendre(ana, async () => (await ana.locator('[data-geste="ma-figurine"]').count()) === 1, 30000), "sa maison : « ✨ Ma figurine », au centre");
+ok((await ana.locator("[data-fanions]").count()) === 0, "… plus de fanions");
+const salonsRetenus = await ana.evaluate(async () => (await (await fetch("/api/direct/ma-piece")).json()).maison?.salons ?? []);
+ok(salonsRetenus[0]?.theme === "foot", "… « Mes salons » retient toujours le foot");
 await ana.waitForTimeout(400);
-await ana.screenshot({ path: `${D}/salons-seance-7-fanions.png` });
+await ana.screenshot({ path: `${D}/salons-seance-7-maison.png` });
 ok(!/exemple/i.test(await ana.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
 await ana.context().close();
 

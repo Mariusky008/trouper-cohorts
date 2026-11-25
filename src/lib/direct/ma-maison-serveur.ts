@@ -52,6 +52,7 @@ import type { PropositionRegarder } from "./regarder-a-deux";
 import { maBoiteARevoir } from "./revoir-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";
 import { teteDuJour } from "./expressions-figurine-serveur";
+import { sonDouble } from "./mon-double-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -170,12 +171,13 @@ export async function vignetteDeLaPiece(supabase: Supabase, p: PieceDuo): Promis
  * qui est posé (pas ce qui attend), et pas de « pendant ton absence ». 🙂 (22 novembre 2026) Et sa figurine qui fait la
  * tête de son humeur, quand elle est prête (`teteDeLaMaison`).
  */
-export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean; de?: string } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table" | "tete">> {
-  const [hum, visites, souvenirs, tete] = await Promise.all([
+export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?: number; visiteur?: boolean; de?: string } = {}): Promise<Pick<MaMaisonVue, "humeur" | "absence" | "table" | "tete" | "double">> {
+  const [hum, visites, souvenirs, tete, double] = await Promise.all([
     lireJson<{ jour?: string; visage?: string }>(supabase, `${h}/humeur.json`).catch(() => ({}) as { jour?: string; visage?: string }),
     o.visiteur ? Promise.resolve({} as { liste?: unknown }) : lireJson<{ liste?: unknown }>(supabase, `${h}/monde/visites.json`).catch(() => ({}) as { liste?: unknown }),
     lireJson<{ liste?: unknown }>(supabase, `${h}/monde/souvenirs.json`).catch(() => ({}) as { liste?: unknown }),
     teteDeLaMaison(supabase, h).catch(() => null),
+    sonDouble(supabase, h).catch(() => null),
   ]);
   const visage = hum.jour === jourParis() ? humeurDe(s(hum.visage) as Sentiment) : null;
   type Brut = { id?: string; de?: string; objet?: string; mot?: string; le?: string; accepte_le?: string };
@@ -191,7 +193,11 @@ export async function vieDeLaMaison(supabase: Supabase, h: string, o: { depuis?:
   const absence = [...new Set(passes.reverse().map((v) => prenoms.get(s(v.de)) ?? "Quelqu’un"))].slice(0, 3);
   return {
     ...(visage ? { humeur: { emoji: visage.emoji, nom: visage.court } } : {}),
-    ...(visage && tete ? { tete } : {}),
+    // (✨ « Ma figurine » : la tête choisie aujourd'hui, ou celle de son humeur — `teteDeLaMaison` ne rend rien sans l'une
+    // ni l'autre)
+    ...(tete ? { tete } : {}),
+    // (✨ sa pancarte, chez lui comme en visite ; chez lui, s'il a préparé son double aujourd'hui)
+    ...(double ? { double: { ...(double.pancarte ? { pancarte: double.pancarte } : {}), ...(o.visiteur ? {} : { pret: double.pret }) } } : {}),
     ...(absence.length ? { absence } : {}),
     ...(surTable.length
       ? {
