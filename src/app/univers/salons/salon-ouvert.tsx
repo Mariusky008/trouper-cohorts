@@ -41,6 +41,7 @@ import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
 import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/direct/visage-essai";
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
+import { Pancarte } from "@/app/collection/pancarte";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import {
@@ -1092,12 +1093,22 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     <FigurineVivanteVue v={souvenir.vivante} hauteur={x.h} e={exprF[souvenir.cle] ?? null} />
                   ) : enDirect ? (
                     <FigurineVivanteVue v={enDirect} hauteur={x.h} e={tetes[p.q] ?? null} />
+                  ) : p.tete ? (
+                    // (✨ « Ma figurine » : sa tête du jour, posée sur son corps sans sa tête — la même que partout)
+                    <span className="so-jour" style={{ height: x.h, width: Math.round(x.h * p.tete.ratio) }} data-tete-du-jour>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.tete.corps} alt="" draggable={false} />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img className="so-jour-tete" src={p.tete.src} alt="" draggable={false} style={{ left: `${p.tete.boite[0] * 100}%`, top: `${p.tete.boite[1] * 100}%`, width: `${p.tete.boite[2] * 100}%`, height: `${p.tete.boite[3] * 100}%` }} />
+                    </span>
                   ) : p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${Math.round(x.h)}px`} alt="" draggable={false} />
                   ) : (
                     <span className="so-sans">🪑</span>
                   )}
+                  {/* (🪧 « Ma figurine » : sa pancarte, au-dessus de sa tête) */}
+                  {p.pancarte && !souvenir && <Pancarte texte={p.pancarte} taille={Math.max(9, Math.min(13, x.h / 12))} bas={`${Math.round(x.h * 0.9)}px`} />}
                   <small>{moi ? "Toi" : souvenir ? `${p.prenom} · ${P.aRegarde}` : p.prenom}</small>
                   {popsS.map((x) =>
                     x.texte ? (
@@ -2251,6 +2262,9 @@ const STYLES = `
 .so-pano{position:absolute;left:0;top:0;max-width:none;background-size:cover;object-fit:cover;pointer-events:none}
 .so-fig{position:absolute;transform:translateX(-50%);padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;-webkit-tap-highlight-color:transparent;transition:opacity .4s}
 .so-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));user-select:none}
+.so-jour{position:relative;display:block;flex:none}
+.so-jour img{position:absolute;left:0;top:0;width:100%;height:100%}
+.so-jour img.so-jour-tete{filter:none}
 .so-fig small{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.6);white-space:nowrap;max-width:110%;overflow:hidden;text-overflow:ellipsis}
 .so-fig.moi small{background:#FF2E9A;color:#2a0f1f}
 .so-fig.fantome{cursor:default;pointer-events:none}

@@ -23,7 +23,7 @@
 import { motInterdit } from "./mots-interdits";
 import { parleDAlcool } from "./meme-surprise";
 import { THEMES_DECOUVRIR, type IdTheme, type ThemeDecouvrir } from "./decouvrir";
-import type { PieceDuo } from "./pieces-duo";
+import type { PieceDuo, Zone } from "./pieces-duo";
 import type { ImageSalon } from "./salon";
 
 export const PLACES_SALON = 8;
@@ -100,7 +100,11 @@ export const MOTIFS_SIGNALEMENT = ["Des insultes ou des moqueries", "Demande des
  * Quelqu'un dans le salon (`q` : son identifiant court, jamais son compte) ; (lot D5) ses passions, et la clé de sa
  * maison si elle est ouverte à tous (« 🏠 Voir sa maison »).
  */
-export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string };
+/**
+ * (✨ « Ma figurine », 25 novembre 2026) `tete` : sa tête du jour posée sur son corps sans sa tête (de 0 à 1 dans le cadre
+ * du corps) — sinon sa figurine d'une seule image ; `pancarte` : la phrase qu'elle porte partout.
+ */
+export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string; tete?: { src: string; corps: string; ratio: number; boite: Zone }; pancarte?: string };
 
 // ─── 🛋️ D2 : la séance chez moi (ma pièce, ma télé, jusqu'à trois proches) ───
 export const PLACES_SEANCE = 4;

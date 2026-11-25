@@ -20,6 +20,7 @@
  *   · SA FICHE : son mot, « Répondre avec ma figurine », « 🏠 Voir sa maison », « 👯 L'ajouter en proche », signaler ; la
  *     mienne : « Retirer ma figurine ».
  */
+import { Pancarte } from "./pancarte";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { OngletVisible } from "./guide";
 import { ApercuOu, CarteAutour, STYLES_CARTE_AUTOUR } from "./autour-carte";
@@ -89,7 +90,9 @@ const centreDe = (lieux: Lieu[]): Pos => (lieux.length ? { lat: lieux.reduce((a,
 const nomDeZone = (nom: string) => nomLieuPropre(nom).nom ?? "";
 
 /** 🧍 Une figurine assise : son corps sans sa tête, puis la tête qu'elle fait — ou sa figurine d'une seule image. */
-export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" | "corps" | "image">; hauteur: number }) {
+/** (🪧 « Ma figurine », 25 novembre 2026 : `f.pancarte`, la phrase qu'elle porte partout, au-dessus de sa tête) */
+export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" | "corps" | "image"> & { pancarte?: string }; hauteur: number }) {
+  const pancarte = f.pancarte ? <Pancarte texte={f.pancarte} taille={Math.max(9, Math.min(15, hauteur / 11))} bas={f.corps ? `${(1 - f.corps.boite[1]) * 100 + 2}%` : "92%"} /> : null;
   if (f.corps)
     return (
       <span className="afg-assise" style={{ height: hauteur, width: Math.round(hauteur * f.corps.ratio) }} data-assise="calques">
@@ -97,6 +100,7 @@ export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" |
         <img src={f.corps.src} alt="" draggable={false} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="afg-tete" src={f.tete} alt="" draggable={false} style={{ left: `${f.corps.boite[0] * 100}%`, top: `${f.corps.boite[1] * 100}%`, width: `${f.corps.boite[2] * 100}%`, height: `${f.corps.boite[3] * 100}%` }} />
+        {pancarte}
       </span>
     );
   if (f.image)
@@ -104,6 +108,7 @@ export function FigurineAssise({ f, hauteur }: { f: Pick<FigurinePosee, "tete" |
       <span className="afg-assise" style={{ height: hauteur }} data-assise="image">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={f.image} alt="" draggable={false} style={{ height: "100%", width: "auto", position: "static" }} />
+        {pancarte}
       </span>
     );
   return <span className="afg-assise vide" style={{ height: hauteur, width: Math.round(hauteur * 0.6) }} aria-hidden="true" />;
@@ -478,6 +483,9 @@ function Poser({
         if (fini || !j?.tetes) return;
         setTetes(j.tetes);
         if (!j.tetes.humeur && j.tetes.tetes[0]) setTete(j.tetes.tetes[0].cle);
+        // (🪧 « Ma figurine » : sa pancarte est son mot du jour — déjà écrit, s'il n'a encore rien tapé)
+        const p = j.tetes.pancarte;
+        if (p) setMot((m) => m || p);
       })
       .catch(() => undefined);
     return () => {

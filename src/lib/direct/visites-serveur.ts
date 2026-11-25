@@ -559,7 +559,9 @@ export async function maisonVisitee(supabase: Supabase, qui: Habitant | null | P
     etat: "ouvert",
     prenom: hote.prenom,
     cle: s(cle),
-    maison: { piece, scene, figurine, contenu, ...(proche ? vie : {}) },
+    // (✨ « Ma figurine » : sa tête du jour et sa pancarte, chez tous ceux qui le visitent — son humeur et sa table, à
+    // ses proches seulement)
+    maison: { piece, scene, figurine, contenu, ...(proche ? vie : { ...("tete" in vie && vie.tete ? { tete: vie.tete } : {}), ...("double" in vie && vie.double ? { double: vie.double } : {}) }) },
     proche,
     chezSoi,
     frappe: Boolean(visiteur && visites.some((v) => v.de === visiteur.id && jourParis(new Date(v.le)) === jour)),

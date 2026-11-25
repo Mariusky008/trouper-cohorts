@@ -24,7 +24,7 @@ import { jourAvant, jourParis } from "@/lib/jour-paris";
 import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe, prochesDe, telecharger } from "./ma-figurine-serveur";
 import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
-import { cheminMesSalons, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
+import { cheminMesSalons, figurineDeLaMaison, teteDeLaMaison, lireSaPiece, sceneDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { gradinDuSalon } from "./salons-gradins-serveur";
 import { gradinDuTheme, type GradinScene, type IdGradin } from "./salons-gradins";
 import { ajouterChezMoi, poserSouvenirCommun } from "./etagere-serveur";
@@ -35,6 +35,7 @@ import { maTeleDuJour, maVideo } from "./tele-du-jour-serveur";
 import { details, lireSelection } from "./selection-serveur";
 import { expressionValide, type ExpressionVisage } from "./visage-essai";
 import { figurineVivante } from "./expressions-figurine-serveur";
+import { pancarteDe } from "./mon-double-serveur";
 import type { FigurineVivante } from "./expressions-figurine";
 import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
@@ -130,12 +131,22 @@ const publicDe = (f: Partial<FichePresent>): PresentSalon => ({
   arrive: Number(f.arrive) || 0,
   ...(Array.isArray(f.passions) && f.passions.length ? { passions: f.passions.map(s).slice(0, 5) } : {}),
   ...(s(f.maison) ? { maison: s(f.maison) } : {}),
+  ...(f.tete && s(f.tete.src) && s(f.tete.corps) ? { tete: f.tete } : {}),
+  ...(s(f.pancarte) ? { pancarte: s(f.pancarte) } : {}),
 });
 /** (lot D5) ce que sa fiche montre en plus : ses passions, sa maison si elle est ouverte à tous. */
 async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passions?: string[]; maison?: string }> {
   const [p, v] = await Promise.all([lirePassions(supabase, h).catch(() => null), visibiliteDeLaMaison(supabase, h).catch(() => "proches")]);
   const maison = v === "tous" ? await poserProfil(supabase, h).catch(() => "") : "";
   return { ...(p?.passions?.length ? { passions: p.passions.slice(0, 5) } : {}), ...(maison ? { maison } : {}) };
+}
+/**
+ * ✨ (« Ma figurine », 25 novembre 2026) sa figurine telle qu'elle est aujourd'hui, partout : sa tête du jour posée sur son
+ * corps sans sa tête (quand elle est prête) et sa pancarte.
+ */
+async function sonDoubleDeSalon(supabase: Supabase, h: string): Promise<Pick<PresentSalon, "tete" | "pancarte">> {
+  const [t, pancarte] = await Promise.all([teteDeLaMaison(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => "")]);
+  return { ...(t ? { tete: { src: t.src, corps: t.corps, ratio: t.ratio, boite: t.boite } } : {}), ...(pancarte ? { pancarte } : {}) };
 }
 const messagePublic = (f: Partial<FicheMessage>): MessageSalon => {
   const { h: _h, ...m } = f as FicheMessage;
@@ -218,7 +229,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   if (t.adultes && m !== "adultes") return { error: "Le salon des jeunes parents est réservé aux adultes.", statut: 403 };
   const q = qui8(moi.id);
   if (await exclusion(supabase, q)) return { error: PHRASES_SALONS.exclu, statut: 403, exclu: true };
-  const [figurine, prenom, salons, caches, gradin, videos, profil] = await Promise.all([
+  const [figurine, prenom, salons, caches, gradin, videos, profil, double] = await Promise.all([
     figurineDeLaMaison(supabase, moi.id).catch(() => null),
     prenomDe(supabase, moi).catch(() => ""),
     salonsDuTheme(supabase, m, t.id),
@@ -226,6 +237,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
     gradinDuSalon(supabase, t.id).catch(() => null),
     videosDuSalon(supabase, t.id, m),
     sonProfilDeSalon(supabase, moi.id),
+    sonDoubleDeSalon(supabase, moi.id),
   ]);
   // (🎭 son gradin validé ; sinon la pièce de son décor)
   const decor = gradin ? null : await decorDuSalon(supabase, t.id);
@@ -240,7 +252,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   const prises = new Set(fiches.map((f) => Number(f.place)));
   const place = ancienne && !prises.has(Number(ancienne.place)) ? Number(ancienne.place) : [...Array(PLACES_SALON).keys()].find((k) => !prises.has(k)) ?? 0;
   const maintenant = Date.now();
-  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [], ...profil };
+  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [], ...profil, ...double };
   if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   // (en passant : les messages de plus de 48 h s'effacent ; 🏠 « Mes salons » retient celui-ci)
   void nettoyerMessages(supabase, m, id, maintenant);
@@ -839,7 +851,8 @@ export async function entrerChez(supabase: Supabase, moi: Habitant, chez: unknow
   const place = hote && !prises.has(0) ? 0 : [...Array(PLACES_SEANCE).keys()].find((k) => !prises.has(k)) ?? 0;
   const maintenant = Date.now();
   // (👥 sa maison, sur sa fiche : entre proches et proches de proches, « 🏠 Voir sa maison » — sa maison décide qui entre)
-  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: maintenant, ecrits: [], ...(maCle ? { maison: maCle } : {}) };
+  const double = await sonDoubleDeSalon(supabase, moi.id);
+  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: maintenant, ecrits: [], ...(maCle ? { maison: maCle } : {}), ...double };
   if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   void nettoyerMessages(supabase, m, id, maintenant);
   // (🎬 « Regarder à deux » : son proche arrive pour la vidéo proposée, et l'hôte n'est pas là — il est prévenu, une fois)

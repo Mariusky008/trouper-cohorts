@@ -854,3 +854,11 @@ messagerie, des deux côtés ; sa figurine vivante ; la colère : la tête fâch
 habituelle ; une figurine qui n'en avait que cinq : seules les deux nouvelles se font) ;
 `essai-expressions-figurine-route.mjs` et `essai-nouvelle-figurine-route.mjs` (sept expressions).
 
+
+## 28. ✨ La figurine au centre : « Ma figurine » (25 novembre 2026)
+
+Le propriétaire : « cette figurine dans ma maison doit être vraiment le centre de notre attention puisque c'est elle que
+les gens verront partout ». Ma maison s'épure (plus de fanions « Mes salons », plus de « Aujourd'hui, si tu veux » chez
+soi : la question du jour et « 📼 Revoir » passent dans « Pendant ton absence ») ; sa figurine brille au centre ; dessous,
+le plus gros bouton, « ✨ Ma figurine », ouvre son double du jour (sa tête du jour, sa pancarte, le miroir, ses
+réactions, sa figurine du mois). Tout est dans `docs/univers/ma-figurine.md`.

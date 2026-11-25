@@ -51,6 +51,9 @@ import { PHRASES_CARNET } from "@/lib/direct/carnet-proches";
 import { CarnetDesProches } from "./carnet-proches";
 import { FeuilleRevoir } from "./revoir";
 import { PHRASES_REVOIR, lienRevoir } from "@/lib/direct/revoir";
+import { PHRASES_DOUBLE } from "@/lib/direct/mon-double";
+import { MonDouble } from "./mon-double";
+import { Pancarte } from "./pancarte";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
@@ -261,6 +264,8 @@ function Piece({
   const [carnet, setCarnet] = useState(false);
   // 📼 (section 31 de Découvrir) mes vidéos déjà vues
   const [revoir, setRevoir] = useState(false);
+  // ✨ (« Ma figurine ») l'écran de mon double du jour
+  const [double, setDouble] = useState(false);
   // 🎁 (lot M5) le cadeau touché sur la table (et ouvert) ; la surprise à laisser, en visite ; les miennes qui attendent
   const [cadeau, setCadeau] = useState<CadeauMaison | null>(null);
   const [ouvert, setOuvert] = useState(false);
@@ -711,17 +716,23 @@ function Piece({
           {figurine && (
             <button
               type="button"
-              className="mmc-fig"
+              className={`mmc-fig${visite ? "" : " brille"}`}
               data-saute={saute % 2}
+              data-ma-figurine={visite ? undefined : "1"}
               style={{ left: `${c.x * 100}%`, bottom: `${(1 - c.y) * 100}%`, height: `${c.hauteur * 100}%` }}
-              aria-label="Ma figurine, chez moi"
+              aria-label={visite ? "Sa figurine" : `${PHRASES_DOUBLE.bouton} : ${PHRASES_DOUBLE.titre.toLowerCase()}`}
               onClick={() => {
                 setIndice(false);
                 setBulle(null);
                 setObjet(null);
                 setSaute((n) => n + 1);
+                // (✨ « Ma figurine » : chez moi, elle est LE bouton de la page — la toucher ouvre mon double du jour)
+                if (!visite) window.setTimeout(() => setDouble(true), 260);
               }}
             >
+              {/* ✨ (« Ma figurine ») elle brille doucement, chez moi ; 🪧 sa pancarte, partout */}
+              {!visite && <span className="mmc-halo" aria-hidden="true" />}
+              {maison.double?.pancarte && <Pancarte texte={maison.double.pancarte} taille={Math.max(10, Math.min(16, (hauteur || 400) * c.hauteur / 13))} bas={maison.tete ? `${(1 - maison.tete.boite[1]) * 100 + 1}%` : "93%"} />}
               {maison.tete ? (
                 // 🙂 (22 novembre 2026) elle fait la tête de son humeur du jour : son corps sans sa tête, puis l'expression
                 <span className="mmc-fig-jour" data-tete-du-jour={maison.tete.e} style={{ aspectRatio: String(maison.tete.ratio) }}>
@@ -752,17 +763,6 @@ function Piece({
           )}
         </div>
       </div>
-      {/* 🏠 (lot D5 de Découvrir) « Mes salons » : les salons ouverts où je vais, en fanions — chez moi seulement */}
-      {!visite && maison.salons?.length ? (
-        <nav className="mmc-fanions" aria-label="Mes salons" data-fanions={maison.salons.length}>
-          {maison.salons.map((x) => (
-            <a key={x.theme} href={`/univers/salons?theme=${x.theme}`} data-fanion={x.theme} title={x.nom}>
-              <span aria-hidden="true">{x.e}</span>
-              <small>{x.nom}</small>
-            </a>
-          ))}
-        </nav>
-      ) : null}
       {arrivee && (
         <p className="mmc-arrivee" role="status" data-arrivee>
           {arrivee}
@@ -997,7 +997,9 @@ function Piece({
       </div>
       {/* 🎨 (la maquette) le bas : ce qu'on peut faire aujourd'hui, puis les trois grands boutons */}
       <div className="mmc-bas" style={visite && !frappe ? { visibility: "hidden" } : undefined}>
-        {(visite ? pucesVisite.length > 0 || questionIci : true) && (
+        {/* (✨ « Ma figurine », 25 novembre 2026 : chez moi, la page s'épure — « Aujourd'hui, si tu veux » part ; ma question
+            du jour et mes vidéos à revoir sont dans « Pendant ton absence ») */}
+        {visite && (pucesVisite.length > 0 || questionIci) && (
           <div className="mmc-puces">
             <span className="mmc-surtitre">{visite ? (neufIci ? PHRASES_BAS.nouveau : PHRASES_BAS.aDecouvrir) : PHRASES_BAS.aujourdhui}</span>
             {pucesVisite.map((o) => (
@@ -1034,32 +1036,23 @@ function Piece({
                 {PHRASES_BAS.question}
               </button>
             )}
-            {!visite && (
-              <a className="mmc-puce" href="/collection#salons" data-puce="tele">
-                {PHRASES_BAS.maTele}
-              </a>
-            )}
-            {!visite && (
-              <button
-                type="button"
-                className="mmc-puce"
-                data-puce="revoir"
-                onClick={() => {
-                  fermerTout();
-                  setRevoir(true);
-                }}
-              >
-                {PHRASES_REVOIR.puce}
-                {(maison.aRevoir?.length ?? 0) > 0 && <i className="mmc-puce-n">{maison.aRevoir!.length}</i>}
-              </button>
-            )}
           </div>
         )}
         {!visite ? (
-          <div className="mmc-gros">
+          <>
+          {/* ✨ (« Ma figurine ») LE bouton de la page : mon double du jour — sa pastille tant que je ne l'ai pas préparé */}
+          <button type="button" className="mmc-double" data-geste="ma-figurine" data-pret={maison.double?.pret ? "1" : "0"} onClick={() => setDouble(true)}>
+            {!maison.double?.pret && (
+              <i className="mmc-double-pastille" data-pastille-double>
+                ● {PHRASES_DOUBLE.aPreparer}
+              </i>
+            )}
+            ✨ {PHRASES_DOUBLE.bouton}
+          </button>
+          <div className="mmc-gros mmc-tuiles">
             <button
               type="button"
-              className="mmc-gros-bouton fort"
+              className="mmc-gros-bouton"
               data-geste="absence"
               onClick={() => {
                 fermerTout();
@@ -1101,6 +1094,7 @@ function Piece({
               {PHRASES_CARNET.bouton}
             </button>
           </div>
+          </>
         ) : (
           visite.peutLaisser && (
             <div className="mmc-gros mmc-actions-visite">
@@ -1128,7 +1122,48 @@ function Piece({
         )}
       </div>
       {absenceOuverte &&
-        createPortal(<PendantTonAbsence lignes={lignesAbsence} onFermer={() => setAbsenceOuverte(false)} />, document.body)}
+        createPortal(
+          <PendantTonAbsence
+            lignes={lignesAbsence}
+            onFermer={() => setAbsenceOuverte(false)}
+            toujours={[
+              ...(maison.question
+                ? [
+                    {
+                      cle: "question",
+                      nom: PHRASES_BAS.question,
+                      faire: () => {
+                        setAbsenceOuverte(false);
+                        fermerTout();
+                        setQuestionOuverte(true);
+                      },
+                    },
+                  ]
+                : []),
+              {
+                cle: "revoir",
+                nom: PHRASES_REVOIR.puce,
+                faire: () => {
+                  setAbsenceOuverte(false);
+                  fermerTout();
+                  setRevoir(true);
+                },
+              },
+            ]}
+          />,
+          document.body,
+        )}
+      {/* ✨ (« Ma figurine ») mon double du jour, en plein écran ; ce que j'y change se voit aussitôt dans ma pièce */}
+      {double &&
+        createPortal(
+          <MonDouble
+            onFermer={() => setDouble(false)}
+            onChange={() => {
+              void lire(ROUTE).then((r) => r.maison && onMaison(r.maison));
+            }}
+          />,
+          document.body,
+        )}
       {surprise &&
         visite?.cle &&
         createPortal(
@@ -1520,6 +1555,16 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-coucou-fait{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));z-index:70;transform:translateX(-50%);margin:0;padding:10px 16px;border-radius:14px;background:rgba(20,6,14,.95);color:#fff;font-size:14px}
 @keyframes mmc-coucou-arrive{from{opacity:0;transform:translate(-50%,20px) scale(.7)}}
 .mmc-fig{position:absolute;transform:translateX(-50%);padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mmc-halo{position:absolute;left:50%;bottom:-8%;width:170%;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(246,181,75,.5) 0%,rgba(255,46,154,.2) 38%,rgba(255,46,154,0) 68%);animation:mmc-brille 3.2s ease-in-out infinite;pointer-events:none;z-index:-1}
+@keyframes mmc-brille{0%,100%{opacity:.5;transform:translateX(-50%) scale(.94)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
+.mmc-fig.brille{isolation:isolate}
+.mmc-double{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:62px;border:0;border-radius:999px;background:linear-gradient(135deg,#ff4fb0,#ff2e9a 60%);color:#fff;font:inherit;font-weight:800;font-size:21px;letter-spacing:-.02em;box-shadow:0 10px 28px rgba(255,46,154,.38),inset 0 1px 0 rgba(255,255,255,.3);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mmc-double:active{transform:scale(.97)}
+.mmc-double-pastille{position:absolute;top:-9px;right:16px;padding:3px 9px;border-radius:999px;background:#f5a23a;color:#2a1500;font-style:normal;font-weight:800;font-size:11.5px;letter-spacing:0;box-shadow:0 4px 12px rgba(245,162,58,.5);animation:mmc-pulse 1.8s ease-in-out infinite}
+@keyframes mmc-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.mmc-tuiles .mmc-gros-bouton{min-height:58px;font-size:11.5px;font-weight:700}
+.mmc-tuiles .mmc-gros-bouton span{font-size:19px}
+@media (prefers-reduced-motion: reduce){.mmc-halo,.mmc-double-pastille{animation:none}}
 .mmc-fig img{display:block;height:100%;width:auto;max-width:none;transform-origin:50% 100%;animation:mmc-souffle 4.5s ease-in-out infinite;user-select:none;-webkit-user-drag:none}
 .mmc-fig[data-saute="1"] img{animation:mmc-saut .5s ease-out,mmc-souffle 4.5s ease-in-out .5s infinite}
 .mmc-fig[data-saute="0"] img{animation:mmc-saut2 .5s ease-out,mmc-souffle 4.5s ease-in-out .5s infinite}
@@ -1533,14 +1578,6 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-fig[data-saute="0"] .mmc-fig-jour{animation:mmc-saut2 .5s ease-out,mmc-souffle 4.5s ease-in-out .5s infinite}
 .mmc-fig .mmc-fig-jour img{position:absolute;inset:0;width:100%;height:100%;animation:none}
 .mmc-fig .mmc-fig-jour img.mmc-fig-tete{right:auto;bottom:auto}
-.mmc-fanions{position:absolute;left:10px;top:10px;display:flex;gap:6px;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none;z-index:5}
-.mmc-fanions a{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 7px 11px;min-width:42px;color:#2a1424;text-decoration:none;background:linear-gradient(180deg,#ffe3a8,#f2c46b);clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);box-shadow:0 4px 10px rgba(0,0,0,.3);transform-origin:top center;animation:mmc-fanion 4s ease-in-out infinite}
-.mmc-fanions a:nth-child(2n){animation-delay:-1.3s;background:linear-gradient(180deg,#ffc2df,#ff8fc8)}
-.mmc-fanions a:nth-child(3n){animation-delay:-2.6s;background:linear-gradient(180deg,#c9e6ff,#8cc4f2)}
-.mmc-fanions span{font-size:17px;line-height:1}
-.mmc-fanions small{font-size:9.5px;font-weight:900;max-width:64px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@keyframes mmc-fanion{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
-@media (prefers-reduced-motion: reduce){.mmc-fanions a{animation:none}}
 .mmc-reponses,.mmc-repondre{grid-column:1;display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .mmc-reponses span{font-size:14px;color:#F3DCE6}
 .mmc-reponses strong{color:#FFF4E6}

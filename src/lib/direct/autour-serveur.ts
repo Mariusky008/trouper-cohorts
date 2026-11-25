@@ -22,9 +22,9 @@ import { parleDAlcool } from "@/lib/direct/meme-surprise";
 import { SANS_AGE, SEAU_FIGURINES, aConfirmeSonAge, ajouterProche, cartesDeMemes, ecrireJson, lireJson, memeDeposable, memesCaches, prochesDe, retirerProche, saFigurineSignee } from "@/lib/direct/ma-figurine-serveur";
 import { calquesDeFigurine } from "@/lib/direct/calques-figurine-serveur";
 import { sesExpressions } from "@/lib/direct/expressions-figurine-serveur";
-import { EXPRESSIONS_FIGURINE, expressionDeLHumeur, expressionFigurineValide, type ExpressionFigurine } from "@/lib/direct/expressions-figurine";
+import { ecrireSaPancarte, pancarteDe, teteChoisieDuJour } from "@/lib/direct/mon-double-serveur";
+import { EXPRESSIONS_FIGURINE, expressionFigurineValide, type ExpressionFigurine } from "@/lib/direct/expressions-figurine";
 import { figurineDeLaMaison } from "@/lib/direct/ma-maison-serveur";
-import { humeurValide } from "@/lib/direct/rituel";
 import {
   EMOJIS_LIEUX_PUBLICS,
   MOT_DU_JOUR_MAX,
@@ -469,10 +469,6 @@ export async function devenirProche(supabase: Supabase, moi: Habitant, cle: unkn
 type DepotFig = { id: string; h: string; le: string; qui: Qui; mot: string; tete: TeteChoisie; nomLieu?: string; reponseA?: string };
 const dossierFig = (ville: string, lieu: string) => `autour-fig/${ville}/${lieu}`;
 type PoseFig = { id: string; qui: Qui; h: string };
-const humeurDe = async (supabase: Supabase, h: string) => {
-  const x = await lireJson<{ jour?: string; visage?: string }>(supabase, `${h}/humeur.json`);
-  return x.jour === jourParis() ? humeurValide(x.visage) : null;
-};
 const tetesCachees = async (supabase: Supabase, h: string | null) => (h ? new Set(((await lireJson<{ ids?: string[] }>(supabase, `${h}/autour-fig-caches.json`)).ids ?? []).map(s)) : new Set<string>());
 
 /** Les poses en cours d'un lieu (moins de 24 h) qu'il peut voir, les plus récentes d'abord. */
@@ -492,8 +488,9 @@ async function posesFigVisibles(supabase: Supabase, ville: string, lieu: string,
  */
 type Silhouette = Pick<FigurinePosee, "tete" | "corps" | "image">;
 async function silhouetteDe(supabase: Supabase, h: string, tete: TeteChoisie): Promise<Silhouette> {
-  const [calques, expr, humeur] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), sesExpressions(supabase, h).catch(() => null), tete === "humeur" ? humeurDe(supabase, h).catch(() => null) : Promise.resolve(null)]);
-  const e: ExpressionFigurine | null = tete === "humeur" ? expressionDeLHumeur(humeur) : tete;
+  // (✨ « humeur », c'est sa tête du jour : celle qu'il a choisie dans « Ma figurine », sinon celle de son humeur)
+  const [calques, expr, duJour] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), sesExpressions(supabase, h).catch(() => null), tete === "humeur" ? teteChoisieDuJour(supabase, h).catch(() => null) : Promise.resolve(null)]);
+  const e: ExpressionFigurine | null = tete === "humeur" ? duJour : tete;
   const memeDecoupe = Boolean(calques && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
   const src = (e && memeDecoupe ? expr?.etat.tetes[e] : "") || calques?.tete.fichier || "";
   if (calques?.sansTete && src) return { tete: src, corps: { src: calques.sansTete.fichier, ratio: calques.ratio, boite: calques.tete.boite } };
@@ -632,14 +629,16 @@ export async function figurinesDuLieu(supabase: Supabase, ville: string, lieu: s
   };
 }
 
-/** 😊 Ses têtes, au moment de poser : celle de son humeur du jour (si elle est prête), puis ses expressions prêtes. */
+/**
+ * 😊 Ses têtes, au moment de poser : sa tête du jour (✨ celle choisie dans « Ma figurine », sinon celle de son humeur — si
+ * elle est prête), puis ses expressions prêtes ; 🪧 sa pancarte, qui est son mot du jour (pour le préremplir).
+ */
 export async function mesTetes(supabase: Supabase, h: string): Promise<MesTetes> {
-  const [calques, expr, humeur] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), sesExpressions(supabase, h).catch(() => null), humeurDe(supabase, h).catch(() => null)]);
+  const [calques, expr, e, pancarte] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), sesExpressions(supabase, h).catch(() => null), teteChoisieDuJour(supabase, h).catch(() => null), pancarteDe(supabase, h).catch(() => "")]);
   const ok = Boolean(calques && expr && (expr.etat.decoupe ?? 1) === (calques.decoupe ?? 1));
   const tetes = ok ? EXPRESSIONS_FIGURINE.filter((x) => expr!.etat.tetes[x.cle]).map((x) => ({ cle: x.cle, src: expr!.etat.tetes[x.cle]!, nom: x.nom })) : [];
-  const e = expressionDeLHumeur(humeur);
   const t = e ? tetes.find((x) => x.cle === e) : undefined;
-  return { humeur: t ? { e: t.cle, src: t.src, nom: t.nom } : null, tetes, habituelle: calques?.tete.fichier || (await figurineDeLaMaison(supabase, h).catch(() => null))?.src || (await saFigurineSignee(supabase, h).catch(() => "")) };
+  return { humeur: t ? { e: t.cle, src: t.src, nom: t.nom } : null, tetes, habituelle: calques?.tete.fichier || (await figurineDeLaMaison(supabase, h).catch(() => null))?.src || (await saFigurineSignee(supabase, h).catch(() => "")), ...(pancarte ? { pancarte } : {}) };
 }
 
 export type DemandePose = { lieu?: unknown; ici?: unknown; qui?: unknown; mot?: unknown; tete?: unknown; nomLieu?: unknown; reponseA?: unknown };
@@ -705,6 +704,9 @@ export async function poserSaFigurine(supabase: Supabase, habitant: Habitant, d:
     (await ecrireJson(supabase, `profils/${cleProfil(habitant.id)}.json`, { h: habitant.id })) &&
     (avant.length > 0 || (await ecrireJson(supabase, cheminJour, { n: n + 1 })));
   if (!ok) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // (🪧 « Ma figurine » : son mot du jour est aussi la pancarte de sa figurine, partout, jusqu'à ce qu'il la change —
+  // sans la compter comme son double préparé : seul « Ma figurine » enlève la pastille)
+  await ecrireSaPancarte(supabase, habitant.id, mot, { preparer: false }).catch(() => undefined);
   // (↩️ celui à côté de qui il s'assoit est prévenu, s'il peut voir la sienne)
   if (origine && (await visible({ qui, h: habitant.id }, regardDe(supabase, origine.h)))) {
     const c = estZone(lieu) ? null : (await lieuxFixesDe(supabase, ville)).find((x) => x.id === lieu);

@@ -3,6 +3,13 @@
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
 
+## 0 quattuordecies. « Ma figurine », au centre de Ma maison (25 novembre 2026)
+
+Après le fil de Découvrir (F1 à F4), le chantier « Ma figurine » : `docs/univers/ma-figurine.md` (les lots 0 à 5, et
+« Elle change toute seule » juste après le lot 1). **Lot 0 (la maquette) validé ; lot 1 codé** (Ma maison épurée, le
+bouton « ✨ Ma figurine », l'écran « Mon double du jour », la même tête et la même pancarte partout) : sa PR suit celle
+de F4.
+
 ## 0 terdecies. La messagerie d'abord ; une seule session (18 novembre 2026)
 
 **L'autre session (les messages et la bienvenue) s'est arrêtée après le lot S2** (le salon du duo : l'écran, les

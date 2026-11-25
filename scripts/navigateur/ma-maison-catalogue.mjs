@@ -113,7 +113,12 @@ const gros = scene.locator(".mmc-gros-bouton");
 ok((await gros.count()) === 3 && /Pendant ton absence/.test(await gros.nth(0).innerText()) && /Ajouter chez moi/.test(await gros.nth(1).innerText()) && /Mes proches/.test(await gros.nth(2).innerText()), "le bas : « Pendant ton absence », « Ajouter chez moi », « 👯 Mes proches »");
 const boites = await Promise.all([0, 1, 2].map((k) => gros.nth(k).boundingBox()));
 ok(boites.every((x) => x && x.y + x.height <= 844 + 1 && x.height >= 56 && x.height < 90), `… les trois à l'écran, de la même taille (${boites.map((x) => Math.round(x?.height)).join(", ")} pt)`);
-ok(/Aujourd’hui, si tu veux/i.test(await scene.locator(".mmc-puces").innerText()) && (await scene.locator('.mmc-puce[data-puce="tele"]').getAttribute("href")) === "/collection#salons", "« Aujourd'hui, si tu veux » : « 📺 Ma télé » (« Tous les salons », sa télé du jour)");
+// (✨ « Ma figurine », 25 novembre 2026 : la page s'épure — au-dessus des trois, LE bouton « ✨ Ma figurine », sa pastille
+// tant que son double n'est pas préparé aujourd'hui ; plus de « Aujourd'hui, si tu veux »)
+const leDouble = scene.locator('.mmc-double[data-geste="ma-figurine"]');
+const boiteDouble = await leDouble.boundingBox();
+ok(/Ma figurine/.test(await leDouble.innerText()) && (await leDouble.locator("[data-pastille-double]").count()) === 1 && boiteDouble && boiteDouble.y + boiteDouble.height <= boites[0].y && boiteDouble.height >= boites[0].height, `« ✨ Ma figurine » : le plus gros bouton, au-dessus des trois, avec sa pastille « À préparer aujourd’hui » (${Math.round(boiteDouble?.height)} pt)`);
+ok((await scene.locator(".mmc-puces").count()) === 0 && (await scene.locator("[data-fanions]").count()) === 0, "plus de « Aujourd'hui, si tu veux », plus de fanions");
 // (21 novembre 2026, le propriétaire : « des rectangles blancs autour de ce qui est cliquable » — plus de contours)
 ok((await scene.locator(".mmc-cadre.montre").count()) === 0 && (await scene.locator(".mmc-zone").evaluateAll((l) => l.every((z) => /none|rgba\([^)]*, 0\)/.test(getComputedStyle(z, "::after").boxShadow)))), "pas de rectangles blancs autour de ce qui se touche");
 // (sa figurine dans son fauteuil : la place de gauche du relevé, de la tête au sol, entière à l'écran)
@@ -122,7 +127,9 @@ ok(fig && Math.abs(fig.x + fig.width / 2 - (pano.x + 0.3 * pano.width)) < 4 && M
 ok((await scene.locator(".mmc-indice").count()) === 1 && /Ta maison se remplit toute seule[\s\S]*Touche les objets de ta pièce/.test(await scene.locator(".mmc-indice").innerText()) && (await p.locator(".mmc-vide").count()) === 0 && !/Glisse/.test(await p.locator("body").innerText()), "l'arrivée : « Ta maison se remplit toute seule… », « Touche les objets de ta pièce », dans la pièce (plus de « Glisse pour faire le tour »)");
 await p.screenshot({ path: `${D}/ma-maison-3-chez-moi.png` });
 // (📼 section 31 de Découvrir : « 📼 Revoir », ses vidéos déjà vues — aucune encore)
-await scene.locator('[data-puce="revoir"]').click();
+// (✨ il est maintenant dans « Pendant ton absence », avec les choses de toujours)
+await gros.nth(0).click();
+await p.locator('.acm-toujours [data-geste="revoir"]').click();
 ok(await attendre(async () => /Tes vidéos déjà vues viendront ici/.test(await p.locator("[data-feuille-revoir]").innerText())), "« 📼 Revoir » : la feuille de ses vidéos déjà vues (aucune encore)");
 await p.locator("[data-feuille-revoir] button[aria-label='Fermer']").click();
 
@@ -149,6 +156,9 @@ await scene.locator(".mmc-fig").evaluate((x) => x.scrollIntoView({ inline: "cent
 const avant = await scene.locator(".mmc-fig").getAttribute("data-saute");
 await scene.locator(".mmc-fig").click();
 ok((await scene.locator(".mmc-fig").getAttribute("data-saute")) !== avant, "sa figurine : elle sautille");
+ok(await attendre(async () => (await p.locator("[data-mon-double]").count()) === 1), "… et ouvre « Mon double du jour »");
+await p.locator("[data-mon-double] [data-retour-maison]").click();
+ok(await attendre(async () => (await p.locator("[data-mon-double]").count()) === 0), "« ‹ Ma maison » : on revient chez soi");
 
 // ─── ⚙️ changer de pièce ───
 await scene.locator('[data-geste="reglages"]').click();
