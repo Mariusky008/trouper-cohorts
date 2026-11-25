@@ -122,6 +122,7 @@ ok(lesPieces.slice(0, 5).join() === "salon:foot,humeur,autour,salon:musique,salo
 ok((await lea.locator("#o-decouvrir [data-piece][data-vide]").count()) === 10, "… les dix salons sans personne en ce moment");
 ok(/2 en direct · ta passion/.test(await texte(foot.locator(".fd-etiquette"))), "« 2 en direct · ta passion »");
 ok((await foot.locator(".fd-fig img").count()) === 2 && (await foot.locator(".fd-fig small").allInnerTexts()).sort().join() === "Hugo,Sam", "le gradin : les figurines de Sam et Hugo");
+ok(/^👋 (Sam et Hugo|Hugo et Sam) sont là$/.test(await texte(foot.locator("[data-proches-la]"))), "(lot F4) « 👋 Sam et Hugo sont là » : ses proches y sont");
 ok((await foot.locator('[data-q] [data-bulle]').allInnerTexts()).includes("Quel but !"), "… la bulle de Sam au-dessus de sa figurine");
 ok(/i\.ytimg\.com/.test((await foot.locator("[data-tele] img").getAttribute("src")) ?? ""), "… ce qui passe à la télé du salon");
 ok((await foot.locator("[data-asseoir]").getAttribute("href")) === "/univers/salons?theme=foot", "« M'asseoir » ouvre le salon");

@@ -654,6 +654,11 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
         </div>
       </div>
       <div className="fd-bas">
+        {p.proches?.length ? (
+          <span className="fd-proches-la" data-proches-la>
+            {P.prochesLa(p.proches)}
+          </span>
+        ) : null}
         <h2>
           {p.e} {p.nom}
         </h2>
@@ -692,6 +697,7 @@ export const STYLES_FIL = `
 .fd-seance-fig{position:absolute;bottom:6%;height:62%;translate:-50% 0;display:flex;flex-direction:column;align-items:center;animation:fd-flotte 3.2s ease-in-out infinite}
 .fd-seance-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));-webkit-user-drag:none}
 .fd-seance-fig small{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.62);font-size:10.5px;font-weight:800;white-space:nowrap}
+.fd-proches-la{display:inline-flex;padding:4px 11px;border-radius:999px;background:#FFE3F1;color:#1A0D14;font-size:12.5px;font-weight:900}
 .fd-maison{background:radial-gradient(80% 45% at 50% 40%,rgba(127,240,196,.16),transparent 70%),#0E1714}
 .fd-chez{justify-content:center}
 .fd-chez-piece{position:relative;width:100%;max-width:460px;height:100%;max-height:52dvh;border-radius:22px;background-size:cover;background-position:center;box-shadow:0 18px 40px -16px #000,inset 0 0 0 1px rgba(255,255,255,.12)}

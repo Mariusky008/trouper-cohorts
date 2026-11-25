@@ -67,7 +67,7 @@ vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens
   - dans un salon où sa figurine est entrée, les bulles arrivent toutes les 6 secondes ;
   - ce que le fil montrait il y a moins de dix minutes s'affiche tout de suite à l'ouverture.
 
-**L'ordre** (simple ; le lot F4 l'affinera) : les salons de ses passions où il y a quelqu'un, l'humeur de ses proches,
+**L'ordre** (simple ; le lot F4 l'a affiné, section 7) : les salons de ses passions où il y a quelqu'un, l'humeur de ses proches,
 Autour, les autres salons où il y a quelqu'un — un de chaque à tour de rôle (`ordreDuFil`), pour que deux pièces de la même
 sorte ne se suivent pas quand il y en a d'autres. Puis les salons sans personne : ses passions, la musique, puis les autres
 dans l'ordre du catalogue (seize pièces au plus).
@@ -194,7 +194,28 @@ depuis le fil (en touchant deux fois l'écran) le voit sur sa figurine : « 👋
 
 **Les essais** : `scripts/essai-proches-en-direct-route.mjs`, `scripts/navigateur/proches-en-direct.mjs`.
 
-## 7. La pièce du salon refaite (25 novembre 2026)
+## 7. Le lot F4 : l'ordre du fil (25 novembre 2026)
+
+Le propriétaire : « d'abord ses proches en direct, puis ses passions, puis les maisons, puis Autour ; rien ne revient
+deux fois de suite ».
+
+- **L'ordre** (`ordreDuFil`, `fil-decouvrir.ts`) :
+  1. ses proches en direct : leurs séances, puis les salons ouverts où un proche est en ce moment (« 👋 Sam et Hugo sont
+     là », des deux côtés) ;
+  2. l'humeur de ses proches ;
+  3. les salons de ses passions où il y a quelqu'un ;
+  4. les maisons ouvertes ;
+  5. Autour ;
+  6. les autres salons où il y a quelqu'un ;
+  7. les salons sans personne (ses passions, la musique, le reste).
+- **Rien ne revient deux fois de suite** : à chaque pas, la première pièce de cet ordre qui n'est pas de la même sorte
+  que la précédente (un salon, une séance, une maison, Autour, l'humeur). S'il ne reste qu'une sorte, elles se suivent.
+- Seize pièces au plus, comme avant.
+
+**Les essais** : `scripts/verifier-fil.mjs` (sans téléphone, dans « Types et lint ») ; `essai-fil-decouvrir-route.mjs` et
+`navigateur/fil-decouvrir.mjs` (« 👋 Sam et Hugo sont là »).
+
+## 8. La pièce du salon refaite (25 novembre 2026)
 
 **Le constat du propriétaire, captures à l'appui** (téléphone et ordinateur) : en glissant, on voit la vidéo, puis plus
 rien jusqu'au bouton « M'asseoir ». Le gradin d'un salon n'a pas encore d'image validée : le plan des places s'affichait
@@ -222,10 +243,8 @@ destiné, c'est suffisant » (la rangée « À suivre sur la télé » de la maq
 huit de la cuisine vide, « Inviter », « Toi » après s'être assise, sa figurine au bord seulement hors des salons, et sur
 un ordinateur la pièce à gauche et le salon à droite) ; `proches-en-direct.mjs` trouve sa figurine par « Toi ».
 
-## 8. Les lots suivants
+## 9. Décidé aussi
 
-- **F4, l'ordre du fil** : d'abord ses proches en direct, puis ses passions, puis les maisons, puis Autour ; rien ne
-  revient deux fois de suite.
 - **Décidé par le propriétaire (25 novembre 2026) : l'appli s'ouvre sur le fil de Découvrir**, plus sur « Messages »
   (`ma-collection.tsx`, à l'ouverture sans adresse). Trois exceptions : pendant que sa figurine se fabrique, rien ne
   change ; l'appli tout juste posée sur l'écran d'accueil s'ouvre sur « Messages », pour proposer les notifications de
