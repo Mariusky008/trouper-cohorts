@@ -165,8 +165,9 @@ const qZoe = await signe.getAttribute("data-faire-signe");
 await lea.screenshot({ path: `${D}/proches-en-direct-4-signe.png` });
 await signe.click({ force: true }); // (il se balance : jamais « stable » pour Playwright)
 ok(await attendre(lea, async () => (await signe.count()) === 0), "un toucher : le signe part (une fois)");
-const pZ = (await route(ZOE, `${ROUTE}?salon=${SEANCE}&depuis=0&connus=`)).pouls;
-ok(pZ?.messages?.some((m) => m.sorte === "geste" && m.cle === "coucou" && m.a === qZoe && m.prenom === "Léa"), "… Zoé le reçoit : 👋 de Léa, vers elle");
+// (le signe part tout de suite à l'écran ; l'envoi, lui, prend un instant : on attend qu'il soit arrivé)
+const signeRecu = async () => (await route(ZOE, `${ROUTE}?salon=${SEANCE}&depuis=0&connus=`)).pouls?.messages?.some((m) => m.sorte === "geste" && m.cle === "coucou" && m.a === qZoe && m.prenom === "Léa");
+ok(await attendre(lea, signeRecu, 8000), "… Zoé le reçoit : 👋 de Léa, vers elle");
 await zoe2.context().close();
 await lea.context().close();
 

@@ -1132,6 +1132,8 @@ function Piece({
         createPortal(
           <PendantTonAbsence
             lignes={lignesAbsence}
+            journee={maison.journee}
+            figurine={figurine?.src}
             onFermer={() => setAbsenceOuverte(false)}
             toujours={[
               ...(maison.question

@@ -15,6 +15,7 @@
  *   posés emballés sur sa table basse (les souvenirs du lot 6 des visites).
  */
 import { useEffect, useRef, useState } from "react";
+import { PHRASES_JOURNEE, journeeVide, type JourneeFigurine } from "@/lib/direct/journee-figurine";
 import {
   AJOUTS_MAISON,
   AJOUT_MOT_MAX,
@@ -544,7 +545,20 @@ export type LigneAbsence = { cle: string; e: string; texte: string; detail?: str
  * (✨ « Ma figurine », 25 novembre 2026 : `toujours` — ce qui était dans « Aujourd'hui, si tu veux », en bas de Ma maison :
  * ma question du jour, mes vidéos à revoir ; toujours là, en puces, sous ce qu'on m'a laissé)
  */
-export function PendantTonAbsence({ lignes, onFermer, toujours = [] }: { lignes: LigneAbsence[]; onFermer: () => void; toujours?: { cle: string; nom: string; faire: () => void }[] }) {
+export function PendantTonAbsence({
+  lignes,
+  onFermer,
+  toujours = [],
+  journee,
+  figurine,
+}: {
+  lignes: LigneAbsence[];
+  onFermer: () => void;
+  toujours?: { cle: string; nom: string; faire: () => void }[];
+  /** 👀 (« Ma figurine », lot 2) sa journée, racontée par sa figurine (`figurine` : son image) */
+  journee?: JourneeFigurine;
+  figurine?: string;
+}) {
   return (
     <div className="acm" role="dialog" aria-modal="true" aria-label={PHRASES_BAS.absence} data-absence onClick={onFermer}>
       <div className="acm-feuille" onClick={(e) => e.stopPropagation()}>
@@ -554,6 +568,32 @@ export function PendantTonAbsence({ lignes, onFermer, toujours = [] }: { lignes:
             ✕
           </button>
         </div>
+        {/* 👀 (« Ma figurine », lot 2) sa figurine raconte sa journée : des prénoms, de vrais chiffres — sinon, elle le dit */}
+        {journee && (
+          <section className="acm-journee" data-journee aria-label={PHRASES_JOURNEE.titre}>
+            {figurine && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={figurine} alt="" draggable={false} />
+            )}
+            <div className="acm-journee-bulle">
+              <b>{PHRASES_JOURNEE.titre}</b>
+              {journeeVide(journee) ? (
+                <p data-journee-rien>{PHRASES_JOURNEE.rien}</p>
+              ) : (
+                <ul>
+                  {journee.coucous.length > 0 && <li data-journee-ligne="coucous">👋 {PHRASES_JOURNEE.coucous(journee.coucous)}</li>}
+                  {journee.visites.length > 0 && <li data-journee-ligne="visites">🚪 {PHRASES_JOURNEE.visites(journee.visites)}</li>}
+                  {journee.salons.n > 0 && (
+                    <li data-journee-ligne="salons">
+                      👀 {PHRASES_JOURNEE.salons(journee.salons.n)}
+                      {journee.salons.prenoms.length > 0 && <small>{PHRASES_JOURNEE.salonsDont(journee.salons.prenoms, journee.salons.n)}</small>}
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
+          </section>
+        )}
         <p className="acm-chapo">{PHRASES_BAS.absenceChapo}</p>
         {lignes.length ? (
           <ul className="acm-absence">
@@ -604,6 +644,14 @@ const STYLES_AJOUTER = `
 .acm-lien{display:block;text-align:center;text-decoration:none}
 .acm-toujours{display:flex;flex-wrap:wrap;gap:8px}
 .acm-toujours button{min-height:40px;padding:8px 13px;border:0;border-radius:14px;background:#33241a;box-shadow:inset 0 0 0 1px rgba(255,211,110,.35);color:#fbf3ea;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.acm-journee{display:flex;align-items:flex-end;gap:10px}
+.acm-journee img{flex:none;width:64px;height:auto;max-height:96px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
+.acm-journee-bulle{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:18px 18px 18px 6px;background:#fff4e6;color:#2a1a10}
+.acm-journee-bulle b{font-size:13.5px}
+.acm-journee-bulle p{margin:0;font-size:14px;line-height:1.4}
+.acm-journee-bulle ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.acm-journee-bulle li{display:flex;flex-direction:column;gap:1px;font-size:14.5px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.acm-journee-bulle small{font-weight:500;font-size:12.5px;color:#6b4a36}
 .acm-pied{margin:4px 0 0;color:#c9b29c;font-size:12.5px;line-height:1.4}
 .acm-absence{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .acm-absence li{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.07)}

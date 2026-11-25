@@ -53,6 +53,7 @@ import { maBoiteARevoir } from "./revoir-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";
 import { teteDuJour } from "./expressions-figurine-serveur";
 import { ornementsDe } from "./ornements-serveur";
+import { saJournee } from "./journee-figurine-serveur";
 import { sonDouble } from "./mon-double-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -273,7 +274,7 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
   if (!scene) return { piece, scene, figurine };
   const vuLe = Number(vu.le) || 0;
   // (🙂🚪🎁 lot M5 : son humeur, qui a frappé depuis sa dernière visite, les cadeaux sur la table)
-  const [vie, question, salons, regarder, aRevoir] = await Promise.all([
+  const [vie, question, salons, regarder, aRevoir, journee] = await Promise.all([
     vieDeLaMaison(supabase, h, { depuis: vuLe || Date.now() }).catch(() => ({})),
     // (💬 lot M5 : ce que mes proches ont répondu à ma question du jour)
     questionChezMoi(supabase, h).catch(() => null),
@@ -283,8 +284,10 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
     propositionsDeRegarder(supabase, h).catch(() => []),
     // (📼 « Revoir » : mes vidéos vues où des amis ont réagi depuis)
     maBoiteARevoir(supabase, h).catch(() => []),
+    // (👀 « Ma figurine », lot 2 : sa journée, racontée par sa figurine)
+    saJournee(supabase, h).catch(() => null),
   ]);
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}), ...(regarder.length ? { regarder } : {}), ...(aRevoir.length ? { aRevoir: aRevoir.slice(0, 5).map((x) => ({ id: x.id, titre: x.titre, de: x.de })) } : {}) };
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}), ...(regarder.length ? { regarder } : {}), ...(aRevoir.length ? { aRevoir: aRevoir.slice(0, 5).map((x) => ({ id: x.id, titre: x.titre, de: x.de })) } : {}), ...(journee ? { journee } : {}) };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */
