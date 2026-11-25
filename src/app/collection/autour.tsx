@@ -20,6 +20,8 @@
  *   · SA FICHE : son mot, « Répondre avec ma figurine », « 🏠 Voir sa maison », « 👯 L'ajouter en proche », signaler ; la
  *     mienne : « Retirer ma figurine ».
  */
+import { jouerBonjour } from "./bonjour";
+import { PHRASES_BONJOUR } from "@/lib/direct/bonjour";
 import { Pancarte } from "./pancarte";
 import { Ornements } from "./ornements";
 import type { Ornements as OrnementsVus } from "@/lib/direct/ornements";
@@ -427,7 +429,11 @@ function VueLieu({ id, ville, onFermer, onPoser, onFiche }: { id: string; ville:
         {figs.map((f) => {
           const aCote = f.reponseA ? figs.find((o) => o.id === f.reponseA) : undefined;
           return (
-            <button key={f.id} type="button" className={`afg-fig${f.moi ? " moi" : ""}${aCote ? " a-cote" : ""}`} data-fig={f.id} data-moi={f.moi ? "1" : undefined} aria-label={`${f.moi ? "Ta figurine" : f.prenom} : ${f.mot}`} onClick={() => onFiche(f, nom)}>
+            <button key={f.id} type="button" className={`afg-fig${f.moi ? " moi" : ""}${aCote ? " a-cote" : ""}`} data-fig={f.id} data-moi={f.moi ? "1" : undefined} aria-label={`${f.moi ? "Ta figurine" : f.prenom} : ${f.mot}`} onClick={() => {
+                // (🎙️ « Ma figurine », lot 4 : on touche sa figurine, on entend son bonjour)
+                if (!f.moi) jouerBonjour(f.bonjour);
+                onFiche(f, nom);
+              }}>
               <span className="afg-bulle">{f.mot}</span>
               <FigurineAssise f={f} hauteur={120} />
               <small className="afg-prenom">{f.moi ? "Toi" : f.prenom}</small>
@@ -726,6 +732,11 @@ function Fiche({ f, lieuNom, compte, onFermer, onRepondre, onRetiree, onSignalee
         <p>
           Posée à {lieuNom} · {quand(f.le)} · {reste(f.fin)}
         </p>
+        {!f.moi && f.bonjour && (
+          <button type="button" className="afg-bonjour" onClick={() => jouerBonjour(f.bonjour)} data-bonjour-de={f.id}>
+            {PHRASES_BONJOUR.entendre(f.prenom)}
+          </button>
+        )}
       </div>
       {f.moi ? (
         <div className="afg-actions">
@@ -1026,6 +1037,7 @@ export const STYLES_AUTOUR =
 .afg-qui button.pris{background:#FF2E9A;color:#fff}
 .afg-erreur{margin:0 0 8px;padding:10px 12px;border-radius:12px;background:rgba(255,80,80,.14);color:#FFB4A9;font-size:13.5px}
 .afg-fiche-haut{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0 18px;text-align:center}
+.afg-bonjour{min-height:40px;margin-top:6px;padding:0 14px;border:0;border-radius:999px;background:rgba(245,162,58,.16);box-shadow:inset 0 0 0 1px rgba(245,162,58,.5);color:inherit;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
 .afg-fiche-haut h2{margin:0;font:800 22px Poppins,system-ui,sans-serif}
 .afg-fiche-haut p{margin:0;font-size:13px;color:#CBB9C3}
 .afg-actions{display:flex;flex-direction:column;gap:10px}

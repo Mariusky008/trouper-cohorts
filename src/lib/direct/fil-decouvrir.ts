@@ -30,7 +30,7 @@ import type { Zone } from "./pieces-duo";
 export type SilhouetteFil = { tete: string; corps?: { src: string; ratio: number; boite: Zone }; image?: string; pancarte?: string; ornements?: Ornements };
 
 /** Quelqu'un qui est dans un salon, en ce moment (jamais son compte : son identifiant court). */
-export type PresentFil = { q: string; prenom: string; src: string; place: number };
+export type PresentFil = { q: string; prenom: string; src: string; place: number; /** 🎙️ son bonjour (lot 4 de « Ma figurine ») */ bonjour?: string };
 /** Une bulle qui vient d'être dite dans le salon (un texte, une réaction, un geste). */
 export type BulleFil = { id: string; q: string; prenom: string; texte: string; le: number };
 
@@ -78,6 +78,8 @@ export type MaisonFil = {
   passion: { e: string; nom: string; court: string };
   /** 👋 son coucou : envoyé, ou la personne a répondu (jamais une fausse réponse : c'est la sienne) */
   coucou?: "envoye" | "repondu";
+  /** 🎙️ son bonjour (lot 4 de « Ma figurine ») */
+  bonjour?: string;
 };
 /**
  * 🎬 (lot F3) Une séance en cours chez un proche (il n'y est pas) : ceux qui y sont (l'hôte d'abord), ce qui passe à sa

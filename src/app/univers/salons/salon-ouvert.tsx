@@ -32,6 +32,8 @@
  * pastille), sa tête copiée en direct chez ceux qui regardent avec lui, la ligne du temps sous la télé, « 💬 Ce qui s'est
  * dit » (toucher une ligne revoit le moment), et sa vraie voix à la seconde (le micro de la barre d'écriture).
  */
+import { jouerBonjour } from "@/app/collection/bonjour";
+import { PHRASES_BONJOUR } from "@/lib/direct/bonjour";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
@@ -1133,7 +1135,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   aria-label={moi ? "Ta figurine" : p.prenom}
                   onClick={() => {
                     setIndice(false);
-                    if (!moi) setFiche(p);
+                    if (moi) return;
+                    setFiche(p);
+                    // (🎙️ « Ma figurine », lot 4 : on touche sa figurine, on entend son bonjour, avec sa voix)
+                    jouerBonjour(p.bonjour);
                   }}
                 >
                   {musique && platine?.enCours?.q === p.q && (
@@ -1367,6 +1372,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             <div>
               <h2>{fiche.prenom}</h2>
               <small>{prive ? P.ficheSeance : P.fiche}</small>
+              {fiche.bonjour && (
+                <button type="button" className="so-bonjour" onClick={() => jouerBonjour(fiche.bonjour)} data-bonjour-de={fiche.q}>
+                  {PHRASES_BONJOUR.entendre(fiche.prenom)}
+                </button>
+              )}
             </div>
           </div>
           {!prive && fiche.passions?.length ? (
@@ -2412,6 +2422,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-fiche.a-coeur .so-grande{margin-bottom:24px}
 .so-fiche h2{margin:0 0 2px}
 .so-fiche small{opacity:.7;font-size:12.5px}
+.so-bonjour{display:block;margin:8px auto 0;min-height:40px;padding:0 14px;border:0;border-radius:999px;background:rgba(245,162,58,.16);box-shadow:inset 0 0 0 1px rgba(245,162,58,.5);color:inherit;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
 .so-grande{position:relative;isolation:isolate;display:flex;justify-content:center;align-items:flex-end;flex:none}
 .so-halo{position:absolute;left:50%;bottom:-10%;width:min(170%,300px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(246,181,75,.5) 0%,rgba(255,46,154,.2) 38%,rgba(255,46,154,0) 68%);animation:so-brille 3.2s ease-in-out infinite;pointer-events:none;z-index:-1}
 @keyframes so-brille{0%,100%{opacity:.5;transform:translateX(-50%) scale(.94)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}

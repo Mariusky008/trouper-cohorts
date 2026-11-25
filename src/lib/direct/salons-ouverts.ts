@@ -105,7 +105,7 @@ export const MOTIFS_SIGNALEMENT = ["Des insultes ou des moqueries", "Demande des
  * (✨ « Ma figurine », 25 novembre 2026) `tete` : sa tête du jour posée sur son corps sans sa tête (de 0 à 1 dans le cadre
  * du corps) — sinon sa figurine d'une seule image ; `pancarte` : la phrase qu'elle porte partout.
  */
-export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string; tete?: { src: string; corps: string; ratio: number; boite: Zone }; pancarte?: string; ornements?: Ornements };
+export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string; tete?: { src: string; corps: string; ratio: number; boite: Zone }; pancarte?: string; ornements?: Ornements; bonjour?: string };
 
 // ─── 🛋️ D2 : la séance chez moi (ma pièce, ma télé, jusqu'à trois proches) ───
 export const PLACES_SEANCE = 4;

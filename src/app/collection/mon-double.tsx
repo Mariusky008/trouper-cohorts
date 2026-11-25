@@ -25,6 +25,7 @@ import { Ornements } from "./ornements";
 import { PHRASES_ORNEMENTS, SERIE_AUREOLE, SERIE_MIN, aDesOrnements } from "@/lib/direct/ornements";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { ImageDuDouble } from "./image-du-double";
+import { MonBonjour } from "./bonjour";
 
 const ROUTE = "/api/direct/mon-double";
 type Reponse = { double?: MonDoubleVue; vivante?: FigurineVivante | null; error?: string };
@@ -337,6 +338,8 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
               ))}
             </div>
           </section>
+        ) : onglet === "bonjour" ? (
+          <MonBonjour bonjour={d.bonjour} envoyer={envoyer} />
         ) : (
           <section data-panneau="mois">
             <h2>{PHRASES_DOUBLE.moisTitre}</h2>
@@ -404,8 +407,8 @@ const STYLES_MON_DOUBLE = `
 .md-camera{position:absolute;left:12px;top:12px;z-index:5;width:84px;height:110px;border-radius:18px;overflow:hidden;background:#15151b;box-shadow:0 0 0 2px #fff4e6}
 .md-camera video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 .md-camera i{position:absolute;left:7px;top:6px;font-style:normal;font-weight:700;font-size:10px;color:#fff4e6;text-shadow:0 1px 2px #000}
-.md-onglets{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:12px 16px 0}
-.md-onglets button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:62px;padding:6px 2px;border:1px solid rgba(255,196,140,.14);border-radius:16px;background:#1c1411;font-weight:600;font-size:11.5px;line-height:1.15}
+.md-onglets{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:12px 16px 0}
+.md-onglets button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:62px;padding:6px 2px;border:1px solid rgba(255,196,140,.14);border-radius:16px;background:#1c1411;font-weight:600;font-size:10.5px;line-height:1.15;letter-spacing:-.01em}
 .md-onglets b{font-size:20px;line-height:1}
 .md-onglets button.on{background:#261b16;border-color:#f5a23a;box-shadow:inset 0 0 0 1px #f5a23a}
 .md-panneau{flex:1;min-height:0;overflow-y:auto;padding:14px 16px 8px;font-family:var(--font-geist-sans),Geist,system-ui,sans-serif}
