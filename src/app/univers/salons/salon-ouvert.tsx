@@ -29,7 +29,7 @@
  * pastille), sa tête copiée en direct chez ceux qui regardent avec lui, la ligne du temps sous la télé, « 💬 Ce qui s'est
  * dit » (toucher une ligne revoit le moment), et sa vraie voix à la seconde (le micro de la barre d'écriture).
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { lecteurYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { themeDe } from "@/lib/direct/decouvrir";
@@ -92,6 +92,22 @@ type Etat =
 /** ⚡ (25 novembre 2026) l'entrée faite par le serveur avant d'envoyer la page (`page.tsx`) : l'écran arrive prêt. */
 export type EtatSalonOuvert = Exclude<Etat, { etat: "chargement" }>;
 const rien = () => () => {};
+/**
+ * ⚡ (l'entrée faite par le serveur) son heure (`tele.maintenant`) date d'avant l'arrivée de la page : on l'avance du
+ * temps passé depuis que la réponse est arrivée — sinon la télé partirait en retard du temps qu'a mis la page à venir
+ * (comme avant, l'écart restant est celui du réseau, que le pouls corrige ensuite).
+ */
+function aCetteHeure(o: OuvertureSalonOuvert): OuvertureSalonOuvert {
+  try {
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const fin = nav ? nav.responseEnd || nav.responseStart : 0;
+    if (!fin) return o;
+    const passe = Date.now() - (performance.timeOrigin + fin);
+    return passe > 0 && passe < 120_000 ? { ...o, tele: { ...o.tele, maintenant: o.tele.maintenant + passe } } : o;
+  } catch {
+    return o;
+  }
+}
 
 /** ⭐ (le lot B) ma télé du jour : une vidéo vue, une réaction gardée (`/api/direct/tele-du-jour`). */
 const posterTele = (corps: Record<string, unknown>) =>
@@ -168,8 +184,10 @@ export function SalonOuvert({ theme, chez, place, video, initial }: { theme?: st
     void Promise.resolve().then(entrer);
   }, [entrer]);
 
+  // (l'entrée faite par le serveur, remise à l'heure une fois sur le téléphone ; celles du téléphone sont à l'heure)
+  const o = useMemo(() => (etat.etat !== "pret" || !monte ? null : etat === initial ? aCetteHeure(etat.o) : etat.o), [etat, initial, monte]);
   const t = themeDe(theme);
-  if (etat.etat === "pret" && monte) return <Salon key={etat.o.salon.id} o={etat.o} onDehors={() => void entrer()} onExclu={() => setEtat({ etat: "exclu" })} />;
+  if (etat.etat === "pret" && o) return <Salon key={o.salon.id} o={o} onDehors={() => void entrer()} onExclu={() => setEtat({ etat: "exclu" })} />;
   if (etat.etat === "pret" || etat.etat === "chargement")
     return (
       <main className="so so-arrivee" data-etat={etat.etat === "pret" ? "arrivee" : "chargement"} aria-busy="true">
