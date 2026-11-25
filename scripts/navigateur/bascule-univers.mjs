@@ -109,15 +109,19 @@ await avant.goto(`${BASE}/collection#figurine`, { waitUntil: "networkidle" });
 await fermerPablito(avant);
 ok((await menu(avant)) === "Découvrir · Autour · Créer · Mes mèmes · Proches" && (await avant.locator(".pn").count()) === 0, `éteint : le menu d'aujourd'hui, pas d'invitation (${await menu(avant)})`);
 
-// ═══ ALLUMÉ : l'appli s'ouvre sur « Chez moi » (le 13 novembre : « Mon univers » et « Proches » ne font plus qu'un) ═══
+// ═══ ALLUMÉ : l'appli s'ouvre sur le fil de Découvrir (décision du propriétaire, 25 novembre 2026 ; avant : « Messages ») ═══
 // (Marc a déjà ouvert l'appli : sa figurine du nouveau style y est passée — le pont — et Sam peut lui parler)
 await fetch(`${ALLUME}/api/direct/ma-figurine`, { headers: { cookie: `clikme_habitant=${MARC.jeton}` } });
 const p = await tel(ALLUME, SAM);
 await p.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
-await fermerPablito(p);
+await fermerPablito(p, "#o-decouvrir");
+await p.waitForFunction(() => location.hash === "#decouvrir", null, { timeout: 20000 }).catch(() => null);
+ok(new URL(p.url()).hash === "#decouvrir" && (await p.locator("#o-decouvrir [data-fil] .fd-boite").isVisible()) && (await p.locator(".mc-nav-decouvrir.pris.mc-nav-centre").count()) === 1, `🎞️ l'appli s'ouvre sur le fil de Découvrir, son gros bouton au milieu (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
+// 💬 « Messages », d'un toucher
+await p.locator(".mc-nav-proches").click();
 await p.waitForSelector(".cm-tete", { timeout: 20000 }).catch(() => null);
-ok(new URL(p.url()).hash === "#proches" && (await texte(p, "#o-proches .cm-titre h2")) === "Messages" && (await p.locator("#o-proches .cm-fenetre, #o-proches .cm-attend").count()) === 0, `l'appli s'ouvre sur « Messages », sans la fenêtre sur son univers (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
-ok((await menu(p)) === "Découvrir · Messages · Ma maison · Autour" && (await p.locator(".mc-nav-proches.pris.mc-nav-centre").count()) === 1 && (await p.locator(".mc-nav-maison.mc-nav-centre").count()) === 0 && (await p.locator(".mc-nav-maison.mc-nav-moi img").count()) === 1, `🏠 le menu du bas, à quatre : le gros bouton est l'onglet où l'on est (« Messages »), « Ma maison » garde sa figurine en petit (22 novembre 2026) : ${await menu(p)}`);
+ok(new URL(p.url()).hash === "#proches" && (await texte(p, "#o-proches .cm-titre h2")) === "Messages" && (await p.locator("#o-proches .cm-fenetre, #o-proches .cm-attend").count()) === 0, `« Messages », sans la fenêtre sur son univers (${new URL(p.url()).pathname}${new URL(p.url()).hash})`);
+ok((await menu(p)) === "Découvrir · Messages · Ma maison · Autour" && (await p.locator(".mc-nav-proches.pris.mc-nav-centre").count()) === 1 && (await p.locator(".mc-nav-decouvrir.mc-nav-centre").count()) === 0 && (await p.locator(".mc-nav-maison.mc-nav-centre").count()) === 0 && (await p.locator(".mc-nav-maison.mc-nav-moi img").count()) === 1, `🏠 le menu du bas, à quatre : le gros bouton est l'onglet où l'on est (« Messages »), « Ma maison » garde sa figurine en petit (22 novembre 2026) : ${await menu(p)}`);
 await p.locator(".mc-nav-maison").click();
 await p.waitForSelector("#o-maison .cm-attend", { timeout: 20000 }).catch(() => null);
 ok((await p.locator(".mc-nav-maison.mc-nav-centre").count()) === 1 && (await p.locator(".mc-nav-proches.mc-nav-centre").count()) === 0, "… « Ma maison » touchée : c'est elle qui devient le gros bouton, « Messages » redevient normal");
@@ -154,7 +158,7 @@ await p.locator(".mc-nav-proches").click();
 
 // ═══ 🏡 MARC, QUI A SON UNIVERS : « Ma maison » (son univers en entier, ⚙️) ; sa pastille d'humeur, dans « Messages » ═══
 const m = await tel(ALLUME, MARC);
-await m.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
+await m.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
 await fermerPablito(m);
 await m.waitForSelector("#o-proches .cm-tete", { timeout: 20000 }).catch(() => null);
 await m.locator(".mc-nav-maison").click();
@@ -213,7 +217,8 @@ await json(`${MARC.id}/proches.json`, { ids: [SAM.id, LEA.id] });
 await json(`${LEA.id}/proches.json`, { ids: [MARC.id] });
 const visiter = (qui, corps) => fetch(`${ALLUME}/api/direct/visites`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${qui.jeton}` }, body: JSON.stringify({ ...corps, cle: cleProfil(MARC.id) }) });
 ok((await visiter(SAM, { action: "souvenir", objet: "fleurs", mot: "Pour ton atelier !" })).status === 200 && (await visiter(LEA, { action: "frapper" })).status === 200, "Sam laisse un bouquet chez Marc ; Léa frappe à sa porte");
-await m.goto(`${ALLUME}/collection`, { waitUntil: "networkidle" });
+// (🎁 la surprise attend dans « Messages » : depuis le 25 novembre 2026, l'appli s'ouvre sur le fil)
+await m.goto(`${ALLUME}/collection#proches`, { waitUntil: "networkidle" });
 await fermerPablito(m);
 // (📐 lot 2 : la ligne de chacun dit ce qui s'est passé — lue derrière la découverte, qui s'ouvre par-dessus)
 await m.waitForFunction(() => [...document.querySelectorAll(".cm-liste li[data-cle] .cm-texte")].some((x) => x.textContent.includes("cadeau")), null, { timeout: 20000, polling: 200 }).catch(() => null);

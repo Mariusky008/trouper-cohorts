@@ -593,6 +593,10 @@ Autour, l'humeur de ses proches), sa figurine au bord ; toucher deux fois, elle 
 L'ancienne page est derrière « Tous les salons » (`#salons`). Suivent F2 (les maisons ouvertes), F3 (mes proches en
 direct), F4 (l'ordre du fil).
 
+**🎞️ L'appli s'ouvre sur le fil de Découvrir (25 novembre 2026, décision du propriétaire ; `fil.md`, section 5)** :
+plus sur « Messages ». Sauf pendant que sa figurine se fabrique, et à la première ouverture de l'appli posée sur l'écran
+d'accueil (« Messages », pour proposer les notifications). Essai : `bascule-univers.mjs`.
+
 **🧹 Le mème du jour est parti (23 novembre 2026)** — le propriétaire : « le mème du jour n'existe plus, c'est l'humeur du
 jour maintenant ». Partis : la notification de 11 h 30 (ses deux tâches planifiées, `vercel.json`), le thème du jour en
 haut de « Créer », le lien « 🔥 Le mème du jour › » de « Moi » (il mène au fil), l'essai `meme-du-jour.mjs`. Restent les
