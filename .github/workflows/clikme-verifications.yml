@@ -43,6 +43,8 @@ jobs:
         run: node scripts/verifier-etagere.mjs
       - name: Écrire, partager (lot M1), sans téléphone (le texte, les liens, les adresses refusées, les aperçus, les phrases)
         run: node scripts/verifier-messages.mjs
+      - name: L'ordre du fil (lot F4), sans téléphone (ses proches d'abord, rien deux fois de suite, les phrases)
+        run: node scripts/verifier-fil.mjs
       - name: Lint de l'épisode
         run: >-
           npx eslint
