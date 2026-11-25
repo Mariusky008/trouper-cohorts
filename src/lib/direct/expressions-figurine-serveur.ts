@@ -31,7 +31,7 @@ import { consigneVisageAssiseLibre } from "./perso-consignes";
 import { prendre, rendre } from "./pieces-duo-serveur";
 import { imageSalon } from "./salon-fichiers-serveur";
 import { EXPRESSIONS_VISAGE } from "./visage-essai";
-import { EXPRESSIONS_FIGURINE, RATTRAPAGE_EXPRESSIONS, type EtatExpressionsHabitants, type ExpressionFigurine, type ExpressionsFigurine, type ExpressionsHabitantVue, type FigurineVivante, type TeteDuJour } from "./expressions-figurine";
+import { EXPRESSIONS_FIGURINE, RATTRAPAGE_EXPRESSIONS, TETES_FIGURINE, type TeteFigurine, type EtatExpressionsHabitants, type ExpressionsFigurine, type ExpressionsHabitantVue, type FigurineVivante, type TeteDuJour } from "./expressions-figurine";
 import { teteChoisieDuJour } from "./mon-double-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -46,7 +46,7 @@ const base = () => s(process.env.OPENAI_PERSO_BASE_URL) || s(process.env.OPENAI_
  * taille, sous le même angle** — sa tête est ensuite découpée au même endroit que la tête habituelle. La tristesse et la
  * colère restent tendres, comme des personnages de dessin animé : jamais de larmes qui coulent, jamais de méchanceté.
  */
-const VISAGES: Record<ExpressionFigurine, string> = {
+const VISAGES: Record<TeteFigurine, string> = {
   sourire: "a big, warm, happy SMILE: cheeks raised, eyes slightly squinting with happiness, eyebrows relaxed and lifted",
   rire: "a big burst of LAUGHTER: eyes squeezed shut into happy crescents, cheeks pushed up, a wide open laughing mouth",
   surprise: "a big SURPRISE: eyes wide open, eyebrows raised very high, the mouth open in a round « oh! »",
@@ -54,8 +54,10 @@ const VISAGES: Record<ExpressionFigurine, string> = {
   grimace: "a funny GRIMACE: tongue sticking out, one eye squeezed shut, nose wrinkled",
   triste: "a SAD, downcast face, tender like a cartoon character: inner eyebrows raised and drawn together, eyes a little glossy looking slightly down, the corners of the mouth clearly turned down in a small pout (no tears running)",
   fache: "a GRUMPY, cross face, comic like a cartoon character (never scary): eyebrows lowered and pulled together into a deep frown, eyes narrowed, lips pressed tight, cheeks slightly puffed",
+  // (🗣️ 25 novembre 2026 : sa tête qui parle — la bouche suit sa voix)
+  parle: "TALKING, caught in the middle of a word: the usual calm, neutral face (eyebrows relaxed, eyes open as usual, no smile), only the mouth open as when saying « ah », the jaw slightly lowered, the upper teeth and the tongue just visible",
 };
-export const consigneExpression = (e: ExpressionFigurine) =>
+export const consigneExpression = (e: TeteFigurine) =>
   consigneVisageAssiseLibre(`${VISAGES[e]}. The head keeps EXACTLY the same position, size and angle (no tilt, no turn): only the face changes`);
 
 // (la part de la tête effacée du corps, et le corps sans sa tête : `calques-figurine-serveur.ts`, une seule règle — la
@@ -163,14 +165,16 @@ export async function teteAuMemeEndroit(image: Buffer, figurine: Buffer, r: Cadr
 const dossier = (h: string) => `${h}/calques`;
 const NOMS = {
   etat: (k: string) => `${k}-expressions.json`,
-  entiere: (k: string, e: ExpressionFigurine) => `${k}-expression-${e}.png`,
-  tete: (k: string, e: ExpressionFigurine) => `${k}-tete-${e}.png`,
+  entiere: (k: string, e: TeteFigurine) => `${k}-expression-${e}.png`,
+  tete: (k: string, e: TeteFigurine) => `${k}-tete-${e}.png`,
   sansTete: (k: string) => `${k}-corps-sans-tete.png`,
 };
 /** (les cinq que la caméra reconnaît : sans elles, pas de figurine vivante) */
 const lesCinq = EXPRESSIONS_VISAGE.map((x) => x.cle);
-/** (😢😠 22 novembre 2026 : les sept à faire, la tristesse et la colère comprises) */
+/** (😢😠 22 novembre 2026 : les sept expressions, la tristesse et la colère comprises) */
 const lesSept = EXPRESSIONS_FIGURINE.map((x) => x.cle);
+/** (🗣️ 25 novembre 2026 : les huit têtes à faire — les sept, puis la bouche ouverte) */
+const lesHuit = TETES_FIGURINE.map((x) => x.cle);
 
 async function lireEtat(supabase: Supabase, h: string, k: string): Promise<ExpressionsFigurine> {
   const b = await depotDans(supabase, dossier(h))
@@ -184,11 +188,11 @@ async function lireEtat(supabase: Supabase, h: string, k: string): Promise<Expre
   }
   if (o.empreinte !== k) return { empreinte: k, tetes: {} };
   const tetes: ExpressionsFigurine["tetes"] = {};
-  for (const e of lesSept) if (s(o.tetes?.[e])) tetes[e] = s(o.tetes?.[e]);
+  for (const e of lesHuit) if (s(o.tetes?.[e])) tetes[e] = s(o.tetes?.[e]);
   return { empreinte: k, tetes, ...(s(o.corpsSansTete) ? { corpsSansTete: s(o.corpsSansTete) } : {}), ...(s(o.le) ? { le: s(o.le) } : {}), ...(s(o.rate) ? { rate: s(o.rate) } : {}), ...(s(o.erreur) ? { erreur: s(o.erreur) } : {}), ...(Number(o.decoupe) > 1 ? { decoupe: Number(o.decoupe) } : {}) };
 }
-/** (les sept et le corps sans sa tête, découpés sur des calques de la règle d'aujourd'hui) */
-const complet = (e: ExpressionsFigurine) => Boolean(e.corpsSansTete) && lesSept.every((x) => e.tetes[x]) && (e.decoupe ?? 1) === DECOUPE_TETE;
+/** (les huit têtes et le corps sans sa tête, découpés sur des calques de la règle d'aujourd'hui) */
+const complet = (e: ExpressionsFigurine) => Boolean(e.corpsSansTete) && lesHuit.every((x) => e.tetes[x]) && (e.decoupe ?? 1) === DECOUPE_TETE;
 /** (🧍 22 novembre 2026 : découpées sur ces calques-là — la même règle de découpe de la tête) */
 const memeDecoupe = (e: ExpressionsFigurine, c: { decoupe?: number }) => (e.decoupe ?? 1) === (c.decoupe ?? 1);
 const enPause = (e: ExpressionsFigurine) => Boolean(e.rate) && Date.now() - Date.parse(e.rate ?? "") < RATTRAPAGE_EXPRESSIONS.recommencerApres;
@@ -216,7 +220,7 @@ export async function figurineVivante(supabase: Supabase, h: string): Promise<Fi
   const [calques, etat, du] = await Promise.all([calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null), lireEtat(supabase, h, empreinteDe(chemin)), humeurP]);
   if (!calques || !etat.corpsSansTete || !lesCinq.every((x) => etat.tetes[x]) || !memeDecoupe(etat, calques)) return null;
   const expressions = Object.fromEntries(lesSept.filter((x) => etat.tetes[x]).map((x) => [x, etat.tetes[x]])) as FigurineVivante["expressions"];
-  return { ratio: calques.ratio, corps: etat.corpsSansTete, tete: { src: calques.tete.fichier, boite: calques.tete.boite, pivot: calques.tete.pivot }, expressions, ...(du && expressions[du] ? { humeur: du } : {}) };
+  return { ratio: calques.ratio, corps: etat.corpsSansTete, tete: { src: calques.tete.fichier, boite: calques.tete.boite, pivot: calques.tete.pivot }, expressions, ...(du && expressions[du] ? { humeur: du } : {}), ...(etat.tetes.parle ? { parle: etat.tetes.parle } : {}) };
 }
 
 /**
@@ -233,7 +237,7 @@ export async function teteDuJour(supabase: Supabase, h: string): Promise<TeteDuJ
   return src ? { e, src, decoupe: etat.decoupe ?? 1 } : null;
 }
 
-export type PassageExpressions = { faites: ExpressionFigurine[]; manquent: ExpressionFigurine[]; rien?: "sans-figurine" | "deja" | "en-pause" | "en-cours"; erreur?: string };
+export type PassageExpressions = { faites: TeteFigurine[]; manquent: TeteFigurine[]; rien?: "sans-figurine" | "deja" | "en-pause" | "en-cours"; erreur?: string };
 
 /**
  * 🛠️ Ce qui manque de ses expressions (le corps sans sa tête, puis les expressions qui manquent, toutes à la fois), avant
@@ -245,19 +249,19 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
   const k = empreinteDe(chemin);
   const avantTout = await lireEtat(supabase, h, k);
   if (complet(avantTout)) return { faites: [], manquent: [], rien: "deja" };
-  if (!o.force && enPause(avantTout)) return { faites: [], manquent: lesSept.filter((e) => !avantTout.tetes[e]), rien: "en-pause" };
+  if (!o.force && enPause(avantTout)) return { faites: [], manquent: lesHuit.filter((e) => !avantTout.tetes[e]), rien: "en-pause" };
   const verrou = depotDans(supabase, `${h}/expressions-verrou`);
   const qui = await prendre(verrou);
-  if (!qui) return { faites: [], manquent: lesSept.filter((e) => !avantTout.tetes[e]), rien: "en-cours" };
+  if (!qui) return { faites: [], manquent: lesHuit.filter((e) => !avantTout.tetes[e]), rien: "en-cours" };
   const d = depotDans(supabase, dossier(h));
   try {
     // (relue sous le verrou : un autre passage vient peut-être de finir)
     const etat = await lireEtat(supabase, h, k);
     if (complet(etat)) return { faites: [], manquent: [], rien: "deja" };
     const ecrire = (x: ExpressionsFigurine) => d.ecrire(NOMS.etat(k), Buffer.from(JSON.stringify(x)), "application/json");
-    const rater = async (erreur: string, faites: ExpressionFigurine[] = []) => {
+    const rater = async (erreur: string, faites: TeteFigurine[] = []) => {
       await ecrire({ ...etat, rate: new Date().toISOString(), erreur });
-      return { faites, manquent: lesSept.filter((e) => !etat.tetes[e]), erreur };
+      return { faites, manquent: lesHuit.filter((e) => !etat.tetes[e]), erreur };
     };
     // (ses calques d'abord — faits ici s'ils ne le sont pas encore : le cadrage de sa tête habituelle)
     const calques = await calquesDeFigurine(supabase, h).catch(() => null);
@@ -283,9 +287,9 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
       etat.corpsSansTete = img.src;
     }
     // (les expressions qui manquent, toutes à la fois : une expression entière déjà faite se redécoupe sans le moteur)
-    const manquent = lesSept.filter((e) => !etat.tetes[e]);
+    const manquent = lesHuit.filter((e) => !etat.tetes[e]);
     const rendus = await Promise.all(
-      manquent.map(async (e): Promise<{ e: ExpressionFigurine; src?: string; erreur?: string }> => {
+      manquent.map(async (e): Promise<{ e: TeteFigurine; src?: string; erreur?: string }> => {
         try {
           let entiere = await d.lire(NOMS.entiere(k, e)).catch(() => null);
           if (!entiere) {
@@ -313,7 +317,7 @@ export async function fabriquerExpressionsDeTete(supabase: Supabase, h: string, 
     await d
       .ecrire(NOMS.etat(k), Buffer.from(JSON.stringify({ ...avantTout, rate: new Date().toISOString(), erreur: "Ça n’a pas marché." })), "application/json")
       .catch(() => false);
-    return { faites: [], manquent: lesSept.filter((e) => !avantTout.tetes[e]), erreur: "Ça n’a pas marché." };
+    return { faites: [], manquent: lesHuit.filter((e) => !avantTout.tetes[e]), erreur: "Ça n’a pas marché." };
   } finally {
     await rendre(verrou, qui);
   }

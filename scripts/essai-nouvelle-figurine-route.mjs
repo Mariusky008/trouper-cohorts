@@ -135,7 +135,7 @@ for (let k = 0; k < 120 && !expressions?.le; k++) {
   await new Promise((fini) => setTimeout(fini, 500));
   expressions = await lire(`${h}/calques/${empreinteAssise}-expressions.json`);
 }
-ok(Boolean(expressions?.le) && Object.keys(expressions.tetes ?? {}).length === 7 && Boolean(expressions.corpsSansTete), "📷 « C'est moi ! » : ses sept expressions de visage suivent (la tête seulement : la tristesse et la colère comprises), après la réponse");
+ok(Boolean(expressions?.le) && Object.keys(expressions.tetes ?? {}).length === 8 && Boolean(expressions.tetes.parle) && Boolean(expressions.corpsSansTete), "📷 « C'est moi ! » : ses sept expressions de visage et sa bouche ouverte suivent (la tête seulement : la tristesse et la colère comprises), après la réponse");
 const perso = await (await fetch(`${BASE}/api/direct/perso`, { headers: { cookie: cookies } })).json();
 ok(perso.origine === "rangee" && perso.fiche?.complete === true && perso.fiche.style === "collection-1", "ce qu'il voit de sa fiche : complète, du nouveau style");
 const admin = await (await fetch(`${BASE}/api/admin/direct/fiches?h=${h}`, { headers: { cookie: COOKIE_ADMIN } })).json();
