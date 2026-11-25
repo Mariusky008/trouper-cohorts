@@ -16,7 +16,7 @@ https://claude.ai/artifact/AAQV8sh6SN382BxzbLF31r
 | 1 | Ma maison épurée, le bouton « ✨ Ma figurine », l'écran « Mon double du jour », la même figurine partout | ✓ fusionné le 25 novembre (#282) ; section 2 |
 | — | « Elle change toute seule » : la série 🔥 (une auréole à 7 jours), l'accessoire de sa passion, le cœur-souvenir « offert par Sam » — des calques posés par-dessus, sans nouvelle image | ✓ fusionné le 25 novembre (#283) ; section 3 |
 | 2 | « Pendant ton absence » : sa figurine raconte sa journée, de vrais prénoms, de vrais chiffres | ✓ fusionné le 25 novembre (#284) ; section 4 |
-| 3 | L'image à partager : « Ma figurine du jour » | section 5 |
+| 3 | L'image à partager : « Ma figurine du jour » | ✓ fusionné le 25 novembre (#286) ; section 5 |
 | 4 | Le bonjour avec SA voix (jamais de voix de synthèse) | section 6 |
 | 5 | La collection | à faire |
 
