@@ -1793,3 +1793,54 @@ même seconde pour tous. Le lot M1 en fait **le salon musique** — les autres s
 L'onglet Découvrir s'ouvre désormais sur un fil plein écran : on glisse de pièce en pièce, sa figurine au bord. Tout ce
 qui précède (ma télé du jour, les salons par passion, la séance) reste là, derrière « Tous les salons » (`#salons`) — et
 le fil y mène. Le détail : `docs/univers/fil.md`.
+
+## 38. 🎙️ « Ma réplique » : la suite de la vidéo, dite par sa figurine (25 novembre 2026, décidé, pas encore codé)
+
+Le propriétaire : « À la fin de la vidéo, j'aimerais que les utilisateurs puissent laisser un message vidéo avec leur
+figurine. » Les réactions à la seconde (4.5) disent ce qu'on a ressenti **pendant** la vidéo ; personne ne dit rien
+**à la fin**. « Ma réplique », c'est ce qu'on dit après : « Moi, je suis sûr que j'aurais réussi ! » — « Mais
+absolument pas, tu serais tombé ! ». **Le code attend la fin du Lot 5 de « Ma figurine »** (une PR à la fois), et la
+maquette est validée par le propriétaire avant tout code.
+
+### 38.1 Ce qui est enregistré : sa voix et sa tête, jamais son visage
+
+- **Rien n'est filmé.** On enregistre **sa vraie voix** (le micro du talkie, `src/app/salon/micro.tsx`, comme le
+  bonjour du Lot 4 de « Ma figurine ») et, si la caméra est acceptée, **la piste de ses têtes** lue sur le téléphone
+  (`src/app/univers/visage/ma-tete.ts` : l'expression, la tête penchée et tournée, à quelques images par seconde) —
+  `[{ t, e, roulis, lacet }]`. Jamais de voix de synthèse.
+- **Rejouée par sa figurine** : la bouche s'ouvre au volume de sa voix (`figurine-qui-parle.tsx`), elle fait ses têtes
+  à la bonne seconde (`figurine-vivante.tsx`). Sans caméra : la bouche seule, avec sa tête du jour.
+- **10 s au plus**, une réécoute avant d'envoyer (« Recommencer » / « Envoyer »).
+
+### 38.2 À la fin de la vidéo, sans rien imposer
+
+- À la fin, sous la télé, un bouton discret : **« 🎙️ Ma réplique »**. Rien ne bloque « Suivante ».
+- **Une seule réplique par personne et par vidéo** (on peut la refaire, ou l'effacer). On peut **répondre à une
+  réplique** (« ↩️ Répondre à Paul ») : sa réponse est sa réplique, posée à la suite de celle de Paul.
+- Pas de texte écrit sous la réplique au départ (il faudrait transcrire la voix) : le prénom, la durée, la tête.
+
+### 38.3 Regarder ensuite : une seule façon
+
+- La vidéo, puis, à la fin : **« ▶ Les répliques · Paul, Léa »**. On les écoute, ou on passe à la suivante. Leur ordre :
+  celui de l'enregistrement, chaque réponse juste après la réplique à laquelle elle répond.
+- **📌 Garder** met la capsule (la vidéo et ses répliques) sur l'étagère de sa maison.
+
+### 38.4 Qui les voit (décidé : seulement les participants au départ)
+
+- **Chez moi (ma télé du jour, une séance)** : mes proches, ceux qui voient déjà mes réactions (4.5).
+- **Dans un salon ouvert** : ceux de ce salon, **48 h**, comme la conversation ; ce qu'on a gardé sur l'étagère reste.
+- **Jamais des inconnus** qui découvrent la vidéo plus tard, parce que :
+  - **les 15-17 ans** : leur voix ne sort jamais de leur cercle (et jamais un adulte ne les entend) ;
+  - **la modération** : entre proches, « Signaler » et « Effacer ma réplique » suffisent ; des voix publiques, non ;
+  - **les droits** : dans l'appli, la vidéo passe par le lecteur officiel (YouTube) ; une capsule partagée hors de
+    l'appli ne montre **jamais ses images** (le titre et la chaîne sur un carton, comme « 🎬 Nos réactions ») ;
+  - **une voix est une donnée personnelle** : chacun efface la sienne quand il veut, partout.
+- Le partage hors de l'appli suit le réglage existant « Mes réactions peuvent apparaître dans les clips de mes
+  proches » (éteint pour les 15-17 ans).
+- **Plus tard, peut-être** : des répliques publiques, pour les adultes seulement, avec un accord clair et une
+  modération — à décider après avoir vu l'usage.
+
+### 38.5 À décider à la maquette
+
+- La durée de conservation chez les proches (la proposition : tant que la vidéo est dans « Revoir », section 31).
+- Le nombre de répliques montrées d'office à la fin (la proposition : les 3 premières, puis « Toutes »).
