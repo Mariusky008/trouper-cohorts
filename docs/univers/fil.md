@@ -243,7 +243,61 @@ destiné, c'est suffisant » (la rangée « À suivre sur la télé » de la maq
 huit de la cuisine vide, « Inviter », « Toi » après s'être assise, sa figurine au bord seulement hors des salons, et sur
 un ordinateur la pièce à gauche et le salon à droite) ; `proches-en-direct.mjs` trouve sa figurine par « Toi ».
 
-## 9. Décidé aussi
+## 9. Plus d'écran entre « M'asseoir » et le salon (25 novembre 2026)
+
+**Le constat du propriétaire** : « quand on clique sur M'asseoir, j'ai d'abord un écran complètement inutile qui
+stipule le thème, comme Séries et films, et qui fait perdre du temps pour rien. » Cet écran (« 🎬 Séries et films … »)
+attendait que le téléphone ait chargé la page, puis demandé au serveur de faire entrer sa figurine.
+
+- **Le serveur entre avant d'envoyer la page** (`src/app/univers/salons/page.tsx`, `entreeDuServeur`) : la même
+  entrée que l'action `entrer` (un salon) ou `entrer-chez` (une séance). La page arrive avec le salon prêt et sa place
+  prise. Il n'y a plus d'aller-retour en plus.
+- **Le temps que le téléphone reprenne la page** (une fraction de seconde), on voit la pièce encore vide : le titre du
+  salon et la télé noire, jamais le thème en grand (`SalonOuvert`, `initial`).
+- Les autres écrans ne changent pas : son âge à dire, sa figurine à créer (sans compte, arrivé par un lien), exclu.
+  Si l'entrée échoue côté serveur, le téléphone la refait lui-même, comme avant.
+- **L'heure de la télé** : l'heure du serveur (`tele.maintenant`) date d'avant l'arrivée de la page. Quand le navigateur
+  a chargé cette page-ci, on l'avance du temps écoulé depuis la réponse (`aCetteHeure`), pour que tout le monde reste
+  à la même seconde. Arrivé par une navigation de Next (sans recharger), le délai est court et on n'y touche pas.
+- **Dans le fil**, « M'asseoir », « Ta place » et « M'asseoir avec eux » d'une séance réagissent tout de suite au toucher : ils
+  battent doucement pendant que le serveur fait entrer sa figurine (`data-part`).
+
+**L'essai** : `scripts/navigateur/salons-ouverts.mjs` vérifie qu'en entrant dans le salon du foot, on ne voit jamais
+l'écran du thème et que le téléphone n'envoie aucune demande d'entrée. Sans ce changement, l'essai échoue.
+
+## 10. La fiche d'une figurine, dans un salon : sa figurine comme dans Ma maison (25 novembre 2026)
+
+**Le propriétaire** : « quand on clique sur une figurine dans le salon et que les options s'ouvrent, je veux qu'on voie
+la figurine telle qu'elle a été faite dans Ma maison, avec pancarte s'il y en a une ». Avant, la fiche montrait une
+petite image (64 points), sans sa tête du jour ni sa pancarte.
+
+- **En haut de sa fiche, sa figurine en grand** (170 points ; `FigurineEnGrand`, `salon-ouvert.tsx`). Elle est comme au
+  centre de sa maison (`docs/univers/ma-figurine.md`) :
+  - sa tête du jour posée sur son corps ;
+  - ce qu'elle porte toute seule (l'auréole, l'accessoire de sa passion, le cœur), cette fois avec leurs étiquettes
+    (« 🔥 8 », « 🎁 offert par Léa ») ;
+  - sa pancarte au-dessus ;
+  - le halo qui brille et le souffle de Ma maison.
+- **Dessous, rien ne change** : son prénom, « prénom et figurine seulement », ses passions, les gestes, « 👯 Ajouter en
+  proche », sa maison, « Ne plus voir » et « Signaler ».
+- **Une figurine de l'ancien style** (une seule image) : l'image en grand, sa pancarte et ses étiquettes.
+- Dans un salon comme dans une séance chez un proche : la même fiche.
+- Les données étaient déjà là (`PresentSalon.tete`, `pancarte`, `ornements`, posés par « Ma figurine », #282 et #283) :
+  rien ne change côté serveur. Comme dans le salon, sa tête et sa pancarte sont celles qu'il avait en entrant.
+
+**L'essai** : `scripts/navigateur/fiche-salon.mjs`. Sam a :
+
+- sa tête du jour (il rit) et sa pancarte ;
+- huit jours de suite ;
+- le foot comme passion ;
+- un cœur offert par Léa.
+
+Il est au salon du foot. Léa le touche, et sa fiche montre sa figurine en grand avec sa tête du jour, sa pancarte,
+l'auréole, l'écharpe, le cœur, leurs étiquettes et le halo. La pancarte tient dans la feuille, et l'étiquette du cœur ne
+cache pas son prénom. Dessous restent les gestes et « Ajouter en proche », et un geste referme la fiche. (Le faux moteur
+d'images rend des images transparentes : pour la capture, son corps et sa tête sont redessinés.)
+
+## 11. Décidé aussi
 
 - **Décidé par le propriétaire (25 novembre 2026) : l'appli s'ouvre sur le fil de Découvrir**, plus sur « Messages »
   (`ma-collection.tsx`, à l'ouverture sans adresse). Trois exceptions : pendant que sa figurine se fabrique, rien ne

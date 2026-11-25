@@ -146,10 +146,21 @@ await lea.screenshot({ path: `${D}/salons-ouverts-1-accueil.png`, fullPage: fals
 await lea.locator("#o-salons .td-direct").evaluate((e) => e.scrollIntoView({ block: "start" }));
 await lea.waitForTimeout(300);
 await lea.screenshot({ path: `${D}/salons-ouverts-1b-vitrine.png`, fullPage: false });
+// (⚡ 25 novembre 2026, le propriétaire : « un écran complètement inutile qui stipule le thème ») le serveur entre avant
+// d'envoyer la page : jamais l'écran du thème, et le téléphone n'a plus à entrer lui-même
+const entreesDuTelephone = [];
+const compterEntree = (r) => r.method() === "POST" && /salons-ouverts/.test(r.url()) && /"action":"entrer/.test(r.postData() ?? "") && entreesDuTelephone.push(r.url());
+lea.on("request", compterEntree);
+await lea.addInitScript(() => {
+  const vus = (window.__ecranDuTheme = []);
+  new MutationObserver(() => document.querySelector(".so-grand, .so[data-etat='chargement']") && vus.push(1)).observe(document, { childList: true, subtree: true });
+});
 await lea.locator('#o-salons [data-salon="foot"]').click();
 await lea.waitForURL(/\/univers\/salons\?theme=foot/);
 const salon = lea.locator(".so[data-salon]");
 ok(await attendre(lea, async () => (await salon.getAttribute("data-salon")) === "foot-1"), "elle entre : le salon du foot");
+lea.off("request", compterEntree);
+ok(!(await lea.evaluate(() => window.__ecranDuTheme?.length ?? 0)) && !entreesDuTelephone.length, `⚡ le salon tout de suite : ni l'écran du thème, ni d'entrée faite par le téléphone (${entreesDuTelephone.length})`);
 ok(/⚽ Le salon du foot/.test(await texte(lea.locator("[data-nom]"))) && /1 ici · 7 places libres · 8 places/.test(await texte(lea.locator("[data-places]"))), `« ${await texte(lea.locator("[data-nom]"))} », « ${await texte(lea.locator("[data-places]"))} »`);
 ok(await attendre(lea, async () => (await lea.locator('.so-fig[data-moi] img').evaluate((i) => i.complete && i.naturalWidth > 0)) === true && /Toi/.test(await texte(lea.locator(".so-fig[data-moi]")))), "sa figurine, dans la pièce : « Toi »");
 // (🎭 21 novembre 2026, « comme la photo 2 » : plus jamais la pièce — sans décor validé, le fond sombre et les places du plan)
