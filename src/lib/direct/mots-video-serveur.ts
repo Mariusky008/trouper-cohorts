@@ -27,6 +27,7 @@ import { IDS_THEMES } from "./decouvrir";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { figurineVivante } from "./expressions-figurine-serveur";
 import { noterFicheVideo } from "./fiche-video-serveur";
+import { suivreApresPublication } from "./suivis-video-serveur";
 import { MOTS_VIDEO, ordonnerMots, tetesValides, type MotDeQuelquun, type MotVu, type SuiteVue, type TeteMot } from "./mots-video";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -215,6 +216,8 @@ export async function publierMot(
   await ecrireJson(supabase, `${dossierSesMots(m, q)}/${v.id}.json`, { le }).catch(() => false);
   // (💬 la fiche de la vidéo : sa discussion se retrouvera, même quand elle aura quitté la télé ou le salon)
   await noterFicheVideo(supabase, v);
+  // (🔔 je suis désormais la discussion 🌍 de cette vidéo, sans bruit — sauf si j'ai déjà choisi)
+  await suivreApresPublication(supabase, moi.id, { video: v.id, tranche: m, titre: v.titre }).catch(() => false);
   return { ok: true };
 }
 

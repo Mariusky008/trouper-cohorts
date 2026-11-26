@@ -20,6 +20,23 @@ export const CERCLES_DISCUSSION = ["proches", "tous"] as const;
 export type CercleDiscussion = (typeof CERCLES_DISCUSSION)[number];
 export const cercleValide = (x: unknown): CercleDiscussion | null => ((CERCLES_DISCUSSION as readonly unknown[]).includes(x) ? (x as CercleDiscussion) : null);
 
+/** 🔔 (lot A3) Le suivi d'une discussion : prévenir (sur le téléphone), sans bruit (dans Activité), ne plus suivre. */
+export const NIVEAUX_SUIVI = ["prevenir", "discret", "non"] as const;
+export type NiveauSuivi = (typeof NIVEAUX_SUIVI)[number];
+export const NIVEAUX: Record<NiveauSuivi, { e: string; nom: string; sous: string }> = {
+  prevenir: { e: "🔔", nom: "Me prévenir", sous: "Une notification quand on y écrit (jamais la nuit, une à la fois)" },
+  discret: { e: "🤫", nom: "Sans bruit", sous: "Les nouveautés t’attendent dans Activité ; une réponse à toi te prévient" },
+  non: { e: "🔕", nom: "Ne plus suivre", sous: "Rien ne te prévient ; la discussion reste là si tu reviens" },
+};
+/**
+ * Le niveau de départ, tant qu'on n'a pas choisi : 👯 entre proches, on est prévenu (on l'a vue) ; 🌍 sans bruit si
+ * l'on y a parlé, sinon pas suivi. Le temps passé devant ne compte pas : ce qu'on y fait, si.
+ */
+export function niveauDeDepart(cercle: CercleDiscussion, o: { vue: boolean; aParle: boolean }): NiveauSuivi {
+  if (cercle === "proches") return o.vue || o.aParle ? "prevenir" : "non";
+  return o.aParle ? "discret" : "non";
+}
+
 export type VideoDiscussion = { id: string; titre: string; chaine: string; duree: number };
 
 /** Ce que l'écran reçoit. */
@@ -35,6 +52,9 @@ export type DiscussionVue = {
   tous: SuiteVue | null;
   /** ✍️ (lot A2) les mots écrits de ma tranche (vides tant que je n'ai pas dit si j'ai 18 ans). */
   ecrits: EcritVu[];
+  /** 🔔 (lot A3) mon niveau dans chaque cercle, et quand je l'avais lue avant d'ouvrir (0 : jamais) — « Nouveau ». */
+  suivi: Record<CercleDiscussion, NiveauSuivi>;
+  luAvant: Record<CercleDiscussion, number>;
 };
 
 /**
@@ -172,6 +192,13 @@ export const PHRASES_DISCUSSION = {
   sousLaVideo: "🌍 Le laisser sous la vidéo",
   sousLaVideoSous: "Ceux qui la regarderont ailleurs le liront",
   voirDiscussion: "💬 Voir la discussion",
+  // 🔔 (lot A3) suivre
+  suivreTitre: "Cette discussion",
+  nouveau: "Nouveau",
+  proposerSuivre: "🔔 Te prévenir quand quelqu’un écrit ici ?",
+  oui: "Oui",
+  pasBesoin: "Pas besoin",
+  niveauChoisi: (nom: string) => `✓ ${nom}`,
   introuvable: "Cette discussion n’est plus là : la vidéo a quitté ta télé, et tu n’y as rien dit.",
   age: "Avant de lire leurs mots : as-tu 18 ans ou plus ? Les 15-17 ans ont leur discussion à eux.",
   adulte: "J’ai 18 ans ou plus",

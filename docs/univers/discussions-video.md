@@ -39,7 +39,7 @@ messagerie bruyante.
 | A0 | La conception et les maquettes | ✅ validée le 26 novembre 2026 |
 | A1 | L'écran Discussion vidéo, en lecture ; la fiche vidéo ; les entrées | ✅ fait |
 | A2 | Écrire : le mot écrit 🌍, répondre, « Lu par… », « 🌍 Le laisser sous la vidéo » | ✅ fait |
-| A3 | Suivre : les trois niveaux, les niveaux de départ, le ⋯ | à faire |
+| A3 | Suivre : les trois niveaux, les niveaux de départ, le ⋯ | ✅ fait |
 | A4 | Activité et la cloche 🛎️ ; « Pendant ton absence » y passe | à faire |
 | A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | à faire |
 | A6 | Les groupes : le cercle 👥, vidéo par vidéo | à faire |
@@ -100,3 +100,17 @@ messagerie bruyante.
   répond à Léa ; Léa répond au mot dit d'Inès ; depuis un salon ; Jade à part ; signaler, trois fois, l'administrateur ;
   effacer) et de `navigateur/discussion-video.mjs` (l'accord, « Publier », répondre à Inès, le fil, un lien refusé,
   effacer).
+
+## A3, dans le code
+
+- **Le suivi, chez moi** : `<h>/suivis-videos.json` = { suivis: { "<cercle>:<vidéo>": { niveau?, lu?, depuis?, titre? } } }
+  (deux cents au plus, les plus anciens partent) ; et, pour qu'A5 sache qui prévenir sans lire tous les comptes, un
+  fichier par suiveur : `discussions/<cercle>/<tranche|->/<vidéo>/suiveurs/<q>.json` = { h, niveau } (retiré quand on
+  choisit 🔕) (`suivis-video-serveur.ts`).
+- **Les niveaux de départ** (`niveauDeDepart`) : 👯 🔔 si je l'ai vue ou si j'y ai parlé, sinon pas suivie ; 🌍 🤫 si j'y ai
+  publié (mot écrit ou mot dit), sinon pas suivie. Un choix fait à la main gagne toujours.
+- **L'écran** : le bouton du suivi en haut de la discussion ouvre la feuille 🔔 Prévenir · 🤫 Sans bruit · 🔕 Ne plus
+  suivre (`data-suivi`, `data-niveau`). Après ma première publication en 🌍 : « Te prévenir quand on te répond ? »
+  (`data-proposer-suivre`). Ce qui est arrivé depuis ma dernière visite porte « Nouveau » (`lu`, noté à chaque ouverture).
+- **La route** : `POST { action: "suivre", id, cercle, niveau }` ; `GET` rend `suivi` et `luAvant`.
+- **Les essais** : la suite des deux scripts (niveaux de départ, le choix gardé, 🔕 retire le suiveur, « Nouveau »).

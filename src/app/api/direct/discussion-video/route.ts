@@ -9,10 +9,11 @@
 //                                    ouverts (400 `refus`) ; `repond` : l'id d'un mot écrit, ou `mot:<q>` (un mot dit)
 // POST { action: "effacer", id, ecrit }  → { ok } : le mien, partout
 // POST { action: "signaler", id, ecrit } → { ok, cache } : plus chez moi ; trois personnes : chez personne
+// (lot A3) POST { action: "suivre", id, cercle: "proches"|"tous", niveau: "prevenir"|"discret"|"non" } → { niveau }
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { effacerEcrit, laDiscussion, publierEcrit, signalerEcrit } from "@/lib/direct/discussion-video-serveur";
+import { effacerEcrit, laDiscussion, publierEcrit, signalerEcrit, suivreDiscussion } from "@/lib/direct/discussion-video-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine sur ce téléphone." }, { status: 401, headers: sansCache });
   const p = ((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>;
-  const r = p.action === "publier" ? await publierEcrit(supabase, moi, p) : p.action === "effacer" ? await effacerEcrit(supabase, moi, p) : p.action === "signaler" ? await signalerEcrit(supabase, moi, p) : { error: "Demande inconnue.", statut: 400 };
+  const r = p.action === "publier" ? await publierEcrit(supabase, moi, p) : p.action === "effacer" ? await effacerEcrit(supabase, moi, p) : p.action === "signaler" ? await signalerEcrit(supabase, moi, p) : p.action === "suivre" ? await suivreDiscussion(supabase, moi, p) : { error: "Demande inconnue.", statut: 400 };
   if (r.error) {
     const x = r as { refus?: string; age?: true };
     return NextResponse.json({ error: r.error, ...(x.refus ? { refus: x.refus } : {}), ...(x.age ? { age: true } : {}) }, { status: r.statut ?? 400, headers: sansCache });

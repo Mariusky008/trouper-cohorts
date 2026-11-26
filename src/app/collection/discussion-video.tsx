@@ -11,6 +11,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ECRITS_VIDEO,
+  NIVEAUX,
+  NIVEAUX_SUIVI,
   PHRASES_DISCUSSION as P,
   cercleDeDepart,
   cleMot,
@@ -19,6 +21,7 @@ import {
   lienYouTube,
   type CercleDiscussion,
   type DiscussionVue,
+  type NiveauSuivi,
 } from "@/lib/direct/discussion-video";
 import { ceQuiSestDit } from "@/lib/direct/reactions-video";
 import { PHRASES_MOTS } from "@/lib/direct/mots-video";
@@ -61,6 +64,10 @@ export function DiscussionVideoEcran() {
   const [occupe, setOccupe] = useState(false);
   const [note, setNote] = useState("");
   const [signales, setSignales] = useState<string[]>([]);
+  // 🔔 (lot A3) suivre : la feuille des trois niveaux, la question après la première publication, « Nouveau »
+  const [feuilleSuivi, setFeuilleSuivi] = useState(false);
+  const [proposer, setProposer] = useState(false);
+  const [luDepart, setLuDepart] = useState<number | null>(null);
 
   const charger = useCallback(async () => {
     const q = new URLSearchParams(window.location.search);
@@ -74,6 +81,7 @@ export function DiscussionVideoEcran() {
       if (!r.ok || !j.discussion) return setEtat({ erreur: P.rate });
       const d = j.discussion;
       setEtat({ d });
+      setLuDepart((x) => x ?? d.luAvant.tous);
       setCercle((c) => c ?? cercleDeDepart(d, q.get("cercle")));
     } catch {
       setEtat({ erreur: P.rate });
@@ -128,7 +136,17 @@ export function DiscussionVideoEcran() {
     setTexte("");
     setRepond(null);
     dire(P.publie);
+    if (r.j.premiere === true) setProposer(true);
     await charger();
+  };
+  const suivre = async (cercleChoisi: CercleDiscussion, niveau: NiveauSuivi) => {
+    if (!d) return;
+    setFeuilleSuivi(false);
+    setProposer(false);
+    const r = await poster({ action: "suivre", id: d.video.id, cercle: cercleChoisi, niveau });
+    if (!r.ok) return dire(String(r.j.error || P.rate));
+    setEtat({ d: { ...d, suivi: { ...d.suivi, [cercleChoisi]: niveau } } });
+    dire(P.niveauChoisi(`${NIVEAUX[niveau].e} ${NIVEAUX[niveau].nom}`));
   };
   const effacerEcrit = async (ecrit: string) => {
     if (!d) return;
@@ -197,6 +215,25 @@ export function DiscussionVideoEcran() {
                 </button>
               ))}
             </div>
+
+            {cercle && (
+              <button type="button" className="dv-suivi" data-suivi={d.suivi[cercle]} onClick={() => setFeuilleSuivi(true)}>
+                {NIVEAUX[d.suivi[cercle]].e} {NIVEAUX[d.suivi[cercle]].nom} <i>⋯</i>
+              </button>
+            )}
+            {proposer && (
+              <div className="dv-proposer" data-proposer-suivre>
+                <span>{P.proposerSuivre}</span>
+                <span className="dv-accord-boutons">
+                  <button type="button" onClick={() => setProposer(false)}>
+                    {P.pasBesoin}
+                  </button>
+                  <button type="button" className="oui" data-proposer-oui onClick={() => void suivre("tous", "prevenir")}>
+                    {P.oui}
+                  </button>
+                </span>
+              </div>
+            )}
 
             {cercle === "proches" && dit && (
               <section className="dv-fil" data-fil="proches">
@@ -267,8 +304,9 @@ export function DiscussionVideoEcran() {
                           const prenom = m ? (m.moi ? P.toi : m.prenom) : e ? (e.moi ? P.toi : e.prenom) : "";
                           const moi = Boolean(m?.moi || e?.moi);
                           const aQui = m?.repond?.prenom ?? e?.repond?.prenom;
+                          const neuf = Boolean(luDepart) && !moi && l.le > (luDepart ?? 0);
                           return (
-                            <li key={l.cle} className={`dv-msg${moi ? " moi" : ""}${l.repond && aQui ? " rep" : ""}`} {...(m ? { "data-mot": m.q } : { "data-ecrit": e?.id })}>
+                            <li key={l.cle} className={`dv-msg${moi ? " moi" : ""}${l.repond && aQui ? " rep" : ""}${neuf ? " neuf" : ""}`} {...(neuf ? { "data-neuf": "" } : {})} {...(m ? { "data-mot": m.q } : { "data-ecrit": e?.id })}>
                               <Tete prenom={prenom} src={(m ?? e)?.figurine?.src} />
                               <div className="dv-bulle dv-bulle-tous">
                                 <small>
@@ -351,6 +389,21 @@ export function DiscussionVideoEcran() {
             )}
 
             {cercle === "proches" && <p className="dv-pied">{P.pourEcrire}</p>}
+            {feuilleSuivi && cercle && (
+              <div className="dv-voile" onClick={() => setFeuilleSuivi(false)}>
+                <div className="dv-feuille" role="dialog" aria-label={P.suivreTitre} data-feuille-suivi onClick={(ev) => ev.stopPropagation()}>
+                  <b>{P.suivreTitre}</b>
+                  {NIVEAUX_SUIVI.map((n) => (
+                    <button key={n} type="button" className={`dv-niveau${d.suivi[cercle] === n ? " on" : ""}`} data-niveau={n} onClick={() => void suivre(cercle, n)}>
+                      <span>
+                        {NIVEAUX[n].e} {NIVEAUX[n].nom}
+                      </span>
+                      <small>{NIVEAUX[n].sous}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {note && (
               <p className="dv-note" role="status" data-note>
                 {note}
@@ -412,6 +465,17 @@ const STYLES = `
 .dv-age{display:flex;flex-direction:column;gap:8px}
 .dv-age button{border:0;border-radius:14px;padding:12px;background:rgba(255,255,255,.1);color:#fbf3ea;font:inherit;font-weight:800;cursor:pointer}
 .dv-texte{display:block}
+.dv-suivi{align-self:flex-start;margin:0 14px;border:0;border-radius:999px;padding:6px 12px;background:rgba(255,255,255,.08);color:#fbf3ea;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.dv-suivi i{font-style:normal;opacity:.7;margin-left:4px}
+.dv-proposer{display:flex;flex-direction:column;gap:8px;margin:0 14px;padding:10px 12px;border-radius:14px;background:rgba(255,210,122,.14);font-size:14px;font-weight:700}
+.dv-msg.neuf .dv-bulle{box-shadow:inset 0 0 0 1.5px rgba(255,210,122,.75)}
+.dv-msg.neuf .dv-bulle small::after{content:" · ${P.nouveau}";color:#ffd27a}
+.dv-voile{position:fixed;inset:0;z-index:6;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,5,4,.55)}
+.dv-feuille{width:100%;max-width:560px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;padding:16px 16px calc(18px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;background:#2d1f14;color:#fbf3ea}
+.dv-niveau{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;background:transparent;color:#fbf3ea;font:inherit;text-align:left;cursor:pointer}
+.dv-niveau span{font-weight:800;font-size:14.5px}
+.dv-niveau small{color:#c9b29c;font-size:12.5px;line-height:1.35}
+.dv-niveau.on{border-color:#ffd27a;background:rgba(255,210,122,.1)}
 .dv-actions{display:flex;gap:4px}
 .dv-actions button{border:0;background:none;padding:2px 4px;color:#c9b29c;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .dv-ecrire{position:sticky;bottom:0;display:flex;flex-direction:column;gap:6px;margin:4px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#24180f;border-top:1px solid rgba(255,255,255,.08)}
