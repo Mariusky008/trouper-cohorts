@@ -283,6 +283,15 @@ function Piece({
   const [frappe, setFrappe] = useState(Boolean(visite?.frappe));
   // 🎨 (la maquette) « Pendant ton absence » ouvert ; en visite, la porte qui s'ouvre et « Oh, te voilà ! Entre 😊 »
   const [absenceOuverte, setAbsenceOuverte] = useState(false);
+  // (🛎️ lot A4 : Activité y renvoie — `?absence=1` ouvre la feuille d'office, une fois)
+  useEffect(() => {
+    if (visite) return;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("absence") !== "1") return;
+    u.searchParams.delete("absence");
+    window.history.replaceState(window.history.state, "", `${u.pathname}${u.search}${u.hash}`);
+    void Promise.resolve().then(() => setAbsenceOuverte(true));
+  }, [visite]);
   const [accueil, setAccueil] = useState(false);
   // (la porte ouverte, on est entré : ce qu'il a mis aujourd'hui peut se montrer — juste après « Léa saura que tu as frappé »)
   const [entre, setEntre] = useState(!visite || Boolean(visite.frappe));

@@ -34,6 +34,7 @@
  * lus (la pastille de « Proches »).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PHRASES_ACTIVITE } from "@/lib/direct/activite";
 import { EVT_ANCRE, Feuille, OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { STYLES_TROIS_RENDUS } from "./trois-rendus";
 import { OngletVisible } from "./guide";
@@ -168,6 +169,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   const [nouveautes, setNouveautes] = useState(0);
   // 👥 (« Mes groupes ») les invitations devant la télé d'un proche et les demandes de proche qui attendent un geste
   const [attenteGroupes, setAttenteGroupes] = useState(0);
+  // 🛎️ (discussions des vidéos, lot A4) la cloche : combien de discussions ont du nouveau (un vrai nombre)
+  const [cloche, setCloche] = useState(0);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
   // 👋 LA BIENVENUE (`tuto.tsx`) : ce que ce téléphone a déjà vu (lu dans le navigateur, montré une fois la page chargée)
@@ -312,6 +315,27 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     return () => window.clearTimeout(t);
   }, [compte, prete, univers, maison]);
 
+  // 🛎️ LA CLOCHE (lot A4) : en arrivant, en revenant sur la page, et toutes les cinq minutes
+  useEffect(() => {
+    if (!compte || !univers) return;
+    let fini = false;
+    const compter = () => {
+      if (document.visibilityState !== "visible") return;
+      fetch("/api/direct/activite?compter=1", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((j: { nouveau?: number }) => !fini && typeof j.nouveau === "number" && setCloche(j.nouveau))
+        .catch(() => undefined);
+    };
+    compter();
+    const t = window.setInterval(compter, 300_000);
+    document.addEventListener("visibilitychange", compter);
+    return () => {
+      fini = true;
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", compter);
+    };
+  }, [compte, univers]);
+
   // 🟢 « LÀ MAINTENANT » : toutes les minutes, tant que la page est visible — et ses messages non lus
   useEffect(() => {
     if (!compte || !prete) return;
@@ -349,6 +373,13 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
           Clik<b>Me</b>
         </button>
         <span className="mc-droite">
+          {/* 🛎️ ACTIVITÉ (lot A4) : la cloche, pas un cinquième onglet — elle ouvre une ligne par discussion */}
+          {compte && univers && (
+            <a className="mc-cloche" href="/univers/activite" data-cloche aria-label={PHRASES_ACTIVITE.cloche(cloche)}>
+              <span aria-hidden="true">🛎️</span>
+              {cloche > 0 && <i data-cloche-nombre>{cloche > 9 ? "9+" : cloche}</i>}
+            </a>
+          )}
           {/* 🃏 « MOI », SOUS SON PRÉNOM (8 novembre 2026 : « Proches » a pris sa place dans le menu) */}
           {compte ? (
             <button type="button" className={`mc-moi${vue === "personnage" ? " pris" : ""}`} aria-label="Moi : ma figurine, mes réglages" aria-current={vue === "personnage" ? "page" : undefined} onClick={() => aller("personnage", undefined, false, true)}>
@@ -609,6 +640,8 @@ button.mc-moi{position:relative;display:inline-flex;align-items:center;gap:7px;m
 button.mc-moi.pris{background:linear-gradient(135deg,rgba(255,46,154,.32),rgba(242,196,107,.22))}
 button.mc-moi img,button.mc-moi > span{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#FF2E9A;font-size:16px}
 .mc-droite{display:flex;align-items:center;gap:8px;min-width:0}
+.mc-cloche{position:relative;flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.08);text-decoration:none;font-size:18px;-webkit-tap-highlight-color:transparent}
+.mc-cloche i{position:absolute;right:-3px;top:-3px;display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#FF2E9A;color:#fff;font-style:normal;font-size:10.5px;font-weight:900}
 .mc-feuille-proteger .cn-proteger{padding:2px 0 4px;border:0;background:none}
 .mc-feuille-proteger .cn-proteger > b{padding-right:40px;font-size:19px}
 .mc-onglets{padding:14px 16px 0}

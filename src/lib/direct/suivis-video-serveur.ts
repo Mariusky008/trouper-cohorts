@@ -24,6 +24,10 @@ export const cleSuivi = (cercle: CercleDiscussion, video: string) => `${cercle}:
 export const dossierSuiveurs = (cercle: CercleDiscussion, tranche: string, video: string) => `discussions/${cercle}/${tranche || "-"}/${video}/suiveurs`;
 export const niveauValide = (x: unknown): NiveauSuivi | null => ((NIVEAUX_SUIVI as readonly unknown[]).includes(x) ? (x as NiveauSuivi) : null);
 
+/** Tous mes suivis (pour Activité, lot A4). */
+export const tousMesSuivis = (supabase: Supabase, h: string) => lire(supabase, h);
+export type { Suivi };
+
 async function lire(supabase: Supabase, h: string): Promise<Record<string, Suivi>> {
   const f = await lireJson<Fiche>(supabase, cheminSuivis(h)).catch(() => ({}) as Fiche);
   return f.suivis && typeof f.suivis === "object" ? f.suivis : {};

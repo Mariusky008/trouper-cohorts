@@ -6,9 +6,11 @@
 // mots ; 🌍 Tous · 1 : le mot d'Inès, « ▶ 🎙️ 3 s ». Une vidéo qu'elle n'a jamais croisée : « Cette discussion n'est
 // plus là ». (Lot A2) Elle écrit sous la vidéo : « 🌍 Lu par tous ceux qui la regardent », l'accord la première fois,
 // « Publier » ; elle répond au mot d'Inès (« ↩ Inès ») ; un lien ne part pas ; elle efface son mot. Rien ne déborde,
-// jamais le mot « exemple », aucune erreur.
+// jamais le mot « exemple », aucune erreur. (Lot A4) Inès répond à Léa : la cloche 🛎️ en haut dit 1 ; Activité :
+// « ↩ Inès t'a répondu » et sa phrase, en « Nouveau » ; un toucher ouvre la discussion ; au retour, « Déjà vu ».
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
+import { lancerSecondeApp } from "../seconde-app.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
 const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
@@ -152,6 +154,34 @@ ok(!/exemple/i.test(await p.locator("body").innerText()), "jamais le mot « exem
 // ═══ UNE VIDÉO JAMAIS CROISÉE ═══
 await p.goto(`${BASE}/univers/discussion?video=AAAAAAAAAAA`, { waitUntil: "domcontentloaded" });
 ok(await attendre(async () => /Cette discussion n’est plus là/.test(await texte(p.locator("[data-discussion-erreur]")))), "une vidéo jamais croisée : « Cette discussion n’est plus là »");
+
+// ═══ (A4) 🛎️ LA CLOCHE ET ACTIVITÉ ═══
+const vueI = await appel(INES, `/api/direct/discussion-video?video=${V}`);
+const deLea = (vueI.discussion?.ecrits ?? []).find((e) => e.prenom === "Léa");
+ok(Boolean(deLea), "Inès voit la réponse de Léa");
+ok((await appel(INES, "/api/direct/discussion-video", { action: "publier", id: V, texte: "Merci, c’est gentil !", repond: deLea?.id, accord: true })).statut === 200, "… et lui répond");
+// (la cloche est dans le menu de l'appli allumée, comme en ligne : une seconde app, « Univers pour tous » allumé —
+// `BASE_ALLUMEE` : celle qu'on a lancée soi-même, en local)
+const { base: ALLUME, arreter } = process.env.BASE_ALLUMEE ? { base: process.env.BASE_ALLUMEE, arreter: () => {} } : await lancerSecondeApp();
+await ctx.addCookies([{ name: "clikme_habitant", value: LEA.jeton, url: ALLUME }, { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: ALLUME }]);
+await p.goto(`${ALLUME}/collection#decouvrir`, { waitUntil: "domcontentloaded" });
+const cloche = p.locator("[data-cloche]");
+ok(await attendre(async () => (await texte(p.locator("[data-cloche-nombre]"))) === "1"), `la cloche 🛎️ en haut : « ${await texte(p.locator("[data-cloche-nombre]"))} »`);
+ok((await cloche.getAttribute("aria-label").catch(() => "")) === "Activité : du nouveau dans 1 discussion" && (await cloche.getAttribute("href").catch(() => "")) === "/univers/activite", `« ${await cloche.getAttribute("aria-label").catch(() => "")} », vers Activité`);
+arreter();
+await p.goto(`${BASE}/univers/activite`, { waitUntil: "domcontentloaded" });
+const ligneA = p.locator("[data-ligne-activite][data-reponse]");
+ok(await attendre(async () => (await ligneA.count()) === 1), "Activité : la réponse d'Inès");
+ok(/↩ Inès t’a répondu/.test(await texte(ligneA)) && /« Merci, c’est gentil ! »/.test(await texte(ligneA)) && /🌍 Tous/.test(await texte(ligneA)), `« ${await texte(ligneA)} »`);
+ok((await ligneA.getAttribute("data-neuf")) === "" && (await p.locator("[data-tout-lu]").count()) === 1, "… en « Nouveau », avec « Tout marquer lu »");
+ok((await p.evaluate(() => document.documentElement.scrollWidth)) <= 390, "Activité : rien ne déborde");
+await ligneA.click();
+await p.waitForURL(/\/univers\/discussion\?video=/);
+ok(await attendre(async () => (await p.locator('[data-cercle="tous"]').getAttribute("aria-selected")) === "true"), "un toucher ouvre la discussion, sur 🌍 Tous");
+await p.goBack({ waitUntil: "domcontentloaded" });
+ok(await attendre(async () => (await p.locator("[data-ligne-activite]").count()) >= 1 && (await p.locator("[data-ligne-activite][data-neuf]").count()) === 0), "au retour : « Déjà vu »");
+ok((await p.locator("[data-chez-toi]").getAttribute("href")) === "/collection?absence=1#maison", "« 🏠 Pendant ton absence, chez toi » renvoie à Ma maison");
+ok(!/exemple/i.test(await p.locator("body").innerText()), "Activité : jamais le mot « exemple »");
 
 ok(erreurs.length === 0, `aucune erreur${erreurs.length ? ` : ${erreurs.join(" | ")}` : ""}`);
 await b.close();

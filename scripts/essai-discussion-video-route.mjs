@@ -13,6 +13,9 @@
 // voit rien des adultes ; signaler (plus chez moi ; à trois, chez personne ; l'administrateur) ; effacer le sien.
 // (Lot A3) Suivre : les niveaux de départ (Sam prévenu entre proches ; Inès et Léa sans bruit en 🌍 après avoir parlé ;
 // Jade, rien), la première publication le dit, choisir 🔔 / 🔕 (l'index des suiveurs suit), « lu » avant.
+// (Lot A4) Activité : Inès répond à Sam (↩ en haut, chez Sam ; rien chez Léa, qui ne suit plus) ; la cloche compte les
+// discussions qui ont du nouveau ; ouvrir la discussion, ou « Tout marquer lu », la remet à zéro ; Jade n'a rien des
+// adultes ; un événement de plus de trente jours s'efface ; sans compte : 401.
 // Jamais un compte, jamais le mot « exemple ».
 import crypto from "node:crypto";
 
@@ -200,6 +203,39 @@ await new Promise((r) => setTimeout(r, 3100));
 ok((await ecrire(LEA, { action: "publier", id: V, texte: "Bon, je reviens quand même", accord: true })).premiere === false, "elle reparle : son choix tient (pas de nouvelle question)");
 ok((await ouvrir(LEA, V)).discussion?.suivi?.tous === "non", "… toujours 🔕");
 ok((await ecrire(SAM, { action: "suivre", id: V, cercle: "proches", niveau: "discret" })).niveau === "discret" && (await ouvrir(SAM, V)).discussion?.suivi?.proches === "discret", "Sam passe ses proches 🤫 sans bruit");
+
+// ═══ (A4) 🛎️ ACTIVITÉ ═══
+const activite = async (x, compter) => {
+  const r = await fetch(`${BASE}/api/direct/activite${compter ? "?compter=1" : ""}`, { headers: avec(x) });
+  return garder({ statut: r.status, ...((await r.json().catch(() => ({}))) ?? {}) });
+};
+const CLE = `tous:${V}`;
+ok((await activite(null)).statut === 401, "Activité sans compte : 401");
+const VIEUX = `${Date.now() - 31 * 24 * 3600_000}.tous.${V}.${INES.q}.n.abcd.json`;
+await json(`${SAM.id}/activite/${VIEUX}`, { prenom: "Inès", titre: TITRE, texte: "il y a longtemps" });
+ok((await activite(SAM, true)).nouveau === 0, `Sam a tout lu : la cloche est à zéro`);
+await new Promise((r) => setTimeout(r, 3100));
+const rep = await ecrire(INES, { action: "publier", id: V, texte: "Oui, quel but !", repond: e4.ecrit?.id, accord: true });
+ok(Boolean(rep.ecrit), "Inès répond au mot de Sam");
+ok((await activite(SAM, true)).nouveau === 1, "la cloche de Sam : 1");
+const as1 = await activite(SAM);
+const ligneS = as1.lignes?.[0];
+ok(ligneS?.cle === CLE && ligneS.neuf && ligneS.reponse?.prenom === "Inès" && ligneS.reponse.texte === "Oui, quel but !", `en haut chez Sam : « ↩ Inès t'a répondu » et sa phrase (${JSON.stringify(ligneS)})`);
+ok(ligneS?.titre === TITRE && ligneS.cercle === "tous", "… avec le titre de la vidéo et son cercle");
+ok(!(await lire(`${SAM.id}/activite/${VIEUX}`)), "un événement de plus de trente jours s'efface");
+const al = await activite(LEA);
+ok(!(al.lignes ?? []).some((x) => x.cle === CLE && x.neuf), "rien de neuf chez Léa : elle ne suit plus (🔕), et on ne lui a pas répondu");
+ok(!((await activite(JADE)).lignes ?? []).some((x) => x.video === V && x.cercle === "tous"), "Jade (15-17 ans) n'a rien des adultes");
+const listeI = await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: `${INES.id}/activite`, limit: 100 }) }).then((r) => r.json()).catch(() => []);
+ok(Array.isArray(listeI) && listeI.length > 0 && !listeI.some((f) => String(f.name).includes(`.${INES.q}.`)), `Inès a de l'activité, jamais pour ses propres mots (${Array.isArray(listeI) ? listeI.length : "?"})`);
+await ouvrir(SAM, V);
+ok((await activite(SAM, true)).nouveau === 0 && (await activite(SAM)).lignes?.find((x) => x.cle === CLE)?.neuf === false, "Sam ouvre la discussion : la ligne passe dans « Déjà vu »");
+await new Promise((r) => setTimeout(r, 3100));
+await ecrire(INES, { action: "publier", id: V, texte: "Et la passe avant !", accord: true });
+const as2 = await activite(SAM);
+ok(as2.nouveau === 1 && as2.lignes?.[0]?.cle === CLE && !as2.lignes[0].reponse && as2.lignes[0].dernier?.texte === "Et la passe avant !", "Inès reparle (sans lui répondre) : Sam la suit, c'est du nouveau");
+ok((await poster(SAM, "activite", { action: "lu" })).ok === true && (await activite(SAM, true)).nouveau === 0, "« Tout marquer lu » : la cloche est à zéro");
+ok((await poster(SAM, "activite", { action: "tout" })).statut === 400, "une demande inconnue : 400");
 
 // ═══ JAMAIS UN COMPTE, JAMAIS LE MOT « EXEMPLE » ═══
 const tout = JSON.stringify(tous);
