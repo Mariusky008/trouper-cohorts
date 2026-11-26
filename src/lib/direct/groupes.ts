@@ -58,6 +58,8 @@ export type PropositionGroupe = {
   autre?: { prenom: string; quand: number; q: string };
   /** on peut entrer (dix minutes avant, deux heures après) */
   ouverte?: true;
+  /** 💛 (lot G4) la séance est finie : « On garde ce groupe ? » (seulement pour ceux qui y avaient leur place) */
+  garder?: GarderGroupe;
 };
 
 export const themeDuGroupe = (t: unknown) => THEMES_DECOUVRIR.find((x) => x.id === t) ?? null;
@@ -170,3 +172,80 @@ export const PHRASES_PROPOSITIONS = {
 /** 🔔 (lot G3) Le rappel part une fois par heure de rendez-vous, de quinze minutes avant à trente minutes après. */
 export const RAPPEL_AVANT_MS = 15 * 60_000;
 export const RAPPEL_APRES_MS = 30 * 60_000;
+
+// ═══ 💛 (lot G4) « ON GARDE CE GROUPE ? », ET TOUS MES GROUPES ═══
+/** La fin du premier rendez-vous : « On garde ce groupe ? » à partir de quarante-cinq minutes après l'heure… */
+export const GARDER_DES_MS = 45 * 60_000;
+/** … et pendant deux jours. */
+export const GARDER_JUSQUA_MS = 48 * 3600_000;
+/** Trois groupes gardés par personne, pour commencer (montré seulement quand on l'atteint). */
+export const GROUPES_MAX = 3;
+/** Un groupe : au moins deux personnes qui l'ont gardé (celui qui le crée avec ses proches : tout de suite). */
+export const MEMBRES_MIN = 2;
+export const MEMBRES_MAX = 8;
+/** « g-<ms>-<q>-<hex> » : un groupe (né d'une proposition, il en garde l'identifiant). */
+export const ID_GROUPE = /^g-\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}$/;
+export const idDuGroupe = (idProposition: string) => `g-${idProposition}`;
+
+/** « On garde ce groupe ? » sur la carte d'une proposition, pour ceux qui y avaient leur place. */
+export type GarderGroupe = {
+  /** ceux qui l'ont gardé (leur `q`) */
+  gardes: string[];
+  /** je l'ai gardé */
+  moi?: true;
+  /** le groupe est né (deux personnes au moins) : son identifiant */
+  groupe?: string;
+};
+
+/** Un groupe, tel que l'écran le voit (seulement ses membres le voient). */
+export type GroupeVue = {
+  id: string;
+  nom: string;
+  mot?: string;
+  theme: IdTheme;
+  e: string;
+  /** ses membres (moi compris), dans l'ordre où ils l'ont gardé */
+  membres: PlaceGroupe[];
+  /** ceux qui sont dans son salon en ce moment */
+  ici: PlaceGroupe[];
+  /** le dernier passage dans son salon (pas le mien) */
+  passage?: { prenom: string; le: number };
+  /** je suis invité (un proche l'a créé) : « 💛 Garder ce groupe » ou « Non merci » */
+  invite?: { de: string };
+};
+
+export const PHRASES_GROUPES_GARDES = {
+  // la carte de fin
+  finie: (e: string, nom: string) => `${e} ${nom} · la séance est finie`,
+  garderQuestion: "On garde ce groupe ?",
+  garder: "💛 Garder ce groupe",
+  garde: "✓ Gardé · entrer dans le groupe",
+  gardeSeul: "✓ Gardé",
+  personne: "Personne n’est obligé : ceux qui gardent forment le groupe.",
+  attendre: "Le groupe naît dès qu’un autre le garde aussi.",
+  ne: (nom: string) => `✨ « ${nom} » est dans Mes groupes, pour de bon`,
+  tuGardes: "💛 Tu gardes le groupe",
+  tropDeGroupes: `${GROUPES_MAX} groupes au plus pour commencer.`,
+  // les rangées
+  actifs: "Mes groupes actifs",
+  tous: "Tous mes groupes",
+  creer: "Créer",
+  seulsMembres: "Un groupe n’est visible que par ses membres.",
+  enLigne: (n: number) => `● ${n} dans le salon`,
+  passe: (prenom: string, heure: string) => `🕑 Passage de ${prenom} à ${heure}`,
+  entrer: "Entrer",
+  invitePar: (prenom: string) => `👥 ${prenom} te propose ce groupe`,
+  nonMerci: "Non merci",
+  // son espace
+  retour: "Retour à Mes groupes",
+  membres: (n: number) => `👥 ${n}`,
+  salonVide: "Son salon est toujours ouvert : les suivants te verront.",
+  dansLeSalon: "🛋️ Le salon du groupe",
+  lesMembres: "👥 Membres",
+  // créer avec ses proches
+  creerTitre: "Un groupe avec mes proches",
+  creerChoisir: "Avec qui ?",
+  creerAucun: "Il te faut d’abord des proches : invite-les devant ta télé.",
+  creerPublier: "👥 Créer le groupe",
+  cree: (nom: string) => `👥 « ${nom} » est créé : tes proches le voient dans Mes groupes`,
+} as const;

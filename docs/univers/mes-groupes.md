@@ -29,7 +29,7 @@ une discussion avec un ami : les salons sont vides quand on arrive le premier ; 
 | G1 | L'onglet, « Avec mes proches » (l'existant), Autour en tuile | ✅ fait (#295) |
 | G2 | ＋ Proposer, Propositions de groupes, la pièce « On se retrouve ? » du fil | ✅ ce lot |
 | G3 | Les rappels (cron toutes les 5 minutes) | fait (PR à suivre) |
-| G4 | « On garde ce groupe ? », Tous mes groupes | à faire |
+| G4 | « On garde ce groupe ? », Tous mes groupes | fait (PR à suivre) |
 | G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | à faire |
 | G6 | La sélection du jour, les rôles qui tournent | à faire |
 | G7 | Le journal | à faire |
@@ -91,3 +91,32 @@ Les règles :
   du site si besoin (par défaut `https://www.clikme.fr`). En offre Pro, on pourra passer la tâche dans `vercel.json`.
 - Essai : `scripts/essai-groupes-rappels-route.mjs` (de vrais téléphones abonnés au faux service de notifications ;
   `?dans=<minutes>` fait comme si le temps avait passé, seulement pour les essais ou avec `CRON_SECRET`).
+
+## G4, dans le code
+
+- **« On garde ce groupe ? »** : quarante-cinq minutes après l'heure d'une proposition, et pendant deux jours
+  (`GARDER_DES_MS`, `GARDER_JUSQUA_MS`), la carte devient la carte de fin pour ceux qui y avaient leur place (deux au
+  moins) : leurs figurines, une coche ✓ pour ceux qui ont gardé, « 💛 Garder ce groupe ». Ceux qui gardent forment le
+  groupe : il naît au deuxième (`MEMBRES_MIN`), il garde le nom, le mot et la passion de la proposition
+  (`idDuGroupe` : « g-<id de la proposition> »). Celui qui garde le premier voit « ✓ Gardé · Le groupe naît dès qu'un
+  autre le garde aussi. »
+- **Un groupe avec mes proches** (« ＋ Créer », ou la carte ＋ au bout d'« Avec mes proches » tant que je n'ai aucun
+  groupe) : un nom, une passion, des proches (ceux avec qui je parle), un mot. Le groupe existe tout de suite pour moi ;
+  mes proches le voient dans « Tous mes groupes » (« 👥 Léa te propose ce groupe ») avec une notification, et le gardent
+  ou disent « Non merci ».
+- **Trois groupes au plus** par personne pour commencer (`GROUPES_MAX`), dit seulement quand on l'atteint.
+- **Rangées** : « Mes groupes actifs » (seulement ceux où quelqu'un est dans le salon, cachée sinon), « Tous mes
+  groupes » (la table de chacun, ses membres autour ; « ● 2 dans le salon » ou « 🕑 Passage de Zoé à 14 h »). Un groupe
+  n'est visible que par ses membres.
+- **Son espace** (`groupe-espace.tsx`) : son identité (passion, nom, mot), son salon attitré (qui y est, sinon le dernier
+  passage, « Entrer »), ses membres. Les onglets Aujourd'hui, Rendez-vous, Discussion et Journal arrivent avec G5 à G7.
+- **Son salon** : `/univers/salons?groupe=<id>` (action `entrer-groupe` de la route des salons, `entrerAuGroupe`). C'est
+  un salon privé (« groupe-<id> », dans `decouvrir/salons/prives/`), à ses membres seulement, comme un salon ouvert de
+  sa passion : le gradin, les vidéos de la passion, huit places, la conversation. Il ne dépend pas de l'interrupteur
+  des salons ouverts. En entrant, on laisse son passage.
+- **Stockage** (`groupes-chemins-serveur.ts`) : `groupes/groupes/<id>.json` (l'identité, écrite une fois),
+  `groupes/membres/<id>/<q>.json` (chacun écrit la sienne), `groupes/miens/<q>.json` (mes groupes),
+  `groupes/invites/<id>/<q>.json` et `groupes/invitations/<q>/<id>.json` (les proches invités),
+  `groupes/passages/<id>/<q>.json`.
+- Route : `GET /api/direct/mes-groupes` renvoie aussi `groupes` ; `POST` `garder`, `creer-groupe`, `garder-groupe`,
+  `non-merci`. Essai : `scripts/essai-groupes-gardes-route.mjs`.

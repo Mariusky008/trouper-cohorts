@@ -2,11 +2,12 @@
 // on entre dans le salon de ce thème (le plus rempli qui a une place). On y arrive depuis l'accueil de Découvrir.
 // 🎬 LA SÉANCE CHEZ MOI (le lot D2, section 19) — `/univers/salons?chez=moi` : ma pièce, ma télé, mes proches invités ;
 // `?chez=<clé>` : chez un proche qui m'a invité (depuis sa notification ou la carte « Venir » de Découvrir).
+// 👥 (lot G4) `?groupe=<id>` : le salon d'un de mes groupes (ses membres seulement), depuis Mes groupes.
 // ⚡ (25 novembre 2026) on y entre côté serveur : la page arrive avec le salon prêt (`entreeDuServeur`).
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { apercuDeLaPlace, entrerAuSalon, entrerChez, type OuvertureSalonOuvert } from "@/lib/direct/salons-ouverts-serveur";
+import { apercuDeLaPlace, entrerAuGroupe, entrerAuSalon, entrerChez, type OuvertureSalonOuvert } from "@/lib/direct/salons-ouverts-serveur";
 import { habitantCourant, type Habitant } from "@/lib/direct/habitant";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { salonsOuverts } from "@/lib/direct/interrupteurs-serveur";
@@ -63,9 +64,9 @@ async function entreeDuServeur(entrer: (supabase: ReturnType<typeof createAdminC
   }
 }
 
-export default async function PageSalonOuvert({ searchParams }: { searchParams: Promise<{ theme?: string; chez?: string; place?: string; video?: string }> }) {
+export default async function PageSalonOuvert({ searchParams }: { searchParams: Promise<{ theme?: string; chez?: string; place?: string; video?: string; groupe?: string }> }) {
   if (!(await universPermis())) redirect("/admin");
-  const { theme, chez, place, video } = await searchParams;
+  const { theme, chez, place, video, groupe } = await searchParams;
   // (une séance entre proches ne dépend pas de l'interrupteur des salons ouverts ; ➕ `place` : le jeton d'un lien WhatsApp)
   // (📼 `video` : chez moi, « Revoir » une vidéo déjà vue)
   if (chez && /^(moi|[A-Za-z0-9_-]{4,64})$/.test(chez)) {
@@ -73,6 +74,10 @@ export default async function PageSalonOuvert({ searchParams }: { searchParams: 
     const v = chez === "moi" && video && /^[A-Za-z0-9_-]{11}$/.test(video) ? video : undefined;
     const initial = await entreeDuServeur((supabase, moi) => entrerChez(supabase, moi, chez, p, v));
     return <SalonOuvert chez={chez} place={p} video={v} initial={initial} />;
+  }
+  if (groupe && /^g-[A-Za-z0-9_-]{8,64}$/.test(groupe)) {
+    const initial = await entreeDuServeur((supabase, moi) => entrerAuGroupe(supabase, moi, groupe));
+    return <SalonOuvert groupe={groupe} initial={initial} />;
   }
   if (!salonsOuverts()) notFound();
   const t = themeDe(theme);

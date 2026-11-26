@@ -11,11 +11,15 @@
 // POST { action: "retirer", id }                 → { ok } : sa proposition s'en va
 // POST { action: "signaler", id }                → { ok } : trois personnes, et elle disparaît
 // POST { action: "entrer", id }                  → { aller } : à l'heure dite, où aller
+// 💛 (lot G4) GET → aussi { groupes } : tous mes groupes (et ceux où un proche m'invite) ; leur salon : `/univers/salons?groupe=<id>`
+// POST { action: "garder", id }                  → { proposition, groupe? } : « On garde ce groupe ? » à la fin de la séance
+// POST { action: "creer-groupe", nom, theme, mot?, cles } → { groupe } : un groupe tout de suite, avec des proches
+// POST { action: "garder-groupe" | "non-merci", groupe } → { groupe? } : un proche m'invite dans son groupe
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { maisonDeMoi, mesDemandes, mesInvitations, seancesDesProches } from "@/lib/direct/salons-ouverts-serveur";
-import { autreHeure, confirmer, entrer, propositionsPourMoi, proposer, retirer, signaler } from "@/lib/direct/groupes-serveur";
+import { autreHeure, confirmer, creerGroupe, entrer, garder, mesGroupes, propositionsPourMoi, proposer, repondreGroupe, retirer, signaler } from "@/lib/direct/groupes-serveur";
 
 export const dynamic = "force-dynamic";
 
@@ -26,14 +30,15 @@ export async function GET() {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
-  const [invitations, demandes, seances, propositions, maison] = await Promise.all([
+  const [invitations, demandes, seances, propositions, maison, groupes] = await Promise.all([
     mesInvitations(supabase, moi).catch(() => []),
     mesDemandes(supabase, moi).catch(() => []),
     seancesDesProches(supabase, moi).catch(() => []),
     propositionsPourMoi(supabase, moi).catch(() => []),
     maisonDeMoi(supabase, moi.id).catch(() => null),
+    mesGroupes(supabase, moi).catch(() => []),
   ]);
-  return NextResponse.json({ ok: true, invitations, demandes, seances, propositions, ...(maison === "adultes" ? { adulte: true } : {}) }, { headers: sansCache });
+  return NextResponse.json({ ok: true, invitations, demandes, seances, propositions, groupes, ...(maison === "adultes" ? { adulte: true } : {}) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {
@@ -60,6 +65,18 @@ export async function POST(request: Request) {
   if (p.action === "entrer") {
     const r = await entrer(supabase, moi, p.id);
     return repondre(r, { aller: r.aller });
+  }
+  if (p.action === "garder") {
+    const r = await garder(supabase, moi, p.id);
+    return repondre(r, { proposition: r.proposition, ...(r.groupe ? { groupe: r.groupe } : {}) });
+  }
+  if (p.action === "creer-groupe") {
+    const r = await creerGroupe(supabase, moi, p);
+    return repondre(r, { groupe: r.groupe });
+  }
+  if (p.action === "garder-groupe" || p.action === "non-merci") {
+    const r = await repondreGroupe(supabase, moi, p.groupe, p.action === "non-merci");
+    return repondre(r, r.groupe ? { groupe: r.groupe } : {});
   }
   return NextResponse.json({ error: "Je ne sais pas faire ça." }, { status: 400, headers: sansCache });
 }

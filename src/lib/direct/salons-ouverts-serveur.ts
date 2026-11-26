@@ -44,6 +44,7 @@ import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
+import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe } from "./groupes-chemins-serveur";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
@@ -288,6 +289,67 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   };
 }
 
+/**
+ * 🛋️ (lot G4, 26 novembre 2026) LE SALON D'UN GROUPE : son salon attitré, toujours ouvert, même vide — à ses membres
+ * seulement. Comme un salon ouvert de sa passion (le gradin, les vidéos de la passion, huit places), mais à lui. En
+ * entrant, je laisse mon passage (« 🕑 Passage de Léa à 14 h ») : les suivants le voient.
+ */
+export async function entrerAuGroupe(supabase: Supabase, moi: Habitant, groupe: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; age?: true; figurine?: true; exclu?: true }>> {
+  const gid = idGroupeValide(groupe);
+  const q = qui8(moi.id);
+  if (!gid || !(await estMembre(supabase, gid, q))) return { error: "Ce groupe n’existe pas.", statut: 404 };
+  const m = await maisonDeMoi(supabase, moi.id);
+  if (!m) return { error: PHRASES_SALONS.age, statut: 409, age: true };
+  if (await exclusion(supabase, q)) return { error: PHRASES_SALONS.exclu, statut: 403, exclu: true };
+  const g = await lireJson<{ nom?: string; theme?: string }>(supabase, cheminGroupe(gid)).catch(() => ({}) as { nom?: string; theme?: string });
+  const t = themeDe(g.theme) ?? themeDe("series")!;
+  const lieu: Lieu = "prives";
+  const id = idSalonDuGroupe(gid);
+  const maintenant = Date.now();
+  const [figurine, prenom, presents, caches, gradin, videos, profil, double, proches] = await Promise.all([
+    figurineDeLaMaison(supabase, moi.id).catch(() => null),
+    prenomDe(supabase, moi).catch(() => ""),
+    presentsFrais(supabase, lieu, id, maintenant),
+    mesCaches(supabase, moi.id),
+    gradinDuSalon(supabase, t.id).catch(() => null),
+    videosDuSalon(supabase, t.id, m),
+    sonProfilDeSalon(supabase, moi.id),
+    sonDoubleDeSalon(supabase, moi.id),
+    prochesDe(supabase, moi.id).catch(() => new Set<string>()),
+  ]);
+  if (!figurine) return { error: PHRASES_SALONS.sansFigurine, statut: 409, figurine: true };
+  const decor = gradin ? null : await decorDuSalon(supabase, t.id);
+  const autres = presents.filter((p) => p.nom !== q);
+  if (autres.length >= PLACES_SALON) return { error: "Toutes les places sont prises.", statut: 409 };
+  const fiches = await Promise.all(autres.map((p) => lirePresent(supabase, lieu, id, p.nom)));
+  const ancienne = presents.some((p) => p.nom === q) ? await lirePresent(supabase, lieu, id, q) : null;
+  const prises = new Set(fiches.map((f) => Number(f.place)));
+  const place = ancienne && !prises.has(Number(ancienne.place)) ? Number(ancienne.place) : [...Array(PLACES_SALON).keys()].find((k) => !prises.has(k)) ?? 0;
+  const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [], ...profil, ...double };
+  if (!(await ecrireJson(supabase, `${dossierPresents(lieu, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  await ecrireJson(supabase, `${dossierPassages(gid)}/${q}.json`, { q, prenom: fiche.prenom, le: maintenant });
+  await noterVusAuSalon(supabase, { h: moi.id, prenom: fiche.prenom }, fiches);
+  void nettoyerMessages(supabase, lieu, id, maintenant);
+  const messages = await derniersMessages(supabase, lieu, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches });
+  return {
+    ouverture: {
+      salon: { id, theme: t.id, n: 1, nom: `${t.e} ${s(g.nom) || nomDuSalon(t.id).replace(/^\S+\s/, "")}`, maison: lieu },
+      moi: q,
+      presents: [...fiches.filter((f) => f.q).map((f) => avecProche(f, proches)), publicDe(fiche)],
+      messages,
+      caches,
+      decor,
+      gradin,
+      tele: { videos, maintenant },
+    },
+  };
+}
+
+/** 🛋️ (lot G4) Qui est dans le salon d'un groupe, en ce moment (leur `q`). */
+export async function presentsDuGroupe(supabase: Supabase, gid: string, maintenant = Date.now()): Promise<string[]> {
+  return (await presentsFrais(supabase, "prives", idSalonDuGroupe(gid), maintenant)).map((p) => p.nom);
+}
+
 async function nettoyerMessages(supabase: Supabase, m: Lieu, id: string, maintenant: number): Promise<void> {
   const l = await lister(supabase, dossierMessages(m, id), { limite: 60 }).catch(() => [] as Entree[]);
   const vieux = l.filter((e) => maintenant - (Number(e.nom.split("-")[0]) || 0) > CONSERVE_MS).map((e) => `${dossierMessages(m, id)}/${e.nom}`);
@@ -314,6 +376,12 @@ async function derniersMessages(supabase: Supabase, m: Lieu, id: string, o: { de
  * quelqu'un (« chez-<q> »), s'il en est l'hôte ou s'il y est invité.
  */
 async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ m?: Lieu; id?: string; seance?: { qHote: string; hote: boolean } }>> {
+  // (👥 lot G4 : le salon d'un groupe — à ses membres seulement)
+  const gid = groupeDuSalon(id);
+  if (gid) {
+    if (!(await estMembre(supabase, gid, qui8(moi.id)))) return { error: "Ce salon est celui d’un groupe.", statut: 403 };
+    return { m: "prives", id: idSalonDuGroupe(gid) };
+  }
   const qHote = seanceDe(id);
   if (qHote) {
     const hote = qHote === qui8(moi.id);

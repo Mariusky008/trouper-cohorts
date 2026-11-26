@@ -13,6 +13,7 @@
 // POST { action: "ne-plus-voir" | "revoir", q } → { caches }
 // 🎬 LE LOT D2, LA SÉANCE CHEZ MOI (le salon « chez-<q> » : pouls, écrire, sortir, conversation comme un salon ouvert)
 // POST { action: "entrer-chez", chez: "moi" | <clé>, place? } → { ouverture } : ma télé ; chez un proche qui m'invite
+// POST { action: "entrer-groupe", groupe }      → { ouverture } : 👥 (lot G4) le salon d'un de mes groupes
 //                                               (`place` : le jeton d'un lien WhatsApp — sa place libre, et proches ;
 //                                               `video` : 📼 chez moi, « Revoir » une vidéo déjà vue)
 // POST { action: "place", salon?, chez? }      → { lien, prenom, chez? } : ➕ un lien qui réserve une place libre de ma télé
@@ -60,6 +61,7 @@ import {
   demanderProche,
   ecrireAuSalon,
   entrerAuSalon,
+  entrerAuGroupe,
   entrerChez,
   etagereDuSalon,
   garderMoment,
@@ -87,8 +89,9 @@ const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
 const FERMES = { error: "Les salons ouverts sont fermés pour l’instant." };
 // (les séances entre proches ne passent pas par l'interrupteur des salons ouverts)
-const SEANCE = new Set(["entrer-chez", "tele", "inviter", "inviter-video", "place", "pas-maintenant", "rejoindre", "laisser-demande"]);
-const enSeance = (salon: unknown) => String(salon ?? "").startsWith("chez-");
+const SEANCE = new Set(["entrer-chez", "entrer-groupe", "tele", "inviter", "inviter-video", "place", "pas-maintenant", "rejoindre", "laisser-demande"]);
+// (👥 lot G4 : le salon d'un groupe non plus — ses membres seulement)
+const enSeance = (salon: unknown) => /^(chez|groupe)-/.test(String(salon ?? ""));
 
 export async function GET(request: Request) {
   const u = new URL(request.url).searchParams;
@@ -149,6 +152,11 @@ export async function POST(request: Request) {
   if (p.action === "entrer-chez") {
     const r = await entrerChez(supabase, moi, p.chez, p.place, p.video);
     return repondre(r, { ouverture: r.ouverture }, r.figurine ? { figurine: true } : {});
+  }
+  // 👥 (lot G4) le salon d'un groupe
+  if (p.action === "entrer-groupe") {
+    const r = await entrerAuGroupe(supabase, moi, p.groupe);
+    return repondre(r, { ouverture: r.ouverture }, { ...(r.age ? { age: true } : {}), ...(r.figurine ? { figurine: true } : {}), ...(r.exclu ? { exclu: true } : {}) });
   }
   if (p.action === "tele") {
     const r = await teleDeLaSeance(supabase, moi, p);
