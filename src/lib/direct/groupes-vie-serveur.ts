@@ -234,6 +234,7 @@ async function ecrire(supabase: Supabase, moi: Habitant, gid: string, fiche: Fic
   const id = `${maintenant}-${q}-${randomBytes(3).toString("hex")}`;
   const f: FicheMessage = { id, q, prenom: fiche.prenom, src: fiche.src, texte, le: maintenant, ...(idee ? { idee } : {}) };
   if (!(await ecrireJson(supabase, `${dossierDiscussion(gid)}/${id}.json`, f))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  await prevenirLeGroupe(supabase, gid, f, maintenant).catch(() => undefined);
   return { message: { id, q, prenom: f.prenom, src: f.src, texte, le: maintenant, mien: true, ...(idee ? { idee } : {}) } };
 }
 
@@ -277,4 +278,40 @@ export async function rappelerLesRendezVous(supabase: Supabase, o: { maintenant?
     }
   }
   return { rappels, personnes };
+}
+
+// ─── 🔔 les nouveaux messages du groupe (fait « avec soin », après G8) ───
+/** Une vague de notifications par groupe toutes les deux heures au plus ; jamais la nuit. */
+export const NOTIF_DISCUSSION_MS = 2 * 3600_000;
+const HEURE_PARIS = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", hourCycle: "h23", hour: "2-digit" });
+/** (Paris) de 22 h à 9 h : on ne réveille personne pour une discussion. */
+export const heureCalme = (ms: number) => {
+  const h = Number(HEURE_PARIS.format(ms));
+  return h >= 22 || h < 9;
+};
+const cheminNotifDiscussion = (gid: string) => `groupes/notifs-discussion/${gid}.json`;
+
+/**
+ * 🔔 Un message (ou 💡 une idée) dans la discussion : les autres membres sont prévenus — pas celui qui écrit, pas ceux
+ * qui sont dans le salon du groupe, pas la nuit, et une fois toutes les deux heures au plus pour tout le groupe (la
+ * notification suivante remplace la précédente sur le téléphone : `groupe-msg-<id>`).
+ */
+async function prevenirLeGroupe(supabase: Supabase, gid: string, f: FicheMessage, maintenant: number): Promise<number> {
+  if (heureCalme(maintenant)) return 0;
+  const avant = await lireJson<{ le?: number }>(supabase, cheminNotifDiscussion(gid)).catch(() => ({}) as { le?: number });
+  if (maintenant - (Number(avant.le) || 0) < NOTIF_DISCUSSION_MS) return 0;
+  if (!(await ecrireJson(supabase, cheminNotifDiscussion(gid), { le: maintenant, de: f.q }))) return 0;
+  // (import à la demande : les salons dépendent déjà des groupes)
+  const { presentsDuGroupe } = await import("./salons-ouverts-serveur");
+  const [membres, ici, g] = await Promise.all([
+    membresDe(supabase, gid),
+    presentsDuGroupe(supabase, gid, maintenant).catch(() => [] as string[]),
+    lireJson<{ nom?: string }>(supabase, cheminGroupe(gid)).catch(() => ({}) as { nom?: string }),
+  ]);
+  const qui = membres.filter((m) => m.q !== f.q && !ici.includes(m.q));
+  const notif = f.idee
+    ? { titre: `💡 ${f.prenom} propose une séance`, corps: `« ${f.texte} » · ${s(g.nom)}`, url: "/collection#groupes", tag: `groupe-msg-${gid}` }
+    : { titre: `💬 ${s(g.nom) || "Ton groupe"}`, corps: `${f.prenom} : ${f.texte}`, url: "/collection#groupes", tag: `groupe-msg-${gid}` };
+  const issues = await Promise.all(qui.map((m) => prevenirUnHabitantAppli(supabase, m.h, notif).catch(() => "rien" as const)));
+  return issues.filter((x) => x === "envoye").length;
 }
