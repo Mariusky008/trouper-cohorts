@@ -20,7 +20,8 @@ import { dansMonHistorique } from "./revoir-serveur";
 import { cheminReactions, reactionsDesProches } from "./reactions-video-serveur";
 import { aMonMot, laVideo, saTranche, suiteDeLaVideo } from "./mots-video-serveur";
 import { ID_VIDEO, ficheVideo, noterFicheVideo } from "./fiche-video-serveur";
-import { ECRITS_VIDEO, PHRASES_DISCUSSION, type DiscussionVue, type EcritVu, type VideoDiscussion } from "./discussion-video";
+import { choisirNiveau, marquerLu, mesSuivis, niveauValide, suivreApresPublication } from "./suivis-video-serveur";
+import { ECRITS_VIDEO, PHRASES_DISCUSSION, cercleValide, niveauDeDepart, type NiveauSuivi, type DiscussionVue, type EcritVu, type VideoDiscussion } from "./discussion-video";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Resultat<T> = T & { error?: string; statut?: number; age?: true; refus?: string };
@@ -73,8 +74,25 @@ export async function laDiscussion(supabase: Supabase, moi: Habitant, id: unknow
   ]);
   if (r.error) return { error: r.error, statut: r.statut };
   const ecrits = suite.suite ? await lesEcrits(supabase, moi, suite.suite.tranche, video.id) : [];
+  // (🔔 lot A3 : mon niveau dans chaque cercle — choisi, sinon celui de départ ; et je l'ai lue maintenant)
+  const [choix, luAvant] = await Promise.all([mesSuivis(supabase, moi.id, video.id), marquerLu(supabase, moi.id, video.id, video.titre)]);
+  const miennes = r.miennes ?? [];
+  const suivi: Record<"proches" | "tous", NiveauSuivi> = {
+    proches: choix.proches?.niveau ?? niveauDeDepart("proches", { vue: r.vue === true, aParle: miennes.some((x) => x.source !== "implicite") }),
+    tous: choix.tous?.niveau ?? niveauDeDepart("tous", { vue: r.vue === true, aParle: ecrits.some((e) => e.moi) || Boolean(suite.suite?.mots.some((m) => m.moi)) }),
+  };
   return {
-    discussion: { video, vue: r.vue === true, aMaTele, proches: r.proches ?? [], miennes: r.miennes ?? [], tous: suite.suite ?? null, ecrits },
+    discussion: {
+      video,
+      vue: r.vue === true,
+      aMaTele,
+      proches: r.proches ?? [],
+      miennes,
+      tous: suite.suite ?? null,
+      ecrits,
+      suivi,
+      luAvant: { proches: luAvant.proches ?? 0, tous: luAvant.tous ?? 0 },
+    },
   };
 }
 
@@ -150,7 +168,7 @@ async function trancheOuRefus(supabase: Supabase, moi: Habitant): Promise<Tranch
  * l'écran ; une réponse à un mot écrit (son id) ou dit (`mot:<q>`) qui est là. `salon` : écrit d'abord dans ce salon
  * ouvert (« vu dans le salon … »).
  */
-export async function publierEcrit(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ecrit?: EcritVu }>> {
+export async function publierEcrit(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ecrit?: EcritVu; premiere?: boolean }>> {
   const v = await videoDeLaDiscussion(supabase, moi, p.id, p.seance);
   if (!v) return { error: "Cette discussion n’est plus là.", statut: 404 };
   const m = await trancheOuRefus(supabase, moi);
@@ -183,8 +201,10 @@ export async function publierEcrit(supabase: Supabase, moi: Habitant, p: Record<
   const fiche: FicheEcrit = { id, h: moi.id, q, prenom, texte: [...texte].slice(0, ECRITS_VIDEO.texte).join(""), le: maintenant, ...(repond ? { repond } : {}), ...(sid ? { de: nomDuSalon(sid.theme, sid.n) } : {}) };
   if (!(await ecrireJson(supabase, `${dossier}/${id}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await noterFicheVideo(supabase, v);
+  // (🔔 je la suis désormais, sans bruit — la première fois, l'écran propose d'être prévenu)
+  const premiere = await suivreApresPublication(supabase, moi.id, { video: v.id, tranche: m, titre: v.titre });
   const vus = await lesEcrits(supabase, moi, m, v.id);
-  return { ecrit: vus.find((x) => x.id === id) };
+  return { ecrit: vus.find((x) => x.id === id), premiere };
 }
 
 /** 🗑️ Effacer mon mot écrit : il disparaît partout, tout de suite (les réponses restent). */
@@ -226,4 +246,21 @@ export async function signalerEcrit(supabase: Supabase, moi: Habitant, p: Record
   });
   const par = await lister(supabase, `${dossierSignales(m, v.id)}/${id}`);
   return { ok: true, cache: par.length >= ECRITS_VIDEO.seuilSignalements };
+}
+
+/** 🔔 (lot A3) Choisir son niveau de suivi pour un cercle : prévenir, sans bruit, ne plus suivre. */
+export async function suivreDiscussion(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ niveau?: NiveauSuivi }>> {
+  const v = await videoDeLaDiscussion(supabase, moi, p.id, p.seance);
+  if (!v) return { error: "Cette discussion n’est plus là.", statut: 404 };
+  const cercle = cercleValide(p.cercle);
+  const niveau = niveauValide(p.niveau);
+  if (!cercle || !niveau) return { error: "Quel suivi ?", statut: 400 };
+  let tranche = "-";
+  if (cercle === "tous") {
+    const m = await trancheOuRefus(supabase, moi);
+    if (typeof m !== "string") return m;
+    tranche = m;
+  }
+  await choisirNiveau(supabase, moi.id, { cercle, video: v.id, tranche, niveau, titre: v.titre });
+  return { niveau };
 }

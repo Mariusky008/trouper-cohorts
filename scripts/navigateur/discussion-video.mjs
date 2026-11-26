@@ -107,6 +107,16 @@ await p.locator("[data-accord-publier]").click();
 ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-ecrit]').count()) === 1), "« Publier » : son mot est sous la vidéo");
 ok(/Toi/.test(await texte(p.locator('[data-fil="tous"] [data-ecrit]'))) && /Son meilleur album/.test(await texte(p.locator('[data-fil="tous"] [data-ecrit]'))), "… « Toi », ses mots");
 ok(/Ton mot est sous la vidéo/.test(await texte(p.locator("[data-note]"))), "« ✓ Ton mot est sous la vidéo. »");
+// (🔔 lot A3 : la première fois, « Te prévenir quand quelqu'un écrit ici ? »)
+ok(await attendre(async () => (await p.locator("[data-proposer-suivre]").count()) === 1), "« 🔔 Te prévenir quand quelqu’un écrit ici ? »");
+ok((await p.locator("[data-suivi]").getAttribute("data-suivi")) === "discret" && /🤫 Sans bruit/.test(await texte(p.locator("[data-suivi]"))), "… en attendant : « 🤫 Sans bruit »");
+await p.locator("[data-proposer-oui]").click();
+ok(await attendre(async () => (await p.locator("[data-suivi]").getAttribute("data-suivi")) === "prevenir"), "« Oui » : « 🔔 Me prévenir »");
+await p.locator("[data-suivi]").click();
+ok(await attendre(async () => (await p.locator("[data-feuille-suivi] [data-niveau]").count()) === 3), "⋯ : les trois niveaux");
+await p.screenshot({ path: `${D}/discussion-video-suivi.png` });
+await p.locator('[data-feuille-suivi] [data-niveau="non"]').click();
+ok(await attendre(async () => (await p.locator("[data-suivi]").getAttribute("data-suivi")) === "non"), "« 🔕 Ne plus suivre » : retenu");
 await p.screenshot({ path: `${D}/discussion-video-3.png` });
 // (répondre au mot dit d'Inès)
 await p.waitForTimeout(3200);
@@ -126,6 +136,14 @@ ok(await attendre(async () => /un lien ne part pas ici/.test(await texte(p.locat
 const mien = p.locator('[data-fil="tous"] [data-ecrit]').filter({ hasText: "Son meilleur album" });
 await mien.locator("[data-effacer]").click();
 ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-ecrit]').count()) === 1), "« Effacer » : son mot est parti");
+
+// ═══ (A3) « NOUVEAU » DEPUIS LA DERNIÈRE FOIS ═══
+ok((await appel(SAM, "/api/direct/discussion-video", { action: "publier", id: V, texte: "Quel but !", accord: true })).statut === 200, "pendant ce temps, Sam écrit sous la vidéo");
+await p.reload({ waitUntil: "domcontentloaded" });
+await p.locator('[data-cercle="tous"]').click();
+const neuf = p.locator('[data-fil="tous"] [data-neuf]');
+ok(await attendre(async () => (await neuf.count()) === 1), "à son retour, le mot de Sam est « Nouveau »");
+ok(/Quel but/.test(await texte(neuf)), `« ${await texte(neuf)} »`);
 
 // ═══ RIEN NE DÉBORDE, JAMAIS « EXEMPLE » ═══
 ok((await p.evaluate(() => document.documentElement.scrollWidth)) <= 390, "rien ne déborde");

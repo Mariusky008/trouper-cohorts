@@ -11,6 +11,8 @@
 // vidéo : l'accord, la modération, 90 signes, un toutes les trois secondes ; Léa écrit, Inès répond à son mot écrit,
 // Léa répond au mot dit d'Inès ; le fil dans l'ordre ; écrit depuis un salon ouvert (« vu dans le salon … ») ; Jade ne
 // voit rien des adultes ; signaler (plus chez moi ; à trois, chez personne ; l'administrateur) ; effacer le sien.
+// (Lot A3) Suivre : les niveaux de départ (Sam prévenu entre proches ; Inès et Léa sans bruit en 🌍 après avoir parlé ;
+// Jade, rien), la première publication le dit, choisir 🔔 / 🔕 (l'index des suiveurs suit), « lu » avant.
 // Jamais un compte, jamais le mot « exemple ».
 import crypto from "node:crypto";
 
@@ -176,6 +178,28 @@ const l3 = await ouvrir(INES, V);
 ok(!l3.discussion?.ecrits?.some((e) => e.id === e1.ecrit?.id), "… il est parti, partout");
 const repI = l3.discussion?.ecrits?.find((e) => e.id === e2.ecrit?.id);
 ok(Boolean(repI) && !repI.repond, "… la réponse d'Inès reste, seule");
+
+// ═══ (A3) 🔔 SUIVRE ═══
+ok(e1.premiere === true && e3.premiere === false, "la première publication de Léa le dit (l'écran propose d'être prévenue) ; pas la suivante");
+const sv = await ouvrir(SAM, V);
+ok(sv.discussion?.suivi?.proches === "prevenir", `Sam l'a vue et y a écrit : 👯 prévenu (${sv.discussion?.suivi?.proches})`);
+const iv = await ouvrir(INES, V);
+ok(iv.discussion?.suivi?.tous === "discret", `Inès a laissé un mot : 🌍 sans bruit (${iv.discussion?.suivi?.tous})`);
+ok((await lire(`discussions/tous/adultes/${V}/suiveurs/${INES.q}.json`))?.niveau === "discret", "… elle est dans l'index des suiveurs");
+const jv = await ouvrir(JADE, V);
+ok(jv.discussion?.suivi?.tous === "non" && jv.discussion.suivi.proches === "non", "Jade n'y a rien fait : pas suivie");
+const lv = await ouvrir(LEA, V);
+ok(lv.discussion?.suivi?.tous === "discret" && lv.discussion.luAvant?.tous > 0, "Léa : 🌍 sans bruit, et quand elle l'avait lue");
+ok((await ecrire(LEA, { action: "suivre", id: V, cercle: "tous", niveau: "fort" })).statut === 400, "un niveau inconnu : 400");
+ok((await ecrire(LEA, { action: "suivre", id: "AAAAAAAAAAA", cercle: "tous", niveau: "prevenir" })).statut === 404, "une discussion qu'elle ne peut pas ouvrir : 404");
+ok((await ecrire(LEA, { action: "suivre", id: V, cercle: "tous", niveau: "prevenir" })).niveau === "prevenir", "Léa choisit 🔔 Me prévenir");
+ok((await ouvrir(LEA, V)).discussion?.suivi?.tous === "prevenir" && (await lire(`discussions/tous/adultes/${V}/suiveurs/${LEA.q}.json`))?.niveau === "prevenir", "… c'est retenu, et l'index suit");
+ok((await ecrire(LEA, { action: "suivre", id: V, cercle: "tous", niveau: "non" })).niveau === "non", "… puis 🔕 Ne plus suivre");
+ok((await lire(`discussions/tous/adultes/${V}/suiveurs/${LEA.q}.json`)) === null, "… elle sort de l'index");
+await new Promise((r) => setTimeout(r, 3100));
+ok((await ecrire(LEA, { action: "publier", id: V, texte: "Bon, je reviens quand même", accord: true })).premiere === false, "elle reparle : son choix tient (pas de nouvelle question)");
+ok((await ouvrir(LEA, V)).discussion?.suivi?.tous === "non", "… toujours 🔕");
+ok((await ecrire(SAM, { action: "suivre", id: V, cercle: "proches", niveau: "discret" })).niveau === "discret" && (await ouvrir(SAM, V)).discussion?.suivi?.proches === "discret", "Sam passe ses proches 🤫 sans bruit");
 
 // ═══ JAMAIS UN COMPTE, JAMAIS LE MOT « EXEMPLE » ═══
 const tout = JSON.stringify(tous);
