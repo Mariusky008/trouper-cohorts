@@ -434,3 +434,46 @@ export const PHRASES_AUJOURDHUI = {
   ajoutee: "＋ Ta vidéo est dans la sélection, avec ton mot",
   retirer: "Retirer la mienne",
 } as const;
+
+// ═══ 📖 (lot G7) LE JOURNAL DU GROUPE : NOTRE HISTOIRE ═══
+/** Une ligne du journal (faite de ce qui s'est vraiment passé, jamais inventée). */
+export type EntreeJournal = {
+  id: string;
+  le: number;
+  e: string;
+  titre: string;
+  sous?: string;
+  /** les têtes (ceux qui étaient là, celui qui a rejoint) */
+  qui?: PlaceGroupe[];
+  /** une vidéo (sa vignette) */
+  video?: string;
+  /** la naissance du groupe (la dernière ligne, en rose) */
+  ne?: true;
+};
+
+export const PHRASES_JOURNAL = {
+  onglet: "📖 Journal",
+  ne: "Le groupe est né",
+  neApres: (nom: string) => `après « ${nom} »`,
+  neCree: (prenom: string) => `créé par ${prenom}`,
+  rejoint: (prenom: string) => `${prenom} a rejoint le groupe`,
+  rdv: (nom: string) => `Nouveau rendez-vous : ${nom}`,
+  rdvPose: (quand: string, prenom: string) => `${quand} · posé par ${prenom}`,
+  idee: (prenom: string) => `L’idée de ${prenom} est devenue une séance`,
+  choisie: (prenom: string) => `La vidéo de ${prenom}, choisie pour la séance`,
+  choisieNouveaute: "Une nouveauté, choisie pour la séance",
+  etaientLa: (n: number) => (n > 1 ? "Ils étaient là" : "Au rendez-vous"),
+} as const;
+
+/** « Aujourd’hui », « Hier », « Mardi », « Le 12 novembre » (Paris). */
+export function jourDuJournal(ms: number, maintenant = Date.now()): string {
+  const j = CLE_JOUR.format(ms);
+  if (j === CLE_JOUR.format(maintenant)) return "Aujourd’hui";
+  if (j === CLE_JOUR.format(maintenant - 24 * 3600_000)) return "Hier";
+  const l = JOUR.format(ms);
+  if (maintenant - ms < 6 * 24 * 3600_000) {
+    const nom = l.split(" ")[0];
+    return `${nom[0].toUpperCase()}${nom.slice(1)}`;
+  }
+  return `Le ${l.split(" ").slice(1).join(" ")}`;
+}

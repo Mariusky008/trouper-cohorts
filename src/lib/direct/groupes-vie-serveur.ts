@@ -60,8 +60,8 @@ const ID = /^\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}$/;
 const idValide = (x: unknown) => (ID.test(s(x)) ? s(x) : null);
 const effacer = (supabase: Supabase, chemins: string[]) => (chemins.length ? supabase.storage.from(SEAU_FIGURINES).remove(chemins).then(() => undefined, () => undefined) : Promise.resolve());
 
-type FicheRdv = { id: string; nom: string; e: string; recurrence: Recurrence; jour?: number; heure: number; minute: number; quand?: number; idee?: true; q: string; prenom: string; le: number };
-type FicheReponse = { q: string; r: ReponseRdv; fois: number; le: number };
+export type FicheRdv = { id: string; nom: string; e: string; recurrence: Recurrence; jour?: number; heure: number; minute: number; quand?: number; idee?: true; q: string; prenom: string; le: number };
+export type FicheReponse = { q: string; r: ReponseRdv; fois: number; le: number };
 type FicheMessage = { id: string; q: string; prenom: string; src: string; texte: string; le: number; idee?: string };
 
 /** Moi, membre de ce groupe (ma fiche de membre) — sinon une erreur. */
@@ -73,12 +73,12 @@ async function membre(supabase: Supabase, moi: Habitant, groupe: unknown): Promi
   return { gid, fiche: fiche as FicheMembre };
 }
 
-async function lireRdvs(supabase: Supabase, gid: string): Promise<FicheRdv[]> {
+export async function lireRdvs(supabase: Supabase, gid: string): Promise<FicheRdv[]> {
   const noms = await listerGroupes(supabase, dossierRdv(gid), 40);
   const l = await Promise.all(noms.map((n) => lireJson<Partial<FicheRdv>>(supabase, `${dossierRdv(gid)}/${n}`).catch(() => ({}) as Partial<FicheRdv>)));
   return l.filter((x): x is FicheRdv => Boolean(x.id && x.nom && x.recurrence));
 }
-async function reponsesDe(supabase: Supabase, gid: string, rid: string): Promise<FicheReponse[]> {
+export async function reponsesDe(supabase: Supabase, gid: string, rid: string): Promise<FicheReponse[]> {
   const noms = await listerGroupes(supabase, dossierReponses(gid, rid), 20);
   const l = await Promise.all(noms.map((n) => lireJson<Partial<FicheReponse>>(supabase, `${dossierReponses(gid, rid)}/${n}`).catch(() => ({}) as Partial<FicheReponse>)));
   return l.filter((x): x is FicheReponse => Boolean(x.q && x.r && x.fois));

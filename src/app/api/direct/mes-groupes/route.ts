@@ -24,10 +24,12 @@
 // POST { action: "jour-proposer", groupe, video? | lien?, mot? } → { aujourdhui } : ma vidéo du jour, et mon mot
 // POST { action: "jour-retirer", groupe }         → { aujourdhui }
 // POST { action: "jour-envie", groupe, video, oui } → { aujourdhui, retenue? } : 🙋
+// 📖 (lot G7, `groupes-journal-serveur.ts`) GET `?groupe=<id>&journal=1` → { journal } : notre histoire
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { maisonDeMoi, mesDemandes, mesInvitations, seancesDesProches } from "@/lib/direct/salons-ouverts-serveur";
+import { journalDuGroupe } from "@/lib/direct/groupes-journal-serveur";
 import { aujourdhuiDuGroupe, envieDuJour, proposerVideoDuJour, retirerVideoDuJour } from "@/lib/direct/groupes-jour-serveur";
 import { ajouterRdv, ecrireAuGroupe, repondreRdv, retirerRdv, vieDuGroupe } from "@/lib/direct/groupes-vie-serveur";
 import { autreHeure, confirmer, creerGroupe, entrer, garder, mesGroupes, propositionsPourMoi, proposer, repondreGroupe, retirer, signaler } from "@/lib/direct/groupes-serveur";
@@ -42,6 +44,10 @@ export async function GET(request: Request) {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   const groupe = new URL(request.url).searchParams.get("groupe");
+  if (groupe && new URL(request.url).searchParams.get("journal")) {
+    const r = await journalDuGroupe(supabase, moi, groupe);
+    return NextResponse.json(r.error ? { error: r.error } : { ok: true, journal: r.journal }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+  }
   if (groupe) {
     const [r, j] = await Promise.all([vieDuGroupe(supabase, moi, groupe), aujourdhuiDuGroupe(supabase, moi, groupe).catch(() => ({}) as Awaited<ReturnType<typeof aujourdhuiDuGroupe>>)]);
     return NextResponse.json(r.error ? { error: r.error } : { ok: true, vie: r.vie, ...(j.aujourdhui ? { aujourdhui: j.aujourdhui } : {}) }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
