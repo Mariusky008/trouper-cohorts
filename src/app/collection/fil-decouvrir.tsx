@@ -30,6 +30,8 @@ import { FigurineAssise } from "./autour";
 import { MEMOIRE_FIL, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import { vignetteYouTube } from "@/lib/direct/tele";
 import { ApercuVideo } from "./apercu-video";
+import { QuoiDeNeuf } from "./quoi-de-neuf";
+import { ouvrirHumeurDuJour } from "./rituel";
 import { PLAN_GRADIN, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import { GESTES_SALON, PLACES_SALON, REACTIONS_SALON, type MessageSalon, type PresentSalon } from "@/lib/direct/salons-ouverts";
 import { REACTIONS_MUSIQUE } from "@/lib/direct/platine";
@@ -147,7 +149,8 @@ export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => voi
       (vus) => {
         for (const v of vus) if (v.isIntersecting) setCourante((v.target as HTMLElement).dataset.k ?? "");
       },
-      { root: b, threshold: 0.6 },
+      // (0,5 : avec « Quoi de neuf ? » au-dessus, la première pièce n'est pas tout à l'écran au départ — c'est elle qu'on regarde)
+      { root: b, threshold: 0.5 },
     );
     b.querySelectorAll<HTMLElement>("[data-k]").forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -332,6 +335,20 @@ export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => voi
     <div className="fd" data-fil data-pieces={pieces.length}>
       <div className="fd-boite" ref={boite} onPointerDown={surAppui} onPointerUp={surLacher} onPointerCancel={() => (appui.current = null)}>
         {!fil && <div className="fd-carte fd-attente" aria-hidden="true" />}
+        {/* ☀️ « Quoi de neuf ? » (26 novembre 2026) : en haut, comme les stories — il s'en va en glissant vers la première pièce */}
+        {fil?.quoiDeNeuf && !fil.age && (
+          <QuoiDeNeuf
+            q={fil.quoiDeNeuf}
+            moi={fil.moi.figurine}
+            pastille={Boolean(fil.surprise)}
+            onHumeur={ouvrirHumeurDuJour}
+            onRepondre={onConversation}
+            onCoucou={(cle) => {
+              setPieces((l) => l.map((x) => (x.sorte === "maison" && x.cle === cle ? { ...x, coucou: "envoye" } : x)));
+              setFil((f) => (f?.quoiDeNeuf ? { ...f, quoiDeNeuf: { ...f.quoiDeNeuf, decouvrir: f.quoiDeNeuf.decouvrir.map((m) => (m.cle === cle ? { ...m, coucou: "envoye" } : m)) } } : f));
+            }}
+          />
+        )}
         {fil?.age && (
           <section className="fd-carte fd-age" data-k="age" data-piece="age">
             <div className="fd-milieu">

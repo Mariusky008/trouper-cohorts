@@ -297,6 +297,10 @@ function ChoixHumeur({ choisie, onChoisi, petit = false }: { choisie: Sentiment 
  * ☀️ « COMMENT TU TE SENS AUJOURD'HUI ? » — à la première ouverture du jour (`actif` : sa figurine est prête, et rien
  * d'autre n'est ouvert par-dessus). Puis les mots des figurines arrivent, dans la même feuille.
  */
+/** ☀️ (« Quoi de neuf ? », 26 novembre 2026) La carte « Ton humeur » ouvre la feuille « Ton humeur du jour ». */
+const EVENEMENT_HUMEUR = "clikme-humeur-du-jour";
+export const ouvrirHumeurDuJour = () => window.dispatchEvent(new Event(EVENEMENT_HUMEUR));
+
 export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondre: (cle: string) => void }) {
   const r = useRituel();
   const [ouverte, setOuverte] = useState(false);
@@ -318,6 +322,15 @@ export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondr
       fini = true;
     };
   }, [actif, vue]);
+
+  // (la carte « Ton humeur » de « Quoi de neuf ? » : la feuille s'ouvre, même passée ce matin)
+  useEffect(() => {
+    const ouvrir = () => {
+      void chargerRituel().then(() => setOuverte(true));
+    };
+    window.addEventListener(EVENEMENT_HUMEUR, ouvrir);
+    return () => window.removeEventListener(EVENEMENT_HUMEUR, ouvrir);
+  }, []);
 
   const passer = useCallback(() => {
     ecrire(CLE_PASSEE, r?.jour ?? jourParis());
