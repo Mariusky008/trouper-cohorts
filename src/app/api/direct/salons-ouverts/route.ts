@@ -8,6 +8,9 @@
 // POST { action: "age", adulte }               → { adulte } : 18 ans ou plus (un « non » ne se retourne pas)
 // POST { action: "entrer", theme }             → { ouverture } : le salon le plus rempli qui a une place
 // POST { action: "ecrire", salon, sorte, texte?, cle?, a? } → { message } ; un texte relu avant de partir (`refus`)
+// POST { action: "jeu", salon, sorte: "accord", texte, video } → { jeu } : 🙋 « Qui est d'accord ? » (relu ; un jeu à la fois,
+//                                                un par personne et par vidéo ; le pouls porte `jeu`)
+// POST { action: "voter", salon, jeu, v: "oui" | "non" } → { ok } : son vote, tant que le jeu est ouvert (30 s)
 // POST { action: "sortir", salon, t?, duree? } → { ok } : sa place se libère (😴 parti avant la fin : sa figurine dort)
 // POST { action: "signaler", salon, q, motif, message? } → { ok, exclu } ; trois en une heure : 24 h dehors
 // POST { action: "ne-plus-voir" | "revoir", q } → { caches }
@@ -48,6 +51,7 @@
 // POST { action: "coeur-morceau", salon, q }   → { platine } : ❤️ fait monter (ou plus) le morceau de q dans la file
 // POST { action: "retirer-morceau", salon }    → { platine } : ↩️ retire le sien de la file
 // `CLIKME_SALONS_OUVERTS=0` : les salons ouverts sont fermés (404) ; les séances entre proches restent possibles.
+import { lancerJeu, voterAuJeu } from "@/lib/direct/jeux-salon-serveur";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
@@ -139,6 +143,12 @@ export async function POST(request: Request) {
     const r = await ecrireAuSalon(supabase, moi, p);
     return repondre(r, { message: r.message }, r.refus ? { refus: r.refus } : {});
   }
+  // (🙋 les jeux du salon, 26 novembre 2026)
+  if (p.action === "jeu") {
+    const r = await lancerJeu(supabase, moi, p);
+    return repondre(r, { jeu: r.jeu }, r.refus ? { refus: r.refus } : {});
+  }
+  if (p.action === "voter") return repondre(await voterAuJeu(supabase, moi, p));
   if (p.action === "sortir") return repondre(await sortirDuSalon(supabase, moi, p.salon, { t: p.t, duree: p.duree }));
   if (p.action === "signaler") {
     const r = await signalerAuSalon(supabase, moi, p);
