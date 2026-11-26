@@ -45,6 +45,7 @@ import { STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
 import { TeleDuJourEcran } from "./tele-du-jour";
 import { FilDecouvrir, STYLES_FIL } from "./fil-decouvrir";
+import { STYLES_APERCU } from "./apercu-video";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
 import { FeuilleInstaller, ProposerLesNotifications, STYLES_MON_TELEPHONE } from "./mon-telephone";
@@ -406,12 +407,11 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
         </section>
 
         {/* 🎞️ DÉCOUVRIR, LE FIL « DE PIÈCE EN PIÈCE » (lot F1, 23 novembre 2026 ; `fil-decouvrir.tsx`) : plein écran, on
-            glisse de pièce en pièce ; « Tous les salons » ouvre l'ancienne page */}
+            glisse de pièce en pièce (l'ancienne page : seulement par les anciens liens, `#salons`) */}
         {ouverts.has("decouvrir") && (
           <section className="mc-onglet mc-fil" id="o-decouvrir" hidden={vue !== "decouvrir"} aria-label="Découvrir">
             <OngletVisible.Provider value={vue === "decouvrir"}>
               <FilDecouvrir
-                onTousLesSalons={() => aller("salons", undefined, false, true)}
                 onAutour={() => aller("autour", undefined, false, true)}
                 onConversation={(cle) => {
                   aller("proches", undefined, false, true);
@@ -549,7 +549,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_FIL + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_PAGE_MOI + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
+      <style>{STYLES_MC + STYLES_FIL + STYLES_APERCU + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_PAGE_MOI + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
     </main>
   );
 }

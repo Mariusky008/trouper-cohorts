@@ -63,6 +63,8 @@ const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceSc
 await ctx.addCookies([{ name: "clikme_habitant", value: ZOE.jeton, url: BASE }]);
 await ctx.route(/^https:\/\/i\.ytimg\.com\//, (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
 await ctx.route(/^https:\/\/www\.youtube(-nocookie)?\.com\//, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<html><body style='background:#000'></body></html>" }));
+// (▶ l'aperçu qui se lance seul charge le lecteur de YouTube : ici, un lecteur vide — il reste une vignette)
+await ctx.route("https://www.youtube.com/iframe_api", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: "" }));
 const zoe = await ctx.newPage();
 zoe.on("pageerror", (e) => erreurs.push(String(e)));
 const attendre = async (f, ms = 15000) => {

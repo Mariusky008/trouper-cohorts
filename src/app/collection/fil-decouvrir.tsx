@@ -10,7 +10,7 @@
  * ce qui s'y est dit aujourd'hui, et on s'y assoit le premier). Sa figurine est au bord de la pièce (en bas à droite) :
  * toucher deux fois l'écran (ou la toucher, elle) et elle réagit — dans un salon, pour de vrai : elle s'y assoit le
  * temps qu'on y est, sa réaction part au salon, et ceux qui sont là la voient. Chaque bouton ouvre ce qui existe déjà.
- * L'ancienne page de Découvrir (ma télé du jour, tous les salons) est derrière « Tous les salons » (`#salons`).
+ * L'ancienne page de Découvrir (ma télé du jour, tous les salons) ne s'ouvre plus que par les anciens liens (`#salons`).
  * 🏡 Le lot F2 (25 novembre 2026) : les maisons ouvertes de ceux de son âge qui partagent une de ses passions — sa pièce,
  * sa figurine ; « 🚪 Frapper à sa porte » (la visite), « 👋 Lui faire coucou » (toucher deux fois aussi) ; et, en haut,
  * la surprise d'une visite qui l'attend dans « Messages » (🎁 un cadeau, 🚪 quelqu'un qui a frappé).
@@ -29,6 +29,7 @@ import { OngletVisible } from "./guide";
 import { FigurineAssise } from "./autour";
 import { MEMOIRE_FIL, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import { vignetteYouTube } from "@/lib/direct/tele";
+import { ApercuVideo } from "./apercu-video";
 import { PLAN_GRADIN, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import { GESTES_SALON, PLACES_SALON, REACTIONS_SALON, type MessageSalon, type PresentSalon } from "@/lib/direct/salons-ouverts";
 import { REACTIONS_MUSIQUE } from "@/lib/direct/platine";
@@ -61,7 +62,7 @@ function fusionner(avant: PieceFil[], apres: PieceFil[]): PieceFil[] {
 
 type Reaction = { k: string; e: string; texte: string; n: number };
 
-export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { onTousLesSalons: () => void; onAutour: () => void; onConversation: (cle: string) => void }) {
+export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => void; onConversation: (cle: string) => void }) {
   const visible = useContext(OngletVisible);
   const [fil, setFil] = useState<FilVue | null>(null);
   const [pieces, setPieces] = useState<PieceFil[]>([]);
@@ -436,28 +437,21 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
               <button type="button" className="fd-bouton" onClick={onAutour}>
                 {P.poserAutour}
               </button>
-              <button type="button" className="fd-bouton fd-second" onClick={onTousLesSalons}>
-                {P.tousLesSalons}
-              </button>
             </div>
           </section>
         )}
       </div>
 
-      {/* en haut : ce qui l'attend ailleurs, et « Tous les salons » (👥 lot G1, 26 novembre 2026 : les invitations devant
-          la télé d'un proche et les demandes de proche ont quitté le fil pour « Mes groupes ») */}
-      <div className="fd-haut">
-        {fil?.surprise ? (
+      {/* en haut : ce qui l'attend ailleurs (👥 lot G1, 26 novembre 2026 : les invitations devant la télé d'un proche et les
+          demandes de proche ont quitté le fil pour « Mes groupes » ; le soir même, « Tous les salons » est parti : il menait
+          à l'ancienne page, l'ancien concept — elle ne s'ouvre plus que par les anciens liens, `#salons`) */}
+      {fil?.surprise && (
+        <div className="fd-haut">
           <a className="fd-pastille" href="#proches" data-surprise={fil.surprise.genre}>
             {fil.surprise.genre === "cadeau" ? P.surpriseCadeau(fil.surprise.prenom) : P.surpriseToc(fil.surprise.prenom)}
           </a>
-        ) : (
-          <span />
-        )}
-        <button type="button" className="fd-tous" data-tous-les-salons onClick={onTousLesSalons}>
-          {P.tousLesSalons}
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* 🧍 sa figurine, au bord de la pièce : la toucher, c'est réagir */}
       {moi?.figurine && !courante.startsWith("s:") && (
@@ -507,6 +501,9 @@ function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoind
         {p.video ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={vignetteYouTube(p.video.id)} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />
+        ) : null}
+        {p.video ? (
+          <ApercuVideo id={p.video.id} />
         ) : (
           <span className="fd-neige" aria-hidden="true" />
         )}
@@ -560,6 +557,9 @@ function PieceRdv({ k, p, onConfirmer }: { k: string; p: PropositionGroupe; onCo
           {p.video ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={vignetteYouTube(p.video.id)} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />
+          ) : null}
+          {p.video ? (
+            <ApercuVideo id={p.video.id} />
           ) : (
             <span className="fd-rdv-e" aria-hidden="true">
               {p.e}
@@ -660,6 +660,9 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
           {p.video ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={vignetteYouTube(p.video.id)} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />
+          ) : null}
+          {p.video ? (
+            <ApercuVideo id={p.video.id} />
           ) : (
             <span className="fd-neige" aria-hidden="true" />
           )}
@@ -838,7 +841,7 @@ export const STYLES_FIL = `
 .fd-second{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
 .fd-haut{position:fixed;left:0;right:0;top:calc(58px + env(safe-area-inset-top));z-index:3;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px;pointer-events:none}
 .fd-haut>*{pointer-events:auto}
-.fd-tous,.fd-pastille{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(11,4,9,.55);color:#fff;font:inherit;font-size:13px;font-weight:700;display:inline-flex;align-items:center;text-decoration:none;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.fd-pastille{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(11,4,9,.55);color:#fff;font:inherit;font-size:13px;font-weight:700;display:inline-flex;align-items:center;text-decoration:none;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .fd-pastille{background:#FF2E9A;border-color:transparent;max-width:62vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fd-moi{position:fixed;right:10px;bottom:calc(104px + env(safe-area-inset-bottom));z-index:4;display:flex;flex-direction:column;align-items:center}
 .fd-moi>button{display:flex;flex-direction:column;align-items:center;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transform-origin:50% 100%}
