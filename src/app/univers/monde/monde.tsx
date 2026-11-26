@@ -64,9 +64,10 @@ const marquerVu = (v: number | string) => {
 // plus qu'un, `app/collection/chez-moi.tsx`)
 const MENU_DE_DEMAIN = [
   { ico: "🔥", nom: "Découvrir", href: "/collection#decouvrir" },
+  // (👥 26 novembre 2026 : « Mes groupes » a pris la place d'« Autour », devenu une tuile de Ma maison)
+  { ico: "👥", nom: "Mes groupes", href: "/collection#groupes" },
   { ico: "💬", nom: "Messages", href: "/collection#proches" },
   { ico: "🏠", nom: "Ma maison", href: "/collection#maison" },
-  { ico: "📍", nom: "Autour", href: "/collection#autour" },
 ] as const;
 
 /** (`piece` : où mène « 🏠 Choisis ta pièce » — vide : le parcours d'avant, `choisis-ta-piece-serveur.ts`) */

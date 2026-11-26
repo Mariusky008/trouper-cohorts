@@ -149,7 +149,7 @@ await p.goto(`${BASE}/univers`, { waitUntil: "networkidle" });
 await p.waitForSelector(".um-decouverte .um-decor", { timeout: 30000 }).catch(() => null);
 const menu = await p.locator(".um-menu a").allInnerTexts();
 ok(
-  (await texte(".um-entete")) === "Mon univers" && (await p.locator(".um-place .um-figurine").count()) === 1 && menu.map((m) => m.replace(/\s+/g, " ").trim()).join("|") === "🔥 Découvrir|💬 Messages|🏠 Ma maison|📍 Autour",
+  (await texte(".um-entete")) === "Mon univers" && (await p.locator(".um-place .um-figurine").count()) === 1 && menu.map((m) => m.replace(/\s+/g, " ").trim()).join("|") === "🔥 Découvrir|👥 Mes groupes|💬 Messages|🏠 Ma maison",
   `l'accueil : « Mon univers », sa figurine chez elle, le menu de demain (${menu.length})`,
 );
 ok((await p.locator(".um-menu a", { hasText: "Ma maison" }).getAttribute("href")) === "/collection#maison" && (await p.locator(".um-menu a", { hasText: "Messages" }).getAttribute("href")) === "/collection#proches", "le menu mène à l'appli : « Messages », « Ma maison »…");
