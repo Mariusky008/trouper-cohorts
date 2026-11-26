@@ -50,7 +50,7 @@ import { Autour, STYLES_AUTOUR } from "./autour";
 import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
 import { RaccourcisMoi, STYLES_CHEZ_MOI } from "./chez-moi";
 import { STYLES_MEME_POUR } from "./meme-pour";
-import { MEMOIRE_ETAT, MEMOIRE_FIL, MEMOIRE_MAISON, MEMOIRE_PROCHES, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire, poserProprietaire, prechauffer } from "./memoire-locale";
+import { MEMOIRE_ETAT, MEMOIRE_FIL, MEMOIRE_GROUPES, MEMOIRE_MAISON, MEMOIRE_PROCHES, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire, poserProprietaire, prechauffer } from "./memoire-locale";
 import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } from "./rituel";
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
@@ -60,6 +60,7 @@ import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
 import { BienvenueSelonPablito, STYLES_BIENVENUE_CHEZ } from "./bienvenue-chez";
 import { BIENVENUE_CHEZ_PABLITO } from "@/lib/direct/bienvenue";
 import { MaMaison, STYLES_MA_MAISON } from "./ma-maison";
+import { MesGroupes, enAttenteDe, type MesGroupesVue } from "./mes-groupes";
 import { capterLaProposition, instantane, lierSiBesoin, lireInstantane, ouvrirInstallation } from "@/lib/direct/appli-collection";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
 
@@ -71,7 +72,7 @@ const MENU = [
   { cle: "memes", nom: "Mes mèmes" },
   { cle: "proches", nom: "Proches" },
 ] as const;
-type Onglet = (typeof MENU)[number]["cle"] | "maison";
+type Onglet = (typeof MENU)[number]["cle"] | "maison" | "groupes";
 /**
  * 🏡 LE MENU DE DEMAIN (l'interrupteur « Univers pour tous » allumé, `lib/direct/univers-pour-tous.ts`), À TROIS :
  * Découvrir · CHEZ MOI au milieu · Autour (le propriétaire, le 13 novembre 2026 : « l'application devrait tourner autour
@@ -86,11 +87,17 @@ type Onglet = (typeof MENU)[number]["cle"] | "maison";
  * sa figurine sur le bouton) · Autour. L'appli s'ouvre toujours sur « Messages » (la découverte des cadeaux et des
  * visites s'y joue, en arrivant).
  */
+/*
+ * 👥 PUIS « MES GROUPES » À LA PLACE D'« AUTOUR » (26 novembre 2026, le lot G1 de `docs/univers/mes-groupes.md`) :
+ * Découvrir · MES GROUPES · Messages · Ma maison. Découvrir, c'est rencontrer par hasard, tout de suite ; Mes groupes,
+ * c'est retrouver, à une heure. « Autour » est une tuile 📍 de Ma maison : son écran et son adresse (`#autour`) restent,
+ * et « Ma maison » reste allumé dans le menu quand on y est.
+ */
 const MENU_UNIVERS = [
   { cle: "decouvrir", nom: "Découvrir" },
+  { cle: "groupes", nom: "Mes groupes" },
   { cle: "proches", nom: "Messages" },
   { cle: "maison", nom: "Ma maison" },
-  { cle: "autour", nom: "Autour" },
 ] as const;
 /**
  * Les vues : les onglets du menu, et « Moi » (sous son prénom, en haut) ; 🎞️ (lot F1, 23 novembre 2026) « Tous les
@@ -105,6 +112,9 @@ const ALIAS: Record<string, Vue> = {
   "tous-les-salons": "salons",
   autour: "autour",
   "autour-de-moi": "autour",
+  // (👥 lot G1, 26 novembre 2026)
+  groupes: "groupes",
+  "mes-groupes": "groupes",
   moi: "personnage",
   figurine: "figurine",
   creer: "figurine",
@@ -157,6 +167,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   const [nonLus, setNonLus] = useState(0);
   // 🎁🚪 (« Chez moi ») ses cadeaux et ses visites à découvrir, en plus de ses messages (la pastille du bouton du milieu)
   const [nouveautes, setNouveautes] = useState(0);
+  // 👥 (« Mes groupes ») les invitations devant la télé d'un proche et les demandes de proche qui attendent un geste
+  const [attenteGroupes, setAttenteGroupes] = useState(0);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
   // 🧭 LE TUTO (`tuto.tsx`, 9 novembre 2026) : ce que ce téléphone a déjà vu (la bienvenue, la visite, les pages
@@ -295,8 +307,9 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     return () => window.removeEventListener("hashchange", lire);
   }, [aller]);
 
-  // (« Tous les salons » est dans Découvrir : son onglet reste allumé)
-  const onglet = vue === "salons" ? "decouvrir" : vue;
+  // (« Tous les salons » est dans Découvrir : son onglet reste allumé ; 📍 Autour, une tuile de Ma maison dans le menu
+  // de l'univers : « Ma maison » reste allumé)
+  const onglet = vue === "salons" ? "decouvrir" : univers && vue === "autour" ? "maison" : vue;
   const compte = charge ? Boolean(etat?.compte) : null;
   const prete = etat?.etape === "prete";
 
@@ -308,6 +321,11 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
       void prechauffer(MEMOIRE_FIL, "/api/direct/fil-decouvrir", (j) => j.fil);
       void prechauffer(MEMOIRE_TELE, "/api/direct/tele-du-jour", (j) => j.tele);
       void prechauffer(MEMOIRE_SALONS, "/api/direct/salons-ouverts?accueil=1", (j) => ({ cartes: j.cartes ?? [], vitrine: j.vitrine, age: j.age, maison: j.maison, invitations: j.invitations, demandes: j.demandes }));
+      if (univers) void prechauffer(MEMOIRE_GROUPES, "/api/direct/mes-groupes", (j) => {
+        const v = { invitations: Array.isArray(j.invitations) ? j.invitations : [], demandes: Array.isArray(j.demandes) ? j.demandes : [], seances: Array.isArray(j.seances) ? j.seances : [] } as MesGroupesVue;
+        setAttenteGroupes(enAttenteDe(v));
+        return v;
+      });
       void prechauffer(MEMOIRE_PROCHES, "/api/direct/proches", (j) => (Array.isArray(j.proches) ? { proches: j.proches, presence: j.presence !== false, cle: j.cle ?? "" } : null));
       if (univers && maison) void prechauffer(MEMOIRE_MAISON, "/api/direct/ma-piece", (j) => j.maison);
     }, 1800);
@@ -337,6 +355,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   // ce qui attend dans chaque onglet (un point qui pulse)
   const pastilles: Partial<Record<Onglet, string>> = {
     ...(charge && !prete && etat?.etape !== "fabrication" ? { figurine: "!" } : {}),
+    ...(attenteGroupes > 0 ? { groupes: attenteGroupes > 9 ? "9+" : String(attenteGroupes) } : {}),
     ...(nonLus + nouveautes > 0 ? { proches: nonLus + nouveautes > 9 ? "9+" : String(nonLus + nouveautes) } : {}),
   };
 
@@ -408,6 +427,15 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
             </button>
             <OngletVisible.Provider value={vue === "salons"}>
               <TeleDuJourEcran onglet />
+            </OngletVisible.Provider>
+          </section>
+        )}
+
+        {/* 👥 MES GROUPES (lot G1, 26 novembre 2026) : retrouver ses proches, à une heure */}
+        {ouverts.has("groupes") && (
+          <section className="mc-onglet" id="o-groupes" hidden={vue !== "groupes"} aria-label="Mes groupes">
+            <OngletVisible.Provider value={vue === "groupes"}>
+              <MesGroupes onAttente={setAttenteGroupes} />
             </OngletVisible.Provider>
           </section>
         )}
@@ -593,6 +621,15 @@ function IconeOnglet({ cle }: { cle: Vue | "univers" | "messages" }) {
           <path d="M2.8 20a6.2 6.2 0 0 1 12.4 0" {...trait} />
           <circle cx="17" cy="9" r="2.5" {...trait} />
           <path d="M16.2 14.4a5 5 0 0 1 5.3 5.1" {...trait} />
+        </>
+      ) : cle === "groupes" ? (
+        <>
+          {/* 👥 trois personnages autour d'une table ronde */}
+          <circle cx="12" cy="5.2" r="2.3" {...trait} />
+          <circle cx="4.8" cy="9.6" r="2.1" {...trait} />
+          <circle cx="19.2" cy="9.6" r="2.1" {...trait} />
+          <ellipse cx="12" cy="16.4" rx="8.2" ry="3.4" {...trait} />
+          <path d="M8 13.2c.6-2 2.1-3.2 4-3.2s3.4 1.2 4 3.2" {...trait} />
         </>
       ) : cle === "autour" ? (
         <>

@@ -87,6 +87,8 @@ export const MEMOIRE_REVOIR = "clikme-memoire-revoir-1";
 export const MEMOIRE_MAISON = "clikme-memoire-ma-maison-1";
 /** 🎞️ (lot F1) le fil de Découvrir : ses pièces, la dernière fois */
 export const MEMOIRE_FIL = "clikme-memoire-fil-decouvrir-1";
+/** 👥 (lot G1, 26 novembre 2026) « Mes groupes » : la rangée « Avec mes proches », la dernière fois */
+export const MEMOIRE_GROUPES = "clikme-memoire-mes-groupes-1";
 /** (ce qui montre des images signées : 20 heures ; le reste : trois jours) */
 const SIGNEES = new Set([MEMOIRE_ETAT, MEMOIRE_PROCHES]);
 function dureeDe(cle: string): number {

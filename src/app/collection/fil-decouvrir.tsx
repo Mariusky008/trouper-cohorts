@@ -431,20 +431,13 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
         )}
       </div>
 
-      {/* en haut : ce qui l'attend ailleurs, et « Tous les salons » */}
+      {/* en haut : ce qui l'attend ailleurs, et « Tous les salons » (👥 lot G1, 26 novembre 2026 : les invitations devant
+          la télé d'un proche et les demandes de proche ont quitté le fil pour « Mes groupes ») */}
       <div className="fd-haut">
-        {fil?.invitation ? (
-          <a className="fd-pastille" href={`/univers/salons?chez=${encodeURIComponent(fil.invitation.cle)}`} data-invitation>
-            {P.invitation(fil.invitation.prenom)}
-          </a>
-        ) : fil?.surprise ? (
+        {fil?.surprise ? (
           <a className="fd-pastille" href="#proches" data-surprise={fil.surprise.genre}>
             {fil.surprise.genre === "cadeau" ? P.surpriseCadeau(fil.surprise.prenom) : P.surpriseToc(fil.surprise.prenom)}
           </a>
-        ) : fil?.demandes ? (
-          <button type="button" className="fd-pastille" data-demandes onClick={onTousLesSalons}>
-            {P.demandes(fil.demandes)} · {P.voir}
-          </button>
         ) : (
           <span />
         )}
