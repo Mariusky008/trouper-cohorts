@@ -45,6 +45,8 @@ jobs:
         run: node scripts/verifier-messages.mjs
       - name: L'ordre du fil (lot F4), sans téléphone (ses proches d'abord, rien deux fois de suite, les phrases)
         run: node scripts/verifier-fil.mjs
+      - name: Les propositions de Mes groupes (lot G2), sans téléphone (l'heure de Paris, « Ce soir 21 h », l'entrée, la modération, les phrases)
+        run: node scripts/verifier-groupes.mjs
       - name: Lint de l'épisode
         run: >-
           npx eslint

@@ -1449,3 +1449,27 @@ export async function laisserLaDemande(supabase: Supabase, moi: Habitant, cle: u
   await effacer(supabase, [cheminDemandeRejoindre(qui8(moi.id), qui8(h))]);
   return {};
 }
+
+/**
+ * 👥 (Mes groupes, lot G2) LE RENDEZ-VOUS ENTRE PROCHES, À L'HEURE DITE : la séance de celui qui propose l'attend.
+ * `invites` : ceux qui ont leur place deviennent invités de sa séance (six heures, comme une invitation, sans
+ * notification : la carte de la proposition les y mène) ; `video` : la télé de la séance se cale dessus, en pause, au
+ * début — seulement quand c'est lui qui entre, et pas si elle passe déjà.
+ */
+export async function preparerLeRendezVous(supabase: Supabase, hHote: string, o: { invites: string[]; video?: VideoSalon | null; hoteEntre?: boolean }): Promise<void> {
+  const qHote = qui8(hHote);
+  const maintenant = Date.now();
+  const [prenom, cle] = await Promise.all([prenomDuCompte(supabase, hHote).catch(() => ""), poserProfil(supabase, hHote).catch(() => "")]);
+  const avec = o.video ? { titre: o.video.titre, video: o.video } : {};
+  for (const h of o.invites) {
+    if (!h || h === hHote) continue;
+    const q = qui8(h);
+    if (await invite(supabase, qHote, q)) continue;
+    await ecrireJson(supabase, cheminInvite(qHote, q), { h, le: maintenant, ...avec });
+    if (cle) await ecrireJson(supabase, `${dossierInvitations(h)}/${qHote}.json`, { cle, prenom: prenom || "Ton proche", le: maintenant, ...avec });
+  }
+  if (o.hoteEntre && o.video) {
+    const avant = await lireTeleSeance(supabase, qHote);
+    if (avant?.video.id !== o.video.id) await ecrireJson(supabase, cheminTeleSeance(qHote), { video: o.video, depart: maintenant, pause: 0, n: (avant?.n ?? 0) + 1 } satisfies TeleSeance);
+  }
+}
