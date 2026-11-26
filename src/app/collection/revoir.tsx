@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { PHRASES_REVOIR as P, lienRevoir, type VideoARevoir } from "@/lib/direct/revoir";
 import { vignetteYouTube } from "@/lib/direct/tele";
+import { PHRASES_DISCUSSION as PD, lienDiscussion } from "@/lib/direct/discussion-video";
 import { MEMOIRE_REVOIR, ecrireMemoire, lireMemoire } from "./memoire-locale";
 
 /** Mes vidéos déjà vues (`null` : en chemin). */
@@ -47,12 +48,18 @@ export function RangeeRevoir() {
       <h2>{P.titre}</h2>
       <div className="rv-rangee">
         {liste.map((v) => (
-          <a key={v.id} className={`rv-carte${v.nouveaux ? " neuf" : ""}`} href={lienRevoir(v.id)} data-revoir-video={v.id}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" loading="lazy" />
-            <b>{v.titre}</b>
-            {v.nouveaux && <small data-nouveaux>{P.nouveaux(v.nouveaux.de)}</small>}
-          </a>
+          <div key={v.id} className="rv-case">
+            <a className={`rv-carte${v.nouveaux ? " neuf" : ""}`} href={lienRevoir(v.id)} data-revoir-video={v.id}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={vignetteYouTube(v.id)} alt="" referrerPolicy="no-referrer" loading="lazy" />
+              <b>{v.titre}</b>
+              {v.nouveaux && <small data-nouveaux>{P.nouveaux(v.nouveaux.de)}</small>}
+            </a>
+            {/* (💬 le lot A1 : sa discussion — mes proches, et tous ceux qui l'ont vue) */}
+            <a className="rv-discussion" href={lienDiscussion(v.id)} data-revoir-discussion={v.id}>
+              {PD.titre}
+            </a>
+          </div>
         ))}
       </div>
       <style>{STYLES_REVOIR}</style>
@@ -94,6 +101,9 @@ export function FeuilleRevoir({ onFermer }: { onFermer: () => void }) {
                     {v.nouveaux ? <small data-nouveaux>{P.nouveaux(v.nouveaux.de)}</small> : v.chaine && <small>{v.chaine}</small>}
                   </span>
                 </a>
+                <a className="rv-discussion rv-discussion-ligne" href={lienDiscussion(v.id)} data-revoir-discussion={v.id} aria-label={PD.titre}>
+                  💬
+                </a>
               </li>
             ))}
           </ul>
@@ -113,6 +123,11 @@ const STYLES_REVOIR = `
 .rv h2{margin:0 2px;font-size:17px;font-weight:900}
 .rv-rangee{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
 .rv-rangee::-webkit-scrollbar{display:none}
+.rv-case{flex:none;width:156px;display:flex;flex-direction:column;gap:4px}
+.rv-discussion{align-self:flex-start;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.1);color:inherit;font-size:12px;font-weight:800;text-decoration:none}
+.rv-liste li{display:flex;align-items:center;gap:6px}
+.rv-liste li>a:first-child{flex:1;min-width:0}
+.rv-liste a.rv-discussion-ligne{flex:none;width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:50%;font-size:17px}
 .rv-carte{position:relative;flex:none;width:156px;display:flex;flex-direction:column;gap:5px;color:inherit;text-decoration:none}
 .rv-carte img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;background:#1a0f14;box-shadow:0 6px 16px -8px rgba(0,0,0,.7)}
 .rv-carte.neuf img{box-shadow:0 0 0 2px #ffd27a,0 6px 16px -8px rgba(0,0,0,.7)}

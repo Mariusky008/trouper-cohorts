@@ -67,3 +67,10 @@ export async function monHistorique(supabase: Supabase, h: string): Promise<Vide
       return { id: x.id, titre: x.titre, chaine: s(x.chaine), duree: Number(x.duree) || 0, le: Number(x.le) || 0, ...(b ? { nouveaux: { n: b.n, de: b.de } } : {}) };
     });
 }
+
+/** 💬 (la discussion de la vidéo, lot A1) Cette vidéo est dans mon historique : ce que j'en ai gardé. */
+export async function dansMonHistorique(supabase: Supabase, h: string, id: string): Promise<{ id: string; titre: string; chaine: string; duree: number } | null> {
+  const f = await lireJson<{ liste?: Vue[] }>(supabase, cheminHistorique(h)).catch(() => ({}) as { liste?: Vue[] });
+  const x = (Array.isArray(f.liste) ? f.liste : []).find((y) => s(y?.id) === id && s(y.titre));
+  return x ? { id, titre: s(x.titre), chaine: s(x.chaine), duree: Number(x.duree) || 0 } : null;
+}

@@ -1,0 +1,108 @@
+// 💬 LA DISCUSSION D'UNE VIDÉO, À L'ÉCRAN (`app/collection/discussion-video.tsx`, `/univers/discussion` ;
+// `docs/univers/discussions-video.md`, le lot A1) — sur un iPhone, contre le faux Supabase et le faux YouTube.
+//
+// Léa a vu une vidéo ; Sam (son proche) y a écrit à 0:08 ; Inès (une inconnue) a laissé un mot à la fin. Léa ouvre la
+// discussion : la vidéo en haut, « ▶ Revoir la vidéo » ; 👯 Mes proches · 1 (ouvert d'office) : « Sam · à 0:08 », ses
+// mots ; 🌍 Tous · 1 : le mot d'Inès, « ▶ 🎙️ 3 s ». Une vidéo qu'elle n'a jamais croisée : « Cette discussion n'est
+// plus là ». Rien ne déborde, jamais le mot « exemple », aucune erreur.
+import crypto from "node:crypto";
+import { BASE, D, F, lancer } from "./commun.mjs";
+
+const STOCK = F.replace("/rest/v1", "/storage/v1/object");
+const semer = (t, l) => fetch(`${F}/${t}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(l) });
+const json = (chemin, x) => fetch(`${STOCK}/figurines-clients/${chemin}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(x) });
+const cleProfil = (h) => crypto.createHash("sha256").update(`clikme-profil:${h}`).digest("hex").slice(0, 16);
+
+let echecs = 0;
+const ok = (c, m) => {
+  if (!c) echecs++;
+  console.log(c ? "  ok  " : "ÉCHEC ", m);
+};
+
+// (les pages « Univers » s'ouvrent encore à l'administrateur : sa session, fausse)
+const ADMIN = "00000000-0000-4000-8000-0000000ad001";
+await semer("admins", [{ user_id: ADMIN }]);
+const b64 = (x) => Buffer.from(JSON.stringify(x)).toString("base64url");
+const session = { access_token: "faux-admin", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: "faux", user: { id: ADMIN, aud: "authenticated", role: "authenticated", email: "admin@clikme.invalid", app_metadata: {}, user_metadata: {} } };
+
+const qui = (n, prenom) => ({ id: `5d1e5d1e-0000-4000-8000-0000000d15${String(n).padStart(2, "0")}`, jeton: `jeton-discussion-nav-000${n}`, prenom });
+const LEA = qui(1, "Léa");
+const SAM = qui(2, "Sam");
+const INES = qui(3, "Inès");
+const GENS = [LEA, SAM, INES];
+const maintenant = new Date().toISOString();
+await semer("human_habitants", GENS.map((x) => ({ id: x.id, device_token: x.jeton, prenom: x.prenom, ville_slug: "dax" })));
+for (const x of GENS) {
+  await json(`profils/${cleProfil(x.id)}.json`, { h: x.id });
+  await json(`${x.id}/majeur.json`, { age: 34, adulte: true, le: maintenant });
+  await json(`${x.id}/passions.json`, { passions: ["foot"], poids: {}, le: maintenant });
+}
+await json(`${LEA.id}/proches.json`, { ids: [SAM.id] });
+await json(`${SAM.id}/proches.json`, { ids: [LEA.id] });
+const nuit = await (await fetch(`${BASE}/api/cron/decouvrir-selection`)).json();
+ok(nuit.faites?.length > 0, "la nuit est passée");
+const appel = async (x, chemin, corps) => {
+  const r = await fetch(`${BASE}${chemin}`, corps ? { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify(corps) } : { headers: { cookie: `clikme_habitant=${x.jeton}` } });
+  return { statut: r.status, ...((await r.json().catch(() => ({}))) ?? {}) };
+};
+const V = (await appel(LEA, "/api/direct/tele-du-jour")).tele?.videos?.[0]?.id;
+ok(Boolean(V), `la première vidéo de Léa (${V})`);
+ok((await appel(LEA, "/api/direct/tele-du-jour", { action: "vue", id: V, fin: true, secondes: 30 })).statut === 200, "Léa l'a vue");
+ok((await appel(SAM, "/api/direct/tele-du-jour", { action: "vue", id: V, fin: true, secondes: 30 })).statut === 200, "Sam aussi");
+ok((await appel(SAM, "/api/direct/tele-du-jour", { action: "ecrire", id: V, t: 8, texte: "Il va tirer de là ?!" })).statut === 200, "… il y a écrit à 0:08");
+const VOIX = Buffer.concat([Buffer.from("1a45dfa39f4286810142f7810142f2810442f381084282847765626d", "hex"), crypto.randomBytes(4000)]);
+ok((await appel(INES, "/api/direct/mots-video", { action: "publier", id: V, son: `data:audio/webm;base64,${VOIX.toString("base64")}`, duree: 3, accord: true })).statut === 200, "Inès a laissé un mot à la fin");
+
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+const b = await lancer();
+const erreurs = [];
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
+await ctx.addCookies([{ name: "clikme_habitant", value: LEA.jeton, url: BASE }, { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE }]);
+await ctx.route(/^https:\/\/i\.ytimg\.com\//, (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+const p = await ctx.newPage();
+p.on("pageerror", (e) => erreurs.push(String(e)));
+p.on("console", (m) => m.type() === "error" && !/Failed to load resource/i.test(m.text()) && erreurs.push(m.text()));
+const attendre = async (f, ms = 15000) => {
+  const fin = Date.now() + ms;
+  while (Date.now() < fin) {
+    if (await f().catch(() => false)) return true;
+    await p.waitForTimeout(120);
+  }
+  return false;
+};
+const texte = async (loc) => (await loc.innerText().catch(() => "")).replace(/\s+/g, " ").trim();
+
+// ═══ LÉA OUVRE LA DISCUSSION ═══
+await p.goto(`${BASE}/univers/discussion?video=${V}`, { waitUntil: "domcontentloaded" });
+ok(await attendre(async () => (await p.locator(`[data-discussion="${V}"]`).count()) === 1), "la discussion s'ouvre");
+const revoir = p.locator("[data-revoir-discussion]");
+ok((await texte(revoir)) === "▶ Revoir la vidéo" && (await revoir.getAttribute("href")) === `/univers/salons?chez=moi&video=${V}`, "« ▶ Revoir la vidéo » la rouvre dans son salon");
+const proches = p.locator('[data-cercle="proches"]');
+ok((await texte(proches)) === "👯 Mes proches · 1" && (await proches.getAttribute("aria-selected")) === "true", `« ${await texte(proches)} », ouvert d'office`);
+const ligne = p.locator('[data-fil="proches"] [data-ligne="8"]');
+ok(await attendre(async () => (await ligne.count()) === 1), "la ligne de Sam");
+ok(/Sam · à 0:08/.test(await texte(ligne)) && /Il va tirer de là \?!/.test(await texte(ligne)), `« ${await texte(ligne)} »`);
+await p.screenshot({ path: `${D}/discussion-video-1.png` });
+
+// ═══ 🌍 TOUS ═══
+const tousB = p.locator('[data-cercle="tous"]');
+ok((await texte(tousB)) === "🌍 Tous · 1", `« ${await texte(tousB)} »`);
+await tousB.click();
+ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-mot]').count()) === 1), "🌍 : le mot d'Inès");
+const mot = p.locator('[data-fil="tous"] [data-mot]');
+ok(/Inès/.test(await texte(mot)) && /▶ 🎙️ 3 s/.test(await texte(mot)), `« ${await texte(mot)} »`);
+await p.screenshot({ path: `${D}/discussion-video-2.png` });
+
+// ═══ RIEN NE DÉBORDE, JAMAIS « EXEMPLE » ═══
+ok((await p.evaluate(() => document.documentElement.scrollWidth)) <= 390, "rien ne déborde");
+ok(!/exemple/i.test(await p.locator("body").innerText()), "jamais le mot « exemple »");
+
+// ═══ UNE VIDÉO JAMAIS CROISÉE ═══
+await p.goto(`${BASE}/univers/discussion?video=AAAAAAAAAAA`, { waitUntil: "domcontentloaded" });
+ok(await attendre(async () => /Cette discussion n’est plus là/.test(await texte(p.locator("[data-discussion-erreur]")))), "une vidéo jamais croisée : « Cette discussion n’est plus là »");
+
+ok(erreurs.length === 0, `aucune erreur${erreurs.length ? ` : ${erreurs.join(" | ")}` : ""}`);
+await b.close();
+console.log(echecs ? `\n${echecs} échec(s).` : "\nTout est bon.");
+process.exit(echecs ? 1 : 0);

@@ -1,0 +1,86 @@
+/**
+ * 💬 LA DISCUSSION D'UNE VIDÉO (`docs/univers/discussions-video.md` ; le lot A1) — ce qui ne dépend pas de l'écran.
+ *
+ * Une discussion appartient à la vidéo, pas au salon où elle a commencé : elle reste quand le salon ferme. On la voit à
+ * travers un cercle :
+ *   · 👯 Mes proches : leurs réactions à la seconde, leurs mots, leurs vocaux, leurs réponses (celles qui sont pour moi) —
+ *     les proches ajoutés des deux côtés qui l'ont vue (`reactions-video`, rien de nouveau) ;
+ *   · 🌍 Tous ceux qui l'ont vue : les mots laissés à la fin de la vidéo (`mots-video`), dans sa tranche (adultes, ou
+ *     15-17 ans), où qu'on l'ait vue.
+ *
+ * On l'ouvre si la vidéo est à sa télé (aujourd'hui ou hier), dans son historique (📼 Revoir), dans une séance où l'on est,
+ * dans la sélection d'un salon ouvert de sa tranche, ou si l'on y a déjà laissé un mot ou une réaction.
+ *
+ * FICHIER PARTAGÉ (l'écran, le serveur, les essais).
+ */
+import type { ProcheDevantVideo, ReactionVideo } from "./reactions-video";
+import type { SuiteVue } from "./mots-video";
+
+export const CERCLES_DISCUSSION = ["proches", "tous"] as const;
+export type CercleDiscussion = (typeof CERCLES_DISCUSSION)[number];
+export const cercleValide = (x: unknown): CercleDiscussion | null => ((CERCLES_DISCUSSION as readonly unknown[]).includes(x) ? (x as CercleDiscussion) : null);
+
+export type VideoDiscussion = { id: string; titre: string; chaine: string; duree: number };
+
+/** Ce que l'écran reçoit. */
+export type DiscussionVue = {
+  video: VideoDiscussion;
+  /** Je l'ai déjà vue : tout ce que mes proches ont dit est montré (sinon : caché, pour ne rien gâcher). */
+  vue: boolean;
+  /** Elle est à ma télé : « ▶ Revoir la vidéo » la rouvre dans mon salon ; sinon, sur YouTube. */
+  aMaTele: boolean;
+  proches: ProcheDevantVideo[];
+  miennes: ReactionVideo[];
+  /** Les mots de ma tranche (`null` : je n'ai pas encore dit si j'ai 18 ans). */
+  tous: SuiteVue | null;
+};
+
+/** L'adresse de la discussion (un cercle, si l'on veut l'ouvrir là). */
+export const lienDiscussion = (id: string, cercle?: CercleDiscussion) => `/univers/discussion?video=${encodeURIComponent(id)}${cercle ? `&cercle=${cercle}` : ""}`;
+/** La vidéo sur YouTube (quand elle n'est plus à ma télé). */
+export const lienYouTube = (id: string) => `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
+
+/** Combien de choses dites dans un cercle (jamais un chiffre inventé : ce qui est là). */
+export function combienDans(d: DiscussionVue, c: CercleDiscussion): number {
+  if (c === "tous") return d.tous?.mots.length ?? 0;
+  const deux = [...d.proches.flatMap((p) => p.reactions), ...d.miennes];
+  return deux.filter((r) => r.source !== "implicite").length;
+}
+
+/** Le cercle où s'ouvre l'écran : celui demandé ; sinon mes proches s'ils ont dit quelque chose ; sinon tous. */
+export function cercleDeDepart(d: DiscussionVue, demande: unknown): CercleDiscussion {
+  const c = cercleValide(demande);
+  if (c) return c;
+  return combienDans(d, "proches") > 0 || !combienDans(d, "tous") ? "proches" : "tous";
+}
+
+export const PHRASES_DISCUSSION = {
+  titre: "💬 La discussion",
+  ouvrir: "💬 Toute la discussion",
+  retour: "‹",
+  retourNom: "Revenir",
+  revoir: "▶ Revoir la vidéo",
+  surYouTube: "▶ La voir sur YouTube",
+  proches: "👯 Mes proches",
+  tous: "🌍 Tous",
+  cercle: (nom: string, n: number) => (n ? `${nom} · ${n}` : nom),
+  quiProches: "Tes proches qui l’ont vue. Eux seuls lisent ce qui est dit ici.",
+  quiTous: "Tous ceux qui la regardent dans ClikMe : leurs mots, dits par leur figurine.",
+  quiJeunes: "Tous les 15-17 ans qui la regardent dans ClikMe : leurs mots, dits par leur figurine.",
+  rienProches: "Aucun de tes proches n’a encore réagi à cette vidéo.",
+  rienTous: "Personne n’a encore laissé de mot sur cette vidéo.",
+  cachees: (n: number) => `🔒 ${n} ${n > 1 ? "réactions attendent" : "réaction attend"} : regarde la vidéo d’abord, pour ne rien te gâcher.`,
+  aLaSeconde: (t: string) => `à ${t}`,
+  toi: "Toi",
+  aToi: "à toi",
+  unVocal: "🎙️ un vocal",
+  ecouter: "▶",
+  repondA: (prenom: string) => `↩ ${prenom}`,
+  pourEcrire: "Pour dire quelque chose ici, laisse un mot à la fin de la vidéo.",
+  introuvable: "Cette discussion n’est plus là : la vidéo a quitté ta télé, et tu n’y as rien dit.",
+  age: "Avant de lire leurs mots : as-tu 18 ans ou plus ? Les 15-17 ans ont leur discussion à eux.",
+  adulte: "J’ai 18 ans ou plus",
+  jeune: "J’ai entre 15 et 17 ans",
+  sansCompte: "Crée d’abord ta figurine sur ce téléphone.",
+  rate: "La discussion n’a pas pu s’ouvrir. Réessaie dans un instant.",
+} as const;

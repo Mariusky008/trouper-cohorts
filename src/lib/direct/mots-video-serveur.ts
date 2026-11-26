@@ -26,6 +26,7 @@ import { videoDeLaSeance, videosDuSalon } from "./salons-ouverts-serveur";
 import { IDS_THEMES } from "./decouvrir";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { figurineVivante } from "./expressions-figurine-serveur";
+import { noterFicheVideo } from "./fiche-video-serveur";
 import { MOTS_VIDEO, ordonnerMots, tetesValides, type MotDeQuelquun, type MotVu, type SuiteVue, type TeteMot } from "./mots-video";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -62,19 +63,30 @@ async function saTranche(supabase: Supabase, h: string): Promise<Tranche | null>
  * ou une de la sélection du jour d'un salon de sa tranche (les salons ouverts, et la vidéo d'une séance que l'hôte vient
  * de quitter).
  */
-async function laVideo(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown): Promise<{ id: string } | null> {
+export async function laVideo(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown): Promise<{ id: string; titre: string; chaine: string; duree: number } | null> {
   const x = s(id);
   if (!ID_VIDEO.test(x)) return null;
+  const fiche = (y: { id: string; titre?: string; chaine?: string; duree?: number }) => ({ id: y.id, titre: s(y.titre), chaine: s(y.chaine), duree: Number(y.duree) || 0 });
   const v = await maVideo(supabase, moi.id, x).catch(() => null);
-  if (v) return { id: v.id };
-  if (s(seance) && (await videoDeLaSeance(supabase, moi, seance, x).catch(() => null))) return { id: x };
+  if (v) return fiche(v);
+  if (s(seance)) {
+    const z = await videoDeLaSeance(supabase, moi, seance, x).catch(() => null);
+    if (z) return fiche(z);
+  }
   const m = await saTranche(supabase, moi.id);
   if (!m) return null;
   for (const theme of IDS_THEMES) {
     const l = await videosDuSalon(supabase, theme, m).catch(() => []);
-    if (l.some((y) => y.id === x)) return { id: x };
+    const y = l.find((w) => w.id === x);
+    if (y) return fiche(y);
   }
   return null;
+}
+
+/** 💬 (la discussion de la vidéo, lot A1) J'ai laissé un mot sur cette vidéo (dans ma tranche). */
+export async function aMonMot(supabase: Supabase, moi: Habitant, id: string): Promise<boolean> {
+  const m = await saTranche(supabase, moi.id);
+  return Boolean(m && ID_VIDEO.test(id) && (await lireMot(supabase, m, id, qui8(moi.id))));
 }
 
 async function lireMot(supabase: Supabase, m: Tranche, video: string, q: string): Promise<FicheMot | null> {
@@ -105,8 +117,9 @@ async function prenomDu(supabase: Supabase, h: string): Promise<string> {
  * 🎬 LA SUITE D'UNE VIDÉO : les mots de ma tranche (sans ceux qu'on a cachés ni les trop vieux), mes proches d'abord,
  * chaque réponse après le mot auquel elle répond ; leur son (signé, une heure), leurs têtes, leur figurine.
  */
-export async function suiteDeLaVideo(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown): Promise<Resultat<{ suite?: SuiteVue }>> {
-  const v = await laVideo(supabase, moi, id, seance);
+export async function suiteDeLaVideo(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown, autorisee?: { id: string }): Promise<Resultat<{ suite?: SuiteVue }>> {
+  // (💬 `autorisee` : la discussion de la vidéo a déjà vérifié qu'il peut la voir — une vidéo de son historique)
+  const v = autorisee ?? (await laVideo(supabase, moi, id, seance));
   if (!v) return { error: "Cette vidéo n’est plus à ta télé.", statut: 404 };
   const m = await saTranche(supabase, moi.id);
   if (!m) return { error: "Dis-nous d’abord si tu as 18 ans.", statut: 403, age: true };
@@ -200,6 +213,8 @@ export async function publierMot(
   if (!(await ecrireJson(supabase, cheminMot(m, v.id, q), fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   if (avant?.chemin && avant.chemin !== chemin) await effacer(supabase, [s(avant.chemin)]);
   await ecrireJson(supabase, `${dossierSesMots(m, q)}/${v.id}.json`, { le }).catch(() => false);
+  // (💬 la fiche de la vidéo : sa discussion se retrouvera, même quand elle aura quitté la télé ou le salon)
+  await noterFicheVideo(supabase, v);
   return { ok: true };
 }
 
