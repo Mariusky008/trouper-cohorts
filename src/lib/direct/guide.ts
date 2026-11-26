@@ -53,15 +53,9 @@ export const TUTO_ENREGISTRES = [
   "tuto-chez-4",
   "tuto-chez-5",
   "tuto-chez-5-merci",
-  "tuto-visite-1",
-  ...enSerie("creer", 4),
-  "tuto-creer-4c",
-  ...enSerie("decouvrir", 3),
-  ...enSerie("autour", 3),
-  ...enSerie("memes", 2),
-  ...enSerie("proches", 3),
-  ...enSerie("moi", 2),
 ];
+// (26 novembre 2026 : la visite sous le logo est partie, désuète — ses bulles « tuto-visite », « tuto-creer »,
+// « tuto-decouvrir », « tuto-autour », « tuto-memes », « tuto-proches » et « tuto-moi » et leurs enregistrements avec elle)
 export const SONS_PABLITO: Record<string, string> = Object.fromEntries([
   // L'ACCUEIL (reçues du patron le 5 novembre 2026) : ses quatre premières bulles ; les 5 à 7 parlaient de « Rencontres »,
   // effacé le 7 novembre 2026 ; la dernière (« Allez, à toi de jouer ! », `accueil-8`) porte son enregistrement elle-même
@@ -77,8 +71,7 @@ export const SONS_PABLITO: Record<string, string> = Object.fromEntries([
   // LE TEST DE PERSONNAGE : il pose chaque question (sa clé), puis « ce que tu aimes », puis il écrit la fiche
   ...["elan", "ton", "jeu", "sort", "tete", "gout", "rythme", "gouts", "etoiles"].map((q) => voix(`pablito-quiz-${q}`, `quiz-${q}`)),
   // 🧭 LE TUTO (`app/collection/tuto.tsx`, 9 novembre 2026 : ses textes validés par le patron) : la bienvenue (reçue le
-  // jour même) ; les bulles de la visite s'ajoutent ici une à une, à mesure qu'elles arrivent (`tuto-<page>-<n>`, la
-  // page : visite, creer, decouvrir, autour, memes, proches, moi) — une bulle sans enregistrement s'écrit sans voix
+  // jour même) — une bulle sans enregistrement s'écrit sans voix
   ...TUTO_ENREGISTRES.map((nom) => voix(nom, nom)),
   // PENDANT QUE SA FIGURINE SE FABRIQUE : ce qu'il raconte (dans l'ordre), et « Oups… »
   // (la 1ʳᵉ disait « joli sourire » — sur la photo, on ne sourit pas toujours : réenregistrée le 5 novembre 2026)

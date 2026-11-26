@@ -20,7 +20,7 @@
  *      entrer » passe par ses quatre réglages ;
  *   5. Léa frappe à ta porte, et un nouvel endroit apparaît ;
  *   6. le chemin : ton selfie, ta figurine, 5 minutes avec Pablito, ton univers ; puis « 📸 Je crée ma figurine ».
- * « Passer » (en haut) et « Plus tard » (à la fin) la ferment ; ensuite, le logo ouvre la visite (`tuto.tsx`).
+ * « Passer » (en haut) et « Plus tard » (à la fin) la ferment (la visite sous le logo est partie le 26 novembre 2026).
  * Toi et Léa sont de petits personnages dessinés : le nouveau venu n'a pas encore sa figurine.
  */
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -312,9 +312,6 @@ export function BienvenueTuto({ onFini, onCreer, catalogue = MA_MAISON_CATALOGUE
                 <button type="button" className="bv-plus-tard" onClick={onFini}>
                   Plus tard
                 </button>
-                <span className="bv-indice">
-                  Une question ? Touche le logo <b>ClikMe</b>, en haut, quand tu veux.
-                </span>
               </span>
             ))}
         </footer>
@@ -487,8 +484,6 @@ export const STYLES_BIENVENUE = `
 .bv-fin{flex-direction:column;align-items:stretch;gap:2px}
 .bv .tu-creer{width:100%;min-height:54px;margin:0;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 12px 26px -10px rgba(255,46,154,.95)}
 .bv-plus-tard{min-height:40px;border:0;background:none;color:#CDB4C0;font-size:14px;font-weight:700;cursor:pointer}
-.bv-indice{text-align:center;font-size:12.5px;color:#CDB4C0}
-.bv-indice b{color:#FFF4E6}
 
 @keyframes bv-scintille{to{opacity:.4}}
 @keyframes bv-respire{50%{transform:scale(1.012,.992) rotate(-.6deg)}}
