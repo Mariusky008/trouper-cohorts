@@ -17,8 +17,9 @@ import { THEMES_DECOUVRIR, type IdTheme } from "@/lib/direct/decouvrir";
 import { OngletAujourdhui, STYLES_AUJOURDHUI } from "./groupe-jour";
 import { OngletJournal, STYLES_JOURNAL } from "./groupe-journal";
 import type { TeleDuJour } from "@/lib/direct/tele-du-jour";
-import { NouveauRdv, OngletDiscussion, OngletMembres, OngletRendezVous, STYLES_VIE_DU_GROUPE, useVieDuGroupe } from "./groupe-vie";
-import { MOT_GROUPE_MAX, NOM_GROUPE_MAX, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as P, PHRASES_VIE_DU_GROUPE as PV, PHRASES_AUJOURDHUI as PJ, PHRASES_JOURNAL as PJO, heureLisible, type GroupeVue, type PlaceGroupe } from "@/lib/direct/groupes";
+import { OngletMembresDuGroupe, PlusTheme, STYLES_GRANDIR } from "./groupe-grandir";
+import { NouveauRdv, OngletDiscussion, OngletRendezVous, STYLES_VIE_DU_GROUPE, useVieDuGroupe } from "./groupe-vie";
+import { MOT_GROUPE_MAX, NOM_GROUPE_MAX, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as P, PHRASES_VIE_DU_GROUPE as PV, PHRASES_AUJOURDHUI as PJ, PHRASES_JOURNAL as PJO, PHRASES_GRANDIR as PGR, THEMES_EN_PLUS_MAX, heureLisible, type GroupeVue, type PlaceGroupe } from "@/lib/direct/groupes";
 
 export const salonDuGroupe = (id: string) => `/univers/salons?groupe=${encodeURIComponent(id)}`;
 
@@ -37,9 +38,24 @@ export function Figurine({ p, tete }: { p: PlaceGroupe; tete?: boolean }) {
 }
 
 /** 🛋️ L'espace d'un groupe, en plein écran. */
-export function EspaceGroupe({ g, tele, onFermer }: { g: GroupeVue; tele: TeleDuJour | null; onFermer: () => void }) {
+export function EspaceGroupe({
+  g,
+  tele,
+  adulte,
+  onFermer,
+  onMaj,
+  onQuitte,
+}: {
+  g: GroupeVue;
+  tele: TeleDuJour | null;
+  adulte: boolean;
+  onFermer: () => void;
+  onMaj: (g: GroupeVue) => void;
+  onQuitte: () => void;
+}) {
   const t = THEMES_DECOUVRIR.find((x) => x.id === g.theme);
-  const { vie, setVie, aujourdhui, setAujourdhui } = useVieDuGroupe(g.id);
+  const { vie, setVie, aujourdhui, setAujourdhui, accueils, setAccueils } = useVieDuGroupe(g.id);
+  const [plusTheme, setPlusTheme] = useState(false);
   const [onglet, setOnglet] = useState<"jour" | "rdv" | "discussion" | "journal" | "membres">("jour");
   const [feuille, setFeuille] = useState<"rdv" | "idee" | null>(null);
   const [dit, setDit] = useState("");
@@ -72,10 +88,24 @@ export function EspaceGroupe({ g, tele, onFermer }: { g: GroupeVue; tele: TeleDu
             </div>
           </div>
           {t && (
-            <div className="ge-themes">
+            <div className="ge-themes" data-themes>
               <span className="ge-theme">
                 {t.e} {t.court}
               </span>
+              {/* 🌱 (lot G8) les thèmes ajoutés, et « ＋ thème » */}
+              {(g.themes ?? []).map((id) => {
+                const x = THEMES_DECOUVRIR.find((y) => y.id === id);
+                return x ? (
+                  <span key={id} className="ge-theme" data-theme-groupe={id}>
+                    {x.e} {x.court}
+                  </span>
+                ) : null;
+              })}
+              {(g.themes ?? []).length < THEMES_EN_PLUS_MAX && (
+                <button type="button" className="ge-plus-theme" onClick={() => setPlusTheme(true)} data-plus-theme>
+                  {PGR.plusTheme}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -128,7 +158,9 @@ export function EspaceGroupe({ g, tele, onFermer }: { g: GroupeVue; tele: TeleDu
         ) : onglet === "journal" ? (
           <OngletJournal gid={g.id} />
         ) : onglet === "membres" || !vie ? (
-          onglet === "membres" && <OngletMembres membres={g.membres} />
+          onglet === "membres" && (
+            <OngletMembresDuGroupe g={g} roles={aujourdhui?.roles ?? []} accueils={accueils} setAccueils={setAccueils} messages={vie?.messages ?? []} onDit={dire} onQuitte={onQuitte} />
+          )
         ) : onglet === "rdv" ? (
           <OngletRendezVous gid={g.id} vie={vie} setVie={setVie} salon={salonDuGroupe(g.id)} onNouveau={() => setFeuille("rdv")} onDit={dire} />
         ) : (
@@ -147,12 +179,24 @@ export function EspaceGroupe({ g, tele, onFermer }: { g: GroupeVue; tele: TeleDu
           }}
         />
       )}
+      {plusTheme && (
+        <PlusTheme
+          g={g}
+          adulte={adulte}
+          onFermer={() => setPlusTheme(false)}
+          onAjoute={(themes, e) => {
+            setPlusTheme(false);
+            onMaj({ ...g, themes: themes.filter((x) => x !== g.theme) });
+            dire(PGR.themeAjoute(e));
+          }}
+        />
+      )}
       {dit && (
         <p className="gv-dit" role="status" data-dit>
           {dit}
         </p>
       )}
-      <style>{STYLES_ESPACE + STYLES_VIE_DU_GROUPE + STYLES_AUJOURDHUI + STYLES_JOURNAL}</style>
+      <style>{STYLES_ESPACE + STYLES_VIE_DU_GROUPE + STYLES_AUJOURDHUI + STYLES_JOURNAL + STYLES_GRANDIR}</style>
     </div>,
     document.body,
   );

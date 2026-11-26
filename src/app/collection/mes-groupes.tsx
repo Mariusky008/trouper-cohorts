@@ -372,7 +372,19 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
           }}
         />
       )}
-      {espace && <EspaceGroupe g={espace} tele={tele} onFermer={() => setOuvert(null)} />}
+      {espace && (
+        <EspaceGroupe
+          g={espace}
+          tele={tele}
+          adulte={Boolean(v?.adulte)}
+          onFermer={() => setOuvert(null)}
+          onMaj={(g) => setV((x) => (x ? { ...x, groupes: (x.groupes ?? []).map((y) => (y.id === g.id ? g : y)) } : x))}
+          onQuitte={() => {
+            setOuvert(null);
+            setV((x) => (x ? { ...x, groupes: (x.groupes ?? []).filter((y) => y.id !== espace.id) } : x));
+          }}
+        />
+      )}
       {creer && (
         <CreerGroupe
           adulte={Boolean(v?.adulte)}

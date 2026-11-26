@@ -32,8 +32,8 @@ une discussion avec un ami : les salons sont vides quand on arrive le premier ; 
 | G4 | « On garde ce groupe ? », Tous mes groupes | ✅ fait (#298) |
 | G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | ✅ fait (#299) |
 | G6 | La sélection du jour, les rôles qui tournent | ✅ fait (#300) |
-| G7 | Le journal | fait (PR à suivre) |
-| G8 | Le groupe qui grandit | à faire |
+| G7 | Le journal | ✅ fait (#301) |
+| G8 | Le groupe qui grandit | fait (PR à suivre) |
 
 ## G1, dans le code
 
@@ -183,3 +183,28 @@ Les règles :
   retiendra : rien n'est inventé en attendant.
 - Route : `GET /api/direct/mes-groupes?groupe=<id>&journal=1` → `{ journal }` (membres seulement ; lu à l'ouverture de
   l'onglet). Essai : `scripts/essai-groupes-journal-route.mjs`.
+
+## G8, dans le code
+
+- **🌱 ＋ thème** (dans son identité ; `groupe-grandir.tsx`, `groupes-grandir-serveur.ts`) : un membre ajoute un thème
+  (les passions de Découvrir ; adultes seulement pour un groupe d'adultes), trois de plus au plus
+  (`THEMES_EN_PLUS_MAX`). Le groupe le voit tout de suite ; Aujourd'hui prend un thème par jour, à tour de rôle
+  (`themeDuJour` : l'en-tête, les nouveautés, et les vidéos de la télé du salon du groupe). Dans le journal :
+  « Nouveau thème : musique · proposé par Sam ».
+- **👥 Membres** (l'onglet) : chacun avec sa tête et l'emoji de son rôle du jour.
+  - « ＋ Accueillir quelqu'un » : un membre propose un de ses proches (ceux avec qui il parle, de l'âge du groupe,
+    huit membres au plus). « Le groupe décide ensemble » : dès qu'un autre membre est « Partant ! », le proche est
+    invité (« 👥 Le groupe « … » t'accueille », dans Mes groupes : il le garde, ou « Non merci »). Pas de vote chiffré :
+    les têtes des partants.
+  - « Quitter le groupe » : « Tu peux partir quand tu veux, sans rien expliquer. » Sa fiche de membre et sa place au
+    salon s'en vont ; rien dans le journal.
+  - « 🚩 Signaler » : la personne, pourquoi (les motifs des salons), et son message si on veut. On ne voit plus ses
+    messages (la liste « ne plus voir » des salons, `{h}/salons-caches.json`) ; le signalement est rangé avec ceux des
+    salons (`signalerHorsSalon` : l'administrateur le voit ; trois en une heure, 24 h hors des salons ouverts).
+- **Stockage** : `groupes/themes/<id>/<thème>.json`, `groupes/accueils/<id>/<q>.json`,
+  `groupes/accueils-partants/<id>/<q de l'accueilli>/<q>.json` ; l'invitation reprend celle de « Un groupe avec mes
+  proches » (`groupes/invites`, `groupes/invitations`).
+- Route : `GET ?groupe=<id>` renvoie aussi `accueils` ; `POST` `theme-ajouter`, `accueil-proposer`,
+  `accueil-partant`, `quitter-groupe`, `signaler-groupe`. Essai : `scripts/essai-groupes-grandir-route.mjs`.
+- **Reste à faire** (décidé avec le propriétaire : « après G5, à faire avec soin ») : les notifications des nouveaux
+  messages d'un groupe.

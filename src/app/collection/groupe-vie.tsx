@@ -23,6 +23,7 @@ import {
   heureLisible,
   quandDuRdv,
   quandLisible,
+  type AccueilGroupe,
   type AujourdhuiDuGroupe,
   type MessageGroupe,
   type PlaceGroupe,
@@ -45,15 +46,18 @@ export function useVieDuGroupe(gid: string) {
   const [vie, setVie] = useState<VieDuGroupe | null>(null);
   // (🎬 lot G6 : l'onglet Aujourd'hui vient avec)
   const [aujourdhui, setAujourdhui] = useState<AujourdhuiDuGroupe | null>(null);
+  // (🌱 lot G8 : ceux qu'on propose d'accueillir)
+  const [accueils, setAccueils] = useState<AccueilGroupe[]>([]);
   useEffect(() => {
     let fini = false;
     const lire = () =>
       fetch(`${ROUTE}?groupe=${encodeURIComponent(gid)}`, { cache: "no-store" })
         .then((r) => r.json())
-        .then((j: { vie?: VieDuGroupe; aujourdhui?: AujourdhuiDuGroupe }) => {
+        .then((j: { vie?: VieDuGroupe; aujourdhui?: AujourdhuiDuGroupe; accueils?: AccueilGroupe[] }) => {
           if (fini) return;
           if (j.vie) setVie(j.vie);
           if (j.aujourdhui) setAujourdhui(j.aujourdhui);
+          if (Array.isArray(j.accueils)) setAccueils(j.accueils);
         })
         .catch(() => undefined);
     void lire();
@@ -63,7 +67,7 @@ export function useVieDuGroupe(gid: string) {
       window.clearInterval(t);
     };
   }, [gid]);
-  return { vie, setVie, aujourdhui, setAujourdhui };
+  return { vie, setVie, aujourdhui, setAujourdhui, accueils, setAccueils };
 }
 
 function Tete({ p }: { p: { prenom: string; src: string } }) {

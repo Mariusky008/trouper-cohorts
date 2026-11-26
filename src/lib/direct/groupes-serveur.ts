@@ -21,7 +21,7 @@ import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { maisonDeMoi, preparerLeRendezVous, presentsDuGroupe } from "./salons-ouverts-serveur";
 import { prochainDuGroupe } from "./groupes-vie-serveur";
-import { cheminGroupe, cheminMembre, cheminMiens, dossierInvitationsGroupe, dossierInvites, dossierPassages, estMembre, membresDe, idGroupeValide, type FicheMembre } from "./groupes-chemins-serveur";
+import { cheminGroupe, cheminMembre, cheminMiens, dossierInvitationsGroupe, dossierInvites, dossierPassages, estMembre, membresDe, idGroupeValide, themesDuGroupe, dossierAccueils, type FicheMembre } from "./groupes-chemins-serveur";
 import { maTeleDuJour } from "./tele-du-jour-serveur";
 import { details } from "./selection-serveur";
 import { videoYouTube } from "./tele";
@@ -404,10 +404,11 @@ async function placePourUnGroupe(supabase: Supabase, q: string): Promise<boolean
 
 async function vueDuGroupe(supabase: Supabase, g: FicheGroupe, membres: FicheMembre[], q: string, maintenant: number, invite?: string): Promise<GroupeVue> {
   const t = themeDuGroupe(g.theme);
-  const [ici, passages, prochain] = await Promise.all([
+  const [ici, passages, prochain, themes] = await Promise.all([
     invite ? Promise.resolve([] as string[]) : presentsDuGroupe(supabase, g.id, maintenant).catch(() => [] as string[]),
     invite ? Promise.resolve([] as string[]) : lister(supabase, dossierPassages(g.id), 20),
     prochainDuGroupe(supabase, g.id, maintenant).catch(() => null),
+    themesDuGroupe(supabase, g.id, g.theme).catch(() => [] as string[]),
   ]);
   const place = ({ q: x, prenom, src }: FicheMembre): PlaceGroupe => ({ q: x, prenom, src });
   const dedans = membres.filter((m) => ici.includes(m.q));
@@ -429,6 +430,8 @@ async function vueDuGroupe(supabase: Supabase, g: FicheGroupe, membres: FicheMem
     ...(passage ? { passage } : {}),
     ...(invite ? { invite: { de: invite } } : {}),
     ...(prochain ? { prochain } : {}),
+    ...(themes.length > 1 ? { themes: themes.slice(1) as GroupeVue["themes"] } : {}),
+    ...(invite ? {} : { moi: q }),
   };
 }
 
@@ -530,6 +533,7 @@ export async function repondreGroupe(supabase: Supabase, moi: Habitant, idBrut: 
       if (!(await devenirMembre(supabase, moi, id, maintenant))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
     }
   }
-  await effacer(supabase, [chemin, `${dossierInvites(id)}/${q}.json`]);
+  // (🌱 lot G8 : s'il était proposé par le groupe, sa proposition s'en va aussi)
+  await effacer(supabase, [chemin, `${dossierInvites(id)}/${q}.json`, ...(non ? [`${dossierAccueils(id)}/${q}.json`] : [])]);
   return non ? {} : { groupe: await vueDuGroupe(supabase, g, await membresDe(supabase, id), q, maintenant) };
 }

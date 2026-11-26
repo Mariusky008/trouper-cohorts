@@ -114,7 +114,13 @@ export async function vieDuGroupe(supabase: Supabase, moi: Habitant, groupe: unk
   if (!m.gid) return { error: m.error, statut: m.statut };
   const gid = m.gid;
   const q = qui8(moi.id);
-  const [fiches, membres, noms] = await Promise.all([lireRdvs(supabase, gid), membresDe(supabase, gid), listerGroupes(supabase, dossierDiscussion(gid), 40)]);
+  const [fiches, membres, noms, caches] = await Promise.all([
+    lireRdvs(supabase, gid),
+    membresDe(supabase, gid),
+    listerGroupes(supabase, dossierDiscussion(gid), 40),
+    // (🚩 lot G8 : ceux que je ne veux plus voir — les mêmes que dans les salons, `{h}/salons-caches.json`)
+    lireJson<{ qs?: string[] }>(supabase, `${moi.id}/salons-caches.json`).then((c) => new Set(Array.isArray(c.qs) ? c.qs.map(String) : []), () => new Set<string>()),
+  ]);
   const [rdv, lus] = await Promise.all([
     Promise.all(fiches.map((f) => vueDuRdv(supabase, gid, f, membres, q, maintenant))),
     Promise.all(noms.map((n) => lireJson<Partial<FicheMessage>>(supabase, `${dossierDiscussion(gid)}/${n}`).catch(() => ({}) as Partial<FicheMessage>))),
@@ -123,7 +129,7 @@ export async function vieDuGroupe(supabase: Supabase, moi: Habitant, groupe: unk
   const passes = fiches.filter((f, k) => !rdv[k] && f.recurrence === "une").map((f) => `${dossierRdv(gid)}/${f.id}.json`);
   if (passes.length) void effacer(supabase, passes);
   const messages: MessageGroupe[] = lus
-    .filter((x): x is FicheMessage => Boolean(x.id && x.q && x.texte))
+    .filter((x): x is FicheMessage => Boolean(x.id && x.q && x.texte) && !caches.has(String(x.q)))
     .sort((a, b) => a.le - b.le)
     .map((x) => ({ id: x.id, q: x.q, prenom: x.prenom, src: x.src, texte: x.texte, le: x.le, ...(x.q === q ? { mien: true as const } : {}), ...(x.idee ? { idee: x.idee } : {}) }));
   return { vie: { rdv: rdv.filter((x): x is RdvGroupe => Boolean(x)).sort((a, b) => a.quand - b.quand), messages } };
