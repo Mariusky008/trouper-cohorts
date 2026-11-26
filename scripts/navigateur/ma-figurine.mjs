@@ -500,7 +500,7 @@ hugo.on("request", (r) => r.method() === "POST" && r.url().endsWith("/api/direct
 await hugo.locator(".tf-surprends").click();
 await hugo.waitForSelector(".tf-surprise .tf-surprise-texte", { timeout: 20000 });
 const surprise1 = (await texte(hugo, ".tf-surprise-texte")).replace(/^« | »$/g, "");
-ok(surprise1.length > 10 && (await hugo.locator(".tf-surprise-carte").count()) === 1 && (await hugo.locator('.tf-surprise-carte[href="#personnage"]').count()) === 1, `sans carte : une surprise pour tous, et « 🃏 Fais ta carte de personnage » (${surprise1})`);
+ok(surprise1.length > 10 && (await hugo.locator(".tf-surprise-carte").count()) === 0, `sans carte : une surprise pour tous, sans renvoi vers la carte de personnage, partie (${surprise1})`);
 await hugo.waitForTimeout(400);
 ok((await hugo.locator(".tf-texte textarea").inputValue()) === avantSurprise && voixDites.length === 0, "il la lit d'abord : rien n'est écrit ni dit tant qu'il ne l'a pas choisie");
 await hugo.locator(".tf-surprise-encore").click();
