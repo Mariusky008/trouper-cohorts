@@ -43,7 +43,7 @@ messagerie bruyante.
 | A4 | Activité et la cloche 🛎️ ; « Pendant ton absence » y passe | ✅ fait |
 | A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | ✅ fait |
 | A6 | Les groupes : le cercle 👥, vidéo par vidéo | ✅ fait |
-| A7 | Le soin : « Ne plus voir », l'admin des mots écrits, vidéo indisponible, les cinq cas sur un iPhone | à faire |
+| A7 | Le soin : « Ne plus voir », l'admin des mots écrits, vidéo indisponible, les cinq cas sur un iPhone | ✅ fait |
 
 ## A1, dans le code
 
@@ -181,3 +181,20 @@ messagerie bruyante.
   sous 🌍, la ligne 👥 d'Activité, une réponse, 🔕, effacer, quitter le groupe) ; `essai-groupes-jour-route.mjs` (un mot
   au salon du groupe arrive sous la vidéo ; pas une vidéo hors de sa télé) ; `navigateur/discussion-video.mjs` (l'onglet
   ouvert d'office, « 👥 Lu par … », écrire sans accord).
+
+## A7, dans le code
+
+- **🙈 Ne plus voir** : sous le mot (dit ou écrit) d'une personne qui n'est pas une proche, en 🌍. La même liste que
+  dans les salons (`<habitant>/salons-caches.json`, `nePlusVoir`) : ses mots disparaissent chez moi dans toutes les
+  discussions (🌍 et 👥), dans Activité, et mon téléphone ne sonne plus pour elle. Jamais entre proches. Route
+  `discussion-video`, action `ne-plus-voir` { q, revoir? }.
+- **🚩 Signaler au groupe** : comme en 🌍 — le mot ne passe plus chez moi, à trois membres chez personne
+  (`groupes/videos-signales/<groupe>/<vidéo>/<id>/<q>.json`) ; l'administrateur le voit (motif `ecrit-groupe`).
+- **🗑️ L'administrateur** (`/admin/humain/salons`) : un signalement de mot écrit (🌍 ou 👥) garde le chemin du mot ;
+  « 🗑️ Effacer ce mot » l'efface pour tout le monde (action `effacer-ecrit`, seulement un chemin de mot écrit).
+- **📼 La vidéo partie de YouTube** : YouTube rend alors une vignette grise de 120 × 90 ; l'écran le voit, retire
+  « ▶ Revoir » et dit « Cette vidéo n’est plus sur YouTube. Ce qui s’en est dit reste ici. » La discussion reste.
+- **Sur un iPhone** : l'essai `navigateur/discussion-video.mjs` passe tout sur un iPhone (390 × 844) : 👯, 🌍, écrire,
+  suivre, Activité, 👥, 🙈, la vidéo partie ; rien ne déborde ; jamais le mot « exemple ».
+- **Les essais** : `essai-discussion-video-route.mjs` (🙈 Inès, chez Léa et pas chez Sam, Activité, « revoir » ;
+  🚩 au groupe) ; `navigateur/discussion-video.mjs` (le bouton, l'administrateur qui efface, la vidéo partie).

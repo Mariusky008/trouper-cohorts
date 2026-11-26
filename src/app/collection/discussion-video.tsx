@@ -64,6 +64,7 @@ export function DiscussionVideoEcran() {
   const [occupe, setOccupe] = useState(false);
   const [note, setNote] = useState("");
   const [signales, setSignales] = useState<string[]>([]);
+  const [indisponible, setIndisponible] = useState(false);
   // 🔔 (lot A3) suivre : la feuille des trois niveaux, la question après la première publication, « Nouveau »
   const [feuilleSuivi, setFeuilleSuivi] = useState(false);
   const [proposer, setProposer] = useState(false);
@@ -180,6 +181,26 @@ export function DiscussionVideoEcran() {
     }
   };
 
+  /** 🙈 (lot A7) ne plus voir quelqu'un : ses mots disparaissent, ici comme dans les salons */
+  const nePlusVoir = async (q: string, prenom: string) => {
+    const video = etat && "d" in etat ? etat.d.video.id : null;
+    if (!video) return;
+    const r = await poster({ action: "ne-plus-voir", id: video, q });
+    if (r.ok) {
+      dire(P.nePlusVu(prenom));
+      await charger();
+    }
+  };
+  const signalerAuGroupe = async (ecrit: string) => {
+    const video = etat && "d" in etat ? etat.d.video.id : null;
+    if (!video || !groupeOuvert) return;
+    const r = await poster({ action: "signaler", id: video, ecrit, groupe: groupeOuvert });
+    if (r.ok) {
+      dire(P.signale);
+      await charger();
+    }
+  };
+
   const revenir = () => {
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/collection#decouvrir";
@@ -219,18 +240,34 @@ export function DiscussionVideoEcran() {
           <>
             <header className="dv-video">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={vignetteYouTube(d.video.id)} alt="" referrerPolicy="no-referrer" />
+              {/* (📼 lot A7 : YouTube rend une vignette grise de 120 × 90 pour une vidéo qui n'existe plus) */}
+              <img
+                src={vignetteYouTube(d.video.id)}
+                alt=""
+                referrerPolicy="no-referrer"
+                onLoad={(ev) => {
+                  const i = ev.currentTarget;
+                  if (i.naturalWidth === 120 && i.naturalHeight === 90) setIndisponible(true);
+                }}
+              />
               <button type="button" className="dv-rond dv-retour" aria-label={P.retourNom} onClick={revenir}>
                 {P.retour}
               </button>
-              <a className="dv-revoir" href={d.aMaTele ? lienRevoir(d.video.id) : lienYouTube(d.video.id)} {...(d.aMaTele ? {} : { target: "_blank", rel: "noreferrer" })} data-revoir-discussion>
-                {d.aMaTele ? P.revoir : P.surYouTube}
-              </a>
+              {!indisponible && (
+                <a className="dv-revoir" href={d.aMaTele ? lienRevoir(d.video.id) : lienYouTube(d.video.id)} {...(d.aMaTele ? {} : { target: "_blank", rel: "noreferrer" })} data-revoir-discussion>
+                  {d.aMaTele ? P.revoir : P.surYouTube}
+                </a>
+              )}
               <div className="dv-titre">
                 <b>{d.video.titre}</b>
                 {d.video.chaine && <small>{d.video.chaine}</small>}
               </div>
             </header>
+            {indisponible && (
+              <p className="dv-indisponible" data-video-indisponible>
+                📼 {P.indisponible}
+              </p>
+            )}
 
             <div className="dv-cercles" role="tablist">
               {(["proches", "tous"] as const).map((c) => (
@@ -375,6 +412,11 @@ export function DiscussionVideoEcran() {
                                       {P.signaler}
                                     </button>
                                   )}
+                                  {!moi && !(m ?? e)?.proche && (
+                                    <button type="button" data-ne-plus-voir={(m ?? e)?.q} onClick={() => void nePlusVoir((m ?? e)?.q ?? "", prenom)}>
+                                      {P.nePlusVoir}
+                                    </button>
+                                  )}
                                 </span>
                               </div>
                             </li>
@@ -461,6 +503,11 @@ export function DiscussionVideoEcran() {
                                   {P.effacer}
                                 </button>
                               )}
+                              {!e.moi && (
+                                <button type="button" data-signaler={e.id} onClick={() => void signalerAuGroupe(e.id)}>
+                                  {P.signaler}
+                                </button>
+                              )}
                             </span>
                           </div>
                         </li>
@@ -545,6 +592,7 @@ const STYLES = `
 .dv-video img{width:100%;height:100%;object-fit:cover;display:block}
 .dv-video::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,0) 60%)}
 .dv-retour{position:absolute;z-index:1;top:calc(10px + env(safe-area-inset-top));left:12px}
+.dv-indisponible{margin:10px 14px 0;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.08);color:#eadbcb;font-size:14px;line-height:1.4}
 .dv-revoir{position:absolute;z-index:1;top:calc(12px + env(safe-area-inset-top));right:12px;padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-weight:800;font-size:13px;text-decoration:none}
 .dv-titre{position:absolute;z-index:1;left:14px;right:14px;bottom:10px;display:flex;flex-direction:column;gap:2px}
 .dv-titre b{font-size:16px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

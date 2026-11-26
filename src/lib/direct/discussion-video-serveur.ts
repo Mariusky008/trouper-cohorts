@@ -13,7 +13,7 @@ import { randomBytes } from "node:crypto";
 import { SEAU_FIGURINES, ecrireJson, lireJson, prenomDe, prochesDe } from "./ma-figurine-serveur";
 import { qui8 } from "./talkie-serveur";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
-import { exclusion, lirePresent } from "./salons-ouverts-serveur";
+import { exclusion, lirePresent, mesCaches, nePlusVoir } from "./salons-ouverts-serveur";
 import { PHRASES_SALONS, nomDuSalon, refusDuMessage, salonDe } from "./salons-ouverts";
 import { maVideo } from "./tele-du-jour-serveur";
 import { dansMonHistorique } from "./revoir-serveur";
@@ -21,7 +21,7 @@ import { cheminReactions, reactionsDesProches } from "./reactions-video-serveur"
 import { aMonMot, laVideo, saTranche, suiteDeLaVideo } from "./mots-video-serveur";
 import { ID_VIDEO, ficheVideo, noterFicheVideo } from "./fiche-video-serveur";
 import { prevenirLaDiscussion } from "./activite-serveur";
-import { aParleAuGroupe, effacerAuGroupe, groupesDeLaVideo, publierAuGroupe, suivreAuGroupe } from "./discussion-groupe-serveur";
+import { aParleAuGroupe, effacerAuGroupe, groupesDeLaVideo, publierAuGroupe, signalerAuGroupe, suivreAuGroupe } from "./discussion-groupe-serveur";
 import { choisirNiveau, marquerLu, mesSuivis, niveauValide, suivreApresPublication } from "./suivis-video-serveur";
 import { ECRITS_VIDEO, PHRASES_DISCUSSION, cercleValide, niveauDeDepart, type NiveauSuivi, type DiscussionVue, type EcritVu, type VideoDiscussion } from "./discussion-video";
 
@@ -77,7 +77,10 @@ export async function laDiscussion(supabase: Supabase, moi: Habitant, id: unknow
     noterFicheVideo(supabase, video),
   ]);
   if (r.error) return { error: r.error, statut: r.statut };
-  const ecrits = suite.suite ? await lesEcrits(supabase, moi, suite.suite.tranche, video.id) : [];
+  // (🙈 lot A7 : ceux que je ne veux plus voir — les mêmes que dans les salons ; jamais entre proches)
+  const caches = new Set(await mesCaches(supabase, moi.id).catch(() => [] as string[]));
+  const ecrits = (suite.suite ? await lesEcrits(supabase, moi, suite.suite.tranche, video.id) : []).filter((e) => !caches.has(e.q));
+  if (suite.suite) suite.suite = { ...suite.suite, mots: suite.suite.mots.filter((m) => m.moi || !caches.has(m.q)) };
   // (🔔 lot A3 : mon niveau dans chaque cercle — choisi, sinon celui de départ ; et je l'ai lue maintenant)
   const [choix, luAvant] = await Promise.all([mesSuivis(supabase, moi.id, video.id), marquerLu(supabase, moi.id, video.id, video.titre)]);
   const miennes = r.miennes ?? [];
@@ -97,7 +100,7 @@ export async function laDiscussion(supabase: Supabase, moi: Habitant, id: unknow
       suivi,
       luAvant: { proches: luAvant.proches ?? 0, tous: luAvant.tous ?? 0 },
       // (👥 lot A6 : mes groupes qui en parlent, et celui d'où je viens)
-      groupes: await groupesDeLaVideo(supabase, moi, video.id, { demande: groupe, marquer: true, titre: video.titre }).catch(() => []),
+      groupes: (await groupesDeLaVideo(supabase, moi, video.id, { demande: groupe, marquer: true, titre: video.titre }).catch(() => [])).map((g) => ({ ...g, ecrits: g.ecrits.filter((e) => !caches.has(e.q)) })),
     },
   };
 }
@@ -236,6 +239,7 @@ export async function effacerEcrit(supabase: Supabase, moi: Habitant, p: Record<
 export async function signalerEcrit(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ok?: true; cache?: boolean }>> {
   const v = await videoDeLaDiscussion(supabase, moi, p.id, p.seance);
   if (!v) return { error: "Cette discussion n’est plus là.", statut: 404 };
+  if (p.groupe) return signalerAuGroupe(supabase, moi, v.id, p);
   const m = await trancheOuRefus(supabase, moi);
   if (typeof m !== "string") return m;
   const id = s(p.ecrit);
@@ -256,6 +260,8 @@ export async function signalerEcrit(supabase: Supabase, moi: Habitant, p: Record
     prenom: s(f.prenom),
     auteur: { q: auteur, h: moi.id },
     texte: s(f.texte),
+    // (🗑️ lot A7 : l'administrateur peut l'effacer)
+    ecrit: `${dossierEcrits(m, v.id)}/${id}.json`,
   });
   const par = await lister(supabase, `${dossierSignales(m, v.id)}/${id}`);
   return { ok: true, cache: par.length >= ECRITS_VIDEO.seuilSignalements };
@@ -277,4 +283,13 @@ export async function suivreDiscussion(supabase: Supabase, moi: Habitant, p: Rec
   }
   await choisirNiveau(supabase, moi.id, { cercle, video: v.id, tranche, niveau, titre: v.titre });
   return { niveau };
+}
+
+/**
+ * 🙈 (lot A7) Ne plus voir quelqu'un : ses mots (dits et écrits) ne passent plus chez moi, dans aucune discussion, ni
+ * dans Activité, ni sur mon téléphone — la même liste que dans les salons (`<h>/salons-caches.json`). `revoir` : l'inverse.
+ */
+export async function nePlusVoirDansLaDiscussion(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ok?: true }>> {
+  const r = await nePlusVoir(supabase, moi, p.q, p.revoir === true);
+  return r.error ? { error: r.error, statut: r.statut } : { ok: true };
 }

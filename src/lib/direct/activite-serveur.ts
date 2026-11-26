@@ -89,8 +89,14 @@ export async function prevenirLaDiscussion(
   );
   // (📱 lot A5 : puis le téléphone, selon la règle de bruit)
   const niveaux = new Map(suiveurs.map((x) => [s(x.h), niveauDe(x.niveau)] as const));
-  await Promise.all([...pour].map(([h, sorte]) => sonnerLeTelephone(supabase, h, { cercle: o.cercle, video: o.video, titre: o.titre, prenom: o.prenom, texte: o.texte, vocal: o.vocal, ...(o.groupe ? { groupe: o.groupe.id, groupeNom: o.groupe.nom } : {}), sorte, niveau: niveaux.get(h) ?? null, le }).catch(() => "rien")));
+  await Promise.all([...pour].map(([h, sorte]) => sonnerLeTelephone(supabase, h, { q, cercle: o.cercle, video: o.video, titre: o.titre, prenom: o.prenom, texte: o.texte, vocal: o.vocal, ...(o.groupe ? { groupe: o.groupe.id, groupeNom: o.groupe.nom } : {}), sorte, niveau: niveaux.get(h) ?? null, le }).catch(() => "rien")));
   return [...pour.keys()];
+}
+
+/** 🙈 (lot A7) ceux que je ne veux plus voir (la liste des salons, `<h>/salons-caches.json`) ; jamais entre proches. */
+async function mesCachesA(supabase: Supabase, h: string): Promise<Set<string>> {
+  const f = await lireJson<{ qs?: unknown[] }>(supabase, `${h}/salons-caches.json`).catch(() => ({}) as { qs?: unknown[] });
+  return new Set((Array.isArray(f.qs) ? f.qs : []).map((x) => s(x)));
 }
 
 const niveauDe = (x: unknown): NiveauSuivi | null => (x === "prevenir" || x === "discret" || x === "non" ? x : null);
@@ -106,7 +112,7 @@ const cheminVague = (h: string, seg: string, video: string) => `${h}/vagues/${se
 async function sonnerLeTelephone(
   supabase: Supabase,
   h: string,
-  o: { cercle: CercleDiscussion | "groupe"; groupe?: string; groupeNom?: string; video: string; titre: string; prenom: string; texte?: string; vocal?: boolean; sorte: SorteEvenement; niveau: NiveauSuivi | null; le: number },
+  o: { q: string; cercle: CercleDiscussion | "groupe"; groupe?: string; groupeNom?: string; video: string; titre: string; prenom: string; texte?: string; vocal?: boolean; sorte: SorteEvenement; niveau: NiveauSuivi | null; le: number },
 ): Promise<"envoye" | "rien"> {
   if (heureCalme(o.le)) return "rien";
   if (o.sorte === "n" && o.niveau !== "prevenir") return "rien";
@@ -114,6 +120,7 @@ async function sonnerLeTelephone(
   const suivi = (await tousMesSuivis(supabase, h))[`${seg}:${o.video}`];
   if (o.sorte === "r" && suivi?.niveau === "non") return "rien";
   if (o.le - (Number(suivi?.lu) || 0) < 2 * 60_000) return "rien";
+  if (o.cercle !== "proches" && (await mesCachesA(supabase, h)).has(o.q)) return "rien";
   const chemin = cheminVague(h, seg, o.video);
   const v = await lireJson<{ le?: number; rep?: boolean }>(supabase, chemin).catch(() => ({}) as { le?: number; rep?: boolean });
   const dansLaVague = o.le - (Number(v.le) || 0) < NOTIF_DISCUSSION_MS;
@@ -143,11 +150,12 @@ async function sonnerLeTelephone(
 /** 🛎️ Mon activité : une ligne par discussion. `compter` : seulement combien ont du nouveau (sans ouvrir un fichier). */
 export async function monActivite(supabase: Supabase, h: string, o: { compter?: boolean } = {}): Promise<ActiviteVue> {
   const maintenant = Date.now();
-  const [liste, suivis, luFiche, boite] = await Promise.all([
+  const [liste, suivis, luFiche, boite, caches] = await Promise.all([
     supabase.storage.from(SEAU_FIGURINES).list(dossierActivite(h), { limit: ACTIVITE.evenementsMax, sortBy: { column: "name", order: "desc" } }),
     tousMesSuivis(supabase, h),
     lireJson<{ lu?: number }>(supabase, cheminLu(h)).catch(() => ({}) as { lu?: number }),
     maBoiteARevoir(supabase, h).catch(() => []),
+    mesCachesA(supabase, h),
   ]);
   const luGlobal = Number(luFiche.lu) || 0;
   const evenements = ((Array.isArray(liste.data) ? liste.data : []) as { name?: string }[]).map((f) => lireNom(s(f.name))).filter((x): x is Evenement => Boolean(x));
@@ -164,6 +172,7 @@ export async function monActivite(supabase: Supabase, h: string, o: { compter?: 
   for (const e of evenements) {
     if (maintenant - e.le > ACTIVITE.gardeJours * JOUR_MS) continue;
     if (luDe(segment(e), e.video).suivi?.niveau === "non" && e.sorte !== "r") continue;
+    if (e.cercle !== "proches" && caches.has(e.q)) continue;
     const cle = `${segment(e)}:${e.video}`;
     groupes.set(cle, [...(groupes.get(cle) ?? []), e]);
   }

@@ -920,8 +920,17 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
 
 // ─── 🛡️ l'administration (`/admin/humain/salons`) ───
 export type SalonEnCours = { maison: MaisonSalons; id: string; nom: string; presents: { q: string; prenom: string }[]; messages24h: number };
-export type SignalementVu = { le: number; q: string; prenom: string; motif: string; salon: string; texte?: string; par: string };
+export type SignalementVu = { le: number; q: string; prenom: string; motif: string; salon: string; texte?: string; par: string; ecrit?: string };
 export type ExclusionVue = { q: string; prenom: string; jusqua: number; par: string; salon: string };
+
+/** 🗑️ (discussions des vidéos, lot A7) un mot écrit sous une vidéo (🌍) ou dans le cercle d'un groupe (👥) */
+const CHEMIN_ECRIT = /^(decouvrir\/ecrits\/(adultes|jeunes)\/[A-Za-z0-9_-]{11}|groupes\/videos\/g-\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}\/[A-Za-z0-9_-]{11})\/\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}\.json$/;
+export async function effacerEcritParAdministrateur(supabase: Supabase, chemin: unknown): Promise<{ ok?: true; error?: string; statut?: number }> {
+  const c = s(chemin);
+  if (!CHEMIN_ECRIT.test(c)) return { error: "Quel mot ?", statut: 400 };
+  await effacer(supabase, [c]);
+  return { ok: true };
+}
 
 export async function administrationDesSalons(supabase: Supabase): Promise<{ salons: SalonEnCours[]; signalements: SignalementVu[]; exclus: ExclusionVue[] }> {
   const maintenant = Date.now();
@@ -946,7 +955,7 @@ export async function administrationDesSalons(supabase: Supabase): Promise<{ sal
       cibles.map(async (q) => {
         const l = (await lister(supabase, dossierSignalements(q), { limite: 10, recents: true })).filter((e) => maintenant - (Number(e.nom.split("-")[0]) || 0) < 7 * 24 * 3600_000);
         const lus = await Promise.all(l.map((e) => lireJson<Record<string, unknown>>(supabase, `${dossierSignalements(q)}/${e.nom}`)));
-        return lus.map((x): SignalementVu => ({ le: Number(x.le) || 0, q, prenom: s(x.prenom), motif: s(x.motif), salon: s(x.salon), ...(s(x.texte) ? { texte: s(x.texte) } : {}), par: s((x.auteur as { q?: string } | undefined)?.q) }));
+        return lus.map((x): SignalementVu => ({ le: Number(x.le) || 0, q, prenom: s(x.prenom), motif: s(x.motif), salon: s(x.salon), ...(s(x.texte) ? { texte: s(x.texte) } : {}), par: s((x.auteur as { q?: string } | undefined)?.q), ...(CHEMIN_ECRIT.test(s(x.ecrit)) ? { ecrit: s(x.ecrit) } : {}) }));
       }),
     )
   )

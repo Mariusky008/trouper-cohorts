@@ -9,8 +9,10 @@
 // jamais le mot « exemple », aucune erreur. (Lot A4) Inès répond à Léa : la cloche 🛎️ en haut dit 1 ; Activité :
 // « ↩ Inès t'a répondu » et sa phrase, en « Nouveau » ; un toucher ouvre la discussion ; au retour, « Déjà vu ».
 // (Lot A6) 👥 Sam écrit au groupe « Les Footeux » : Léa l'ouvre depuis le groupe (l'onglet, ouvert d'office), « 👥 Lu par
-// Les Footeux », elle répond sans accord ; rien sous 🌍.
+// Les Footeux », elle répond sans accord ; rien sous 🌍. (Lot A7) « 🙈 Ne plus voir » ; l'administrateur efface un mot
+// signalé ; une vidéo partie de YouTube : la discussion reste, sans « ▶ Revoir ».
 import crypto from "node:crypto";
+import sharp from "sharp";
 import { BASE, D, F, lancer } from "./commun.mjs";
 import { lancerSecondeApp } from "../seconde-app.mjs";
 
@@ -208,6 +210,34 @@ ok((await p.locator("[data-accord]").count()) === 0, "… pas d'accord à donner
 ok(!((await appel(INES, `/api/direct/discussion-video?video=${V}`)).discussion?.ecrits ?? []).some((e) => /Samedi, chez moi/.test(e.texte)), "… et rien sous 🌍 Tous");
 ok((await p.evaluate(() => document.documentElement.scrollWidth)) <= 390, "le groupe : rien ne déborde");
 await p.screenshot({ path: `${D}/discussion-video-groupe.png` });
+
+// ═══ (A7) 🙈 NE PLUS VOIR, 🗑️ L'ADMINISTRATEUR, 📼 LA VIDÉO PARTIE ═══
+await p.goto(`${BASE}/univers/discussion?video=${V}&cercle=tous`, { waitUntil: "domcontentloaded" });
+ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-ecrit]').count()) >= 1), "🌍 : les mots sont là");
+const motInes = p.locator(`[data-fil="tous"] [data-ne-plus-voir]`).first();
+ok(/🙈 Ne plus voir/.test(await texte(motInes)), "« 🙈 Ne plus voir » sous le mot d'une inconnue");
+// (🗑️ Léa signale le mot écrit d'Inès ; l'administrateur l'efface)
+const merci = (await appel(LEA, `/api/direct/discussion-video?video=${V}`)).discussion?.ecrits?.find((e) => /Merci/.test(e.texte));
+ok((await appel(LEA, "/api/direct/discussion-video", { action: "signaler", id: V, ecrit: merci?.id })).statut === 200, "Léa signale « Merci, c’est gentil ! »");
+const admin = await p.evaluate(async () => (await fetch("/api/admin/direct/salons", { cache: "no-store" })).json());
+const sig = (admin.signalements ?? []).find((x) => x.texte === "Merci, c’est gentil !");
+ok(Boolean(sig?.ecrit), `l'administrateur le voit, avec de quoi l'effacer (${sig?.ecrit})`);
+const eff = await p.evaluate(async (ecrit) => (await fetch("/api/admin/direct/salons", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "effacer-ecrit", ecrit }) })).status, sig?.ecrit ?? "");
+ok(eff === 200 && !((await appel(SAM, `/api/direct/discussion-video?video=${V}`)).discussion?.ecrits ?? []).some((e) => /Merci/.test(e.texte)), "« 🗑️ Effacer ce mot » : il n'est plus sous la vidéo, chez personne");
+ok((await p.evaluate(async () => (await fetch("/api/admin/direct/salons", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "effacer-ecrit", ecrit: "1/../../tout.json" }) })).status)) === 400, "… jamais autre chose qu'un mot écrit");
+// (🙈 un toucher)
+await motInes.click();
+ok(await attendre(async () => /ne passera plus chez toi/.test(await texte(p.locator("[data-note]")))), `« ${await texte(p.locator("[data-note]"))} »`);
+ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-mot]').count()) === 0), "… ses mots ont disparu");
+await appel(LEA, "/api/direct/discussion-video", { action: "ne-plus-voir", id: V, q: (await appel(INES, `/api/direct/discussion-video?video=${V}`)).discussion?.tous?.mots?.find((m) => m.moi)?.q, revoir: true });
+// (📼 YouTube rend une vignette grise de 120 × 90 : la vidéo n'existe plus)
+const GRISE = await sharp({ create: { width: 120, height: 90, channels: 3, background: "#888" } }).jpeg().toBuffer();
+await p.route("**/i.ytimg.com/**", (r) => r.fulfill({ status: 200, contentType: "image/jpeg", body: GRISE }));
+await p.goto(`${BASE}/univers/discussion?video=${V}`, { waitUntil: "domcontentloaded" });
+ok(await attendre(async () => (await p.locator("[data-video-indisponible]").count()) === 1), "📼 la vidéo a quitté YouTube : « Cette vidéo n’est plus sur YouTube… »");
+ok((await p.locator("[data-revoir-discussion]").count()) === 0 && (await p.locator('[data-cercle="tous"]').count()) === 1, "… plus de « ▶ Revoir », la discussion reste");
+await p.screenshot({ path: `${D}/discussion-video-indisponible.png` });
+await p.unroute("**/i.ytimg.com/**");
 
 ok(erreurs.length === 0, `aucune erreur${erreurs.length ? ` : ${erreurs.join(" | ")}` : ""}`);
 await b.close();
