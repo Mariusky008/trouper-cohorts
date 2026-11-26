@@ -372,7 +372,7 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
           }}
         />
       )}
-      {espace && <EspaceGroupe g={espace} onFermer={() => setOuvert(null)} />}
+      {espace && <EspaceGroupe g={espace} tele={tele} onFermer={() => setOuvert(null)} />}
       {creer && (
         <CreerGroupe
           adulte={Boolean(v?.adulte)}

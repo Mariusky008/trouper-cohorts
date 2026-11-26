@@ -5,8 +5,8 @@
  * validée, planche « Groupe »).
  *
  * L'espace : son identité (sa passion, son nom, son mot), son salon attitré — toujours ouvert, même vide (qui y est, ou
- * qui y est passé) — puis ses onglets : 📅 Rendez-vous et 💬 Discussion (lot G5, `groupe-vie.tsx`), 👥 Membres.
- * Aujourd'hui et Journal arrivent avec leurs lots (G6, G7) : jamais un onglet vide.
+ * qui y est passé) — puis ses onglets : 🎬 Aujourd'hui (lot G6, `groupe-jour.tsx`), 📅 Rendez-vous et 💬 Discussion
+ * (lot G5, `groupe-vie.tsx`), 👥 Membres. Le Journal arrive avec son lot (G7) : jamais un onglet vide.
  *
  * Créer : un nom, une passion, des proches, un mot. Le groupe existe tout de suite pour moi ; mes proches le voient dans
  * Mes groupes, et le gardent s'ils veulent.
@@ -14,8 +14,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { THEMES_DECOUVRIR, type IdTheme } from "@/lib/direct/decouvrir";
+import { OngletAujourdhui, STYLES_AUJOURDHUI } from "./groupe-jour";
+import type { TeleDuJour } from "@/lib/direct/tele-du-jour";
 import { NouveauRdv, OngletDiscussion, OngletMembres, OngletRendezVous, STYLES_VIE_DU_GROUPE, useVieDuGroupe } from "./groupe-vie";
-import { MOT_GROUPE_MAX, NOM_GROUPE_MAX, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as P, PHRASES_VIE_DU_GROUPE as PV, heureLisible, type GroupeVue, type PlaceGroupe } from "@/lib/direct/groupes";
+import { MOT_GROUPE_MAX, NOM_GROUPE_MAX, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as P, PHRASES_VIE_DU_GROUPE as PV, PHRASES_AUJOURDHUI as PJ, heureLisible, type GroupeVue, type PlaceGroupe } from "@/lib/direct/groupes";
 
 export const salonDuGroupe = (id: string) => `/univers/salons?groupe=${encodeURIComponent(id)}`;
 
@@ -34,10 +36,10 @@ export function Figurine({ p, tete }: { p: PlaceGroupe; tete?: boolean }) {
 }
 
 /** 🛋️ L'espace d'un groupe, en plein écran. */
-export function EspaceGroupe({ g, onFermer }: { g: GroupeVue; onFermer: () => void }) {
+export function EspaceGroupe({ g, tele, onFermer }: { g: GroupeVue; tele: TeleDuJour | null; onFermer: () => void }) {
   const t = THEMES_DECOUVRIR.find((x) => x.id === g.theme);
-  const { vie, setVie } = useVieDuGroupe(g.id);
-  const [onglet, setOnglet] = useState<"rdv" | "discussion" | "membres">("rdv");
+  const { vie, setVie, aujourdhui, setAujourdhui } = useVieDuGroupe(g.id);
+  const [onglet, setOnglet] = useState<"jour" | "rdv" | "discussion" | "membres">("jour");
   const [feuille, setFeuille] = useState<"rdv" | "idee" | null>(null);
   const [dit, setDit] = useState("");
   const minuterie = useRef(0);
@@ -100,13 +102,29 @@ export function EspaceGroupe({ g, onFermer }: { g: GroupeVue; onFermer: () => vo
 
         {/* 📅💬👥 (lot G5) les onglets : jamais un onglet vide */}
         <div className="gv-onglets" role="tablist">
-          {(["rdv", "discussion", "membres"] as const).map((x) => (
+          {(["jour", "rdv", "discussion", "membres"] as const).map((x) => (
             <button key={x} type="button" role="tab" className={`gv-onglet${onglet === x ? " pris" : ""}`} aria-selected={onglet === x} onClick={() => setOnglet(x)} data-onglet={x}>
-              {x === "rdv" ? PV.ongletRdv : x === "discussion" ? PV.ongletDiscussion : PV.ongletMembres}
+              {x === "jour" ? PJ.onglet : x === "rdv" ? PV.ongletRdv : x === "discussion" ? PV.ongletDiscussion : PV.ongletMembres}
             </button>
           ))}
         </div>
-        {onglet === "membres" || !vie ? (
+        {onglet === "jour" ? (
+          aujourdhui && (
+            <OngletAujourdhui
+              gid={g.id}
+              etiquette={PJ.etiquette(t?.e ?? g.e, t?.court ?? "")}
+              a={aujourdhui}
+              setA={setAujourdhui}
+              tele={tele}
+              onDit={dire}
+              onSujet={() => setOnglet("discussion")}
+              onProchaine={() => {
+                setOnglet("rdv");
+                setFeuille("rdv");
+              }}
+            />
+          )
+        ) : onglet === "membres" || !vie ? (
           onglet === "membres" && <OngletMembres membres={g.membres} />
         ) : onglet === "rdv" ? (
           <OngletRendezVous gid={g.id} vie={vie} setVie={setVie} salon={salonDuGroupe(g.id)} onNouveau={() => setFeuille("rdv")} onDit={dire} />
@@ -131,7 +149,7 @@ export function EspaceGroupe({ g, onFermer }: { g: GroupeVue; onFermer: () => vo
           {dit}
         </p>
       )}
-      <style>{STYLES_ESPACE + STYLES_VIE_DU_GROUPE}</style>
+      <style>{STYLES_ESPACE + STYLES_VIE_DU_GROUPE + STYLES_AUJOURDHUI}</style>
     </div>,
     document.body,
   );

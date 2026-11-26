@@ -182,7 +182,7 @@ export async function prochaineDuFil(supabase: Supabase, moi: Habitant, passions
 }
 
 /** La vidéo choisie : une vidéo de sa télé du jour, un lien YouTube collé, ou aucune (les nouveautés de la passion). */
-async function videoChoisie(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ video?: VideoSalon | null }>> {
+export async function videoChoisie(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ video?: VideoSalon | null }>> {
   if (s(p.video)) {
     const v = ((await maTeleDuJour(supabase, moi.id).catch(() => null))?.videos ?? []).find((x) => x.id === s(p.video));
     if (!v) return { error: "Cette vidéo n’est plus dans ta télé du jour.", statut: 404 };

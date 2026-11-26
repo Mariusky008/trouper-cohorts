@@ -30,8 +30,8 @@ une discussion avec un ami : les salons sont vides quand on arrive le premier ; 
 | G2 | ＋ Proposer, Propositions de groupes, la pièce « On se retrouve ? » du fil | ✅ fait (#296) |
 | G3 | Les rappels (cron toutes les 5 minutes) | ✅ fait (#297) |
 | G4 | « On garde ce groupe ? », Tous mes groupes | ✅ fait (#298) |
-| G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | fait (PR à suivre) |
-| G6 | La sélection du jour, les rôles qui tournent | à faire |
+| G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | ✅ fait (#299) |
+| G6 | La sélection du jour, les rôles qui tournent | fait (PR à suivre) |
 | G7 | Le journal | à faire |
 | G8 | Le groupe qui grandit | à faire |
 
@@ -109,8 +109,8 @@ Les règles :
   groupes » (la table de chacun, ses membres autour ; « ● 2 dans le salon » ou « 🕑 Passage de Zoé à 14 h »). Un groupe
   n'est visible que par ses membres.
 - **Son espace** (`groupe-espace.tsx`) : son identité (passion, nom, mot), son salon attitré (qui y est, sinon le dernier
-  passage, « Entrer »), puis ses onglets (G5 : 📅 Rendez-vous, 💬 Discussion, 👥 Membres ; Aujourd'hui et Journal avec
-  G6 et G7).
+  passage, « Entrer »), puis ses onglets (G6 : 🎬 Aujourd'hui ; G5 : 📅 Rendez-vous, 💬 Discussion ; 👥 Membres ; le Journal
+  avec G7).
 - **Son salon** : `/univers/salons?groupe=<id>` (action `entrer-groupe` de la route des salons, `entrerAuGroupe`). C'est
   un salon privé (« groupe-<id> », dans `decouvrir/salons/prives/`), à ses membres seulement, comme un salon ouvert de
   sa passion : le gradin, les vidéos de la passion, huit places, la conversation. Il ne dépend pas de l'interrupteur
@@ -145,3 +145,22 @@ Les règles :
   exceptionnelle passée s'efface à la lecture suivante.
 - Route : `GET /api/direct/mes-groupes?groupe=<id>` → `{ vie }` (membres seulement) ; `POST` `rdv-ajouter`,
   `rdv-repondre`, `rdv-retirer`, `ecrire-groupe`. Essai : `scripts/essai-groupes-vie-route.mjs`.
+
+## G6, dans le code
+
+- **🎬 Aujourd'hui** (le premier onglet de l'espace d'un groupe ; `groupe-jour.tsx`, `groupes-jour-serveur.ts`) :
+  « Aujourd'hui : ⚽ foot ». La sélection du jour : la vidéo que chaque membre propose aujourd'hui (« ＋ Proposer la
+  mienne » : de sa télé du jour, ou un lien YouTube, et « Pourquoi elle ? »), sa tête sur la vignette et son mot ; puis
+  les nouveautés de la passion (la sélection du jour des salons : trois quand personne n'a rien proposé, deux sinon).
+- **🙋** : chacun lève la main pour celles qu'il veut ce soir ; on voit les têtes, jamais un nombre. À deux mains
+  (`ENVIES_RETENUE`), « ✓ Ce soir » : la vidéo ouvre la télé du salon du groupe (`videosRetenues`, lue par
+  `entrerAuGroupe`), avant les vidéos de la passion. Celui qui propose a la main levée d'office.
+- **Ce soir, chacun son rôle** (`rolesDuJour`) : 🎬 La vidéo, 💬 Le sujet, 🔎 La découverte, 📅 La prochaine — autant
+  de rôles que de membres (quatre au plus) ; chaque jour, chacun prend le suivant (l'ordre des membres est fixe). Pas de
+  points. « C'est ton tour » : 🎬 ouvre « Ma vidéo du jour », 🔎 la même avec un lien, 💬 la discussion, 📅 « ＋ Un
+  rendez-vous ».
+- **Stockage** : `groupes/jour/<id>/<jour>/<q>.json` (ma vidéo du jour et mon mot), `groupes/envies/<id>/<jour>/<q>.json`
+  (mes 🙋, avec les fiches des vidéos pour que le salon puisse les passer).
+- Route : `GET /api/direct/mes-groupes?groupe=<id>` renvoie aussi `aujourdhui` ; `POST` `jour-proposer`,
+  `jour-retirer`, `jour-envie` (`{ video, oui }` → `retenue` quand ma main est la deuxième). Essai :
+  `scripts/essai-groupes-jour-route.mjs`.

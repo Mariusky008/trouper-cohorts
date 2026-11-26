@@ -20,10 +20,15 @@
 // POST { action: "rdv-repondre", groupe, rdv, reponse: "viens" | "absent" | "tard" } → { rdv, entre? }
 // POST { action: "rdv-retirer", groupe, rdv }    → { ok } : celui qui l'a posé
 // POST { action: "ecrire-groupe", groupe, texte } → { message }
+// 🎬 (lot G6, `groupes-jour-serveur.ts`) GET `?groupe=<id>` → aussi { aujourdhui } : la sélection du jour, les rôles
+// POST { action: "jour-proposer", groupe, video? | lien?, mot? } → { aujourdhui } : ma vidéo du jour, et mon mot
+// POST { action: "jour-retirer", groupe }         → { aujourdhui }
+// POST { action: "jour-envie", groupe, video, oui } → { aujourdhui, retenue? } : 🙋
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { maisonDeMoi, mesDemandes, mesInvitations, seancesDesProches } from "@/lib/direct/salons-ouverts-serveur";
+import { aujourdhuiDuGroupe, envieDuJour, proposerVideoDuJour, retirerVideoDuJour } from "@/lib/direct/groupes-jour-serveur";
 import { ajouterRdv, ecrireAuGroupe, repondreRdv, retirerRdv, vieDuGroupe } from "@/lib/direct/groupes-vie-serveur";
 import { autreHeure, confirmer, creerGroupe, entrer, garder, mesGroupes, propositionsPourMoi, proposer, repondreGroupe, retirer, signaler } from "@/lib/direct/groupes-serveur";
 
@@ -38,8 +43,8 @@ export async function GET(request: Request) {
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   const groupe = new URL(request.url).searchParams.get("groupe");
   if (groupe) {
-    const r = await vieDuGroupe(supabase, moi, groupe);
-    return NextResponse.json(r.error ? { error: r.error } : { ok: true, vie: r.vie }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+    const [r, j] = await Promise.all([vieDuGroupe(supabase, moi, groupe), aujourdhuiDuGroupe(supabase, moi, groupe).catch(() => ({}) as Awaited<ReturnType<typeof aujourdhuiDuGroupe>>)]);
+    return NextResponse.json(r.error ? { error: r.error } : { ok: true, vie: r.vie, ...(j.aujourdhui ? { aujourdhui: j.aujourdhui } : {}) }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
   }
   const [invitations, demandes, seances, propositions, maison, groupes] = await Promise.all([
     mesInvitations(supabase, moi).catch(() => []),
@@ -101,6 +106,14 @@ export async function POST(request: Request) {
   if (p.action === "ecrire-groupe") {
     const r = await ecrireAuGroupe(supabase, moi, p);
     return repondre(r, { message: r.message });
+  }
+  if (p.action === "jour-proposer" || p.action === "jour-retirer") {
+    const r = p.action === "jour-proposer" ? await proposerVideoDuJour(supabase, moi, p) : await retirerVideoDuJour(supabase, moi, p);
+    return repondre(r, { aujourdhui: r.aujourdhui });
+  }
+  if (p.action === "jour-envie") {
+    const r = await envieDuJour(supabase, moi, p);
+    return repondre(r, { aujourdhui: r.aujourdhui, ...(r.retenue ? { retenue: true } : {}) });
   }
   return NextResponse.json({ error: "Je ne sais pas faire ça." }, { status: 400, headers: sansCache });
 }

@@ -11,12 +11,15 @@
  * - (lot G5) `groupes/rdv/<id>/<rdv>.json` : un rendez-vous (écrit par celui qui le propose) ;
  *   `groupes/reponses/<id>/<rdv>/<q>.json` : ma réponse (Je viens, Absent, Plus tard) pour sa prochaine fois ;
  *   `groupes/discussion/<id>/<ms>-<q>-<hex>.json` : un message ; `groupes/rappels-rdv/<id>/<rdv>.json` : le dernier rappel.
+ * - (lot G6) `groupes/jour/<id>/<jour>/<q>.json` : ma vidéo du jour pour le groupe, et mon mot ;
+ *   `groupes/envies/<id>/<jour>/<q>.json` : les vidéos que je veux ce soir (🙋).
  *
  * FICHIER SERVEUR.
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { SEAU_FIGURINES, lireJson } from "./ma-figurine-serveur";
-import { ID_GROUPE, type PlaceGroupe } from "./groupes";
+import { ENVIES_RETENUE, ID_GROUPE, type PlaceGroupe } from "./groupes";
+import type { VideoSalon } from "./salons-ouverts";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -64,4 +67,33 @@ export async function membresDe(supabase: Supabase, id: string): Promise<FicheMe
   const noms = await listerGroupes(supabase, dossierMembres(id), 20);
   const l = await Promise.all(noms.map((n) => lireJson<Partial<FicheMembre>>(supabase, `${dossierMembres(id)}/${n}`).catch(() => ({}) as Partial<FicheMembre>)));
   return l.filter((x): x is FicheMembre => Boolean(x.q && x.h)).sort((a, b) => a.le - b.le);
+}
+
+export const dossierJourGroupe = (id: string, jour: string) => `groupes/jour/${id}/${jour}`;
+export const dossierEnvies = (id: string, jour: string) => `groupes/envies/${id}/${jour}`;
+/** 🙋 Mes envies du jour : les vidéos (entières, pour que le salon puisse les passer) que je veux ce soir. */
+export type FicheEnvies = { q: string; videos: VideoSalon[]; le: number };
+
+/** Les envies du jour de chacun (une fiche par personne). */
+export async function enviesDuJour(supabase: Supabase, id: string, jour: string): Promise<FicheEnvies[]> {
+  const noms = await listerGroupes(supabase, dossierEnvies(id, jour), 40);
+  const l = await Promise.all(noms.map((n) => lireJson<Partial<FicheEnvies>>(supabase, `${dossierEnvies(id, jour)}/${n}`).catch(() => ({}) as Partial<FicheEnvies>)));
+  return l.filter((x): x is FicheEnvies => Boolean(x.q && Array.isArray(x.videos)));
+}
+
+/**
+ * 🎬 (lot G6) Les vidéos retenues ce soir (deux mains levées au moins), dans l'ordre où elles ont été voulues : elles
+ * ouvrent la télé du salon du groupe.
+ */
+export async function videosRetenues(supabase: Supabase, id: string, jour: string): Promise<VideoSalon[]> {
+  const envies = (await enviesDuJour(supabase, id, jour)).sort((a, b) => a.le - b.le);
+  const par = new Map<string, { v: VideoSalon; n: number }>();
+  for (const f of envies)
+    for (const v of f.videos) {
+      if (!v?.id) continue;
+      const x = par.get(v.id) ?? { v: { id: v.id, titre: s(v.titre), chaine: s(v.chaine), duree: Number(v.duree) || 0 }, n: 0 };
+      x.n++;
+      par.set(v.id, x);
+    }
+  return [...par.values()].filter((x) => x.n >= ENVIES_RETENUE).map((x) => x.v);
 }
