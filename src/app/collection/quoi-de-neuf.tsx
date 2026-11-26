@@ -17,13 +17,18 @@
  * Toucher une carte : sa figurine du jour en grand (sa pancarte), et « Réagis avec ta figurine » — pour de vrai :
  *   · un proche : un câlin, « Je pense à toi », un cœur, un fou rire, dans leur conversation (sa figurine le fait chez
  *     lui) ; « Lui répondre » (Messages), « Voir sa maison » ;
- *   · quelqu'un à découvrir : le coucou de la maison ouverte (sa figurine apparaît dans sa pièce) ; « Frapper à sa porte ».
+ *   · quelqu'un à découvrir : 👋 coucou, « ⚽ Allez ! » (sa passion), 😂, 👏 — sa figurine apparaît dans sa pièce en le
+ *     faisant (le coucou de la maison ouverte) ; « Frapper à sa porte », et le salon de leur passion (le propriétaire :
+ *     « on veut que les gens interagissent les uns avec les autres, l'idée c'est vraiment de créer des liens avec des
+ *     inconnus »).
  * Toucher à droite : la suivante ; à gauche : la précédente.
  */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { FigurineAssise } from "./autour";
 import type { MaisonFil, ProcheHumeurFil, QuoiDeNeufFil, SilhouetteFil } from "@/lib/direct/fil-decouvrir";
+import { GESTES_COUCOU, type GesteCoucou } from "@/lib/direct/ma-maison";
+import { nomDuSalon } from "@/lib/direct/salons-ouverts";
 
 export const PHRASES_QUOI_DE_NEUF = {
   titre: "Quoi de neuf ?",
@@ -36,7 +41,6 @@ export const PHRASES_QUOI_DE_NEUF = {
   procheVerra: (prenom: string) => `${prenom} verra ta figurine faire ton geste`,
   inconnuVerra: "Ta figurine apparaît dans sa pièce, avec ton prénom",
   envoye: (prenom: string, e: string) => `${e} C’est parti : ${prenom} va voir ta figurine`,
-  coucouDeja: (prenom: string) => `👋 Tu as déjà fait coucou à ${prenom} aujourd’hui`,
   repondre: "Lui répondre",
   voirMaison: "Voir sa maison",
   frapper: "Frapper à sa porte",
@@ -188,14 +192,13 @@ function Histoire({ cartes, i, moi, onAller, onFermer, onRepondre, onCoucou }: {
     setGeste("");
     setEnvoi({ cle: cleCarte(c), e: g.e, texte: r.ok ? P.envoye(c.p.prenom, g.e) : r.j.error || P.rate });
   }
-  async function coucou() {
+  async function coucou(g: GesteCoucou, e: string) {
     if (c.genre !== "maison" || geste) return;
-    if (c.p.coucou) return setEnvoi({ cle: cleCarte(c), e: "👋", texte: P.coucouDeja(c.p.prenom) });
-    setGeste("coucou");
-    const r = await poster("/api/direct/visites", { action: "coucou", cle });
+    setGeste(g);
+    const r = await poster("/api/direct/visites", { action: "coucou", cle, geste: g, ...(g === "allez" ? { e } : {}) });
     setGeste("");
     if (r.ok) onCoucou(cle);
-    setEnvoi({ cle: cleCarte(c), e: "👋", texte: r.ok ? P.envoye(c.p.prenom, "👋") : r.j.error || P.rate });
+    setEnvoi({ cle: cleCarte(c), e, texte: r.ok ? P.envoye(c.p.prenom, e) : r.j.error || P.rate });
   }
 
   return (
@@ -254,10 +257,16 @@ function Histoire({ cartes, i, moi, onAller, onFermer, onRepondre, onCoucou }: {
               </button>
             ))
           ) : (
-            <button type="button" className={`qn-geste large${geste === "coucou" ? " part" : ""}`} onClick={() => void coucou()} data-geste="coucou">
-              <b aria-hidden="true">👋</b>
-              Lui faire coucou
-            </button>
+            GESTES_COUCOU.map((g) => {
+              // (« Allez ! » avec l'emoji de leur passion)
+              const e = g.cle === "allez" ? c.p.passion.e : g.e;
+              return (
+                <button key={g.cle} type="button" className={`qn-geste${geste === g.cle ? " part" : ""}`} onClick={() => void coucou(g.cle, e)} data-geste={g.cle}>
+                  <b aria-hidden="true">{e}</b>
+                  {g.nom}
+                </button>
+              );
+            })
           )}
         </div>
         {fait && (
@@ -276,9 +285,16 @@ function Histoire({ cartes, i, moi, onAller, onFermer, onRepondre, onCoucou }: {
               </a>
             </>
           ) : (
-            <a className="qn-bouton" href={`/univers/chez/${encodeURIComponent(cle)}`} data-frapper-histoire>
-              {P.frapper}
-            </a>
+            <>
+              <a className="qn-bouton" href={`/univers/chez/${encodeURIComponent(cle)}`} data-frapper-histoire>
+                {P.frapper}
+              </a>
+              {c.p.passion.id && (
+                <a className="qn-bouton second" href={`/univers/salons?theme=${c.p.passion.id}`} data-salon-passion>
+                  {nomDuSalon(c.p.passion.id)}
+                </a>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -334,11 +350,10 @@ export const STYLES_QUOI_DE_NEUF = `
 .qn-gestes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .qn-geste{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:64px;padding:8px 4px;border:0;border-radius:16px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
 .qn-geste b{font-size:24px;line-height:1}
-.qn-geste.large{grid-column:1 / -1;flex-direction:row;justify-content:center;gap:10px;font-size:15px}
 .qn-geste.part{background:#FF2E9A}
 .qn-h-note{margin:0;font-size:13px;font-weight:800;color:#FFE2B8;text-align:center}
 .qn-h-boutons{display:flex;gap:8px}
-.qn-bouton{flex:1;display:flex;align-items:center;justify-content:center;min-height:48px;padding:0 12px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-size:15px;font-weight:900;text-decoration:none;cursor:pointer}
+.qn-bouton{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center;min-height:48px;padding:0 12px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-size:15px;font-weight:900;text-decoration:none;cursor:pointer}
 .qn-bouton.second{background:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);color:#FFF4E6}
 @media (prefers-reduced-motion:reduce){.qn-histoire,.qn-h-fig,.qn-h-geste{animation:none}}
 `;

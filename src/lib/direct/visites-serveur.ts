@@ -29,10 +29,10 @@ import { completerMonde, lireFicheMonde } from "./fiches-serveur";
 import { cheminVisibiliteMaison, figurineDeLaMaison, lireSaPiece, sceneDeLaMaison, vieDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { objetsDeMaMaison } from "./etagere-serveur";
 import { questionChezLui } from "./question-maison-serveur";
-import { VISIBILITES_DE_MAISON, objetsPlaces, ouverteAuFil, placerChezMoi, type CoucouVu, type MaisonVisitee, type VisibiliteMaison } from "./ma-maison";
+import { VISIBILITES_DE_MAISON, bulleDuCoucou, gesteCoucou, objetsPlaces, ouverteAuFil, placerChezMoi, type CoucouVu, type MaisonVisitee, type VisibiliteMaison } from "./ma-maison";
 import { lirePassions } from "./passions-serveur";
 import { direSesDixHuitAns, sesDixHuitAns } from "./majorite-serveur";
-import type { IdTheme } from "./decouvrir";
+import { THEMES_DECOUVRIR, type IdTheme } from "./decouvrir";
 import { coucouDe, ecrireCoucous, lireCoucous } from "./coucous-serveur";
 import { maisonPourTous } from "./interrupteurs-serveur";
 import { ecrireJson, lireJson, lireLigne, signer } from "./ma-figurine-serveur";
@@ -470,15 +470,19 @@ export async function maisonsPourLeFil(supabase: Supabase, moi: string, max = 3)
 }
 
 /** 👋 Lui faire coucou : sa figurine apparaît dans sa pièce ; il est prévenu ; une fois par jour chez la même personne. */
-export async function faireCoucou(supabase: Supabase, visiteur: Habitant, cle: unknown): Promise<Resultat> {
+export async function faireCoucou(supabase: Supabase, visiteur: Habitant, cle: unknown, geste?: unknown, e?: unknown): Promise<Resultat> {
   const c = await chezQui(supabase, visiteur, cle);
   if (!c.h) return { error: c.error, statut: c.statut };
+  // (« Quoi de neuf ? » : 👋 coucou, 🙌 allez (avec l'emoji de la passion), 😂, 👏 — un de chaque par jour chez lui)
+  const g = gesteCoucou(geste);
+  const emoji = g.cle === "allez" ? THEMES_DECOUVRIR.find((t) => t.e === s(e))?.e : undefined;
   const liste = await lireCoucous(supabase, c.h);
   const jour = jourParis();
-  if (liste.some((x) => x.de === visiteur.id && jourParis(new Date(x.le)) === jour)) return { ok: true };
-  if (!(await ecrireCoucous(supabase, c.h, [...liste, coucouDe(visiteur.id)]))) return { error: "Ça n’a pas marché.", statut: 502 };
+  if (liste.some((x) => x.de === visiteur.id && (x.geste ?? "coucou") === g.cle && jourParis(new Date(x.le)) === jour)) return { ok: true };
+  if (!(await ecrireCoucous(supabase, c.h, [...liste, coucouDe(visiteur.id, g.cle, emoji)]))) return { error: "Ça n’a pas marché.", statut: 502 };
   const { prenom } = await quiEst(supabase, visiteur.id);
-  await prevenirUneFoisParJour(supabase, c.h, "coucou", { titre: `👋 ${prenom} te fait coucou`, corps: "Sa figurine est chez toi. Réponds si tu veux.", url: "/collection#maison", tag: "coucou" }).catch(() => undefined);
+  const bulle = bulleDuCoucou({ geste: g.cle, e: emoji });
+  await prevenirUneFoisParJour(supabase, c.h, "coucou", { titre: g.cle === "coucou" ? `👋 ${prenom} te fait coucou` : `${prenom} : « ${bulle} »`, corps: "Sa figurine est chez toi. Réponds si tu veux.", url: "/collection#maison", tag: "coucou" }).catch(() => undefined);
   return { ok: true };
 }
 
@@ -488,7 +492,8 @@ export async function repondreCoucou(supabase: Supabase, h: string, id: unknown,
   const x = liste.find((c) => c.id === s(id));
   if (!x) return { error: "Ce coucou n’est plus là.", statut: 404 };
   if (x.repondu_le || x.laisse_le) return { ok: true };
-  const maj = liste.map((c) => (c.id === x.id ? { ...c, ...(oui === true ? { repondu_le: new Date().toISOString() } : { laisse_le: new Date().toISOString() }) } : c));
+  // (« Quoi de neuf ? » : plusieurs gestes de la même personne — on répond à tous d'un coup, sa figurine s'en va)
+  const maj = liste.map((c) => (c.id === x.id || (c.de === x.de && !c.repondu_le && !c.laisse_le) ? { ...c, ...(oui === true ? { repondu_le: new Date().toISOString() } : { laisse_le: new Date().toISOString() }) } : c));
   if (!(await ecrireCoucous(supabase, h, maj))) return { error: "Ça n’a pas marché.", statut: 502 };
   if (oui === true) {
     const { prenom } = await quiEst(supabase, h);
@@ -505,7 +510,7 @@ export async function coucousRecus(supabase: Supabase, h: string): Promise<Couco
       // (sa figurine détourée, celle de sa maison, quand il en a une : à la même échelle que la mienne)
       const [q, cle, maison] = await Promise.all([quiEst(supabase, c.de), poserProfil(supabase, c.de).catch(() => ""), figurineDeLaMaison(supabase, c.de).catch(() => null)]);
       const image = maison?.src || q.image;
-      return { id: c.id, prenom: q.prenom, le: c.le, ...(image ? { image } : {}), ...(cle ? { cle } : {}) };
+      return { id: c.id, prenom: q.prenom, le: c.le, ...(image ? { image } : {}), ...(cle ? { cle } : {}), ...(c.geste ? { geste: c.geste } : {}), ...(c.e ? { e: c.e } : {}) };
     }),
   );
   return vus;

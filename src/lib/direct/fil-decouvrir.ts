@@ -76,7 +76,7 @@ export type MaisonFil = {
   /** la vignette de sa pièce */
   image: string;
   figurine: SilhouetteFil;
-  passion: { e: string; nom: string; court: string };
+  passion: { e: string; nom: string; court: string; /** (« Quoi de neuf ? ») son salon : `/univers/salons?theme=<id>` */ id?: IdTheme };
   /** 👋 son coucou : envoyé, ou la personne a répondu (jamais une fausse réponse : c'est la sienne) */
   coucou?: "envoye" | "repondu";
   /** 🎙️ son bonjour (lot 4 de « Ma figurine ») */

@@ -90,7 +90,7 @@ async function maisonsOuvertes(supabase: Supabase, moi: Habitant): Promise<Maiso
     maisons.map(async (m): Promise<MaisonFil | null> => {
       const [[figurine, bonjour], t] = [await Promise.all([silhouetteDuFil(supabase, m.h).catch(() => null), bonjourDe(supabase, m.h).catch(() => null)]), themeDe(m.passion)];
       if (!figurine || !t) return null;
-      return { sorte: "maison", cle: m.cle, prenom: m.prenom, image: m.image, figurine, passion: { e: t.e, nom: t.nom, court: t.court }, ...(m.coucou ? { coucou: m.coucou } : {}), ...(bonjour ? { bonjour: bonjour.src } : {}) };
+      return { sorte: "maison", cle: m.cle, prenom: m.prenom, image: m.image, figurine, passion: { e: t.e, nom: t.nom, court: t.court, id: t.id }, ...(m.coucou ? { coucou: m.coucou } : {}), ...(bonjour ? { bonjour: bonjour.src } : {}) };
     }),
   );
   return vues.filter((x): x is MaisonFil => Boolean(x));

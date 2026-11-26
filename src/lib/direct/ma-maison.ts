@@ -64,7 +64,25 @@ export type ScenePiece = {
 export type TeteMaison = { e: ExpressionFigurine; corps: string; ratio: number; src: string; boite: Zone; /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string };
 
 /** 👋 (lot F2) Un coucou reçu : de qui (son prénom, sa figurine, sa clé), quand. */
-export type CoucouVu = { id: string; prenom: string; image?: string; cle?: string; le: string };
+export type CoucouVu = { id: string; prenom: string; image?: string; cle?: string; le: string; /** (« Quoi de neuf ? ») son geste : 👋 par défaut */ geste?: GesteCoucou; /** l'emoji de la passion, pour « Allez ! » */ e?: string };
+/**
+ * 👋 (« Quoi de neuf ? », 26 novembre 2026 : « on veut que les gens interagissent, créer des liens avec des inconnus »)
+ * Les gestes qu'on peut faire à quelqu'un à découvrir : sa figurine apparaît dans sa pièce en le faisant. Un de chaque
+ * par jour chez la même personne.
+ */
+export const GESTES_COUCOU = [
+  { cle: "coucou", e: "👋", nom: "Coucou", bulle: "Coucou !" },
+  { cle: "allez", e: "🙌", nom: "Allez !", bulle: "Allez !" },
+  { cle: "mdr", e: "😂", nom: "Je ris", bulle: "Je ris !" },
+  { cle: "bravo", e: "👏", nom: "Bravo", bulle: "Bravo !" },
+] as const;
+export type GesteCoucou = (typeof GESTES_COUCOU)[number]["cle"];
+export const gesteCoucou = (x: unknown) => GESTES_COUCOU.find((g) => g.cle === x) ?? GESTES_COUCOU[0];
+/** La bulle de sa figurine : « 👋 Coucou ! », « ⚽ Allez ! » (l'emoji de la passion), « 😂 Je ris ! »… */
+export const bulleDuCoucou = (c: { geste?: GesteCoucou; e?: string }) => {
+  const g = gesteCoucou(c.geste);
+  return `${g.cle === "allez" && c.e ? c.e : g.e} ${g.bulle}`;
+};
 
 /** 🚪👋 (lot F2) Les mots des maisons ouvertes : la question à l'inscription, le coucou. */
 export const PHRASES_PORTE = {
