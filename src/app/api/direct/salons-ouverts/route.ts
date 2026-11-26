@@ -11,6 +11,9 @@
 // POST { action: "jeu", salon, sorte: "accord", texte, video } → { jeu } : 🙋 « Qui est d'accord ? » (relu ; un jeu à la fois,
 //                                                un par personne et par vidéo ; le pouls porte `jeu`)
 // POST { action: "voter", salon, jeu, v: "oui" | "non" } → { ok } : son vote, tant que le jeu est ouvert (30 s)
+// 🎯 (le défi) POST { action: "jeu", salon, sorte: "defi", a, texte, video, quand: 30 | 60 | "fin", reste } → { jeu } ;
+//    { action: "pas-maintenant-defi", salon, jeu } (le défié) ; { action: "temoigner", salon, jeu, v } (le moment de
+//    vérité) ; GET ?mes-defis=1 → { points } : mon total, chez moi seulement
 // POST { action: "sortir", salon, t?, duree? } → { ok } : sa place se libère (😴 parti avant la fin : sa figurine dort)
 // POST { action: "signaler", salon, q, motif, message? } → { ok, exclu } ; trois en une heure : 24 h dehors
 // POST { action: "ne-plus-voir" | "revoir", q } → { caches }
@@ -51,7 +54,7 @@
 // POST { action: "coeur-morceau", salon, q }   → { platine } : ❤️ fait monter (ou plus) le morceau de q dans la file
 // POST { action: "retirer-morceau", salon }    → { platine } : ↩️ retire le sien de la file
 // `CLIKME_SALONS_OUVERTS=0` : les salons ouverts sont fermés (404) ; les séances entre proches restent possibles.
-import { lancerJeu, voterAuJeu } from "@/lib/direct/jeux-salon-serveur";
+import { lancerJeu, mesPointsDeDefis, pasMaintenantAuDefi, temoignerAuDefi, voterAuJeu } from "@/lib/direct/jeux-salon-serveur";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
@@ -119,6 +122,7 @@ export async function GET(request: Request) {
     const v = await vivanteDeLaSeance(supabase, moi, u.get("salon"), u.get("vivante"));
     return NextResponse.json(v.error ? { error: v.error } : { ok: true, vivante: v.vivante ?? null }, { status: v.error ? (v.statut ?? 400) : 200, headers: sansCache });
   }
+  if (u.get("mes-defis")) return NextResponse.json({ ok: true, points: await mesPointsDeDefis(supabase, moi).catch(() => 0) }, { headers: sansCache });
   const r = await poulsDuSalon(supabase, moi, u.get("salon"), u.get("depuis"), u.get("connus"));
   return NextResponse.json(r.error ? { error: r.error } : { ok: true, pouls: r.pouls }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
 }
@@ -149,6 +153,8 @@ export async function POST(request: Request) {
     return repondre(r, { jeu: r.jeu }, r.refus ? { refus: r.refus } : {});
   }
   if (p.action === "voter") return repondre(await voterAuJeu(supabase, moi, p));
+  if (p.action === "pas-maintenant-defi") return repondre(await pasMaintenantAuDefi(supabase, moi, p));
+  if (p.action === "temoigner") return repondre(await temoignerAuDefi(supabase, moi, p));
   if (p.action === "sortir") return repondre(await sortirDuSalon(supabase, moi, p.salon, { t: p.t, duree: p.duree }));
   if (p.action === "signaler") {
     const r = await signalerAuSalon(supabase, moi, p);

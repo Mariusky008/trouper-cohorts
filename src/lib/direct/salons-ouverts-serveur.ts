@@ -529,7 +529,7 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
     r.seance ? Promise.resolve([] as DormeurSalon[]) : dormeurs(supabase, m, sid, new Set(presents.map((p) => p.nom)), maintenant),
   ]);
   // (🙋 les jeux du salon : celui en cours, s'il y en a un)
-  const jeu = await jeuDuSalon(supabase, m, sid, caches, maintenant).catch(() => null);
+  const jeu = await jeuDuSalon(supabase, m, sid, caches, maintenant, q).catch(() => null);
   // (👯 l'entrée au salon : ceux qui arrivent et qui sont mes proches — le check ✋, chez moi seulement)
   const proches = !r.seance && nouveaux.some((f) => f.q) ? await prochesDe(supabase, moi.id).catch(() => new Set<string>()) : new Set<string>();
   const rejoindre = r.seance?.hote ? await demandesARejoindre(supabase, r.seance.qHote, maintenant).catch(() => []) : [];

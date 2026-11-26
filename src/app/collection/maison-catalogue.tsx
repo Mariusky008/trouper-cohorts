@@ -55,6 +55,7 @@ import { PHRASES_DOUBLE } from "@/lib/direct/mon-double";
 import { MonDouble } from "./mon-double";
 import { Pancarte } from "./pancarte";
 import { Ornements } from "./ornements";
+import { MesDefis } from "@/app/univers/salons/mes-defis";
 import { MOMENTS_DUO, type EmplacementsDuo, type Zone } from "@/lib/direct/pieces-duo";
 import { lecteurYouTube, videoYouTube } from "@/lib/direct/tele";
 
@@ -1106,6 +1107,8 @@ function Piece({
               Autour
             </a>
           </div>
+          {/* (🎯 les jeux du salon, 26 novembre 2026 : mes points de défis — à moi seul, seulement si j'en ai) */}
+          <MesDefis />
           </>
         ) : (
           visite.peutLaisser && (
