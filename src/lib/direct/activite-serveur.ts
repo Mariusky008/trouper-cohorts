@@ -17,8 +17,11 @@ import { SEAU_FIGURINES, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { qui8 } from "./talkie-serveur";
 import { maBoiteARevoir } from "./revoir-serveur";
 import { cleSuivi, dossierSuiveurs, tousMesSuivis, type Suivi } from "./suivis-video-serveur";
-import { cercleValide, type CercleDiscussion } from "./discussion-video";
-import { ACTIVITE, type ActiviteVue, type LigneActivite, type SorteEvenement } from "./activite";
+import { cercleValide, lienDiscussion, type CercleDiscussion, type NiveauSuivi } from "./discussion-video";
+import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
+import { NOTIF_DISCUSSION_MS, heureCalme } from "./regle-de-bruit";
+import { titreCourt } from "./reactions-video";
+import { ACTIVITE, PHRASES_ACTIVITE, type ActiviteVue, type LigneActivite, type SorteEvenement } from "./activite";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type FicheEvenement = { prenom?: string; titre?: string; texte?: string; vocal?: boolean };
@@ -61,7 +64,52 @@ export async function prevenirLaDiscussion(
   await Promise.all(
     [...pour].map(([h, sorte]) => ecrireJson(supabase, `${dossierActivite(h)}/${le}.${o.cercle}.${o.video}.${q}.${sorte}.${randomBytes(2).toString("hex")}.json`, fiche).catch(() => false)),
   );
+  // (📱 lot A5 : puis le téléphone, selon la règle de bruit)
+  const niveaux = new Map(suiveurs.map((x) => [s(x.h), niveauDe(x.niveau)] as const));
+  await Promise.all([...pour].map(([h, sorte]) => sonnerLeTelephone(supabase, h, { ...o, sorte, niveau: niveaux.get(h) ?? null, le }).catch(() => "rien")));
   return [...pour.keys()];
+}
+
+const niveauDe = (x: unknown): NiveauSuivi | null => (x === "prevenir" || x === "discret" || x === "non" ? x : null);
+const cheminVague = (h: string, cercle: CercleDiscussion, video: string) => `${h}/vagues/${cercle}.${video}.json`;
+
+/**
+ * 📱 (lot A5) LE TÉLÉPHONE, après Activité — la matrice : ↩ une réponse directe sonne en 🔔 et en 🤫 (pas en 🔕 : Activité
+ * seulement) ; 💬 du nouveau sonne seulement en 🔔. La règle de bruit (`regle-de-bruit.ts`) : rien de 22 h à 9 h ; une
+ * vague par discussion toutes les deux heures ; une réponse directe peut passer devant la vague, une fois par vague ; la
+ * suivante remplace la précédente (le même `tag`). Pas si je viens de l'ouvrir (deux minutes). Les interrupteurs :
+ * « Quand on me répond », « Les discussions que je suis ».
+ */
+async function sonnerLeTelephone(
+  supabase: Supabase,
+  h: string,
+  o: { cercle: CercleDiscussion; video: string; titre: string; prenom: string; texte?: string; vocal?: boolean; sorte: SorteEvenement; niveau: NiveauSuivi | null; le: number },
+): Promise<"envoye" | "rien"> {
+  if (heureCalme(o.le)) return "rien";
+  if (o.sorte === "n" && o.niveau !== "prevenir") return "rien";
+  const suivi = (await tousMesSuivis(supabase, h))[cleSuivi(o.cercle, o.video)];
+  if (o.sorte === "r" && suivi?.niveau === "non") return "rien";
+  if (o.le - (Number(suivi?.lu) || 0) < 2 * 60_000) return "rien";
+  const chemin = cheminVague(h, o.cercle, o.video);
+  const v = await lireJson<{ le?: number; rep?: boolean }>(supabase, chemin).catch(() => ({}) as { le?: number; rep?: boolean });
+  const dansLaVague = o.le - (Number(v.le) || 0) < NOTIF_DISCUSSION_MS;
+  const titre = titreCourt(o.titre);
+  const dit = o.vocal ? PHRASES_ACTIVITE.vocal : o.texte ? `« ${o.texte} »` : "";
+  let notif: { titre: string; corps: string };
+  if (o.sorte === "r") {
+    if (dansLaVague && v.rep) return "rien";
+    await ecrireJson(supabase, chemin, { le: dansLaVague ? Number(v.le) : o.le, rep: true });
+    notif = { titre: PHRASES_ACTIVITE.aRepondu(o.prenom), corps: [dit, titre].filter(Boolean).join(" · ") };
+  } else {
+    if (dansLaVague) return "rien";
+    await ecrireJson(supabase, chemin, { le: o.le, rep: false });
+    // (combien de nouveaux : de vrais fichiers, depuis que je l'ai lue)
+    const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossierActivite(h), { limit: ACTIVITE.evenementsMax, sortBy: { column: "name", order: "desc" } });
+    const lu = Number(suivi?.lu) || 0;
+    const n = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => lireNom(s(f.name))).filter((e) => e && e.cercle === o.cercle && e.video === o.video && e.le > lu).length;
+    notif = { titre: PHRASES_ACTIVITE.vague(Math.max(1, n), titre), corps: `${o.prenom} : ${dit || "…"}` };
+  }
+  return prevenirUnHabitantAppli(supabase, h, { ...notif, url: lienDiscussion(o.video, o.cercle), tag: `discussion-${o.cercle}-${o.video}` }, o.sorte === "r" ? "repondu" : "suivies");
 }
 
 /** 🛎️ Mon activité : une ligne par discussion. `compter` : seulement combien ont du nouveau (sans ouvrir un fichier). */

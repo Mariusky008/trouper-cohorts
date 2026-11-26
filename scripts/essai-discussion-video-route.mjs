@@ -15,9 +15,12 @@
 // Jade, rien), la première publication le dit, choisir 🔔 / 🔕 (l'index des suiveurs suit), « lu » avant.
 // (Lot A4) Activité : Inès répond à Sam (↩ en haut, chez Sam ; rien chez Léa, qui ne suit plus) ; la cloche compte les
 // discussions qui ont du nouveau ; ouvrir la discussion, ou « Tout marquer lu », la remet à zéro ; Jade n'a rien des
-// adultes ; un événement de plus de trente jours s'efface ; sans compte : 401.
+// adultes ; un événement de plus de trente jours s'efface ; sans compte : 401. (Lot A5) Le téléphone : « ↩ Inès t'a
+// répondu » sonne ; la suite attend la vague (deux heures) ; puis « 💬 … nouveaux mots » ; l'interrupteur « Les discussions
+// que je suis » coupé : rien ; Jade (15-17 ans) l'a éteint d'office ; la nuit (22 h à 9 h) : rien.
 // Jamais un compte, jamais le mot « exemple ».
 import crypto from "node:crypto";
+import { recus, telephone } from "./navigateur/commun.mjs";
 
 const F = "http://127.0.0.1:54321/rest/v1";
 const FAUX = F.replace("/rest/v1", "");
@@ -236,6 +239,54 @@ const as2 = await activite(SAM);
 ok(as2.nouveau === 1 && as2.lignes?.[0]?.cle === CLE && !as2.lignes[0].reponse && as2.lignes[0].dernier?.texte === "Et la passe avant !", "Inès reparle (sans lui répondre) : Sam la suit, c'est du nouveau");
 ok((await poster(SAM, "activite", { action: "lu" })).ok === true && (await activite(SAM, true)).nouveau === 0, "« Tout marquer lu » : la cloche est à zéro");
 ok((await poster(SAM, "activite", { action: "tout" })).statut === 400, "une demande inconnue : 400");
+
+// ═══ (A5) 📱 LE TÉLÉPHONE ═══
+const nuitParis = (() => {
+  const h = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", hourCycle: "h23", hour: "2-digit" }).format(Date.now()));
+  return h >= 22 || h < 9;
+})();
+const telLea = telephone("lea-discussion");
+const telJade = telephone("jade-discussion");
+await json(`notif/abonnes/${LEA.id}.json`, { h: LEA.id, ville: "dax", abonnements: [telLea.abonnement], le: new Date().toISOString() });
+await json(`notif/abonnes/${JADE.id}.json`, { h: JADE.id, ville: "dax", abonnements: [telJade.abonnement], le: new Date().toISOString() });
+const etatL = await poster(LEA, "ma-figurine", { action: "notif-etat" });
+ok(etatL.discussions?.repondu === true && etatL.discussions.proches === true && etatL.discussions.suivies === true, `les trois interrupteurs de Léa, allumés (${JSON.stringify(etatL.discussions)})`);
+ok((await poster(JADE, "ma-figurine", { action: "notif-etat" })).discussions?.suivies === false, "Jade (15-17 ans) : « Les discussions que je suis » éteint d'office");
+ok((await poster(LEA, "ma-figurine", { action: "notif-discussions", genre: "tout", oui: false })).statut === 400, "un interrupteur inconnu : 400");
+ok((await ecrire(LEA, { action: "suivre", id: V, cercle: "tous", niveau: "prevenir" })).niveau === "prevenir", "Léa suit de nouveau, 🔔");
+// (elle n'est pas dans la discussion : sa dernière lecture date de dix minutes)
+const suivisL = await lire(`${LEA.id}/suivis-videos.json`);
+for (const x of Object.values(suivisL?.suivis ?? {})) x.lu = Date.now() - 10 * 60_000;
+await json(`${LEA.id}/suivis-videos.json`, suivisL);
+const deL = ((await ouvrir(INES, V)).discussion?.ecrits ?? []).find((e) => e.prenom === "Léa" && /je reviens/.test(e.texte));
+ok(Boolean(deL), "le mot de Léa est là");
+const pause = () => new Promise((r) => setTimeout(r, 3100));
+const sonneries = async () => (await recus(telLea)).filter((n) => String(n.tag ?? "").startsWith("discussion-"));
+await pause();
+await ecrire(INES, { action: "publier", id: V, texte: "Contente que tu reviennes", repond: deL?.id, accord: true });
+const vague = `${LEA.id}/vagues/tous.${V}.json`;
+// (deux heures plus tard : sa vague est passée)
+const effacerVague = () => fetch(`${STOCK}/figurines-clients`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefixes: [vague] }) });
+if (nuitParis) {
+  ok((await sonneries()).length === 0 && !(await lire(vague)), "la nuit (22 h à 9 h) : le téléphone de Léa ne sonne pas");
+} else {
+  const r1 = await sonneries();
+  ok(r1.length === 1 && r1[0].title === "↩ Inès t’a répondu" && /« Contente que tu reviennes »/.test(r1[0].body) && r1[0].tag === `discussion-tous-${V}` && r1[0].url === `/univers/discussion?video=${V}&cercle=tous`, `« ↩ Inès t'a répondu » sonne (${JSON.stringify(r1[0])})`);
+  await pause();
+  await ecrire(INES, { action: "publier", id: V, texte: "Et toi Léa ?", accord: true });
+  ok((await sonneries()).length === 1, "la suite attend : une vague toutes les deux heures");
+  await effacerVague();
+  await pause();
+  await ecrire(INES, { action: "publier", id: V, texte: "Bon, à plus", accord: true });
+  const r2 = await sonneries();
+  ok(r2.length === 2 && /^💬 \d+ nouveaux mots sur « /.test(r2[1].title) && r2[1].body === "Inès : « Bon, à plus »" && r2[1].tag === r1[0].tag, `deux heures plus tard : « ${r2[1]?.title} » (${r2[1]?.body}), qui remplace la précédente`);
+  ok((await poster(LEA, "ma-figurine", { action: "notif-discussions", genre: "suivies", oui: false })).discussions?.suivies === false, "Léa coupe « Les discussions que je suis »");
+  await effacerVague();
+  await pause();
+  await ecrire(INES, { action: "publier", id: V, texte: "Encore un mot", accord: true });
+  ok((await sonneries()).length === 2, "… plus rien sur son téléphone (Activité le garde)");
+  ok(((await activite(LEA)).lignes ?? []).find((x) => x.cle === CLE)?.neuf === true, "… et sa ligne d'Activité est « Nouveau »");
+}
 
 // ═══ JAMAIS UN COMPTE, JAMAIS LE MOT « EXEMPLE » ═══
 const tout = JSON.stringify(tous);

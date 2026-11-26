@@ -31,6 +31,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import type { Habitant } from "@/lib/direct/habitant";
 import { SEAU_FIGURINES, ecrireJson, lireJson, telecharger } from "@/lib/direct/ma-figurine-serveur";
 import { jourParis } from "@/lib/direct/theme-du-jour";
+import { sesDixHuitAns } from "@/lib/direct/majorite-serveur";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v));
@@ -66,7 +67,11 @@ export async function lierAppli(supabase: Supabase, jeton: unknown): Promise<{ d
 // ─── 2. 🔔 les abonnements ─────────────────────────────────────────────────────────────────────────────────────────
 export type Abonnement = { endpoint: string; keys: { p256dh: string; auth: string } };
 // (`reponses` : « Quand on répond à tes mèmes » — absent : allumé)
-type FicheAbonne = { h: string; ville: string; abonnements: Abonnement[]; le: string; reponses?: boolean };
+// (🔔 discussions des vidéos, lot A5 : `discussions` — les trois interrupteurs ; absent : allumé, sauf « Les discussions
+// que je suis » pour les 15-17 ans, éteint d'office)
+type FicheAbonne = { h: string; ville: string; abonnements: Abonnement[]; le: string; reponses?: boolean; discussions?: Partial<Record<InterrupteurDiscussion, boolean>> };
+export const INTERRUPTEURS_DISCUSSION = ["repondu", "proches", "suivies"] as const;
+export type InterrupteurDiscussion = (typeof INTERRUPTEURS_DISCUSSION)[number];
 const DOSSIER_ABONNES = "notif/abonnes";
 const cheminAbonne = (h: string) => `${DOSSIER_ABONNES}/${h}.json`;
 /** Un habitant n'a pas vingt téléphones : au-delà, les plus anciens s'effacent. */
@@ -133,6 +138,29 @@ export async function choisirLesReponses(supabase: Supabase, habitant: Habitant,
   delete reste.reponses;
   const ok = await ecrireJson(supabase, cheminAbonne(habitant.id), oui === false ? { ...reste, reponses: false } : reste);
   return ok ? { ok: true, reponses: oui !== false } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+}
+
+/** (l'interrupteur, lu dans la fiche ; « suivies » éteint d'office pour les 15-17 ans) */
+async function interrupteurAllume(supabase: Supabase, h: string, f: Partial<FicheAbonne>, genre: InterrupteurDiscussion): Promise<boolean> {
+  const choisi = f.discussions?.[genre];
+  if (typeof choisi === "boolean") return choisi;
+  if (genre !== "suivies") return true;
+  return (await sesDixHuitAns(supabase, h).catch(() => null)) !== false;
+}
+/** 🔔 (lot A5) Mes trois interrupteurs des discussions. `null` : il n'a pas les notifications. */
+export async function mesInterrupteurs(supabase: Supabase, habitant: Habitant): Promise<Record<InterrupteurDiscussion, boolean> | null> {
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(habitant.id));
+  if (!sesAbonnements(f).length) return null;
+  const l = await Promise.all(INTERRUPTEURS_DISCUSSION.map(async (g) => [g, await interrupteurAllume(supabase, habitant.id, f, g)] as const));
+  return Object.fromEntries(l) as Record<InterrupteurDiscussion, boolean>;
+}
+export async function choisirInterrupteur(supabase: Supabase, habitant: Habitant, genre: unknown, oui: unknown): Promise<{ ok?: boolean; discussions?: Record<InterrupteurDiscussion, boolean>; error?: string; statut?: number }> {
+  if (!(INTERRUPTEURS_DISCUSSION as readonly unknown[]).includes(genre)) return { error: "Quel interrupteur ?", statut: 400 };
+  const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(habitant.id));
+  if (!sesAbonnements(f).length) return { error: "Allume d’abord les notifications.", statut: 400 };
+  const ok = await ecrireJson(supabase, cheminAbonne(habitant.id), { ...f, discussions: { ...f.discussions, [genre as InterrupteurDiscussion]: oui !== false } });
+  const discussions = ok ? await mesInterrupteurs(supabase, habitant) : null;
+  return ok && discussions ? { ok: true, discussions } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
 }
 
 // ─── 3. 🔔 l'envoi ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -319,11 +347,13 @@ export async function prevenirUneFoisParJour(supabase: Supabase, pour: string, g
  * 🔔 UNE NOTIFICATION À UN HABITANT (Découvrir, lots D2 et D5 : une invitation devant ma télé, une demande de proche) —
  * s'il a les notifications ; l'appelant en limite le nombre. Ses téléphones qui ne répondent plus s'effacent.
  */
-export async function prevenirUnHabitantAppli(supabase: Supabase, pour: string, notif: Notif): Promise<"envoye" | "rien"> {
+export async function prevenirUnHabitantAppli(supabase: Supabase, pour: string, notif: Notif, genre?: InterrupteurDiscussion): Promise<"envoye" | "rien"> {
   if (!pour || !vapid()) return "rien";
   const f = await lireJson<FicheAbonne>(supabase, cheminAbonne(pour));
   const abs = sesAbonnements(f);
   if (!abs.length) return "rien";
+  // (🔔 lot A5 : « Quand on me répond », « Mes proches et mes groupes », « Les discussions que je suis »)
+  if (genre && !(await interrupteurAllume(supabase, pour, f, genre))) return "rien";
   const issues = await Promise.all(abs.map((ab) => envoyer(ab, notif)));
   const morts = abs.filter((_, i) => issues[i] === "mort");
   if (morts.length) {

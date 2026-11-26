@@ -55,7 +55,7 @@ import { figurineDuNouveauStyle, poserLePont, visagesDuNouveauStyle } from "@/li
 import { fabriquerExpressionsDeTete } from "@/lib/direct/expressions-figurine-serveur";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant, poserCookie } from "@/lib/direct/habitant";
-import { abonner, choisirLesReponses, couper, estAbonne, jetonAppli, lierAppli, prevenirDUneReponse, prevenuDesReponses } from "@/lib/direct/appli-collection-serveur";
+import { abonner, choisirLesReponses, couper, estAbonne, jetonAppli, lierAppli, prevenirDUneReponse, prevenuDesReponses, mesInterrupteurs, choisirInterrupteur } from "@/lib/direct/appli-collection-serveur";
 import { villeSlug } from "@/lib/direct/ville";
 import { ERREUR_AGE, lienMessage } from "@/lib/direct/ma-figurine";
 import {
@@ -189,8 +189,13 @@ export async function POST(request: Request) {
   }
   if (p?.action === "notif-couper") return NextResponse.json(await couper(supabase, moi, p.endpoint));
   if (p?.action === "notif-etat") {
-    const [abonne, reponses] = await Promise.all([estAbonne(supabase, moi, p.endpoint), prevenuDesReponses(supabase, moi)]);
-    return NextResponse.json({ ok: true, abonne, ...(reponses !== null ? { reponses } : {}) }, { headers: sansCache });
+    const [abonne, reponses, discussions] = await Promise.all([estAbonne(supabase, moi, p.endpoint), prevenuDesReponses(supabase, moi), mesInterrupteurs(supabase, moi)]);
+    return NextResponse.json({ ok: true, abonne, ...(reponses !== null ? { reponses } : {}), ...(discussions ? { discussions } : {}) }, { headers: sansCache });
+  }
+  // 🔔 (discussions des vidéos, lot A5) les trois interrupteurs : { genre: "repondu"|"proches"|"suivies", oui }
+  if (p?.action === "notif-discussions") {
+    const r = await choisirInterrupteur(supabase, moi, p.genre, p.oui);
+    return NextResponse.json(r.ok ? { ok: true, discussions: r.discussions } : { error: r.error }, { status: r.ok ? 200 : (r.statut ?? 400), headers: sansCache });
   }
   // ↩️ « Quand on répond à tes mèmes » : allumé (par défaut) ou coupé
   if (p?.action === "notif-reponses") {

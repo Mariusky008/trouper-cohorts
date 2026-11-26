@@ -31,6 +31,7 @@ import { cleProfil } from "./autour-serveur";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { dejaVue, maVideo } from "./tele-du-jour-serveur";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
+import { mesSuivis } from "./suivis-video-serveur";
 import { noterARevoir, revue } from "./revoir-serveur";
 import { figurineVivante } from "./expressions-figurine-serveur";
 import {
@@ -176,7 +177,15 @@ export async function noterVocal(supabase: Supabase, moi: Habitant, id: unknown,
 
 /** 🔔 Envoyer une notification préparée (après la réponse). */
 export async function prevenir(supabase: Supabase, p: { h: string; notif: Notif }): Promise<void> {
-  await prevenirUnHabitantAppli(supabase, p.h, p.notif).catch(() => "rien");
+  // (📱 lot A5 : une réponse entre proches — l'interrupteur « Quand on me répond » ; pas s'il ne suit plus 🔕)
+  if ((await niveauProches(supabase, p.h, p.notif.url)) === "non") return;
+  await prevenirUnHabitantAppli(supabase, p.h, p.notif, "repondu").catch(() => "rien");
+}
+/** (📱 lot A5) Son niveau choisi pour le cercle 👯 d'une vidéo (`undefined` : celui de départ, 🔔). */
+async function niveauProches(supabase: Supabase, h: string, url: string): Promise<string | undefined> {
+  const video = /[?&]tele=([A-Za-z0-9_-]{11})/.exec(url)?.[1];
+  if (!video) return undefined;
+  return (await mesSuivis(supabase, h, video).catch(() => ({}) as Awaited<ReturnType<typeof mesSuivis>>)).proches?.niveau;
 }
 
 /**
@@ -204,7 +213,9 @@ export async function apresLaVue(supabase: Supabase, moi: Habitant, video: strin
   // (📼 section 31 : la vidéo va dans leur boîte « à revoir », avec mon prénom)
   await Promise.all(eux.map((p) => noterARevoir(supabase, p.h, { id: v.id, titre: v.titre }, prenom).catch(() => undefined)));
   const notif: Notif = { titre: PHRASES_REACTIONS.aRegarde(prenom, titreCourt(v.titre)), corps: PHRASES_REACTIONS.revoisLa, url: adresseVideo(v.id), tag: `tele-${v.id}` };
-  await Promise.all(eux.map((p) => prevenirUnHabitantAppli(supabase, p.h, notif).catch(() => "rien")));
+  // (📱 lot A5 : seulement ceux qui la suivent en 🔔 — 🤫 et 🔕 la trouvent dans Activité ; l'interrupteur « Mes proches
+  // et mes groupes »)
+  await Promise.all(eux.map(async (p) => ((await niveauProches(supabase, p.h, notif.url)) ?? "prevenir") === "prevenir" && prevenirUnHabitantAppli(supabase, p.h, notif, "proches").catch(() => "rien")));
 }
 
 /**

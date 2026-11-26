@@ -55,6 +55,8 @@ export const PHRASES_ACTIVITE = {
   ontEcrit: (l: string[]) => `${listePrenoms(l)} ${l.length > 1 ? "ont" : "a"} écrit`,
   nouveaux: (n: number) => `${n} nouveau${n > 1 ? "x" : ""}`,
   vocal: "🎙️ un mot dit",
+  /** 📱 (lot A5) la vague sur le téléphone */
+  vague: (n: number, titre: string) => `💬 ${n} nouveau${n > 1 ? "x" : ""} mot${n > 1 ? "s" : ""} sur « ${titre} »`,
   cercle: { proches: "👯 Proches", tous: "🌍 Tous" } as Record<CercleDiscussion, string>,
   vide: "Rien de neuf pour l’instant. Quand on te répond, ou qu’on parle d’une vidéo que tu suis, c’est ici.",
   videFiltre: "Rien ici pour l’instant.",

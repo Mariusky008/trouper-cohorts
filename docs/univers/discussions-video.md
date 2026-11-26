@@ -41,7 +41,7 @@ messagerie bruyante.
 | A2 | Écrire : le mot écrit 🌍, répondre, « Lu par… », « 🌍 Le laisser sous la vidéo » | ✅ fait |
 | A3 | Suivre : les trois niveaux, les niveaux de départ, le ⋯ | ✅ fait |
 | A4 | Activité et la cloche 🛎️ ; « Pendant ton absence » y passe | ✅ fait |
-| A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | à faire |
+| A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | ✅ fait |
 | A6 | Les groupes : le cercle 👥, vidéo par vidéo | à faire |
 | A7 | Le soin : « Ne plus voir », l'admin des mots écrits, vidéo indisponible, les cinq cas sur un iPhone | à faire |
 
@@ -136,3 +136,23 @@ messagerie bruyante.
 - **Les essais** : la suite des deux scripts (Inès répond à Sam ; rien chez Léa qui ne suit plus ; Jade à part ; ouvrir
   la discussion ou « Tout marquer lu » remet à zéro ; trente jours ; sur l'iPhone, la cloche dans l'appli allumée, la
   ligne, un toucher, « Déjà vu »).
+
+## A5, dans le code
+
+- **La règle de bruit, commune** : `regle-de-bruit.ts` (`heureCalme` : rien de 22 h à 9 h, heure de Paris ;
+  `NOTIF_DISCUSSION_MS` : deux heures), sortie de `groupes-vie-serveur.ts` (#303), qui la reprend.
+- **Le téléphone d'une discussion** (`sonnerLeTelephone`, dans `activite-serveur.ts`, après l'événement d'Activité) :
+  ↩ une réponse directe sonne en 🔔 et en 🤫 (pas en 🔕 : Activité seulement), « ↩ Inès t'a répondu », sa phrase et le
+  titre ; 💬 du nouveau sonne seulement en 🔔, « 💬 4 nouveaux mots sur « … » » (compté sur les vrais fichiers). Une vague
+  par discussion toutes les deux heures (`<habitant>/vagues/<cercle>.<vidéo>.json` = { le, rep }) ; une réponse directe
+  peut passer devant la vague, une fois par vague ; le même `tag` (`discussion-<cercle>-<vidéo>`) : la suivante remplace
+  la précédente. Pas si je viens de l'ouvrir (deux minutes). Le toucher ouvre la discussion.
+- **👯 Les proches** (`reactions-video-serveur.ts`) : « 🎬 Léa a regardé « … » » sonne seulement chez ceux qui suivent en
+  🔔 (🤫 et 🔕 : Activité) ; « Léa t'a répondu » pas en 🔕.
+- **Les trois interrupteurs** : dans « Moi » (`mon-telephone.tsx`), sous les notifications, là où sont déjà les
+  réglages du téléphone (la maquette les mettait dans ⚙️ de Ma maison) : 💬 « Quand on me répond », 👯 « Mes proches et
+  mes groupes » (aussi les messages des groupes, #303), 🔔 « Les discussions que je suis » (éteint d'office pour les
+  15-17 ans). Rangés avec l'abonnement (`notif/abonnes/<h>.json`, `discussions`) ; route `ma-figurine`, actions
+  `notif-etat` (rend `discussions`) et `notif-discussions` { genre, oui }.
+- **Les essais** : la suite de `essai-discussion-video-route.mjs` (les interrupteurs, Jade éteinte d'office, la réponse
+  qui sonne, la vague qui attend, « 💬 … nouveaux mots » qui remplace, l'interrupteur coupé ; la nuit : rien).
