@@ -10,6 +10,9 @@
 // POST { action: "effacer", id, ecrit }  → { ok } : le mien, partout
 // POST { action: "signaler", id, ecrit } → { ok, cache } : plus chez moi ; trois personnes : chez personne
 // (lot A3) POST { action: "suivre", id, cercle: "proches"|"tous", niveau: "prevenir"|"discret"|"non" } → { niveau }
+// (lot A6, 👥) GET …&groupe=<id> : le cercle de ce groupe (j'en suis membre), même vide ; `discussion.groupes`.
+//              POST publier / effacer avec `groupe` : dans le cercle du groupe (ses membres seulement, sans accord) ;
+//              POST suivre { cercle: "groupe", groupe, niveau }
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine sur ce téléphone." }, { status: 401, headers: sansCache });
   const q = new URL(request.url).searchParams;
-  const r = await laDiscussion(supabase, moi, q.get("video"), q.get("seance"));
+  const r = await laDiscussion(supabase, moi, q.get("video"), q.get("seance"), q.get("groupe"));
   if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
   return NextResponse.json({ discussion: r.discussion }, { headers: sansCache });
 }

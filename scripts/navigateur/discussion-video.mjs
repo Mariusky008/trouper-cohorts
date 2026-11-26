@@ -8,6 +8,8 @@
 // « Publier » ; elle répond au mot d'Inès (« ↩ Inès ») ; un lien ne part pas ; elle efface son mot. Rien ne déborde,
 // jamais le mot « exemple », aucune erreur. (Lot A4) Inès répond à Léa : la cloche 🛎️ en haut dit 1 ; Activité :
 // « ↩ Inès t'a répondu » et sa phrase, en « Nouveau » ; un toucher ouvre la discussion ; au retour, « Déjà vu ».
+// (Lot A6) 👥 Sam écrit au groupe « Les Footeux » : Léa l'ouvre depuis le groupe (l'onglet, ouvert d'office), « 👥 Lu par
+// Les Footeux », elle répond sans accord ; rien sous 🌍.
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
 import { lancerSecondeApp } from "../seconde-app.mjs";
@@ -182,6 +184,30 @@ await p.goBack({ waitUntil: "domcontentloaded" });
 ok(await attendre(async () => (await p.locator("[data-ligne-activite]").count()) >= 1 && (await p.locator("[data-ligne-activite][data-neuf]").count()) === 0), "au retour : « Déjà vu »");
 ok((await p.locator("[data-chez-toi]").getAttribute("href")) === "/collection?absence=1#maison", "« 🏠 Pendant ton absence, chez toi » renvoie à Ma maison");
 ok(!/exemple/i.test(await p.locator("body").innerText()), "Activité : jamais le mot « exemple »");
+
+// ═══ (A6) 👥 LE CERCLE D'UN GROUPE ═══
+const qui8 = (h) => crypto.createHash("sha256").update(`clikme-talkie:qui:${h}`).digest("hex").slice(0, 8);
+const GID = `g-${Date.now()}-${qui8(LEA.id)}-a6a6a6`;
+await json(`groupes/groupes/${GID}.json`, { id: GID, nom: "Les Footeux", le: Date.now() });
+for (const x of [LEA, SAM]) {
+  await json(`groupes/membres/${GID}/${qui8(x.id)}.json`, { q: qui8(x.id), h: x.id, prenom: x.prenom, src: "", le: Date.now() });
+  await json(`groupes/miens/${qui8(x.id)}.json`, { groupes: [GID] });
+}
+ok((await appel(SAM, "/api/direct/discussion-video", { action: "publier", id: V, groupe: GID, texte: "On en parle samedi ?" })).statut === 200, "Sam écrit au groupe « Les Footeux »");
+await p.goto(`${BASE}/univers/discussion?video=${V}&cercle=groupe&groupe=${GID}`, { waitUntil: "domcontentloaded" });
+const ongletG = p.locator(`[data-cercle="groupe"][data-groupe="${GID}"]`);
+ok(await attendre(async () => (await ongletG.getAttribute("aria-selected").catch(() => "")) === "true"), "l'onglet 👥 Les Footeux, ouvert d'office");
+ok(/Les Footeux/.test(await texte(ongletG)), `« ${await texte(ongletG)} »`);
+const filG = p.locator('[data-fil="groupe"]');
+ok(/Sam/.test(await texte(filG)) && /On en parle samedi \?/.test(await texte(filG)), "le mot de Sam, au groupe");
+ok(/👥 Lu par Les Footeux/.test(await texte(p.locator("[data-ecrire]"))), "« 👥 Lu par Les Footeux »");
+await p.locator("[data-ecrire] input").fill("Samedi, chez moi !");
+await p.locator('[data-ecrire] button[type="submit"]').click();
+ok(await attendre(async () => (await filG.locator("[data-ecrit]").count()) === 2 && /Toi/.test(await texte(filG.locator("[data-ecrit]").last()))), "« Publier », sans accord : son mot est au groupe");
+ok((await p.locator("[data-accord]").count()) === 0, "… pas d'accord à donner (ce n'est pas 🌍)");
+ok(!((await appel(INES, `/api/direct/discussion-video?video=${V}`)).discussion?.ecrits ?? []).some((e) => /Samedi, chez moi/.test(e.texte)), "… et rien sous 🌍 Tous");
+ok((await p.evaluate(() => document.documentElement.scrollWidth)) <= 390, "le groupe : rien ne déborde");
+await p.screenshot({ path: `${D}/discussion-video-groupe.png` });
 
 ok(erreurs.length === 0, `aucune erreur${erreurs.length ? ` : ${erreurs.join(" | ")}` : ""}`);
 await b.close();

@@ -12,7 +12,7 @@ import { PHRASES_ACTIVITE as P, quandActivite, type ActiviteVue, type LigneActiv
 import { lienDiscussion } from "@/lib/direct/discussion-video";
 import { vignetteYouTube } from "@/lib/direct/tele";
 
-type Filtre = "tout" | "reponses" | "proches" | "tous";
+type Filtre = "tout" | "reponses" | "proches" | "groupe" | "tous";
 type Etat = { a: ActiviteVue } | { erreur: string } | null;
 
 /** La phrase principale d'une ligne. */
@@ -76,7 +76,7 @@ export function ActiviteEcran() {
 
   const ligne = (l: LigneActivite) => (
     <li key={l.cle}>
-      <a className={`ac-ligne ac-${l.cercle}${l.neuf ? " neuf" : ""}`} href={lienDiscussion(l.video, l.cercle)} data-ligne-activite={l.cle} data-neuf={l.neuf ? "" : undefined} data-reponse={l.reponse ? "" : undefined}>
+      <a className={`ac-ligne ac-${l.cercle}${l.neuf ? " neuf" : ""}`} href={lienDiscussion(l.video, l.cercle, undefined, l.groupe?.id)} data-ligne-activite={l.cle} data-neuf={l.neuf ? "" : undefined} data-reponse={l.reponse ? "" : undefined}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="ac-vignette" src={vignetteYouTube(l.video)} alt="" referrerPolicy="no-referrer" />
         <span className="ac-corps">
@@ -86,7 +86,7 @@ export function ActiviteEcran() {
           </span>
           {detail(l) && <span className="ac-dit">{detail(l)}</span>}
           <small>
-            {l.titre} · <i>{P.cercle[l.cercle]}</i>
+            {l.titre} · <i>{l.groupe ? `👥 ${l.groupe.nom}` : P.cercle[l.cercle]}</i>
           </small>
         </span>
       </a>
@@ -108,7 +108,7 @@ export function ActiviteEcran() {
       </header>
       {etat && "a" in etat && etat.a.lignes.length > 0 && (
         <div className="ac-filtres" role="tablist">
-          {(["tout", "reponses", "proches", "tous"] as const).map((f) => (
+          {(["tout", "reponses", "proches", "groupe", "tous"] as const).filter((f) => f !== "groupe" || etat.a.lignes.some((x) => x.groupe)).map((f) => (
             <button key={f} type="button" role="tab" aria-selected={filtre === f} className={filtre === f ? "on" : ""} data-filtre={f} onClick={() => setFiltre(f)}>
               {P.filtres[f]}
             </button>
@@ -166,6 +166,7 @@ const STYLES = `
 .ac-ligne{display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:16px;background:rgba(255,255,255,.05);color:inherit;text-decoration:none;border-left:4px solid transparent}
 .ac-ligne.ac-proches{border-left-color:#ff5d8f}
 .ac-ligne.ac-tous{border-left-color:#4f8ff0}
+.ac-ligne.ac-groupe{border-left-color:#3fbf8a}
 .ac-ligne.neuf{background:rgba(255,255,255,.1)}
 .ac-vignette{flex:none;width:72px;height:41px;border-radius:8px;object-fit:cover;background:#170f0a}
 .ac-corps{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
