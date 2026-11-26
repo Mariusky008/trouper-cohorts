@@ -4,6 +4,7 @@
 //
 // GET ?video=<id>                               → { suite } : les mots de sa tranche (adultes, ou 15-17 ans), ses proches
 //                                                 d'abord ; 403 `age` : il n'a pas encore dit s'il a 18 ans
+// GET ?de=<q>                                   → { mots } : (les jeux du salon) ses derniers mots publiés, pour sa fiche
 // POST { action: "publier", id, son, duree, tetes?, repond?, accord: true } → { ok } : sa voix (une à dix secondes), ses
 //                                                 têtes ; un seul mot par vidéo (le nouveau remplace l'ancien)
 // POST { action: "effacer", id }                → { ok } : son mot disparaît partout
@@ -12,7 +13,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { effacerMot, publierMot, signalerMot, suiteDeLaVideo } from "@/lib/direct/mots-video-serveur";
+import { effacerMot, publierMot, sesMots, signalerMot, suiteDeLaVideo } from "@/lib/direct/mots-video-serveur";
 import { direSesDixHuitAns } from "@/lib/direct/majorite-serveur";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,10 @@ export async function GET(request: Request) {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   const q = new URL(request.url).searchParams;
+  if (q.get("de")) {
+    const d = await sesMots(supabase, moi, q.get("de"));
+    return repondre(d, { mots: d.mots ?? [] });
+  }
   const r = await suiteDeLaVideo(supabase, moi, q.get("video"), q.get("seance"));
   return repondre(r, { suite: r.suite });
 }

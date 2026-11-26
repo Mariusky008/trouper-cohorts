@@ -10,7 +10,8 @@
 // ne passe plus chez Léa, toujours chez Sam ; signalée par trois personnes : chez personne ; l'administrateur le voit.
 // Un mot de plus de 30 jours ne passe plus. Sam efface son mot : la réponse de Léa reste, seule. Jade (15-17 ans) : sa
 // suite à elle, jamais celle des adultes. (Lot 2) La vidéo d'un salon ouvert de sa tranche, celle d'une séance où l'on
-// est (l'hôte ou un invité) : leur suite aussi. Jamais le mot « exemple ».
+// est (l'hôte ou un invité) : leur suite aussi. (Les jeux du salon) Ses mots, sur sa fiche : ceux qu'il a publiés, sans
+// ceux qu'il a effacés ni ceux qu'on a cachés, jamais d'une autre tranche. Jamais le mot « exemple ».
 import crypto from "node:crypto";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -196,6 +197,23 @@ ok((await poster(LEA, { action: "publier", id: VSE, seance: `chez-${MAX.q}`, son
 ok((await (await fetch(`${route}?video=${VSE}&seance=chez-${MAX.q}`, { headers: { cookie: `clikme_habitant=${MAX.jeton}` } })).json()).suite?.mots?.some((m) => m.prenom === "Léa"), "… Max, l'hôte, l'entend");
 ok((await fetch(`${route}?video=${VSE}&seance=chez-${MAX.q}`, { headers: { cookie: `clikme_habitant=${INES.jeton}` } })).status === 404, "… Inès, pas invitée : 404");
 ok((await poster(LEA, { action: "effacer", id: VSE, seance: `chez-${MAX.q}` })).statut === 200, "… Léa l'efface");
+
+// ═══ 🎙️ (LES JEUX DU SALON) SES MOTS, SUR SA FICHE ═══
+const sesMots = async (x, q) => {
+  const r = await fetch(`${route}?de=${encodeURIComponent(q)}`, { headers: x ? { cookie: `clikme_habitant=${x.jeton}` } : {} });
+  return garder({ statut: r.status, ...((await r.json().catch(() => ({}))) ?? {}) });
+};
+ok((await sesMots(null, LEA.q)).statut === 401, "ses mots, sans compte : 401");
+ok((await sesMots(MAX, "!!")).statut === 400, "… de personne : 400");
+const dLea = await sesMots(MAX, LEA.q);
+const videosLea = (dLea.mots ?? []).map((m) => m.video);
+ok(dLea.statut === 200 && videosLea.length === 2 && videosLea.includes(V) && videosLea.includes(VS), `Max voit les deux mots publiés de Léa, pas celui qu'elle a effacé (${videosLea.join(", ")})`);
+ok((dLea.mots ?? []).every((m) => m.src && m.duree > 0 && m.le > 0), "… chacun avec son son et sa durée");
+ok(dLea.mots?.[0]?.video === VS, "… le plus récent d'abord");
+ok((await sesMots(MAX, SAM.q)).mots?.length === 0, "Sam a effacé le sien : rien");
+ok((await sesMots(LEA, INES.q)).mots?.length === 0, "Inès, signalée : rien chez Léa");
+ok((await sesMots(INES, INES.q)).mots?.length === 1, "… mais Inès voit le sien");
+ok((await sesMots(JADE, LEA.q)).mots?.length === 0, "Jade (15-17 ans) n'entend jamais les mots des adultes");
 
 // ═══ JAMAIS UN COMPTE, JAMAIS LE MOT « EXEMPLE » ═══
 const tout = JSON.stringify(tous);

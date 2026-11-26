@@ -5,7 +5,8 @@
 // Sam a préparé son double du jour (sa tête qui rit, sa pancarte), il vient depuis huit jours (🔥, l'auréole), le foot
 // est sa passion du moment (l'écharpe), Léa lui a offert une surprise (le cœur). Il est au salon du foot. Léa y entre et
 // touche sa figurine : sa fiche la montre en grand — sa tête du jour sur son corps, l'auréole, l'écharpe, le cœur et
-// leurs étiquettes, sa pancarte au-dessus, le halo de Ma maison ; puis ses gestes, comme avant.
+// leurs étiquettes, sa pancarte au-dessus, le halo de Ma maison ; puis ses gestes, comme avant. (Les jeux du salon,
+// 26 novembre 2026) Ses mots à la suite des vidéos ; une fois proches : « 💬 Lui écrire » à la place d'« Ajouter ».
 import sharp from "sharp";
 import crypto from "node:crypto";
 import { poserPiece } from "../piece-en-hauteur.mjs";
@@ -114,6 +115,13 @@ const entree = await appel(SAM, "/api/direct/salons-ouverts", { action: "entrer"
 const qSam = entree.corps?.ouverture?.moi;
 ok(entree.statut === 200 && Boolean(qSam), "Sam est au salon du foot");
 
+// (🎙️ les jeux du salon : Sam a laissé un mot à la suite d'une vidéo, il y a une heure)
+const VMOT = "CCCCCCCCCCC";
+const sonMot = `decouvrir/mots/adultes/${VMOT}/son/${qSam}-1.webm`;
+await deposer(sonMot, Buffer.from("1a45dfa39f4286810142f7810142f2810442f381084282847765626d", "hex"), "audio/webm");
+await json(`decouvrir/mots/adultes/${VMOT}/${qSam}.json`, { h: SAM.id, q: qSam, prenom: "Sam", chemin: sonMot, type: "audio/webm", duree: 4, le: Date.now() - 3600_000, tetes: [] });
+await json(`decouvrir/mots-de/adultes/${qSam}/${VMOT}.json`, { le: Date.now() - 3600_000 });
+
 // ═══ LÉA ENTRE, ET TOUCHE SA FIGURINE ═══
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const b = await lancer();
@@ -179,6 +187,24 @@ await lea.screenshot({ path: `${D}/fiche-salon-1-sam.png` });
 // (un geste depuis sa fiche : elle se ferme, comme avant)
 await lea.locator("[data-geste]").first().click();
 ok(await attendre(async () => (await f.count()) === 0), "un geste : sa fiche se ferme");
+
+// ═══ 🎙️ SES MOTS À LA SUITE DES VIDÉOS ; 💬 ENTRE PROCHES, « LUI ÉCRIRE » ═══
+await figSam.click({ force: true });
+ok(await attendre(async () => (await lea.locator("[data-ses-mots]").count()) === 1), "🎙️ sa fiche : « Ses mots à la suite des vidéos » (il en a publié un)");
+await lea.locator("[data-ses-mots] > button").click();
+ok(await attendre(async () => (await lea.locator(`[data-son-mot="${VMOT}"]`).count()) === 1), "… toucher la ligne : la vidéo de son mot, à écouter");
+ok(!/exemple/i.test(await texte(lea.locator(".so-feuille"))), "… jamais le mot « exemple »");
+await lea.screenshot({ path: `${D}/fiche-salon-2-ses-mots.png` });
+await json(`${LEA.id}/proches.json`, { ids: [SAM.id] });
+await json(`${SAM.id}/proches.json`, { ids: [LEA.id] });
+await lea.goto(`${BASE}/univers/salons?theme=foot`, { waitUntil: "domcontentloaded" });
+ok(await attendre(async () => (await figSam.count()) === 1, 30000), "Léa et Sam sont devenus proches ; elle revient au salon");
+await figSam.click({ force: true });
+ok(await attendre(async () => (await lea.locator("[data-lui-ecrire]").count()) === 1), "💬 sa fiche : « Lui écrire »");
+ok((await lea.locator("[data-lui-ecrire]").getAttribute("href")) === `/collection?parler=${SAM.cle}#proches`, "… qui ouvre leur conversation");
+ok((await lea.locator("[data-ajouter-proche]").count()) === 0, "… et plus « Ajouter en proche » (c'est déjà fait)");
+await lea.screenshot({ path: `${D}/fiche-salon-3-proche.png` });
+
 ok(!erreurs.length, `aucune erreur${erreurs.length ? ` : ${erreurs.slice(0, 3).join(" | ")}` : ""}`);
 
 await b.close();

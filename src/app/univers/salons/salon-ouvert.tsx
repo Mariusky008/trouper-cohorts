@@ -55,7 +55,7 @@ import { Ornements } from "@/app/collection/ornements";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
-import { PHRASES_MOTS as PMOTS } from "@/lib/direct/mots-video";
+import { PHRASES_MOTS as PMOTS, type MotDeQuelquun } from "@/lib/direct/mots-video";
 import { SuiteDeLaVideo } from "@/app/collection/suite-de-la-video";
 import {
   GESTES_SALON,
@@ -1562,9 +1562,16 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           </div>
           {/* (👥 21 novembre 2026, « tout pour tous » : devant une télé aussi — le proche d'un invité s'y assoit) */}
           <div className="so-liens">
-              <button type="button" className="so-bouton petit" data-ajouter-proche onClick={() => void demanderProche(fiche)}>
-                {P.proche}
-              </button>
+              {/* (💬 les jeux du salon, 26 novembre 2026 : déjà proches — « Lui écrire » à la place de « Ajouter en proche ») */}
+              {fiche.proche && fiche.cle ? (
+                <a className="so-bouton petit" data-lui-ecrire href={`/collection?parler=${encodeURIComponent(fiche.cle)}#proches`} onClick={() => sortir(salon.id)}>
+                  {P.luiEcrire}
+                </a>
+              ) : !fiche.proche ? (
+                <button type="button" className="so-bouton petit" data-ajouter-proche onClick={() => void demanderProche(fiche)}>
+                  {P.proche}
+                </button>
+              ) : null}
               {fiche.maison ? (
                 <a className="so-bouton petit clair" data-voir-maison href={`/univers/chez/${encodeURIComponent(fiche.maison)}`} onClick={() => sortir(salon.id)}>
                   {P.voirMaison}
@@ -1575,6 +1582,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 </span>
               )}
             </div>
+          <SesMots q={fiche.q} />
           <div className="so-discret">
             <button type="button" data-ne-plus-voir onClick={() => void cacher(fiche)}>
               {P.nePlusVoir}
@@ -2734,6 +2742,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-conv p span{margin-left:6px;font-size:11px;opacity:.55}
 .so-coeur{margin-left:6px;border:0;background:none;font-size:14px;cursor:pointer;padding:0 2px}
 .so-coeur:disabled{cursor:default}
+.so-ses-mots{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}.so-ses-mots small{opacity:.7;font-size:12px}.so-ses-mots-liste{display:flex;gap:8px;overflow-x:auto}.so-ses-mots-liste button{flex:none;width:112px;display:flex;flex-direction:column;gap:3px;background:none;border:0;color:inherit;padding:0;font-weight:700;font-size:12px;cursor:pointer}.so-ses-mots-liste img{width:112px;aspect-ratio:16/9;object-fit:cover;border-radius:10px}
 .so-passions{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px;font-size:13px}
 .so-passions b{font-size:12px;opacity:.7;margin-right:2px}
 .so-passions span{border-radius:999px;padding:4px 10px;background:rgba(255,255,255,.1);font-weight:700}
@@ -2805,3 +2814,55 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-fig.choix{filter:drop-shadow(0 0 10px rgba(242,196,107,.65))}
 @media (prefers-reduced-motion: reduce){.so-note-choix,.so-fig.danse > *,.so-fig.chante > *,.so-pl-cetait{animation:none!important}}
 `;
+
+/**
+ * 🎙️ (les jeux du salon, 26 novembre 2026) SES MOTS À LA SUITE DES VIDÉOS, sur sa fiche : seulement s'il en a publié
+ * (jamais une ligne vide). Toucher la ligne les montre ; toucher une vidéo fait entendre son mot, sa vraie voix.
+ */
+function SesMots({ q }: { q: string }) {
+  const [mots, setMots] = useState<MotDeQuelquun[]>([]);
+  const [ouvert, setOuvert] = useState(false);
+  const son = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    let fini = false;
+    void fetch(`/api/direct/mots-video?de=${encodeURIComponent(q)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { mots?: MotDeQuelquun[] }) => !fini && setMots(Array.isArray(j.mots) ? j.mots : []))
+      .catch(() => undefined);
+    return () => {
+      fini = true;
+      son.current?.pause();
+    };
+  }, [q]);
+  if (!mots.length) return null;
+  return (
+    <div className="so-ses-mots" data-ses-mots={mots.length}>
+      <button type="button" className="so-bouton petit clair" aria-expanded={ouvert} onClick={() => setOuvert((o) => !o)}>
+        {PMOTS.sesMots}
+      </button>
+      {ouvert && (
+        <>
+          <small>{PMOTS.sesMotsSous}</small>
+          <div className="so-ses-mots-liste">
+            {mots.map((m) => (
+              <button
+                key={m.video}
+                type="button"
+                data-son-mot={m.video}
+                onClick={() => {
+                  son.current?.pause();
+                  const a = new Audio(m.src);
+                  son.current = a;
+                  void a.play().catch(() => undefined);
+                }}
+              >
+                <img src={vignetteYouTube(m.video)} alt="" loading="lazy" />
+                <span>▶ {PMOTS.duree(m.duree)}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

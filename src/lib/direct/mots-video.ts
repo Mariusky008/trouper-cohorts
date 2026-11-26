@@ -34,7 +34,12 @@ export const MOTS_VIDEO = {
   tetesMax: 60,
   /** La fin d'une vidéo sans geste : la suivante arrive après ce temps (sans mot à écouter). */
   suivanteSeuleS: 8,
+  /** 🎙️ (les jeux du salon) Sur sa fiche : ses derniers mots, pas plus. */
+  sesMotsMax: 6,
 } as const;
+
+/** 🎙️ (les jeux du salon) Un de ses mots, sur sa fiche : la vidéo, son son (signé, une heure). */
+export type MotDeQuelquun = { video: string; src: string; duree: number; le: number };
 
 /** Une tête notée pendant le mot, à sa seconde (`r` : la tête penchée, `l` : tournée ; rien : son visage habituel). */
 export type TeteMot = { t: number; e: ExpressionVisage | null; r?: number; l?: number };
@@ -163,4 +168,7 @@ export const PHRASES_MOTS = {
   age: "Avant ton premier mot : as-tu 18 ans ou plus ? Les 15-17 ans ont leur suite à eux.",
   adulte: "J’ai 18 ans ou plus",
   jeune: "J’ai entre 15 et 17 ans",
+  // (les jeux du salon : sa fiche)
+  sesMots: "🎙️ Ses mots à la suite des vidéos",
+  sesMotsSous: "Publiés : ils passent déjà à la suite de ces vidéos",
 } as const;
