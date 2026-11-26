@@ -74,6 +74,33 @@ const qSam = oS?.moi;
 const qTom = (await appel(TOM, ROUTE, { action: "entrer", theme: "foot" })).ouverture?.moi;
 ok(Boolean(salon && qSam && qTom), `Sam et Tom sont au salon du foot (${salon})`);
 
+// La télé du salon tourne à l'heure de Paris : le choix « dans 30 s » disparaît dans les 30 dernières secondes d'une
+// vidéo. On attend donc une vidéo qui a encore au moins 90 s devant elle (le temps que Léa entre et ouvre la feuille).
+const resteTele = (videos, ms) => {
+  const durees = videos.map((v) => Math.max(1, Math.round(v.duree)));
+  const total = durees.reduce((a, b) => a + b, 0);
+  if (!total) return 0;
+  const d = new Date(ms);
+  const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hourCycle: "h23" }).format(d));
+  const m = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", minute: "2-digit" }).format(d));
+  let r = (((h * 60 + m) * 60 + d.getUTCSeconds()) % total + total) % total;
+  for (const x of durees) {
+    if (r < x) return x - r;
+    r -= x;
+  }
+  return 0;
+};
+const videosTele = oS?.tele?.videos ?? [];
+for (let i = 0; i < 20; i++) {
+  const r = resteTele(videosTele, Date.now());
+  if (!r || r >= 90) break;
+  console.log(`  (la vidéo du salon finit dans ${r} s : on attend la suivante)`);
+  await new Promise((f) => setTimeout(f, (r + 1) * 1000));
+  // Sam et Tom restent au salon pendant l'attente.
+  await appel(SAM, ROUTE, { action: "entrer", theme: "foot" });
+  await appel(TOM, ROUTE, { action: "entrer", theme: "foot" });
+}
+
 // ═══ LÉA ENTRE, ET LANCE « QUI EST D'ACCORD ? » ═══
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 const b = await lancer();
@@ -111,7 +138,7 @@ const feuille = lea.locator("[data-feuille-defi]");
 ok(await attendre(async () => (await feuille.count()) === 1) && /Défier Sam/.test(await feuille.innerText()), "la feuille s'ouvre : « 🎯 Défier Sam »");
 await feuille.locator("input").fill("Il va réussir son saut ?");
 const quand = feuille.locator("[data-quand-choix]");
-ok((await quand.count()) >= 1 && /dans 30 s/.test(await quand.first().innerText()), "« On le saura » : dans 30 s…");
+ok((await quand.count()) >= 1 && /dans 30 s|dans 1 min|à la fin/.test(await quand.first().innerText()), "« On le saura » : dans 30 s…");
 await quand.first().click();
 await lea.screenshot({ path: `${D}/defi-salon-1-lancer.png` });
 await feuille.locator("[data-lancer-defi]").click();
