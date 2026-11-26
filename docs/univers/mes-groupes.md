@@ -33,7 +33,7 @@ une discussion avec un ami : les salons sont vides quand on arrive le premier ; 
 | G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | ✅ fait (#299) |
 | G6 | La sélection du jour, les rôles qui tournent | ✅ fait (#300) |
 | G7 | Le journal | ✅ fait (#301) |
-| G8 | Le groupe qui grandit | fait (PR à suivre) |
+| G8 | Le groupe qui grandit | ✅ fait (#302) |
 
 ## G1, dans le code
 
@@ -206,5 +206,15 @@ Les règles :
   proches » (`groupes/invites`, `groupes/invitations`).
 - Route : `GET ?groupe=<id>` renvoie aussi `accueils` ; `POST` `theme-ajouter`, `accueil-proposer`,
   `accueil-partant`, `quitter-groupe`, `signaler-groupe`. Essai : `scripts/essai-groupes-grandir-route.mjs`.
-- **Reste à faire** (décidé avec le propriétaire : « après G5, à faire avec soin ») : les notifications des nouveaux
-  messages d'un groupe.
+
+## Les notifications des nouveaux messages (« à faire avec soin », après G8)
+
+- Un message (ou 💡 une idée de séance) dans la discussion d'un groupe prévient les autres membres (`prevenirLeGroupe`,
+  `groupes-vie-serveur.ts`) : « 💬 Les copains · Sam : On regarde quoi ce soir ? », ou « 💡 Zoé propose une séance ».
+- Avec soin :
+  - pas celui qui écrit, pas ceux qui sont dans le salon du groupe ;
+  - jamais la nuit (de 22 h à 9 h, heure de Paris : `heureCalme`) — rien n'est rattrapé au matin ;
+  - une vague toutes les deux heures au plus pour tout le groupe (`NOTIF_DISCUSSION_MS`,
+    `groupes/notifs-discussion/<id>.json`) ;
+  - la suivante remplace la précédente sur le téléphone (`groupe-msg-<id>`).
+- Essai : `scripts/essai-groupes-notifs-route.mjs` (la nuit, il vérifie que personne n'est prévenu).
