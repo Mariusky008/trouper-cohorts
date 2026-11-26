@@ -29,6 +29,10 @@ figurine partout ; le bouton « ✨ Ma figurine » de Ma maison), lisez d'abord 
 lisez d'abord `docs/univers/decouvrir.md`. **Le fil « de pièce en pièce »** (l'onglet Découvrir depuis le 23 novembre
 2026 : on glisse de pièce en pièce, sa figurine au bord) : `docs/univers/fil.md`.
 
+**Si vous travaillez sur les discussions attachées aux vidéos** (la discussion d'une vidéo qui continue après le salon,
+les cercles 👯 Mes proches / 👥 Mon groupe / 🌍 Tous, le suivi, Activité et la cloche 🛎️), lisez d'abord
+`docs/univers/discussions-video.md`.
+
 **Si vous travaillez sur « Mes groupes »** (l'onglet qui a remplacé Autour : retrouver ses proches et ses groupes à une
 heure, « ＋ Proposer », « Avec mes proches »), lisez d'abord `docs/univers/mes-groupes.md`.
 

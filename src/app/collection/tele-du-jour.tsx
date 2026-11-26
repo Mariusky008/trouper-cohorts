@@ -51,6 +51,7 @@ import { TesPassions } from "./tes-passions";
 import { createPortal } from "react-dom";
 import { InviterSurLaVideo } from "./carnet-proches";
 import { RangeeRevoir } from "./revoir";
+import { PHRASES_DISCUSSION as PD, lienDiscussion } from "@/lib/direct/discussion-video";
 import { SuiteDeLaVideo } from "./suite-de-la-video";
 import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele, type VitrineSalon } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
@@ -1432,6 +1433,12 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
                 )}
                 {ditL.lignes.length > 0 && <p className="td-astuce">{PR.revoir}</p>}
               </>
+            )}
+            {/* (💬 le lot A1 : toute la discussion de la vidéo — mes proches, et tous ceux qui l'ont vue) */}
+            {v && (
+              <a className="td-lien-salon" href={lienDiscussion(v.id)} data-vers-discussion>
+                {PD.ouvrir} <i>›</i>
+              </a>
             )}
             <button type="button" className="td-lien" onClick={() => setDit(null)}>
               {PR.fermer}
