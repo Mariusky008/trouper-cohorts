@@ -181,6 +181,8 @@ export function MonTelephone() {
   const [erreur, setErreur] = useState("");
   const allumee = i.notif === "allumee";
   const [reponses, setReponses] = useState<boolean | null>(null);
+  // 💬 (discussions des vidéos, lot A5) les trois interrupteurs des discussions
+  const [discussions, setDiscussions] = useState<Record<GenreDiscussion, boolean> | null>(null);
   useEffect(() => {
     void verifierNotif();
   }, []);
@@ -189,8 +191,9 @@ export function MonTelephone() {
     let fini = false;
     void fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "notif-etat" }) })
       .then((r) => r.json())
-      .then((j: { reponses?: boolean }) => {
+      .then((j: { reponses?: boolean; discussions?: Record<GenreDiscussion, boolean> }) => {
         if (!fini && typeof j.reponses === "boolean") setReponses(j.reponses);
+        if (!fini && j.discussions && typeof j.discussions === "object") setDiscussions(j.discussions);
       })
       .catch(() => undefined);
     return () => {
@@ -204,6 +207,14 @@ export function MonTelephone() {
     const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "notif-reponses", oui: !reponses }) }).catch(() => null);
     const j = (await r?.json().catch(() => ({}))) as { reponses?: boolean } | undefined;
     if (r?.ok && typeof j?.reponses === "boolean") setReponses(j.reponses);
+    setOccupe(false);
+  };
+  const basculerDiscussion = async (genre: GenreDiscussion) => {
+    if (!discussions) return;
+    setOccupe(true);
+    const r = await fetch("/api/direct/ma-figurine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "notif-discussions", genre, oui: !discussions[genre] }) }).catch(() => null);
+    const j = (await r?.json().catch(() => ({}))) as { discussions?: Record<GenreDiscussion, boolean> } | undefined;
+    if (r?.ok && j?.discussions) setDiscussions(j.discussions);
     setOccupe(false);
   };
   const basculer = async () => {
@@ -279,9 +290,33 @@ export function MonTelephone() {
           </button>
         </div>
       )}
+      {/* 💬 (lot A5) LES DISCUSSIONS DES VIDÉOS : trois interrupteurs ; rien de 22 h à 9 h, une vague toutes les deux heures */}
+      {allumee &&
+        discussions &&
+        GENRES_DISCUSSION.map((g) => (
+          <div key={g.cle} className="ct-ligne" data-interrupteur-discussion={g.cle}>
+            <span className="ct-emoji" aria-hidden="true">
+              {g.e}
+            </span>
+            <span className="ct-quoi">
+              <b>{g.nom}</b>
+              <small>{discussions[g.cle] ? g.oui : "Coupé. Tu les verras dans 🛎️ Activité."}</small>
+            </span>
+            <button type="button" role="switch" aria-checked={discussions[g.cle]} aria-label={g.nom} className={`ct-interrupteur${discussions[g.cle] ? " pris" : ""}`} disabled={occupe} onClick={() => void basculerDiscussion(g.cle)}>
+              <i />
+            </button>
+          </div>
+        ))}
     </section>
   );
 }
+
+type GenreDiscussion = "repondu" | "proches" | "suivies";
+const GENRES_DISCUSSION: { cle: GenreDiscussion; e: string; nom: string; oui: string }[] = [
+  { cle: "repondu", e: "💬", nom: "Quand on me répond", oui: "Sous une vidéo, entre proches : je te préviens." },
+  { cle: "proches", e: "👯", nom: "Mes proches et mes groupes", oui: "Quand un proche réagit à une vidéo que tu as vue, quand ton groupe parle." },
+  { cle: "suivies", e: "🔔", nom: "Les discussions que je suis", oui: "Une fois toutes les deux heures au plus, jamais la nuit." },
+];
 
 export const STYLES_MON_TELEPHONE = `
 .ct-invite{display:flex;flex-direction:column;gap:6px;margin-top:4px;padding:14px;border-radius:20px;background:rgba(127,240,196,.08);border:1.5px solid rgba(127,240,196,.45)}

@@ -356,6 +356,19 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
  * seulement. Comme un salon ouvert de sa passion (le gradin, les vidéos de la passion, huit places), mais à lui. En
  * entrant, je laisse mon passage (« 🕑 Passage de Léa à 14 h ») : les suivants le voient.
  */
+/**
+ * 🎬 La télé du salon d'un groupe : (lot G6) les vidéos retenues ce soir par le groupe, puis (lot G8) celles du thème du
+ * jour du groupe (sinon de sa passion).
+ */
+export async function videosDuSalonDuGroupe(supabase: Supabase, gid: string, theme: IdTheme, m: MaisonSalons): Promise<VideoSalon[]> {
+  const [a, b] = await Promise.all([
+    videosRetenues(supabase, gid, jourParis()).catch(() => [] as VideoSalon[]),
+    themesDuGroupe(supabase, gid, theme).then((l) => videosDuSalon(supabase, themeDuJour(l, jourParis()) ?? theme, m)),
+  ]);
+  const l = a.filter((v) => v.duree > 0);
+  return [...l, ...b.filter((v) => !l.some((x) => x.id === v.id))];
+}
+
 export async function entrerAuGroupe(supabase: Supabase, moi: Habitant, groupe: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; age?: true; figurine?: true; exclu?: true }>> {
   const gid = idGroupeValide(groupe);
   const q = qui8(moi.id);
@@ -374,15 +387,7 @@ export async function entrerAuGroupe(supabase: Supabase, moi: Habitant, groupe: 
     presentsFrais(supabase, lieu, id, maintenant),
     mesCaches(supabase, moi.id),
     gradinDuSalon(supabase, t.id).catch(() => null),
-    // (🎬 lot G6 : les vidéos retenues ce soir par le groupe ouvrent sa télé, puis celles de sa passion)
-    // (🌱 lot G8 : les vidéos du thème du jour du groupe)
-    Promise.all([
-      videosRetenues(supabase, gid, jourParis()).catch(() => [] as VideoSalon[]),
-      themesDuGroupe(supabase, gid, t.id).then((l) => videosDuSalon(supabase, themeDuJour(l, jourParis()) ?? t.id, m)),
-    ]).then(([a, b]) => {
-      const l = a.filter((v) => v.duree > 0);
-      return [...l, ...b.filter((v) => !l.some((x) => x.id === v.id))];
-    }),
+    videosDuSalonDuGroupe(supabase, gid, t.id, m),
     sonProfilDeSalon(supabase, moi.id),
     sonDoubleDeSalon(supabase, moi.id),
     prochesDe(supabase, moi.id).catch(() => new Set<string>()),
@@ -612,7 +617,23 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   const message: FicheMessage = { id, de: q, prenom: s(f.prenom) || "Quelqu’un", le: maintenant, ...corps, h: moi.id };
   if (!(await ecrireJson(supabase, `${dossierMessages(m, sid)}/${id}.json`, message))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await ecrireJson(supabase, `${dossierPresents(m, sid)}/${q}.json`, { ...f, ecrits: [...ecrits, maintenant] });
+  // (👥 discussions des vidéos, lot A6 : au salon d'un groupe, ce qu'on écrit pendant une vidéo va aussi dans le cercle
+  // du groupe pour cette vidéo — ce qu'on dit dans le salon du groupe y reste)
+  const gid = groupeDuSalon(sid);
+  if (gid && sorte === "texte" && corps.texte && s(p.video)) await laisserAuGroupe(supabase, moi, gid, s(p.video), corps.texte).catch(() => undefined);
   return { message: messagePublic(message) };
+}
+
+/** (👥 lot A6) La vidéo est bien à la télé du salon du groupe : le mot va dans le cercle du groupe. */
+async function laisserAuGroupe(supabase: Supabase, moi: Habitant, gid: string, video: string, texte: string): Promise<void> {
+  const m = await maisonDeMoi(supabase, moi.id);
+  if (!m) return;
+  const g = await lireJson<{ theme?: string }>(supabase, cheminGroupe(gid)).catch(() => ({}) as { theme?: string });
+  const t = themeDe(g.theme) ?? themeDe("series")!;
+  const v = (await videosDuSalonDuGroupe(supabase, gid, t.id, m)).find((x) => x.id === video);
+  if (!v) return;
+  const { publierAuGroupe } = await import("./discussion-groupe-serveur");
+  await publierAuGroupe(supabase, moi, { id: v.id, titre: s(v.titre), chaine: s((v as { chaine?: string }).chaine), duree: Number(v.duree) || 0 }, { groupe: gid, texte, auSalon: true });
 }
 
 // ─── 🎵 (le lot M1) LA PLATINE DU SALON DE LA MUSIQUE ───

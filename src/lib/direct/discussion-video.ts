@@ -55,7 +55,14 @@ export type DiscussionVue = {
   /** 🔔 (lot A3) mon niveau dans chaque cercle, et quand je l'avais lue avant d'ouvrir (0 : jamais) — « Nouveau ». */
   suivi: Record<CercleDiscussion, NiveauSuivi>;
   luAvant: Record<CercleDiscussion, number>;
+  /** 👥 (lot A6) mes groupes qui parlent de cette vidéo (ou d'où je viens) : leurs mots, mon niveau, ma dernière lecture. */
+  groupes: GroupeDeLaDiscussion[];
 };
+
+/** 👥 (lot A6) Le cercle d'un groupe, pour une vidéo : ses membres actuels seulement. */
+export type GroupeDeLaDiscussion = { id: string; nom: string; ecrits: EcritVu[]; suivi: NiveauSuivi; luAvant: number };
+/** Un cercle de l'écran : 👯, 🌍, ou 👥 un de mes groupes (son id). */
+export type OngletDiscussion = CercleDiscussion | `groupe:${string}`;
 
 /**
  * ✍️ (lot A2) Les mots écrits sous la vidéo (🌍) : 90 signes, la modération des salons ouverts ; on répond à un mot écrit
@@ -128,8 +135,8 @@ export function filDeTous(mots: readonly MotVu[], ecrits: readonly EcritVu[]): L
 }
 
 /** L'adresse de la discussion (un cercle, si l'on veut l'ouvrir là). */
-export const lienDiscussion = (id: string, cercle?: CercleDiscussion, seance?: string) =>
-  `/univers/discussion?video=${encodeURIComponent(id)}${cercle ? `&cercle=${cercle}` : ""}${seance ? `&seance=${encodeURIComponent(seance)}` : ""}`;
+export const lienDiscussion = (id: string, cercle?: CercleDiscussion | "groupe", seance?: string, groupe?: string) =>
+  `/univers/discussion?video=${encodeURIComponent(id)}${cercle ? `&cercle=${cercle}` : ""}${seance ? `&seance=${encodeURIComponent(seance)}` : ""}${groupe ? `&groupe=${encodeURIComponent(groupe)}` : ""}`;
 /** La vidéo sur YouTube (quand elle n'est plus à ma télé). */
 export const lienYouTube = (id: string) => `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
 
@@ -172,6 +179,11 @@ export const PHRASES_DISCUSSION = {
   pourEcrire: "Pour dire quelque chose à tes proches, réagis pendant la vidéo : ils le verront à la seconde.",
   // ✍️ (lot A2) écrire sous la vidéo
   luParTous: "🌍 Lu par tous ceux qui la regardent",
+  /** 👥 (lot A6) */
+  luParGroupe: (nom: string) => `👥 Lu par ${nom}`,
+  quiGroupe: (nom: string) => `Les membres de ${nom}. Ce que vous dites au salon du groupe pendant la vidéo arrive ici aussi.`,
+  groupeVide: "Rien encore. Dis-leur ce que tu en as pensé.",
+  auSalon: "au salon du groupe",
   luParJeunes: "🌍 Lu par tous les 15-17 ans qui la regardent",
   ecrire: "Écris sous la vidéo…",
   repondreA: (prenom: string) => `↩ Répondre à ${prenom}…`,

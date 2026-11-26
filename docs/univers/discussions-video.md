@@ -41,8 +41,8 @@ messagerie bruyante.
 | A2 | Écrire : le mot écrit 🌍, répondre, « Lu par… », « 🌍 Le laisser sous la vidéo » | ✅ fait |
 | A3 | Suivre : les trois niveaux, les niveaux de départ, le ⋯ | ✅ fait |
 | A4 | Activité et la cloche 🛎️ ; « Pendant ton absence » y passe | ✅ fait |
-| A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | à faire |
-| A6 | Les groupes : le cercle 👥, vidéo par vidéo | à faire |
+| A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | ✅ fait |
+| A6 | Les groupes : le cercle 👥, vidéo par vidéo | ✅ fait |
 | A7 | Le soin : « Ne plus voir », l'admin des mots écrits, vidéo indisponible, les cinq cas sur un iPhone | à faire |
 
 ## A1, dans le code
@@ -136,3 +136,48 @@ messagerie bruyante.
 - **Les essais** : la suite des deux scripts (Inès répond à Sam ; rien chez Léa qui ne suit plus ; Jade à part ; ouvrir
   la discussion ou « Tout marquer lu » remet à zéro ; trente jours ; sur l'iPhone, la cloche dans l'appli allumée, la
   ligne, un toucher, « Déjà vu »).
+
+## A5, dans le code
+
+- **La règle de bruit, commune** : `regle-de-bruit.ts` (`heureCalme` : rien de 22 h à 9 h, heure de Paris ;
+  `NOTIF_DISCUSSION_MS` : deux heures), sortie de `groupes-vie-serveur.ts` (#303), qui la reprend.
+- **Le téléphone d'une discussion** (`sonnerLeTelephone`, dans `activite-serveur.ts`, après l'événement d'Activité) :
+  ↩ une réponse directe sonne en 🔔 et en 🤫 (pas en 🔕 : Activité seulement), « ↩ Inès t'a répondu », sa phrase et le
+  titre ; 💬 du nouveau sonne seulement en 🔔, « 💬 4 nouveaux mots sur « … » » (compté sur les vrais fichiers). Une vague
+  par discussion toutes les deux heures (`<habitant>/vagues/<cercle>.<vidéo>.json` = { le, rep }) ; une réponse directe
+  peut passer devant la vague, une fois par vague ; le même `tag` (`discussion-<cercle>-<vidéo>`) : la suivante remplace
+  la précédente. Pas si je viens de l'ouvrir (deux minutes). Le toucher ouvre la discussion.
+- **👯 Les proches** (`reactions-video-serveur.ts`) : « 🎬 Léa a regardé « … » » sonne seulement chez ceux qui suivent en
+  🔔 (🤫 et 🔕 : Activité) ; « Léa t'a répondu » pas en 🔕.
+- **Les trois interrupteurs** : dans « Moi » (`mon-telephone.tsx`), sous les notifications, là où sont déjà les
+  réglages du téléphone (la maquette les mettait dans ⚙️ de Ma maison) : 💬 « Quand on me répond », 👯 « Mes proches et
+  mes groupes » (aussi les messages des groupes, #303), 🔔 « Les discussions que je suis » (éteint d'office pour les
+  15-17 ans). Rangés avec l'abonnement (`notif/abonnes/<h>.json`, `discussions`) ; route `ma-figurine`, actions
+  `notif-etat` (rend `discussions`) et `notif-discussions` { genre, oui }.
+- **Les essais** : la suite de `essai-discussion-video-route.mjs` (les interrupteurs, Jade éteinte d'office, la réponse
+  qui sonne, la vague qui attend, « 💬 … nouveaux mots » qui remplace, l'interrupteur coupé ; la nuit : rien).
+
+## A6, dans le code
+
+- **Le cercle d'un groupe** (`discussion-groupe-serveur.ts`) : un fichier par mot, rangé par groupe et par vidéo,
+  `groupes/videos/<groupe>/<vidéo>/<ms>-<q>-<x>.json` = { id, h, q, prenom, texte, le, repond?, de? }. Lu seulement par
+  les membres (mon index `groupes/miens/<q>.json`, vérifié par ma fiche de membre) : celui qui a quitté le groupe ne
+  le voit plus. 90 signes, la modération des salons, pas d'accord à donner (ce sont les membres, pas tout le monde) ;
+  un toutes les trois secondes, sauf au salon.
+- **L'onglet 👥** (`discussion-video.tsx`) : un par groupe où l'on a parlé de la vidéo, et celui d'où je viens
+  (`/univers/discussion?video=…&cercle=groupe&groupe=<id>`, même vide). « 👥 Lu par Les Footeux », répondre, effacer
+  le sien ; « Nouveau » depuis ma dernière lecture. La vidéo s'ouvre aussi quand mon groupe en a parlé, même partie de
+  ma télé.
+- **Le salon du groupe** (`salons-ouverts-serveur.ts`, `ecrireAuSalon`) : un mot écrit au salon du groupe pendant une
+  vidéo (l'écran envoie la vidéo qui passe) va aussi dans le cercle 👥 de cette vidéo, « au salon du groupe » — si la
+  vidéo est bien à la télé du groupe. Le bouton « 🌍 Le laisser sous la vidéo » n'est pas montré au salon d'un groupe.
+- **Suivre** : 🔔 d'office pour les membres ; le niveau est rangé dans mes suivis sous `<groupe>:<vidéo>` ; route
+  `suivre` { cercle: "groupe", groupe, niveau }.
+- **Activité et le téléphone** : les membres sont prévenus (pas ceux qui sont au salon du groupe à ce moment) ; la ligne
+  porte « 👥 Les Footeux » (bord vert, filtre « 👥 Groupes », montré seulement s'il y a une ligne de groupe) ; la vague
+  du téléphone : « 👥 Les Footeux · 3 nouveaux mots », sous l'interrupteur 👯 « Mes proches et mes groupes ».
+- **Pas fait** : le lien depuis le journal du groupe vers ces discussions (à voir avec Mes groupes).
+- **Les essais** : `essai-discussion-video-route.mjs` (le cercle venu du groupe, Noé non membre, la modération, rien
+  sous 🌍, la ligne 👥 d'Activité, une réponse, 🔕, effacer, quitter le groupe) ; `essai-groupes-jour-route.mjs` (un mot
+  au salon du groupe arrive sous la vidéo ; pas une vidéo hors de sa télé) ; `navigateur/discussion-video.mjs` (l'onglet
+  ouvert d'office, « 👥 Lu par … », écrire sans accord).

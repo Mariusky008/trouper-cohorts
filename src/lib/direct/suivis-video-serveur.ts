@@ -39,6 +39,13 @@ async function ecrire(supabase: Supabase, h: string, suivis: Record<string, Suiv
   await ecrireJson(supabase, cheminSuivis(h), { suivis: Object.fromEntries(gardes) }).catch(() => false);
 }
 
+/** (👥 lot A6) Changer quelques clés de mes suivis (« <groupe>:<vidéo> »), le reste gardé. */
+export async function ecrireSuivi(supabase: Supabase, h: string, patch: Record<string, Partial<Suivi>>): Promise<void> {
+  const l = await lire(supabase, h);
+  for (const [c, x] of Object.entries(patch)) l[c] = { ...l[c], ...x, depuis: l[c]?.depuis ?? Date.now() };
+  await ecrire(supabase, h, l);
+}
+
 /** Mes choix pour une vidéo (les deux cercles), et quand je l'ai lue. */
 export async function mesSuivis(supabase: Supabase, h: string, video: string): Promise<Partial<Record<CercleDiscussion, Suivi>>> {
   const l = await lire(supabase, h);

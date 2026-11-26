@@ -24,7 +24,9 @@ export type SorteEvenement = "r" | "n";
 /** Une ligne d'Activité. */
 export type LigneActivite = {
   cle: string;
-  cercle: CercleDiscussion;
+  cercle: CercleDiscussion | "groupe";
+  /** 👥 (lot A6) le groupe de cette discussion */
+  groupe?: { id: string; nom: string };
   video: string;
   titre: string;
   /** le plus récent (ms) */
@@ -49,13 +51,16 @@ export const PHRASES_ACTIVITE = {
   toutLu: "Tout marquer lu",
   nouveau: "Nouveau",
   dejaVu: "Déjà vu",
-  filtres: { tout: "Tout", reponses: "↩ Réponses", proches: "👯 Proches", tous: "🌍 Tous" },
+  filtres: { tout: "Tout", reponses: "↩ Réponses", proches: "👯 Proches", groupe: "👥 Groupes", tous: "🌍 Tous" },
   aRepondu: (p: string) => `↩ ${p} t’a répondu`,
   ontReagi: (l: string[]) => `${listePrenoms(l)} ${l.length > 1 ? "ont" : "a"} réagi`,
   ontEcrit: (l: string[]) => `${listePrenoms(l)} ${l.length > 1 ? "ont" : "a"} écrit`,
   nouveaux: (n: number) => `${n} nouveau${n > 1 ? "x" : ""}`,
   vocal: "🎙️ un mot dit",
-  cercle: { proches: "👯 Proches", tous: "🌍 Tous" } as Record<CercleDiscussion, string>,
+  /** 📱 (lot A5) la vague sur le téléphone */
+  vagueGroupe: (nom: string, n: number) => `👥 ${nom} · ${n} nouveau${n > 1 ? "x" : ""} mot${n > 1 ? "s" : ""}`,
+  vague: (n: number, titre: string) => `💬 ${n} nouveau${n > 1 ? "x" : ""} mot${n > 1 ? "s" : ""} sur « ${titre} »`,
+  cercle: { proches: "👯 Proches", tous: "🌍 Tous", groupe: "👥" } as Record<CercleDiscussion | "groupe", string>,
   vide: "Rien de neuf pour l’instant. Quand on te répond, ou qu’on parle d’une vidéo que tu suis, c’est ici.",
   videFiltre: "Rien ici pour l’instant.",
   chezToi: "🏠 Pendant ton absence, chez toi",

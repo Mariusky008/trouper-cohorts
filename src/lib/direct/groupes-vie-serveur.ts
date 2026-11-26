@@ -19,6 +19,7 @@ import type { Habitant } from "./habitant";
 import { SEAU_FIGURINES, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { qui8 } from "./talkie-serveur";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
+import { NOTIF_DISCUSSION_MS, heureCalme } from "./regle-de-bruit";
 import {
   cheminGroupe,
   cheminMembre,
@@ -281,14 +282,8 @@ export async function rappelerLesRendezVous(supabase: Supabase, o: { maintenant?
 }
 
 // ─── 🔔 les nouveaux messages du groupe (fait « avec soin », après G8) ───
-/** Une vague de notifications par groupe toutes les deux heures au plus ; jamais la nuit. */
-export const NOTIF_DISCUSSION_MS = 2 * 3600_000;
-const HEURE_PARIS = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", hourCycle: "h23", hour: "2-digit" });
-/** (Paris) de 22 h à 9 h : on ne réveille personne pour une discussion. */
-export const heureCalme = (ms: number) => {
-  const h = Number(HEURE_PARIS.format(ms));
-  return h >= 22 || h < 9;
-};
+/** (🤫 la règle de bruit, commune aux discussions des vidéos depuis le lot A5 : `regle-de-bruit.ts`) */
+export { NOTIF_DISCUSSION_MS, heureCalme };
 const cheminNotifDiscussion = (gid: string) => `groupes/notifs-discussion/${gid}.json`;
 
 /**
@@ -312,6 +307,7 @@ async function prevenirLeGroupe(supabase: Supabase, gid: string, f: FicheMessage
   const notif = f.idee
     ? { titre: `💡 ${f.prenom} propose une séance`, corps: `« ${f.texte} » · ${s(g.nom)}`, url: "/collection#groupes", tag: `groupe-msg-${gid}` }
     : { titre: `💬 ${s(g.nom) || "Ton groupe"}`, corps: `${f.prenom} : ${f.texte}`, url: "/collection#groupes", tag: `groupe-msg-${gid}` };
-  const issues = await Promise.all(qui.map((m) => prevenirUnHabitantAppli(supabase, m.h, notif).catch(() => "rien" as const)));
+  // (🔔 lot A5 : l'interrupteur « Mes proches et mes groupes »)
+  const issues = await Promise.all(qui.map((m) => prevenirUnHabitantAppli(supabase, m.h, notif, "proches").catch(() => "rien" as const)));
   return issues.filter((x) => x === "envoye").length;
 }
