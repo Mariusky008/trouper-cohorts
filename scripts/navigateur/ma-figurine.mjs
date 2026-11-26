@@ -181,8 +181,8 @@ ok((await hugo.locator(".tf-feuille-reagir #reactions .rx-gag").count()) === 4, 
 await hugo.screenshot({ path: `${D}/ma-figurine-0b-reagir.png` });
 await hugo.locator(".tf-feuille.ouverte .tf-feuille-fermer").click();
 await hugo.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
-// 🔒 le cadenas doré, à côté de son prénom : sa figurine n'est pas encore protégée
-ok((await texte(hugo, ".mc-barre .mc-cadenas")).includes("Sauvegarder") && (await hugo.locator(".mc-barre .mc-cadenas").getAttribute("aria-label")).includes("ne la perds jamais"), "🔒 en haut, un cadenas doré : « Sauvegarder »");
+// 🔒 (26 novembre 2026) plus de cadenas en haut : « Sauvegarder ma figurine » est une ligne de « Moi »
+ok((await hugo.locator(".mc-barre .mc-cadenas").count()) === 0, "🔒 plus de cadenas dans la barre du haut");
 
 // ═══ 🗓️ SA FIGURINE DU MOIS, MÉRITÉE : DIX JOURS SUR CLIKME CE MOIS-CI (lot 3 ; des jours de rencontres jusqu'à ce que
 // « Rencontres » parte, le 7 novembre 2026) ═══
@@ -352,12 +352,17 @@ await lea.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 30000 });
 const voixDemandees = [];
 lea.on("request", (r) => r.method() === "POST" && r.url().endsWith("/api/direct/ma-figurine") && /"action":"voix"/.test(r.postData() ?? "") && voixDemandees.push(r.postData()));
 ok((await lea.locator(".tf-moi .tf-dit").count()) === 1 && (await lea.locator(".tf-moi .tf-quelle-voix, .tf-moi .tf-voix").count()) === 0, "sa figurine est là : ce qu'elle dit, sans voix à choisir");
-await lea.locator(".mc-barre .mc-cadenas").click();
+await lea.locator(".mc-barre button.mc-moi").click();
+await lea.waitForSelector('#o-personnage [data-ligne="sauver"]', { timeout: 30000 });
+ok((await texte(lea, '#o-personnage [data-ligne="sauver"]')).includes("À faire"), "« Moi » : « Sauvegarder ma figurine », à faire");
+await lea.locator('#o-personnage [data-ligne="sauver"]').click();
 await lea.waitForSelector(".tf-feuille.ouverte .cn-proteger", { timeout: 10000 });
-ok((await texte(lea, ".tf-feuille.ouverte .cn-proteger")).includes("Ne perds jamais ta figurine"), "🔐 le cadenas doré : son adresse peut protéger sa figurine (un code pour la retrouver)");
-await lea.screenshot({ path: `${D}/ma-figurine-1-cadenas.png` });
+ok((await texte(lea, ".tf-feuille.ouverte .cn-proteger")).includes("Ne perds jamais ta figurine"), "🔐 son adresse peut protéger sa figurine (un code pour la retrouver)");
+await lea.screenshot({ path: `${D}/ma-figurine-1-sauvegarder.png` });
 await lea.locator(".tf-feuille.ouverte .tf-feuille-fermer").click();
 await lea.waitForFunction(() => !document.querySelector(".tf-feuille.ouverte"), null, { timeout: 5000 });
+await lea.locator(".mc-nav-figurine").click();
+await lea.waitForSelector(".tf-moi .tf-texte textarea", { state: "visible", timeout: 10000 });
 ok((await lea.locator(".tf-moi .tf-v[data-cle]").count()) === 14 && (await lea.locator(".tf-moi .tf-v.ferme").count()) === 0, "ses visages, tous ouverts : « Normal », sept humeurs (dont le fou rire, la grimace et l'amour) et six attitudes");
 // 😍 L'AMOUR (7 novembre 2026) : son visage amoureux est demandé, et des cœurs montent autour d'elle en attendant
 await lea.locator('.tf-moi .tf-v[data-cle="amour"]').click();
@@ -495,7 +500,7 @@ hugo.on("request", (r) => r.method() === "POST" && r.url().endsWith("/api/direct
 await hugo.locator(".tf-surprends").click();
 await hugo.waitForSelector(".tf-surprise .tf-surprise-texte", { timeout: 20000 });
 const surprise1 = (await texte(hugo, ".tf-surprise-texte")).replace(/^« | »$/g, "");
-ok(surprise1.length > 10 && (await hugo.locator(".tf-surprise-carte").count()) === 1 && (await hugo.locator('.tf-surprise-carte[href="#personnage"]').count()) === 1, `sans carte : une surprise pour tous, et « 🃏 Fais ta carte de personnage » (${surprise1})`);
+ok(surprise1.length > 10 && (await hugo.locator(".tf-surprise-carte").count()) === 0, `sans carte : une surprise pour tous, sans renvoi vers la carte de personnage, partie (${surprise1})`);
 await hugo.waitForTimeout(400);
 ok((await hugo.locator(".tf-texte textarea").inputValue()) === avantSurprise && voixDites.length === 0, "il la lit d'abord : rien n'est écrit ni dit tant qu'il ne l'a pas choisie");
 await hugo.locator(".tf-surprise-encore").click();

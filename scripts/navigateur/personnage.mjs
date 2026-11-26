@@ -1,10 +1,9 @@
-// 🃏 « MOI » : SA CARTE DE PERSONNAGE, DANS UN TÉLÉPHONE — `clikme.fr/collection#personnage`, contre le faux Supabase,
+// 🙂 « MOI », SOUS SON PRÉNOM, DANS UN TÉLÉPHONE — `clikme.fr/collection#personnage`, contre le faux Supabase,
 // sans IA (la fiche est alors composée par le serveur : c'est ce chemin qu'on essaie).
 //
-// Léa (deux figurines au Comptoir) fait le questionnaire : sept questions, ses goûts, sa phrase fétiche ; sa carte se
-// révèle (niveau, six caractéristiques). Elle la partage : un lien `/carte/<id>` qu'un inconnu ouvre. Elle répond à la
-// question du jour ; « Ce que ta figurine sait de toi » montre tout, elle efface une chose, puis tout. Son adresse
-// protège sa figurine, qu'un autre téléphone retrouve avec le code.
+// Léa (deux figurines au Comptoir) ouvre « Moi », refait le 26 novembre 2026 (`app/collection/page-moi.tsx`) : plus de
+// carte de personnage ; ses réglages par thème, ses passions. La question du jour ; « Ce que ta figurine sait de toi »
+// montre tout, elle efface une chose, puis tout. Son adresse protège sa figurine, qu'un autre téléphone retrouve avec le code.
 //
 // « RENCONTRES » EST EFFACÉ (7 novembre 2026, le propriétaire : « effacer ») : cet essai remplace
 // `personnage-rencontre.mjs`. On vérifie aussi que « Rencontres » n'existe plus : ni dans le menu, ni à son adresse
@@ -56,60 +55,31 @@ const api = (p, url, corps) =>
     return { statut: r.status, ...(await r.json().catch(() => ({}))) };
   }, [url, corps]);
 
-// ═══ LÉA : LE QUESTIONNAIRE, SA CARTE ═══
+// ═══ LÉA : « MOI », REFAIT LE 26 NOVEMBRE 2026 (`page-moi.tsx`) — SA FIGURINE, SES RÉGLAGES PAR THÈME ; PLUS DE CARTE ═══
 const lea = await tel(LEA);
 await lea.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
 // (pas encore de figurine : Pablito lui dit bienvenue, une fois)
 await fermerPablito(lea);
-await lea.waitForSelector("#o-personnage .mp-lancer", { timeout: 60000 });
-ok((await texte(lea, "#o-personnage")).includes("Quel personnage es-tu") && (await lea.locator("#o-personnage .pc.silhouette").count()) === 1, "« Moi » : la carte mystère, et « Lancer le test »");
-await lea.locator("#o-personnage .mp-lancer").first().click();
-for (let k = 0; k < 7; k++) {
-  await lea.waitForSelector("#o-personnage .mp-choix button", { timeout: 10000 });
-  if (k === 0) ok((await texte(lea, "#o-personnage .mp-compte")) === "1 / 8", "sept questions, puis ses goûts");
-  await lea.locator("#o-personnage .mp-choix button").nth(k % 2).click();
-  // SA CARTE SE CONSTRUIT EN DIRECT : chaque réponse fait monter ses caractéristiques (le gain s'envole)
-  if (k === 0) ok((await lea.locator("#o-personnage .mp-direct li").count()) === 6 && (await lea.locator("#o-personnage .mp-gain").count()) > 0, "sa carte se construit en direct : le gain de sa réponse s'envole");
-}
-await lea.waitForSelector("#o-personnage .mp-gouts", { timeout: 10000 });
-for (const g of ["Cuisine", "Musique", "Voyages"]) await lea.locator("#o-personnage .mp-gouts button", { hasText: g }).click();
-ok(await lea.locator("#o-personnage .mp-gouts button", { hasText: "Sport" }).isDisabled(), "trois goûts au plus");
-await lea.locator("#o-personnage .mp-phrase").fill("Allez, on y va !");
-await lea.locator("#o-personnage .mp-reveler").click();
-await lea.waitForSelector("#o-personnage .mp-sienne .pc", { timeout: 30000 });
-ok((await texte(lea, "#o-personnage .mp-nouvelle")).includes("Nouvelle carte") && (await lea.locator(".pc-confettis i").count()) > 10, "la révélation : « Nouvelle carte ! », les confettis");
-const carte = await texte(lea, "#o-personnage .pc");
-ok(/Niv\. 3/.test(carte) && carte.includes("Léa") && /Fidélité \d+/.test(carte) && carte.includes("Super-pouvoir") && carte.includes("« Allez, on y va ! »"), `sa carte : niveau 3 (deux cadeaux : sa carte, sa première figurine du mois), six caractéristiques, sa fiche (${carte.slice(0, 140)})`);
-ok((await lea.locator("#o-personnage .pc-carac li").count()) === 6, "six caractéristiques");
-await lea.locator("#o-personnage .pc").click();
-ok((await lea.locator("#o-personnage .pc-scene.dos").count()) === 1, "un toucher la retourne : sa fiche au dos");
-ok((await texte(lea, "#o-personnage .mp-monte")).includes("Ta prochaine étape") && (await texte(lea, "#o-personnage .mp-monte")).includes("Argent") && !/achat/i.test(await texte(lea, "#o-personnage .mp-monte")), "ce qui la fait monter : sa prochaine étape (un cadeau de ClikMe), le cadre Argent — plus aucun achat");
-const g1 = await api(lea, "/api/direct/personnage");
-ok(
-  g1.progres?.etapes?.includes("carte") && !g1.progres?.etapes?.some((e) => ["rencontre", "ami", "membre", "souvenirs", "commerce"].includes(e)) && g1.carte?.niveau === 1 + g1.progres.cadeaux && g1.carte?.par === "local",
-  `ses étapes font monter sa carte, un niveau par cadeau, plus aucune étape des Rencontres (${JSON.stringify(g1.progres)}, niveau ${g1.carte?.niveau}), fiche sans IA ici`,
-);
-const insulte = await api(lea, "/api/direct/personnage", { action: "creer", reponses: g1.carte.reponses, phrase: "espèce de connard" });
-ok(insulte.statut === 422, "une phrase fétiche insultante : refusée");
-await lea.screenshot({ path: `${D}/personnage-1-carte.png`, fullPage: true });
-
-// SA CARTE PARTAGÉE
-// (« 📲 Partager ma carte » : le bouton de sa carte — la question du jour, plus bas, a aussi son « OK » les jours de réponse libre)
-await lea.locator("#o-personnage .mp-sienne .mp-texte > .mp-bouton").click();
-await lea.waitForSelector("#o-personnage .tf-wa", { timeout: 15000 });
-const lienCarte = await lea.locator("#o-personnage .tf-adresse").inputValue();
-ok(/\/carte\/[a-z0-9]{12}$/.test(lienCarte) && decodeURIComponent((await lea.locator("#o-personnage .tf-wa").getAttribute("href")) ?? "").includes("Découvre mon personnage ClikMe"), `son lien de carte, sur WhatsApp (${lienCarte})`);
-const inconnu = await tel(null);
-await inconnu.goto(lienCarte.replace(/^https?:\/\/[^/]+/, BASE), { waitUntil: "networkidle" });
-await inconnu.waitForSelector(".cp .pc", { timeout: 30000 });
-ok((await texte(inconnu, ".cp h1")).includes("Léa") && (await inconnu.locator('.cp-toi a[href="/collection#personnage"]').count()) === 1 && (await inconnu.locator('meta[name="robots"][content*="noindex"]').count()) === 1, "un inconnu voit sa carte, « Faire ma carte », pas dans Google");
-ok((await debordement(inconnu)) <= 0, "la carte partagée ne déborde pas");
-await inconnu.screenshot({ path: `${D}/personnage-2-partagee.png`, fullPage: true });
+await lea.waitForSelector("#o-personnage .pm", { timeout: 60000 });
+const moiTxt = await texte(lea, "#o-personnage");
+ok(moiTxt.includes("Léa") && (await lea.locator("#o-personnage [data-creer]").count()) === 1, "« Moi » : son prénom, et « ✨ Créer ma figurine » tant qu'elle n'en a pas");
+ok(!moiTxt.includes("Quel personnage es-tu") && (await lea.locator("#o-personnage .mp-lancer, #o-personnage .pc, .mc-barre .mc-moi i, .mc-barre .mc-cadenas, #o-personnage .cm-moi-raccourcis").count()) === 0, "plus de carte de personnage, ni de « ! » à côté du prénom, ni de cadenas en haut, ni de raccourcis vers le studio");
+const groupes = await lea.locator("#o-personnage [data-groupe]").evaluateAll((l) => l.map((x) => x.dataset.groupe));
+ok(groupes.includes("aime") && groupes.includes("telephone") && groupes.includes("donnees"), `ses réglages rangés par thème (${groupes.join(", ")})`);
+await lea.waitForSelector('#o-personnage [data-ligne="passions"] .pm-puces', { timeout: 15000 }).catch(() => null);
+ok((await texte(lea, '#o-personnage [data-ligne="passions"]')).includes("Mes passions"), "❤️ « Mes passions » : elles choisissent ce qu'elle voit dans Découvrir");
+await lea.locator('#o-personnage [data-ligne="passions"]').click();
+await lea.waitForSelector("#o-personnage .tp-tuiles", { timeout: 15000 });
+ok((await lea.locator("#o-personnage [data-retour-moi]").count()) === 1, "un toucher : ses passions, dans la page, et « ‹ Moi » pour revenir");
+await lea.locator("#o-personnage [data-retour-moi]").click();
+await lea.waitForSelector('#o-personnage [data-ligne="passions"]', { timeout: 15000 });
+ok((await debordement(lea)) <= 0 && !/exemple/i.test(await texte(lea, "#o-personnage")), "« Moi » ne déborde pas, sans le mot interdit");
+await lea.screenshot({ path: `${D}/personnage-1-moi.png`, fullPage: true });
 
 // ✨ « MES VŒUX » ont quitté « Moi » le 19 novembre 2026 (avec l'ancien « Découvrir ») ; la question du jour n'y revient pas
 await lea.goto(`${BASE}/collection?v=${Date.now()}#personnage`, { waitUntil: "networkidle" });
 await fermerPablito(lea, "#o-personnage");
-await lea.waitForSelector("#o-personnage .pc", { timeout: 30000 });
+await lea.waitForSelector("#o-personnage .pm", { timeout: 30000 });
 const mesTxt = await texte(lea, "#o-personnage");
 ok(!mesTxt.includes("Mes vœux") && (await lea.locator("#o-personnage .vx-mes, #o-personnage .pc-exauce").count()) === 0 && (await lea.locator("#o-personnage .cn-question").count()) === 0, "plus de « Mes vœux » dans Moi, ni de question du jour");
 // ❓ la question du jour reste comprise par sa figurine (on y répond par l'API : elle n'a plus d'écran dans « Moi »)
@@ -129,7 +99,7 @@ await lea.waitForFunction(() => /Elle a retenu 3 choses/.test(document.querySele
 await lea.waitForSelector("#o-personnage .cn-choses li", { timeout: 15000 });
 const nAvant = await lea.locator("#o-personnage .cn-choses li").count();
 const savoirTxt = await texte(lea, "#o-personnage .cn-savoir");
-ok(nAvant >= 3 && savoirTxt.includes("Ta carte") && savoirTxt.includes("je cuisine pour mes amis") && savoirTxt.includes("Question du jour"), `ce que sa figurine sait d'elle : sa carte, ses réponses d'aujourd'hui et d'avant (${nAvant} : ${savoirTxt.slice(0, 260)})`);
+ok(nAvant >= 3 && savoirTxt.includes("je cuisine pour mes amis") && savoirTxt.includes("Question du jour"), `ce que sa figurine sait d'elle : ses réponses d'aujourd'hui et d'avant (${nAvant} : ${savoirTxt.slice(0, 260)})`);
 // (effacer demande confirmation : « Effacer ceci ? », « Tout effacer ? » — elle dit oui)
 await lea.locator("#o-personnage .cn-choses li button").first().click();
 ok((await repondreFenetre(lea)).includes("Effacer ceci ?"), "« Effacer ceci ? » : une fenêtre de ClikMe");
@@ -140,7 +110,7 @@ await repondreFenetre(lea);
 await lea.waitForFunction(() => document.querySelectorAll("#o-personnage .cn-choses li").length === 0, null, { timeout: 15000 });
 const apresTout = await api(lea, "/api/direct/connaitre?savoir=1");
 const carnetVide = await lireSeau(`${LEA.id}/rencontres.json`);
-ok(apresTout.savoir?.choses?.length === 0 && apresTout.savoir?.carte && (carnetVide?.dit ?? []).length === 0, "« tout effacer » : elle oublie tout ce qu'elle a appris (sa carte reste)");
+ok(apresTout.savoir?.choses?.length === 0 && (carnetVide?.dit ?? []).length === 0, "« tout effacer » : elle oublie tout ce qu'elle a appris");
 ok((await debordement(lea)) <= 0, "« Moi » ne déborde pas");
 await lea.screenshot({ path: `${D}/personnage-5-savoir.png`, fullPage: true });
 
@@ -170,8 +140,8 @@ await neuf.locator(".cn-proteger input[autocomplete=one-time-code]").fill(code2)
 await neuf.locator(".cn-proteger .mp-bouton").click();
 await neuf.waitForURL(/retrouvee=1/, { timeout: 30000 });
 await neuf.waitForLoadState("networkidle");
-const perso2 = await api(neuf, "/api/direct/personnage");
-ok(perso2.carte?.prenom === "Léa", `un autre téléphone retrouve sa figurine avec le code (${perso2.carte?.prenom})`);
+const fig2 = await api(neuf, "/api/direct/ma-figurine");
+ok(fig2.etat?.prenom === "Léa", `un autre téléphone retrouve sa figurine avec le code (${fig2.etat?.prenom})`);
 
 // ═══ 🗑️ « RENCONTRES » N'EXISTE PLUS ═══
 const menu = await lea.locator(".mc-nav button").allInnerTexts();
@@ -184,7 +154,7 @@ await lea.waitForSelector("#o-figurine:not([hidden])", { timeout: 30000 });
 ok((await lea.locator("#o-rencontre").count()) === 0 && (await texte(lea, ".mc-nav button.pris")).includes("Créer"), "le lien d'un ami (`?ami=`) ouvre « Créer »");
 ok((await api(lea, "/api/direct/rencontre")).statut === 404, "sa route est partie (`/api/direct/rencontre` : 404)");
 
-const erreurs = [...lea.err, ...inconnu.err, ...neuf.err];
+const erreurs = [...lea.err, ...neuf.err];
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` : ${erreurs[0]}` : ""}`);
 await b.close();
 console.log(echecs ? `${echecs} ÉCHEC(S)` : "TOUT EST BON");

@@ -34,27 +34,28 @@
  * lus (la pastille de « Proches »).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { EVT_ANCRE, Feuille, OngletFigurine, RefaireMaFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
+import { EVT_ANCRE, Feuille, OngletFigurine, STYLES_MA_FIGURINE } from "./ma-figurine";
 import { STYLES_TROIS_RENDUS } from "./trois-rendus";
 import { OngletVisible } from "./guide";
-import { MonPersonnage, STYLES_PERSONNAGE } from "./personnage";
+import { STYLES_PERSONNAGE } from "./personnage";
+import { PageMoi, STYLES_PAGE_MOI } from "./page-moi";
 import { ProtegerFigurine, STYLES_CONNAITRE } from "./connaitre";
-import { MaFigurineDuMois, STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
+import { STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
 import { TeleDuJourEcran } from "./tele-du-jour";
 import { FilDecouvrir, STYLES_FIL } from "./fil-decouvrir";
 import { STYLES_MES_REACTIONS } from "./mes-reactions";
 import { STYLES_THEME_DU_JOUR } from "./theme-du-jour";
-import { FeuilleInstaller, MonTelephone, ProposerLesNotifications, STYLES_MON_TELEPHONE } from "./mon-telephone";
+import { FeuilleInstaller, ProposerLesNotifications, STYLES_MON_TELEPHONE } from "./mon-telephone";
 import { Autour, STYLES_AUTOUR } from "./autour";
-import { MaPresence, Proches, STYLES_PROCHES } from "./proches";
-import { RaccourcisMoi, STYLES_CHEZ_MOI } from "./chez-moi";
+import { Proches, STYLES_PROCHES } from "./proches";
+import { STYLES_CHEZ_MOI } from "./chez-moi";
 import { STYLES_MEME_POUR } from "./meme-pour";
 import { MEMOIRE_ETAT, MEMOIRE_FIL, MEMOIRE_GROUPES, MEMOIRE_MAISON, MEMOIRE_PROCHES, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire, poserProprietaire, prechauffer } from "./memoire-locale";
-import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } from "./rituel";
+import { HumeurDuMatin, STYLES_RITUEL, ouvrirConversation } from "./rituel";
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
-import { RangeSansDemander, STYLES_ETAGERE } from "./etagere";
+import { STYLES_ETAGERE } from "./etagere";
 import { STYLES_TUTO, ecrireTuto, lireTuto } from "./tuto";
 import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
 import { BienvenueSelonPablito, STYLES_BIENVENUE_CHEZ } from "./bienvenue-chez";
@@ -158,9 +159,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   const [charge, setCharge] = useState(false);
   const [vue, setVue] = useState<Vue>("figurine");
   const [ouverts, setOuverts] = useState<Set<Vue>>(() => new Set(["figurine"]));
-  // (sa carte faite ou refaite : le menu sait s'il en a une)
-  const [aCarte, setACarte] = useState<boolean | null>(null);
-  // 🔒 « NE PERDS JAMAIS TA FIGURINE » (7 novembre 2026, l'avis d'un ami) : un cadenas doré, en haut à côté de son prénom,
+  // 🔒 « NE PERDS JAMAIS TA FIGURINE » (7 novembre 2026, l'avis d'un ami) : une ligne de la page sous son prénom (le cadenas doré du haut, parti le 26 novembre 2026),
   // tant que son adresse ne la protège pas ; il ouvre une feuille (null : jamais ouverte, rien n'y est encore monté)
   const [proteger, setProteger] = useState<boolean | null>(null);
   // 🎙️ ses messages non lus (la pastille de « Proches »)
@@ -352,7 +351,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
         <span className="mc-droite">
           {/* 🃏 « MOI », SOUS SON PRÉNOM (8 novembre 2026 : « Proches » a pris sa place dans le menu) */}
           {compte ? (
-            <button type="button" className={`mc-moi${vue === "personnage" ? " pris" : ""}`} aria-label="Moi : ta carte, tes réglages" aria-current={vue === "personnage" ? "page" : undefined} onClick={() => aller("personnage", undefined, false, true)}>
+            <button type="button" className={`mc-moi${vue === "personnage" ? " pris" : ""}`} aria-label="Moi : ma figurine, mes réglages" aria-current={vue === "personnage" ? "page" : undefined} onClick={() => aller("personnage", undefined, false, true)}>
               {prete && etat?.neutre ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={etat.neutre} alt="" draggable={false} />
@@ -360,16 +359,9 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
                 <span aria-hidden="true">🎭</span>
               )}
               {etat?.prenom || "Moi"}
-              {aCarte === false && <i aria-hidden="true">!</i>}
             </button>
           ) : (
             <span className="mc-moi">🎭 Ta figurine qui parle</span>
-          )}
-          {prete && etat && !etat.protegee && (
-            <button type="button" className="mc-cadenas" aria-label="Sauvegarder ma figurine : ne la perds jamais" onClick={() => setProteger(true)}>
-              <span aria-hidden="true">🔒</span>
-              <small>Sauvegarder</small>
-            </button>
           )}
         </span>
       </header>
@@ -431,26 +423,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
         {ouverts.has("personnage") && (
           <section className="mc-onglet" id="o-personnage" hidden={vue !== "personnage"} aria-label="Mon personnage">
             <OngletVisible.Provider value={vue === "personnage"}>
-              {/* 🙂 (le menu à trois) ce qui était dans « Créer » : ma figurine, mon univers, mes mèmes, mes réactions */}
-              {univers && compte && <RaccourcisMoi allerA={allerA} />}
-              <MonPersonnage
-                compte={compte}
-                onCarte={() => setACarte(true)}
-                onSait={setACarte}
-                allerA={allerA}
-              />
-              {/* 🗓️ sa figurine du mois : elle se mérite en 10 jours sur ClikMe (`#mois` mène ici) */}
-              {compte && <MaFigurineDuMois />}
-              {/* 📱 l'appli sur son écran d'accueil, et les notifications de ses proches (il les coupe ici) — le lot 3 */}
-              {compte && <MonTelephone />}
-              {/* 🔁 la refaire (9 novembre 2026 : elle a quitté le dessous de sa figurine, dans « Créer ») ; faite, on va la voir */}
-              {compte && prete && etat && <RefaireMaFigurine etat={etat} onEtat={poserEtat} onFait={() => allerA("figurine")} />}
-              {/* 🟢 « Là maintenant » chez ses proches : il le coupe ici */}
-              {compte && prete && <MaPresence />}
-              {/* ☀️ « Ma figurine parle pour moi » : le mot de sa figurine sur l'humeur de ses proches (lot R) */}
-              {compte && prete && <MaFigurineParle />}
-              {/* 📌 (l'étagère, lot E5) « Ma figurine range sans me demander » : éteint d'office */}
-              {compte && prete && <RangeSansDemander />}
+              {/* 🙂 LA PAGE SOUS SON PRÉNOM (refaite le 26 novembre 2026, `page-moi.tsx`) : sa figurine, ses réglages par thème */}
+              <PageMoi etat={etat} univers={univers} maison={maison} onEtat={poserEtat} onProteger={() => setProteger(true)} allerA={allerA} />
             </OngletVisible.Provider>
           </section>
         )}
@@ -544,7 +518,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
           </button>
         ))}
       </nav>
-      <style>{STYLES_MC + STYLES_FIL + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
+      <style>{STYLES_MC + STYLES_FIL + STYLES_MA_FIGURINE + STYLES_TROIS_RENDUS + STYLES_PERSONNAGE + STYLES_CONNAITRE + STYLES_FIGURINE_DU_MOIS + STYLES_MES_MEMES + STYLES_MES_REACTIONS + STYLES_THEME_DU_JOUR + STYLES_MON_TELEPHONE + STYLES_AUTOUR + STYLES_PROCHES + STYLES_CHEZ_MOI + STYLES_MEME_POUR + STYLES_RITUEL + STYLES_HUMEUR_REPONSE + STYLES_VIVANT + STYLES_ETAGERE + STYLES_PAGE_MOI + STYLES_TUTO + STYLES_BIENVENUE + STYLES_BIENVENUE_CHEZ + STYLES_MA_MAISON}</style>
     </main>
   );
 }
@@ -634,13 +608,7 @@ body{background:#12060F}
 button.mc-moi{position:relative;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:3px 13px 3px 4px;border:0;font:inherit;font-size:14px;font-weight:800;color:#FFF4E6;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent}
 button.mc-moi.pris{background:linear-gradient(135deg,rgba(255,46,154,.32),rgba(242,196,107,.22))}
 button.mc-moi img,button.mc-moi > span{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#FF2E9A;font-size:16px}
-button.mc-moi i{position:absolute;right:-3px;top:-4px;display:grid;place-items:center;min-width:16px;height:16px;border-radius:999px;background:#F2C46B;color:#2A0F1F;font-style:normal;font-size:10px;font-weight:900}
 .mc-droite{display:flex;align-items:center;gap:8px;min-width:0}
-/* 🔒 le cadenas doré : sa figurine n'est pas encore protégée par son adresse */
-.mc-cadenas{flex:none;display:inline-flex;align-items:center;gap:5px;padding:5px 11px 5px 8px;border-radius:999px;border:1px solid rgba(242,196,107,.65);background:linear-gradient(135deg,rgba(242,196,107,.24),rgba(255,122,89,.12));color:#FFE7B8;font:inherit;cursor:pointer;box-shadow:0 0 16px -6px rgba(242,196,107,.85);-webkit-tap-highlight-color:transparent}
-.mc-cadenas span{font-size:14px;line-height:1}
-.mc-cadenas small{font-size:12px;font-weight:900}
-@media (max-width:359px){.mc-cadenas small{display:none}}
 .mc-feuille-proteger .cn-proteger{padding:2px 0 4px;border:0;background:none}
 .mc-feuille-proteger .cn-proteger > b{padding-right:40px;font-size:19px}
 .mc-onglets{padding:14px 16px 0}

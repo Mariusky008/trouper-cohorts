@@ -141,8 +141,8 @@ ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "sans débor
 
 // ═══ « MOI » ET « MES MÈMES » : PAS DE FENÊTRE DE PABLITO ═══
 await ines.locator(".mc-barre button.mc-moi").click();
-await ines.waitForSelector("#o-personnage .mp-lancer", { timeout: 30000 });
-ok((await ines.locator(".pb-voile, .mqd-revoir").count()) === 0 && (await texte(ines, "#o-personnage")).includes("Quel personnage es-tu"), "« Moi » : plus de fenêtre, « Lancer le test » est dans la page");
+await ines.waitForSelector("#o-personnage .pm", { timeout: 30000 });
+ok((await ines.locator(".pb-voile, .mqd-revoir").count()) === 0 && !(await texte(ines, "#o-personnage")).includes("Quel personnage es-tu"), "« Moi » : plus de fenêtre, plus de carte de personnage");
 await ines.locator(".mc-nav-memes").click();
 await ines.waitForTimeout(1200);
 ok((await ines.locator(".pb-voile, .mqd-revoir").count()) === 0, "« Mes mèmes » : plus de fenêtre");
