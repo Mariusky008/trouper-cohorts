@@ -23,8 +23,9 @@ import { vignetteYouTube } from "@/lib/direct/tele";
 import { PHRASES_SALONS as PS, PLACES_SEANCE, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import { PHRASES_FIL as PF, titreDeSeance, type SeanceFil } from "@/lib/direct/fil-decouvrir";
 import type { TeleDuJour } from "@/lib/direct/tele-du-jour";
-import { PHRASES_PROPOSITIONS as PP, aParis, heureLisible, quandLisible, type PropositionGroupe } from "@/lib/direct/groupes";
+import { PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as PP, aParis, heureLisible, quandLisible, type GroupeVue, type PropositionGroupe } from "@/lib/direct/groupes";
 import { ProposerGroupe } from "./proposer-groupe";
+import { CreerGroupe, EspaceGroupe, Figurine, STYLES_FIGURINES_GROUPE, salonDuGroupe } from "./groupe-espace";
 
 const ROUTE = "/api/direct/mes-groupes";
 const SALONS = "/api/direct/salons-ouverts";
@@ -33,9 +34,9 @@ const SEANCE = "/univers/salons?chez=moi";
 const MEMOIRE_MS = 10 * 60_000;
 const chez = (cle: string) => `/univers/salons?chez=${encodeURIComponent(cle)}`;
 
-export type MesGroupesVue = { invitations: InvitationTele[]; demandes: DemandeProche[]; seances: SeanceFil[]; propositions?: PropositionGroupe[]; adulte?: boolean };
-/** Ce qui attend un geste de moi (la pastille de l'onglet) : les invitations et les demandes de proche. */
-export const enAttenteDe = (v: MesGroupesVue | null) => (v ? v.invitations.length + v.demandes.length : 0);
+export type MesGroupesVue = { invitations: InvitationTele[]; demandes: DemandeProche[]; seances: SeanceFil[]; propositions?: PropositionGroupe[]; groupes?: GroupeVue[]; adulte?: boolean };
+/** Ce qui attend un geste de moi (la pastille de l'onglet) : les invitations, les demandes de proche, les groupes où un proche m'invite. */
+export const enAttenteDe = (v: MesGroupesVue | null) => (v ? v.invitations.length + v.demandes.length + (v.groupes ?? []).filter((g) => g.invite).length : 0);
 
 export const PHRASES_GROUPES = {
   titre: "Mes groupes",
@@ -59,12 +60,15 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
   const [erreur, setErreur] = useState("");
   const [proposer, setProposer] = useState(false);
   const [autre, setAutre] = useState<PropositionGroupe | null>(null);
+  // (💛 lot G4 : l'espace d'un groupe ouvert ; « Un groupe avec mes proches »)
+  const [ouvert, setOuvert] = useState<string | null>(null);
+  const [creer, setCreer] = useState(false);
 
   const charger = useCallback(async () => {
     const r = await fetch(ROUTE, { cache: "no-store" }).catch(() => null);
     const j = (r?.ok ? await r.json().catch(() => null) : null) as Partial<MesGroupesVue> | null;
     if (!j) return setErreur(P.reseau);
-    const n: MesGroupesVue = { invitations: j.invitations ?? [], demandes: j.demandes ?? [], seances: j.seances ?? [], propositions: j.propositions ?? [], ...(j.adulte ? { adulte: true } : {}) };
+    const n: MesGroupesVue = { invitations: j.invitations ?? [], demandes: j.demandes ?? [], seances: j.seances ?? [], propositions: j.propositions ?? [], groupes: j.groupes ?? [], ...(j.adulte ? { adulte: true } : {}) };
     setErreur("");
     setV(n);
     ecrireMemoire(MEMOIRE_GROUPES, n);
@@ -108,7 +112,7 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
   /** 📣 un geste sur une proposition : la carte se met à jour avec la réponse du serveur */
   async function surProposition(corps: Record<string, unknown>): Promise<boolean> {
     const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) }).catch(() => null);
-    const j = ((await r?.json().catch(() => null)) ?? {}) as { proposition?: PropositionGroupe; aller?: string; error?: string };
+    const j = ((await r?.json().catch(() => null)) ?? {}) as { proposition?: PropositionGroupe; groupe?: GroupeVue; aller?: string; error?: string };
     if (!r?.ok) {
       setNote(j.error || P.reseau);
       return false;
@@ -118,9 +122,21 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
     setV((x) => {
       if (!x) return x;
       const l = x.propositions ?? [];
-      return { ...x, propositions: corps.action === "retirer" || corps.action === "signaler" ? l.filter((p) => p.id !== id) : l.map((p) => (p.id === id && j.proposition ? j.proposition : p)) };
+      // (💛 le groupe est né : il rejoint Tous mes groupes)
+      const groupes = j.groupe ? [...(x.groupes ?? []).filter((g) => g.id !== j.groupe!.id), j.groupe] : x.groupes;
+      return { ...x, groupes, propositions: corps.action === "retirer" || corps.action === "signaler" ? l.filter((p) => p.id !== id) : l.map((p) => (p.id === id && j.proposition ? j.proposition : p)) };
     });
+    if (corps.action === "garder") setNote(j.groupe ? PG.ne(j.groupe.nom) : PG.tuGardes);
     return true;
+  }
+
+  /** 💛 Un proche m'invite dans son groupe : je le garde, ou « Non merci ». */
+  async function repondreGroupe(g: GroupeVue, non: boolean) {
+    const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: non ? "non-merci" : "garder-groupe", groupe: g.id }) }).catch(() => null);
+    const j = ((await r?.json().catch(() => null)) ?? {}) as { groupe?: GroupeVue; error?: string };
+    if (!r?.ok) return setNote(j.error || P.reseau);
+    setV((x) => (x ? { ...x, groupes: (x.groupes ?? []).flatMap((y) => (y.id !== g.id ? [y] : j.groupe ? [j.groupe] : [])) } : x));
+    if (!non) setNote(PG.ne(g.nom));
   }
 
   // (une invitation et la séance du même proche : une seule carte, celle de la séance, où l'on est invité)
@@ -128,6 +144,9 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
   const invitations = (v?.invitations ?? []).filter((i) => !seances.some((s) => s.cle === i.cle));
   const demandes = v?.demandes ?? [];
   const propositions = v?.propositions ?? [];
+  const groupes = v?.groupes ?? [];
+  const actifs = groupes.filter((g) => !g.invite && g.ici.length > 0);
+  const espace = groupes.find((g) => g.id === ouvert && !g.invite) ?? null;
   const premiere = tele?.videos[0];
   const moi = tele?.figurine?.src;
 
@@ -141,6 +160,34 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
         </button>
       </div>
 
+      {/* 🟢 MES GROUPES ACTIFS (lot G4) : seulement ceux où quelqu'un est dans le salon — cachée sinon */}
+      {actifs.length > 0 && (
+        <>
+          <h2 className="mg-rubrique">{PG.actifs}</h2>
+          <div className="mg-rang" data-groupes-actifs>
+            {actifs.map((g) => (
+              <div key={g.id} className="mg-carte" data-groupe-actif={g.id}>
+                <button type="button" className="mg-pochette mg-emoji" onClick={() => setOuvert(g.id)} aria-label={g.nom}>
+                  {g.e}
+                </button>
+                <strong className="mg-t">{g.nom}</strong>
+                <span className="mg-m mg-vert">{PG.enLigne(g.ici.length)}</span>
+                <span className="mg-pile">
+                  {g.ici.slice(0, 5).map((p) => (
+                    <span key={p.q} className="mg-tete-ronde">
+                      <Figurine p={p} tete />
+                    </span>
+                  ))}
+                </span>
+                <a className="mg-bouton rose" href={salonDuGroupe(g.id)} data-entrer-groupe>
+                  {PG.entrer}
+                </a>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* 📣 PROPOSITIONS DE GROUPES (lot G2) : « On se retrouve ? » — cachée tant qu'il n'y en a pas */}
       {propositions.length > 0 && (
         <>
@@ -153,7 +200,7 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
           </div>
           <div className="mg-rang" data-propositions>
             {propositions.map((p) => (
-              <CarteProposition key={p.id} p={p} onGeste={(corps) => void surProposition({ ...corps, id: p.id })} onAutre={() => setAutre(p)} />
+              <CarteProposition key={p.id} p={p} onGeste={(corps) => void surProposition({ ...corps, id: p.id })} onAutre={() => setAutre(p)} onOuvrir={setOuvert} />
             ))}
           </div>
         </>
@@ -248,9 +295,60 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
             </button>
           </div>
         ))}
+        {/* 👥 (lot G4) un groupe avec mes proches — quand je n'en ai encore aucun (sinon : « ＋ Créer », plus bas) */}
+        {v && !groupes.length && (
+          <button type="button" className="mg-carte-plus" onClick={() => setCreer(true)} data-creer-groupe-ouvrir>
+            ＋<small>{PG.creerTitre}</small>
+          </button>
+        )}
       </div>
 
       {v && !seances.length && !invitations.length && !demandes.length && <p className="mg-chapo">{P.vide}</p>}
+
+      {/* 👥 TOUS MES GROUPES (lot G4) : la table de chacun ; ceux où un proche m'invite */}
+      {groupes.length > 0 && (
+        <>
+          <div className="mg-tete-rub">
+            <h2 className="mg-rubrique">{PG.tous}</h2>
+            <button type="button" className="mg-plus" onClick={() => setCreer(true)} data-creer-groupe-ouvrir>
+              <b aria-hidden="true">＋</b>
+              {PG.creer}
+            </button>
+          </div>
+          <div className="mg-rang" data-tous-mes-groupes>
+            {groupes.map((g) =>
+              g.invite ? (
+                <div key={g.id} className="mg-carte mg-table" data-groupe-invite={g.id}>
+                  <strong className="mg-t">
+                    {g.e} {g.nom}
+                  </strong>
+                  <Table g={g} />
+                  <span className="mg-m">{PG.invitePar(g.invite.de)}</span>
+                  <button type="button" className="mg-bouton rose" onClick={() => void repondreGroupe(g, false)} data-garder-groupe>
+                    {PG.garder}
+                  </button>
+                  <button type="button" className="mg-lien" onClick={() => void repondreGroupe(g, true)} data-non-merci>
+                    {PG.nonMerci}
+                  </button>
+                </div>
+              ) : (
+                <button key={g.id} type="button" className="mg-carte mg-table" onClick={() => setOuvert(g.id)} data-groupe={g.id}>
+                  <strong className="mg-t">
+                    {g.e} {g.nom}
+                  </strong>
+                  <Table g={g} />
+                  {g.ici.length > 0 ? (
+                    <span className="mg-m mg-vert">{PG.enLigne(g.ici.length)}</span>
+                  ) : g.passage ? (
+                    <span className="mg-m">{PG.passe(g.passage.prenom, heureLisible(g.passage.le))}</span>
+                  ) : null}
+                </button>
+              ),
+            )}
+          </div>
+          <p className="mg-seuls">{PG.seulsMembres}</p>
+        </>
+      )}
       {(note || erreur) && (
         <p className="mg-note" role="status" data-note-groupes>
           {note || erreur}
@@ -269,6 +367,19 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
           }}
         />
       )}
+      {espace && <EspaceGroupe g={espace} onFermer={() => setOuvert(null)} />}
+      {creer && (
+        <CreerGroupe
+          adulte={Boolean(v?.adulte)}
+          passions={tele?.passions ?? []}
+          onFermer={() => setCreer(false)}
+          onCree={(g) => {
+            setCreer(false);
+            setV((x) => (x ? { ...x, groupes: [...(x.groupes ?? []), g] } : x));
+            setNote(PG.cree(g.nom));
+          }}
+        />
+      )}
       {autre && (
         <AutreHeure
           p={autre}
@@ -281,13 +392,14 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
           }}
         />
       )}
-      <style>{STYLES_MES_GROUPES}</style>
+      <style>{STYLES_MES_GROUPES + STYLES_FIGURINES_GROUPE}</style>
     </section>
   );
 }
 
 /** 📣 Une proposition : sa passion, quand, ceux qui ont leur place (sans jamais de zéro : celui qui propose y est). */
-function CarteProposition({ p, onGeste, onAutre }: { p: PropositionGroupe; onGeste: (corps: Record<string, unknown>) => void; onAutre: () => void }) {
+function CarteProposition({ p, onGeste, onAutre, onOuvrir }: { p: PropositionGroupe; onGeste: (corps: Record<string, unknown>) => void; onAutre: () => void; onOuvrir: (id: string) => void }) {
+  if (p.garder) return <CarteGarder p={p} onGeste={onGeste} onOuvrir={onOuvrir} />;
   const n = p.confirmes.length;
   const complet = n >= p.places && !p.jY;
   return (
@@ -369,6 +481,65 @@ function CarteProposition({ p, onGeste, onAutre }: { p: PropositionGroupe; onGes
         )}
       </div>
     </div>
+  );
+}
+
+/** 💛 (lot G4) La séance est finie : « On garde ce groupe ? » — les coches de chacun ; ceux qui gardent forment le groupe. */
+function CarteGarder({ p, onGeste, onOuvrir }: { p: PropositionGroupe; onGeste: (corps: Record<string, unknown>) => void; onOuvrir: (id: string) => void }) {
+  const g = p.garder!;
+  return (
+    <div className="mg-carte mg-large mg-fin" data-garder={p.id}>
+      <span className="mg-m mg-fin-sur">{PG.finie(p.e, p.nom)}</span>
+      <strong className="mg-fin-q">{PG.garderQuestion}</strong>
+      <div className="mg-gardiens">
+        {p.confirmes.map((c) => {
+          const garde = g.gardes.includes(c.q);
+          return (
+            <span key={c.q} className={`mg-gardien${garde ? " garde" : ""}`} data-gardien={c.q} data-garde={garde ? "oui" : "non"}>
+              <span className="mg-tete-ronde">
+                <Figurine p={c} tete />
+                {garde && <i className="mg-coche">✓</i>}
+              </span>
+              <b>{c.prenom}</b>
+            </span>
+          );
+        })}
+      </div>
+      {g.moi && g.groupe ? (
+        <button type="button" className="mg-bouton rose" onClick={() => onOuvrir(g.groupe!)} data-entrer-dans-le-groupe>
+          {PG.garde}
+        </button>
+      ) : g.moi ? (
+        <span className="mg-bouton second" data-garde-attend>
+          {PG.gardeSeul}
+        </span>
+      ) : (
+        <button type="button" className="mg-bouton rose" onClick={() => onGeste({ action: "garder" })} data-garder-bouton>
+          {PG.garder}
+        </button>
+      )}
+      <p className="mg-sous">{g.moi && !g.groupe ? PG.attendre : PG.personne}</p>
+    </div>
+  );
+}
+
+/** 👥 La table d'un groupe : ses membres autour (leurs figurines). */
+function Table({ g }: { g: GroupeVue }) {
+  const autour = g.membres.slice(0, 5);
+  const lefts = autour.length === 1 ? ["50%"] : autour.map((_, k) => `${10 + (k * 80) / (autour.length - 1)}%`);
+  return (
+    <span className="mg-scene" aria-hidden="true">
+      <svg viewBox="0 0 180 90" className="mg-table-svg">
+        <ellipse cx="90" cy="70" rx="70" ry="16" fill="#5a3a2a" />
+        <ellipse cx="90" cy="66" rx="70" ry="16" fill="#7a4e36" />
+        <rect x="84" y="74" width="12" height="16" fill="#3a2418" />
+      </svg>
+      {autour.map((p, k) => (
+        <span key={p.q} className="mg-autour" style={{ left: lefts[k] }}>
+          <Figurine p={p} />
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -491,5 +662,29 @@ export const STYLES_MES_GROUPES = `
 .mg-puce.pris{border-color:#ff2e9a;background:rgba(255,46,154,.2)}
 .mg-puce:disabled{opacity:.35}
 .mg-chapo{margin:0;padding:0 16px;color:#cdb8a4;font-size:14px}
+.mg-vert{color:#3ddc97}
+button.mg-pochette{border:0;color:inherit;font:inherit;font-size:40px;cursor:pointer}
+.mg-gardien .mg-tete-ronde .ge-tete{width:48px;height:48px}
+.mg-carte-plus{flex:none;width:110px;align-self:stretch;border:1px dashed rgba(255,196,140,.35);border-radius:18px;background:rgba(28,14,18,.6);color:#cdb8a4;font:inherit;font-size:40px;font-weight:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.mg-carte-plus small{font-weight:600;font-size:12px;line-height:1.2;text-align:center;padding:0 8px}
+.mg-table{height:auto;min-height:182px;font:inherit;text-align:left;cursor:pointer}
+.mg-scene{position:relative;display:block;height:96px}
+.mg-table-svg{position:absolute;left:0;right:0;bottom:0;width:100%}
+.mg-autour{position:absolute;bottom:28px;width:38px;height:62px;transform:translateX(-50%)}
+.mg-autour .ge-fig{width:38px;height:62px}
+.mg-seuls{margin:-2px 16px 0;text-align:center;color:#a8927e;font-size:12px}
+.mg-tete-ronde .ge-tete{width:100%;height:100%}
+.mg-fin{align-items:center;text-align:center}
+.mg-fin-sur{margin:0}
+.mg-fin-q{font-size:22px;font-weight:900;letter-spacing:-.02em}
+.mg-gardiens{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.mg-gardien{display:flex;flex-direction:column;align-items:center;gap:4px;width:56px}
+.mg-gardien .mg-tete-ronde{width:48px;height:48px;overflow:visible;opacity:.75}
+.mg-gardien .mg-tete-ronde .ge-tete{border-radius:50%}
+.mg-gardien.garde .mg-tete-ronde{opacity:1;box-shadow:0 0 0 3px #3ddc97}
+.mg-gardien b{font-size:12.5px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mg-coche{position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border-radius:50%;background:#3ddc97;color:#06301a;font-style:normal;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #1c0e12}
+.mg-fin .mg-bouton{align-self:stretch;margin-top:4px}
+.mg-sous{margin:0;color:#cdb8a4;font-size:13px}
 .mg-note{margin:0 16px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.06);font-size:14px}
 `;

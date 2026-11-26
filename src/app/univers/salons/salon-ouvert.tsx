@@ -113,12 +113,12 @@ const rien = () => () => {};
  * est déjà court. (On compare à l'adresse attendue, pas à `location` : pendant une navigation de Next, l'écran du salon
  * s'affiche avant que l'adresse ne change.)
  */
-function aCetteHeure(o: OuvertureSalonOuvert, cle: { theme?: string; chez?: string }): OuvertureSalonOuvert {
+function aCetteHeure(o: OuvertureSalonOuvert, cle: { theme?: string; chez?: string; groupe?: string }): OuvertureSalonOuvert {
   try {
     const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
     const fin = nav ? nav.responseEnd || nav.responseStart : 0;
     const ici = nav ? new URL(nav.name, location.href) : null;
-    const cettePage = ici?.pathname === "/univers/salons" && (cle.chez ? ici.searchParams.get("chez") === cle.chez : ici.searchParams.get("theme") === cle.theme);
+    const cettePage = ici?.pathname === "/univers/salons" && (cle.chez ? ici.searchParams.get("chez") === cle.chez : cle.groupe ? ici.searchParams.get("groupe") === cle.groupe : ici.searchParams.get("theme") === cle.theme);
     if (!fin || !cettePage) return o;
     const passe = Date.now() - (performance.timeOrigin + fin);
     return passe > 0 && passe < 60_000 ? { ...o, tele: { ...o.tele, maintenant: o.tele.maintenant + passe } } : o;
@@ -177,7 +177,7 @@ function sortir(salon: string) {
   }
 }
 
-export function SalonOuvert({ theme, chez, place, video, initial }: { theme?: string; chez?: string; place?: string; video?: string; initial?: EtatSalonOuvert }) {
+export function SalonOuvert({ theme, chez, place, video, groupe, initial }: { theme?: string; chez?: string; place?: string; video?: string; groupe?: string; initial?: EtatSalonOuvert }) {
   // ⚡ (25 novembre 2026, le propriétaire : « quand on clique sur M'asseoir, j'ai d'abord un écran complètement inutile
   // qui stipule le thème […] et qui fait perdre du temps pour rien ») le serveur est déjà entré (`initial`) : plus
   // d'écran du thème, plus d'aller-retour. Sans `initial` (une panne côté serveur), l'écran entre lui-même, comme avant.
@@ -188,14 +188,15 @@ export function SalonOuvert({ theme, chez, place, video, initial }: { theme?: st
   const monte = useSyncExternalStore(rien, () => true, () => false);
   const entrer = useCallback(async () => {
     // (🎬 lot D2 : chez moi, ou chez un proche qui m'a invité ; ➕ le lot B : la place libre d'un lien WhatsApp)
-    const r = await poster(chez ? { action: "entrer-chez", chez, ...(place ? { place } : {}), ...(video ? { video } : {}) } : { action: "entrer", theme });
+    // (👥 lot G4 : le salon d'un de mes groupes)
+    const r = await poster(chez ? { action: "entrer-chez", chez, ...(place ? { place } : {}), ...(video ? { video } : {}) } : groupe ? { action: "entrer-groupe", groupe } : { action: "entrer", theme });
     if (r.ok && r.j.ouverture) return setEtat({ etat: "pret", o: r.j.ouverture as OuvertureSalonOuvert });
     if (r.j.age) return setEtat({ etat: "age" });
     // (➕ sans compte ni figurine — quelqu'un qui arrive par le lien WhatsApp d'une place libre : sa figurine d'abord)
     if (r.j.figurine || r.statut === 401) return setEtat({ etat: "sans-figurine" });
     if (r.j.exclu) return setEtat({ etat: "exclu" });
     setEtat({ etat: "erreur", message: String(r.j.error || "Ça n’a pas marché. Réessaie.") });
-  }, [theme, chez, place, video]);
+  }, [theme, chez, place, video, groupe]);
   useEffect(() => {
     if (dejaEntre.current) return;
     dejaEntre.current = true;
@@ -203,7 +204,7 @@ export function SalonOuvert({ theme, chez, place, video, initial }: { theme?: st
   }, [entrer]);
 
   // (l'entrée faite par le serveur, remise à l'heure une fois sur le téléphone ; celles du téléphone sont à l'heure)
-  const o = useMemo(() => (etat.etat !== "pret" || !monte ? null : etat === initial ? aCetteHeure(etat.o, { theme, chez }) : etat.o), [etat, initial, monte, theme, chez]);
+  const o = useMemo(() => (etat.etat !== "pret" || !monte ? null : etat === initial ? aCetteHeure(etat.o, { theme, chez, groupe }) : etat.o), [etat, initial, monte, theme, chez, groupe]);
   const t = themeDe(theme);
   if (etat.etat === "pret" && o) return <Salon key={o.salon.id} o={o} onDehors={() => void entrer()} onExclu={() => setEtat({ etat: "exclu" })} />;
   if (etat.etat === "pret" || etat.etat === "chargement")
@@ -1062,7 +1063,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   return (
     <main className={`so${prive ? " so-seance" : ""}`} data-salon={salon.id} data-maison={salon.maison} data-presents={ici.length} data-hote={seance?.hote ? "1" : undefined}>
       <header className="so-haut">
-        <a className="so-rond" href="/collection#decouvrir" aria-label="Revenir à Découvrir" data-sortir onClick={() => sortir(salon.id)}>
+        <a className="so-rond" href={salon.id.startsWith("groupe-") ? "/collection#groupes" : "/collection#decouvrir"} aria-label={salon.id.startsWith("groupe-") ? "Revenir à Mes groupes" : "Revenir à Découvrir"} data-sortir onClick={() => sortir(salon.id)}>
           ‹
         </a>
         <div className="so-titre">
