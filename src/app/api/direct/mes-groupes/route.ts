@@ -15,10 +15,16 @@
 // POST { action: "garder", id }                  → { proposition, groupe? } : « On garde ce groupe ? » à la fin de la séance
 // POST { action: "creer-groupe", nom, theme, mot?, cles } → { groupe } : un groupe tout de suite, avec des proches
 // POST { action: "garder-groupe" | "non-merci", groupe } → { groupe? } : un proche m'invite dans son groupe
+// 📅💬 (lot G5, `groupes-vie-serveur.ts`) GET `?groupe=<id>` → { vie } : ses rendez-vous et sa discussion (membres seulement)
+// POST { action: "rdv-ajouter", groupe, nom, recurrence, jour?, heure, minute, quand?, idee? } → { rdv, message? }
+// POST { action: "rdv-repondre", groupe, rdv, reponse: "viens" | "absent" | "tard" } → { rdv, entre? }
+// POST { action: "rdv-retirer", groupe, rdv }    → { ok } : celui qui l'a posé
+// POST { action: "ecrire-groupe", groupe, texte } → { message }
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { maisonDeMoi, mesDemandes, mesInvitations, seancesDesProches } from "@/lib/direct/salons-ouverts-serveur";
+import { ajouterRdv, ecrireAuGroupe, repondreRdv, retirerRdv, vieDuGroupe } from "@/lib/direct/groupes-vie-serveur";
 import { autreHeure, confirmer, creerGroupe, entrer, garder, mesGroupes, propositionsPourMoi, proposer, repondreGroupe, retirer, signaler } from "@/lib/direct/groupes-serveur";
 
 export const dynamic = "force-dynamic";
@@ -26,10 +32,15 @@ export const dynamic = "force-dynamic";
 const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
+  const groupe = new URL(request.url).searchParams.get("groupe");
+  if (groupe) {
+    const r = await vieDuGroupe(supabase, moi, groupe);
+    return NextResponse.json(r.error ? { error: r.error } : { ok: true, vie: r.vie }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+  }
   const [invitations, demandes, seances, propositions, maison, groupes] = await Promise.all([
     mesInvitations(supabase, moi).catch(() => []),
     mesDemandes(supabase, moi).catch(() => []),
@@ -77,6 +88,19 @@ export async function POST(request: Request) {
   if (p.action === "garder-groupe" || p.action === "non-merci") {
     const r = await repondreGroupe(supabase, moi, p.groupe, p.action === "non-merci");
     return repondre(r, r.groupe ? { groupe: r.groupe } : {});
+  }
+  if (p.action === "rdv-ajouter") {
+    const r = await ajouterRdv(supabase, moi, p);
+    return repondre(r, { rdv: r.rdv, ...(r.message ? { message: r.message } : {}) });
+  }
+  if (p.action === "rdv-repondre") {
+    const r = await repondreRdv(supabase, moi, p);
+    return repondre(r, { rdv: r.rdv, ...(r.entre ? { entre: true } : {}) });
+  }
+  if (p.action === "rdv-retirer") return repondre(await retirerRdv(supabase, moi, p));
+  if (p.action === "ecrire-groupe") {
+    const r = await ecrireAuGroupe(supabase, moi, p);
+    return repondre(r, { message: r.message });
   }
   return NextResponse.json({ error: "Je ne sais pas faire ça." }, { status: 400, headers: sansCache });
 }

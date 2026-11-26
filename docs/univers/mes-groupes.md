@@ -27,10 +27,10 @@ une discussion avec un ami : les salons sont vides quand on arrive le premier ; 
 | --- | --- | --- |
 | G0 | Maquette | ✅ validée le 26 novembre 2026 |
 | G1 | L'onglet, « Avec mes proches » (l'existant), Autour en tuile | ✅ fait (#295) |
-| G2 | ＋ Proposer, Propositions de groupes, la pièce « On se retrouve ? » du fil | ✅ ce lot |
-| G3 | Les rappels (cron toutes les 5 minutes) | fait (PR à suivre) |
-| G4 | « On garde ce groupe ? », Tous mes groupes | fait (PR à suivre) |
-| G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | à faire |
+| G2 | ＋ Proposer, Propositions de groupes, la pièce « On se retrouve ? » du fil | ✅ fait (#296) |
+| G3 | Les rappels (cron toutes les 5 minutes) | ✅ fait (#297) |
+| G4 | « On garde ce groupe ? », Tous mes groupes | ✅ fait (#298) |
+| G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | fait (PR à suivre) |
 | G6 | La sélection du jour, les rôles qui tournent | à faire |
 | G7 | Le journal | à faire |
 | G8 | Le groupe qui grandit | à faire |
@@ -109,7 +109,8 @@ Les règles :
   groupes » (la table de chacun, ses membres autour ; « ● 2 dans le salon » ou « 🕑 Passage de Zoé à 14 h »). Un groupe
   n'est visible que par ses membres.
 - **Son espace** (`groupe-espace.tsx`) : son identité (passion, nom, mot), son salon attitré (qui y est, sinon le dernier
-  passage, « Entrer »), ses membres. Les onglets Aujourd'hui, Rendez-vous, Discussion et Journal arrivent avec G5 à G7.
+  passage, « Entrer »), puis ses onglets (G5 : 📅 Rendez-vous, 💬 Discussion, 👥 Membres ; Aujourd'hui et Journal avec
+  G6 et G7).
 - **Son salon** : `/univers/salons?groupe=<id>` (action `entrer-groupe` de la route des salons, `entrerAuGroupe`). C'est
   un salon privé (« groupe-<id> », dans `decouvrir/salons/prives/`), à ses membres seulement, comme un salon ouvert de
   sa passion : le gradin, les vidéos de la passion, huit places, la conversation. Il ne dépend pas de l'interrupteur
@@ -120,3 +121,27 @@ Les règles :
   `groupes/passages/<id>/<q>.json`.
 - Route : `GET /api/direct/mes-groupes` renvoie aussi `groupes` ; `POST` `garder`, `creer-groupe`, `garder-groupe`,
   `non-merci`. Essai : `scripts/essai-groupes-gardes-route.mjs`.
+
+## G5, dans le code
+
+- **📅 Rendez-vous** (`groupe-vie.tsx`, `groupes-vie-serveur.ts`) : les habitudes du groupe — chaque jour (« 🌙 Le
+  rendez-vous du soir · chaque soir · 21 h »), chaque semaine (« La découverte du mercredi ») — et les séances
+  exceptionnelles (une seule fois, ⭐). N'importe quel membre en pose un (« ＋ Un rendez-vous » : son nom, chaque jour /
+  chaque semaine et son jour / une seule fois et son jour, l'heure) ; six au plus (`RDV_MAX`) ; celui qui l'a posé le
+  retire. Pour sa prochaine fois (`prochaineFois`, ouverte jusqu'à deux heures après l'heure), chacun répond ✓ Je viens,
+  Absent ou Plus tard (« Tu retrouveras la séance et ses réactions plus tard ») ; on voit les têtes de ceux qui
+  viennent, jamais un nombre. À l'heure (dix minutes avant), la carte a « Entrer » vers le salon du groupe.
+- **Le rappel** : la tâche des cinq minutes (G3) prévient aussi ceux qui ont dit « Je viens » : « 🔔 Le rendez-vous du
+  soir commence dans 10 minutes », une fois par fois (`groupes/rappels-rdv/<groupe>/<rdv>.json`).
+- **La table** d'un groupe, dans Tous mes groupes, dit « 📅 Prochain : Le rendez-vous du soir · Ce soir 21 h ».
+- **💬 Discussion** : quelques mots entre deux rencontres, 90 signes, la modération des salons (liens, numéros, questions
+  personnelles…). Le nom d'un rendez-vous peut dire « rendez-vous » (refusé dans les salons ouverts) : c'est le mot du
+  groupe.
+- **💡 Une idée de séance** (dans la discussion) : son nom, son jour, son heure. Elle arrive dans la discussion (« Une
+  séance « … » ? », « Partant ! ») ; à deux partants (`PARTANTS_MIN`), elle entre dans les rendez-vous (« ⭐ « … » arrive
+  dans les rendez-vous »).
+- **Stockage** : `groupes/rdv/<id>/<rdv>.json` (écrit par celui qui le pose), `groupes/reponses/<id>/<rdv>/<q>.json`
+  (chacun la sienne, avec la fois à laquelle elle répond), `groupes/discussion/<id>/<message>.json`. Une séance
+  exceptionnelle passée s'efface à la lecture suivante.
+- Route : `GET /api/direct/mes-groupes?groupe=<id>` → `{ vie }` (membres seulement) ; `POST` `rdv-ajouter`,
+  `rdv-repondre`, `rdv-retirer`, `ecrire-groupe`. Essai : `scripts/essai-groupes-vie-route.mjs`.
