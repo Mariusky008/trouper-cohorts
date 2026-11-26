@@ -25,10 +25,18 @@
 // POST { action: "jour-retirer", groupe }         → { aujourdhui }
 // POST { action: "jour-envie", groupe, video, oui } → { aujourdhui, retenue? } : 🙋
 // 📖 (lot G7, `groupes-journal-serveur.ts`) GET `?groupe=<id>&journal=1` → { journal } : notre histoire
+// 🌱 (lot G8, `groupes-grandir-serveur.ts`) GET `?groupe=<id>` → aussi { accueils } : ceux qu'on propose d'accueillir
+// POST { action: "theme-ajouter", groupe, theme }  → { themes } : ＋ thème
+// POST { action: "accueil-proposer", groupe, cle } → { accueils } : un de mes proches (je suis partant)
+// POST { action: "accueil-partant", groupe, q }    → { accueils, invite? } : au deuxième partant, il est invité
+// POST { action: "quitter-groupe", groupe }        → { ok }
+// POST { action: "signaler-groupe", groupe, q, motif?, message? } → { caches } : je ne vois plus ses messages
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
 import { maisonDeMoi, mesDemandes, mesInvitations, seancesDesProches } from "@/lib/direct/salons-ouverts-serveur";
+import { accueilsDuGroupe, ajouterTheme, partantAccueil, proposerAccueil, quitterGroupe, signalerDansLeGroupe } from "@/lib/direct/groupes-grandir-serveur";
+import { qui8 } from "@/lib/direct/talkie-serveur";
 import { journalDuGroupe } from "@/lib/direct/groupes-journal-serveur";
 import { aujourdhuiDuGroupe, envieDuJour, proposerVideoDuJour, retirerVideoDuJour } from "@/lib/direct/groupes-jour-serveur";
 import { ajouterRdv, ecrireAuGroupe, repondreRdv, retirerRdv, vieDuGroupe } from "@/lib/direct/groupes-vie-serveur";
@@ -50,7 +58,8 @@ export async function GET(request: Request) {
   }
   if (groupe) {
     const [r, j] = await Promise.all([vieDuGroupe(supabase, moi, groupe), aujourdhuiDuGroupe(supabase, moi, groupe).catch(() => ({}) as Awaited<ReturnType<typeof aujourdhuiDuGroupe>>)]);
-    return NextResponse.json(r.error ? { error: r.error } : { ok: true, vie: r.vie, ...(j.aujourdhui ? { aujourdhui: j.aujourdhui } : {}) }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+    const accueils = r.error ? [] : await accueilsDuGroupe(supabase, String(groupe), qui8(moi.id)).catch(() => []);
+    return NextResponse.json(r.error ? { error: r.error } : { ok: true, vie: r.vie, accueils, ...(j.aujourdhui ? { aujourdhui: j.aujourdhui } : {}) }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
   }
   const [invitations, demandes, seances, propositions, maison, groupes] = await Promise.all([
     mesInvitations(supabase, moi).catch(() => []),
@@ -120,6 +129,19 @@ export async function POST(request: Request) {
   if (p.action === "jour-envie") {
     const r = await envieDuJour(supabase, moi, p);
     return repondre(r, { aujourdhui: r.aujourdhui, ...(r.retenue ? { retenue: true } : {}) });
+  }
+  if (p.action === "theme-ajouter") {
+    const r = await ajouterTheme(supabase, moi, p);
+    return repondre(r, { themes: r.themes });
+  }
+  if (p.action === "accueil-proposer" || p.action === "accueil-partant") {
+    const r = p.action === "accueil-proposer" ? await proposerAccueil(supabase, moi, p) : await partantAccueil(supabase, moi, p);
+    return repondre(r, { accueils: r.accueils, ...("invite" in r && r.invite ? { invite: true } : {}) });
+  }
+  if (p.action === "quitter-groupe") return repondre(await quitterGroupe(supabase, moi, p));
+  if (p.action === "signaler-groupe") {
+    const r = await signalerDansLeGroupe(supabase, moi, p);
+    return repondre(r, { caches: r.caches });
   }
   return NextResponse.json({ error: "Je ne sais pas faire ça." }, { status: 400, headers: sansCache });
 }

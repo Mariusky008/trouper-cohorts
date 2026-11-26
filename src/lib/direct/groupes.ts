@@ -214,6 +214,10 @@ export type GroupeVue = {
   invite?: { de: string };
   /** 📅 (lot G5) son prochain rendez-vous */
   prochain?: { nom: string; quand: number };
+  /** 🌱 (lot G8) les thèmes ajoutés par ses membres (sa passion d'abord, dans `theme`) */
+  themes?: IdTheme[];
+  /** (lot G8) moi, parmi ses membres (pour ne pas me proposer de me signaler) */
+  moi?: string;
 };
 
 export const PHRASES_GROUPES_GARDES = {
@@ -394,7 +398,7 @@ export const ROLES_DU_JOUR: { id: IdRole; e: string; nom: string; tour: string }
 export type RoleDuJour = { id: IdRole; e: string; nom: string; qui: PlaceGroupe; moi?: true };
 
 /** L'onglet Aujourd'hui. */
-export type AujourdhuiDuGroupe = { jour: string; selection: VideoDuGroupe[]; roles: RoleDuJour[] };
+export type AujourdhuiDuGroupe = { jour: string; selection: VideoDuGroupe[]; roles: RoleDuJour[]; /** (lot G8) le thème du jour */ theme?: IdTheme };
 
 /** Le numéro d'un jour (« 2026-11-26 ») : les rôles tournent d'un cran chaque jour. */
 export const numeroDuJour = (jour: string) => Math.floor(Date.parse(`${jour}T12:00:00Z`) / 86_400_000);
@@ -477,3 +481,55 @@ export function jourDuJournal(ms: number, maintenant = Date.now()): string {
   }
   return `Le ${l.split(" ").slice(1).join(" ")}`;
 }
+
+// ═══ 🌱 (lot G8) LE GROUPE QUI GRANDIT : ＋ THÈME, ACCUEILLIR QUELQU'UN, QUITTER, SIGNALER ═══
+/** Trois thèmes au plus en plus de sa passion ; ils tournent, un par jour, dans Aujourd'hui. */
+export const THEMES_EN_PLUS_MAX = 3;
+/** Le thème du jour : sa passion, puis les thèmes ajoutés, à tour de rôle. */
+export function themeDuJour(themes: IdTheme[], jour: string): IdTheme | undefined {
+  if (!themes.length) return undefined;
+  return themes[((numeroDuJour(jour) % themes.length) + themes.length) % themes.length];
+}
+
+/** Quelqu'un qu'un membre propose d'accueillir : il est invité quand un deuxième membre est partant. */
+export type AccueilGroupe = {
+  q: string;
+  prenom: string;
+  src: string;
+  /** qui le propose */
+  de: string;
+  partants: PlaceGroupe[];
+  moi?: true;
+  /** deux partants : il est invité (il voit le groupe dans Mes groupes, et le garde s'il veut) */
+  invite?: true;
+};
+
+export const PHRASES_GRANDIR = {
+  plusTheme: "＋ thème",
+  themeTitre: "🌱 Un thème de plus",
+  themeDit: "Le groupe le voit tout de suite ; un thème par jour dans Aujourd’hui.",
+  themeAjoute: (e: string) => `${e} Nouveau thème proposé au groupe`,
+  tropDeThemes: `${THEMES_EN_PLUS_MAX} thèmes de plus au plus.`,
+  journalTheme: (court: string) => `Nouveau thème : ${court}`,
+  journalThemePar: (prenom: string) => `proposé par ${prenom}`,
+  accueillir: "＋ Accueillir quelqu’un",
+  accueillirTitre: "👥 Accueillir quelqu’un",
+  accueillirDit: "Le groupe décide ensemble : il est invité dès qu’un autre membre est partant.",
+  accueillirAucun: "Tous tes proches sont déjà là, ou tu n’en as pas encore.",
+  accueillirQuestion: (prenom: string) => `Accueillir ${prenom} ?`,
+  accueillirPropose: (prenom: string) => `👥 ${prenom} est proposé au groupe`,
+  accueillirInvite: (prenom: string) => `✓ ${prenom} est invité`,
+  proposePar: (prenom: string) => `proposé par ${prenom}`,
+  quitter: "Quitter le groupe",
+  quitterDit: "Tu peux partir quand tu veux, sans rien expliquer.",
+  quitterOui: "Quitter",
+  quitterNon: "Rester",
+  parti: "Tu as quitté le groupe.",
+  signaler: "🚩 Signaler",
+  signalerTitre: "🚩 Signaler",
+  signalerQui: "Choisis la personne",
+  signalerQuoi: "Pourquoi ?",
+  signalerMessage: "Le message en cause (si tu veux)",
+  signalerEnvoyer: "🚩 Signaler",
+  signale: (prenom: string) => `Merci : c’est noté. Tu ne verras plus les messages de ${prenom}.`,
+} as const;

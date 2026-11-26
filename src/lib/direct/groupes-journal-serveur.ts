@@ -17,8 +17,8 @@ import { ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { qui8 } from "./talkie-serveur";
 import { jourAvant, jourParis } from "@/lib/jour-paris";
 import { lireRdvs, reponsesDe } from "./groupes-vie-serveur";
-import { cheminGroupe, dossierJourGroupe, enviesDuJour, estMembre, idGroupeValide, listerGroupes, membresDe } from "./groupes-chemins-serveur";
-import { ENVIES_RETENUE, OUVERT_APRES_MS, OUVERT_AVANT_MS, PARTANTS_MIN, PHRASES_JOURNAL as PJ, prochaineFois, quandDuRdv, type EntreeJournal, type PlaceGroupe } from "./groupes";
+import { cheminGroupe, dossierJourGroupe, enviesDuJour, estMembre, idGroupeValide, listerGroupes, membresDe, themesEnPlus } from "./groupes-chemins-serveur";
+import { ENVIES_RETENUE, OUVERT_APRES_MS, OUVERT_AVANT_MS, PARTANTS_MIN, PHRASES_GRANDIR as PJG, PHRASES_JOURNAL as PJ, prochaineFois, themeDuGroupe, quandDuRdv, type EntreeJournal, type PlaceGroupe } from "./groupes";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Resultat<T = object> = T & { error?: string; statut?: number };
@@ -80,6 +80,12 @@ export async function journalDuGroupe(supabase: Supabase, moi: Habitant, groupe:
     const fois = prochaineFois(f, maintenant) ?? f.quand;
     const viens = (await reponsesDe(supabase, gid, f.id)).filter((r) => r.r === "viens" && r.fois === fois).sort((a, b) => a.le - b.le);
     if (viens.length >= PARTANTS_MIN) l.push({ id: `idee-${f.id}`, le: viens[PARTANTS_MIN - 1].le, e: "💡", titre: PJ.idee(f.prenom), sous: `« ${f.nom} »` });
+  }
+
+  // 🌱 (lot G8) les thèmes ajoutés
+  for (const t of await themesEnPlus(supabase, gid).catch(() => [])) {
+    const th = themeDuGroupe(t.theme);
+    if (th) l.push({ id: `theme-${t.theme}`, le: t.le, e: th.e, titre: PJG.journalTheme(th.court), sous: PJG.journalThemePar(t.prenom) });
   }
 
   // 🎬 les vidéos choisies pour la séance (deux mains), jour par jour

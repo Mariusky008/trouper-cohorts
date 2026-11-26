@@ -29,10 +29,11 @@ import {
   listerGroupes,
   membresDe,
   idGroupeValide,
+  themesDuGroupe,
   type FicheEnvies,
   type FicheMembre,
 } from "./groupes-chemins-serveur";
-import { ENVIES_RETENUE, MOT_GROUPE_MAX, NOUVEAUTES_DU_JOUR, refusDuGroupe, rolesDuJour, themeDuGroupe, type AujourdhuiDuGroupe, type PlaceGroupe, type VideoDuGroupe } from "./groupes";
+import { ENVIES_RETENUE, MOT_GROUPE_MAX, NOUVEAUTES_DU_JOUR, refusDuGroupe, rolesDuJour, themeDuGroupe, themeDuJour, type AujourdhuiDuGroupe, type PlaceGroupe, type VideoDuGroupe } from "./groupes";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Resultat<T = object> = T & { error?: string; statut?: number };
@@ -54,14 +55,16 @@ const place = ({ q, prenom, src }: PlaceGroupe): PlaceGroupe => ({ q, prenom, sr
 /** 🎬 L'onglet Aujourd'hui : la sélection du jour (et les 🙋 de chacun), les rôles. */
 async function construire(supabase: Supabase, moi: Habitant, gid: string, jour: string): Promise<AujourdhuiDuGroupe> {
   const q = qui8(moi.id);
-  const [g, membres, noms, envies, maison] = await Promise.all([
-    lireJson<{ theme?: string }>(supabase, cheminGroupe(gid)).catch(() => ({}) as { theme?: string }),
+  const g = await lireJson<{ theme?: string }>(supabase, cheminGroupe(gid)).catch(() => ({}) as { theme?: string });
+  const [themes, membres, noms, envies, maison] = await Promise.all([
+    themesDuGroupe(supabase, gid, g.theme),
     membresDe(supabase, gid),
     listerGroupes(supabase, dossierJourGroupe(gid, jour), 40),
     enviesDuJour(supabase, gid, jour),
     maisonDeMoi(supabase, moi.id).catch(() => null),
   ]);
-  const t = themeDuGroupe(g.theme);
+  // (🌱 lot G8 : sa passion et les thèmes ajoutés, un par jour)
+  const t = themeDuGroupe(themeDuJour(themes, jour) ?? g.theme);
   const dedans = new Map(membres.map((m) => [m.q, m]));
   const fiches = (await Promise.all(noms.map((n) => lireJson<Partial<FicheVideoDuJour>>(supabase, `${dossierJourGroupe(gid, jour)}/${n}`).catch(() => ({}) as Partial<FicheVideoDuJour>))))
     .filter((x): x is FicheVideoDuJour => Boolean(x.q && x.video?.id && dedans.has(x.q)))
@@ -91,6 +94,7 @@ async function construire(supabase: Supabase, moi: Habitant, gid: string, jour: 
     jour,
     selection: [...proposees.map((f) => vue(f.video, f)), ...nouveautes.map((v) => vue(v))],
     roles: rolesDuJour(membres.map(place), jour, q),
+    ...(t ? { theme: t.id } : {}),
   };
 }
 

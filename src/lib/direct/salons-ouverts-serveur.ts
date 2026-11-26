@@ -45,7 +45,8 @@ import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
 import { noterPresence } from "./groupes-journal-serveur";
-import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe, videosRetenues } from "./groupes-chemins-serveur";
+import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe, themesDuGroupe, videosRetenues } from "./groupes-chemins-serveur";
+import { themeDuJour } from "./groupes";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
@@ -314,7 +315,11 @@ export async function entrerAuGroupe(supabase: Supabase, moi: Habitant, groupe: 
     mesCaches(supabase, moi.id),
     gradinDuSalon(supabase, t.id).catch(() => null),
     // (🎬 lot G6 : les vidéos retenues ce soir par le groupe ouvrent sa télé, puis celles de sa passion)
-    Promise.all([videosRetenues(supabase, gid, jourParis()).catch(() => [] as VideoSalon[]), videosDuSalon(supabase, t.id, m)]).then(([a, b]) => {
+    // (🌱 lot G8 : les vidéos du thème du jour du groupe)
+    Promise.all([
+      videosRetenues(supabase, gid, jourParis()).catch(() => [] as VideoSalon[]),
+      themesDuGroupe(supabase, gid, t.id).then((l) => videosDuSalon(supabase, themeDuJour(l, jourParis()) ?? t.id, m)),
+    ]).then(([a, b]) => {
       const l = a.filter((v) => v.duree > 0);
       return [...l, ...b.filter((v) => !l.some((x) => x.id === v.id))];
     }),
@@ -623,19 +628,33 @@ export async function signalerAuSalon(supabase: Supabase, moi: Habitant, p: Reco
   // (le message en cause, s'il est donné : sa copie, pour l'administrateur)
   const idm = s(p.message);
   const msg = /^\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}$/.test(idm) ? await lireJson<Partial<FicheMessage>>(supabase, `${dossierMessages(m, sid)}/${idm}.json`) : {};
+  return signalerHorsSalon(supabase, moi, { cible: { q: cible, h: s(f.h), prenom: s(f.prenom) }, salon: sid, lieu: m, motif, ...(msg.de === cible && msg.texte ? { texte: msg.texte } : {}) });
+}
+
+/**
+ * 🚩 Le signalement lui-même (les salons, et 👥 le lot G8 : un membre d'un groupe) : rangé pour l'administrateur ; trois
+ * personnes différentes en une heure, et il quitte les salons ouverts pour 24 heures.
+ */
+export async function signalerHorsSalon(
+  supabase: Supabase,
+  moi: Habitant,
+  x: { cible: { q: string; h: string; prenom: string }; salon: string; lieu?: Lieu; motif: string; texte?: string },
+): Promise<{ exclu: boolean }> {
+  const auteur = qui8(moi.id);
+  const m = x.lieu ?? "prives";
   const maintenant = Date.now();
-  await ecrireJson(supabase, `${dossierSignalements(cible)}/${maintenant}-${auteur}.json`, {
+  await ecrireJson(supabase, `${dossierSignalements(x.cible.q)}/${maintenant}-${auteur}.json`, {
     le: maintenant,
-    motif,
-    salon: sid,
+    motif: x.motif,
+    salon: x.salon,
     maison: m,
-    q: cible,
-    h: f.h,
-    prenom: f.prenom,
+    q: x.cible.q,
+    h: x.cible.h,
+    prenom: x.cible.prenom,
     auteur: { q: auteur, h: moi.id },
-    ...(msg.de === cible && msg.texte ? { texte: msg.texte } : {}),
+    ...(x.texte ? { texte: x.texte } : {}),
   });
-  const l = await lister(supabase, dossierSignalements(cible), { limite: 60, recents: true });
+  const l = await lister(supabase, dossierSignalements(x.cible.q), { limite: 60, recents: true });
   const auteurs = new Set(
     l
       .map((e) => e.nom.replace(/\.json$/, "").split("-"))
@@ -643,7 +662,7 @@ export async function signalerAuSalon(supabase: Supabase, moi: Habitant, p: Reco
       .map(([, a]) => a),
   );
   if (auteurs.size < SIGNALEMENTS_SEUIL) return { exclu: false };
-  await exclureDesSalons(supabase, { q: cible, h: s(f.h), prenom: s(f.prenom), salon: sid, ...(m !== "prives" ? { maison: m } : {}), par: "signalements", ms: EXCLUSION_MS });
+  await exclureDesSalons(supabase, { q: x.cible.q, h: x.cible.h, prenom: x.cible.prenom, salon: x.salon, ...(m !== "prives" ? { maison: m } : {}), par: "signalements", ms: EXCLUSION_MS });
   return { exclu: true };
 }
 

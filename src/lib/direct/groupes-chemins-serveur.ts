@@ -13,12 +13,16 @@
  *   `groupes/discussion/<id>/<ms>-<q>-<hex>.json` : un message ; `groupes/rappels-rdv/<id>/<rdv>.json` : le dernier rappel.
  * - (lot G6) `groupes/jour/<id>/<jour>/<q>.json` : ma vidéo du jour pour le groupe, et mon mot ;
  *   `groupes/envies/<id>/<jour>/<q>.json` : les vidéos que je veux ce soir (🙋).
+ * - (lot G8) `groupes/themes/<id>/<thème>.json` : un thème de plus (écrit par celui qui l'ajoute) ;
+ *   `groupes/accueils/<id>/<q>.json` : quelqu'un qu'un membre propose d'accueillir ;
+ *   `groupes/accueils-partants/<id>/<q de l'accueilli>/<q>.json` : je suis partant pour l'accueillir.
  *
  * FICHIER SERVEUR.
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { SEAU_FIGURINES, lireJson } from "./ma-figurine-serveur";
-import { ENVIES_RETENUE, ID_GROUPE, type PlaceGroupe } from "./groupes";
+import { ENVIES_RETENUE, ID_GROUPE, THEMES_EN_PLUS_MAX, themeDuGroupe, type PlaceGroupe } from "./groupes";
+import type { IdTheme } from "./decouvrir";
 import type { VideoSalon } from "./salons-ouverts";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -97,3 +101,24 @@ export async function videosRetenues(supabase: Supabase, id: string, jour: strin
     }
   return [...par.values()].filter((x) => x.n >= ENVIES_RETENUE).map((x) => x.v);
 }
+
+export const dossierThemes = (id: string) => `groupes/themes/${id}`;
+/** 🌱 (lot G8) Un thème de plus. */
+export type FicheTheme = { theme: IdTheme; q: string; prenom: string; le: number };
+/** Les thèmes ajoutés au groupe, dans l'ordre où ils l'ont été. */
+export async function themesEnPlus(supabase: Supabase, id: string): Promise<FicheTheme[]> {
+  const noms = await listerGroupes(supabase, dossierThemes(id), 20);
+  const l = await Promise.all(noms.map((n) => lireJson<Partial<FicheTheme>>(supabase, `${dossierThemes(id)}/${n}`).catch(() => ({}) as Partial<FicheTheme>)));
+  return l
+    .filter((x): x is FicheTheme => Boolean(x.theme && themeDuGroupe(x.theme) && x.q))
+    .sort((a, b) => a.le - b.le)
+    .slice(0, THEMES_EN_PLUS_MAX);
+}
+/** Tous les thèmes du groupe : sa passion d'abord. */
+export async function themesDuGroupe(supabase: Supabase, id: string, passion: unknown): Promise<IdTheme[]> {
+  const t = themeDuGroupe(passion);
+  const plus = (await themesEnPlus(supabase, id).catch(() => [] as FicheTheme[])).map((x) => x.theme).filter((x) => x !== t?.id);
+  return [...(t ? [t.id] : []), ...new Set(plus)];
+}
+export const dossierAccueils = (id: string) => `groupes/accueils/${id}`;
+export const dossierPartantsAccueil = (id: string, q: string) => `groupes/accueils-partants/${id}/${q}`;
