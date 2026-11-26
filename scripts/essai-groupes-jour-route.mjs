@@ -105,6 +105,14 @@ ok(e1.statut === 200 && e1.retenue && v2?.retenue && v2.moi && v2.envies.map((p)
 ok((await jour(ZOE))?.selection.find((v) => v.id === V.id)?.retenue, "Zoé la voit retenue");
 const s1 = await appel(SAM, "/api/direct/salons-ouverts", { action: "entrer-groupe", groupe: GID });
 ok(s1.statut === 200 && (V.duree > 0 ? s1.ouverture?.tele?.videos?.[0]?.id === V.id : true), "elle ouvre la télé du salon du groupe");
+// (💬 lot A6 des discussions : ce qu'on dit au salon du groupe pendant la vidéo va dans son cercle 👥, sous la vidéo)
+if (s1.ouverture?.tele?.videos?.some((v) => v.id === V.id)) {
+  ok((await appel(SAM, "/api/direct/salons-ouverts", { action: "ecrire", salon: `groupe-${GID}`, sorte: "texte", texte: "Quel but, les gars", video: V.id })).statut === 200, "Sam écrit au salon du groupe pendant la vidéo");
+  const dg = (await appel(LEA, `/api/direct/discussion-video?video=${V.id}`)).discussion?.groupes?.find((g) => g.id === GID);
+  ok(dg?.ecrits?.some((e) => e.texte === "Quel but, les gars" && e.prenom === "Sam" && e.de === "au salon du groupe"), `… Léa le retrouve sous la vidéo, dans 👥 (${JSON.stringify(dg?.ecrits ?? null)})`);
+  await new Promise((r) => setTimeout(r, 3100));
+  ok((await appel(SAM, "/api/direct/salons-ouverts", { action: "ecrire", salon: `groupe-${GID}`, sorte: "texte", texte: "Et celle-là ?", video: "zzzzzzzzzzz" })).statut === 200 && !((await appel(LEA, `/api/direct/discussion-video?video=${V.id}`)).discussion?.groupes?.find((g) => g.id === GID)?.ecrits ?? []).some((e) => e.texte === "Et celle-là ?"), "… une vidéo qui n'est pas à la télé du groupe : rien sous la vidéo");
+}
 await appel(SAM, "/api/direct/salons-ouverts", { action: "sortir", salon: `groupe-${GID}` });
 ok((await geste(SAM, { action: "jour-envie", groupe: GID, video: "zzzzzzzzzzz", oui: true })).statut === 404, "une vidéo hors de la sélection : non");
 const e2 = await geste(SAM, { action: "jour-envie", groupe: GID, video: V.id, oui: false });

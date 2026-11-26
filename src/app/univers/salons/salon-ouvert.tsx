@@ -866,10 +866,14 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       return;
     }
     setRefus("");
-    if (await envoyer({ sorte: "texte", texte: t })) {
+    // (👥 discussions des vidéos, lot A6 : au salon d'un groupe, la vidéo qui passe — le mot va aussi dans le cercle du
+    // groupe ; jamais dans 🌍, pas de bouton « sous la vidéo » ici)
+    const auGroupe = salon.id.startsWith("groupe-");
+    const videoDuGroupe = auGroupe && !prive ? videoQuiPasse() : null;
+    if (await envoyer({ sorte: "texte", texte: t, ...(videoDuGroupe ? { video: videoDuGroupe } : {}) })) {
       setTexte("");
       // (🌍 dans un salon ouvert, pendant une vidéo : « Le laisser sous la vidéo », dix secondes)
-      const vid = prive ? null : videoQuiPasse();
+      const vid = prive || auGroupe ? null : videoQuiPasse();
       if (vid) {
         const x = { texte: t, video: vid };
         setSousVideo(x);

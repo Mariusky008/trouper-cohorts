@@ -68,6 +68,9 @@ export function DiscussionVideoEcran() {
   const [feuilleSuivi, setFeuilleSuivi] = useState(false);
   const [proposer, setProposer] = useState(false);
   const [luDepart, setLuDepart] = useState<number | null>(null);
+  // 👥 (lot A6) le cercle d'un de mes groupes : celui qui est ouvert, et quand je l'avais lu avant d'arriver
+  const [groupeOuvert, setGroupeOuvert] = useState<string | null>(null);
+  const [luGroupes, setLuGroupes] = useState<Record<string, number> | null>(null);
 
   const charger = useCallback(async () => {
     const q = new URLSearchParams(window.location.search);
@@ -82,7 +85,10 @@ export function DiscussionVideoEcran() {
       const d = j.discussion;
       setEtat({ d });
       setLuDepart((x) => x ?? d.luAvant.tous);
+      setLuGroupes((x) => x ?? Object.fromEntries(d.groupes.map((g) => [g.id, g.luAvant])));
       setCercle((c) => c ?? cercleDeDepart(d, q.get("cercle")));
+      const g = q.get("groupe");
+      if (q.get("cercle") === "groupe" && g && d.groupes.some((x) => x.id === g)) setGroupeOuvert((x) => x ?? g);
     } catch {
       setEtat({ erreur: P.rate });
     }
@@ -126,13 +132,14 @@ export function DiscussionVideoEcran() {
     const id = d?.video.id;
     const t = texte.trim();
     if (!id || !t || occupe) return;
-    if (!avecAccord && !accordDonne()) return setAccord(true);
+    // (👥 dans le cercle d'un groupe : seuls ses membres le lisent, pas d'accord à donner)
+    if (!groupeOuvert && !avecAccord && !accordDonne()) return setAccord(true);
     setAccord(false);
     setOccupe(true);
-    const r = await poster({ action: "publier", id, texte: t, ...(repond ? { repond: repond.cle } : {}), accord: true });
+    const r = await poster({ action: "publier", id, texte: t, ...(repond ? { repond: repond.cle } : {}), ...(groupeOuvert ? { groupe: groupeOuvert } : { accord: true }) });
     setOccupe(false);
     if (!r.ok) return dire(String(r.j.error || P.rate));
-    donnerAccord();
+    if (!groupeOuvert) donnerAccord();
     setTexte("");
     setRepond(null);
     dire(P.publie);
@@ -143,14 +150,22 @@ export function DiscussionVideoEcran() {
     if (!d) return;
     setFeuilleSuivi(false);
     setProposer(false);
+    if (groupeOuvert) {
+      const g = groupeOuvert;
+      const r = await poster({ action: "suivre", id: d.video.id, cercle: "groupe", groupe: g, niveau });
+      if (!r.ok) return dire(String(r.j.error || P.rate));
+      setEtat({ d: { ...d, groupes: [...d.groupes].map((x) => (x.id === g ? { ...x, suivi: niveau } : x)) } });
+      return dire(P.niveauChoisi(`${NIVEAUX[niveau].e} ${NIVEAUX[niveau].nom}`));
+    }
     const r = await poster({ action: "suivre", id: d.video.id, cercle: cercleChoisi, niveau });
     if (!r.ok) return dire(String(r.j.error || P.rate));
     setEtat({ d: { ...d, suivi: { ...d.suivi, [cercleChoisi]: niveau } } });
     dire(P.niveauChoisi(`${NIVEAUX[niveau].e} ${NIVEAUX[niveau].nom}`));
   };
   const effacerEcrit = async (ecrit: string) => {
-    if (!d) return;
-    const r = await poster({ action: "effacer", id: d.video.id, ecrit });
+    const video = etat && "d" in etat ? etat.d.video.id : null;
+    if (!video) return;
+    const r = await poster({ action: "effacer", id: video, ecrit, ...(groupeOuvert ? { groupe: groupeOuvert } : {}) });
     if (r.ok) {
       dire(P.efface);
       await charger();
@@ -174,6 +189,15 @@ export function DiscussionVideoEcran() {
   const dit = useMemo(() => (d ? ceQuiSestDit(d.proches, d.miennes, { moi: P.toi, jusqua: d.vue ? null : 0 }) : null), [d]);
   const fil = useMemo(() => (d?.tous ? filDeTous(d.tous.mots, d.ecrits).filter((l) => !signales.includes(l.cle)) : []), [d, signales]);
   const figurines = useMemo(() => new Map((d?.proches ?? []).filter((p) => p.figurine).map((p) => [p.cle, p.figurine?.src ?? ""])), [d]);
+  const leGroupe = groupeOuvert ? ((d?.groupes ?? []).find((g) => g.id === groupeOuvert) ?? null) : null;
+  const filGroupe = useMemo(() => {
+    const g = groupeOuvert ? d?.groupes.find((x) => x.id === groupeOuvert) : null;
+    return g ? filDeTous([], g.ecrits) : [];
+  }, [d, groupeOuvert]);
+  const luGroupe = leGroupe ? (luGroupes?.[leGroupe.id] ?? 0) : 0;
+  /** (le cercle montré : 👯 ou 🌍 — ou aucun des deux quand un groupe est ouvert) */
+  const vueCercle = leGroupe ? null : cercle;
+  const niveauOuvert: NiveauSuivi | null = leGroupe ? leGroupe.suivi : d && cercle ? d.suivi[cercle] : null;
 
   return (
     <div className="dv" data-discussion={d?.video.id ?? ""}>
@@ -210,15 +234,27 @@ export function DiscussionVideoEcran() {
 
             <div className="dv-cercles" role="tablist">
               {(["proches", "tous"] as const).map((c) => (
-                <button key={c} type="button" role="tab" aria-selected={cercle === c} className={`dv-cercle dv-${c}${cercle === c ? " on" : ""}`} data-cercle={c} onClick={() => setCercle(c)}>
+                <button key={c} type="button" role="tab" aria-selected={vueCercle === c} className={`dv-cercle dv-${c}${vueCercle === c ? " on" : ""}`} data-cercle={c} onClick={() => {
+                    setCercle(c);
+                    setGroupeOuvert(null);
+                    setRepond(null);
+                  }}>
                   {P.cercle(c === "proches" ? P.proches : P.tous, combienDans(d, c))}
+                </button>
+              ))}
+              {(d?.groupes ?? []).map((g) => (
+                <button key={g.id} type="button" role="tab" aria-selected={groupeOuvert === g.id} className={`dv-cercle dv-groupe${groupeOuvert === g.id ? " on" : ""}`} data-cercle="groupe" data-groupe={g.id} onClick={() => {
+                    setGroupeOuvert(g.id);
+                    setRepond(null);
+                  }}>
+                  {P.cercle(`👥 ${g.nom}`, g.ecrits.length)}
                 </button>
               ))}
             </div>
 
-            {cercle && (
-              <button type="button" className="dv-suivi" data-suivi={d.suivi[cercle]} onClick={() => setFeuilleSuivi(true)}>
-                {NIVEAUX[d.suivi[cercle]].e} {NIVEAUX[d.suivi[cercle]].nom} <i>⋯</i>
+            {niveauOuvert && (
+              <button type="button" className="dv-suivi" data-suivi={niveauOuvert} onClick={() => setFeuilleSuivi(true)}>
+                {NIVEAUX[niveauOuvert].e} {NIVEAUX[niveauOuvert].nom} <i>⋯</i>
               </button>
             )}
             {proposer && (
@@ -235,7 +271,7 @@ export function DiscussionVideoEcran() {
               </div>
             )}
 
-            {cercle === "proches" && dit && (
+            {vueCercle === "proches" && dit && (
               <section className="dv-fil" data-fil="proches">
                 <p className="dv-qui dv-qui-proches">{P.quiProches}</p>
                 {dit.lignes.length === 0 && !dit.cachees ? (
@@ -277,7 +313,7 @@ export function DiscussionVideoEcran() {
               </section>
             )}
 
-            {cercle === "tous" && (
+            {vueCercle === "tous" && (
               <section className="dv-fil" data-fil="tous">
                 {!d.tous ? (
                   <div className="dv-age" data-age>
@@ -388,13 +424,84 @@ export function DiscussionVideoEcran() {
               </section>
             )}
 
-            {cercle === "proches" && <p className="dv-pied">{P.pourEcrire}</p>}
-            {feuilleSuivi && cercle && (
+            {leGroupe && (
+              <section className="dv-fil" data-fil="groupe">
+                <p className="dv-qui dv-qui-groupe">{P.quiGroupe(leGroupe.nom)}</p>
+                {filGroupe.length === 0 ? (
+                  <p className="dv-doux" data-rien>
+                    {P.groupeVide}
+                  </p>
+                ) : (
+                  <ul className="dv-liste">
+                    {filGroupe.map((l) => {
+                      const e = l.ecrit;
+                      if (!e) return null;
+                      const prenom = e.moi ? P.toi : e.prenom;
+                      const neuf = luGroupe > 0 && !e.moi && e.le > luGroupe;
+                      return (
+                        <li key={l.cle} className={`dv-msg${e.moi ? " moi" : ""}${e.repond ? " rep" : ""}${neuf ? " neuf" : ""}`} {...(neuf ? { "data-neuf": "" } : {})} data-ecrit={e.id}>
+                          <Tete prenom={prenom} src={e.figurine?.src} />
+                          <div className="dv-bulle dv-bulle-groupe">
+                            <small>
+                              {prenom}
+                              {e.repond ? ` ${P.repondA(e.repond.prenom)}` : ""}
+                              {e.de ? ` · ${e.de}` : ""}
+                            </small>
+                            <span>
+                              <span className="dv-texte">{e.texte}</span>
+                            </span>
+                            <span className="dv-actions">
+                              {!e.moi && (
+                                <button type="button" data-repondre={e.id} onClick={() => setRepond({ cle: e.id, prenom })}>
+                                  {P.repondre}
+                                </button>
+                              )}
+                              {e.moi && (
+                                <button type="button" data-effacer={e.id} onClick={() => void effacerEcrit(e.id)}>
+                                  {P.effacer}
+                                </button>
+                              )}
+                            </span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <form
+                  className="dv-ecrire"
+                  data-ecrire
+                  onSubmit={(ev) => {
+                    ev.preventDefault();
+                    void publier(true);
+                  }}
+                >
+                  <span className="dv-lu dv-lu-groupe">{P.luParGroupe(leGroupe.nom)}</span>
+                  {repond && (
+                    <span className="dv-repond" data-reponse-a>
+                      {P.repondreA(repond.prenom).replace("…", "")}
+                      <button type="button" aria-label={P.annuler} onClick={() => setRepond(null)}>
+                        {P.annulerReponse}
+                      </button>
+                    </span>
+                  )}
+                  <span className="dv-champ">
+                    <input value={texte} maxLength={ECRITS_VIDEO.texte} autoComplete="off" name="texte" placeholder={repond ? P.repondreA(repond.prenom) : P.ecrire} aria-label={P.ecrire} onChange={(ev) => setTexte(ev.target.value)} />
+                    <button type="submit" disabled={occupe || !texte.trim()}>
+                      {P.publier}
+                    </button>
+                  </span>
+                </form>
+              </section>
+            )}
+
+            {vueCercle === "proches" && <p className="dv-pied">{P.pourEcrire}</p>}
+            {feuilleSuivi && niveauOuvert && cercle && (
               <div className="dv-voile" onClick={() => setFeuilleSuivi(false)}>
                 <div className="dv-feuille" role="dialog" aria-label={P.suivreTitre} data-feuille-suivi onClick={(ev) => ev.stopPropagation()}>
                   <b>{P.suivreTitre}</b>
                   {NIVEAUX_SUIVI.map((n) => (
-                    <button key={n} type="button" className={`dv-niveau${d.suivi[cercle] === n ? " on" : ""}`} data-niveau={n} onClick={() => void suivre(cercle, n)}>
+                    <button key={n} type="button" className={`dv-niveau${niveauOuvert === n ? " on" : ""}`} data-niveau={n} onClick={() => void suivre(cercle, n)}>
                       <span>
                         {NIVEAUX[n].e} {NIVEAUX[n].nom}
                       </span>
@@ -446,6 +553,10 @@ const STYLES = `
 .dv-cercle{flex:1;min-width:0;border:0;border-radius:11px;padding:9px 6px;background:transparent;color:#c9b29c;font:inherit;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dv-cercle.on.dv-proches{background:#ff5d8f;color:#fff}
 .dv-cercle.on.dv-tous{background:#4f8ff0;color:#fff}
+.dv-cercle.on.dv-groupe{background:#3fbf8a;color:#fff}
+.dv-qui-groupe{color:#7fe0b4}
+.dv-bulle-groupe{background:rgba(63,191,138,.14)}
+.dv-lu-groupe{color:#7fe0b4}
 .dv-fil{display:flex;flex-direction:column;gap:10px;padding:0 14px}
 .dv-qui{margin:0;font-size:12.5px;font-weight:700}
 .dv-qui-proches{color:#ff8fb1}

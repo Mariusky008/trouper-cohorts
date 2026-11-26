@@ -16,7 +16,7 @@ import { randomBytes } from "node:crypto";
 import { SEAU_FIGURINES, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { qui8 } from "./talkie-serveur";
 import { maBoiteARevoir } from "./revoir-serveur";
-import { cleSuivi, dossierSuiveurs, tousMesSuivis, type Suivi } from "./suivis-video-serveur";
+import { dossierSuiveurs, tousMesSuivis, type Suivi } from "./suivis-video-serveur";
 import { cercleValide, lienDiscussion, type CercleDiscussion, type NiveauSuivi } from "./discussion-video";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
 import { NOTIF_DISCUSSION_MS, heureCalme } from "./regle-de-bruit";
@@ -24,8 +24,12 @@ import { titreCourt } from "./reactions-video";
 import { ACTIVITE, PHRASES_ACTIVITE, type ActiviteVue, type LigneActivite, type SorteEvenement } from "./activite";
 
 type Supabase = ReturnType<typeof createAdminClient>;
-type FicheEvenement = { prenom?: string; titre?: string; texte?: string; vocal?: boolean };
-type Evenement = { nom: string; le: number; cercle: CercleDiscussion; video: string; q: string; sorte: SorteEvenement };
+type FicheEvenement = { prenom?: string; titre?: string; texte?: string; vocal?: boolean; groupe?: string };
+/** (👥 lot A6 : `cercle` « groupe », et son id) */
+type Evenement = { nom: string; le: number; cercle: CercleDiscussion | "groupe"; groupe?: string; video: string; q: string; sorte: SorteEvenement };
+/** Le morceau du nom qui dit la discussion : « proches », « tous », ou l'id du groupe. */
+const segment = (e: { cercle: CercleDiscussion | "groupe"; groupe?: string }) => (e.cercle === "groupe" ? s(e.groupe) : e.cercle);
+const ID_GROUPE = /^g-\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}$/;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const JOUR_MS = 24 * 3600_000;
 const ID_VIDEO = /^[A-Za-z0-9_-]{11}$/;
@@ -33,9 +37,12 @@ const dossierActivite = (h: string) => `${h}/activite`;
 const cheminLu = (h: string) => `${h}/activite-lu.json`;
 
 function lireNom(nom: string): Evenement | null {
-  const m = /^(\d{13})\.([a-z]+)\.([A-Za-z0-9_-]{11})\.([A-Za-z0-9_-]{4,16})\.([rn])(?:\.[0-9a-f]{4})?\.json$/.exec(nom);
-  const cercle = m ? cercleValide(m[2]) : null;
-  return m && cercle ? { nom, le: Number(m[1]), cercle, video: m[3], q: m[4], sorte: m[5] as SorteEvenement } : null;
+  const m = /^(\d{13})\.([a-z]+|g-\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6})\.([A-Za-z0-9_-]{11})\.([A-Za-z0-9_-]{4,16})\.([rn])(?:\.[0-9a-f]{4})?\.json$/.exec(nom);
+  if (!m) return null;
+  const base = { nom, le: Number(m[1]), video: m[3], q: m[4], sorte: m[5] as SorteEvenement };
+  if (ID_GROUPE.test(m[2])) return { ...base, cercle: "groupe", groupe: m[2] };
+  const cercle = cercleValide(m[2]);
+  return cercle ? { ...base, cercle } : null;
 }
 
 /**
@@ -45,33 +52,49 @@ function lireNom(nom: string): Evenement | null {
 export async function prevenirLaDiscussion(
   supabase: Supabase,
   auteur: string,
-  o: { cercle: CercleDiscussion; tranche: string; video: string; titre: string; prenom: string; texte?: string; vocal?: boolean; repondA?: string },
+  o: {
+    cercle: CercleDiscussion | "groupe";
+    tranche: string;
+    video: string;
+    titre: string;
+    prenom: string;
+    texte?: string;
+    vocal?: boolean;
+    repondA?: string;
+    /** 👥 (lot A6) le groupe, et ses membres à prévenir (leur niveau : celui qu'ils ont choisi, sinon 🔔) */
+    groupe?: { id: string; nom: string; membres: { h: string; niveau: NiveauSuivi }[] };
+  },
 ): Promise<string[]> {
-  if (!ID_VIDEO.test(o.video)) return [];
+  if (!ID_VIDEO.test(o.video) || (o.cercle === "groupe" && !ID_GROUPE.test(s(o.groupe?.id)))) return [];
   const q = qui8(auteur);
   const pour = new Map<string, SorteEvenement>();
   if (o.repondA && o.repondA !== auteur) pour.set(o.repondA, "r");
-  const dossier = dossierSuiveurs(o.cercle, o.tranche, o.video);
-  const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossier, { limit: ACTIVITE.suiveursMax + 1, sortBy: { column: "name", order: "asc" } });
-  const noms = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => s(f.name)).filter((n) => n.endsWith(".json") && n !== `${q}.json`);
-  const suiveurs = await Promise.all(noms.slice(0, ACTIVITE.suiveursMax).map((n) => lireJson<{ h?: string; niveau?: string }>(supabase, `${dossier}/${n}`).catch(() => ({}) as { h?: string; niveau?: string })));
+  let suiveurs: { h?: string; niveau?: string }[];
+  if (o.cercle === "groupe") suiveurs = o.groupe?.membres ?? [];
+  else {
+    const dossier = dossierSuiveurs(o.cercle, o.tranche, o.video);
+    const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossier, { limit: ACTIVITE.suiveursMax + 1, sortBy: { column: "name", order: "asc" } });
+    const noms = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => s(f.name)).filter((n) => n.endsWith(".json") && n !== `${q}.json`);
+    suiveurs = await Promise.all(noms.slice(0, ACTIVITE.suiveursMax).map((n) => lireJson<{ h?: string; niveau?: string }>(supabase, `${dossier}/${n}`).catch(() => ({}) as { h?: string; niveau?: string })));
+  }
   for (const x of suiveurs) {
     const h = s(x.h);
     if (h && h !== auteur && (x.niveau === "prevenir" || x.niveau === "discret") && !pour.has(h)) pour.set(h, "n");
   }
   const le = Date.now();
-  const fiche: FicheEvenement = { prenom: o.prenom, titre: o.titre, ...(o.texte ? { texte: o.texte } : {}), ...(o.vocal ? { vocal: true } : {}) };
+  const fiche: FicheEvenement = { prenom: o.prenom, titre: o.titre, ...(o.texte ? { texte: o.texte } : {}), ...(o.vocal ? { vocal: true } : {}), ...(o.groupe ? { groupe: o.groupe.nom } : {}) };
+  const ou = { cercle: o.cercle, ...(o.groupe ? { groupe: o.groupe.id } : {}) };
   await Promise.all(
-    [...pour].map(([h, sorte]) => ecrireJson(supabase, `${dossierActivite(h)}/${le}.${o.cercle}.${o.video}.${q}.${sorte}.${randomBytes(2).toString("hex")}.json`, fiche).catch(() => false)),
+    [...pour].map(([h, sorte]) => ecrireJson(supabase, `${dossierActivite(h)}/${le}.${segment(ou)}.${o.video}.${q}.${sorte}.${randomBytes(2).toString("hex")}.json`, fiche).catch(() => false)),
   );
   // (📱 lot A5 : puis le téléphone, selon la règle de bruit)
   const niveaux = new Map(suiveurs.map((x) => [s(x.h), niveauDe(x.niveau)] as const));
-  await Promise.all([...pour].map(([h, sorte]) => sonnerLeTelephone(supabase, h, { ...o, sorte, niveau: niveaux.get(h) ?? null, le }).catch(() => "rien")));
+  await Promise.all([...pour].map(([h, sorte]) => sonnerLeTelephone(supabase, h, { cercle: o.cercle, video: o.video, titre: o.titre, prenom: o.prenom, texte: o.texte, vocal: o.vocal, ...(o.groupe ? { groupe: o.groupe.id, groupeNom: o.groupe.nom } : {}), sorte, niveau: niveaux.get(h) ?? null, le }).catch(() => "rien")));
   return [...pour.keys()];
 }
 
 const niveauDe = (x: unknown): NiveauSuivi | null => (x === "prevenir" || x === "discret" || x === "non" ? x : null);
-const cheminVague = (h: string, cercle: CercleDiscussion, video: string) => `${h}/vagues/${cercle}.${video}.json`;
+const cheminVague = (h: string, seg: string, video: string) => `${h}/vagues/${seg}.${video}.json`;
 
 /**
  * 📱 (lot A5) LE TÉLÉPHONE, après Activité — la matrice : ↩ une réponse directe sonne en 🔔 et en 🤫 (pas en 🔕 : Activité
@@ -83,14 +106,15 @@ const cheminVague = (h: string, cercle: CercleDiscussion, video: string) => `${h
 async function sonnerLeTelephone(
   supabase: Supabase,
   h: string,
-  o: { cercle: CercleDiscussion; video: string; titre: string; prenom: string; texte?: string; vocal?: boolean; sorte: SorteEvenement; niveau: NiveauSuivi | null; le: number },
+  o: { cercle: CercleDiscussion | "groupe"; groupe?: string; groupeNom?: string; video: string; titre: string; prenom: string; texte?: string; vocal?: boolean; sorte: SorteEvenement; niveau: NiveauSuivi | null; le: number },
 ): Promise<"envoye" | "rien"> {
   if (heureCalme(o.le)) return "rien";
   if (o.sorte === "n" && o.niveau !== "prevenir") return "rien";
-  const suivi = (await tousMesSuivis(supabase, h))[cleSuivi(o.cercle, o.video)];
+  const seg = segment(o);
+  const suivi = (await tousMesSuivis(supabase, h))[`${seg}:${o.video}`];
   if (o.sorte === "r" && suivi?.niveau === "non") return "rien";
   if (o.le - (Number(suivi?.lu) || 0) < 2 * 60_000) return "rien";
-  const chemin = cheminVague(h, o.cercle, o.video);
+  const chemin = cheminVague(h, seg, o.video);
   const v = await lireJson<{ le?: number; rep?: boolean }>(supabase, chemin).catch(() => ({}) as { le?: number; rep?: boolean });
   const dansLaVague = o.le - (Number(v.le) || 0) < NOTIF_DISCUSSION_MS;
   const titre = titreCourt(o.titre);
@@ -106,10 +130,14 @@ async function sonnerLeTelephone(
     // (combien de nouveaux : de vrais fichiers, depuis que je l'ai lue)
     const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossierActivite(h), { limit: ACTIVITE.evenementsMax, sortBy: { column: "name", order: "desc" } });
     const lu = Number(suivi?.lu) || 0;
-    const n = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => lireNom(s(f.name))).filter((e) => e && e.cercle === o.cercle && e.video === o.video && e.le > lu).length;
-    notif = { titre: PHRASES_ACTIVITE.vague(Math.max(1, n), titre), corps: `${o.prenom} : ${dit || "…"}` };
+    const n = ((Array.isArray(data) ? data : []) as { name?: string }[]).map((f) => lireNom(s(f.name))).filter((e) => e && segment(e) === seg && e.video === o.video && e.le > lu).length;
+    // (👥 un groupe : « 👥 Les copains · 4 nouveaux mots », « Zoé : … · La finale »)
+    notif = o.groupeNom
+      ? { titre: PHRASES_ACTIVITE.vagueGroupe(o.groupeNom, Math.max(1, n)), corps: `${o.prenom} : ${dit || "…"} · ${titre}` }
+      : { titre: PHRASES_ACTIVITE.vague(Math.max(1, n), titre), corps: `${o.prenom} : ${dit || "…"}` };
   }
-  return prevenirUnHabitantAppli(supabase, h, { ...notif, url: lienDiscussion(o.video, o.cercle), tag: `discussion-${o.cercle}-${o.video}` }, o.sorte === "r" ? "repondu" : "suivies");
+  const genre = o.sorte === "r" ? "repondu" : o.cercle === "groupe" ? "proches" : "suivies";
+  return prevenirUnHabitantAppli(supabase, h, { ...notif, url: lienDiscussion(o.video, o.cercle, undefined, o.groupe), tag: `discussion-${seg}-${o.video}` }, genre);
 }
 
 /** 🛎️ Mon activité : une ligne par discussion. `compter` : seulement combien ont du nouveau (sans ouvrir un fichier). */
@@ -126,8 +154,8 @@ export async function monActivite(supabase: Supabase, h: string, o: { compter?: 
   // (trente jours, puis effacés)
   const vieux = evenements.filter((e) => maintenant - e.le > ACTIVITE.gardeJours * JOUR_MS);
   if (vieux.length) void supabase.storage.from(SEAU_FIGURINES).remove(vieux.map((e) => `${dossierActivite(h)}/${e.nom}`)).then(() => undefined, () => undefined);
-  const luDe = (c: CercleDiscussion, video: string): { lu: number; suivi?: Suivi } => {
-    const suivi = suivis[cleSuivi(c, video)];
+  const luDe = (c: string, video: string): { lu: number; suivi?: Suivi } => {
+    const suivi = suivis[`${c}:${video}`];
     return { lu: Math.max(luGlobal, Number(suivi?.lu) || 0), suivi };
   };
 
@@ -135,16 +163,16 @@ export async function monActivite(supabase: Supabase, h: string, o: { compter?: 
   const groupes = new Map<string, Evenement[]>();
   for (const e of evenements) {
     if (maintenant - e.le > ACTIVITE.gardeJours * JOUR_MS) continue;
-    if (luDe(e.cercle, e.video).suivi?.niveau === "non" && e.sorte !== "r") continue;
-    const cle = `${e.cercle}:${e.video}`;
+    if (luDe(segment(e), e.video).suivi?.niveau === "non" && e.sorte !== "r") continue;
+    const cle = `${segment(e)}:${e.video}`;
     groupes.set(cle, [...(groupes.get(cle) ?? []), e]);
   }
   const lignes: LigneActivite[] = [];
   for (const [cle, l] of groupes) {
-    const { cercle, video } = l[0];
-    const { lu, suivi } = luDe(cercle, video);
+    const { cercle, video, groupe } = l[0];
+    const { lu, suivi } = luDe(segment(l[0]), video);
     const neufs = l.filter((e) => e.le > lu);
-    lignes.push({ cle, cercle, video, titre: s(suivi?.titre), le: l[0].le, neuf: neufs.length > 0, nouveaux: neufs.length, prenoms: [] });
+    lignes.push({ cle, cercle, video, ...(groupe ? { groupe: { id: groupe, nom: "" } } : {}), titre: s(suivi?.titre), le: l[0].le, neuf: neufs.length > 0, nouveaux: neufs.length, prenoms: [] });
   }
   // (👯 ce que mes proches ont dit d'une vidéo que j'ai vue : ma boîte « à revoir »)
   for (const x of boite) {
@@ -156,14 +184,15 @@ export async function monActivite(supabase: Supabase, h: string, o: { compter?: 
   if (o.compter) return { lignes: [], nouveau };
 
   // (les réponses directes nouvelles en haut, puis le nouveau, puis le déjà vu ; le plus récent d'abord)
-  const aReponse = (x: LigneActivite) => (groupes.get(x.cle) ?? []).some((e) => e.sorte === "r" && e.le > luDe(x.cercle, x.video).lu);
+  const segLigne = (x: LigneActivite) => (x.groupe ? x.groupe.id : x.cercle);
+  const aReponse = (x: LigneActivite) => (groupes.get(x.cle) ?? []).some((e) => e.sorte === "r" && e.le > luDe(segLigne(x), x.video).lu);
   lignes.sort((a, b) => Number(b.neuf && aReponse(b)) - Number(a.neuf && aReponse(a)) || Number(b.neuf) - Number(a.neuf) || b.le - a.le);
   const montrees = lignes.slice(0, ACTIVITE.lignesMax);
   await Promise.all(
     montrees.map(async (x) => {
       const l = groupes.get(x.cle);
       if (!l) return;
-      const lu = luDe(x.cercle, x.video).lu;
+      const lu = luDe(segLigne(x), x.video).lu;
       // (les prénoms : le dernier événement de chacun, trois au plus ; et la réponse la plus récente)
       const parQui: Evenement[] = [];
       for (const e of l) if (!parQui.some((p) => p.q === e.q) && parQui.length < 3) parQui.push(e);
@@ -179,6 +208,7 @@ export async function monActivite(supabase: Supabase, h: string, o: { compter?: 
         x.reponse = { prenom: s(f?.prenom) || "Quelqu’un", ...(texteDe(f) ? { texte: texteDe(f) } : {}) };
       }
       if (!x.titre) x.titre = s(dernier?.titre) || s(lus.map(([, f]) => s(f.titre)).find(Boolean));
+      if (x.groupe) x.groupe.nom = s(lus.map(([, f]) => s(f.groupe)).find(Boolean)) || "Ton groupe";
     }),
   );
   return { lignes: montrees.filter((x) => x.titre), nouveau };

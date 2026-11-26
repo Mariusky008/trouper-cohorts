@@ -21,6 +21,7 @@ import { cheminReactions, reactionsDesProches } from "./reactions-video-serveur"
 import { aMonMot, laVideo, saTranche, suiteDeLaVideo } from "./mots-video-serveur";
 import { ID_VIDEO, ficheVideo, noterFicheVideo } from "./fiche-video-serveur";
 import { prevenirLaDiscussion } from "./activite-serveur";
+import { aParleAuGroupe, effacerAuGroupe, groupesDeLaVideo, publierAuGroupe, suivreAuGroupe } from "./discussion-groupe-serveur";
 import { choisirNiveau, marquerLu, mesSuivis, niveauValide, suivreApresPublication } from "./suivis-video-serveur";
 import { ECRITS_VIDEO, PHRASES_DISCUSSION, cercleValide, niveauDeDepart, type NiveauSuivi, type DiscussionVue, type EcritVu, type VideoDiscussion } from "./discussion-video";
 
@@ -59,11 +60,13 @@ export async function videoDeLaDiscussion(supabase: Supabase, moi: Habitant, id:
   const fiche = await ficheVideo(supabase, i);
   if (!fiche) return null;
   const [reactions, mot] = await Promise.all([lireJson<{ vu?: number }>(supabase, cheminReactions(i, moi.id)).catch(() => ({}) as { vu?: number }), aMonMot(supabase, moi, i).catch(() => false)]);
-  return Number(reactions.vu) > 0 || mot ? { ...fiche, aMaTele: false } : null;
+  if (Number(reactions.vu) > 0 || mot) return { ...fiche, aMaTele: false };
+  // (👥 lot A6 : un de mes groupes en a parlé)
+  return (await aParleAuGroupe(supabase, moi, i).catch(() => false)) ? { ...fiche, aMaTele: false } : null;
 }
 
 /** 💬 La discussion : la vidéo, ce que mes proches en ont dit, les mots de ma tranche. */
-export async function laDiscussion(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown): Promise<Resultat<{ discussion?: DiscussionVue }>> {
+export async function laDiscussion(supabase: Supabase, moi: Habitant, id: unknown, seance?: unknown, groupe?: unknown): Promise<Resultat<{ discussion?: DiscussionVue }>> {
   const v = await videoDeLaDiscussion(supabase, moi, id, seance);
   if (!v) return { error: "Cette discussion n’est plus là.", statut: 404 };
   const { aMaTele, ...video } = v;
@@ -93,6 +96,8 @@ export async function laDiscussion(supabase: Supabase, moi: Habitant, id: unknow
       ecrits,
       suivi,
       luAvant: { proches: luAvant.proches ?? 0, tous: luAvant.tous ?? 0 },
+      // (👥 lot A6 : mes groupes qui en parlent, et celui d'où je viens)
+      groupes: await groupesDeLaVideo(supabase, moi, video.id, { demande: groupe, marquer: true, titre: video.titre }).catch(() => []),
     },
   };
 }
@@ -172,6 +177,8 @@ async function trancheOuRefus(supabase: Supabase, moi: Habitant): Promise<Tranch
 export async function publierEcrit(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ecrit?: EcritVu; premiere?: boolean }>> {
   const v = await videoDeLaDiscussion(supabase, moi, p.id, p.seance);
   if (!v) return { error: "Cette discussion n’est plus là.", statut: 404 };
+  // (👥 lot A6 : dans le cercle d'un de mes groupes — pas d'accord à donner : seuls ses membres le lisent)
+  if (p.groupe !== undefined) return publierAuGroupe(supabase, moi, v, { groupe: p.groupe, texte: p.texte, repond: p.repond });
   const m = await trancheOuRefus(supabase, moi);
   if (typeof m !== "string") return m;
   if (p.accord !== true) return { error: "Il nous faut ton accord pour publier ton mot.", statut: 400 };
@@ -216,6 +223,7 @@ export async function publierEcrit(supabase: Supabase, moi: Habitant, p: Record<
 export async function effacerEcrit(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ ok?: true }>> {
   const v = await videoDeLaDiscussion(supabase, moi, p.id, p.seance);
   if (!v) return { error: "Cette discussion n’est plus là.", statut: 404 };
+  if (p.groupe !== undefined) return effacerAuGroupe(supabase, moi, v.id, { groupe: p.groupe, ecrit: p.ecrit });
   const m = await trancheOuRefus(supabase, moi);
   if (typeof m !== "string") return m;
   const id = s(p.ecrit);
@@ -257,8 +265,9 @@ export async function signalerEcrit(supabase: Supabase, moi: Habitant, p: Record
 export async function suivreDiscussion(supabase: Supabase, moi: Habitant, p: Record<string, unknown>): Promise<Resultat<{ niveau?: NiveauSuivi }>> {
   const v = await videoDeLaDiscussion(supabase, moi, p.id, p.seance);
   if (!v) return { error: "Cette discussion n’est plus là.", statut: 404 };
-  const cercle = cercleValide(p.cercle);
   const niveau = niveauValide(p.niveau);
+  if (p.cercle === "groupe" && niveau) return suivreAuGroupe(supabase, moi, v, { groupe: p.groupe, niveau });
+  const cercle = cercleValide(p.cercle);
   if (!cercle || !niveau) return { error: "Quel suivi ?", statut: 400 };
   let tranche = "-";
   if (cercle === "tous") {
