@@ -91,6 +91,9 @@ const erreurs = [];
 const ouvrir = async (x) => {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
   await ctx.addCookies([{ name: "clikme_habitant", value: x.jeton, url: BASE }, { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: BASE }]);
+  // (📷 la carte de la caméra, proposée une fois à qui a ses expressions, n'est pas l'objet de cet essai : déjà vue — sinon
+  // elle peut s'ouvrir au milieu, selon le moment où ses expressions sont prêtes)
+  await ctx.addInitScript(() => window.localStorage.setItem("clikme-visage-propose", "1"));
   await ctx.route("https://www.youtube.com/iframe_api", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: FAUX_YT }));
   await ctx.route(/^https:\/\/i\.ytimg\.com\//, (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
   await ctx.route(/^https:\/\/www\.youtube-nocookie\.com\//, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>lecteur</title>" }));
