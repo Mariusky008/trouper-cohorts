@@ -9,7 +9,7 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { THEMES_DECOUVRIR, type IdTheme } from "@/lib/direct/decouvrir";
-import { vignetteYouTube } from "@/lib/direct/tele";
+import { videoYouTube, vignetteYouTube } from "@/lib/direct/tele";
 import { MOT_GROUPE_MAX, NOM_GROUPE_MAX, PHRASES_PROPOSITIONS as P, aParis, quandLisible, type PlacesGroupe, type PourQui, type PropositionGroupe } from "@/lib/direct/groupes";
 import type { TeleDuJour } from "@/lib/direct/tele-du-jour";
 
@@ -50,7 +50,8 @@ export function ProposerGroupe({ tele, moi, adulte, onFermer, onPubliee }: { tel
   })();
   const nbPlaces: PlacesGroupe = pour === "proches" ? 4 : places;
   const nomVu = nom.trim() || (t ? `${t.court[0].toUpperCase()}${t.court.slice(1)} ensemble` : "");
-  const vignette = video.genre === "tele" ? vignetteYouTube(video.id) : null;
+  const duLien = video.genre === "lien" ? videoYouTube(lien.trim()) : null;
+  const vignette = video.genre === "tele" ? vignetteYouTube(video.id) : duLien ? vignetteYouTube(duLien.id) : null;
   const ceSoirPasse = aParis(0, HEURES[HEURES.length - 1]) < Date.now();
 
   async function publier() {
@@ -152,20 +153,27 @@ export function ProposerGroupe({ tele, moi, adulte, onFermer, onPubliee }: { tel
                 <span>{v.titre}</span>
               </button>
             ))}
-            <button type="button" className={`pg-vignette vide${video.genre === "lien" ? " pris" : ""}`} aria-pressed={video.genre === "lien"} onClick={() => setVideo({ genre: "lien" })} data-lien>
-              <b aria-hidden="true">🔗</b>
-              {P.unLien}
-            </button>
             <button type="button" className={`pg-vignette vide${video.genre === "nouveautes" ? " pris" : ""}`} aria-pressed={video.genre === "nouveautes"} onClick={() => setVideo({ genre: "nouveautes" })} data-nouveautes>
               <b aria-hidden="true">📰</b>
               {P.nouveautes}
             </button>
           </div>
-          {video.genre === "lien" && (
-            <label className="pg-champ">
-              <input type="url" inputMode="url" value={lien} onChange={(e) => setLien(e.target.value)} placeholder={P.lienIndice} data-lien-adresse />
-            </label>
-          )}
+          {/* 🔗 (26 novembre 2026) le lien, toujours en vue : n'importe quelle vidéo YouTube, pas seulement celles du jour */}
+          <label className={`pg-champ pg-lien${video.genre === "lien" ? " pris" : ""}`} data-lien>
+            <span>🔗 {P.unLien}</span>
+            <input
+              type="url"
+              inputMode="url"
+              value={lien}
+              onFocus={() => setVideo({ genre: "lien" })}
+              onChange={(e) => {
+                setLien(e.target.value);
+                setVideo({ genre: "lien" });
+              }}
+              placeholder={P.lienIndice}
+              data-lien-adresse
+            />
+          </label>
         </div>
 
         <div>
@@ -270,6 +278,9 @@ const STYLES_PROPOSER = `
 .pg-ou{margin:-4px 16px 0;text-align:center;color:#cdb8a4;font-size:12.5px}
 .pg-champ{display:flex;flex-direction:column;gap:6px;padding:0 16px}
 .pg-champ span{color:#F2C46B;font-weight:800;font-size:15px}
+.pg-lien{margin-top:10px}
+.pg-lien span{font-size:14px}
+.pg-lien.pris input{border-color:#ff2e9a;box-shadow:0 0 0 2px rgba(255,46,154,.35)}
 .pg-champ input{min-height:48px;padding:0 14px;border:1px solid rgba(255,196,140,.3);border-radius:14px;background:#1c1411;color:#FFF4E6;font:inherit;font-size:16px}
 .pg-etiquette{margin:0 0 8px;padding:0 16px;color:#F2C46B;font-weight:800;font-size:15px}
 .pg-rang{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 4px;scrollbar-width:none}
