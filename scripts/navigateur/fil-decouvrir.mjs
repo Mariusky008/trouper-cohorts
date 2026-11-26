@@ -210,9 +210,11 @@ await lea.screenshot({ path: `${D}/fil-8-ordinateur.png` });
 await lea.setViewportSize({ width: 390, height: 844 });
 await lea.waitForTimeout(400);
 
-// ═══ « TOUS LES SALONS » : L'ANCIENNE PAGE ; « ‹ LE FIL » ═══
-await lea.locator("#o-decouvrir [data-tous-les-salons]").click();
-ok(await attendre(lea, async () => (await lea.locator("#o-salons:not([hidden]) [data-carte-tele]").count()) === 1 && lea.url().endsWith("#salons"), 30000), "« Tous les salons » : l'ancienne page (sa télé du jour, les salons)");
+// ═══ « TOUS LES SALONS » N'EST PLUS EN HAUT DU FIL (26 novembre 2026 : il menait à l'ancien concept) ; L'ANCIENNE PAGE
+// NE S'OUVRE PLUS QUE PAR LES ANCIENS LIENS (`#salons`), AVEC « ‹ LE FIL » ═══
+ok((await lea.locator("#o-decouvrir [data-tous-les-salons]").count()) === 0 && !(await lea.locator("#o-decouvrir").innerText()).includes("Tous les salons"), "plus de « Tous les salons » en haut du fil");
+await lea.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
+ok(await attendre(lea, async () => (await lea.locator("#o-salons:not([hidden]) [data-carte-tele]").count()) === 1, 30000), "`#salons` (un ancien lien) : l'ancienne page (sa télé du jour, les salons)");
 ok((await lea.locator(".mc-nav button.pris").innerText()).includes("Découvrir"), "… toujours dans Découvrir");
 await lea.locator("#o-salons [data-retour-fil]").click();
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir:not([hidden]) [data-fil]").count()) === 1), "« ‹ Le fil » : retour au fil");

@@ -26,6 +26,7 @@ import { PHRASES_FIL as PF, titreDeSeance, type SeanceFil } from "@/lib/direct/f
 import type { TeleDuJour } from "@/lib/direct/tele-du-jour";
 import { OUVERT_AVANT_MS, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as PP, PHRASES_VIE_DU_GROUPE as PV, aParis, heureLisible, quandLisible, type GroupeVue, type PropositionGroupe } from "@/lib/direct/groupes";
 import { ProposerGroupe } from "./proposer-groupe";
+import { ApercuVideo, useSuspendreApercus } from "./apercu-video";
 import { CreerGroupe, EspaceGroupe, Figurine, STYLES_FIGURINES_GROUPE, salonDuGroupe } from "./groupe-espace";
 
 const ROUTE = "/api/direct/mes-groupes";
@@ -192,13 +193,8 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
       {/* 📣 PROPOSITIONS DE GROUPES (lot G2) : « On se retrouve ? » — cachée tant qu'il n'y en a pas */}
       {propositions.length > 0 && (
         <>
-          <div className="mg-tete-rub">
-            <h2 className="mg-rubrique">{PP.rangee}</h2>
-            <button type="button" className="mg-plus" onClick={() => setProposer(true)}>
-              <b aria-hidden="true">＋</b>
-              {PP.lancer}
-            </button>
-          </div>
+          {/* (« ＋ Lancer » est parti le 26 novembre 2026 au soir : il faisait la même chose que « ＋ Proposer », juste au-dessus) */}
+          <h2 className="mg-rubrique">{PP.rangee}</h2>
           <div className="mg-rang" data-propositions>
             {propositions.map((p) => (
               <CarteProposition key={p.id} p={p} onGeste={(corps) => void surProposition({ ...corps, id: p.id })} onAutre={() => setAutre(p)} onOuvrir={setOuvert} />
@@ -424,6 +420,8 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
 function CarteProposition({ p, onGeste, onAutre, onOuvrir }: { p: PropositionGroupe; onGeste: (corps: Record<string, unknown>) => void; onAutre: () => void; onOuvrir: (id: string) => void }) {
   const [menu, setMenu] = useState(false);
   const [voir, setVoir] = useState(false);
+  // (la vidéo en grand : les aperçus se taisent)
+  useSuspendreApercus(voir);
   if (p.garder) return <CarteGarder p={p} onGeste={onGeste} onOuvrir={onOuvrir} />;
   const n = p.confirmes.length;
   const complet = n >= p.places && !p.jY;
@@ -437,6 +435,9 @@ function CarteProposition({ p, onGeste, onAutre, onOuvrir }: { p: PropositionGro
   return (
     <div className="mg-carte mg-large mg-prop" data-proposition={p.id} data-pour={p.pour}>
       <div className={`mg-ecran${p.video ? "" : " sans"}`} style={p.video ? { backgroundImage: `url(${vignetteYouTube(p.video.id)})` } : undefined}>
+        {/* ▶ (26 novembre 2026) à l'écran, elle se lance toute seule, avec le son dès qu'on a touché la page ; on glisse
+            de côté : la suivante démarre, celle-ci s'arrête */}
+        {p.video && <ApercuVideo id={p.video.id} />}
         <span className="mg-ecran-ombre" aria-hidden="true" />
         {p.video ? (
           <button type="button" className="mg-ecran-lire" onClick={() => setVoir(true)} aria-label={PP.voirVideo} data-voir-video>
@@ -756,6 +757,8 @@ export const STYLES_MES_GROUPES = `
 .mg-ecran{position:relative;aspect-ratio:16/9;max-width:100%;background:#24131f center/cover no-repeat}
 .mg-ecran.sans{display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(255,46,154,.3),#20111b 70%)}
 .mg-ecran-e{font-size:58px}
+.mg-ecran .av-son{top:auto;bottom:52px}
+.mg-ecran[data-apercu-joue] .mg-ecran-lire i{opacity:0;transform:scale(.6);transition:opacity .3s ease,transform .3s ease}
 .mg-ecran-ombre{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 34%,transparent 50%,rgba(0,0,0,.85) 100%);pointer-events:none}
 .mg-ecran-lire{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;background:none;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mg-ecran-lire i{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 10px 26px rgba(0,0,0,.45)}

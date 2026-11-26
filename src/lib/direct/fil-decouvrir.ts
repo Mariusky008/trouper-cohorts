@@ -163,7 +163,6 @@ export const listePrenoms = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).j
 export const PHRASES_FIL = {
   indice: "Glisse : de pièce en pièce, de salon en salon",
   indiceDouble: "Touche deux fois : ta figurine réagit, et on la voit",
-  tousLesSalons: "Tous les salons",
   retourFil: "‹ Le fil",
   enDirect: (n: number) => `${n} en direct`,
   tesPassions: "ta passion",

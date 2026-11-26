@@ -112,7 +112,6 @@ export function aParis(jours: number, h: number, m = 0, maintenant = Date.now())
 
 export const PHRASES_PROPOSITIONS = {
   rangee: "Propositions de groupes",
-  lancer: "Lancer",
   confirmer: "Je confirme ma place",
   confirme: "✓ Ma place est prise",
   complet: "Complet",
