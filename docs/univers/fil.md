@@ -59,6 +59,21 @@ vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens
   bouton « Tous les salons » est parti le 26 novembre 2026 au soir (le propriétaire : « quand je clique dessus j'arrive sur
   l'ancien design et concept : il faut l'enlever ») ; l'ancienne page (ma télé du jour, les salons par passion,
   `#salons`) ne s'ouvre plus que par les anciens liens, avec « ‹ Le fil » pour revenir.
+- **« Quoi de neuf ? »** (26 novembre 2026, la maquette validée par le propriétaire :
+  https://claude.ai/artifact/YT3qagN9r2jdPZNZBdXhAW ; `app/collection/quoi-de-neuf.tsx`) : tout en haut du fil, une rangée
+  de cartes comme les stories de Facebook, qui s'en va en glissant vers la première pièce. D'abord « Ton humeur » (« ＋ »
+  tant qu'il ne l'a pas dite : elle ouvre « Ton humeur du jour »), puis ses proches qui ont dit la leur aujourd'hui (leur
+  figurine qui en fait la tête ; un rond rose tant qu'il ne l'a pas regardée). Sans proche qui l'a dite : les maisons
+  ouvertes de ceux qui partagent une de ses passions (« ⚽ Foot, comme toi »). Toucher une carte : sa figurine du jour en
+  grand, sa pancarte, et « Réagis avec ta figurine », pour de vrai :
+  - un proche : 🤗 un câlin, 💭 « Je pense à toi », ❤️, 😂 (les gestes de leur conversation), « Lui répondre », « Voir sa
+    maison » ;
+  - quelqu'un à découvrir (le propriétaire : « l'idée, c'est vraiment de créer des liens avec des inconnus ») : 👋 Coucou,
+    « ⚽ Allez ! » (l'emoji de leur passion), 😂 Je ris, 👏 Bravo — sa figurine apparaît dans sa pièce en le faisant (le
+    coucou de la maison ouverte, un de chaque par jour ; répondre répond à tous) ; « Frapper à sa porte », le salon de leur
+    passion.
+
+  Toucher à droite : la suivante. L'humeur de ses proches n'est plus une pièce du fil.
 - **Les vidéos se lancent seules** (26 novembre 2026, « comme sur YouTube : quand je scrolle, je vois le début de la
   vidéo avec le son ») : la télé de la pièce à l'écran joue, une seule à la fois dans toute l'appli
   (`app/collection/apercu-video.tsx`, aussi dans les « Propositions de groupes » de Mes groupes). Le son : les navigateurs

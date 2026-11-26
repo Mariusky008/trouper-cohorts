@@ -33,6 +33,7 @@ import {
   puceDeLObjet,
   PHRASES_CADEAU,
   PHRASES_PORTE,
+  bulleDuCoucou,
   PHRASES_QUESTION,
   type CadeauMaison,
   type QuestionChezLui,
@@ -767,7 +768,7 @@ function Piece({
           {/* 👋 (lot F2 du fil) chez moi : la figurine de qui m'a fait coucou, à côté de la mienne */}
           {!visite && coucou?.image && (
             <span className="mmc-coucou" data-coucou-de={coucou.id} style={{ left: `${Math.min(0.9, c.x + 0.2) * 100}%`, bottom: `${(1 - c.y) * 100}%`, height: `${c.hauteur * 0.9 * 100}%` }}>
-              <span className="mmc-coucou-bulle">{PHRASES_PORTE.coucouBulle}</span>
+              <span className="mmc-coucou-bulle">{bulleDuCoucou(coucou)}</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={coucou.image} alt="" draggable={false} />
             </span>

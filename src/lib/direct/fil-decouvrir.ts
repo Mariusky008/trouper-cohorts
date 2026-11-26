@@ -76,7 +76,7 @@ export type MaisonFil = {
   /** la vignette de sa pièce */
   image: string;
   figurine: SilhouetteFil;
-  passion: { e: string; nom: string; court: string };
+  passion: { e: string; nom: string; court: string; /** (« Quoi de neuf ? ») son salon : `/univers/salons?theme=<id>` */ id?: IdTheme };
   /** 👋 son coucou : envoyé, ou la personne a répondu (jamais une fausse réponse : c'est la sienne) */
   coucou?: "envoye" | "repondu";
   /** 🎙️ son bonjour (lot 4 de « Ma figurine ») */
@@ -109,7 +109,20 @@ export type SeanceFil = {
 export type RdvFil = { sorte: "rdv"; proposition: PropositionGroupe };
 export type PieceFil = SalonFil | AutourFil | HumeurFil | MaisonFil | SeanceFil | RdvFil;
 
+/**
+ * ☀️ « QUOI DE NEUF ? » (26 novembre 2026, la maquette validée par le propriétaire ; `docs/univers/fil.md`) : la rangée
+ * en haut de Découvrir, comme les stories de Facebook. D'abord la sienne (son humeur du jour, ou « ＋ » pour la dire),
+ * puis l'humeur du jour de ses proches (leur figurine qui en fait la tête) ; sans proche qui l'a dite, des gens qui
+ * partagent une de ses passions et ont ouvert leur maison (lot F2). Toucher une carte : sa figurine du jour en grand, et
+ * on y réagit avec SA figurine (pour de vrai : un geste dans leur conversation, un coucou dans sa maison).
+ */
+export type QuoiDeNeufFil = { mienne: { emoji: string; nom: string } | null; proches: ProcheHumeurFil[]; decouvrir: MaisonFil[] };
+/** Combien de cartes au plus dans « Quoi de neuf ? » (après la sienne). */
+export const QUOI_DE_NEUF_MAX = 12;
+
 export type FilVue = {
+  /** ☀️ « Quoi de neuf ? », en haut (sans rien à y montrer, il n'est pas là) */
+  quoiDeNeuf?: QuoiDeNeufFil;
   moi: { prenom: string; figurine: SilhouetteFil | null };
   /** les salons ont besoin de savoir s'il a 18 ans ou plus (les 15-17 ans ont les leurs) */
   age?: true;

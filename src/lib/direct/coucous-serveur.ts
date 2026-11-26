@@ -12,11 +12,12 @@
 import { randomUUID } from "node:crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { ecrireJson, lireJson } from "./ma-figurine-serveur";
+import type { GesteCoucou } from "./ma-maison";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
-export type Coucou = { id: string; de: string; le: string; repondu_le?: string; laisse_le?: string };
+export type Coucou = { id: string; de: string; le: string; repondu_le?: string; laisse_le?: string; /** (« Quoi de neuf ? ») son geste, et l'emoji de la passion pour « Allez ! » */ geste?: GesteCoucou; e?: string };
 const chemin = (h: string) => `${h}/monde/coucous.json`;
 
 export async function lireCoucous(supabase: Supabase, h: string): Promise<Coucou[]> {
@@ -26,4 +27,4 @@ export async function lireCoucous(supabase: Supabase, h: string): Promise<Coucou
 
 export const ecrireCoucous = (supabase: Supabase, h: string, liste: Coucou[]) => ecrireJson(supabase, chemin(h), { liste: liste.slice(-40) });
 
-export const coucouDe = (de: string): Coucou => ({ id: randomUUID().slice(0, 12), de, le: new Date().toISOString() });
+export const coucouDe = (de: string, geste: GesteCoucou = "coucou", e?: string): Coucou => ({ id: randomUUID().slice(0, 12), de, le: new Date().toISOString(), ...(geste !== "coucou" ? { geste } : {}), ...(e ? { e } : {}) });

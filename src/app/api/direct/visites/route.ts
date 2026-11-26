@@ -4,7 +4,8 @@
 // GET ?moi=1                                       → { visites } : chez moi — qui est passé, les souvenirs, qui entre
 // GET ?publics=1                                   → { publics } : les univers ouverts à tous (« Découvrir », lot 7)
 // POST { action: "frapper", cle }                  → frapper à la porte (il est prévenu, une fois par jour)
-// POST { action: "coucou", cle }                   → 👋 (lot F2 du fil) lui faire coucou : sa figurine apparaît chez lui
+// POST { action: "coucou", cle, geste?, e? }        → 👋 (lot F2 du fil) lui faire coucou : sa figurine apparaît chez lui
+//                                                    (« Quoi de neuf ? » : geste coucou | allez (e : l'emoji de la passion) | mdr | bravo)
 // POST { action: "souvenir", cle, objet, mot? }    → laisser un souvenir (ses proches seulement ; il l'accepte ou non)
 // POST { action: "signaler", cle }                 → signaler un univers (pour l'équipe)
 // POST { action: "decider", id, oui }              → chez moi : accepter (il se pose) ou refuser un souvenir
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     p?.action === "frapper"
       ? await frapper(supabase, moi, p.cle)
       : p?.action === "coucou"
-        ? await faireCoucou(supabase, moi, p.cle)
+        ? await faireCoucou(supabase, moi, p.cle, p.geste, p.e)
         : p?.action === "souvenir"
         ? await laisserSouvenir(supabase, moi, p.cle, p.objet, p.mot)
         : p?.action === "signaler"
