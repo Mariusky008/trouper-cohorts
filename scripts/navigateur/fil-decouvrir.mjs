@@ -118,7 +118,7 @@ await fermerPablito(lea, "#o-decouvrir");
 const foot = lea.locator('#o-decouvrir [data-piece="salon"][data-theme="foot"]');
 ok(await attendre(lea, async () => (await foot.count()) === 1, 45000), "Découvrir s'ouvre sur le fil : le salon du foot d'abord");
 const lesPieces = await lea.locator("#o-decouvrir [data-piece]").evaluateAll((l) => l.map((x) => x.getAttribute("data-piece") + (x.getAttribute("data-theme") ? `:${x.getAttribute("data-theme")}` : "")));
-ok(lesPieces.slice(0, 5).join() === "salon:foot,humeur,autour,salon:musique,salon:cuisine" && lesPieces.length === 14, `les pièces : sa passion en direct, l'humeur de ses proches, Autour, la musique ; puis tous les autres salons, sa passion d'abord (${lesPieces.length})`);
+ok(lesPieces.slice(0, 4).join() === "salon:foot,autour,salon:musique,salon:cuisine" && lesPieces.length === 13, `les pièces : sa passion en direct, Autour, la musique ; puis tous les autres salons, sa passion d'abord (${lesPieces.length})`);
 ok((await lea.locator("#o-decouvrir [data-piece][data-vide]").count()) === 10, "… les dix salons sans personne en ce moment");
 ok(/2 en direct · ta passion/.test(await texte(foot.locator(".fd-etiquette"))), "« 2 en direct · ta passion »");
 ok((await foot.locator(".fd-fig img").count()) === 2 && (await foot.locator(".fd-fig small").allInnerTexts()).sort().join() === "Hugo,Sam", "le gradin : les figurines de Sam et Hugo");
@@ -150,21 +150,40 @@ ok(vu, "Sam la voit pour de vrai : sa figurine dans le salon, sa réaction");
 await lea.waitForTimeout(300);
 await lea.screenshot({ path: `${D}/fil-2-reaction.png` });
 
-// ═══ ELLE GLISSE : L'HUMEUR DE SES PROCHES ; SA FIGURINE A QUITTÉ LE SALON ═══
-await glisser(lea);
-ok(await attendre(lea, async () => (await courante(lea)) === "h"), "elle glisse : l'humeur de ses proches");
-const humeur = lea.locator('#o-decouvrir [data-piece="humeur"]');
-ok((await humeur.locator("[data-proche] small").allInnerTexts()).join() === "Sam,Hugo" && /tristesse/i.test(await texte(humeur.locator("h2"))), `Sam d'abord (« ${await texte(humeur.locator("h2"))} »), puis Hugo`);
+// ═══ « QUOI DE NEUF ? », EN HAUT : L'HUMEUR DU JOUR DE SES PROCHES (26 novembre 2026) ═══
+await lea.evaluate(() => document.querySelector("#o-decouvrir .fd-boite").scrollTo({ top: 0 }));
+await lea.waitForTimeout(500);
+const qdn = lea.locator("#o-decouvrir [data-quoi-de-neuf]");
+ok((await qdn.count()) === 1 && /Quoi de neuf \?/.test(await texte(qdn.locator("h2"))) && /Les humeurs du jour de tes proches/.test(await texte(qdn.locator(".qn-tete small"))), "en haut : « Quoi de neuf ? », les humeurs du jour de ses proches");
+ok((await qdn.locator("[data-carte] .qn-nom").allInnerTexts()).join() === "Sam,Hugo" && (await qdn.locator("[data-carte] .qn-emoji").allInnerTexts()).join() === "😢,😂", "… Sam d'abord (😢), puis Hugo (😂), leurs figurines qui en font la tête");
+ok((await texte(qdn.locator(".qn-moi .qn-nom"))) === "Ton humeur" && (await qdn.locator(".qn-moi .qn-plus").count()) === 1, "… la sienne d'abord : « Ton humeur », avec ＋ (pas encore dite)");
+ok((await lea.locator('#o-decouvrir [data-piece="humeur"]').count()) === 0, "… elle n'est plus une pièce du fil");
+await lea.screenshot({ path: `${D}/fil-3-quoi-de-neuf.png` });
+await qdn.locator(`[data-carte]`).first().click();
+const histoire = lea.locator("[data-histoire]");
+ok(await attendre(lea, async () => (await histoire.count()) === 1), "toucher Sam : sa figurine du jour en grand");
+ok(/Sam/.test(await texte(histoire.locator(".qn-h-qui b"))) && /Tristesse aujourd’hui/.test(await texte(histoire.locator(".qn-h-qui small"))) && (await histoire.locator(".qn-h-fig img").count()) >= 1, `… « ${await texte(histoire.locator(".qn-h-qui"))} »`);
+ok((await histoire.locator("[data-geste]").count()) === 4 && /Sam verra ta figurine faire ton geste/.test(await texte(histoire.locator(".qn-h-moi"))), "… « Réagis avec ta figurine » : quatre gestes");
+ok(((await histoire.locator("[data-voir-maison]").getAttribute("href")) ?? "").startsWith("/univers/chez/"), "… « Voir sa maison »");
+await histoire.locator('[data-geste="calin"]').click();
+ok(await attendre(lea, async () => /C’est parti : Sam va voir ta figurine/.test(await texte(histoire.locator("[data-geste-parti]")))), "🤗 un câlin : il part pour de vrai, dans leur conversation");
+await lea.screenshot({ path: `${D}/fil-3b-histoire.png` });
+ok((await qdn.locator('[data-carte][data-vue="1"]').count()) === 1, "… la carte de Sam est vue (le rond rose s'éteint)");
+await histoire.locator(".qn-h-zone.d").click();
+ok(await attendre(lea, async () => /Hugo/.test(await texte(histoire.locator(".qn-h-qui b")))), "toucher à droite : Hugo");
+await histoire.locator(".qn-h-zone.d").click();
+ok(await attendre(lea, async () => (await histoire.count()) === 0), "… et après le dernier, elle se ferme");
+await qdn.locator(`[data-carte]`).first().click();
+await histoire.locator("[data-repondre-histoire]").click();
+ok(await attendre(lea, async () => (await lea.locator("#o-proches:not([hidden])").count()) === 1 && (await lea.locator('[role="dialog"][aria-label="Ta conversation avec Sam"]').count()) === 1, 20000), "« Lui répondre » : Messages, sa conversation avec Sam ouverte");
 ok(await attendre(lea, async () => (await route(SAM, `${SALONS}?salon=foot-1&depuis=${Date.now()}`)).pouls?.ici?.length === 2, 10000), "… sa figurine a quitté le salon du foot");
-await lea.screenshot({ path: `${D}/fil-3-humeur.png` });
-await humeur.locator("[data-repondre]").click();
-ok(await attendre(lea, async () => (await lea.locator("#o-proches:not([hidden])").count()) === 1 && (await lea.locator('[role="dialog"][aria-label="Ta conversation avec Sam"]').count()) === 1, 20000), "« Répondre à Sam » : Messages, sa conversation avec Sam ouverte");
 
 // ═══ AUTOUR, LA MUSIQUE ═══
 // (« Retour » ferme d'abord sa conversation, puis revient au fil)
 await lea.goBack();
 await attendre(lea, async () => (await lea.locator('[role="dialog"][aria-label="Ta conversation avec Sam"]').count()) === 0);
-if ((await lea.locator("#o-decouvrir:not([hidden])").count()) === 0) await lea.goBack();
+// (le fil revient parfois du premier coup : on lui laisse le temps avant de revenir encore)
+if (!(await attendre(lea, async () => (await lea.locator("#o-decouvrir:not([hidden])").count()) === 1, 3000))) await lea.goBack();
 ok(await attendre(lea, async () => (await lea.locator("#o-decouvrir:not([hidden]) [data-fil]").count()) === 1), "« Retour » : le fil");
 await lea.evaluate(() => document.querySelector('#o-decouvrir [data-piece="autour"]').scrollIntoView());
 await lea.waitForTimeout(600);

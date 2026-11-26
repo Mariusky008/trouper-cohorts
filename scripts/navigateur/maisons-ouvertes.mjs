@@ -107,6 +107,18 @@ ok((await texte(chez.locator(".fd-etiquette"))) === "⚽ Foot et sport, comme to
 ok(/Vous aimez tous les deux : foot/.test(await texte(chez.locator(".fd-bas p"))), "« Vous aimez tous les deux : foot »");
 const surprise = lea.locator("[data-surprise]");
 ok((await surprise.getAttribute("data-surprise")) === "toc" && (await texte(surprise)) === "🚪 Sam a frappé à ta porte", "en haut : « 🚪 Sam a frappé à ta porte »");
+// (☀️ « Quoi de neuf ? », 26 novembre 2026 : sans proche qui a dit son humeur, ceux qui aiment ce qu'elle aime)
+const qdn = lea.locator("#o-decouvrir [data-quoi-de-neuf]");
+ok((await qdn.count()) === 1 && /Ils aiment ce que tu aimes/.test(await texte(qdn.locator(".qn-tete small"))) && (await texte(qdn.locator("[data-carte] .qn-nom"))) === "Zoé" && (await texte(qdn.locator("[data-carte] .qn-passion"))) === "⚽ Foot, comme toi", "en haut, « Quoi de neuf ? » : Zoé, « ⚽ Foot, comme toi »");
+const sp = await surprise.boundingBox();
+const titre = await qdn.locator(".qn-tete").boundingBox();
+ok(sp && titre && sp.y + sp.height <= titre.y + 1, "… sous la pastille de la surprise, sans la cacher");
+await qdn.locator("[data-carte]").click();
+const histoire = lea.locator("[data-histoire]");
+ok(await attendre(lea, async () => (await histoire.count()) === 1) && (await histoire.locator('[data-geste="coucou"]').count()) === 1 && ((await histoire.locator("[data-frapper-histoire]").getAttribute("href")) ?? "").startsWith("/univers/chez/"), "toucher Zoé : sa figurine en grand, « 👋 Lui faire coucou », « Frapper à sa porte »");
+await lea.screenshot({ path: `${D}/maisons-ouvertes-0-quoi-de-neuf.png` });
+await histoire.locator("[data-fermer-histoire]").click();
+ok(await attendre(lea, async () => (await histoire.count()) === 0), "… « ✕ » la referme");
 await chez.scrollIntoViewIfNeeded();
 await lea.waitForTimeout(600);
 ok(await attendre(lea, async () => (await chez.locator(".fd-chez-piece").evaluate((x) => getComputedStyle(x).backgroundImage.includes("/api/direct/salon/fichier/"))) && (await chez.locator(".fd-chez-fig img").count()) >= 1), "sa pièce, sa figurine dedans");

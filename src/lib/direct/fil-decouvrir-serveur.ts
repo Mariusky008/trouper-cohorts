@@ -34,7 +34,7 @@ import { estDouce } from "./humeur-reponse";
 import { maisonsPourLeFil, mesVisites } from "./visites-serveur";
 import { themeDe } from "./decouvrir";
 import { bonjourDe } from "./bonjour-serveur";
-import { ordreDuFil, type AutourFil, type FilVue, type HumeurFil, type MaisonFil, type PieceFil, type ProcheHumeurFil, type SalonFil, type SeanceFil, type SilhouetteFil } from "./fil-decouvrir";
+import { QUOI_DE_NEUF_MAX, ordreDuFil, type AutourFil, type FilVue, type MaisonFil, type QuoiDeNeufFil, type PieceFil, type ProcheHumeurFil, type SalonFil, type SeanceFil, type SilhouetteFil } from "./fil-decouvrir";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -52,7 +52,7 @@ export async function silhouetteDuFil(supabase: Supabase, h: string): Promise<Si
 }
 
 /** ☀️ Ses proches (ceux à qui il parle) qui ont dit leur humeur aujourd'hui — les plus doux d'abord : on leur répond. */
-async function humeursDesProches(supabase: Supabase, moi: Habitant): Promise<ProcheHumeurFil[]> {
+async function humeursDesProches(supabase: Supabase, moi: Habitant, max = 4): Promise<ProcheHumeurFil[]> {
   const miens = [...(await prochesDe(supabase, moi.id))].filter((h) => h !== moi.id).slice(0, 30);
   const vus = await Promise.all(
     miens.map(async (h): Promise<ProcheHumeurFil | null> => {
@@ -64,7 +64,7 @@ async function humeursDesProches(supabase: Supabase, moi: Habitant): Promise<Pro
       return { cle, prenom: s(ligne.ligne?.prenom) || "Ton proche", humeur, emoji: v.emoji, nom: v.court, doux: estDouce(humeur), figurine };
     }),
   );
-  return vus.filter((x): x is ProcheHumeurFil => Boolean(x)).sort((a, b) => Number(b.doux) - Number(a.doux)).slice(0, 4);
+  return vus.filter((x): x is ProcheHumeurFil => Boolean(x)).sort((a, b) => Number(b.doux) - Number(a.doux)).slice(0, max);
 }
 
 /** 📍 Les figurines posées dans sa ville (les plus récentes, pas les siennes), assises : deux au plus. */
@@ -117,12 +117,13 @@ async function prochesDansLesSalons(supabase: Supabase, moi: Habitant, salons: S
 /** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`, lot F4), et sa figurine. */
 export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<FilVue> {
   const ouverts = salonsOuverts();
-  const [prenom, figurine, direct, autour, humeurs, invitations, demandes, maisons, surprise, seances] = await Promise.all([
+  const [mienne, prenom, figurine, direct, autour, humeurs, invitations, demandes, maisons, surprise, seances] = await Promise.all([
+    humeurDuJour(supabase, moi.id).catch(() => null),
     prenomDe(supabase, moi).catch(() => ""),
     silhouetteDuFil(supabase, moi.id),
     ouverts ? salonsEnDirect(supabase, moi).catch((): Awaited<ReturnType<typeof salonsEnDirect>> => ({ salons: [] })) : Promise.resolve<Awaited<ReturnType<typeof salonsEnDirect>>>({ salons: [] }),
     poseesAutour(supabase, moi).catch(() => [] as AutourFil[]),
-    humeursDesProches(supabase, moi).catch(() => [] as ProcheHumeurFil[]),
+    humeursDesProches(supabase, moi, QUOI_DE_NEUF_MAX).catch(() => [] as ProcheHumeurFil[]),
     mesInvitations(supabase, moi).catch(() => []),
     ouverts ? mesDemandes(supabase, moi).catch(() => []) : Promise.resolve([]),
     maisonsOuvertes(supabase, moi).catch(() => [] as MaisonFil[]),
@@ -146,13 +147,18 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
   const avecProches = vivants.filter((x) => x.proches);
   const passions = vivants.filter((x) => !x.proches && x.mien);
   const autres = vivants.filter((x) => !x.proches && !x.mien);
-  const humeur: HumeurFil[] = humeurs.length ? [{ sorte: "humeur", proches: humeurs }] : [];
-  const groupes: PieceFil[][] = [seances, avecProches, humeur, passions, rdv, maisons, autour, autres, vides];
+  // (☀️ 26 novembre 2026 : l'humeur du jour de ses proches a quitté le fil pour « Quoi de neuf ? », en haut — sans proche
+  // qui l'a dite, ce sont les maisons ouvertes de ceux qui partagent une de ses passions)
+  const h = humeurDe(mienne);
+  const quoiDeNeuf: QuoiDeNeufFil | undefined =
+    humeurs.length || maisons.length ? { mienne: h ? { emoji: h.emoji, nom: h.court } : null, proches: humeurs, decouvrir: humeurs.length ? [] : maisons.slice(0, QUOI_DE_NEUF_MAX) } : undefined;
+  const groupes: PieceFil[][] = [seances, avecProches, passions, rdv, maisons, autour, autres, vides];
   const inv = invitations[0];
   return {
     moi: { prenom: prenom || "Toi", figurine },
     ...(direct.age ? { age: true as const } : {}),
     pieces: ordreDuFil(groupes),
+    ...(quoiDeNeuf ? { quoiDeNeuf } : {}),
     ...(inv ? { invitation: { cle: inv.cle, prenom: inv.prenom } } : {}),
     ...(demandes.length ? { demandes: demandes.length } : {}),
     ...(surprise ? { surprise } : {}),
