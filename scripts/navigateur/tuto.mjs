@@ -4,10 +4,8 @@
 // fois — une conversation avec Pablito, on touche sa question, il répond (six bulles, ses six voix enregistrées), et
 // au-dessus l'univers grandit (l'univers commun, l'étagère qui se remplit, les endroits et la porte, Léa qui frappe, le
 // chemin) ; un toucher sur la conversation écrit la bulle d'un coup ; puis « Je crée ma figurine ». Les pages n'ouvrent
-// plus aucune fenêtre d'elles-mêmes. Inès, qui a sa figurine : pas de bienvenue ; un point rose sur le logo ; le logo ouvre la
-// visite (six pages) ; « Créer » : Pablito la montre sur la vraie page, la lumière suit ses trois étapes (9 novembre
-// 2026) — sa phrase, les tons et les trois façons, « son visage moi-même », sa voix et « Créer mon mème » ; « La suite : Découvrir » ; « Échap » arrête ; « Créer » est « Vue » ; « Retour »
-// pendant une page arrête la visite. Rien ne déborde, jamais le mot interdit, aucune erreur dans la page.
+// plus aucune fenêtre d'elles-mêmes. Inès, qui a sa figurine : pas de bienvenue ; le logo ramène au fil de Découvrir (la
+// visite de Pablito, désuète, est partie le 26 novembre 2026). Rien ne déborde, jamais le mot interdit, aucune erreur.
 import fs from "node:fs";
 import { BASE, D, F, lancer } from "./commun.mjs";
 
@@ -43,26 +41,6 @@ const tel = async (cookie) => {
 const texte = async (p, sel) => (await p.locator(sel).first().innerText({ timeout: 15000 }).catch(() => "")).replace(/\s+/g, " ").trim();
 const debordement = (p) => p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 const sansMotInterdit = async (p) => !/exemple/i.test(await p.evaluate(() => document.body.innerText));
-/** La bulle a fini de s'écrire. */
-const ecrite = (p) => p.waitForFunction(() => document.querySelector(".tu .tu-carte") && !document.querySelector(".tu .tu-curseur"), null, { timeout: 15000 });
-const suivant = async (p) => {
-  await ecrite(p);
-  await p.locator(".tu .tu-suivant").click();
-  await p.waitForTimeout(450);
-};
-/** La lumière entoure-t-elle cet élément (à la marge près), une fois posée ? */
-const eclaire = async (p, sel) => {
-  await p.waitForTimeout(700);
-  return p.evaluate((s) => {
-    const l = document.querySelector(".tu-lumiere")?.getBoundingClientRect();
-    const e = [...document.querySelectorAll(s)].map((x) => x.getBoundingClientRect()).find((r) => r.width > 0 && r.height > 0);
-    if (!l || !e) return { ok: false, l: l && [l.x, l.y, l.width, l.height].map(Math.round), e: e && [e.x, e.y, e.width, e.height].map(Math.round) };
-    const dedans = l.left <= e.left + 1 && l.top <= e.top + 1 && l.right >= e.right - 1 && l.bottom >= e.bottom - 1;
-    const serre = l.width <= e.width + 16 && l.height <= e.height + 16;
-    return { ok: dedans, serre, l: [l.x, l.y, l.width, l.height].map(Math.round), e: [e.x, e.y, e.width, e.height].map(Math.round) };
-  }, sel);
-};
-
 // ═══ UN NOUVEAU VENU : LA BIENVENUE (la conversation avec Pablito, l'univers qui grandit) ═══
 const BULLES = [
   ["Salut ! Moi, c’est Pablito, le patron de ClikMe. Bienvenue !", "tuto-bienvenue-1", "C’est quoi, ClikMe ?"],
@@ -134,87 +112,34 @@ for (let k = 1; k < BULLES.length; k++) {
 await neuf.waitForTimeout(2000);
 ok((await opacite(neuf, ".bv-chemin .bv-etape:last-child")) === 1 && (await texte(neuf, ".bv-chemin")).includes("Ton selfie"), "le chemin : ton selfie, ta figurine, 5 minutes avec Pablito, ton univers");
 ok((await neuf.locator(".tu .tu-passer").count()) === 0 && (await texte(neuf, ".tu .tu-creer")).includes("Je crée ma figurine") && (await neuf.locator(".tu .bv-plus-tard").count()) === 1, "à la fin : « Je crée ma figurine », ou « Plus tard »");
-ok((await texte(neuf, ".tu .bv-indice")).includes("Touche le logo ClikMe"), "et le logo pour la suite (« Touche le logo ClikMe, en haut »)");
+ok((await neuf.locator(".tu .bv-indice").count()) === 0, "plus de « Touche le logo ClikMe » : la visite est partie");
 ok((await neuf.evaluate(() => { const f = document.querySelector(".bv-fil"); return f.scrollHeight - f.scrollTop - f.clientHeight; })) <= 2, "la conversation reste en bas : sa dernière bulle se lit");
 await neuf.screenshot({ path: `${D}/tuto-4-la-fin.png` });
 await neuf.locator(".tu .tu-creer").click();
 await neuf.waitForTimeout(600);
 ok((await neuf.locator(".tu").count()) === 0 && neuf.url().endsWith("#creer") && (await neuf.locator("#creer.tf-quete").count()) === 1, "« Je crée ma figurine » : la bienvenue s'en va, la page de sa figurine");
-ok((await neuf.evaluate(() => localStorage.getItem("clikme-tuto-bienvenue"))) === "1" && (await neuf.locator(".mc-logo .mc-logo-point").count()) === 1, "retenue sur ce téléphone ; un point rose sur le logo");
+ok((await neuf.evaluate(() => localStorage.getItem("clikme-tuto-bienvenue"))) === "1" , "retenue sur ce téléphone");
 await neuf.reload({ waitUntil: "networkidle" });
 await neuf.waitForSelector("main.mc[data-charge]", { timeout: 30000 });
 await neuf.waitForTimeout(600);
 ok((await neuf.locator(".tu").count()) === 0, "revenu : plus de bienvenue (une seule fois)");
 ok((await debordement(neuf)) <= 0 && (await sansMotInterdit(neuf)), "sans débordement, sans le mot interdit");
 
-// ═══ INÈS, QUI A SA FIGURINE : LE LOGO OUVRE LA VISITE ═══
+// ═══ INÈS, QUI A SA FIGURINE : PAS DE BIENVENUE ; LE LOGO RAMÈNE À L'ACCUEIL (la visite est partie, 26 novembre 2026) ═══
 const ines = await tel(INES.jeton);
 await ines.goto(`${BASE}/collection#figurine`, { waitUntil: "networkidle" });
 await ines.waitForSelector(".tf-moi .tf-texte textarea", { timeout: 60000 });
 await ines.waitForTimeout(600);
 ok((await ines.locator(".tu, .pb-voile, .mqd-revoir").count()) === 0, "elle a sa figurine : pas de bienvenue, aucune fenêtre dans la page");
-ok((await ines.locator(".mc-logo .mc-logo-point").count()) === 1, "un point rose sur le logo : la visite n'a jamais été ouverte");
+ok((await ines.locator(".mc-logo-point").count()) === 0, "plus de point rose sur le logo");
 await ines.locator(".mc-barre .mc-logo").click();
-await ines.waitForSelector(".mc-feuille-visite.ouverte .tu-page", { timeout: 10000 });
-const pages = await ines.locator(".mc-feuille-visite .tu-page").evaluateAll((l) => l.map((x) => x.dataset.page));
-ok(pages.join(",") === "creer,decouvrir,autour,memes,proches,moi", `la visite : six pages (${pages.join(", ")})`);
-ok((await texte(ines, ".mc-feuille-visite")).includes("Je te fais visiter ? Touche une page : je te la montre sur place.") && (await texte(ines, ".tu-som-progres")).includes("0 page vue sur 6"), "sa bulle, et « 0 page vue sur 6 »");
-ok((await ines.locator(".mc-logo .mc-logo-point").count()) === 0 && (await ines.evaluate(() => localStorage.getItem("clikme-tuto-visite"))) === "1", "ouverte une fois : le point rose s'en va");
-await ines.waitForTimeout(400);
-ok(ines.sons.includes("/collection/pablito/tuto-visite-1.mp3"), `sa voix : « Je te fais visiter ? » (${ines.sons.join(", ")})`);
-ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "la visite ne déborde pas, sans le mot interdit");
-await ines.screenshot({ path: `${D}/tuto-3-visite.png` });
-
-// ═══ « CRÉER » : PABLITO LA MONTRE SUR LA VRAIE PAGE ═══
-await ines.locator('.mc-feuille-visite .tu-page[data-page="creer"]').click();
-await ines.waitForSelector('.tu[data-rang="1"]', { timeout: 10000 });
-await ecrite(ines);
-const phrase = await eclaire(ines, "#o-figurine .tf-dit");
-ok((await texte(ines, ".tu-qui")).toLowerCase().includes("créer") && (await texte(ines, ".tu-texte")).startsWith("Ici, tu fais parler ta figurine") && phrase.ok && ines.sons.includes("/collection/pablito/tuto-creer-1.mp3"), `1 / 4 : la lumière sur ce qu'elle dit (lumière ${phrase.l}, ce qu'elle dit ${phrase.e})`);
-ok((await ines.locator(".mc-feuille-visite.ouverte").count()) === 0, "la feuille de la visite s'est rangée");
-await ines.screenshot({ path: `${D}/tuto-4-creer-phrase.png` });
-await suivant(ines);
-const visage = await eclaire(ines, "#o-figurine .tf-visages");
-ok((await texte(ines, ".tu-texte")).startsWith("« Visage »") && visage.ok && visage.serre && ines.sons.includes("/collection/pablito/tuto-creer-2.mp3"), `2 / 4 : la rangée de ses visages (lumière ${visage.l}, rangée ${visage.e} ; sa voix, celle de « Visage »)`);
-await ines.screenshot({ path: `${D}/tuto-5-creer-visage.png` });
-await suivant(ines);
-const idee = await eclaire(ines, "#o-figurine .tf-pas-idee");
-ok((await texte(ines, ".tu-texte")).startsWith("Pas d’idée ?") && idee.ok && ines.sons.includes("/collection/pablito/tuto-creer-3.mp3"), `3 / 4 : « Pas d'idée ? » (lumière ${idee.l}, bouton ${idee.e})`);
-await suivant(ines);
-const leBut = await eclaire(ines, "#o-figurine .tf-envoi");
-const reagir = await eclaire(ines, "#o-figurine .tf-reagir-lien");
-ok((await texte(ines, ".tu-texte")).includes("« Créer mon mème »") && leBut.ok && reagir.ok, `4 / 4 : « Créer mon mème », et « Réagir en un toucher » juste dessous (lumière ${leBut.l})`);
-await ecrite(ines);
-ok(ines.sons.includes("/collection/pablito/tuto-creer-4c.mp3") && !ines.sons.includes("/collection/pablito/tuto-creer-4.mp3"), "la dernière bulle, réécrite, a sa voix (son nouvel enregistrement, jamais l'ancien, qui parlait d'« Animer »)");
-ok((await texte(ines, ".tu .tu-fin")).includes("La suite : Découvrir") && (await texte(ines, ".tu .tu-fin")).includes("C’est compris"), "à la fin : « La suite : Découvrir », ou « C'est compris »");
-ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "la visite de « Créer » ne déborde pas, sans le mot interdit");
-await ines.screenshot({ path: `${D}/tuto-6-creer-fin.png` });
-
-// ═══ LA SUITE : « DÉCOUVRIR » ; « ÉCHAP » ARRÊTE ═══
-await ines.locator(".tu .tu-fin .tu-suivant").click();
 await ines.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-decouvrir"), null, { timeout: 10000 }).catch(() => null);
-await ines.waitForSelector('.tu[data-rang="1"]', { timeout: 10000 });
-ok((await ines.locator(".mc-nav-decouvrir.pris").count()) === 1 && (await texte(ines, ".tu-qui")).toLowerCase().includes("découvrir"), "la suite : on passe sur « Découvrir », Pablito continue");
-await ines.screenshot({ path: `${D}/tuto-7-decouvrir.png` });
-await ines.keyboard.press("Escape");
-await ines.waitForTimeout(300);
-ok((await ines.locator(".tu").count()) === 0 && (await ines.locator(".mc-nav-decouvrir.pris").count()) === 1, "« Échap » arrête la visite ; la page reste");
-ok((await ines.locator(".pb-voile, .mqd-revoir").count()) === 0, "« Découvrir » n'ouvre plus de fenêtre d'elle-même");
-await ines.locator(".mc-barre .mc-logo").click();
-await ines.waitForSelector(".mc-feuille-visite.ouverte .tu-page", { timeout: 10000 });
-const etats = await ines.locator(".mc-feuille-visite .tu-page").evaluateAll((l) => l.map((x) => `${x.dataset.page}:${x.classList.contains("vue") ? "vue" : "non"}`));
-ok(etats[0] === "creer:vue" && etats[1] === "decouvrir:non" && (await texte(ines, ".tu-som-progres")).includes("1 page vue sur 6") && (await texte(ines, ".tu-tout")).includes("Continuer la visite"), `« Créer » est vue, « Découvrir » (arrêtée) ne l'est pas (${etats.join(" ")})`);
-
-// ═══ « PROCHES », PUIS « RETOUR » ═══
-await ines.locator('.mc-feuille-visite .tu-page[data-page="proches"]').click();
-await ines.waitForSelector('.tu[data-rang="1"]', { timeout: 10000 });
-await ines.waitForTimeout(800);
-ok((await ines.locator(".mc-nav-proches.pris").count()) === 1 && (await texte(ines, ".tu-qui")).toLowerCase().includes("proches"), "« Proches » : on y va, Pablito explique");
-await ines.goBack();
 await ines.waitForTimeout(600);
-ok((await ines.locator(".tu").count()) === 0 && new URL(ines.url()).pathname === "/collection", `« Retour » arrête la visite, sans quitter l'appli (${ines.url()})`);
+ok((await ines.locator(".mc-nav-decouvrir.pris").count()) === 1 && new URL(ines.url()).hash === "#decouvrir", `le logo ramène au fil de Découvrir (${ines.url()})`);
+ok((await ines.locator(".tu, .mc-feuille-visite, .tu-page").count()) === 0 && !ines.sons.some((s) => /tuto-(visite|creer|decouvrir|autour|memes|proches|moi)-/.test(s)), "aucune visite, aucune de ses anciennes bulles");
+ok((await debordement(ines)) <= 0 && (await sansMotInterdit(ines)), "sans débordement, sans le mot interdit");
 
-// ═══ « MOI » ET « MES MÈMES » : PLUS DE FENÊTRE, LEURS BOUTONS SONT DANS LA PAGE ═══
+// ═══ « MOI » ET « MES MÈMES » : PAS DE FENÊTRE DE PABLITO ═══
 await ines.locator(".mc-barre button.mc-moi").click();
 await ines.waitForSelector("#o-personnage .mp-lancer", { timeout: 30000 });
 ok((await ines.locator(".pb-voile, .mqd-revoir").count()) === 0 && (await texte(ines, "#o-personnage")).includes("Quel personnage es-tu"), "« Moi » : plus de fenêtre, « Lancer le test » est dans la page");

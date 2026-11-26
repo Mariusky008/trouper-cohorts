@@ -356,7 +356,7 @@ export function MonPersonnage({
     return (
       <div className="mp">
         {tete}
-        {/* (9 novembre 2026 : Pablito n'ouvre plus de fenêtre ici — il explique « Moi » dans la visite, sous le logo) */}
+        {/* (9 novembre 2026 : Pablito n'ouvre plus de fenêtre ici) */}
         <p className="mp-intro">Ta carte de personnage t’attend : sept questions, et Pablito devine qui tu es. Mais d’abord, ta figurine : c’est elle qui sera sur ta carte.</p>
         <button type="button" className="og-go" onClick={() => allerA?.("figurine")}>
           📸 Créer ma figurine
@@ -482,7 +482,7 @@ export function MonPersonnage({
     return (
       <div className="mp">
         {tete}
-        {/* (9 novembre 2026 : plus de fenêtre de Pablito — il explique « Moi » dans la visite, sous le logo) */}
+        {/* (9 novembre 2026 : plus de fenêtre de Pablito) */}
         <p className="mp-intro">Réponds vite, sans réfléchir : sept questions, et ta carte se construit sous tes yeux. Ensuite, chaque étape franchie dans ClikMe fait monter ton niveau 🎁</p>
         <button type="button" className="og-go mp-lancer" onClick={() => setEtape({ q: 0 })}>
           🎲 Lancer le test · 30 secondes

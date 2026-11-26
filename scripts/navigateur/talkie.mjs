@@ -220,11 +220,12 @@ await zoe.waitForSelector(".pr-plein .pr-fil li", { timeout: 30000 });
 await zoe.goBack();
 await zoe.waitForSelector(".pr-plein", { state: "detached", timeout: 10000 }).catch(() => null);
 ok((await zoe.locator(".pr-plein").count()) === 0 && new URL(zoe.url()).pathname === "/collection" && (await texte(zoe, ".mc-nav button.pris")).includes("Proches"), `« Retour » referme la conversation, sans quitter « Proches » (${zoe.url()})`);
-// (le logo ouvre la visite, depuis le tuto du 9 novembre 2026 : on la referme)
+// (le logo ramène à l'accueil, le fil de Découvrir, depuis le 26 novembre 2026 ; « Retour » revient à « Proches »)
 await zoe.locator(".mc-barre .mc-logo").click();
-await zoe.waitForSelector(".mc-feuille-visite.ouverte", { timeout: 10000 }).catch(() => null);
-ok(new URL(zoe.url()).pathname === "/collection" && (await zoe.locator(".mc-feuille-visite.ouverte .tu-page").count()) === 6, `le logo ouvre la visite, dans l'appli (${zoe.url()})`);
-await zoe.keyboard.press("Escape");
+await zoe.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-decouvrir"), null, { timeout: 10000 }).catch(() => null);
+ok(new URL(zoe.url()).pathname === "/collection" && (await zoe.locator(".mc-nav button.pris.mc-nav-decouvrir").count()) === 1 && (await zoe.locator(".tu").count()) === 0, `le logo ramène à l'accueil, dans l'appli, sans visite (${zoe.url()})`);
+await zoe.goBack();
+await zoe.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-proches"), null, { timeout: 10000 }).catch(() => null);
 await zoe.locator(".mc-nav-figurine").click();
 await zoe.waitForFunction(() => document.querySelector(".mc-nav button.pris")?.className.includes("mc-nav-figurine"), null, { timeout: 10000 }).catch(() => null);
 await zoe.goBack();

@@ -55,7 +55,7 @@ import { HumeurDuMatin, MaFigurineParle, STYLES_RITUEL, ouvrirConversation } fro
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
 import { RangeSansDemander, STYLES_ETAGERE } from "./etagere";
-import { PageEnVisite, STYLES_TUTO, VisiteTuto, ecrireTuto, lireTuto, pageTuto, type PageTuto } from "./tuto";
+import { STYLES_TUTO, ecrireTuto, lireTuto } from "./tuto";
 import { BienvenueTuto, STYLES_BIENVENUE } from "./bienvenue";
 import { BienvenueSelonPablito, STYLES_BIENVENUE_CHEZ } from "./bienvenue-chez";
 import { BIENVENUE_CHEZ_PABLITO } from "@/lib/direct/bienvenue";
@@ -171,10 +171,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   const [attenteGroupes, setAttenteGroupes] = useState(0);
   // (stable : la fabrication rappelle le serveur dans un effet qui en dépend)
   const poserEtat = useCallback((e: EtatMaFigurine) => setEtat(e), []);
-  // 🧭 LE TUTO (`tuto.tsx`, 9 novembre 2026) : ce que ce téléphone a déjà vu (la bienvenue, la visite, les pages
-  // visitées — lu dans le navigateur, montré une fois la page chargée) ; ce qui est ouvert : la visite, ou une page
+  // 👋 LA BIENVENUE (`tuto.tsx`) : ce que ce téléphone a déjà vu (lu dans le navigateur, montré une fois la page chargée)
   const [souvenir, setSouvenir] = useState(lireTuto);
-  const [tuto, setTuto] = useState<null | "visite" | PageTuto>(null);
   const retenir = useCallback((m: (s: ReturnType<typeof lireTuto>) => ReturnType<typeof lireTuto>) => {
     setSouvenir((s) => {
       const n = m(s);
@@ -269,24 +267,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
     if (etat?.etape === "prete" && etat.messages.length > 0 && sansAdresse) aller("decouvrir");
   }, [charge, etat, aller, univers]);
 
-  // 🧭 LE TUTO : le logo ouvre la visite (le point rose s'en va) ; une page : on y va, Pablito la montre
-  const ouvrirVisite = () => {
-    if (!souvenir.visite) retenir((s) => ({ ...s, visite: true }));
-    setTuto("visite");
-  };
-  const visiterPage = useCallback((p: PageTuto) => {
-    aller(pageTuto(p).vue, undefined, false, true);
-    setTuto(p);
-  }, [aller]);
-  const pageVue = useCallback((p: PageTuto) => retenir((s) => (s.vues.includes(p) ? s : { ...s, vues: [...s.vues, p] })), [retenir]);
-  const fermerTuto = useCallback(() => setTuto(null), []);
   const finirBienvenue = useCallback(() => retenir((s) => ({ ...s, bienvenue: true })), [retenir]);
-  // (« Retour » pendant la visite d'une page : elle s'arrête, et la page reste)
-  useEffect(() => {
-    if (!tuto || tuto === "visite") return;
-    window.addEventListener("popstate", fermerTuto);
-    return () => window.removeEventListener("popstate", fermerTuto);
-  }, [tuto, fermerTuto]);
 
   // l'adresse décide de la vue (à l'arrivée, et quand un lien de la page change l'ancre)
   useEffect(() => {
@@ -360,15 +341,13 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   };
 
   // 👋 la bienvenue : à la toute première arrivée (pas encore de figurine, ni en fabrication), une fois sur ce téléphone
-  const bienvenue = charge && Boolean(etat) && etat?.etape !== "prete" && etat?.etape !== "fabrication" && !souvenir.bienvenue && tuto === null;
+  const bienvenue = charge && Boolean(etat) && etat?.etape !== "prete" && etat?.etape !== "fabrication" && !souvenir.bienvenue;
   return (
     <main className="mc" data-charge={charge ? "" : undefined}>
       <header className="mc-barre">
-        {/* 🧭 LE LOGO OUVRE LA VISITE (9 novembre 2026 : « quand je clique sur le logo, je devrais avoir un tuto des pages
-            et des fonctionnalités ») ; un point rose tant qu'il ne l'a jamais ouverte */}
-        <button type="button" className="mc-logo" aria-label={`La visite de ClikMe${charge && !souvenir.visite ? " (nouveau)" : ""}`} onClick={ouvrirVisite}>
+        {/* LE LOGO RAMÈNE AU FIL DE DÉCOUVRIR, l'accueil (26 novembre 2026 : la visite de Pablito, désuète, est partie) */}
+        <button type="button" className="mc-logo" aria-label="ClikMe : l’accueil" onClick={() => aller("decouvrir", undefined, false, true)}>
           Clik<b>Me</b>
-          {charge && !souvenir.visite && <i className="mc-logo-point" aria-hidden="true" />}
         </button>
         <span className="mc-droite">
           {/* 🃏 « MOI », SOUS SON PRÉNOM (8 novembre 2026 : « Proches » a pris sa place dans le menu) */}
@@ -516,17 +495,10 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
       {/* 📲 « Comment la mettre sur ton écran d'accueil » (ouverte par « Installer ») */}
       <FeuilleInstaller />
 
-      {/* 🧭 LE TUTO : la visite (sous le logo), Pablito sur une page, la bienvenue */}
-      {charge && (
-        <Feuille ouverte={tuto === "visite"} onFermer={fermerTuto} titre="La visite" className="mc-feuille-visite">
-          <VisiteTuto ouverte={tuto === "visite"} vues={souvenir.vues} icone={(p) => <IconeOnglet cle={p === "creer" ? "figurine" : p === "moi" ? "personnage" : p} />} onPage={visiterPage} />
-        </Feuille>
-      )}
-      {tuto && tuto !== "visite" && <PageEnVisite key={tuto} page={tuto} onVue={pageVue} onSuivante={visiterPage} onFermer={fermerTuto} />}
       {/* ☀️ LE RITUEL DU JOUR (lot R) : « Comment tu te sens aujourd'hui ? », à la première ouverture du jour — jamais
-          par-dessus la bienvenue, la visite ou une autre feuille */}
+          par-dessus la bienvenue ou une autre feuille */}
       <HumeurDuMatin
-        actif={Boolean(charge && compte && prete && !bienvenue && tuto === null && !proteger)}
+        actif={Boolean(charge && compte && prete && !bienvenue && !proteger)}
         onRepondre={(cle) => {
           aller("proches", undefined, false, true);
           ouvrirConversation(cle);
@@ -579,7 +551,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
 
 /**
  * Les icônes du menu, dessinées pour ClikMe (une flamme, une épingle, un « + » sur son ressort, une pile de mèmes, deux
- * personnages) ; et « Moi » (une carte de personnage), pour la visite.
+ * personnages) ; et « Moi » (une carte de personnage).
  */
 function IconeOnglet({ cle }: { cle: Vue | "univers" | "messages" }) {
   const trait = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
@@ -657,8 +629,6 @@ body{background:#12060F}
 .mc-barre{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;
   background:rgba(18,6,15,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .mc-logo{position:relative;padding:0;border:0;background:none;font:inherit;font-size:19px;font-weight:900;color:#FFF4E6;text-decoration:none;letter-spacing:-.02em;cursor:pointer}
-.mc-logo-point{position:absolute;top:1px;right:-11px;width:9px;height:9px;border-radius:50%;background:#FF2E9A;box-shadow:0 0 0 3px #1E0C18;animation:mc-pastille 1.6s ease-in-out infinite}
-.mc-feuille-visite .tf-feuille-corps{max-height:calc(100dvh - 40px);overflow-y:auto}
 .mc-logo b{color:#FF2E9A}
 .mc-moi{min-width:0;overflow:hidden;text-overflow:ellipsis;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700;color:#D9C3CB;white-space:nowrap}
 button.mc-moi{position:relative;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:3px 13px 3px 4px;border:0;font:inherit;font-size:14px;font-weight:800;color:#FFF4E6;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent}

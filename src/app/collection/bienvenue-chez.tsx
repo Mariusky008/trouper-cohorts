@@ -284,9 +284,6 @@ export function BienvenueChezPablito({ univers, onFini, onCreer }: { univers: Un
           <button type="button" className="bv-plus-tard" onClick={onFini}>
             Plus tard
           </button>
-          <span className="bv-indice">
-            Une question ? Touche le logo <b>ClikMe</b>, en haut, quand tu veux.
-          </span>
         </span>
       );
     if (b.moment === "range") {
