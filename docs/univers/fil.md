@@ -55,12 +55,18 @@ vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens
   | ☀️ L'humeur de ses proches | leurs figurines qui en font la tête ; les humeurs douces d'abord (« Un mot de toi, et sa journée change ») | « Répondre à Sam » (Messages, sa conversation) |
   | 🪑 Un salon sans personne | « ✨ Sois le premier » ; sa télé (ce qui passe) ; son gradin vide ; les dernières bulles de la journée (« Zoé · il y a 2 h », « Qui a une recette de crêpes ? ») ; « Zoé y était aujourd'hui. Assieds-toi : les suivants te verront. » (musique : « La radio tourne. Entre danser… ») | « M'asseoir » |
 
-- **En haut** : « Tous les salons », c'est-à-dire l'ancienne page de Découvrir (ma télé du jour, les salons par
-  passion, `#salons`), avec « ‹ Le fil » pour revenir. À gauche, s'il y en a : « 🎬 Sam t'invite devant sa télé », ou
-  les demandes de proche.
+- **En haut** : rien qu'une pastille, s'il y en a une (« 🎬 Sam t'invite devant sa télé », une visite qui attend). Le
+  bouton « Tous les salons » est parti le 26 novembre 2026 au soir (le propriétaire : « quand je clique dessus j'arrive sur
+  l'ancien design et concept : il faut l'enlever ») ; l'ancienne page (ma télé du jour, les salons par passion,
+  `#salons`) ne s'ouvre plus que par les anciens liens, avec « ‹ Le fil » pour revenir.
+- **Les vidéos se lancent seules** (26 novembre 2026, « comme sur YouTube : quand je scrolle, je vois le début de la
+  vidéo avec le son ») : la télé de la pièce à l'écran joue, une seule à la fois dans toute l'appli
+  (`app/collection/apercu-video.tsx`, aussi dans les « Propositions de groupes » de Mes groupes). Le son : les navigateurs
+  l'interdisent tant qu'on n'a pas touché la page ; avant, « 🔇 Touche pour le son » ; après le premier toucher, chaque
+  vidéo qui démarre a le son ; « 🔊 » le coupe pour les suivantes (on s'en souvient).
 - **Sans âge dit** : la question « as-tu 18 ans ou plus ? » d'abord, puis les salons arrivent.
 - **Rien du tout** (les salons fermés par l'interrupteur) : « Personne en direct pour l'instant », avec « 📍 Poser ma
-  figurine » et « Tous les salons ». Avec les salons ouverts, cela n'arrive plus : il y a toujours les salons vides.
+  figurine ». Avec les salons ouverts, cela n'arrive plus : il y a toujours les salons vides.
 - **Le fil vit** :
   - il se recharge toutes les 30 secondes, sans bouger sous le doigt : les pièces déjà là gardent leur place et se
     mettent à jour, les nouvelles s'ajoutent à la fin ;
