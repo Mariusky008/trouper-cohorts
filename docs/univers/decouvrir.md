@@ -2006,6 +2006,14 @@ vérité** : à l'heure dite, ceux qui regardent (hors lanceur et défié) disen
 deux doivent être d'accord ; sinon, pas de points. Jamais une réponse inventée par l'appli. +10 au défié qui trouve (au
 lanceur sinon), +5 aux autres qui trouvent. **Jamais de total en public** : seul le « +10 » qui saute ; chacun voit le
 sien chez soi.
+Dans le code : le bouton « 🎯 Je te mets au défi » sur la fiche (et dans la barre : on choisit qui), `FeuilleDefi` et
+`CarteDuDefi` (`jeux.tsx`) ; au-dessus des figurines : 🎯 le lanceur, 🔒 ceux qui ont répondu, « +10 » au résultat. Le
+serveur (`jeux-salon-serveur.ts`) cache les réponses de chacun jusqu'au résultat (on ne voit que la sienne) ; le moment
+de vérité : `<salon>/jeux/<id>/verite/<q>.json` (`verdictDuDefi`) ; les points comptés une fois
+(`<salon>/jeux/<id>/compte.json`, `pointsDuDefi`, le plafond du jour) et rangés chez chacun : `<h>/defis/<id>.json`.
+« 🎯 Mes défis » dans Ma maison, sous les tuiles, seulement si j'ai des points (`mes-defis.tsx`, `GET ?mes-defis=1`).
+Route : `action: "jeu"` (`sorte: "defi"`, `a`, `quand`, `reste`), `"pas-maintenant-defi"`, `"temoigner"`. Essais :
+`scripts/essai-defi-salon-route.mjs`, `scripts/navigateur/defi-salon.mjs`.
 
 **Les limites** : un seul jeu à la fois dans un salon ; un jeu lancé par personne et par vidéo ; des points pour 3 défis
 par jour ; pas deux défis à la même personne dans l'heure ; une figurine endormie ne peut pas être défiée.

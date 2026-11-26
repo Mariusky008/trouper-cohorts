@@ -57,7 +57,7 @@ import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import { PHRASES_MOTS as PMOTS, type MotDeQuelquun } from "@/lib/direct/mots-video";
 import { SuiteDeLaVideo } from "@/app/collection/suite-de-la-video";
-import { CarteDuJeu, FeuilleAccord, PancarteDeJeu, voteAffiche } from "./jeux";
+import { CarteDuJeu, FeuilleAccord, FeuilleDefi, PancarteDeJeu, voteAffiche } from "./jeux";
 import { etapeDuJeu, PHRASES_JEUX as PJ, type JeuVu } from "@/lib/direct/jeux-salon";
 import {
   GESTES_SALON,
@@ -318,6 +318,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // (🙋 les jeux du salon, 26 novembre 2026 : le jeu en cours, l'heure pour savoir où il en est, la feuille pour le lancer)
   const [jeu, setJeu] = useState<JeuVu | null>(null);
   const [lancerJeu, setLancerJeu] = useState(false);
+  // (🎯 le défi : la feuille, et qui est déjà choisi — depuis sa fiche)
+  const [lancerDefi, setLancerDefi] = useState<{ a?: string } | null>(null);
   const [heureJeu, setHeureJeu] = useState(0);
   const boite = useRef<HTMLDivElement>(null);
   const [L, setL] = useState(0);
@@ -1028,6 +1030,41 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const t = window.setInterval(tic, 500);
     return () => window.clearInterval(t);
   }, [jeu, decalage]);
+  /** 🎯 Les secondes qui restent à la vidéo qui passe (0 : on ne sait pas). */
+  const resteVideo = (): number => {
+    const ms = Date.now() + (decalage.current ?? 0);
+    if (prive) {
+      const s = aPart ?? tele;
+      return s && s.video.duree ? Math.max(0, Math.floor(s.video.duree - positionSeance(s, ms))) : 0;
+    }
+    const pos = positionTele(o.tele.videos, ms);
+    return pos ? Math.max(0, Math.floor((o.tele.videos[pos.i]?.duree ?? 0) - pos.t)) : 0;
+  };
+  async function lancerLeDefi(a: string, texte: string, quand: number | "fin"): Promise<string | null> {
+    const video = videoQuiPasse();
+    if (!video) return PJ.pasDeVideo;
+    const r = await poster({ action: "jeu", salon: salon.id, sorte: "defi", a, texte, video, quand, reste: resteVideo() });
+    if (!r.ok) return String(r.j.error || "Ça n’a pas marché. Réessaie.");
+    setJeu((r.j.jeu as JeuVu) ?? null);
+    setLancerDefi(null);
+    return null;
+  }
+  async function pasMaintenant() {
+    if (!jeu) return;
+    const r = await poster({ action: "pas-maintenant-defi", salon: salon.id, jeu: jeu.id });
+    if (!r.ok) dire(String(r.j.error || "Ça n’a pas marché. Réessaie."), 3600);
+    else {
+      const ms = Date.now() + (decalage.current ?? 0);
+      setJeu((j) => (j ? { ...j, pasMaintenant: true, fin: ms, finVerite: ms } : j));
+    }
+  }
+  async function temoigner(v: "oui" | "non") {
+    if (!jeu) return;
+    const id = jeu.id;
+    setJeu((j) => (j && j.id === id ? { ...j, temoins: { ...(j.temoins ?? {}), [o.moi]: v } } : j));
+    const r = await poster({ action: "temoigner", salon: salon.id, jeu: id, v });
+    if (!r.ok) dire(String(r.j.error || "Ça n’a pas marché. Réessaie."), 3600);
+  }
   async function lancerAccord(texte: string): Promise<string | null> {
     const video = videoQuiPasse();
     if (!video) return PJ.pasDeVideo;
@@ -1040,7 +1077,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   async function voter(v: "oui" | "non") {
     if (!jeu) return;
     const id = jeu.id;
-    setJeu((j) => (j && j.id === id ? { ...j, votes: { ...j.votes, [o.moi]: v } } : j));
+    setJeu((j) => (j && j.id === id ? { ...j, votes: { ...j.votes, [o.moi]: v }, ...(j.repondu ? { repondu: [...new Set([...j.repondu, o.moi])] } : {}) } : j));
     const r = await poster({ action: "voter", salon: salon.id, jeu: id, v });
     if (!r.ok) dire(String(r.j.error || "Ça n’a pas marché. Réessaie."), 3600);
   }
@@ -1474,7 +1511,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       </div>
 
       <section className="so-bas" ref={bas}>
-        {jeu && heureJeu > 0 && etapeDuJeu(jeu, heureJeu) !== "fini" && <CarteDuJeu jeu={jeu} moi={o.moi} ms={heureJeu} presents={ici} onVoter={(v) => void voter(v)} />}
+        {jeu && heureJeu > 0 && etapeDuJeu(jeu, heureJeu) !== "fini" && <CarteDuJeu jeu={jeu} moi={o.moi} ms={heureJeu} presents={ici} onVoter={(v) => void voter(v)} onPasMaintenant={() => void pasMaintenant()} onTemoigner={(v) => void temoigner(v)} />}
         {/* (22 novembre 2026, le propriétaire : « supprime cette phrase : Tu mènes la télé… » — l'hôte n'a plus de phrase) */}
         {!seance?.hote && (
           <p className="so-info" data-info>
@@ -1552,6 +1589,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               🙋
             </button>
           )}
+          {prive && (
+            <button type="button" className="so-jeu-rond" data-lancer-defi-barre aria-label={PJ.defi} title={PJ.defi} disabled={Boolean(jeu)} onClick={() => setLancerDefi({})}>
+              🎯
+            </button>
+          )}
         </div>
         {refus && (
           <p className="so-refus" data-refus role="alert">
@@ -1562,6 +1604,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           <div className="so-jeux" data-jeux>
             <button type="button" className="so-bouton petit doux" data-lancer-accord disabled={Boolean(jeu)} onClick={() => setLancerJeu(true)}>
               {PJ.accord}
+            </button>
+            <button type="button" className="so-bouton petit doux" data-lancer-defi-barre disabled={Boolean(jeu)} onClick={() => setLancerDefi({})}>
+              {PJ.defi}
             </button>
           </div>
         )}
@@ -1585,6 +1630,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       {lancerJeu && (
         <Feuille onFermer={() => setLancerJeu(false)}>
           <FeuilleAccord relue={!prive} onLancer={lancerAccord} onAnnuler={() => setLancerJeu(false)} />
+        </Feuille>
+      )}
+
+      {lancerDefi && (
+        <Feuille onFermer={() => setLancerDefi(null)}>
+          <FeuilleDefi
+            presents={ici.filter((p) => p.q !== o.moi && !caches.includes(p.q))}
+            choisi={lancerDefi.a}
+            relue={!prive}
+            reste={resteVideo()}
+            onLancer={lancerLeDefi}
+            onAnnuler={() => setLancerDefi(null)}
+          />
         </Feuille>
       )}
 
@@ -1627,6 +1685,20 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               </button>
             ))}
           </div>
+          {/* (🎯 les jeux du salon : le défi se lance d'ici — pas pendant un autre jeu) */}
+          {!jeu && (
+            <button
+              type="button"
+              className="so-bouton petit so-defier"
+              data-defier-fiche={fiche.q}
+              onClick={() => {
+                setLancerDefi({ a: fiche.q });
+                setFiche(null);
+              }}
+            >
+              {PJ.defi}
+            </button>
+          )}
           {/* (👥 21 novembre 2026, « tout pour tous » : devant une télé aussi — le proche d'un invité s'y assoit) */}
           <div className="so-liens">
               {/* (💬 les jeux du salon, 26 novembre 2026 : déjà proches — « Lui écrire » à la place de « Ajouter en proche ») */}
@@ -2747,8 +2819,9 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-vol{0%{opacity:0;transform:translate(-50%,0) scale(.6)}15%{opacity:1}100%{opacity:1;transform:translate(calc(-50% + var(--dx)),var(--dy)) scale(1.1)}}
 .so-bas{padding:12px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
 .so-info{margin:0;font-size:12.5px;opacity:.75;text-align:center}
-.so-reagir button.so-jeu-rond{background:rgba(255,159,67,.22)}
+.so-reagir button.so-jeu-rond{background:rgba(255,159,67,.22);width:36px;height:36px;font-size:18px}
 .so-reagir button.so-jeu-rond:disabled{opacity:.4}
+.so-defier{display:block;width:100%;margin:0 0 10px;background:linear-gradient(135deg,#ffb36b,#FF9F43);color:#2b1600}
 .so-jeux{display:flex;justify-content:center;gap:8px;margin:2px 0 8px}
 .so-reagir{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
 .so-reagir span{font-size:13px;font-weight:800}
