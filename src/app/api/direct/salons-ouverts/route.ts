@@ -8,7 +8,7 @@
 // POST { action: "age", adulte }               → { adulte } : 18 ans ou plus (un « non » ne se retourne pas)
 // POST { action: "entrer", theme }             → { ouverture } : le salon le plus rempli qui a une place
 // POST { action: "ecrire", salon, sorte, texte?, cle?, a? } → { message } ; un texte relu avant de partir (`refus`)
-// POST { action: "sortir", salon }             → { ok } : sa place se libère
+// POST { action: "sortir", salon, t?, duree? } → { ok } : sa place se libère (😴 parti avant la fin : sa figurine dort)
 // POST { action: "signaler", salon, q, motif, message? } → { ok, exclu } ; trois en une heure : 24 h dehors
 // POST { action: "ne-plus-voir" | "revoir", q } → { caches }
 // 🎬 LE LOT D2, LA SÉANCE CHEZ MOI (le salon « chez-<q> » : pouls, écrire, sortir, conversation comme un salon ouvert)
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
     const r = await ecrireAuSalon(supabase, moi, p);
     return repondre(r, { message: r.message }, r.refus ? { refus: r.refus } : {});
   }
-  if (p.action === "sortir") return repondre(await sortirDuSalon(supabase, moi, p.salon));
+  if (p.action === "sortir") return repondre(await sortirDuSalon(supabase, moi, p.salon, { t: p.t, duree: p.duree }));
   if (p.action === "signaler") {
     const r = await signalerAuSalon(supabase, moi, p);
     return repondre(r, { exclu: Boolean(r.exclu) });

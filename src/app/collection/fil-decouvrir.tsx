@@ -678,7 +678,7 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
                     key={`f${i}`}
                     className={`fd-fauteuil${i === sienne && !assis ? " sienne" : ""}`}
                     data-fauteuil={i}
-                    style={{ left: pc(g.x), top: pc(g.y - g.hauteur * 0.6), width: pc(g.hauteur * 0.92), height: pc(g.hauteur * 0.6) }}
+                    style={{ left: pc(g.x), top: pc(g.y - g.hauteur * 0.8), width: pc(g.hauteur * 0.92), height: pc(g.hauteur * 0.8) }}
                     aria-hidden="true"
                   >
                     <i className="dos" />
@@ -802,6 +802,9 @@ export const STYLES_FIL = `
 .fd-scene{flex:1 1 auto;min-height:0;display:flex;justify-content:center;align-items:flex-end}
 .fd-gradin{position:relative;height:100%;max-height:100%;aspect-ratio:1/1;max-width:100%;border-radius:18px;overflow:visible;background:radial-gradient(70% 60% at 50% 70%,rgba(255,255,255,.06),transparent 70%);background-size:cover;background-position:center}
 .fd-gradin-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:18px}
+/* 🪑 (26 novembre 2026) sans gradin validé, les fauteuils remplissent toute la pièce : toute la largeur, toute la hauteur sous la télé */
+.fd-scene{container-type:size}
+.fd-gradin[data-gradin="plan"]{aspect-ratio:auto;width:100%;height:auto;align-self:stretch;max-width:min(100%,130cqh)}
 .fd-fig{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;transform-origin:50% 100%}
 .fd-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));-webkit-user-drag:none}
 .fd-fig.danse img{animation:fd-danse .8s ease-in-out infinite;transform-origin:50% 100%}

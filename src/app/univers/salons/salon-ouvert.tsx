@@ -75,6 +75,7 @@ import {
   type MessageSalon,
   type MomentSalon,
   type PresentSalon,
+  type DormeurSalon,
   type TeleSeance,
   type VideoSalon,
 } from "@/lib/direct/salons-ouverts";
@@ -168,10 +169,13 @@ const poster = (corps: Record<string, unknown>) =>
     .then(async (r) => ({ ok: r.ok, statut: r.status, j: (await r.json().catch(() => ({}))) as Record<string, unknown> }))
     .catch(() => ({ ok: false, statut: 0, j: { error: "Pas de réseau : réessaie dans un instant." } as Record<string, unknown> }));
 
-/** Sortir : sa place se libère tout de suite (sinon, d'elle-même en 2 min 30). */
+/** 😴 (26 novembre 2026) ce que la télé du salon montre en ce moment : où j'en suis si je pars avant la fin */
+let teleEnCours: (() => { t: number; duree: number } | null) | null = null;
+/** Sortir : sa place se libère tout de suite (sinon, d'elle-même en 2 min 30) ; parti avant la fin, sa figurine dort. */
 function sortir(salon: string) {
   try {
-    navigator.sendBeacon?.(ROUTE, new Blob([JSON.stringify({ action: "sortir", salon })], { type: "application/json" }));
+    const vu = teleEnCours?.() ?? null;
+    navigator.sendBeacon?.(ROUTE, new Blob([JSON.stringify({ action: "sortir", salon, ...(vu ? { t: Math.round(vu.t), duree: vu.duree } : {}) })], { type: "application/json" }));
   } catch {
     /* (elle se libérera d'elle-même) */
   }
@@ -292,6 +296,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [etagere, setEtagere] = useState<MomentSalon[] | null>(null);
   const [aimes, setAimes] = useState<string[]>([]);
   const [presents, setPresents] = useState<PresentSalon[]>(o.presents);
+  // (😴 ceux qui sont partis avant la fin de la vidéo : leur figurine dort à leur place)
+  const [dorment, setDorment] = useState<DormeurSalon[]>(o.dorment ?? []);
   const [messages, setMessages] = useState<MessageSalon[]>(o.messages);
   const [caches, setCaches] = useState<string[]>(o.caches);
   const [anims, setAnims] = useState<Anime[]>([]);
@@ -672,6 +678,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         return [...garde, ...neufs];
       });
       recevoir(p.messages, true);
+      if (p.dorment) setDorment(p.dorment);
       setDemandesRejoindre(p.rejoindre ?? []);
       // (🎬 la télé de la séance : ce que l'hôte vient de faire)
       if (p.seance !== undefined) {
@@ -1035,6 +1042,14 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     prises.add(k);
     places.set(p.q, k);
   }
+  // (😴 ceux qui dorment, à leur place si personne ne l'a prise ; plus là à la fin de la vidéo)
+  const dodo = new Map<string, { d: DormeurSalon; k: number }>();
+  const ilEst = Date.now() + (decalage.current ?? 0);
+  for (const d of dorment) {
+    if (prive || d.fin <= ilEst || places.has(d.q) || prises.has(d.place) || d.place >= nPlaces) continue;
+    prises.add(d.place);
+    dodo.set(d.q, { d, k: d.place });
+  }
   // (🎭 dans un gradin, chacun se voit toujours devant, au milieu : sa place et la première s'échangent, pour lui seul)
   const kMoi = places.get(o.moi);
   const vue = (k: number) => (kMoi !== undefined ? (k === kMoi ? 0 : k === 0 ? kMoi : k) : k);
@@ -1047,7 +1062,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   posRef.current = ou;
   // (🎭 les places libres : elles brillent doucement ; ⭐ chez moi, mes amis qui l'ont vue s'y assoient d'abord — la
   // dernière reste libre, pour inviter)
-  const vues = new Set([...places.values()].map(vue));
+  const vues = new Set([...places.values(), ...[...dodo.values()].map((x) => x.k)].map(vue));
   const toutesLibres = plan.map((g, k) => ({ g, k })).filter((x) => !vues.has(x.k));
   // (un ami qui est là en vrai n'est pas aussi assis en souvenir ; 🎞️ seul sur ma vidéo gardée, celui qui est là mais
   // regarde autre chose — l'hôte — rejoue sur sa propre figurine ses réactions à MA vidéo : « Léa · l'a vue »)
@@ -1303,6 +1318,27 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     ),
                   )}
                 </button>
+                </span>
+              );
+            })}
+          {L > 0 &&
+            [...dodo.values()].map(({ d, k }) => {
+              const g = plan[vue(k)];
+              if (!g) return null;
+              const x = gx + g.x * lG;
+              const y = gy + g.y * hG;
+              const h = g.hauteur * hG;
+              return (
+                <span key={`dort-${d.q}`} className="so-fig dort" data-dort={d.q} style={{ left: x, bottom: H - y, height: h, zIndex: Math.round(y) }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {d.figurine && <img src={d.figurine.src} srcSet={d.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} />}
+                  <i className="so-zzz" aria-hidden="true">
+                    💤
+                  </i>
+                  <small>
+                    {d.prenom}
+                    <b>{P.partiA(d.t)}</b>
+                  </small>
                 </span>
               );
             })}
@@ -2168,6 +2204,16 @@ function TeleDuSalon({
     return p ? { id: videos[p.i].id, t: p.t, titre: videos[p.i].titre, duree: videos[p.i].duree } : null;
   }, [videos, decalage]);
   const [pos, setPos] = useState<Courant | null>(() => maintenant());
+  // (😴 si je pars avant la fin : où j'en suis)
+  useEffect(() => {
+    teleEnCours = () => {
+      const c = maintenant();
+      return c ? { t: c.t, duree: c.duree } : null;
+    };
+    return () => {
+      teleEnCours = null;
+    };
+  }, [maintenant]);
   // (🎵 un autre morceau, ou la radio qui reprend : la télé change, à la bonne seconde, sans se refaire)
   const cleMorceau = morceau ? `${morceau.n}-${morceau.id}` : "radio";
   useEffect(() => {
@@ -2584,6 +2630,13 @@ const STYLES = `
 .so-fig small{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.6);white-space:nowrap;max-width:110%;overflow:hidden;text-overflow:ellipsis}
 .so-fig.moi small{background:#FF2E9A;color:#2a0f1f}
 .so-fig.fantome{cursor:default;pointer-events:none}
+.so-fig.dort{cursor:default;pointer-events:none}
+.so-fig.dort img{filter:grayscale(.55) brightness(.72);transform:rotate(-7deg);transform-origin:50% 100%}
+.so-fig.dort small{display:flex;flex-direction:column;align-items:center;max-width:none;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.6);font-weight:800;line-height:1.15}
+.so-fig.dort small b{font-size:10.5px;font-weight:700;color:#e8d8ff}
+.so-zzz{position:absolute;top:2%;right:6%;font-size:20px;font-style:normal;animation:so-zzz 2.6s ease-in-out infinite}
+@keyframes so-zzz{0%{opacity:0;transform:translate(0,6px) scale(.8)}35%{opacity:1}100%{opacity:0;transform:translate(10px,-18px) scale(1.1)}}
+@media (prefers-reduced-motion:reduce){.so-zzz{animation:none}}
 .so-fig.fantome img{opacity:.92}
 .so-fig.fantome small{background:rgba(0,0,0,.45);font-weight:700}
 .so-fig.souvenir small{background:rgba(0,0,0,.45);font-weight:700}

@@ -109,6 +109,23 @@ export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | n
   /** 👯 (l'entrée au salon, 26 novembre 2026) c'est un de MES proches — vu seulement par moi (le check à son entrée) */
   proche?: true };
 
+/**
+ * 😴 (26 novembre 2026, demandé par le propriétaire) PARTI AVANT LA FIN : sa figurine s'endort à sa place. On voit où il
+ * en était de la vidéo (`t`, en secondes) ; elle s'en va à la fin de la vidéo (`fin`, au plus une demi-heure), tout de
+ * suite s'il entre dans un autre salon, ou si quelqu'un arrive et qu'il n'y a plus d'autre place.
+ */
+export type DormeurSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; t: number; fin: number };
+export const SOMMEIL_MIN_MS = 2 * 60_000;
+export const SOMMEIL_MAX_MS = 30 * 60_000;
+/** « 4:12 », « 1:02:05 » */
+export const minuteVideo = (t: number): string => {
+  const x = Math.max(0, Math.floor(t));
+  const h = Math.floor(x / 3600);
+  const m = Math.floor((x % 3600) / 60);
+  const sec = String(x % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+};
+
 // ─── 🛋️ D2 : la séance chez moi (ma pièce, ma télé, jusqu'à trois proches) ───
 export const PLACES_SEANCE = 4;
 export const INVITES_MAX = PLACES_SEANCE - 1;
@@ -267,6 +284,7 @@ export const PHRASES_SALONS = {
   placePriseCorps: "Il est devant ta télé : viens regarder avec lui.",
   placePerimee: "Ce lien a déjà servi, ou il a plus de six heures : demande-en un autre.",
   aRegarde: "l’a vue",
+  partiA: (t: number) => `😴 parti à ${minuteVideo(t)}`,
   pasDeTele: "La télé du salon s’allume avec la sélection du jour.",
   ecrire: "Écris au salon",
   refus: (r: string) => `🚫 Ce message ne part pas : ${r}.`,
