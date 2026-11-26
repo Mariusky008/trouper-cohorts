@@ -23,7 +23,7 @@ import { vignetteYouTube } from "@/lib/direct/tele";
 import { PHRASES_SALONS as PS, PLACES_SEANCE, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import { PHRASES_FIL as PF, titreDeSeance, type SeanceFil } from "@/lib/direct/fil-decouvrir";
 import type { TeleDuJour } from "@/lib/direct/tele-du-jour";
-import { PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as PP, aParis, heureLisible, quandLisible, type GroupeVue, type PropositionGroupe } from "@/lib/direct/groupes";
+import { PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as PP, PHRASES_VIE_DU_GROUPE as PV, aParis, heureLisible, quandLisible, type GroupeVue, type PropositionGroupe } from "@/lib/direct/groupes";
 import { ProposerGroupe } from "./proposer-groupe";
 import { CreerGroupe, EspaceGroupe, Figurine, STYLES_FIGURINES_GROUPE, salonDuGroupe } from "./groupe-espace";
 
@@ -342,6 +342,11 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
                   ) : g.passage ? (
                     <span className="mg-m">{PG.passe(g.passage.prenom, heureLisible(g.passage.le))}</span>
                   ) : null}
+                  {g.prochain && (
+                    <span className="mg-m" data-prochain>
+                      📅 {PV.prochain(`${g.prochain.nom} · ${quandLisible(g.prochain.quand)}`)}
+                    </span>
+                  )}
                 </button>
               ),
             )}

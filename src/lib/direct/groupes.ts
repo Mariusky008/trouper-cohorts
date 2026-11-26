@@ -212,6 +212,8 @@ export type GroupeVue = {
   passage?: { prenom: string; le: number };
   /** je suis invité (un proche l'a créé) : « 💛 Garder ce groupe » ou « Non merci » */
   invite?: { de: string };
+  /** 📅 (lot G5) son prochain rendez-vous */
+  prochain?: { nom: string; quand: number };
 };
 
 export const PHRASES_GROUPES_GARDES = {
@@ -248,4 +250,111 @@ export const PHRASES_GROUPES_GARDES = {
   creerAucun: "Il te faut d’abord des proches : invite-les devant ta télé.",
   creerPublier: "👥 Créer le groupe",
   cree: (nom: string) => `👥 « ${nom} » est créé : tes proches le voient dans Mes groupes`,
+} as const;
+
+// ═══ 📅💬 (lot G5) LES RENDEZ-VOUS DU GROUPE, ET SA DISCUSSION ═══
+/** « chaque jour », « chaque semaine » (un jour, 0 = lundi), ou une seule fois (exceptionnel). */
+export type Recurrence = "jour" | "semaine" | "une";
+export type ReponseRdv = "viens" | "absent" | "tard";
+export const REPONSES_RDV: ReponseRdv[] = ["viens", "absent", "tard"];
+/** Six rendez-vous au plus par groupe ; un message : 90 signes, comme dans les salons. */
+export const RDV_MAX = 6;
+export const MESSAGE_GROUPE_MAX = 90;
+/** Une idée de séance entre dans les rendez-vous quand deux personnes sont partantes. */
+export const PARTANTS_MIN = 2;
+export const JOURS_SEMAINE = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"] as const;
+
+/** Un rendez-vous du groupe, tel que l'écran le voit (sa prochaine fois). */
+export type RdvGroupe = {
+  id: string;
+  nom: string;
+  e: string;
+  recurrence: Recurrence;
+  /** chaque semaine : le jour (0 = lundi) */
+  jour?: number;
+  heure: number;
+  minute: number;
+  /** la prochaine fois (ms) — ou celle qui est en cours */
+  quand: number;
+  /** ceux qui viennent (leur figurine) */
+  viennent: PlaceGroupe[];
+  /** ma réponse pour cette fois-ci */
+  moi?: ReponseRdv;
+  /** je l'ai proposé (je peux le retirer) */
+  mien?: true;
+  /** une idée de séance (« Partant ! ») : elle entre dans les rendez-vous à deux partants */
+  idee?: true;
+  de: string;
+};
+
+/** Un message de la discussion du groupe. */
+export type MessageGroupe = { id: string; q: string; prenom: string; src: string; texte: string; le: number; mien?: true; idee?: string };
+
+/** Ce qu'on lit en ouvrant l'espace d'un groupe. */
+export type VieDuGroupe = { rdv: RdvGroupe[]; messages: MessageGroupe[] };
+
+const JOUR_COURT = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", weekday: "short" });
+const JOURS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+/** (Paris) le jour de la semaine d'un instant, 0 = lundi. */
+export const jourDeLaSemaine = (ms: number) => JOURS_EN.indexOf(JOUR_COURT.format(ms));
+
+/**
+ * La prochaine fois d'un rendez-vous (ou celle en cours : jusqu'à deux heures après l'heure). Une seule fois : son
+ * heure, ou `null` quand elle est passée depuis plus de deux heures.
+ */
+export function prochaineFois(r: { recurrence: Recurrence; jour?: number; heure: number; minute: number; quand?: number }, maintenant = Date.now()): number | null {
+  if (r.recurrence === "une") return r.quand && r.quand + OUVERT_APRES_MS > maintenant ? r.quand : null;
+  for (let k = 0; k <= 8; k++) {
+    const t = aParis(k, r.heure, r.minute, maintenant);
+    if (t + OUVERT_APRES_MS <= maintenant) continue;
+    if (r.recurrence === "semaine" && jourDeLaSemaine(t) !== r.jour) continue;
+    return t;
+  }
+  return null;
+}
+
+/** « chaque soir · 21 h », « chaque mercredi · 20 h », « Samedi 22 h · exceptionnel ». */
+export function quandDuRdv(r: Pick<RdvGroupe, "recurrence" | "jour" | "heure" | "quand">, maintenant = Date.now()): string {
+  const h = heureLisible(r.quand);
+  if (r.recurrence === "jour") return `${r.heure >= 18 ? "chaque soir" : "chaque jour"} · ${h}`;
+  if (r.recurrence === "semaine") return `chaque ${JOURS_SEMAINE[r.jour ?? 0]} · ${h}`;
+  return `${quandLisible(r.quand, maintenant)} · exceptionnel`;
+}
+
+export const PHRASES_VIE_DU_GROUPE = {
+  ongletRdv: "📅 Rendez-vous",
+  ongletDiscussion: "💬 Discussion",
+  ongletMembres: "👥 Membres",
+  viens: "✓ Je viens",
+  absent: "Absent",
+  tard: "Plus tard",
+  tardDit: "Tu retrouveras la séance et ses réactions plus tard",
+  nouveau: "＋ Un rendez-vous",
+  nouveauTitre: "📅 Un rendez-vous",
+  nouveauDit: "📅 Le groupe le voit tout de suite",
+  sonNom: "Son nom",
+  nomIndice: "Le rendez-vous du soir",
+  chaqueJour: "Chaque jour",
+  chaqueSemaine: "Chaque semaine",
+  uneFois: "Une seule fois",
+  heure: "À quelle heure",
+  quelJour: "Quel jour",
+  rdvAucun: "Un rendez-vous fixe, et le groupe se retrouve sans y penser.",
+  creer: "📅 Ajouter",
+  retirer: "Retirer",
+  tropDeRdv: `${RDV_MAX} rendez-vous au plus par groupe.`,
+  prochain: (quand: string) => `Prochain : ${quand}`,
+  // la discussion
+  ecrire: "Écrire au groupe…",
+  envoyer: "Envoyer",
+  idee: "💡 Une idée de séance",
+  ideeTitre: "💡 Une idée de séance",
+  ideeQuestion: (nom: string) => `Une séance « ${nom} » ?`,
+  partant: "Partant !",
+  partantFait: "✓ Partant",
+  ideeEntre: (nom: string) => `⭐ « ${nom} » arrive dans les rendez-vous`,
+  ideeEnvoyee: "💡 Ton idée est dans la discussion",
+  rienEncore: "Dites-vous un mot entre deux rencontres.",
+  // le rappel (lot G3, pour les rendez-vous du groupe)
+  rappelCorps: "Ton groupe t’attend dans son salon.",
 } as const;

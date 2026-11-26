@@ -20,7 +20,8 @@ import { SEAU_FIGURINES, ecrireJson, lireJson, prenomDe, prochesDe } from "./ma-
 import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { maisonDeMoi, preparerLeRendezVous, presentsDuGroupe } from "./salons-ouverts-serveur";
-import { cheminGroupe, cheminMembre, cheminMiens, dossierInvitationsGroupe, dossierInvites, dossierMembres, dossierPassages, estMembre, idGroupeValide, type FicheMembre } from "./groupes-chemins-serveur";
+import { prochainDuGroupe } from "./groupes-vie-serveur";
+import { cheminGroupe, cheminMembre, cheminMiens, dossierInvitationsGroupe, dossierInvites, dossierPassages, estMembre, membresDe, idGroupeValide, type FicheMembre } from "./groupes-chemins-serveur";
 import { maTeleDuJour } from "./tele-du-jour-serveur";
 import { details } from "./selection-serveur";
 import { videoYouTube } from "./tele";
@@ -377,11 +378,6 @@ async function lireGroupe(supabase: Supabase, id: string): Promise<FicheGroupe |
   const f = await lireJson<Partial<FicheGroupe>>(supabase, cheminGroupe(id)).catch(() => ({}) as Partial<FicheGroupe>);
   return f.id === id && f.nom ? (f as FicheGroupe) : null;
 }
-async function membresDe(supabase: Supabase, id: string): Promise<FicheMembre[]> {
-  const noms = await lister(supabase, dossierMembres(id), 20);
-  const l = await Promise.all(noms.map((n) => lireJson<Partial<FicheMembre>>(supabase, `${dossierMembres(id)}/${n}`).catch(() => ({}) as Partial<FicheMembre>)));
-  return l.filter((x): x is FicheMembre => Boolean(x.q && x.h)).sort((a, b) => a.le - b.le);
-}
 async function mesIds(supabase: Supabase, q: string): Promise<string[]> {
   const f = await lireJson<{ groupes?: unknown }>(supabase, cheminMiens(q)).catch(() => ({}) as { groupes?: unknown });
   return Array.isArray(f.groupes) ? f.groupes.map((x) => idGroupeValide(x)).filter((x): x is string => Boolean(x)) : [];
@@ -408,9 +404,10 @@ async function placePourUnGroupe(supabase: Supabase, q: string): Promise<boolean
 
 async function vueDuGroupe(supabase: Supabase, g: FicheGroupe, membres: FicheMembre[], q: string, maintenant: number, invite?: string): Promise<GroupeVue> {
   const t = themeDuGroupe(g.theme);
-  const [ici, passages] = await Promise.all([
+  const [ici, passages, prochain] = await Promise.all([
     invite ? Promise.resolve([] as string[]) : presentsDuGroupe(supabase, g.id, maintenant).catch(() => [] as string[]),
     invite ? Promise.resolve([] as string[]) : lister(supabase, dossierPassages(g.id), 20),
+    prochainDuGroupe(supabase, g.id, maintenant).catch(() => null),
   ]);
   const place = ({ q: x, prenom, src }: FicheMembre): PlaceGroupe => ({ q: x, prenom, src });
   const dedans = membres.filter((m) => ici.includes(m.q));
@@ -431,6 +428,7 @@ async function vueDuGroupe(supabase: Supabase, g: FicheGroupe, membres: FicheMem
     ici: dedans.map(place),
     ...(passage ? { passage } : {}),
     ...(invite ? { invite: { de: invite } } : {}),
+    ...(prochain ? { prochain } : {}),
   };
 }
 

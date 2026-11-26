@@ -5,16 +5,17 @@
  * validée, planche « Groupe »).
  *
  * L'espace : son identité (sa passion, son nom, son mot), son salon attitré — toujours ouvert, même vide (qui y est, ou
- * qui y est passé) — et ses membres. Les onglets Aujourd'hui, Rendez-vous, Discussion et Journal arrivent avec leurs lots
- * (G5 à G7) : jamais un onglet vide.
+ * qui y est passé) — puis ses onglets : 📅 Rendez-vous et 💬 Discussion (lot G5, `groupe-vie.tsx`), 👥 Membres.
+ * Aujourd'hui et Journal arrivent avec leurs lots (G6, G7) : jamais un onglet vide.
  *
  * Créer : un nom, une passion, des proches, un mot. Le groupe existe tout de suite pour moi ; mes proches le voient dans
  * Mes groupes, et le gardent s'ils veulent.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { THEMES_DECOUVRIR, type IdTheme } from "@/lib/direct/decouvrir";
-import { MOT_GROUPE_MAX, NOM_GROUPE_MAX, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as P, heureLisible, type GroupeVue, type PlaceGroupe } from "@/lib/direct/groupes";
+import { NouveauRdv, OngletDiscussion, OngletMembres, OngletRendezVous, STYLES_VIE_DU_GROUPE, useVieDuGroupe } from "./groupe-vie";
+import { MOT_GROUPE_MAX, NOM_GROUPE_MAX, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as P, PHRASES_VIE_DU_GROUPE as PV, heureLisible, type GroupeVue, type PlaceGroupe } from "@/lib/direct/groupes";
 
 export const salonDuGroupe = (id: string) => `/univers/salons?groupe=${encodeURIComponent(id)}`;
 
@@ -35,6 +36,16 @@ export function Figurine({ p, tete }: { p: PlaceGroupe; tete?: boolean }) {
 /** 🛋️ L'espace d'un groupe, en plein écran. */
 export function EspaceGroupe({ g, onFermer }: { g: GroupeVue; onFermer: () => void }) {
   const t = THEMES_DECOUVRIR.find((x) => x.id === g.theme);
+  const { vie, setVie } = useVieDuGroupe(g.id);
+  const [onglet, setOnglet] = useState<"rdv" | "discussion" | "membres">("rdv");
+  const [feuille, setFeuille] = useState<"rdv" | "idee" | null>(null);
+  const [dit, setDit] = useState("");
+  const minuterie = useRef(0);
+  const dire = (x: string) => {
+    setDit(x);
+    window.clearTimeout(minuterie.current);
+    minuterie.current = window.setTimeout(() => setDit(""), 3200);
+  };
   if (typeof document === "undefined") return null;
   return createPortal(
     <div className="ge" role="dialog" aria-label={g.nom} data-espace-groupe={g.id}>
@@ -87,18 +98,40 @@ export function EspaceGroupe({ g, onFermer }: { g: GroupeVue; onFermer: () => vo
           </a>
         </div>
 
-        <h2 className="ge-rub">{PG.lesMembres}</h2>
-        <div className="ge-membres" data-membres>
-          {g.membres.map((p) => (
-            <span key={p.q} className="ge-membre">
-              <Figurine p={p} tete />
-              <b>{p.prenom}</b>
-            </span>
+        {/* 📅💬👥 (lot G5) les onglets : jamais un onglet vide */}
+        <div className="gv-onglets" role="tablist">
+          {(["rdv", "discussion", "membres"] as const).map((x) => (
+            <button key={x} type="button" role="tab" className={`gv-onglet${onglet === x ? " pris" : ""}`} aria-selected={onglet === x} onClick={() => setOnglet(x)} data-onglet={x}>
+              {x === "rdv" ? PV.ongletRdv : x === "discussion" ? PV.ongletDiscussion : PV.ongletMembres}
+            </button>
           ))}
         </div>
-        <p className="ge-seuls">{PG.seulsMembres}</p>
+        {onglet === "membres" || !vie ? (
+          onglet === "membres" && <OngletMembres membres={g.membres} />
+        ) : onglet === "rdv" ? (
+          <OngletRendezVous gid={g.id} vie={vie} setVie={setVie} salon={salonDuGroupe(g.id)} onNouveau={() => setFeuille("rdv")} onDit={dire} />
+        ) : (
+          <OngletDiscussion gid={g.id} vie={vie} setVie={setVie} onIdee={() => setFeuille("idee")} onDit={dire} />
+        )}
       </div>
-      <style>{STYLES_ESPACE}</style>
+      {feuille && (
+        <NouveauRdv
+          gid={g.id}
+          idee={feuille === "idee"}
+          onFermer={() => setFeuille(null)}
+          onAjoute={(r, m) => {
+            setFeuille(null);
+            setVie((v) => (v ? { rdv: r ? [...v.rdv.filter((x) => x.id !== r.id), r].sort((a, b) => a.quand - b.quand) : v.rdv, messages: m ? [...v.messages, m] : v.messages } : v));
+            dire(feuille === "idee" ? PV.ideeEnvoyee : PV.nouveauDit);
+          }}
+        />
+      )}
+      {dit && (
+        <p className="gv-dit" role="status" data-dit>
+          {dit}
+        </p>
+      )}
+      <style>{STYLES_ESPACE + STYLES_VIE_DU_GROUPE}</style>
     </div>,
     document.body,
   );
