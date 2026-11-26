@@ -25,6 +25,7 @@ import { details } from "./selection-serveur";
 import { videoYouTube } from "./tele";
 import { LIEN_REGARDER_MAX, TITRE_PAR_DEFAUT } from "./regarder-a-deux";
 import { groupesOuverts } from "./interrupteurs-serveur";
+import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
 import type { MaisonSalons, VideoSalon } from "./salons-ouverts";
 import {
   HORIZON_MS,
@@ -34,8 +35,11 @@ import {
   PHRASES_PROPOSITIONS as P,
   PLACES_GROUPE,
   PROPOSITIONS_MAX,
+  RAPPEL_APRES_MS,
+  RAPPEL_AVANT_MS,
   SIGNALEMENTS_GROUPE,
   estOuverte,
+  quandLisible,
   refusDuGroupe,
   themeDuGroupe,
   type PlaceGroupe,
@@ -53,6 +57,8 @@ const cheminProposition = (id: string) => `${DOSSIER}/${id}.json`;
 const dossierPlaces = (id: string) => `groupes/places/${id}`;
 const dossierHoraires = (id: string) => `groupes/horaires/${id}`;
 const dossierSignalements = (id: string) => `groupes/signalements/${id}`;
+const cheminRappel = (id: string) => `groupes/rappels/${id}.json`;
+const LIEN = "/collection#groupes";
 const ID = /^\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}$/;
 const idValide = (x: unknown) => (ID.test(s(x)) ? s(x) : null);
 
@@ -250,11 +256,17 @@ export async function autreHeure(supabase: Supabase, moi: Habitant, id: unknown,
     if (!(await ecrireJson(supabase, cheminProposition(f.id), n))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
     const noms = await lister(supabase, dossierHoraires(f.id), 50);
     await effacer(supabase, noms.map((x) => `${dossierHoraires(f.id)}/${x}`));
+    // (🔔 lot G3 : ceux qui ont leur place l'apprennent)
+    const places = (await placesDe(supabase, f.id)).filter((p) => p.h !== moi.id);
+    const notif = { titre: P.changeNotifTitre(f.nom, quandLisible(quand, maintenant)), corps: P.changeNotifCorps, url: LIEN, tag: `groupe-${f.id}` };
+    await Promise.all(places.map((p) => prevenirUnHabitantAppli(supabase, p.h, notif).catch(() => "rien")));
     return { proposition: await vueDe(supabase, moi, n, maintenant) };
   }
   const prenom = (await prenomDe(supabase, moi).catch(() => "")) || "Quelqu’un";
   const q = qui8(moi.id);
   if (!(await ecrireJson(supabase, `${dossierHoraires(f.id)}/${q}.json`, { q, prenom, quand, le: maintenant } satisfies FicheHoraire))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // (🔔 lot G3 : celui qui propose l'apprend tout de suite)
+  await prevenirUnHabitantAppli(supabase, f.h, { titre: P.autreNotifTitre(prenom, quandLisible(quand, maintenant)), corps: P.autreNotifCorps(f.nom), url: LIEN, tag: `groupe-heure-${f.id}` }).catch(() => "rien");
   return { proposition: await vueDe(supabase, moi, f, maintenant) };
 }
 
@@ -298,4 +310,32 @@ export async function entrer(supabase: Supabase, moi: Habitant, id: unknown): Pr
   if (hote) return { aller: "/univers/salons?chez=moi" };
   const cle = await poserProfil(supabase, f.h).catch(() => "");
   return cle ? { aller: `/univers/salons?chez=${encodeURIComponent(cle)}` } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+}
+
+/**
+ * 🔔 (lot G3) LES RAPPELS : appelé toutes les cinq minutes. Pour chaque proposition dont l'heure arrive (quinze minutes
+ * avant, jusqu'à trente minutes après), ceux qui ont leur place reçoivent « 🔔 Soirée foot commence dans 10 minutes » —
+ * une fois par heure de rendez-vous (l'heure change : un nouveau rappel). `maintenant` : les essais avancent l'horloge.
+ */
+export async function rappelerLesGroupes(supabase: Supabase, o: { maintenant?: number; fin?: number } = {}): Promise<{ rappels: number; personnes: number }> {
+  const maintenant = o.maintenant ?? Date.now();
+  const fin = o.fin ?? Date.now() + 50_000;
+  const noms = await lister(supabase, DOSSIER, 500);
+  let rappels = 0;
+  let personnes = 0;
+  for (const n of noms) {
+    if (Date.now() > fin) break;
+    const f = await lireProposition(supabase, n.replace(/\.json$/, ""));
+    if (!f || maintenant < f.quand - RAPPEL_AVANT_MS || maintenant > f.quand + RAPPEL_APRES_MS) continue;
+    const deja = await lireJson<{ quand?: number }>(supabase, cheminRappel(f.id)).catch(() => ({}) as { quand?: number });
+    if (deja.quand === f.quand) continue;
+    if (!(await ecrireJson(supabase, cheminRappel(f.id), { quand: f.quand, le: maintenant }))) continue;
+    const places = await placesDe(supabase, f.id);
+    const minutes = Math.max(0, Math.round((f.quand - maintenant) / 60_000));
+    const notif = { titre: P.rappelTitre(f.nom, minutes), corps: P.rappelCorps(places.length), url: LIEN, tag: `groupe-${f.id}` };
+    const issues = await Promise.all(places.map((p) => prevenirUnHabitantAppli(supabase, p.h, notif).catch(() => "rien" as const)));
+    rappels++;
+    personnes += issues.filter((x) => x === "envoye").length;
+  }
+  return { rappels, personnes };
 }

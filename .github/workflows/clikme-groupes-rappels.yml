@@ -1,0 +1,25 @@
+# 🔔 Mes groupes (lot G3) : toutes les cinq minutes, les rappels « Soirée foot commence dans 10 minutes ».
+# Vercel (offre gratuite) n'accepte qu'une tâche par jour : c'est donc GitHub qui appelle la route.
+# Le secret `CRON_SECRET` du dépôt doit être le même que celui de Vercel (sans lui, la route répond 401).
+name: Mes groupes — rappels
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: groupes-rappels
+  cancel-in-progress: false
+
+jobs:
+  rappels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Appeler la route des rappels
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE: ${{ vars.CLIKME_URL || 'https://www.clikme.fr' }}
+        run: |
+          curl -fsS --max-time 90 -H "Authorization: Bearer ${CRON_SECRET}" "${SITE}/api/cron/groupes-rappels"
