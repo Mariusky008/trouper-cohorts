@@ -30,3 +30,10 @@ export const salonPourTous = (): boolean => lu("CLIKME_SALON_DU_DUO", SALON_DU_D
  * sans déployer (les cartes disparaissent de l'accueil, on ne peut plus y entrer).
  */
 export const salonsOuverts = (): boolean => lu("CLIKME_SALONS_OUVERTS", true);
+
+/**
+ * 👥 (Mes groupes, lot G2, 26 novembre 2026) Les propositions ouvertes à tout le monde : allumées ;
+ * `CLIKME_GROUPES_OUVERTS=0` les met en pause sans déployer (elles disparaissent, on ne peut plus en publier). Les
+ * propositions entre proches restent possibles.
+ */
+export const groupesOuverts = (): boolean => lu("CLIKME_GROUPES_OUVERTS", true);

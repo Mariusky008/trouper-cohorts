@@ -28,6 +28,8 @@ import { humeurDuJour, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison, teteDeLaMaison } from "./ma-maison-serveur";
 import { pancarteDe } from "./mon-double-serveur";
 import { humeurDe } from "./rituel";
+import { prochaineDuFil } from "./groupes-serveur";
+import { lirePassions } from "./passions-serveur";
 import { estDouce } from "./humeur-reponse";
 import { maisonsPourLeFil, mesVisites } from "./visites-serveur";
 import { themeDe } from "./decouvrir";
@@ -127,6 +129,10 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
     surpriseDeVisite(supabase, moi).catch(() => undefined),
     seancesDesProches(supabase, moi).catch(() => [] as SeanceFil[]),
   ]);
+  // (📣 Mes groupes, lot G2 : une proposition « On se retrouve ? », ses passions d'abord)
+  const passionsDeMoi = ((await lirePassions(supabase, moi.id).catch(() => null))?.passions ?? []).map(String);
+  const prochaine = await prochaineDuFil(supabase, moi, passionsDeMoi).catch(() => null);
+  const rdv: PieceFil[] = prochaine ? [{ sorte: "rdv", proposition: prochaine }] : [];
   const proches = await prochesDansLesSalons(supabase, moi, direct.salons).catch(() => new Set<string>());
   const vivants = direct.salons
     .filter((x) => x.presents.length)
@@ -141,7 +147,7 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
   const passions = vivants.filter((x) => !x.proches && x.mien);
   const autres = vivants.filter((x) => !x.proches && !x.mien);
   const humeur: HumeurFil[] = humeurs.length ? [{ sorte: "humeur", proches: humeurs }] : [];
-  const groupes: PieceFil[][] = [seances, avecProches, humeur, passions, maisons, autour, autres, vides];
+  const groupes: PieceFil[][] = [seances, avecProches, humeur, passions, rdv, maisons, autour, autres, vides];
   const inv = invitations[0];
   return {
     moi: { prenom: prenom || "Toi", figurine },

@@ -32,6 +32,7 @@ import { vignetteYouTube } from "@/lib/direct/tele";
 import { PLAN_GRADIN, type PlaceGradin } from "@/lib/direct/salons-gradins";
 import { GESTES_SALON, PLACES_SALON, REACTIONS_SALON, type MessageSalon, type PresentSalon } from "@/lib/direct/salons-ouverts";
 import { REACTIONS_MUSIQUE } from "@/lib/direct/platine";
+import { PHRASES_PROPOSITIONS as PP, quandLisible, type PropositionGroupe } from "@/lib/direct/groupes";
 import { PHRASES_FIL as P, reactionDuFil, titreDeSeance, type BulleFil, type FilVue, type MaisonFil, type PieceFil, type SalonFil, type SeanceFil } from "@/lib/direct/fil-decouvrir";
 
 const ROUTE = "/api/direct/fil-decouvrir";
@@ -41,7 +42,7 @@ const VISITES = "/api/direct/visites";
 const MEMOIRE_MS = 10 * 60_000;
 const CLE_INDICE = "clikme-fil-indice-vu";
 
-const cleDe = (p: PieceFil) => (p.sorte === "salon" ? `s:${p.theme}` : p.sorte === "autour" ? `a:${p.figurine.id}` : p.sorte === "maison" ? `m:${p.cle}` : p.sorte === "seance" ? `e:${p.cle}` : "h");
+const cleDe = (p: PieceFil) => (p.sorte === "salon" ? `s:${p.theme}` : p.sorte === "autour" ? `a:${p.figurine.id}` : p.sorte === "maison" ? `m:${p.cle}` : p.sorte === "seance" ? `e:${p.cle}` : p.sorte === "rdv" ? `r:${p.proposition.id}` : "h");
 const heuresRestantes = (fin: string) => Math.max(1, Math.round((Date.parse(fin) - Date.now()) / 3600_000));
 const texteDe = (m: MessageSalon) =>
   m.sorte === "texte" ? (m.texte ?? "") : m.sorte === "reaction" ? ([...REACTIONS_SALON, ...REACTIONS_MUSIQUE].find((r) => r.cle === m.cle)?.e ?? "") : (GESTES_SALON.find((g) => g.cle === m.cle)?.e ?? "");
@@ -279,6 +280,16 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
     }
   }
 
+  /** 📣 (Mes groupes, lot G2) « Je confirme ma place » dans une proposition, sans quitter le fil. */
+  async function confirmerRdv(id: string) {
+    const r = await fetch("/api/direct/mes-groupes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "confirmer", id }) })
+      .then(async (x) => ({ ok: x.ok, j: ((await x.json().catch(() => ({}))) ?? {}) as { error?: string; proposition?: PropositionGroupe } }))
+      .catch(() => ({ ok: false, j: {} as { error?: string; proposition?: PropositionGroupe } }));
+    if (!r.ok || !r.j.proposition) return dire(r.j.error || "Ça n’a pas marché.");
+    const n = r.j.proposition;
+    setPieces((l) => l.map((x) => (x.sorte === "rdv" && x.proposition.id === id ? { ...x, proposition: n } : x)));
+  }
+
   /** 🙋 (lot F3) Demander à rejoindre la séance d'un proche : l'hôte est prévenu ; invité déjà, on y va. */
   async function rejoindre(p: SeanceFil) {
     const r = await fetch(SALONS, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "rejoindre", chez: p.cle }) })
@@ -371,6 +382,8 @@ export function FilDecouvrir({ onTousLesSalons, onAutour, onConversation }: { on
             </section>
           ) : p.sorte === "seance" ? (
             <PieceSeance key={k} k={k} p={p} onRejoindre={() => void rejoindre(p)} />
+          ) : p.sorte === "rdv" ? (
+            <PieceRdv key={k} k={k} p={p.proposition} onConfirmer={() => void confirmerRdv(p.proposition.id)} />
           ) : p.sorte === "autour" ? (
             <section key={k} className="fd-carte fd-autour" data-k={k} data-piece="autour" data-pose={p.figurine.id}>
               <span className="fd-etiquette">📍 {P.autourEtiquette(p.nomLieu)}</span>
@@ -531,6 +544,66 @@ function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoind
             {P.rejoindre(n, p.presents[0]?.prenom ?? p.hote)}
           </button>
         )}
+      </div>
+    </section>
+  );
+}
+
+/** 📣 (Mes groupes, lot G2) « On se retrouve ? » : une proposition, ceux qui ont déjà leur place, la mienne à prendre. */
+function PieceRdv({ k, p, onConfirmer }: { k: string; p: PropositionGroupe; onConfirmer: () => void }) {
+  const n = p.confirmes.length;
+  return (
+    <section className="fd-carte fd-rdv" data-k={k} data-piece="rdv" data-proposition={p.id}>
+      <span className="fd-etiquette">{P.rdvEtiquette}</span>
+      <div className="fd-milieu fd-rdv-milieu">
+        <div className="fd-tele" data-tele>
+          {p.video ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={vignetteYouTube(p.video.id)} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />
+          ) : (
+            <span className="fd-rdv-e" aria-hidden="true">
+              {p.e}
+            </span>
+          )}
+        </div>
+        <span className="fd-rdv-places">
+          {Array.from({ length: p.places }, (_, i) => {
+            const c = p.confirmes[i];
+            return c ? (
+              <span key={i} className="fd-rdv-siege" title={c.prenom}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {c.src ? <img src={c.src} alt={c.prenom} draggable={false} /> : "🙂"}
+              </span>
+            ) : (
+              <span key={i} className="fd-rdv-siege libre" aria-label="Place libre">
+                ＋
+              </span>
+            );
+          })}
+        </span>
+        {p.mot && <p className="fd-rdv-mot">« {p.mot} »</p>}
+      </div>
+      <div className="fd-bas">
+        <h2>
+          {p.e} {p.nom} · {quandLisible(p.quand)}
+        </h2>
+        <p>
+          {P.rdvSous(p.de)} {PP.confirmes(n, p.places)}
+        </p>
+        <span className="fd-boutons">
+          {p.jY ? (
+            <span className="fd-bouton fd-second" data-ma-place>
+              {PP.confirme}
+            </span>
+          ) : (
+            <button type="button" className="fd-bouton" data-confirmer onClick={onConfirmer}>
+              {PP.confirmer}
+            </button>
+          )}
+          <a className="fd-bouton fd-second" href="#groupes" data-voir-groupes>
+            {P.rdvVoir}
+          </a>
+        </span>
       </div>
     </section>
   );
@@ -783,6 +856,13 @@ export const STYLES_FIL = `
   background:radial-gradient(55% 30% at 8% 12%,rgba(245,162,58,.22),transparent 70%),radial-gradient(55% 30% at 92% 12%,rgba(245,162,58,.18),transparent 70%),linear-gradient(180deg,#3a2418 0%,#2c1b12 44%,#3b2316 44.4%,#22130b 100%);
   box-shadow:inset 0 0 0 1px rgba(255,196,140,.14)}
 .fd-salon[data-theme="musique"] .fd-salle{background:radial-gradient(55% 30% at 8% 12%,rgba(255,46,154,.2),transparent 70%),radial-gradient(55% 30% at 92% 12%,rgba(245,162,58,.18),transparent 70%),linear-gradient(180deg,#2e1a2a 0%,#24131f 44%,#33202a 44.4%,#1c0f17 100%)}
+.fd-rdv-milieu{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.fd-rdv-e{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:64px;background:radial-gradient(circle,rgba(255,46,154,.25),rgba(20,10,18,1) 70%)}
+.fd-rdv-places{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:320px}
+.fd-rdv-siege{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;overflow:hidden;background:#3a2430;box-shadow:0 0 0 2px rgba(255,244,230,.4)}
+.fd-rdv-siege img{width:100%;height:100%;object-fit:cover;object-position:50% 14%}
+.fd-rdv-siege.libre{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,244,230,.3);color:rgba(255,244,230,.6);font-size:18px}
+.fd-rdv-mot{margin:0;max-width:300px;padding:8px 12px;border-radius:12px;background:#fff4e6;color:#2a1a10;font-family:Caveat,cursive;font-weight:700;font-size:20px;line-height:1.05;text-align:center}
 .fd-salle .fd-tele{box-shadow:0 18px 30px -14px rgba(0,0,0,.85),0 0 40px rgba(245,162,58,.18),inset 0 0 0 6px #0b0806}
 .fd-salle .fd-gradin{background-color:transparent}
 .fd-fauteuil{position:absolute;transform:translateX(-50%);pointer-events:none}

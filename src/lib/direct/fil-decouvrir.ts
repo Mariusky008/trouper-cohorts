@@ -20,6 +20,7 @@
  * dans un salon, ceux qui y sont lui font signe d'un toucher. 🧭 Le lot F4 : l'ordre du fil (`ordreDuFil`).
  */
 import type { IdTheme } from "./decouvrir";
+import type { PropositionGroupe } from "./groupes";
 import type { Ornements } from "./ornements";
 import type { PlaceGradin } from "./salons-gradins";
 import type { FigurinePosee } from "./autour";
@@ -101,7 +102,12 @@ export type SeanceFil = {
   /** sa demande est partie (moins d'une heure) : on attend l'hôte */
   demande?: true;
 };
-export type PieceFil = SalonFil | AutourFil | HumeurFil | MaisonFil | SeanceFil;
+/**
+ * 📣 (Mes groupes, lot G2, 26 novembre 2026) « On se retrouve ? » : de temps en temps, une proposition ouverte à tout le
+ * monde, d'un autre, où il reste une place — ses passions d'abord. Une seule par fil.
+ */
+export type RdvFil = { sorte: "rdv"; proposition: PropositionGroupe };
+export type PieceFil = SalonFil | AutourFil | HumeurFil | MaisonFil | SeanceFil | RdvFil;
 
 export type FilVue = {
   moi: { prenom: string; figurine: SilhouetteFil | null };
@@ -211,6 +217,10 @@ export const PHRASES_FIL = {
   sansFigurine: "Pour réagir, il te faut ta figurine assise dans son fauteuil.",
   // 🎬 (lot F3) mes proches en direct
   seanceEtiquette: (hote: string) => `Chez ${hote}, en direct`,
+  // 📣 (Mes groupes, lot G2) « On se retrouve ? »
+  rdvEtiquette: "📣 On se retrouve ?",
+  rdvSous: (prenom: string) => `${prenom} propose de se retrouver : il reste de la place.`,
+  rdvVoir: "Voir dans Mes groupes",
   seanceSous: (hote: string) => `Demande à les rejoindre : ${hote} te fait entrer d’un toucher.`,
   seanceInvite: "Tu es invité : ta place t’attend.",
   seanceDemande: (hote: string) => `🙋 Demande envoyée à ${hote}. Tu es prévenu dès qu’on t’ouvre.`,

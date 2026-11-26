@@ -1,26 +1,65 @@
-// 👥 MES GROUPES (le lot G1, 26 novembre 2026 ; `docs/univers/mes-groupes.md`) — le sien seulement (le cookie d'habitant).
+// 👥 MES GROUPES (lots G1 et G2, 26 novembre 2026 ; `docs/univers/mes-groupes.md`) — le sien seulement (le cookie d'habitant).
 //
-// GET → { invitations, demandes, seances } : la rangée « Avec mes proches », faite de ce qui existait déjà —
-//       🎬 les invitations devant la télé d'un proche (lot D2), 👯 les demandes de proche (lot D5), et les séances en
-//       cours chez mes proches (lot F3). Les gestes (« Venir », « Pas maintenant », « Accepter », « Demander à les
-//       rejoindre ») passent par la route des salons, comme avant.
+// GET → { invitations, demandes, seances, propositions, adulte? } :
+//       · la rangée « Avec mes proches », faite de ce qui existait déjà (G1) — 🎬 les invitations devant la télé d'un
+//         proche (lot D2), 👯 les demandes de proche (lot D5), et les séances en cours chez mes proches (lot F3) ; leurs
+//         gestes passent par la route des salons, comme avant ;
+//       · 📣 « Propositions de groupes » (G2, `groupes-serveur.ts`) : celles que je peux voir, les plus proches d'abord.
+// POST { action: "proposer", nom, theme, video? | lien?, quand, pour: "tous" | "proches", places, mot? } → { proposition }
+// POST { action: "confirmer" | "laisser", id }   → { proposition } : ma place
+// POST { action: "autre-heure", id, quand }      → { proposition } : une autre heure (celui qui propose : il la prend)
+// POST { action: "retirer", id }                 → { ok } : sa proposition s'en va
+// POST { action: "signaler", id }                → { ok } : trois personnes, et elle disparaît
+// POST { action: "entrer", id }                  → { aller } : à l'heure dite, où aller
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant } from "@/lib/direct/habitant";
-import { mesDemandes, mesInvitations, seancesDesProches } from "@/lib/direct/salons-ouverts-serveur";
+import { maisonDeMoi, mesDemandes, mesInvitations, seancesDesProches } from "@/lib/direct/salons-ouverts-serveur";
+import { autreHeure, confirmer, entrer, propositionsPourMoi, proposer, retirer, signaler } from "@/lib/direct/groupes-serveur";
 
 export const dynamic = "force-dynamic";
 
 const sansCache = { "cache-control": "private, no-store" };
+const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
 
 export async function GET() {
   const supabase = createAdminClient();
   const moi = await habitantCourant(supabase);
-  if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine sur ce téléphone." }, { status: 401, headers: sansCache });
-  const [invitations, demandes, seances] = await Promise.all([
+  if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
+  const [invitations, demandes, seances, propositions, maison] = await Promise.all([
     mesInvitations(supabase, moi).catch(() => []),
     mesDemandes(supabase, moi).catch(() => []),
     seancesDesProches(supabase, moi).catch(() => []),
+    propositionsPourMoi(supabase, moi).catch(() => []),
+    maisonDeMoi(supabase, moi.id).catch(() => null),
   ]);
-  return NextResponse.json({ ok: true, invitations, demandes, seances }, { headers: sansCache });
+  return NextResponse.json({ ok: true, invitations, demandes, seances, propositions, ...(maison === "adultes" ? { adulte: true } : {}) }, { headers: sansCache });
+}
+
+export async function POST(request: Request) {
+  const p = ((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>;
+  const supabase = createAdminClient();
+  const moi = await habitantCourant(supabase);
+  if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
+  const repondre = (r: { error?: string; statut?: number }, ok: Record<string, unknown> = {}) =>
+    NextResponse.json(r.error ? { error: r.error } : { ok: true, ...ok }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+  if (p.action === "proposer") {
+    const r = await proposer(supabase, moi, p);
+    return repondre(r, { proposition: r.proposition });
+  }
+  if (p.action === "confirmer" || p.action === "laisser") {
+    const r = await confirmer(supabase, moi, p.id, p.action === "laisser");
+    return repondre(r, { proposition: r.proposition });
+  }
+  if (p.action === "autre-heure") {
+    const r = await autreHeure(supabase, moi, p.id, p.quand);
+    return repondre(r, { proposition: r.proposition });
+  }
+  if (p.action === "retirer") return repondre(await retirer(supabase, moi, p.id));
+  if (p.action === "signaler") return repondre(await signaler(supabase, moi, p.id));
+  if (p.action === "entrer") {
+    const r = await entrer(supabase, moi, p.id);
+    return repondre(r, { aller: r.aller });
+  }
+  return NextResponse.json({ error: "Je ne sais pas faire ça." }, { status: 400, headers: sansCache });
 }
