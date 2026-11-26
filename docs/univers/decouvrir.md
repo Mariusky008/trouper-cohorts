@@ -1958,3 +1958,19 @@ https://claude.ai/artifact/Qq3BYd4hb2BhTiPSBjYiKs. Avant, la figurine apparaissa
 **L'essai** : `scripts/navigateur/entree-salon.mjs` (sur un iPhone : l'entrée de Léa, jamais devant la télé, sans son
 propre bonjour ; Sam, son proche — sa pancarte, les têtes tournées, le check ✋, son bonjour tout seul ou 🔊 à toucher et
 sa bouche muette ; Zoé, une inconnue, sans check ; recharger ne refait aucune entrée).
+
+## 40. 😴 Parti avant la fin : sa figurine dort à sa place (26 novembre 2026, demandé par le propriétaire)
+
+Quand quelqu'un, proche ou inconnu, quitte un salon ouvert (ou le salon d'un groupe) avant la fin de la vidéo, sa
+figurine ne disparaît pas : elle **s'endort à sa place** (un peu penchée, grisée, 💤), avec « Léa · 😴 parti à 1:40 ».
+Comme la télé du salon montre la même seconde à tout le monde, on sait à quel moment il a arrêté.
+
+- **Elle s'en va à la fin de la vidéo** (au plus une demi-heure, au moins deux minutes) ;
+- **tout de suite s'il entre dans un autre salon** (ou revient dans celui-ci : il s'y réveille) ;
+- **si le salon est plein**, celui qui arrive prend la place d'un endormi (le plus ancien), qui s'en va ;
+- partie à la toute fin (moins de cinq secondes), ou sans télé (la séance chez quelqu'un) : pas de sommeil.
+
+Dans le code : la télé du salon dit où elle en est (`teleEnCours`), « sortir » l'envoie (`t`, `duree`) ;
+`sortirDuSalon` → `endormir` : `decouvrir/salons/<maison>/<salon>/dorment/<q>.json`, et `<h>/salon-dort.json` (où je
+dors) que `reveiller` efface à chaque entrée (`entrerAuSalon`, `entrerAuGroupe`, `entrerChez`). Le pouls et l'ouverture
+portent `dorment` ; `placeEnEntrant` choisit la place. Essai : `scripts/essai-salons-dodo-route.mjs`.
