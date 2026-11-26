@@ -89,7 +89,7 @@ for (let k = 1; k < 6; k++) {
   await hugo.waitForSelector(`.tu.bv[data-rang="${k + 1}"]`, { timeout: 10000 });
 }
 await hugo.waitForSelector(".tu .tu-creer", { timeout: 20000 });
-ok((await texte(hugo, ".tu .bv-indice")).includes("logo"), "à la fin : « Je crée ma figurine », et le logo pour la suite");
+ok((await hugo.locator(".tu .tu-creer").count()) === 1 && (await hugo.locator(".tu .bv-indice").count()) === 0, "à la fin : « Je crée ma figurine », sans renvoi vers le logo (la visite est partie)");
 await hugo.locator(".tu .tu-creer").click();
 ok((await hugo.locator(".tu").count()) === 0, "« Je crée ma figurine » ferme la bienvenue");
 ok((await hugo.locator(".pb-voile, .mqd-revoir").count()) === 0, "plus aucune fenêtre de Pablito dans la page, plus de petit bouton");
