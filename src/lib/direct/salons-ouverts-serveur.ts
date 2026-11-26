@@ -44,6 +44,7 @@ import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
+import { noterPresence } from "./groupes-journal-serveur";
 import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe, videosRetenues } from "./groupes-chemins-serveur";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
@@ -332,6 +333,8 @@ export async function entrerAuGroupe(supabase: Supabase, moi: Habitant, groupe: 
   const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [], ...profil, ...double };
   if (!(await ecrireJson(supabase, `${dossierPresents(lieu, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await ecrireJson(supabase, `${dossierPassages(gid)}/${q}.json`, { q, prenom: fiche.prenom, le: maintenant });
+  // (📖 lot G7 : à l'heure d'un rendez-vous du groupe, j'y étais — le journal s'en souvient)
+  await noterPresence(supabase, gid, { q, prenom: fiche.prenom, src: figurine.src }, maintenant).catch(() => undefined);
   await noterVusAuSalon(supabase, { h: moi.id, prenom: fiche.prenom }, fiches);
   void nettoyerMessages(supabase, lieu, id, maintenant);
   const messages = await derniersMessages(supabase, lieu, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches });

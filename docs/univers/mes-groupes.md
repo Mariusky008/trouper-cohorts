@@ -31,8 +31,8 @@ une discussion avec un ami : les salons sont vides quand on arrive le premier ; 
 | G3 | Les rappels (cron toutes les 5 minutes) | ✅ fait (#297) |
 | G4 | « On garde ce groupe ? », Tous mes groupes | ✅ fait (#298) |
 | G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | ✅ fait (#299) |
-| G6 | La sélection du jour, les rôles qui tournent | fait (PR à suivre) |
-| G7 | Le journal | à faire |
+| G6 | La sélection du jour, les rôles qui tournent | ✅ fait (#300) |
+| G7 | Le journal | fait (PR à suivre) |
 | G8 | Le groupe qui grandit | à faire |
 
 ## G1, dans le code
@@ -109,8 +109,8 @@ Les règles :
   groupes » (la table de chacun, ses membres autour ; « ● 2 dans le salon » ou « 🕑 Passage de Zoé à 14 h »). Un groupe
   n'est visible que par ses membres.
 - **Son espace** (`groupe-espace.tsx`) : son identité (passion, nom, mot), son salon attitré (qui y est, sinon le dernier
-  passage, « Entrer »), puis ses onglets (G6 : 🎬 Aujourd'hui ; G5 : 📅 Rendez-vous, 💬 Discussion ; 👥 Membres ; le Journal
-  avec G7).
+  passage, « Entrer »), puis ses onglets (G6 : 🎬 Aujourd'hui ; G5 : 📅 Rendez-vous, 💬 Discussion ; G7 : 📖 Journal ; 👥
+  Membres).
 - **Son salon** : `/univers/salons?groupe=<id>` (action `entrer-groupe` de la route des salons, `entrerAuGroupe`). C'est
   un salon privé (« groupe-<id> », dans `decouvrir/salons/prives/`), à ses membres seulement, comme un salon ouvert de
   sa passion : le gradin, les vidéos de la passion, huit places, la conversation. Il ne dépend pas de l'interrupteur
@@ -164,3 +164,22 @@ Les règles :
 - Route : `GET /api/direct/mes-groupes?groupe=<id>` renvoie aussi `aujourdhui` ; `POST` `jour-proposer`,
   `jour-retirer`, `jour-envie` (`{ video, oui }` → `retenue` quand ma main est la deuxième). Essai :
   `scripts/essai-groupes-jour-route.mjs`.
+
+## G7, dans le code
+
+- **📖 Journal** (`groupe-journal.tsx`, `groupes-journal-serveur.ts`) : notre histoire sur une ligne de temps, du plus
+  récent (en haut) à la naissance du groupe (tout en bas, en rose), rangée par jour (« Aujourd'hui », « Hier »,
+  « Mardi », « Le 12 novembre »). Seulement ce qui s'est vraiment passé, lu dans ce que le groupe a déjà rangé :
+  - ✨ « Le groupe est né » (« après « Soirée foot » », ou « créé par Léa ») ; 👋 « Sam a rejoint le groupe » (les
+    fiches des membres, sans les fondateurs) ;
+  - 📅 « Nouveau rendez-vous : … » (« chaque soir · 21 h · posé par Léa ») ; 💡 « L'idée de Zoé est devenue une
+    séance » (à son deuxième « Partant ! ») ;
+  - 🎬 « La vidéo de Léa, choisie pour la séance » (deux 🙋, les sept derniers jours ; sa vignette, son mot) ;
+  - 🛋️ les séances : le nom du rendez-vous, « Ils étaient là » et leurs têtes.
+- **Qui était là** : en entrant dans le salon du groupe à l'heure d'un rendez-vous (dix minutes avant, deux heures
+  après), `entrerAuGroupe` appelle `noterPresence`, qui écrit `groupes/journal/<id>/<fois>-<q>-<rdv>.json` (une fois par
+  séance et par personne). C'est le seul fichier propre au journal ; tout le reste est relu.
+- Les moments de la séance (le fou rire, le débat, celle qui a tout fait réagir) viendront quand le salon les
+  retiendra : rien n'est inventé en attendant.
+- Route : `GET /api/direct/mes-groupes?groupe=<id>&journal=1` → `{ journal }` (membres seulement ; lu à l'ouverture de
+  l'onglet). Essai : `scripts/essai-groupes-journal-route.mjs`.
