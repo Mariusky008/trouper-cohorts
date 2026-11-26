@@ -109,11 +109,32 @@ const placeDe = async (p, sel) => {
   return f && piece ? { x: f.x + f.width / 2 - piece.x, bas: f.y + f.height - piece.y, h: f.height } : null;
 };
 
+/**
+ * 🚪 (26 novembre 2026, `decouvrir.md` section 39) sa figurine fait son entrée — elle marche jusqu'à sa place, les autres
+ * tournent la tête un instant : on mesure les places une fois tout le monde assis, face à la télé.
+ */
+const posees = async (p) => {
+  await attendre(p, async () => (await p.locator(".so-fig[data-entre]").count()) > 0, 2500);
+  // (personne ne marche ni ne tourne la tête, et toutes les figurines restent à la même place pendant une demi-seconde)
+  const ou = () => p.evaluate(() => [...document.querySelectorAll(".so-fig")].map((e) => `${e.dataset.entre ?? ""}${e.dataset.regarde ?? ""}${Math.round(e.getBoundingClientRect().x)}`).join());
+  return attendre(
+    p,
+    async () => {
+      if ((await p.locator(".so-fig[data-entre], .so-fig[data-regarde]").count()) > 0) return false;
+      const avant = await ou();
+      await p.waitForTimeout(500);
+      return (await ou()) === avant && (await p.locator(".so-fig[data-entre], .so-fig[data-regarde]").count()) === 0;
+    },
+    10000,
+  );
+};
+
 // ═══ LÉA, SEULE DANS LA TRIBUNE ═══
 const lea = await ouvrir(LEA);
 await lea.goto(`${BASE}/univers/salons?theme=foot`, { waitUntil: "domcontentloaded" });
 ok(await attendre(lea, async () => (await lea.locator('.so-piece[data-gradin="tribune"]').count()) === 1, 30000), "le salon du foot s'ouvre dans la tribune (son gradin validé)");
 ok(await attendre(lea, async () => (await lea.locator(".so-gradin").evaluate((i) => i.complete && i.naturalWidth > 0)) && (await lea.locator(".so-fig[data-moi] img").evaluate((i) => i.complete && i.naturalWidth > 0))), "son image et sa figurine, chargées");
+ok(await posees(lea), "🚪 sa figurine a fait son entrée : elle est assise");
 const piece = await lea.locator(".so-piece").boundingBox();
 const image = await lea.locator(".so-gradin").boundingBox();
 const gx = image.x - piece.x;
@@ -134,6 +155,7 @@ const r = await fetch(`${BASE}/api/direct/salons-ouverts`, { method: "POST", hea
 const oSam = (await r.json()).ouverture;
 ok(oSam?.salon?.id === "foot-1" && oSam.gradin?.id === "tribune" && oSam.presents.find((x) => x.q === oSam.moi)?.place === 1, "Sam entre (par la route) : la tribune, la deuxième place");
 ok(await attendre(lea, async () => (await lea.locator(".so-fig").count()) === 2), "sur l'écran de Léa : Sam s'assoit");
+ok(await posees(lea), "🚪 … après son entrée");
 const sam = await placeDe(lea, ".so-fig:not([data-moi])");
 ok(sam && Math.abs(sam.x - (gx + 0.625 * image.width)) < 3 && Math.abs(sam.bas - (gy + 0.9 * image.height)) < 3, `… devant, à côté d'elle (${Math.round(sam?.x)} pt)`);
 ok(await attendre(lea, async () => (await lea.locator(".so-libre").count()) === 6 && (await lea.locator("[data-seul-salon]").count()) === 0), "six places brillent ; la phrase s'en va");
@@ -150,6 +172,7 @@ const pSam = await ouvrir(SAM);
 await pSam.goto(`${BASE}/univers/salons?theme=foot`, { waitUntil: "domcontentloaded" });
 ok(await attendre(pSam, async () => (await pSam.locator('.so-piece[data-gradin="tribune"]').count()) === 1 && (await pSam.locator(".so-fig").count()) === 2, 30000), "Sam, sur son téléphone : la tribune, Léa et lui");
 await pSam.waitForTimeout(300);
+ok(await posees(pSam), "🚪 il a fait son entrée : tout le monde est assis");
 const imgSam = await pSam.locator(".so-gradin").boundingBox();
 const pieceSam = await pSam.locator(".so-piece").boundingBox();
 const gxS = imgSam.x - pieceSam.x;
@@ -165,6 +188,7 @@ await pSam.context().close();
 const ord = await ouvrir(LEA, { ordinateur: true });
 await ord.goto(`${BASE}/univers/salons?theme=foot`, { waitUntil: "domcontentloaded" });
 ok(await attendre(ord, async () => (await ord.locator(".so-gradin").evaluate((i) => i.complete && i.naturalWidth > 0)) === true, 30000), "sur un ordinateur : le gradin");
+ok(await posees(ord), "… sa figurine est assise");
 const pO = await ord.locator(".so-piece").boundingBox();
 const iO = await ord.locator(".so-gradin").boundingBox();
 const fO = await ord.locator(".so-fig[data-moi]").boundingBox();

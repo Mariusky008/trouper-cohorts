@@ -28,6 +28,10 @@
  * dessus ; sinon la figurine de l'hôte la rejoue en souvenir) ; ensemble, il met aussi en pause ; il invite un de ses
  * proches à une place libre ; la fiche est entière pour tous (un proche de proche peut être là).
  *
+ * 🚪 (26 novembre 2026, section 39) L'entrée, discrète : sa figurine marche jusqu'à sa place par le bas de la pièce, sa
+ * pancarte brille, les autres tournent la tête un instant ; son bonjour tout seul seulement entre deux vidéos (sinon sa
+ * bouche muette et 🔊 à toucher) ; un de mes proches : un check ✋ d'un fauteuil à l'autre.
+ *
  * 📷⏱💬🎙️ (section 34, « tout pour tous ») Dans la séance, pour chacun : « 📷 » en haut (la carte de la maquette, la
  * pastille), sa tête copiée en direct chez ceux qui regardent avec lui, la ligne du temps sous la télé, « 💬 Ce qui s'est
  * dit » (toucher une ligne revoit le moment), et sa vraie voix à la seconde (le micro de la barre d'écriture).
@@ -657,6 +661,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       decalage.current = p.maintenant - Date.now();
       if (p.exclu) return etatRef.current.onExclu();
       if (p.dehors) return etatRef.current.onDehors();
+      // (🚪 l'entrée au salon : ceux qui viennent d'arriver font leur entrée — pas ceux déjà là quand je suis entré)
+      const connusAvant = new Set(etatRef.current.presents.map((x) => x.q));
+      for (const x of p.nouveaux) if (!connusAvant.has(x.q) && x.q !== moiRef.current && p.maintenant - x.arrive < ENTREE_FRAICHE_MS) accueillirRef.current(x.q);
       setPresents((l) => {
         const ici = new Set(p.ici);
         const garde = l.filter((x) => ici.has(x.q));
@@ -722,6 +729,89 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     if (!r.ok) return dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
     if (oui) dire(P.entre(d.prenom), 5200);
   }
+  // ─── 🚪 (26 novembre 2026, `decouvrir.md` section 39) L'ENTRÉE AU SALON, DISCRÈTE ───
+  // Le propriétaire : « l'expérience lorsque la figurine entre dans un salon doit être plus forte », puis « les gens
+  // regardent la vidéo, donc fais pas non plus trop déranger ». Sa figurine arrive par le bord, le long du bas de la pièce,
+  // et s'assoit (1,5 s ; rien devant la télé, le son de la vidéo jamais coupé) ; sa pancarte brille un instant ; les autres
+  // tournent la tête vers elle, moins d'une seconde. Son bonjour (sa voix) ne se joue tout seul qu'entre deux vidéos (ou
+  // la télé en pause) ; sinon sa bouche le dit en silence et une bulle 🔊 attend, à toucher. Un de mes proches : un check
+  // ✋ d'un fauteuil à l'autre — chez nous deux seulement.
+  const [entrees, setEntrees] = useState<string[]>([]);
+  const [eclats, setEclats] = useState<string[]>([]);
+  const [regards, setRegards] = useState<Record<string, "g" | "d">>({});
+  const [muettes, setMuettes] = useState<string[]>([]);
+  const [sons, setSons] = useState<string[]>([]);
+  const posRef = useRef<(q: string) => { x: number; y: number; h: number } | null>(() => null);
+  const pendant = (set: React.Dispatch<React.SetStateAction<string[]>>, q: string, ms: number) => {
+    set((l) => (l.includes(q) ? l : [...l, q]));
+    window.setTimeout(() => set((l) => l.filter((x) => x !== q)), ms);
+  };
+  /** Son bonjour peut-il se jouer tout seul ? Seulement si la télé ne dit rien : entre deux vidéos, ou en pause. */
+  const bonjourPermis = () => {
+    const ms = Date.now() + (decalage.current ?? 0);
+    if (prive) {
+      const t = teleRef.current;
+      return !t || t.pause !== undefined;
+    }
+    if (musique && platine?.enCours) return false;
+    const pos = positionTele(o.tele.videos, ms);
+    if (!pos) return true;
+    const duree = o.tele.videos[pos.i]?.duree ?? 0;
+    return pos.t < ENTRE_DEUX_APRES_S || duree - pos.t < ENTRE_DEUX_AVANT_S;
+  };
+  const assis = (q: string) => {
+    const l = etatRef.current.presents;
+    const p = l.find((x) => x.q === q);
+    if (!p) return;
+    const moi = q === moiRef.current;
+    const cachees = etatRef.current.caches;
+    if (p.pancarte) pendant(setEclats, q, ECLAT_MS);
+    // (👯 mes proches : celui qui arrive, s'il l'est ; si c'est moi qui arrive, ceux qui sont là — trois au plus)
+    const proches = moi ? l.filter((x) => x.proche && x.q !== q && !cachees.includes(x.q)).slice(0, 3).map((x) => x.q) : p.proche ? [moiRef.current] : [];
+    const ici = posRef.current(q);
+    if (ici && !sansMouvement()) {
+      const r: Record<string, "g" | "d"> = {};
+      for (const x of l) {
+        if (x.q === q || cachees.includes(x.q)) continue;
+        const la = posRef.current(x.q);
+        if (la) r[x.q] = ici.x < la.x ? "g" : "d";
+      }
+      const vers = proches[0] ? posRef.current(proches[0]) : null;
+      if (vers) r[q] = vers.x < ici.x ? "g" : "d";
+      setRegards(r);
+      window.setTimeout(() => setRegards({}), proches.length ? REGARD_PROCHE_MS : REGARD_MS);
+    }
+    proches.forEach((a, i) =>
+      window.setTimeout(() => {
+        const fin = Date.now() + 1400;
+        const anim: Anime = { id: `check-${q}-${a}-${fin}`, q, sorte: "vol", texte: "✋", a, fin };
+        setAnims((x) => [...x, anim].slice(-24));
+        window.setTimeout(() => setAnims((x) => x.filter((y) => y.id !== anim.id)), 1450);
+      }, 150 + i * 350),
+    );
+    // (🎙️ jamais le mien chez moi ; chez les autres : tout seul entre deux vidéos, sinon en silence et 🔊 à toucher)
+    if (moi || !p.bonjour) return;
+    if (bonjourPermis()) jouerBonjour(p.bonjour);
+    else {
+      if (p.tete?.parle) pendant(setMuettes, q, MUETTE_MS);
+      pendant(setSons, q, SON_MS);
+    }
+  };
+  const accueillirRef = useRef((q: string) => void q);
+  useEffect(() => {
+    accueillirRef.current = (q: string) => {
+      if (etatRef.current.caches.includes(q)) return;
+      const calme = sansMouvement();
+      if (!calme) pendant(setEntrees, q, ENTREE_MS);
+      window.setTimeout(() => assis(q), calme ? 60 : ENTREE_MS);
+    };
+  });
+  // (moi, qui viens d'entrer : mon entrée — pas quand je recharge la page, ma place gardée)
+  useEffect(() => {
+    if (Date.now() + (decalage.current ?? 0) - moiArrive < ENTREE_FRAICHE_MOI_MS) accueillirRef.current(o.moi);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── 👋 (lot F3) faire signe, d'un toucher, à celui qui vient d'arriver ───
   async function faireSigne(q: string) {
     setSignes((l) => [...l, q]);
@@ -953,6 +1043,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const g = plan[vue(k)];
     return g ? { x: gx + g.x * lG, y: gy + g.y * hG, h: g.hauteur * hG } : null;
   };
+  posRef.current = ou;
   // (🎭 les places libres : elles brillent doucement ; ⭐ chez moi, mes amis qui l'ont vue s'y assoient d'abord — la
   // dernière reste libre, pour inviter)
   const vues = new Set([...places.values()].map(vue));
@@ -1130,9 +1221,25 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               const enDirect = !moi && !souvenir && !aPart && p.q in tetes ? vivantesDe[p.q] : undefined;
               const popsS = souvenir ? popsF.filter((x) => x.cle === souvenir.cle) : [];
               // (👋 lot F3 : il vient d'arriver, après moi — un toucher pour lui faire signe, une fois)
+              const entree = entrees.includes(p.q);
               const signe = !moi && !cache && !souvenir && p.arrive > moiArrive && Date.now() + decalage.current - p.arrive < SIGNE_MS && !signes.includes(p.q);
               return (
                 <span key={p.q} className="so-fig-et">
+                  {sons.includes(p.q) && p.bonjour && (
+                    <button
+                      type="button"
+                      className="so-son-bonjour"
+                      data-son-bonjour={p.q}
+                      aria-label={P.ecouterBonjour(p.prenom)}
+                      style={{ left: x.x + x.h * 0.34, bottom: H - x.y + x.h * 0.62, zIndex: Math.round(x.y) + 2 }}
+                      onClick={() => {
+                        jouerBonjour(p.bonjour);
+                        setSons((l) => l.filter((y) => y !== p.q));
+                      }}
+                    >
+                      🔊
+                    </button>
+                  )}
                   {signe && (
                     <button type="button" className="so-signe" data-faire-signe={p.q} aria-label={P.faireSigne(p.prenom)} style={{ left: x.x, bottom: H - x.y + x.h + 4, zIndex: Math.round(x.y) + 1 }} onClick={() => void faireSigne(p.q)}>
                       👋
@@ -1140,14 +1247,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   )}
                 <button
                   type="button"
-                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}`}
+                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}${entree ? " entre" : ""}${eclats.includes(p.q) ? " eclat" : ""}${regards[p.q] ? ` regarde-${regards[p.q]}` : ""}`}
                   data-q={p.q}
+                  data-entre={entree ? "1" : undefined}
+                  data-eclat={eclats.includes(p.q) ? "1" : undefined}
+                  data-regarde={regards[p.q]}
                   data-danse={dansent[p.q]}
                   data-choix={musique && platine?.enCours?.q === p.q ? "1" : undefined}
                   data-moi={moi ? "1" : undefined}
                   data-souvenir={souvenir ? souvenir.cle : undefined}
                   data-en-direct={enDirect ? (tetes[p.q] ?? "neutre") : undefined}
-                  style={{ left: x.x, bottom: H - x.y, height: x.h, zIndex: Math.round(x.y) }}
+                  style={{ left: x.x, bottom: H - x.y, height: x.h, zIndex: Math.round(x.y), ...(entree ? { ["--ex" as string]: `${-Math.round(x.x + x.h)}px`, ["--ey" as string]: `${Math.max(0, Math.round(H - x.y - 2))}px` } : {}) } as React.CSSProperties}
                   aria-label={moi ? "Ta figurine" : p.prenom}
                   onClick={() => {
                     setIndice(false);
@@ -1170,7 +1280,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     <VivanteQuiParle v={enDirect} hauteur={x.h} e={tetes[p.q] ?? null} bonjour={p.bonjour} />
                   ) : p.tete ? (
                     // (✨ « Ma figurine » : sa tête du jour, posée sur son corps sans sa tête — la même que partout)
-                    <SaTeteDuJour p={p} tete={p.tete} hauteur={x.h} />
+                    <SaTeteDuJour p={p} tete={p.tete} hauteur={x.h} muette={muettes.includes(p.q)} />
                   ) : p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${Math.round(x.h)}px`} alt="" draggable={false} />
@@ -2329,11 +2439,11 @@ function VivanteQuiParle({ v, hauteur, e, bonjour }: { v: FigurineVivante; haute
  * ✨ (« Ma figurine ») Sa tête du jour, posée sur son corps sans sa tête — la même que partout. 🗣️ Pendant son bonjour, sa
  * tête « bouche ouverte » (chargée d'avance) passe devant quand sa voix est forte.
  */
-function SaTeteDuJour({ p, tete, hauteur }: { p: PresentSalon; tete: NonNullable<PresentSalon["tete"]>; hauteur: number }) {
+function SaTeteDuJour({ p, tete, hauteur, muette }: { p: PresentSalon; tete: NonNullable<PresentSalon["tete"]>; hauteur: number; muette?: boolean }) {
   const bouche = useBoucheDuBonjour(tete.parle ? p.bonjour : null);
   const pose = { left: `${tete.boite[0] * 100}%`, top: `${tete.boite[1] * 100}%`, width: `${tete.boite[2] * 100}%`, height: `${tete.boite[3] * 100}%` };
   return (
-    <span className="so-jour" style={{ height: hauteur, width: Math.round(hauteur * tete.ratio) }} data-tete-du-jour data-bouche={bouche ? "1" : undefined}>
+    <span className={`so-jour${muette && !bouche ? " muette" : ""}`} style={{ height: hauteur, width: Math.round(hauteur * tete.ratio) }} data-tete-du-jour data-bouche={bouche ? "1" : undefined} data-muette={muette && !bouche ? "1" : undefined}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={tete.corps} alt="" draggable={false} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2347,6 +2457,20 @@ function SaTeteDuJour({ p, tete, hauteur }: { p: PresentSalon; tete: NonNullable
     </span>
   );
 }
+
+/** 🚪 (l'entrée au salon) sa marche jusqu'à sa place ; sa pancarte qui brille ; les têtes tournées ; sa bouche muette ; sa bulle 🔊. */
+const ENTREE_MS = 1500;
+const ECLAT_MS = 1600;
+const REGARD_MS = 800;
+const REGARD_PROCHE_MS = 1200;
+const MUETTE_MS = 1400;
+const SON_MS = 6000;
+/** (arrivé depuis moins que ça : il fait son entrée — le pouls bat toutes les 4 s ; moi, à l'ouverture) */
+const ENTREE_FRAICHE_MS = 20_000;
+const ENTREE_FRAICHE_MOI_MS = 10_000;
+/** (« entre deux vidéos » : les dernières secondes d'une vidéo, ou les premières de la suivante) */
+const ENTRE_DEUX_AVANT_S = 3;
+const ENTRE_DEUX_APRES_S = 2;
 
 /** 🎙️ (lot 2) une vidéo regardée au moins ce temps-là : sa suite, en carte, quand elle finit. */
 const SUITE_APRES_MS = 20_000;
@@ -2451,7 +2575,7 @@ const STYLES = `
 .so-tele-vide{margin:0;height:100%;display:grid;place-items:center;padding:0 20px;text-align:center;font-size:14px;opacity:.75}
 .so-piece{position:relative;width:100%;overflow:hidden;background:linear-gradient(180deg,#3a1d2c,#1c0d15);isolation:isolate}
 .so-pano{position:absolute;left:0;top:0;max-width:none;background-size:cover;object-fit:cover;pointer-events:none}
-.so-fig{position:absolute;transform:translateX(-50%);padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;-webkit-tap-highlight-color:transparent;transition:opacity .4s}
+.so-fig{position:absolute;transform:translateX(-50%);padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;-webkit-tap-highlight-color:transparent;transition:opacity .4s,rotate .3s ease}
 .so-fig img{height:100%;width:auto;max-width:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5));user-select:none}
 .so-jour{position:relative;display:block;flex:none}
 .so-jour img{position:absolute;left:0;top:0;width:100%;height:100%}
@@ -2525,6 +2649,19 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-souffle{0%,100%{transform:scale(1,1)}50%{transform:scale(1.006,1.012)}}
 @media (prefers-reduced-motion: reduce){.so-halo,.so-souffle{animation:none}}
 .so-fig-et{display:contents}
+.so-fig{transform-origin:50% 100%}
+.so-fig.entre{z-index:5000!important;pointer-events:none;animation:so-entree 1.5s ease-in-out both,so-pas .3s ease-in-out 5 alternate}
+@keyframes so-entree{0%{translate:var(--ex) var(--ey)}62%{translate:0 var(--ey)}88%{translate:0 -6px}100%{translate:0 0}}
+@keyframes so-pas{from{rotate:-4deg}to{rotate:4deg}}
+.so-fig.regarde-g{rotate:-7deg}
+.so-fig.regarde-d{rotate:7deg}
+.so-fig.eclat .pcte{animation:so-eclat 1.6s ease both}
+@keyframes so-eclat{0%{scale:1;filter:none}20%{scale:1.22;filter:drop-shadow(0 0 10px rgba(255,210,122,.95))}70%{scale:1.05;filter:drop-shadow(0 0 6px rgba(255,210,122,.6))}100%{scale:1;filter:none}}
+.so-jour.muette .so-jour-parle{visibility:visible!important;animation:so-muette .36s steps(1) infinite}
+@keyframes so-muette{0%{opacity:1}50%{opacity:0}}
+.so-son-bonjour{position:absolute;transform:translateX(-50%);min-width:44px;height:32px;border:0;border-radius:999px;padding:0 10px;background:#fff;color:#2a0f1f;font-size:16px;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.45);animation:so-son-entre .25s ease-out}
+@keyframes so-son-entre{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
+@media (prefers-reduced-motion:reduce){.so-fig.entre,.so-fig.eclat .pcte,.so-jour.muette .so-jour-parle,.so-son-bonjour{animation:none}.so-fig.regarde-g,.so-fig.regarde-d{rotate:none}}
 .so-signe{position:absolute;transform:translateX(-50%);width:44px;height:44px;border:0;border-radius:50%;background:#fff;font-size:22px;line-height:44px;padding:0;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.45);animation:so-signe 1.2s ease-in-out infinite}
 @keyframes so-signe{0%,100%{rotate:-12deg}50%{rotate:14deg}}
 .so-rejoindre{position:fixed;left:12px;right:12px;top:calc(64px + env(safe-area-inset-top));z-index:60;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;max-width:520px;margin:0 auto;padding:10px 12px;border-radius:18px;background:#1E0F18;color:#FFF4E6;box-shadow:0 14px 34px -10px #000,inset 0 0 0 1px rgba(255,255,255,.14)}
