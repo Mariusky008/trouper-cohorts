@@ -7,8 +7,11 @@
 // inconnue) laisse un mot à la fin. Léa ouvre la discussion : 👯 Sam et ses mots, 🌍 le mot d'Inès ; Inès n'a pas les
 // mots de Sam (pas sa proche). Jade (15-17 ans) : sa discussion à elle, sans le mot d'Inès. Noé n'a pas dit son âge :
 // 🌍 attend sa réponse, 👯 est là. Une vidéo qui a quitté la télé : ouverte par l'historique (📼 Revoir), ou par sa
-// fiche quand on y a dit quelque chose — pas par quelqu'un qui n'y a rien dit. Jamais un compte, jamais le mot
-// « exemple ».
+// fiche quand on y a dit quelque chose — pas par quelqu'un qui n'y a rien dit. (Lot A2) Les mots écrits sous la
+// vidéo : l'accord, la modération, 90 signes, un toutes les trois secondes ; Léa écrit, Inès répond à son mot écrit,
+// Léa répond au mot dit d'Inès ; le fil dans l'ordre ; écrit depuis un salon ouvert (« vu dans le salon … ») ; Jade ne
+// voit rien des adultes ; signaler (plus chez moi ; à trois, chez personne ; l'administrateur) ; effacer le sien.
+// Jamais un compte, jamais le mot « exemple ».
 import crypto from "node:crypto";
 
 const F = "http://127.0.0.1:54321/rest/v1";
@@ -121,6 +124,58 @@ const s2 = await ouvrir(SAM, ANCIENNE);
 ok(s2.statut === 200 && s2.discussion?.video?.titre === "Le but du siècle", "Sam y avait réagi il y a cinq jours : sa fiche la rouvre");
 ok((s2.discussion?.miennes ?? []).some((r) => r.texte === "mdr"), "… avec ce qu'il y avait dit");
 ok((await ouvrir(LEA, ANCIENNE)).statut === 404, "… Léa, qui n'y a rien dit : 404");
+
+// ═══ (A2) ✍️ LES MOTS ÉCRITS SOUS LA VIDÉO ═══
+const ecrire = (x, corps) => poster(x, "discussion-video", corps);
+ok((await ecrire(null, { action: "publier", id: V, texte: "Coucou", accord: true })).statut === 401, "écrire sans compte : 401");
+ok((await ecrire(LEA, { action: "publier", id: V, texte: "Son meilleur album reste le premier." })).statut === 400, "sans l'accord : refusé");
+const lien = await ecrire(LEA, { action: "publier", id: V, texte: "allez voir www.monsite.fr", accord: true });
+ok(lien.statut === 400 && Boolean(lien.refus), `un lien : refusé (« ${lien.error} »)`);
+ok((await ecrire(LEA, { action: "publier", id: "AAAAAAAAAAA", texte: "Coucou", accord: true })).statut === 404, "une vidéo jamais croisée : 404");
+ok((await ecrire(NOE, { action: "publier", id: V, texte: "Coucou", accord: true })).age === true, "Noé, sans âge : « as-tu 18 ans ? »");
+const e1 = await ecrire(LEA, { action: "publier", id: V, texte: "Son meilleur album reste le premier.", accord: true });
+ok(e1.statut === 200 && e1.ecrit?.texte === "Son meilleur album reste le premier." && e1.ecrit.moi === true, "Léa écrit sous la vidéo");
+ok((await ecrire(LEA, { action: "publier", id: V, texte: "Et le deuxième aussi.", accord: true })).statut === 429, "… pas deux en trois secondes");
+const long = await ecrire(INES, { action: "publier", id: V, texte: "a".repeat(120), accord: true });
+ok(long.statut === 400, "plus de 90 signes : refusé");
+ok((await ecrire(INES, { action: "publier", id: V, texte: "Pas d’accord", repond: "1700000000000-zzzzzzzz-abcdef", accord: true })).statut === 404, "répondre à un mot qui n'est pas là : 404");
+const e2 = await ecrire(INES, { action: "publier", id: V, texte: "Pas d’accord, le dernier est bien plus abouti.", repond: e1.ecrit?.id, accord: true });
+ok(e2.statut === 200 && e2.ecrit?.repond?.prenom === "Léa", "Inès répond au mot écrit de Léa");
+await new Promise((r) => setTimeout(r, 3100));
+const e3 = await ecrire(LEA, { action: "publier", id: V, texte: "Ta voix est trop drôle", repond: `mot:${INES.q}`, accord: true });
+ok(e3.statut === 200 && e3.ecrit?.repond?.prenom === "Inès" && e3.ecrit.repond.id === `mot:${INES.q}`, "Léa répond par écrit au mot dit d'Inès");
+const salonFoot = "foot-1";
+await json(`decouvrir/salons/adultes/${salonFoot}/presents/${SAM.q}.json`, { q: SAM.q, prenom: "Sam", place: 0 });
+const e4 = await ecrire(SAM, { action: "publier", id: V, texte: "Quel but !", accord: true, salon: salonFoot });
+ok(e4.statut === 200 && /salon du foot/.test(e4.ecrit?.de ?? ""), `écrit depuis le salon ouvert où il est assis : « ${e4.ecrit?.de} »`);
+const l2 = await ouvrir(LEA, V);
+const ecritsL = (l2.discussion?.ecrits ?? []).map((e) => e.texte);
+ok(ecritsL.length === 4, `Léa voit les quatre mots écrits (${ecritsL.length})`);
+ok(l2.discussion?.ecrits?.find((e) => e.q === SAM.q)?.proche === true && l2.discussion.ecrits.find((e) => e.q === INES.q)?.proche === false, "… Sam, son proche ; Inès, non");
+ok((await ouvrir(JADE, V)).discussion?.ecrits?.length === 0, "Jade (15-17 ans) : aucun mot écrit des adultes");
+ok(Boolean(await lire(`decouvrir/ecrits/adultes/${V}/${e1.ecrit?.id}.json`)), "rangé : un fichier par mot écrit");
+// (signaler)
+ok((await ecrire(LEA, { action: "signaler", id: V, ecrit: e1.ecrit?.id })).statut === 400, "signaler le sien : 400");
+const sg = await ecrire(LEA, { action: "signaler", id: V, ecrit: e4.ecrit?.id });
+ok(sg.statut === 200 && sg.cache === false, "Léa signale le mot de Sam");
+ok(!(await ouvrir(LEA, V)).discussion?.ecrits?.some((e) => e.id === e4.ecrit?.id), "… il ne passe plus chez elle");
+ok((await ouvrir(INES, V)).discussion?.ecrits?.some((e) => e.id === e4.ecrit?.id), "… toujours chez Inès");
+await ecrire(INES, { action: "signaler", id: V, ecrit: e4.ecrit?.id });
+const sg3 = await ecrire(NOE, { action: "signaler", id: V, ecrit: e4.ecrit?.id });
+ok(sg3.age === true, "Noé, sans âge, ne signale pas");
+await poster(NOE, "mots-video", { action: "age", adulte: true });
+ok((await ecrire(NOE, { action: "signaler", id: V, ecrit: e4.ecrit?.id })).cache === true, "signalé par trois personnes : caché pour tous");
+ok((await ouvrir(SAM, V)).discussion?.ecrits?.some((e) => e.id === e4.ecrit?.id), "… sauf pour Sam, son auteur");
+ok(!(await ouvrir(INES, V)).discussion?.ecrits?.some((e) => e.id === e4.ecrit?.id), "… plus chez Inès");
+const admin = await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: `decouvrir/signalements/${SAM.q}`, limit: 10 }) }).then((r) => r.json()).catch(() => []);
+ok(Array.isArray(admin) && admin.length === 3, `l'administrateur le voit (${Array.isArray(admin) ? admin.length : "?"} signalements)`);
+// (effacer)
+ok((await ecrire(INES, { action: "effacer", id: V, ecrit: e1.ecrit?.id })).statut === 400, "effacer celui d'un autre : 400");
+ok((await ecrire(LEA, { action: "effacer", id: V, ecrit: e1.ecrit?.id })).statut === 200, "Léa efface son premier mot");
+const l3 = await ouvrir(INES, V);
+ok(!l3.discussion?.ecrits?.some((e) => e.id === e1.ecrit?.id), "… il est parti, partout");
+const repI = l3.discussion?.ecrits?.find((e) => e.id === e2.ecrit?.id);
+ok(Boolean(repI) && !repI.repond, "… la réponse d'Inès reste, seule");
 
 // ═══ JAMAIS UN COMPTE, JAMAIS LE MOT « EXEMPLE » ═══
 const tout = JSON.stringify(tous);

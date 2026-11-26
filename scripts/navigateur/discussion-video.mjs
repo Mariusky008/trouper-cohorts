@@ -4,7 +4,9 @@
 // Léa a vu une vidéo ; Sam (son proche) y a écrit à 0:08 ; Inès (une inconnue) a laissé un mot à la fin. Léa ouvre la
 // discussion : la vidéo en haut, « ▶ Revoir la vidéo » ; 👯 Mes proches · 1 (ouvert d'office) : « Sam · à 0:08 », ses
 // mots ; 🌍 Tous · 1 : le mot d'Inès, « ▶ 🎙️ 3 s ». Une vidéo qu'elle n'a jamais croisée : « Cette discussion n'est
-// plus là ». Rien ne déborde, jamais le mot « exemple », aucune erreur.
+// plus là ». (Lot A2) Elle écrit sous la vidéo : « 🌍 Lu par tous ceux qui la regardent », l'accord la première fois,
+// « Publier » ; elle répond au mot d'Inès (« ↩ Inès ») ; un lien ne part pas ; elle efface son mot. Rien ne déborde,
+// jamais le mot « exemple », aucune erreur.
 import crypto from "node:crypto";
 import { BASE, D, F, lancer } from "./commun.mjs";
 
@@ -93,6 +95,37 @@ ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-mot]').c
 const mot = p.locator('[data-fil="tous"] [data-mot]');
 ok(/Inès/.test(await texte(mot)) && /▶ 🎙️ 3 s/.test(await texte(mot)), `« ${await texte(mot)} »`);
 await p.screenshot({ path: `${D}/discussion-video-2.png` });
+
+// ═══ (A2) ✍️ ÉCRIRE SOUS LA VIDÉO ═══
+const form = p.locator("[data-ecrire]");
+ok(/🌍 Lu par tous ceux qui la regardent/.test(await texte(form)), "« 🌍 Lu par tous ceux qui la regardent »");
+await form.locator("input").fill("Son meilleur album reste le premier.");
+await form.locator('button[type="submit"]').click();
+ok(await attendre(async () => (await p.locator("[data-accord]").count()) === 1), "la première fois : l'accord");
+ok(/Tous ceux qui regardent cette vidéo verront ta figurine et ce mot/.test(await texte(p.locator("[data-accord]"))), `« ${await texte(p.locator("[data-accord]"))} »`);
+await p.locator("[data-accord-publier]").click();
+ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-ecrit]').count()) === 1), "« Publier » : son mot est sous la vidéo");
+ok(/Toi/.test(await texte(p.locator('[data-fil="tous"] [data-ecrit]'))) && /Son meilleur album/.test(await texte(p.locator('[data-fil="tous"] [data-ecrit]'))), "… « Toi », ses mots");
+ok(/Ton mot est sous la vidéo/.test(await texte(p.locator("[data-note]"))), "« ✓ Ton mot est sous la vidéo. »");
+await p.screenshot({ path: `${D}/discussion-video-3.png` });
+// (répondre au mot dit d'Inès)
+await p.waitForTimeout(3200);
+await p.locator('[data-fil="tous"] [data-mot] [data-repondre]').click();
+ok(/Répondre à Inès/.test(await texte(p.locator("[data-reponse-a]"))), "« ↩ Répondre à Inès »");
+await form.locator("input").fill("Ta voix est trop drôle");
+await form.locator('button[type="submit"]').click();
+ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-ecrit]').count()) === 2), "sa réponse arrive, sans redemander l'accord");
+const lignes = (await p.locator('[data-fil="tous"] > ul > li').allInnerTexts()).map((x) => x.replace(/\s+/g, " "));
+ok(lignes.length === 3 && /Inès/.test(lignes[0]) && /↩ Inès/.test(lignes[1]) && /Son meilleur album/.test(lignes[2]), `le fil : le mot d'Inès, sa réponse juste après, puis son premier mot (${lignes.join(" | ")})`);
+// (un lien ne part pas)
+await p.waitForTimeout(3200);
+await form.locator("input").fill("allez voir www.monsite.fr");
+await form.locator('button[type="submit"]').click();
+ok(await attendre(async () => /un lien ne part pas ici/.test(await texte(p.locator("[data-note]")))), `un lien : « ${await texte(p.locator("[data-note]"))} »`);
+// (effacer)
+const mien = p.locator('[data-fil="tous"] [data-ecrit]').filter({ hasText: "Son meilleur album" });
+await mien.locator("[data-effacer]").click();
+ok(await attendre(async () => (await p.locator('[data-fil="tous"] [data-ecrit]').count()) === 1), "« Effacer » : son mot est parti");
 
 // ═══ RIEN NE DÉBORDE, JAMAIS « EXEMPLE » ═══
 ok((await p.evaluate(() => document.documentElement.scrollWidth)) <= 390, "rien ne déborde");

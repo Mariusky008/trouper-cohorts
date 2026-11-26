@@ -54,7 +54,7 @@ async function lister(supabase: Supabase, dossier: string, limite = 100): Promis
 const effacer = (supabase: Supabase, chemins: string[]) => (chemins.length ? supabase.storage.from(SEAU_FIGURINES).remove(chemins).then(() => undefined, () => undefined) : Promise.resolve());
 
 /** Sa tranche (rien : il n'a pas encore dit s'il a 18 ans). */
-async function saTranche(supabase: Supabase, h: string): Promise<Tranche | null> {
+export async function saTranche(supabase: Supabase, h: string): Promise<Tranche | null> {
   return maisonDe(await sesDixHuitAns(supabase, h).catch(() => null));
 }
 
