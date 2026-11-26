@@ -139,6 +139,11 @@ const publicDe = (f: Partial<FichePresent>): PresentSalon => ({
   ...(f.ornements && typeof f.ornements === "object" ? { ornements: f.ornements } : {}),
   ...(s(f.bonjour).startsWith("/api/direct/bonjour/") ? { bonjour: s(f.bonjour) } : {}),
 });
+/**
+ * 👯 (l'entrée au salon, 26 novembre 2026) sa fiche publique, et « c'est ton proche » s'il l'est — pour moi seul : les
+ * autres du salon ne savent pas qui est proche de qui.
+ */
+const avecProche = (f: Partial<FichePresent>, proches: Set<string>): PresentSalon => ({ ...publicDe(f), ...(f.h && proches.has(f.h) ? { proche: true as const } : {}) });
 /** (lot D5) ce que sa fiche montre en plus : ses passions, sa maison si elle est ouverte à tous. */
 async function sonProfilDeSalon(supabase: Supabase, h: string): Promise<{ passions?: string[]; maison?: string }> {
   const [p, v] = await Promise.all([lirePassions(supabase, h).catch(() => null), visibiliteDeLaMaison(supabase, h).catch(() => "proches")]);
@@ -234,7 +239,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
   if (t.adultes && m !== "adultes") return { error: "Le salon des jeunes parents est réservé aux adultes.", statut: 403 };
   const q = qui8(moi.id);
   if (await exclusion(supabase, q)) return { error: PHRASES_SALONS.exclu, statut: 403, exclu: true };
-  const [figurine, prenom, salons, caches, gradin, videos, profil, double] = await Promise.all([
+  const [figurine, prenom, salons, caches, gradin, videos, profil, double, proches] = await Promise.all([
     figurineDeLaMaison(supabase, moi.id).catch(() => null),
     prenomDe(supabase, moi).catch(() => ""),
     salonsDuTheme(supabase, m, t.id),
@@ -243,6 +248,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
     videosDuSalon(supabase, t.id, m),
     sonProfilDeSalon(supabase, moi.id),
     sonDoubleDeSalon(supabase, moi.id),
+    prochesDe(supabase, moi.id).catch(() => new Set<string>()),
   ]);
   // (🎭 son gradin validé ; sinon la pièce de son décor)
   const decor = gradin ? null : await decorDuSalon(supabase, t.id);
@@ -272,7 +278,7 @@ export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: un
     ouverture: {
       salon: { id, theme: t.id, n, nom: nomDuSalon(t.id, n), maison: m, ...(salons.length && !ou ? { plein: true } : {}) },
       moi: q,
-      presents: [...fiches.filter((f) => f.q).map(publicDe), publicDe(fiche)],
+      presents: [...fiches.filter((f) => f.q).map((f) => avecProche(f, proches)), publicDe(fiche)],
       messages,
       caches,
       decor,
@@ -375,10 +381,12 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
     r.seance ? tetesDeLaSeance(supabase, r.seance.qHote, presents, q, maintenant) : Promise.resolve(null),
     musique ? platineAJour(supabase, m, sid, maintenant).catch(() => null) : Promise.resolve(null),
   ]);
+  // (👯 l'entrée au salon : ceux qui arrivent et qui sont mes proches — le check ✋, chez moi seulement)
+  const proches = !r.seance && nouveaux.some((f) => f.q) ? await prochesDe(supabase, moi.id).catch(() => new Set<string>()) : new Set<string>();
   const rejoindre = r.seance?.hote ? await demandesARejoindre(supabase, r.seance.qHote, maintenant).catch(() => []) : [];
   // (🎬 « Regarder à deux » : vue ensemble, la vidéo devient un souvenir commun)
   const souvenir = r.seance && seance && presents.length >= 2 ? await souvenirSiEnsemble(supabase, r.seance.qHote, q, presents, seance, maintenant).catch(() => null) : null;
-  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map(publicDe), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}), ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}), ...(rejoindre.length ? { rejoindre } : {}) } };
+  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map((f) => avecProche(f, proches)), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}), ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}), ...(rejoindre.length ? { rejoindre } : {}) } };
 }
 
 // ─── 📷 (21 novembre 2026, « tout pour tous ») LA TÊTE EN DIRECT, DANS LA SÉANCE ───

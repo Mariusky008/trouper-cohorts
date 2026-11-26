@@ -1925,3 +1925,36 @@ salon ouvert) trouve à la fin toutes les figurines qui ont laissé leur mot. Ce
   direct) : une figurine montrée d'une seule image ne peut pas ouvrir la bouche — elle dit « 👋 », comme avant.
 - **Les essais** : `scripts/navigateur/bonjour.mjs` (Sam, son sourire du jour, son bonjour de quatre syllabes : au salon,
   sa bouche s'ouvre et se ferme dessus, puis se referme).
+
+## 39. 🚪 L'entrée au salon, discrète (26 novembre 2026)
+
+**Le propriétaire** : « il faut que l'expérience lorsque la figurine entre dans un salon soit vraiment plus forte et plus
+wow », puis « les gens regardent la vidéo, donc fais pas non plus trop déranger ». Retenu : l'entrée en scène, avec les
+retrouvailles entre proches, en version discrète ; la maquette validée (« c'est bon ») :
+https://claude.ai/artifact/Qq3BYd4hb2BhTiPSBjYiKs. Avant, la figurine apparaissait à sa place en fondu.
+
+- **Sa figurine marche jusqu'à sa place** (`ENTREE_MS`, 1,5 s ; `.so-fig.entre`, `so-entree`) : elle arrive par le bord
+  gauche, **le long du bas de la pièce**, puis monte s'asseoir. Rien ne passe devant la télé ; le son de la vidéo n'est
+  jamais coupé ; aucune fenêtre.
+- **Assise, sa pancarte brille un instant** (`.eclat`, 1,6 s), si elle en a une.
+- **Les autres tournent la tête vers elle** (`.regarde-g` / `.regarde-d`), moins d'une seconde (0,8 s), puis reviennent
+  à la télé.
+- **Son bonjour** (sa voix enregistrée, `jouerBonjour`) **ne se joue tout seul qu'entre deux vidéos** : les 3 dernières
+  secondes d'une vidéo du salon ou les 2 premières de la suivante (`positionTele`) ; dans une séance, la télé en pause.
+  Sinon, **sa bouche dit bonjour en silence** (sa tête « bouche ouverte » qui clignote, 1,4 s, `.so-jour.muette`) et **une
+  bulle 🔊 attend 6 s** près d'elle : la toucher fait entendre son bonjour. Pas de bonjour enregistré : rien de tout ça.
+  Jamais le sien chez soi.
+- **👯 Un de mes proches** (`PresentSalon.proche`, posé par le serveur pour moi seul, d'après `prochesDe`) : en arrivant,
+  nous nous tournons l'un vers l'autre et **un check ✋ vole d'un fauteuil à l'autre** (le même vol que les gestes). Si
+  c'est moi qui arrive, vers chacun de mes proches déjà là (trois au plus). **Chez nous deux seulement** : les autres du
+  salon ne savent pas qui est proche de qui (les 15-17 ans). Pas de « côte à côte » : dans un gradin, chacun se voit
+  devant, au milieu (sa place et la première s'échangent, pour lui seul), deux voisins ne peuvent donc pas l'être sur
+  les deux téléphones à la fois.
+- **Qui fait son entrée** : celui qui arrive après moi (le pouls le dit, arrivé depuis moins de 20 s), et moi en ouvrant
+  le salon (arrivé depuis moins de 10 s : recharger la page, ma place gardée, ne refait pas mon entrée). Ceux qui sont
+  déjà là quand j'entre ne la refont pas. Celui que je ne veux plus voir non plus.
+- **Moins de mouvement** (le réglage du téléphone) : pas de marche, pas de têtes tournées ; la pancarte et 🔊 restent.
+
+**L'essai** : `scripts/navigateur/entree-salon.mjs` (sur un iPhone : l'entrée de Léa, jamais devant la télé, sans son
+propre bonjour ; Sam, son proche — sa pancarte, les têtes tournées, le check ✋, son bonjour tout seul ou 🔊 à toucher et
+sa bouche muette ; Zoé, une inconnue, sans check ; recharger ne refait aucune entrée).

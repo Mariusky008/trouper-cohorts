@@ -105,7 +105,9 @@ export const MOTIFS_SIGNALEMENT = ["Des insultes ou des moqueries", "Demande des
  * (✨ « Ma figurine », 25 novembre 2026) `tete` : sa tête du jour posée sur son corps sans sa tête (de 0 à 1 dans le cadre
  * du corps) — sinon sa figurine d'une seule image ; `pancarte` : la phrase qu'elle porte partout.
  */
-export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string; tete?: { src: string; corps: string; ratio: number; boite: Zone; /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string }; pancarte?: string; ornements?: Ornements; bonjour?: string };
+export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string; tete?: { src: string; corps: string; ratio: number; boite: Zone; /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string }; pancarte?: string; ornements?: Ornements; bonjour?: string;
+  /** 👯 (l'entrée au salon, 26 novembre 2026) c'est un de MES proches — vu seulement par moi (le check à son entrée) */
+  proche?: true };
 
 // ─── 🛋️ D2 : la séance chez moi (ma pièce, ma télé, jusqu'à trois proches) ───
 export const PLACES_SEANCE = 4;
@@ -316,6 +318,7 @@ export const PHRASES_SALONS = {
   entre: (prenom: string) => `Invitation envoyée à ${prenom} : sa place l’attend`,
   // 👋 (lot F3) faire signe, d'un toucher, à celui qui vient d'arriver
   faireSigne: (prenom: string) => `Faire signe à ${prenom}`,
+  ecouterBonjour: (prenom: string) => `Écouter le bonjour de ${prenom}`,
   invite: (p: string) => `C’est ${p} qui mène la télé.`,
   // 🎞️ (21 novembre 2026, le propriétaire : « il garde sa vidéo ») l'invité garde la vidéo de son invitation
   tuGardes: (p: string) => `${p} regarde autre chose : tu gardes ta vidéo, à ton rythme.`,
