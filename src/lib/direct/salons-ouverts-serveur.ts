@@ -48,6 +48,8 @@ import { noterPresence } from "./groupes-journal-serveur";
 import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe, themesDuGroupe, videosRetenues } from "./groupes-chemins-serveur";
 import { themeDuJour } from "./groupes";
 import { cleProfil } from "./autour-serveur";
+import { jeuDuSalon } from "./jeux-salon-serveur";
+import type { JeuVu } from "./jeux-salon";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
@@ -100,9 +102,9 @@ const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
 // ─── les chemins ───
 /** Une maison de salons ouverts, ou « prives » : les séances chez quelqu'un (lot D2). */
-type Lieu = MaisonSalons | "prives";
+export type Lieu = MaisonSalons | "prives";
 const base = (m: Lieu) => `decouvrir/salons/${m}`;
-const dossierSalon = (m: Lieu, id: string) => `${base(m)}/${id}`;
+export const dossierSalon = (m: Lieu, id: string) => `${base(m)}/${id}`;
 const dossierPresents = (m: Lieu, id: string) => `${dossierSalon(m, id)}/presents`;
 const dossierMessages = (m: Lieu, id: string) => `${dossierSalon(m, id)}/messages`;
 /** 😴 (26 novembre 2026) ceux qui sont partis avant la fin de la vidéo : leur figurine dort à sa place */
@@ -128,7 +130,7 @@ async function lister(supabase: Supabase, dossier: string, o: { limite?: number;
 const effacer = (supabase: Supabase, chemins: string[]) => (chemins.length ? supabase.storage.from(SEAU_FIGURINES).remove(chemins).then(() => undefined, () => undefined) : Promise.resolve());
 
 /** Les présents d'un salon (vus depuis moins de 2 min 30) : leur `q` et quand on les a vus. */
-async function presentsFrais(supabase: Supabase, m: Lieu, id: string, maintenant = Date.now()): Promise<Entree[]> {
+export async function presentsFrais(supabase: Supabase, m: Lieu, id: string, maintenant = Date.now()): Promise<Entree[]> {
   const l = await lister(supabase, dossierPresents(m, id));
   const frais = l.filter((e) => e.nom.endsWith(".json") && maintenant - e.ms < PRESENCE_MS);
   // (les fiches de ceux partis depuis plus d'un jour : effacées en passant)
@@ -136,7 +138,7 @@ async function presentsFrais(supabase: Supabase, m: Lieu, id: string, maintenant
   if (vieux.length) void effacer(supabase, vieux);
   return frais.map((e) => ({ nom: e.nom.replace(/\.json$/, ""), ms: e.ms }));
 }
-const lirePresent = (supabase: Supabase, m: Lieu, id: string, q: string) => lireJson<Partial<FichePresent>>(supabase, `${dossierPresents(m, id)}/${q}.json`);
+export const lirePresent = (supabase: Supabase, m: Lieu, id: string, q: string) => lireJson<Partial<FichePresent>>(supabase, `${dossierPresents(m, id)}/${q}.json`);
 const publicDe = (f: Partial<FichePresent>): PresentSalon => ({
   q: s(f.q),
   prenom: s(f.prenom) || "Quelqu’un",
@@ -224,7 +226,7 @@ const messagePublic = (f: Partial<FicheMessage>): MessageSalon => {
 export async function maisonDeMoi(supabase: Supabase, h: string): Promise<MaisonSalons | null> {
   return maisonDe(await sesDixHuitAns(supabase, h).catch(() => null));
 }
-async function exclusion(supabase: Supabase, q: string, maintenant = Date.now()): Promise<number> {
+export async function exclusion(supabase: Supabase, q: string, maintenant = Date.now()): Promise<number> {
   const e = await lireJson<{ jusqua?: number }>(supabase, cheminExclu(q)).catch(() => ({}) as { jusqua?: number });
   return Number(e.jusqua) > maintenant ? Number(e.jusqua) : 0;
 }
@@ -447,7 +449,7 @@ async function derniersMessages(supabase: Supabase, m: Lieu, id: string, o: { de
  * Le salon où il dit être (son identifiant) : un salon ouvert, dans sa maison à lui ; ou (lot D2) une séance chez
  * quelqu'un (« chez-<q> »), s'il en est l'hôte ou s'il y est invité.
  */
-async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ m?: Lieu; id?: string; seance?: { qHote: string; hote: boolean } }>> {
+export async function sonSalon(supabase: Supabase, moi: Habitant, id: unknown): Promise<Resultat<{ m?: Lieu; id?: string; seance?: { qHote: string; hote: boolean } }>> {
   // (👥 lot G4 : le salon d'un groupe — à ses membres seulement)
   const gid = groupeDuSalon(id);
   if (gid) {
@@ -487,6 +489,8 @@ export type PoulsSalonOuvert = {
   rejoindre?: DemandeRejoindre[];
   /** 😴 (26 novembre 2026) ceux qui sont partis avant la fin de la vidéo, endormis à leur place (pas dans une séance) */
   dorment?: DormeurSalon[];
+  /** 🙋 (les jeux du salon, 26 novembre 2026) le jeu en cours (`null` : aucun) */
+  jeu?: JeuVu | null;
 };
 /**
  * 💓 Le pouls (toutes les quelques secondes) : les présents (`ici`, et le détail de ceux qu'il ne connaît pas encore),
@@ -524,12 +528,14 @@ export async function poulsDuSalon(supabase: Supabase, moi: Habitant, id: unknow
     musique ? platineAJour(supabase, m, sid, maintenant).catch(() => null) : Promise.resolve(null),
     r.seance ? Promise.resolve([] as DormeurSalon[]) : dormeurs(supabase, m, sid, new Set(presents.map((p) => p.nom)), maintenant),
   ]);
+  // (🙋 les jeux du salon : celui en cours, s'il y en a un)
+  const jeu = await jeuDuSalon(supabase, m, sid, caches, maintenant).catch(() => null);
   // (👯 l'entrée au salon : ceux qui arrivent et qui sont mes proches — le check ✋, chez moi seulement)
   const proches = !r.seance && nouveaux.some((f) => f.q) ? await prochesDe(supabase, moi.id).catch(() => new Set<string>()) : new Set<string>();
   const rejoindre = r.seance?.hote ? await demandesARejoindre(supabase, r.seance.qHote, maintenant).catch(() => []) : [];
   // (🎬 « Regarder à deux » : vue ensemble, la vidéo devient un souvenir commun)
   const souvenir = r.seance && seance && presents.length >= 2 ? await souvenirSiEnsemble(supabase, r.seance.qHote, q, presents, seance, maintenant).catch(() => null) : null;
-  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map((f) => avecProche(f, proches)), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}), ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}), ...(rejoindre.length ? { rejoindre } : {}), ...(r.seance ? {} : { dorment }) } };
+  return { pouls: { ici: presents.map((p) => p.nom), nouveaux: nouveaux.filter((f) => f.q).map((f) => avecProche(f, proches)), messages, maintenant, ...(r.seance ? { seance: seance ?? null } : {}), ...(souvenir ? { souvenir } : {}), ...(tetes ? { tetes } : {}), ...(platine ? { platine: vueDeLaPlatine(platine, q) } : {}), ...(rejoindre.length ? { rejoindre } : {}), ...(r.seance ? {} : { dorment }), jeu } };
 }
 
 // ─── 📷 (21 novembre 2026, « tout pour tous ») LA TÊTE EN DIRECT, DANS LA SÉANCE ───

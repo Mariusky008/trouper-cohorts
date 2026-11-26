@@ -57,6 +57,8 @@ import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import { PHRASES_MOTS as PMOTS, type MotDeQuelquun } from "@/lib/direct/mots-video";
 import { SuiteDeLaVideo } from "@/app/collection/suite-de-la-video";
+import { CarteDuJeu, FeuilleAccord, PancarteDeJeu, voteAffiche } from "./jeux";
+import { etapeDuJeu, PHRASES_JEUX as PJ, type JeuVu } from "@/lib/direct/jeux-salon";
 import {
   GESTES_SALON,
   INVITES_MAX,
@@ -313,6 +315,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // 🎬 (« Regarder à deux », `ma-maison.md` section 24) la vidéo vue ensemble vient de devenir un souvenir commun
   const [souvenir, setSouvenir] = useState("");
   const [occupe, setOccupe] = useState(false);
+  // (🙋 les jeux du salon, 26 novembre 2026 : le jeu en cours, l'heure pour savoir où il en est, la feuille pour le lancer)
+  const [jeu, setJeu] = useState<JeuVu | null>(null);
+  const [lancerJeu, setLancerJeu] = useState(false);
+  const [heureJeu, setHeureJeu] = useState(0);
   const boite = useRef<HTMLDivElement>(null);
   const [L, setL] = useState(0);
   const dernier = useRef(Math.max(0, ...o.messages.map((m) => m.le)));
@@ -679,6 +685,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       });
       recevoir(p.messages, true);
       if (p.dorment) setDorment(p.dorment);
+      // (🙋 le jeu du salon : mon vote, s'il n'est pas encore revenu du serveur, reste affiché)
+      if (p.jeu !== undefined) setJeu((avant) => (p.jeu && avant?.id === p.jeu.id ? { ...p.jeu, votes: { ...avant.votes, ...p.jeu.votes } } : (p.jeu ?? null)));
       setDemandesRejoindre(p.rejoindre ?? []);
       // (🎬 la télé de la séance : ce que l'hôte vient de faire)
       if (p.seance !== undefined) {
@@ -1001,6 +1009,42 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const r = await poster({ action: "garder", salon: salon.id, moment: m.id });
     dire(r.ok ? P.garde : String(r.j.error || "Ça n’a pas marché. Réessaie."));
   }
+  // ─── 🙋 les jeux du salon ───
+  /** La vidéo qui passe à ma télé (le jeu porte sur elle). */
+  const videoQuiPasse = (): string | null => {
+    if (prive) return (aPart ?? tele)?.video.id ?? null;
+    const pos = positionTele(o.tele.videos, Date.now() + (decalage.current ?? 0));
+    return pos ? (o.tele.videos[pos.i]?.id ?? null) : null;
+  };
+  // (l'heure du serveur, deux fois par seconde tant qu'un jeu est là : vote, résultat, puis la carte s'en va)
+  useEffect(() => {
+    if (!jeu) return;
+    const tic = () => {
+      const ms = Date.now() + (decalage.current ?? 0);
+      setHeureJeu(ms);
+      if (etapeDuJeu(jeu, ms) === "fini") setJeu(null);
+    };
+    tic();
+    const t = window.setInterval(tic, 500);
+    return () => window.clearInterval(t);
+  }, [jeu, decalage]);
+  async function lancerAccord(texte: string): Promise<string | null> {
+    const video = videoQuiPasse();
+    if (!video) return PJ.pasDeVideo;
+    const r = await poster({ action: "jeu", salon: salon.id, sorte: "accord", texte, video });
+    if (!r.ok) return String(r.j.error || "Ça n’a pas marché. Réessaie.");
+    setJeu((r.j.jeu as JeuVu) ?? null);
+    setLancerJeu(false);
+    return null;
+  }
+  async function voter(v: "oui" | "non") {
+    if (!jeu) return;
+    const id = jeu.id;
+    setJeu((j) => (j && j.id === id ? { ...j, votes: { ...j.votes, [o.moi]: v } } : j));
+    const r = await poster({ action: "voter", salon: salon.id, jeu: id, v });
+    if (!r.ok) dire(String(r.j.error || "Ça n’a pas marché. Réessaie."), 3600);
+  }
+
   async function demanderProche(p: PresentSalon) {
     setFiche(null);
     const r = await poster({ action: "proche", salon: salon.id, q: p.q });
@@ -1256,6 +1300,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                       🔊
                     </button>
                   )}
+                  {jeu && voteAffiche(jeu, p.q, heureJeu) && (
+                    <PancarteDeJeu e={voteAffiche(jeu, p.q, heureJeu) ?? ""} q={p.q} style={{ left: x.x, bottom: H - x.y + x.h + 2, zIndex: Math.round(x.y) + 3 }} />
+                  )}
                   {signe && (
                     <button type="button" className="so-signe" data-faire-signe={p.q} aria-label={P.faireSigne(p.prenom)} style={{ left: x.x, bottom: H - x.y + x.h + 4, zIndex: Math.round(x.y) + 1 }} onClick={() => void faireSigne(p.q)}>
                       👋
@@ -1427,6 +1474,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       </div>
 
       <section className="so-bas" ref={bas}>
+        {jeu && heureJeu > 0 && etapeDuJeu(jeu, heureJeu) !== "fini" && <CarteDuJeu jeu={jeu} moi={o.moi} ms={heureJeu} presents={ici} onVoter={(v) => void voter(v)} />}
         {/* (22 novembre 2026, le propriétaire : « supprime cette phrase : Tu mènes la télé… » — l'hôte n'a plus de phrase) */}
         {!seance?.hote && (
           <p className="so-info" data-info>
@@ -1504,6 +1552,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             {refus}
           </p>
         )}
+        <div className="so-jeux" data-jeux>
+          <button type="button" className="so-bouton petit doux" data-lancer-accord disabled={Boolean(jeu)} onClick={() => setLancerJeu(true)}>
+            {PJ.accord}
+          </button>
+        </div>
         <form className="so-ecrire" onSubmit={(e) => void ecrire(e)}>
           <input value={texte} maxLength={TEXTE_SALON_MAX} autoComplete="off" placeholder={P.ecrire} aria-label={P.ecrire} name="texte" onChange={(e) => setTexte(e.target.value)} />
           {/* (🎙️ « tout pour tous » : ma vraie voix, à la seconde de la vidéo — mes proches l'écouteront à ce moment) */}
@@ -1519,6 +1572,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         <p className="so-note" data-note role="status">
           {note}
         </p>
+      )}
+
+      {lancerJeu && (
+        <Feuille onFermer={() => setLancerJeu(false)}>
+          <FeuilleAccord relue={!prive} onLancer={lancerAccord} onAnnuler={() => setLancerJeu(false)} />
+        </Feuille>
       )}
 
       {fiche && (
@@ -2680,6 +2739,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-vol{0%{opacity:0;transform:translate(-50%,0) scale(.6)}15%{opacity:1}100%{opacity:1;transform:translate(calc(-50% + var(--dx)),var(--dy)) scale(1.1)}}
 .so-bas{padding:12px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
 .so-info{margin:0;font-size:12.5px;opacity:.75;text-align:center}
+.so-jeux{display:flex;justify-content:center;gap:8px;margin:2px 0 8px}
 .so-reagir{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
 .so-reagir span{font-size:13px;font-weight:800}
 .so-reagir button{width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.1);font-size:21px;cursor:pointer}

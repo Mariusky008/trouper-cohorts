@@ -1992,7 +1992,12 @@ une PR chacun.
 
 **Lot 2 — « 🙋 Qui est d'accord ? »** : une phrase sur la vidéo (relue comme le reste du salon), tout le salon vote
 👍 / 👎 pendant 30 secondes, le lanceur aussi ; une pancarte au-dessus de chaque figurine qui vote ; le résultat : les
-têtes de chaque camp, **sans chiffre ni pourcentage**.
+têtes de chaque camp, **sans chiffre ni pourcentage** ; 😎 au-dessus du camp le plus fourni, 🤷 pour l'autre (rien en
+cas d'égalité) ; la carte s'en va seule 12 secondes après. Dans le code : `lib/direct/jeux-salon.ts` (règles, phrases),
+`jeux-salon-serveur.ts` (`<salon>/jeu.json`, un vote par fichier `<salon>/jeux/<id>/votes/<q>.json`,
+`<salon>/jeux-lances/<q>-<vidéo>.json`), le pouls porte `jeu` ; la route : `action: "jeu"` et `"voter"` ; l'écran :
+`src/app/univers/salons/jeux.tsx` (la carte s'affiche en haut de la barre, sous la pièce). Essais :
+`scripts/essai-jeux-salon-route.mjs`, `scripts/navigateur/jeux-salon.mjs`.
 
 **Lot 3 — « 🎯 Je te mets au défi »** : lancé depuis la fiche de quelqu'un (ou le bouton de la barre). Une question
 Oui/Non sur la suite de la vidéo, et quand on le saura (dans 30 s, 1 min, à la fin). Le défié répond d'abord (ou « Pas
