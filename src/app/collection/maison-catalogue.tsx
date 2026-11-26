@@ -1576,9 +1576,9 @@ const STYLES_MAISON_CATALOGUE = `
 .mmc-double:active{transform:scale(.97)}
 .mmc-double-pastille{position:absolute;top:-9px;right:16px;padding:3px 9px;border-radius:999px;background:#f5a23a;color:#2a1500;font-style:normal;font-weight:800;font-size:11.5px;letter-spacing:0;box-shadow:0 4px 12px rgba(245,162,58,.5);animation:mmc-pulse 1.8s ease-in-out infinite}
 @keyframes mmc-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.mmc-tuiles{grid-template-columns:repeat(4,minmax(0,1fr))}
-.mmc-tuiles .mmc-gros-bouton{min-height:58px;font-size:11.5px;font-weight:700}
-.mmc-tuiles .mmc-gros-bouton span{font-size:19px}
+.mmc-tuiles{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.mmc-tuiles .mmc-gros-bouton{min-height:58px;padding:5px 3px;gap:3px;font-size:11px;font-weight:700;line-height:1.1}
+.mmc-tuiles .mmc-gros-bouton span{font-size:17px;line-height:1}
 @media (prefers-reduced-motion: reduce){.mmc-halo,.mmc-double-pastille{animation:none}}
 .mmc-fig img{display:block;height:100%;width:auto;max-width:none;transform-origin:50% 100%;animation:mmc-souffle 4.5s ease-in-out infinite;user-select:none;-webkit-user-drag:none}
 .mmc-fig[data-saute="1"] img{animation:mmc-saut .5s ease-out,mmc-souffle 4.5s ease-in-out .5s infinite}
