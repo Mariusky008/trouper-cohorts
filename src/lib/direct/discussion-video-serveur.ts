@@ -20,6 +20,7 @@ import { dansMonHistorique } from "./revoir-serveur";
 import { cheminReactions, reactionsDesProches } from "./reactions-video-serveur";
 import { aMonMot, laVideo, saTranche, suiteDeLaVideo } from "./mots-video-serveur";
 import { ID_VIDEO, ficheVideo, noterFicheVideo } from "./fiche-video-serveur";
+import { prevenirLaDiscussion } from "./activite-serveur";
 import { choisirNiveau, marquerLu, mesSuivis, niveauValide, suivreApresPublication } from "./suivis-video-serveur";
 import { ECRITS_VIDEO, PHRASES_DISCUSSION, cercleValide, niveauDeDepart, type NiveauSuivi, type DiscussionVue, type EcritVu, type VideoDiscussion } from "./discussion-video";
 
@@ -203,6 +204,10 @@ export async function publierEcrit(supabase: Supabase, moi: Habitant, p: Record<
   await noterFicheVideo(supabase, v);
   // (🔔 je la suis désormais, sans bruit — la première fois, l'écran propose d'être prévenu)
   const premiere = await suivreApresPublication(supabase, moi.id, { video: v.id, tranche: m, titre: v.titre });
+  // (🛎️ lot A4 : ↩ celui à qui je réponds, 💬 ceux qui la suivent — dans leur Activité)
+  const motDit = repond.startsWith("mot:") ? repond.slice(4) : "";
+  const repondA = repond ? s((await lireJson<{ h?: string }>(supabase, motDit ? `${dossierMots(m, v.id)}/${motDit}.json` : `${dossier}/${repond}.json`).catch(() => ({}) as { h?: string })).h) : "";
+  await prevenirLaDiscussion(supabase, moi.id, { cercle: "tous", tranche: m, video: v.id, titre: v.titre, prenom, texte: fiche.texte, ...(repondA ? { repondA } : {}) }).catch(() => []);
   const vus = await lesEcrits(supabase, moi, m, v.id);
   return { ecrit: vus.find((x) => x.id === id), premiere };
 }

@@ -40,7 +40,7 @@ messagerie bruyante.
 | A1 | L'écran Discussion vidéo, en lecture ; la fiche vidéo ; les entrées | ✅ fait |
 | A2 | Écrire : le mot écrit 🌍, répondre, « Lu par… », « 🌍 Le laisser sous la vidéo » | ✅ fait |
 | A3 | Suivre : les trois niveaux, les niveaux de départ, le ⋯ | ✅ fait |
-| A4 | Activité et la cloche 🛎️ ; « Pendant ton absence » y passe | à faire |
+| A4 | Activité et la cloche 🛎️ ; « Pendant ton absence » y passe | ✅ fait |
 | A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | à faire |
 | A6 | Les groupes : le cercle 👥, vidéo par vidéo | à faire |
 | A7 | Le soin : « Ne plus voir », l'admin des mots écrits, vidéo indisponible, les cinq cas sur un iPhone | à faire |
@@ -114,3 +114,25 @@ messagerie bruyante.
   (`data-proposer-suivre`). Ce qui est arrivé depuis ma dernière visite porte « Nouveau » (`lu`, noté à chaque ouverture).
 - **La route** : `POST { action: "suivre", id, cercle, niveau }` ; `GET` rend `suivi` et `luAvant`.
 - **Les essais** : la suite des deux scripts (niveaux de départ, le choix gardé, 🔕 retire le suiveur, « Nouveau »).
+
+## A4, dans le code
+
+- **Les événements** : `<habitant>/activite/<ms>.<cercle>.<vidéo>.<q>.<sorte>.<x>.json` = { prenom, titre, texte?, vocal? }
+  (`activite-serveur.ts`), un fichier par événement, écrit par celui qui intervient. `sorte` : `r` (↩ on me répond,
+  toujours, même si je ne suis plus la discussion) ou `n` (💬 du nouveau dans une discussion que je suis, 🔔 ou 🤫 ; cent
+  suiveurs au plus, lus dans l'index d'A3). Jamais pour soi. Tout se lit dans le nom : la cloche compte sans ouvrir un
+  fichier. Effacés après trente jours. Écrits par `publierEcrit` (mot écrit) et `publierMot` (mot dit).
+- **👯 Les proches** : leur boîte « à revoir » (`tele-revoir.json`, qui existait) devient une ligne d'Activité.
+- **Lu** : une ligne est « Nouveau » si quelque chose est arrivé après mon dernier passage dans la discussion (`lu`
+  d'A3) et après « Tout marquer lu » (`<habitant>/activite-lu.json`). 🔕 : seulement les réponses directes.
+- **L'écran** : `/univers/activite` (`app/collection/activite.tsx`) : une ligne par discussion (la vignette, « ↩ Inès
+  t'a répondu » et sa phrase, ou « Léa et Sam ont écrit », combien de nouveaux, le titre et le cercle, sa couleur) ; les
+  réponses directes en haut ; « Nouveau » puis « Déjà vu » ; les filtres Tout · ↩ Réponses · 👯 Proches · 🌍 Tous ;
+  « Tout marquer lu ». En bas, « 🏠 Pendant ton absence, chez toi » ouvre la feuille de Ma maison
+  (`/collection?absence=1#maison`) : Ma maison garde son bouton.
+- **La cloche 🛎️** : en haut de l'appli (`ma-collection.tsx`, l'univers allumé), avec le vrai nombre de discussions où
+  il y a du nouveau ; relue en arrivant, en revenant sur la page, et toutes les cinq minutes.
+- **La route** : `GET /api/direct/activite` → { lignes, nouveau } ; `?compter=1` → { nouveau } ; `POST { action: "lu" }`.
+- **Les essais** : la suite des deux scripts (Inès répond à Sam ; rien chez Léa qui ne suit plus ; Jade à part ; ouvrir
+  la discussion ou « Tout marquer lu » remet à zéro ; trente jours ; sur l'iPhone, la cloche dans l'appli allumée, la
+  ligne, un toucher, « Déjà vu »).

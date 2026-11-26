@@ -28,6 +28,7 @@ import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { figurineVivante } from "./expressions-figurine-serveur";
 import { noterFicheVideo } from "./fiche-video-serveur";
 import { suivreApresPublication } from "./suivis-video-serveur";
+import { prevenirLaDiscussion } from "./activite-serveur";
 import { MOTS_VIDEO, ordonnerMots, tetesValides, type MotDeQuelquun, type MotVu, type SuiteVue, type TeteMot } from "./mots-video";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -218,6 +219,9 @@ export async function publierMot(
   await noterFicheVideo(supabase, v);
   // (🔔 je suis désormais la discussion 🌍 de cette vidéo, sans bruit — sauf si j'ai déjà choisi)
   await suivreApresPublication(supabase, moi.id, { video: v.id, tranche: m, titre: v.titre }).catch(() => false);
+  // (🛎️ lot A4 : ↩ celui à qui je réponds, 💬 ceux qui suivent la discussion — dans leur Activité)
+  const repondA = repond ? s((await lireMot(supabase, m, v.id, repond))?.h) : "";
+  await prevenirLaDiscussion(supabase, moi.id, { cercle: "tous", tranche: m, video: v.id, titre: v.titre, prenom: s(fiche.prenom) || "Quelqu’un", vocal: true, ...(repondA ? { repondA } : {}) }).catch(() => []);
   return { ok: true };
 }
 
