@@ -20,10 +20,11 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { OngletVisible } from "./guide";
 import { MEMOIRE_GROUPES, MEMOIRE_TELE, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import { vignetteYouTube } from "@/lib/direct/tele";
+import { THEMES_DECOUVRIR } from "@/lib/direct/decouvrir";
 import { PHRASES_SALONS as PS, PLACES_SEANCE, type DemandeProche, type InvitationTele } from "@/lib/direct/salons-ouverts";
 import { PHRASES_FIL as PF, titreDeSeance, type SeanceFil } from "@/lib/direct/fil-decouvrir";
 import type { TeleDuJour } from "@/lib/direct/tele-du-jour";
-import { PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as PP, PHRASES_VIE_DU_GROUPE as PV, aParis, heureLisible, quandLisible, type GroupeVue, type PropositionGroupe } from "@/lib/direct/groupes";
+import { OUVERT_AVANT_MS, PHRASES_GROUPES_GARDES as PG, PHRASES_PROPOSITIONS as PP, PHRASES_VIE_DU_GROUPE as PV, aParis, heureLisible, quandLisible, type GroupeVue, type PropositionGroupe } from "@/lib/direct/groupes";
 import { ProposerGroupe } from "./proposer-groupe";
 import { CreerGroupe, EspaceGroupe, Figurine, STYLES_FIGURINES_GROUPE, salonDuGroupe } from "./groupe-espace";
 
@@ -414,89 +415,176 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
   );
 }
 
-/** 📣 Une proposition : sa passion, quand, ceux qui ont leur place (sans jamais de zéro : celui qui propose y est). */
+/**
+ * 📣 (26 novembre 2026, la maquette « Propositions de groupes » validée par le propriétaire) une proposition : la vidéo en
+ * grand (son ▶ la lance), l'heure et la passion posées dessus ; le mot de celui qui propose dans une bulle ; les places en
+ * fauteuils, avec les têtes de ceux qui viennent ; un seul gros bouton, « 🛋️ Je viens à 20 h » ; « 20 h ne te va pas ?
+ * Propose une autre heure » ; « Signaler », « Retirer » rangés dans ⋯.
+ */
 function CarteProposition({ p, onGeste, onAutre, onOuvrir }: { p: PropositionGroupe; onGeste: (corps: Record<string, unknown>) => void; onAutre: () => void; onOuvrir: (id: string) => void }) {
+  const [menu, setMenu] = useState(false);
+  const [voir, setVoir] = useState(false);
   if (p.garder) return <CarteGarder p={p} onGeste={onGeste} onOuvrir={onOuvrir} />;
   const n = p.confirmes.length;
   const complet = n >= p.places && !p.jY;
+  const entrer = p.ouverte && (p.jY || p.mienne || p.pour === "tous");
+  const theme = THEMES_DECOUVRIR.find((t) => t.id === p.theme);
+  const auteur = p.confirmes[0];
+  const geste = (corps: Record<string, unknown>) => {
+    setMenu(false);
+    onGeste(corps);
+  };
   return (
-    <div className="mg-carte mg-large" data-proposition={p.id} data-pour={p.pour}>
-      <div className="mg-prop-haut">
-        <span className="mg-prop-e" aria-hidden="true" style={p.video ? { backgroundImage: `url(${vignetteYouTube(p.video.id)})` } : undefined}>
-          {p.video ? "" : p.e}
-        </span>
-        <span className="mg-prop-txt">
-          <strong className="mg-t">
-            {p.e} {p.nom}
-          </strong>
-          <span className="mg-quand">🕘 {quandLisible(p.quand)}</span>
-          <span className="mg-m">{p.pour === "proches" ? `${PP.pourProches} · ` : ""}{p.mienne ? "" : PP.propose(p.de)}</span>
-        </span>
-      </div>
-      {p.mot && <p className="mg-mot">« {p.mot} »</p>}
-      <div className="mg-prop-places">
-        <span className="mg-pile">
-          {p.confirmes.slice(0, 6).map((c) => (
-            <span key={c.q} className="mg-tete-ronde" title={c.prenom}>
-              {c.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={c.src} alt={c.prenom} draggable={false} />
-              ) : (
-                <span aria-hidden="true">🙂</span>
-              )}
-            </span>
-          ))}
-        </span>
-        <span className="mg-m" data-confirmes>
-          {PP.confirmes(n, p.places)}
-        </span>
-      </div>
-      {p.autre && (
-        <p className="mg-autre" data-autre-heure>
-          {PP.autre(p.autre.prenom, quandLisible(p.autre.quand))}
-          {p.mienne && (
-            <button type="button" className="mg-lien" onClick={() => onGeste({ action: "autre-heure", quand: p.autre!.quand })} data-prendre-heure>
-              {PP.prendreHeure}
-            </button>
-          )}
-        </p>
-      )}
-      <div className="mg-prop-boutons">
-        {p.ouverte && (p.jY || p.mienne || p.pour === "tous") ? (
-          <button type="button" className="mg-bouton rose" onClick={() => onGeste({ action: "entrer" })} data-entrer>
-            {PP.entrer}
+    <div className="mg-carte mg-large mg-prop" data-proposition={p.id} data-pour={p.pour}>
+      <div className={`mg-ecran${p.video ? "" : " sans"}`} style={p.video ? { backgroundImage: `url(${vignetteYouTube(p.video.id)})` } : undefined}>
+        <span className="mg-ecran-ombre" aria-hidden="true" />
+        {p.video ? (
+          <button type="button" className="mg-ecran-lire" onClick={() => setVoir(true)} aria-label={PP.voirVideo} data-voir-video>
+            <i aria-hidden="true" />
+            <small>{PP.voirVideo}</small>
           </button>
-        ) : p.mienne || p.jY ? (
-          <span className="mg-bouton second" data-ma-place>
-            {PP.confirme}
+        ) : (
+          <span className="mg-ecran-e" aria-hidden="true">
+            {p.e}
+          </span>
+        )}
+        {p.ouverte ? (
+          <span className="mg-ecran-direct" data-direct>
+            <i aria-hidden="true" />
+            {PP.enDirect}
           </span>
         ) : (
-          <button type="button" className="mg-bouton rose" disabled={complet} onClick={() => onGeste({ action: "confirmer" })} data-confirmer>
-            {complet ? PP.complet : PP.confirmer}
-          </button>
+          <span className="mg-ecran-quand">🕘 {quandLisible(p.quand)}</span>
         )}
-        <button type="button" className="mg-bouton second mg-etroit" onClick={onAutre} aria-label="Proposer un autre horaire" data-autre>
-          {PP.autreHeure}
+        {theme && (
+          <span className="mg-ecran-theme">
+            {theme.e} {theme.court.charAt(0).toUpperCase() + theme.court.slice(1)}
+          </span>
+        )}
+        <button type="button" className="mg-ecran-plus" onClick={() => setMenu((x) => !x)} aria-label={PP.plus} aria-expanded={menu} data-menu>
+          ⋯
         </button>
-      </div>
-      <div className="mg-prop-liens">
-        {p.mienne ? (
-          <button type="button" className="mg-lien" onClick={() => onGeste({ action: "retirer" })} data-retirer>
-            {PP.retirer}
-          </button>
-        ) : (
-          <>
-            {p.jY && (
-              <button type="button" className="mg-lien" onClick={() => onGeste({ action: "laisser" })} data-laisser>
-                {PP.laisser}
+        {menu && (
+          <span className="mg-menu" role="menu">
+            {p.mienne ? (
+              <button type="button" role="menuitem" onClick={() => geste({ action: "retirer" })} data-retirer>
+                {PP.retirer}
+              </button>
+            ) : (
+              <button type="button" role="menuitem" onClick={() => geste({ action: "signaler" })} data-signaler>
+                🚩 {PP.signaler}
               </button>
             )}
-            <button type="button" className="mg-lien" onClick={() => onGeste({ action: "signaler" })} data-signaler>
-              {PP.signaler}
-            </button>
-          </>
+          </span>
+        )}
+        {p.video && <span className="mg-ecran-titre">{p.video.titre}</span>}
+      </div>
+
+      <div className="mg-prop-corps">
+        <strong className="mg-prop-nom">{p.nom}</strong>
+        {p.pour === "proches" && <span className="mg-m">{PP.pourProches}</span>}
+        {p.mot ? (
+          <div className="mg-qui">
+            {auteur && (
+              <span className="mg-tete-ronde">
+                <Figurine p={auteur} tete />
+              </span>
+            )}
+            <p className="mg-bulle">
+              <small>{p.mienne ? PP.taProposition : PP.propose(p.de)}</small>« {p.mot} »
+            </p>
+          </div>
+        ) : (
+          <span className="mg-m">{p.mienne ? PP.taProposition : PP.propose(p.de)}</span>
+        )}
+
+        <div className="mg-salon-places">
+          <span className="mg-salon-titre">
+            <span>{PP.leSalon}</span>
+            <b data-confirmes>{PP.viennent(n, p.places)}</b>
+          </span>
+          <span className="mg-sieges" style={{ gridTemplateColumns: `repeat(${p.places},minmax(0,1fr))` }}>
+            {Array.from({ length: p.places }, (_, k) => {
+              const c = p.confirmes[k];
+              const attend = !c && k === n && !p.jY && !p.mienne && !complet && !p.ouverte;
+              return (
+                <span key={k} className={`mg-siege${attend ? " attend" : ""}`} title={c?.prenom}>
+                  <i className="dos" aria-hidden="true" />
+                  <i className="assise" aria-hidden="true" />
+                  {c && (
+                    <span className="mg-siege-tete">
+                      <Figurine p={c} tete />
+                    </span>
+                  )}
+                </span>
+              );
+            })}
+          </span>
+        </div>
+
+        {entrer ? (
+          <button type="button" className="mg-bouton rose mg-gros" onClick={() => onGeste({ action: "entrer" })} data-entrer>
+            {PP.entrerSalon}
+          </button>
+        ) : p.mienne || p.jY ? (
+          <span className="mg-gardee" data-ma-place>
+            <b aria-hidden="true">✓</b>
+            <span>
+              {PP.placeGardee}
+              <small>{PP.salonOuvre(heureLisible(p.quand - OUVERT_AVANT_MS))}</small>
+            </span>
+          </span>
+        ) : (
+          <button type="button" className="mg-bouton rose mg-gros" disabled={complet} onClick={() => onGeste({ action: "confirmer" })} data-confirmer>
+            {complet ? PP.complet : PP.jeViens(quandLisible(p.quand))}
+          </button>
+        )}
+
+        {p.autre && (
+          <p className="mg-autre" data-autre-heure>
+            {PP.autre(p.autre.prenom, quandLisible(p.autre.quand))}
+            {p.mienne && (
+              <button type="button" className="mg-lien" onClick={() => onGeste({ action: "autre-heure", quand: p.autre!.quand })} data-prendre-heure>
+                {PP.prendreHeure}
+              </button>
+            )}
+          </p>
+        )}
+        {!p.ouverte && (
+          <button type="button" className="mg-lien mg-centre" onClick={onAutre} data-autre>
+            {p.mienne ? PP.changerHeure : PP.autreLien(heureLisible(p.quand))}
+          </button>
+        )}
+        {p.jY && !p.mienne && (
+          <button type="button" className="mg-lien mg-centre" onClick={() => onGeste({ action: "laisser" })} data-laisser>
+            {PP.jeNePeuxPlus}
+          </button>
         )}
       </div>
+
+      {voir && p.video && (
+        <>
+          <button type="button" className="mg-voile" aria-label="Fermer" onClick={() => setVoir(false)} />
+          <div className="mg-feuille mg-feuille-video" role="dialog" aria-label={p.video.titre} data-feuille-video>
+            <span className="mg-lecteur">
+              <iframe src={`https://www.youtube-nocookie.com/embed/${p.video.id}?autoplay=1&playsinline=1&rel=0&iv_load_policy=3`} title={p.video.titre} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen />
+            </span>
+            <p className="mg-feuille-titre">{p.video.titre}</p>
+            {!entrer && !p.mienne && !p.jY && !complet && (
+              <button
+                type="button"
+                className="mg-bouton rose mg-gros"
+                onClick={() => {
+                  setVoir(false);
+                  onGeste({ action: "confirmer" });
+                }}
+              >
+                {PP.jeViens(quandLisible(p.quand))}
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -576,6 +664,7 @@ function AutreHeure({ p, onFermer, onProposer }: { p: PropositionGroupe; onFerme
         <p className="mg-m">
           {p.e} {p.nom} · {quandLisible(p.quand)}
         </p>
+        <p className="mg-feuille-explique">{p.mienne ? PP.autreExpliqueMienne : PP.autreExplique(p.de)}</p>
         <div className="mg-rang mg-puces">
           {choix.map((j) => (
             <button key={j} type="button" className={`mg-puce${jours === j ? " pris" : ""}`} aria-pressed={jours === j} onClick={() => setJours(j)}>
@@ -651,29 +740,64 @@ export const STYLES_MES_GROUPES = `
 .mg-plus{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 12px;border:1px solid rgba(255,196,140,.35);border-radius:999px;background:none;color:#F2C46B;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
 .mg-plus b{font-size:18px;line-height:1}
 .mg-large{width:min(358px,calc(100vw - 32px));gap:10px}
-.mg-prop-haut{display:flex;gap:12px;align-items:center}
-.mg-prop-e{flex:none;display:flex;align-items:center;justify-content:center;width:58px;height:58px;border-radius:16px;background:rgba(255,46,154,.16) center/cover no-repeat;font-size:32px}
-.mg-prop-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
-.mg-prop-txt .mg-t{font-size:17px;overflow-wrap:anywhere}
-.mg-quand{font-size:14.5px;font-weight:700}
-.mg-prop-txt .mg-m{margin:0;white-space:normal}
-.mg-mot{margin:0;padding:8px 10px;border-radius:12px;background:#fff4e6;color:#2a1a10;font-family:Caveat,cursive;font-weight:700;font-size:18px;line-height:1.05}
-.mg-prop-places{display:flex;align-items:center;gap:12px}
-.mg-prop-places .mg-m{margin:0;font-size:14px}
 .mg-pile{display:flex;padding-left:6px}
 .mg-pile .mg-tete-ronde{margin-left:-6px}
 .mg-autre{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0;color:#F2C46B;font-size:13.5px;font-weight:700}
 .mg-autre .mg-lien{margin:0;min-height:28px}
-.mg-prop-boutons{display:flex;gap:8px}
-.mg-prop-boutons .mg-bouton{flex:1;margin-top:0}
-.mg-prop-boutons .mg-etroit{flex:none;padding:0 14px}
 .mg-bouton.rose{background:#d6247f;color:#fff}
 .mg-bouton:disabled{opacity:.5;cursor:default}
-.mg-prop-liens{display:flex;justify-content:flex-end;gap:12px;margin-top:-6px}
 .mg-voile{position:fixed;inset:0;z-index:58;border:0;background:rgba(0,0,0,.55)}
 .mg-feuille{position:fixed;left:0;right:0;bottom:0;z-index:59;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto;padding:18px 0 calc(22px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:#1c1411;box-shadow:0 -10px 40px rgba(0,0,0,.6)}
 .mg-feuille>p,.mg-feuille>.mg-bouton{margin-left:16px;margin-right:16px}
 .mg-feuille-titre{margin:0;font-size:20px;font-weight:800}
+.mg-feuille-explique{margin:0 16px;color:#cdb8a4;font-size:14px;line-height:1.4}
+/* 📣 (26 novembre 2026) la carte d'une proposition : la vidéo en grand, les fauteuils, un seul gros bouton */
+.mg-prop{width:min(340px,calc(100vw - 56px));padding:0;gap:0;overflow:hidden;border-radius:22px}
+.mg-ecran{position:relative;aspect-ratio:16/9;max-width:100%;background:#24131f center/cover no-repeat}
+.mg-ecran.sans{display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(255,46,154,.3),#20111b 70%)}
+.mg-ecran-e{font-size:58px}
+.mg-ecran-ombre{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 34%,transparent 50%,rgba(0,0,0,.85) 100%);pointer-events:none}
+.mg-ecran-lire{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;background:none;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mg-ecran-lire i{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.mg-ecran-lire i::before{content:"";margin-left:5px;border-left:18px solid #1A0D14;border-top:11px solid transparent;border-bottom:11px solid transparent}
+.mg-ecran-lire small{padding:2px 9px;border-radius:999px;background:rgba(11,4,9,.7);font-size:11.5px;font-weight:800}
+.mg-ecran-quand,.mg-ecran-direct,.mg-ecran-theme{position:absolute;top:9px;display:inline-flex;align-items:center;gap:6px;max-width:46%;padding:5px 10px;border-radius:999px;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mg-ecran-quand{left:9px;background:#fff4e6;color:#2a1a10}
+.mg-ecran-direct{left:9px;background:#FF4D6D;color:#fff;letter-spacing:.03em}
+.mg-ecran-direct i{width:8px;height:8px;border-radius:50%;background:#fff;animation:mg-bat 1.2s ease-in-out infinite}
+.mg-ecran-theme{right:44px;max-width:34%;background:rgba(11,4,9,.72);color:#fff}
+.mg-ecran-plus{position:absolute;top:7px;right:7px;width:32px;height:32px;border:0;border-radius:50%;background:rgba(11,4,9,.72);color:#fff;font:inherit;font-size:17px;font-weight:900;line-height:1;cursor:pointer}
+.mg-menu{position:absolute;top:44px;right:8px;z-index:2;display:flex;flex-direction:column;min-width:150px;padding:6px;border-radius:14px;background:#1c1411;box-shadow:0 12px 30px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,196,140,.25)}
+.mg-menu button{min-height:42px;padding:0 12px;border:0;border-radius:10px;background:none;color:#FFF4E6;font:inherit;font-size:14.5px;font-weight:700;text-align:left;cursor:pointer}
+.mg-ecran-titre{position:absolute;left:12px;right:12px;bottom:9px;font-size:14px;font-weight:800;line-height:1.25;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;pointer-events:none}
+.mg-prop-corps{display:flex;flex-direction:column;gap:10px;padding:12px 13px 14px}
+.mg-prop-nom{font-size:17px;font-weight:900;line-height:1.2;overflow-wrap:anywhere}
+.mg-prop-corps .mg-m{margin:-4px 0 0;white-space:normal}
+.mg-qui{display:flex;align-items:flex-end;gap:9px}
+.mg-qui .mg-tete-ronde{width:38px;height:38px;box-shadow:0 0 0 2px #fff4e6}
+.mg-bulle{margin:0;min-width:0;padding:6px 11px 7px;border-radius:15px 15px 15px 4px;background:#fff4e6;color:#2a1a10;font-family:Caveat,cursive;font-weight:700;font-size:20px;line-height:1.05;overflow-wrap:anywhere}
+.mg-bulle small{display:block;margin-bottom:2px;font-family:inherit;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;color:#7A5A68}
+.mg-salon-places{display:flex;flex-direction:column;gap:7px}
+.mg-salon-titre{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:700;color:#cdb8a4}
+.mg-salon-titre b{color:#FFF4E6;font-weight:800;text-align:right}
+.mg-sieges{display:grid;gap:5px;padding-top:6px}
+.mg-siege{position:relative;aspect-ratio:1/1.05;max-width:56px;width:100%;justify-self:center}
+.mg-siege .dos{position:absolute;left:12%;right:12%;top:0;height:64%;border-radius:10px 10px 5px 5px;background:linear-gradient(180deg,#7d3654,#5a2239)}
+.mg-siege .assise{position:absolute;left:4%;right:4%;bottom:0;height:42%;border-radius:7px;background:linear-gradient(180deg,#8e4062,#612641)}
+.mg-siege-tete{position:absolute;left:50%;top:-8%;z-index:1;transform:translateX(-50%);width:78%;aspect-ratio:1;border-radius:50%;overflow:hidden;background:#3a2430;box-shadow:0 0 0 2px #fff4e6}
+.mg-siege-tete img{width:100%;height:100%;object-fit:cover;object-position:50% 14%}
+.mg-siege-tete .ge-tete{width:100%;height:100%}
+.mg-siege.attend::after{content:"";position:absolute;left:-20%;right:-20%;bottom:-18%;height:70%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,46,154,.55),transparent);animation:mg-bat 2s ease-in-out infinite}
+.mg-bouton.mg-gros{min-height:50px;margin-top:2px;font-size:16px;box-shadow:0 10px 22px -8px rgba(255,46,154,.9)}
+.mg-gardee{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,46,154,.14);box-shadow:inset 0 0 0 1px rgba(255,46,154,.4);font-size:14px;font-weight:800}
+.mg-gardee small{display:block;font-size:12px;font-weight:600;color:#cdb8a4}
+.mg-lien.mg-centre{align-self:center;margin:-2px 0 0;text-align:center}
+.mg-feuille-video .mg-lecteur{display:block;aspect-ratio:16/9;max-width:100%;margin:0 16px;border-radius:14px;overflow:hidden;background:#000}
+.mg-feuille-video iframe{width:100%;height:100%;border:0;display:block}
+.mg-feuille-video .mg-feuille-titre{margin:0 16px;font-size:16px}
+.mg-feuille-video .mg-bouton{margin:0 16px}
+@keyframes mg-bat{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.mg-ecran-direct i,.mg-siege.attend::after{animation:none}}
 .mg-puces{padding-bottom:2px}
 .mg-puce{flex:none;min-height:40px;padding:0 14px;border:1px solid rgba(255,196,140,.28);border-radius:999px;background:#120c09;color:#FFF4E6;font:inherit;font-size:14px;font-weight:700;white-space:nowrap;cursor:pointer}
 .mg-puce.pris{border-color:#ff2e9a;background:rgba(255,46,154,.2)}

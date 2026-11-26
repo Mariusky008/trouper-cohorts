@@ -218,3 +218,17 @@ Les règles :
     `groupes/notifs-discussion/<id>.json`) ;
   - la suivante remplace la précédente sur le téléphone (`groupe-msg-<id>`).
 - Essai : `scripts/essai-groupes-notifs-route.mjs` (la nuit, il vérifie que personne n'est prévenu).
+
+## Les retours du 26 novembre (sur l'appli en ligne)
+
+- **La carte d'une proposition, refaite** (maquette validée : https://claude.ai/artifact/DoBKsMzJLrmMuTpBceMgoR,
+  `CarteProposition` dans `app/collection/mes-groupes.tsx`) : la vidéo en grand (16:9, toute la largeur), son ▶
+  « Voir la vidéo » la lance dans une feuille (le lecteur officiel) ; l'heure et la passion posées dessus ; le mot de celui
+  qui propose dans une bulle, à côté de sa tête ; les places en fauteuils (4 ou 8), les têtes de ceux qui viennent, le
+  suivant qui brille ; un seul gros bouton, « 🛋️ Je viens ce soir à 20 h » ; puis le bandeau « ✓ Ta place est gardée · Le
+  salon ouvre à 19 h 50 » ; « 20 h ne te va pas ? Propose une autre heure » (la feuille dit ce qui se passe) ; « Je ne peux
+  plus venir » ; « Signaler », « Retirer » rangés dans ⋯. Les cartes défilent de côté. Essai :
+  `scripts/navigateur/propositions-carte.mjs`.
+- **« Proposer » : le lien d'une vidéo YouTube toujours en vue**, sous la rangée des vidéos du jour (il était caché au
+  bout de la rangée) ; sa vignette passe dans l'aperçu.
+- **Le salon de Découvrir** : sans gradin validé, les fauteuils remplissent toute la pièce sous la télé.
