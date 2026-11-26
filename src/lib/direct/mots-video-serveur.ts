@@ -26,7 +26,7 @@ import { videoDeLaSeance, videosDuSalon } from "./salons-ouverts-serveur";
 import { IDS_THEMES } from "./decouvrir";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { figurineVivante } from "./expressions-figurine-serveur";
-import { MOTS_VIDEO, ordonnerMots, tetesValides, type MotVu, type SuiteVue, type TeteMot } from "./mots-video";
+import { MOTS_VIDEO, ordonnerMots, tetesValides, type MotDeQuelquun, type MotVu, type SuiteVue, type TeteMot } from "./mots-video";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Resultat<T = object> = T & { error?: string; statut?: number; age?: true };
@@ -41,6 +41,8 @@ const JOUR_MS = 24 * 3600_000;
 const dossierMots = (m: Tranche, video: string) => `decouvrir/mots/${m}/${video}`;
 const cheminMot = (m: Tranche, video: string, q: string) => `${dossierMots(m, video)}/${q}.json`;
 const dossierSignales = (m: Tranche, video: string) => `decouvrir/mots-signales/${m}/${video}`;
+/** 🎙️ (les jeux du salon, 26 novembre 2026) l'index de ses mots : un fichier vide par vidéo où il en a laissé un. */
+const dossierSesMots = (m: Tranche, q: string) => `decouvrir/mots-de/${m}/${q}`;
 
 async function lister(supabase: Supabase, dossier: string, limite = 100): Promise<{ nom: string; ms: number }[]> {
   const { data } = await supabase.storage.from(SEAU_FIGURINES).list(dossier, { limit: limite, sortBy: { column: "name", order: "asc" } });
@@ -197,6 +199,7 @@ export async function publierMot(
   const fiche: FicheMot = { h: moi.id, q, prenom: await prenomDu(supabase, moi.id), chemin, type: son.type, duree, le, tetes: tetesValides(p.tetes, duree) as TeteMot[], ...(repond ? { repond } : {}) };
   if (!(await ecrireJson(supabase, cheminMot(m, v.id, q), fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   if (avant?.chemin && avant.chemin !== chemin) await effacer(supabase, [s(avant.chemin)]);
+  await ecrireJson(supabase, `${dossierSesMots(m, q)}/${v.id}.json`, { le }).catch(() => false);
   return { ok: true };
 }
 
@@ -208,7 +211,7 @@ export async function effacerMot(supabase: Supabase, moi: Habitant, id: unknown,
   if (!m) return { ok: true };
   const q = qui8(moi.id);
   const avant = await lireMot(supabase, m, v.id, q);
-  await effacer(supabase, [cheminMot(m, v.id, q), ...(avant?.chemin ? [s(avant.chemin)] : [])]);
+  await effacer(supabase, [cheminMot(m, v.id, q), `${dossierSesMots(m, q)}/${v.id}.json`, ...(avant?.chemin ? [s(avant.chemin)] : [])]);
   return { ok: true };
 }
 
@@ -242,4 +245,37 @@ export async function signalerMot(supabase: Supabase, moi: Habitant, id: unknown
   });
   const par = await lister(supabase, `${dossierSignales(m, v.id)}/${q}`);
   return { ok: true, cache: par.length >= MOTS_VIDEO.seuilSignalements };
+}
+
+/**
+ * 🎙️ SES MOTS À LA SUITE DES VIDÉOS (les jeux du salon, 26 novembre 2026, sa fiche au salon) : les derniers mots
+ * qu'il a publiés (de ma tranche, ni trop vieux, ni cachés pour moi), avec leur vidéo. Rien d'autre que ce que tout le
+ * monde entend déjà à la suite de ces vidéos.
+ */
+export async function sesMots(supabase: Supabase, moi: Habitant, cible: unknown): Promise<Resultat<{ mots?: MotDeQuelquun[] }>> {
+  const q = s(cible);
+  if (!ID_Q.test(q)) return { error: "De qui ?", statut: 400 };
+  const m = await saTranche(supabase, moi.id);
+  if (!m) return { mots: [] };
+  const maintenant = Date.now();
+  const mienQ = qui8(moi.id);
+  const entrees = (await lister(supabase, dossierSesMots(m, q), 100))
+    .filter((e) => e.nom.endsWith(".json") && ID_VIDEO.test(e.nom.replace(/\.json$/, "")))
+    .sort((a, b) => b.ms - a.ms)
+    .slice(0, MOTS_VIDEO.sesMotsMax * 2);
+  const lus = await Promise.all(
+    entrees.map(async (e) => {
+      const video = e.nom.replace(/\.json$/, "");
+      const f = await lireMot(supabase, m, video, q);
+      if (!f || !(Number(f.le) > maintenant - MOTS_VIDEO.conserveJours * JOUR_MS)) {
+        // (effacé, ou trop vieux : l'index s'efface en passant)
+        void effacer(supabase, [`${dossierSesMots(m, q)}/${e.nom}`]);
+        return null;
+      }
+      if (q !== mienQ && (await cachesDe(supabase, m, video, mienQ)).has(q)) return null;
+      const src = await signer(supabase, s(f.chemin), 3600).catch(() => "");
+      return src ? ({ video, src, duree: Number(f.duree) || 0, le: Number(f.le) || 0 } satisfies MotDeQuelquun) : null;
+    }),
+  );
+  return { mots: lus.filter((x): x is MotDeQuelquun => Boolean(x)).sort((a, b) => b.le - a.le).slice(0, MOTS_VIDEO.sesMotsMax) };
 }

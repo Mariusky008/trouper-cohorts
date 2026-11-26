@@ -47,6 +47,7 @@ import { themeDe, type IdTheme } from "./decouvrir";
 import { noterPresence } from "./groupes-journal-serveur";
 import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe, themesDuGroupe, videosRetenues } from "./groupes-chemins-serveur";
 import { themeDuJour } from "./groupes";
+import { cleProfil } from "./autour-serveur";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
@@ -153,7 +154,11 @@ const publicDe = (f: Partial<FichePresent>): PresentSalon => ({
  * 👯 (l'entrée au salon, 26 novembre 2026) sa fiche publique, et « c'est ton proche » s'il l'est — pour moi seul : les
  * autres du salon ne savent pas qui est proche de qui.
  */
-const avecProche = (f: Partial<FichePresent>, proches: Set<string>): PresentSalon => ({ ...publicDe(f), ...(f.h && proches.has(f.h) ? { proche: true as const } : {}) });
+const avecProche = (f: Partial<FichePresent>, proches: Set<string>): PresentSalon => ({
+  ...publicDe(f),
+  // (💬 les jeux du salon, 26 novembre 2026 : la clé de notre conversation, pour « Lui écrire » — à moi seul)
+  ...(f.h && proches.has(f.h) ? { proche: true as const, cle: cleProfil(f.h) } : {}),
+});
 
 // ─── 😴 (26 novembre 2026) parti avant la fin : sa figurine dort à sa place ───
 /** J'entre dans un salon (n'importe lequel) : ma figurine endormie ailleurs s'en va. */

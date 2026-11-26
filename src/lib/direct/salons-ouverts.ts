@@ -107,7 +107,9 @@ export const MOTIFS_SIGNALEMENT = ["Des insultes ou des moqueries", "Demande des
  */
 export type PresentSalon = { q: string; prenom: string; figurine: ImageSalon | null; place: number; arrive: number; passions?: string[]; maison?: string; tete?: { src: string; corps: string; ratio: number; boite: Zone; /** 🗣️ sa tête la bouche ouverte (si elle est prête) : sa bouche suit son bonjour (`useBoucheDuBonjour`) */ parle?: string }; pancarte?: string; ornements?: Ornements; bonjour?: string;
   /** 👯 (l'entrée au salon, 26 novembre 2026) c'est un de MES proches — vu seulement par moi (le check à son entrée) */
-  proche?: true };
+  proche?: true;
+  /** 💬 (les jeux du salon) la clé de notre conversation, s'il est mon proche (`/collection?parler=<clé>`) */
+  cle?: string };
 
 /**
  * 😴 (26 novembre 2026, demandé par le propriétaire) PARTI AVANT LA FIN : sa figurine s'endort à sa place. On voit où il
@@ -385,6 +387,8 @@ export const PHRASES_SALONS = {
   accepter: "Accepter",
   refuser: "Non merci",
   voirMaison: "🏠 Voir sa maison",
+  // (💬 les jeux du salon, 26 novembre 2026 : entre proches seulement)
+  luiEcrire: "💬 Lui écrire",
   maisonFermee: "🏠 Sa maison est fermée aux visites",
   sesPassions: "Ses passions",
   mesSalons: "Mes salons",

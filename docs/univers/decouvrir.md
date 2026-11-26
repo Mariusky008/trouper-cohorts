@@ -1974,3 +1974,33 @@ Dans le code : la télé du salon dit où elle en est (`teleEnCours`), « sortir
 `sortirDuSalon` → `endormir` : `decouvrir/salons/<maison>/<salon>/dorment/<q>.json`, et `<h>/salon-dort.json` (où je
 dors) que `reveiller` efface à chaque entrée (`entrerAuSalon`, `entrerAuGroupe`, `entrerChez`). Le pouls et l'ouverture
 portent `dorment` ; `placeEnEntrant` choisit la place. Essai : `scripts/essai-salons-dodo-route.mjs`.
+
+## 41. 🎯🙋 Les jeux du salon, et la fiche d'une figurine complétée (26 novembre 2026, demandé par le propriétaire)
+
+Maquette validée le 26 novembre 2026 (« ok c'est bon ») : https://claude.ai/artifact/ABjUPW9VGQVqzdDDmPLFea. Trois lots,
+une PR chacun.
+
+**Lot 1 — la fiche complétée** (toucher une figurine au salon) :
+- **💬 Lui écrire**, seulement si c'est mon proche (`PresentSalon.cle` : la clé de notre conversation, posée par le
+  serveur pour moi seul) : ouvre notre conversation (`/collection?parler=<clé>#proches`). « 👯 Ajouter en proche »
+  disparaît alors (c'est déjà fait). Jamais de message privé à un inconnu : il y a des 15-17 ans dans les salons.
+- **🎙️ Ses mots à la suite des vidéos** : ses derniers mots publiés (six au plus, de ma tranche, ni effacés, ni trop
+  vieux, ni cachés pour moi) — rien d'autre que ce que tout le monde entend déjà à la suite de ces vidéos. La ligne
+  n'apparaît que s'il en a. Toucher une vidéo : son mot, sa vraie voix. Rangement : un index par personne,
+  `decouvrir/mots-de/<tranche>/<q>/<vidéo>.json`, écrit en publiant, effacé en effaçant (les mots publiés avant le
+  26 novembre n'y sont pas). Route : `GET /api/direct/mots-video?de=<q>`.
+
+**Lot 2 — « 🙋 Qui est d'accord ? »** : une phrase sur la vidéo (relue comme le reste du salon), tout le salon vote
+👍 / 👎 pendant 30 secondes, le lanceur aussi ; une pancarte au-dessus de chaque figurine qui vote ; le résultat : les
+têtes de chaque camp, **sans chiffre ni pourcentage**.
+
+**Lot 3 — « 🎯 Je te mets au défi »** : lancé depuis la fiche de quelqu'un (ou le bouton de la barre). Une question
+Oui/Non sur la suite de la vidéo, et quand on le saura (dans 30 s, 1 min, à la fin). Le défié répond d'abord (ou « Pas
+maintenant », sans rien perdre) ; sa réponse reste cachée ; les autres peuvent tenter leur chance. **Le moment de
+vérité** : à l'heure dite, ceux qui regardent (hors lanceur et défié) disent ce qu'ils ont vu ; personne d'autre : les
+deux doivent être d'accord ; sinon, pas de points. Jamais une réponse inventée par l'appli. +10 au défié qui trouve (au
+lanceur sinon), +5 aux autres qui trouvent. **Jamais de total en public** : seul le « +10 » qui saute ; chacun voit le
+sien chez soi.
+
+**Les limites** : un seul jeu à la fois dans un salon ; un jeu lancé par personne et par vidéo ; des points pour 3 défis
+par jour ; pas deux défis à la même personne dans l'heure ; une figurine endormie ne peut pas être défiée.
