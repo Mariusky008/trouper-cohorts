@@ -23,6 +23,7 @@ import {
   heureLisible,
   quandDuRdv,
   quandLisible,
+  type AujourdhuiDuGroupe,
   type MessageGroupe,
   type PlaceGroupe,
   type Recurrence,
@@ -33,7 +34,7 @@ import {
 
 const ROUTE = "/api/direct/mes-groupes";
 
-async function poster(corps: Record<string, unknown>): Promise<{ ok: boolean; j: Record<string, unknown> }> {
+export async function poster(corps: Record<string, unknown>): Promise<{ ok: boolean; j: Record<string, unknown> }> {
   const r = await fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) }).catch(() => null);
   const j = ((await r?.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   return { ok: Boolean(r?.ok && !j.error), j: r ? j : { error: "Pas de réseau : réessaie dans un instant." } };
@@ -42,12 +43,18 @@ async function poster(corps: Record<string, unknown>): Promise<{ ok: boolean; j:
 /** La vie du groupe, relue toutes les vingt secondes tant que son espace est ouvert. */
 export function useVieDuGroupe(gid: string) {
   const [vie, setVie] = useState<VieDuGroupe | null>(null);
+  // (🎬 lot G6 : l'onglet Aujourd'hui vient avec)
+  const [aujourdhui, setAujourdhui] = useState<AujourdhuiDuGroupe | null>(null);
   useEffect(() => {
     let fini = false;
     const lire = () =>
       fetch(`${ROUTE}?groupe=${encodeURIComponent(gid)}`, { cache: "no-store" })
         .then((r) => r.json())
-        .then((j: { vie?: VieDuGroupe }) => !fini && j.vie && setVie(j.vie))
+        .then((j: { vie?: VieDuGroupe; aujourdhui?: AujourdhuiDuGroupe }) => {
+          if (fini) return;
+          if (j.vie) setVie(j.vie);
+          if (j.aujourdhui) setAujourdhui(j.aujourdhui);
+        })
         .catch(() => undefined);
     void lire();
     const t = window.setInterval(() => document.visibilityState === "visible" && void lire(), 20_000);
@@ -56,7 +63,7 @@ export function useVieDuGroupe(gid: string) {
       window.clearInterval(t);
     };
   }, [gid]);
-  return { vie, setVie };
+  return { vie, setVie, aujourdhui, setAujourdhui };
 }
 
 function Tete({ p }: { p: { prenom: string; src: string } }) {

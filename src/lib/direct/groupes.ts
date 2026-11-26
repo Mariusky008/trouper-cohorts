@@ -358,3 +358,79 @@ export const PHRASES_VIE_DU_GROUPE = {
   // le rappel (lot G3, pour les rendez-vous du groupe)
   rappelCorps: "Ton groupe t’attend dans son salon.",
 } as const;
+
+// ═══ 🎬 (lot G6) AUJOURD'HUI DANS LE GROUPE : LA SÉLECTION DU JOUR, LES RÔLES QUI TOURNENT ═══
+/** Une vidéo est retenue pour ce soir dès que deux membres lèvent la main (🙋) — jamais un nombre à l'écran. */
+export const ENVIES_RETENUE = 2;
+/** Les nouveautés de la passion, au bout de la sélection (trois quand personne n'a encore rien proposé). */
+export const NOUVEAUTES_DU_JOUR = 2;
+
+/** Une vidéo de la sélection du jour du groupe. */
+export type VideoDuGroupe = {
+  id: string;
+  titre: string;
+  chaine: string;
+  duree: number;
+  /** qui l'a proposée, et son mot (« pourquoi elle ») ; sans : une nouveauté de la passion */
+  de?: PlaceGroupe;
+  mot?: string;
+  nouveaute?: true;
+  /** ceux qui la veulent ce soir (🙋, leurs têtes) */
+  envies: PlaceGroupe[];
+  moi?: true;
+  /** ✓ Ce soir : elle ouvrira la séance dans le salon du groupe */
+  retenue?: true;
+  mienne?: true;
+};
+
+export type IdRole = "video" | "sujet" | "decouverte" | "prochaine";
+/** Les rôles du jour, dans l'ordre : ils tournent chaque jour entre les membres. */
+export const ROLES_DU_JOUR: { id: IdRole; e: string; nom: string; tour: string }[] = [
+  { id: "video", e: "🎬", nom: "La vidéo", tour: "Choisis la vidéo qui ouvrira la séance" },
+  { id: "sujet", e: "💬", nom: "Le sujet", tour: "Lance le sujet du jour dans la discussion" },
+  { id: "decouverte", e: "🔎", nom: "La découverte", tour: "Fais découvrir quelque chose au groupe" },
+  { id: "prochaine", e: "📅", nom: "La prochaine", tour: "Pose le prochain rendez-vous" },
+];
+export type RoleDuJour = { id: IdRole; e: string; nom: string; qui: PlaceGroupe; moi?: true };
+
+/** L'onglet Aujourd'hui. */
+export type AujourdhuiDuGroupe = { jour: string; selection: VideoDuGroupe[]; roles: RoleDuJour[] };
+
+/** Le numéro d'un jour (« 2026-11-26 ») : les rôles tournent d'un cran chaque jour. */
+export const numeroDuJour = (jour: string) => Math.floor(Date.parse(`${jour}T12:00:00Z`) / 86_400_000);
+
+/** Les rôles du jour : chaque membre (dans l'ordre de leur `q`) prend le suivant, d'un cran de plus chaque jour. */
+export function rolesDuJour(membres: PlaceGroupe[], jour: string, q: string): RoleDuJour[] {
+  const l = [...membres].sort((a, b) => (a.q < b.q ? -1 : a.q > b.q ? 1 : 0));
+  if (!l.length) return [];
+  const d = ((numeroDuJour(jour) % l.length) + l.length) % l.length;
+  return ROLES_DU_JOUR.slice(0, l.length).map((r, k) => {
+    const qui = l[(k + d) % l.length];
+    return { id: r.id, e: r.e, nom: r.nom, qui, ...(qui.q === q ? { moi: true as const } : {}) };
+  });
+}
+
+export const PHRASES_AUJOURDHUI = {
+  onglet: "🎬 Aujourd’hui",
+  etiquette: (e: string, court: string) => `Aujourd’hui : ${e} ${court}`,
+  ceSoir: "✓ Ce soir",
+  envie: "🙋",
+  envieDit: "🙋 Tu la veux ce soir",
+  retenueDit: "✓ Elle ouvrira la séance, dans le salon du groupe",
+  nouveaute: "✨ Nouveauté",
+  proposer: "Proposer la mienne",
+  roles: "Ce soir, chacun son rôle",
+  toi: "Toi",
+  tonTour: "C’est ton tour",
+  go: "Go",
+  // la feuille « Ma vidéo »
+  maVideoTitre: "＋ Ma vidéo du jour",
+  maTele: "De ma télé du jour",
+  unLien: "Un lien YouTube",
+  lienIndice: "Colle le lien d’une vidéo YouTube",
+  pourquoi: "Pourquoi elle ?",
+  pourquoiIndice: "Le moment de dingue à 1:10",
+  publier: "＋ Dans la sélection",
+  ajoutee: "＋ Ta vidéo est dans la sélection, avec ton mot",
+  retirer: "Retirer la mienne",
+} as const;

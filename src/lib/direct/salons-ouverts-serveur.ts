@@ -44,7 +44,7 @@ import { lirePassions } from "./passions-serveur";
 import { PIECES_DUO, type PieceDuo } from "./pieces-duo";
 import type { ScenePiece } from "./ma-maison";
 import { themeDe, type IdTheme } from "./decouvrir";
-import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe } from "./groupes-chemins-serveur";
+import { cheminGroupe, dossierPassages, estMembre, groupeDuSalon, idGroupeValide, idSalonDuGroupe, videosRetenues } from "./groupes-chemins-serveur";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
@@ -312,7 +312,11 @@ export async function entrerAuGroupe(supabase: Supabase, moi: Habitant, groupe: 
     presentsFrais(supabase, lieu, id, maintenant),
     mesCaches(supabase, moi.id),
     gradinDuSalon(supabase, t.id).catch(() => null),
-    videosDuSalon(supabase, t.id, m),
+    // (🎬 lot G6 : les vidéos retenues ce soir par le groupe ouvrent sa télé, puis celles de sa passion)
+    Promise.all([videosRetenues(supabase, gid, jourParis()).catch(() => [] as VideoSalon[]), videosDuSalon(supabase, t.id, m)]).then(([a, b]) => {
+      const l = a.filter((v) => v.duree > 0);
+      return [...l, ...b.filter((v) => !l.some((x) => x.id === v.id))];
+    }),
     sonProfilDeSalon(supabase, moi.id),
     sonDoubleDeSalon(supabase, moi.id),
     prochesDe(supabase, moi.id).catch(() => new Set<string>()),
