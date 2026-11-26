@@ -28,7 +28,7 @@ une discussion avec un ami : les salons sont vides quand on arrive le premier ; 
 | G0 | Maquette | ✅ validée le 26 novembre 2026 |
 | G1 | L'onglet, « Avec mes proches » (l'existant), Autour en tuile | ✅ fait (#295) |
 | G2 | ＋ Proposer, Propositions de groupes, la pièce « On se retrouve ? » du fil | ✅ ce lot |
-| G3 | Les rappels (cron toutes les 5 minutes) | à faire |
+| G3 | Les rappels (cron toutes les 5 minutes) | fait (PR à suivre) |
 | G4 | « On garde ce groupe ? », Tous mes groupes | à faire |
 | G5 | Rendez-vous (Je viens / Absent / Plus tard) et Discussion | à faire |
 | G6 | La sélection du jour, les rôles qui tournent | à faire |
@@ -74,4 +74,20 @@ Les règles :
   ceux qui ont leur place y sont invités, la télé se cale sur la vidéo choisie quand l'hôte entre).
 - Trois propositions à venir par personne ; trois signalements et la proposition disparaît ; `CLIKME_GROUPES_OUVERTS=0`
   met en pause les propositions ouvertes à tout le monde (celles entre proches restent).
-- Les rappels (« Ta Soirée foot commence dans 10 minutes ») arrivent avec G3.
+- Les rappels (« Ta Soirée foot commence dans 10 minutes ») : voir G3.
+
+## G3, dans le code
+
+- `rappelerLesGroupes` (`lib/direct/groupes-serveur.ts`) : pour chaque proposition dont l'heure tombe entre quinze minutes
+  avant et trente minutes après (`RAPPEL_AVANT_MS`, `RAPPEL_APRES_MS`), une notification « 🔔 Soirée foot commence dans
+  10 minutes » à chacun de ceux qui ont leur place, une seule fois par heure de rendez-vous (`groupes/rappels/<id>.json`
+  garde l'heure déjà rappelée ; si l'heure change, un nouveau rappel partira). Le toucher ouvre `/collection#groupes`.
+- Une autre heure proposée : celui qui propose l'apprend tout de suite (« 🕘 Zoé propose demain 21 h à la place »).
+  Celui qui propose prend une autre heure : ceux qui ont leur place l'apprennent (« 🕘 Soirée foot passe à … »), leur
+  place est gardée.
+- La route `GET /api/cron/groupes-rappels` (garde `CRON_SECRET`). Elle est appelée toutes les cinq minutes par GitHub
+  (`.github/workflows/clikme-groupes-rappels.yml`), parce que Vercel en offre gratuite n'accepte qu'une tâche par jour.
+  Le secret `CRON_SECRET` du dépôt GitHub doit être le même que sur Vercel ; la variable `CLIKME_URL` change l'adresse
+  du site si besoin (par défaut `https://www.clikme.fr`). En offre Pro, on pourra passer la tâche dans `vercel.json`.
+- Essai : `scripts/essai-groupes-rappels-route.mjs` (de vrais téléphones abonnés au faux service de notifications ;
+  `?dans=<minutes>` fait comme si le temps avait passé, seulement pour les essais ou avec `CRON_SECRET`).

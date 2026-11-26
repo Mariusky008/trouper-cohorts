@@ -158,4 +158,15 @@ export const PHRASES_PROPOSITIONS = {
   autreTitre: "🕘 Un autre horaire ?",
   proposerHeure: "Proposer",
   autreEnvoye: "🕘 C’est proposé : tout le monde le voit sur la carte.",
+  // 🔔 (lot G3) les rappels et les changements d'heure
+  rappelTitre: (nom: string, minutes: number) => (minutes > 0 ? `🔔 ${nom} commence dans ${minutes} minute${minutes > 1 ? "s" : ""}` : `🔔 ${nom} a commencé`),
+  rappelCorps: (n: number) => (n > 1 ? `Vous êtes ${n} à avoir votre place : on se retrouve !` : "Ta place t’attend : on se retrouve !"),
+  autreNotifTitre: (prenom: string, quand: string) => `🕘 ${prenom} propose ${quand} à la place`,
+  autreNotifCorps: (nom: string) => `Pour « ${nom} » : tu peux prendre cette heure depuis la carte.`,
+  changeNotifTitre: (nom: string, quand: string) => `🕘 ${nom} passe à ${quand.charAt(0).toLowerCase()}${quand.slice(1)}`,
+  changeNotifCorps: "Ta place est gardée. Si ça ne te va plus, laisse-la depuis la carte.",
 } as const;
+
+/** 🔔 (lot G3) Le rappel part une fois par heure de rendez-vous, de quinze minutes avant à trente minutes après. */
+export const RAPPEL_AVANT_MS = 15 * 60_000;
+export const RAPPEL_APRES_MS = 30 * 60_000;
