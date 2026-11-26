@@ -1546,17 +1546,25 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             </button>
           ))}
           {!prive && <small>{P.ouTouche}</small>}
+          {/* (🙋 dans la séance, la place est comptée — tout tient dans l'écran sans défiler : le jeu en rond, dans la rangée) */}
+          {prive && (
+            <button type="button" className="so-jeu-rond" data-lancer-accord aria-label={PJ.accord} title={PJ.accord} disabled={Boolean(jeu)} onClick={() => setLancerJeu(true)}>
+              🙋
+            </button>
+          )}
         </div>
         {refus && (
           <p className="so-refus" data-refus role="alert">
             {refus}
           </p>
         )}
-        <div className="so-jeux" data-jeux>
-          <button type="button" className="so-bouton petit doux" data-lancer-accord disabled={Boolean(jeu)} onClick={() => setLancerJeu(true)}>
-            {PJ.accord}
-          </button>
-        </div>
+        {!prive && (
+          <div className="so-jeux" data-jeux>
+            <button type="button" className="so-bouton petit doux" data-lancer-accord disabled={Boolean(jeu)} onClick={() => setLancerJeu(true)}>
+              {PJ.accord}
+            </button>
+          </div>
+        )}
         <form className="so-ecrire" onSubmit={(e) => void ecrire(e)}>
           <input value={texte} maxLength={TEXTE_SALON_MAX} autoComplete="off" placeholder={P.ecrire} aria-label={P.ecrire} name="texte" onChange={(e) => setTexte(e.target.value)} />
           {/* (🎙️ « tout pour tous » : ma vraie voix, à la seconde de la vidéo — mes proches l'écouteront à ce moment) */}
@@ -2739,6 +2747,8 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-vol{0%{opacity:0;transform:translate(-50%,0) scale(.6)}15%{opacity:1}100%{opacity:1;transform:translate(calc(-50% + var(--dx)),var(--dy)) scale(1.1)}}
 .so-bas{padding:12px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
 .so-info{margin:0;font-size:12.5px;opacity:.75;text-align:center}
+.so-reagir button.so-jeu-rond{background:rgba(255,159,67,.22)}
+.so-reagir button.so-jeu-rond:disabled{opacity:.4}
 .so-jeux{display:flex;justify-content:center;gap:8px;margin:2px 0 8px}
 .so-reagir{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
 .so-reagir span{font-size:13px;font-weight:800}
