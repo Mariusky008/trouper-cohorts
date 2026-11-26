@@ -1064,11 +1064,6 @@ export function StudioMoi({ etat: etat0 }: { etat: EtatMaFigurine; onEtat?: (e: 
                     C’est moi ✓
                   </button>
                 </span>
-                {!surprise.carte && (
-                  <a className="tf-surprise-carte" href="#personnage">
-                    🃏 Fais ta carte de personnage : tes surprises te ressembleront
-                  </a>
-                )}
                 <button type="button" className="tf-surprise-fermer" aria-label="Fermer" onClick={() => setSurprise(null)}>
                   ✕
                 </button>

@@ -146,14 +146,15 @@ await p.locator(".cm-nouveau").click();
 await p.locator(".cm-actions button", { hasText: "Créer un mème" }).click();
 await p.waitForFunction(() => location.hash === "#creer", null, { timeout: 10000 }).catch(() => null);
 ok(new URL(p.url()).hash === "#creer" && !(await p.locator("#o-figurine").isHidden()), "« Créer un mème » ouvre le studio");
-// 🙂 « Moi » : ce qui était dans « Créer »
+// 🙂 « Moi » (refait le 26 novembre 2026) : sa figurine, « ✨ Ma figurine », ses réglages ; plus de raccourcis vers le studio
 await p.locator(".mc-barre button.mc-moi").click();
-await p.waitForSelector(".cm-moi-raccourcis", { timeout: 10000 }).catch(() => null);
-const raccourcis = (await p.locator(".cm-moi-raccourcis b").allInnerTexts()).join(" · ");
-ok(raccourcis === "Ma figurine et mes mèmes · Mon univers · Mes mèmes envoyés · Mes réactions", `« Moi » : ${raccourcis}`);
-await p.locator(".cm-moi-raccourcis button", { hasText: "Mes mèmes envoyés" }).click();
-await p.waitForFunction(() => location.hash === "#memes", null, { timeout: 10000 }).catch(() => null);
-ok(new URL(p.url()).hash === "#memes", "« Mes mèmes envoyés » : là où ils sont");
+await p.waitForSelector("#o-personnage .pm", { timeout: 10000 }).catch(() => null);
+ok((await p.locator(".cm-moi-raccourcis").count()) === 0 && (await p.locator("#o-personnage [data-ma-figurine]").count()) === 1 && (await p.locator('#o-personnage [data-ligne="refaire"][href="/univers/figurine"]').count()) === 1, "« Moi » : « ✨ Ma figurine », « Refaire ma figurine » (l'atelier), plus de raccourcis vers le studio");
+await p.locator("#o-personnage [data-ma-figurine]").click();
+await p.waitForSelector("[data-mon-double]", { timeout: 10000 }).catch(() => null);
+ok((await texte(p, "[data-mon-double] [data-retour-maison]")) === "‹ Moi", "« ✨ Ma figurine » ouvre son double du jour, « ‹ Moi » pour revenir");
+await p.locator("[data-mon-double] [data-retour-maison]").click();
+await p.waitForSelector("[data-mon-double]", { state: "detached", timeout: 10000 }).catch(() => null);
 await p.locator(".mc-nav-proches").click();
 
 // ═══ 🏡 MARC, QUI A SON UNIVERS : « Ma maison » (son univers en entier, ⚙️) ; sa pastille d'humeur, dans « Messages » ═══

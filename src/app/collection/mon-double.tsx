@@ -75,7 +75,7 @@ export function FigurineDuDouble({ d, e, hauteur }: { d: MonDoubleVue; e: Expres
   ) : null;
 }
 
-export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChange: () => void }) {
+export function MonDouble({ onFermer, onChange, retour = PHRASES_DOUBLE.retour }: { onFermer: () => void; onChange: () => void; /** (ouvert depuis la page sous son prénom : « ‹ Moi ») */ retour?: string }) {
   const [d, setD] = useState<MonDoubleVue | null>(null);
   const [vivante, setVivante] = useState<FigurineVivante | null>(null);
   const [onglet, setOnglet] = useState<OngletDouble>("tete");
@@ -141,7 +141,7 @@ export function MonDouble({ onFermer, onChange }: { onFermer: () => void; onChan
     <div className="md" role="dialog" aria-modal="true" aria-label={PHRASES_DOUBLE.titre} data-mon-double>
       <header className="md-haut">
         <button type="button" className="md-retour" onClick={fermer} data-retour-maison>
-          {PHRASES_DOUBLE.retour}
+          {retour}
         </button>
         <span>
           <b>{PHRASES_DOUBLE.titre}</b>

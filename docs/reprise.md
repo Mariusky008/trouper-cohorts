@@ -3,6 +3,16 @@
 Pour la session qui reprend si celle-ci s'arrête. **Mettre ce fichier à jour à chaque étape terminée** (et le dire au
 propriétaire). L'ancienne passation (`docs/passation.md`, 28 octobre) parle d'un autre chantier (la démo humaine).
 
+## 0 quindecies. Le ménage du 26 novembre 2026 : la visite sous le logo, la page sous son prénom
+
+- **La visite de Pablito sous le logo est partie** (PR #307) : la feuille « Je te fais visiter ? », ses six pages et
+  leurs 19 enregistrements. Le logo ramène au fil de Découvrir ; la bienvenue de la première arrivée reste (`tuto.tsx`).
+- **La page sous son prénom est refaite** (`app/collection/page-moi.tsx`, maquette validée :
+  https://claude.ai/artifact/YZMMFvuTP8CYSzDhR9puCk) : sa figurine et « ✨ Ma figurine » en haut, puis ses réglages par
+  thème (Ma figurine, Ce que j'aime, Qui me voit, Quand je ne suis pas là, Mon téléphone, Mes données). Partis : la carte
+  de personnage (la page `/carte/<id>` reste pour les liens déjà envoyés), le « ! », le cadenas du haut (devenu une
+  ligne), les raccourcis vers le studio des mèmes (leurs écrans restent).
+
 ## 0 quattuordecies. « Ma figurine », au centre de Ma maison (25 novembre 2026)
 
 Après le fil de Découvrir (F1 à F4), le chantier « Ma figurine » : `docs/univers/ma-figurine.md` (les lots 0 à 5, et
