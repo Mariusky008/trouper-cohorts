@@ -5,14 +5,42 @@
  *
  * La vidéo en haut (« ▶ Revoir la vidéo »), puis deux cercles, chacun avec sa couleur : 👯 Mes proches (leurs réactions à
  * la seconde, leurs mots, leurs vocaux, leurs réponses) et 🌍 Tous (les mots laissés à la fin de la vidéo, dits par leur
- * figurine). On la retrouve même quand on a quitté le salon où on l'a vue. Pour l'instant on la lit ; on y écrit au lot A2.
+ * figurine, et les mots écrits — lot A2). On la retrouve même quand on a quitté le salon où on l'a vue. En 🌍, on écrit
+ * sous la vidéo (« Publier », l'accord la première fois), on répond, on efface le sien, on signale.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PHRASES_DISCUSSION as P, cercleDeDepart, combienDans, lienYouTube, type CercleDiscussion, type DiscussionVue } from "@/lib/direct/discussion-video";
+import {
+  ECRITS_VIDEO,
+  PHRASES_DISCUSSION as P,
+  cercleDeDepart,
+  cleMot,
+  combienDans,
+  filDeTous,
+  lienYouTube,
+  type CercleDiscussion,
+  type DiscussionVue,
+} from "@/lib/direct/discussion-video";
 import { ceQuiSestDit } from "@/lib/direct/reactions-video";
 import { PHRASES_MOTS } from "@/lib/direct/mots-video";
 import { lienRevoir } from "@/lib/direct/revoir";
 import { vignetteYouTube } from "@/lib/direct/tele";
+
+/** L'accord pour publier sous une vidéo, donné une fois sur ce téléphone. */
+export const CLE_ACCORD_ECRIT = "clikme-accord-ecrit-v1";
+export const accordDonne = () => {
+  try {
+    return window.localStorage.getItem(CLE_ACCORD_ECRIT) === "1";
+  } catch {
+    return false;
+  }
+};
+export const donnerAccord = () => {
+  try {
+    window.localStorage.setItem(CLE_ACCORD_ECRIT, "1");
+  } catch {
+    /* (rien : on le redemandera) */
+  }
+};
 
 const seconde = (t: number) => {
   const x = Math.max(0, Math.floor(t));
@@ -26,12 +54,20 @@ export function DiscussionVideoEcran() {
   const [cercle, setCercle] = useState<CercleDiscussion | null>(null);
   const [joue, setJoue] = useState<string | null>(null);
   const son = useRef<HTMLAudioElement | null>(null);
+  // ✍️ (lot A2) écrire sous la vidéo
+  const [texte, setTexte] = useState("");
+  const [repond, setRepond] = useState<{ cle: string; prenom: string } | null>(null);
+  const [accord, setAccord] = useState(false);
+  const [occupe, setOccupe] = useState(false);
+  const [note, setNote] = useState("");
+  const [signales, setSignales] = useState<string[]>([]);
 
   const charger = useCallback(async () => {
     const q = new URLSearchParams(window.location.search);
     const id = q.get("video") ?? "";
     try {
-      const r = await fetch(`/api/direct/discussion-video?video=${encodeURIComponent(id)}`, { cache: "no-store" });
+      const seance = q.get("seance");
+      const r = await fetch(`/api/direct/discussion-video?video=${encodeURIComponent(id)}${seance ? `&seance=${encodeURIComponent(seance)}` : ""}`, { cache: "no-store" });
       const j = (await r.json().catch(() => ({}))) as { discussion?: DiscussionVue };
       if (r.status === 401) return setEtat({ erreur: P.sansCompte });
       if (r.status === 404) return setEtat({ erreur: P.introuvable });
@@ -68,6 +104,49 @@ export function DiscussionVideoEcran() {
     await charger();
   };
 
+  const dire = (t: string) => {
+    setNote(t);
+    window.setTimeout(() => setNote((x) => (x === t ? "" : x)), 4200);
+  };
+  const poster = async (corps: Record<string, unknown>) => {
+    const seance = new URLSearchParams(window.location.search).get("seance");
+    const r = await fetch("/api/direct/discussion-video", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...corps, ...(seance ? { seance } : {}) }) }).catch(() => null);
+    const j = ((await r?.json().catch(() => null)) ?? {}) as Record<string, unknown>;
+    return { ok: Boolean(r?.ok), j };
+  };
+  const publier = async (avecAccord: boolean) => {
+    const id = d?.video.id;
+    const t = texte.trim();
+    if (!id || !t || occupe) return;
+    if (!avecAccord && !accordDonne()) return setAccord(true);
+    setAccord(false);
+    setOccupe(true);
+    const r = await poster({ action: "publier", id, texte: t, ...(repond ? { repond: repond.cle } : {}), accord: true });
+    setOccupe(false);
+    if (!r.ok) return dire(String(r.j.error || P.rate));
+    donnerAccord();
+    setTexte("");
+    setRepond(null);
+    dire(P.publie);
+    await charger();
+  };
+  const effacerEcrit = async (ecrit: string) => {
+    if (!d) return;
+    const r = await poster({ action: "effacer", id: d.video.id, ecrit });
+    if (r.ok) {
+      dire(P.efface);
+      await charger();
+    }
+  };
+  const signalerEcrit = async (ecrit: string) => {
+    if (!d) return;
+    const r = await poster({ action: "signaler", id: d.video.id, ecrit });
+    if (r.ok) {
+      setSignales((l) => [...l, ecrit]);
+      dire(P.signale);
+    }
+  };
+
   const revenir = () => {
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/collection#decouvrir";
@@ -75,6 +154,7 @@ export function DiscussionVideoEcran() {
 
   const d = etat && "d" in etat ? etat.d : null;
   const dit = useMemo(() => (d ? ceQuiSestDit(d.proches, d.miennes, { moi: P.toi, jusqua: d.vue ? null : 0 }) : null), [d]);
+  const fil = useMemo(() => (d?.tous ? filDeTous(d.tous.mots, d.ecrits).filter((l) => !signales.includes(l.cle)) : []), [d, signales]);
   const figurines = useMemo(() => new Map((d?.proches ?? []).filter((p) => p.figurine).map((p) => [p.cle, p.figurine?.src ?? ""])), [d]);
 
   return (
@@ -175,27 +255,52 @@ export function DiscussionVideoEcran() {
                 ) : (
                   <>
                     <p className="dv-qui dv-qui-tous">{d.tous.tranche === "jeunes" ? P.quiJeunes : P.quiTous}</p>
-                    {d.tous.mots.length === 0 ? (
+                    {fil.length === 0 ? (
                       <p className="dv-doux" data-rien>
                         {P.rienTous}
                       </p>
                     ) : (
                       <ul className="dv-liste">
-                        {d.tous.mots.map((m) => {
-                          const cle = `mot-${m.q}`;
+                        {fil.map((l) => {
+                          const m = l.mot;
+                          const e = l.ecrit;
+                          const prenom = m ? (m.moi ? P.toi : m.prenom) : e ? (e.moi ? P.toi : e.prenom) : "";
+                          const moi = Boolean(m?.moi || e?.moi);
+                          const aQui = m?.repond?.prenom ?? e?.repond?.prenom;
                           return (
-                            <li key={cle} className={`dv-msg${m.moi ? " moi" : ""}${m.repond ? " rep" : ""}`} data-mot={m.q}>
-                              <Tete prenom={m.moi ? P.toi : m.prenom} src={m.figurine?.src} />
+                            <li key={l.cle} className={`dv-msg${moi ? " moi" : ""}${l.repond && aQui ? " rep" : ""}`} {...(m ? { "data-mot": m.q } : { "data-ecrit": e?.id })}>
+                              <Tete prenom={prenom} src={(m ?? e)?.figurine?.src} />
                               <div className="dv-bulle dv-bulle-tous">
                                 <small>
-                                  {m.moi ? P.toi : m.prenom}
-                                  {m.proche && !m.moi ? ` · ${PHRASES_MOTS.proche}` : ""}
-                                  {m.repond ? ` ${P.repondA(m.repond.prenom)}` : ""}
+                                  {prenom}
+                                  {(m ?? e)?.proche && !moi ? ` · ${PHRASES_MOTS.proche}` : ""}
+                                  {aQui ? ` ${P.repondA(aQui)}` : ""}
+                                  {e?.de ? ` · ${P.vuDans(e.de)}` : ""}
                                 </small>
                                 <span>
-                                  <button type="button" className="dv-ecoute dv-ecoute-mot" data-ecouter-mot={m.q} onClick={() => ecouter(cle, m.src)}>
-                                    {joue === cle ? "■" : P.ecouter} 🎙️ {PHRASES_MOTS.duree(m.duree)}
-                                  </button>
+                                  {m && (
+                                    <button type="button" className="dv-ecoute dv-ecoute-mot" data-ecouter-mot={m.q} onClick={() => ecouter(l.cle, m.src)}>
+                                      {joue === l.cle ? "■" : P.ecouter} 🎙️ {PHRASES_MOTS.duree(m.duree)}
+                                    </button>
+                                  )}
+                                  {e && <span className="dv-texte">{e.texte}</span>}
+                                </span>
+                                <span className="dv-actions">
+                                  {!moi && (
+                                    <button type="button" data-repondre={l.cle} onClick={() => setRepond({ cle: m ? cleMot(m.q) : l.cle, prenom })}>
+                                      {P.repondre}
+                                    </button>
+                                  )}
+                                  {e && moi && (
+                                    <button type="button" data-effacer={e.id} onClick={() => void effacerEcrit(e.id)}>
+                                      {P.effacer}
+                                    </button>
+                                  )}
+                                  {e && !moi && (
+                                    <button type="button" data-signaler={e.id} onClick={() => void signalerEcrit(e.id)}>
+                                      {P.signaler}
+                                    </button>
+                                  )}
                                 </span>
                               </div>
                             </li>
@@ -203,12 +308,54 @@ export function DiscussionVideoEcran() {
                         })}
                       </ul>
                     )}
+                    <form
+                      className="dv-ecrire"
+                      data-ecrire
+                      onSubmit={(ev) => {
+                        ev.preventDefault();
+                        void publier(false);
+                      }}
+                    >
+                      <span className="dv-lu">{d.tous.tranche === "jeunes" ? P.luParJeunes : P.luParTous}</span>
+                      {repond && (
+                        <span className="dv-repond" data-reponse-a>
+                          {P.repondreA(repond.prenom).replace("…", "")}
+                          <button type="button" aria-label={P.annuler} onClick={() => setRepond(null)}>
+                            {P.annulerReponse}
+                          </button>
+                        </span>
+                      )}
+                      <span className="dv-champ">
+                        <input value={texte} maxLength={ECRITS_VIDEO.texte} autoComplete="off" name="texte" placeholder={repond ? P.repondreA(repond.prenom) : P.ecrire} aria-label={P.ecrire} onChange={(ev) => setTexte(ev.target.value)} />
+                        <button type="submit" disabled={occupe || !texte.trim()}>
+                          {P.publier}
+                        </button>
+                      </span>
+                      {accord && (
+                        <span className="dv-accord" data-accord>
+                          <span>{P.accord}</span>
+                          <span className="dv-accord-boutons">
+                            <button type="button" onClick={() => setAccord(false)}>
+                              {P.annuler}
+                            </button>
+                            <button type="button" className="oui" data-accord-publier onClick={() => void publier(true)}>
+                              {P.publier}
+                            </button>
+                          </span>
+                        </span>
+                      )}
+                    </form>
                   </>
                 )}
               </section>
             )}
 
-            <p className="dv-pied">{P.pourEcrire}</p>
+            {cercle === "proches" && <p className="dv-pied">{P.pourEcrire}</p>}
+            {note && (
+              <p className="dv-note" role="status" data-note>
+                {note}
+              </p>
+            )}
           </>
         )
       )}
@@ -264,5 +411,21 @@ const STYLES = `
 .dv-ecoute{border:0;border-radius:999px;padding:5px 11px;background:rgba(255,255,255,.14);color:#fbf3ea;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .dv-age{display:flex;flex-direction:column;gap:8px}
 .dv-age button{border:0;border-radius:14px;padding:12px;background:rgba(255,255,255,.1);color:#fbf3ea;font:inherit;font-weight:800;cursor:pointer}
+.dv-texte{display:block}
+.dv-actions{display:flex;gap:4px}
+.dv-actions button{border:0;background:none;padding:2px 4px;color:#c9b29c;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.dv-ecrire{position:sticky;bottom:0;display:flex;flex-direction:column;gap:6px;margin:4px -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#24180f;border-top:1px solid rgba(255,255,255,.08)}
+.dv-lu{font-size:12px;font-weight:800;color:#8db8ff}
+.dv-repond{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#c9b29c}
+.dv-repond button{border:0;border-radius:50%;width:22px;height:22px;background:rgba(255,255,255,.12);color:#fbf3ea;cursor:pointer}
+.dv-champ{display:flex;gap:8px}
+.dv-champ input{flex:1;min-width:0;border:0;border-radius:999px;padding:11px 14px;font:inherit;font-size:16px;background:rgba(255,255,255,.1);color:#fbf3ea}
+.dv-champ input::placeholder{color:rgba(251,243,234,.55)}
+.dv-champ button,.dv-accord .oui{border:0;border-radius:999px;padding:0 16px;background:#4f8ff0;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.dv-champ button:disabled{opacity:.5}
+.dv-accord{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(79,143,240,.16);font-size:13.5px;line-height:1.4}
+.dv-accord-boutons{display:flex;justify-content:flex-end;gap:8px}
+.dv-accord-boutons button{border:0;border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.12);color:#fbf3ea;font:inherit;font-weight:800;cursor:pointer}
+.dv-note{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:calc(100% - 32px);margin:0;padding:10px 14px;border-radius:14px;background:#120b07;color:#fbf3ea;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:5}
 .dv-pied{margin:6px 14px 0;color:#9c8670;font-size:13px;line-height:1.4}
 `;

@@ -14,7 +14,7 @@
  * FICHIER PARTAGÉ (l'écran, le serveur, les essais).
  */
 import type { ProcheDevantVideo, ReactionVideo } from "./reactions-video";
-import type { SuiteVue } from "./mots-video";
+import type { MotVu, SuiteVue } from "./mots-video";
 
 export const CERCLES_DISCUSSION = ["proches", "tous"] as const;
 export type CercleDiscussion = (typeof CERCLES_DISCUSSION)[number];
@@ -33,16 +33,89 @@ export type DiscussionVue = {
   miennes: ReactionVideo[];
   /** Les mots de ma tranche (`null` : je n'ai pas encore dit si j'ai 18 ans). */
   tous: SuiteVue | null;
+  /** ✍️ (lot A2) les mots écrits de ma tranche (vides tant que je n'ai pas dit si j'ai 18 ans). */
+  ecrits: EcritVu[];
 };
 
+/**
+ * ✍️ (lot A2) Les mots écrits sous la vidéo (🌍) : 90 signes, la modération des salons ouverts ; on répond à un mot écrit
+ * ou à un mot dit (`mot:<q>`). Gardés 30 jours ; cachés pour moi si je les signale, pour tous à trois signalements.
+ */
+export const ECRITS_VIDEO = {
+  texte: 90,
+  conserveJours: 30,
+  seuilSignalements: 3,
+  /** Les plus récents lus pour une vidéo. */
+  lusMax: 120,
+  /** Par personne et par vidéo. */
+  parPersonne: 30,
+  /** Pas plus d'un toutes les trois secondes. */
+  ecartMs: 3000,
+  /** Les figurines préparées (les premières) ; les autres : leur initiale. */
+  figurinesMax: 16,
+} as const;
+
+/** Un mot écrit, tel que les autres le voient (jamais un compte). */
+export type EcritVu = {
+  id: string;
+  q: string;
+  prenom: string;
+  texte: string;
+  le: number;
+  /** À quoi il répond : un mot écrit (son id) ou un mot dit (`mot:<q>`), et à qui. */
+  repond?: { id: string; prenom: string };
+  /** « vu dans le salon … » */
+  de?: string;
+  moi: boolean;
+  proche: boolean;
+  figurine: { src: string } | null;
+};
+
+/** La clé d'un mot dit, pour lui répondre par écrit. */
+export const cleMot = (q: string) => `mot:${q}`;
+
+/** Une ligne du fil 🌍 : un mot dit ou un mot écrit. */
+export type LigneTous = { cle: string; le: number; repond?: string; mot?: MotVu; ecrit?: EcritVu };
+
+/**
+ * Le fil 🌍 : chaque conversation dans l'ordre où elle a commencé ; une réponse juste après ce à quoi elle répond (et
+ * après les réponses déjà là). Une réponse à quelque chose qui n'est plus là devient une ligne comme une autre.
+ */
+export function filDeTous(mots: readonly MotVu[], ecrits: readonly EcritVu[]): LigneTous[] {
+  const lignes: LigneTous[] = [
+    ...mots.map((m) => ({ cle: cleMot(m.q), le: m.le, ...(m.repond ? { repond: cleMot(m.repond.q) } : {}), mot: m })),
+    ...ecrits.map((e) => ({ cle: e.id, le: e.le, ...(e.repond ? { repond: e.repond.id } : {}), ecrit: e })),
+  ];
+  const cles = new Set(lignes.map((l) => l.cle));
+  const enfants = new Map<string, LigneTous[]>();
+  const racines: LigneTous[] = [];
+  for (const l of lignes) {
+    if (l.repond && l.repond !== l.cle && cles.has(l.repond)) enfants.set(l.repond, [...(enfants.get(l.repond) ?? []), l]);
+    else racines.push(l);
+  }
+  const fil: LigneTous[] = [];
+  const vus = new Set<string>();
+  const poser = (l: LigneTous) => {
+    if (vus.has(l.cle)) return;
+    vus.add(l.cle);
+    fil.push(l);
+    for (const e of (enfants.get(l.cle) ?? []).sort((a, b) => a.le - b.le)) poser(e);
+  };
+  for (const r of racines.sort((a, b) => a.le - b.le)) poser(r);
+  // (une boucle de réponses, s'il y en avait une : rien ne se perd)
+  for (const l of lignes) poser(l);
+  return fil;
+}
+
 /** L'adresse de la discussion (un cercle, si l'on veut l'ouvrir là). */
-export const lienDiscussion = (id: string, cercle?: CercleDiscussion) => `/univers/discussion?video=${encodeURIComponent(id)}${cercle ? `&cercle=${cercle}` : ""}`;
+export const lienDiscussion = (id: string, cercle?: CercleDiscussion, seance?: string) =>
+  `/univers/discussion?video=${encodeURIComponent(id)}${cercle ? `&cercle=${cercle}` : ""}${seance ? `&seance=${encodeURIComponent(seance)}` : ""}`;
 /** La vidéo sur YouTube (quand elle n'est plus à ma télé). */
 export const lienYouTube = (id: string) => `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
 
 /** Combien de choses dites dans un cercle (jamais un chiffre inventé : ce qui est là). */
 export function combienDans(d: DiscussionVue, c: CercleDiscussion): number {
-  if (c === "tous") return d.tous?.mots.length ?? 0;
+  if (c === "tous") return (d.tous?.mots.length ?? 0) + d.ecrits.length;
   const deux = [...d.proches.flatMap((p) => p.reactions), ...d.miennes];
   return deux.filter((r) => r.source !== "implicite").length;
 }
@@ -76,7 +149,29 @@ export const PHRASES_DISCUSSION = {
   unVocal: "🎙️ un vocal",
   ecouter: "▶",
   repondA: (prenom: string) => `↩ ${prenom}`,
-  pourEcrire: "Pour dire quelque chose ici, laisse un mot à la fin de la vidéo.",
+  pourEcrire: "Pour dire quelque chose à tes proches, réagis pendant la vidéo : ils le verront à la seconde.",
+  // ✍️ (lot A2) écrire sous la vidéo
+  luParTous: "🌍 Lu par tous ceux qui la regardent",
+  luParJeunes: "🌍 Lu par tous les 15-17 ans qui la regardent",
+  ecrire: "Écris sous la vidéo…",
+  repondreA: (prenom: string) => `↩ Répondre à ${prenom}…`,
+  repondre: "↩ Répondre",
+  annulerReponse: "✕",
+  publier: "Publier",
+  accord: "Tous ceux qui regardent cette vidéo verront ta figurine et ce mot. Tu pourras l’effacer quand tu veux.",
+  annuler: "Annuler",
+  publie: "✓ Ton mot est sous la vidéo.",
+  effacer: "Effacer",
+  efface: "✓ Ton mot est effacé, partout.",
+  signaler: "Signaler",
+  signale: "Merci : ce mot ne passera plus chez toi, et on va le regarder.",
+  refus: (r: string) => `Ton mot ne part pas : ${r}.`,
+  vuDans: (nom: string) => `vu dans ${nom}`,
+  doucement: "Doucement 🙂 Un mot à la fois.",
+  // (dans un salon ouvert, sous ma bulle)
+  sousLaVideo: "🌍 Le laisser sous la vidéo",
+  sousLaVideoSous: "Ceux qui la regarderont ailleurs le liront",
+  voirDiscussion: "💬 Voir la discussion",
   introuvable: "Cette discussion n’est plus là : la vidéo a quitté ta télé, et tu n’y as rien dit.",
   age: "Avant de lire leurs mots : as-tu 18 ans ou plus ? Les 15-17 ans ont leur discussion à eux.",
   adulte: "J’ai 18 ans ou plus",

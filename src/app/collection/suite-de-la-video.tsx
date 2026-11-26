@@ -14,6 +14,7 @@
  * Jamais de voix de synthèse : seulement des voix enregistrées au micro.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PHRASES_DISCUSSION as PD, lienDiscussion } from "@/lib/direct/discussion-video";
 import { MOTS_VIDEO, PHRASES_MOTS as P, teteA, type MotVu, type SuiteVue, type TeteMot } from "@/lib/direct/mots-video";
 import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
 import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
@@ -187,6 +188,10 @@ export function SuiteDeLaVideo({ video, onSuivante, mode = "fin", seance }: { vi
         <header className="sv-haut">
           <h2>{P.titre}</h2>
           <p className="sv-titre-video">{video.titre}</p>
+          {/* (✍️ discussions des vidéos, lot A2 : les mots écrits sous la vidéo, et y écrire) */}
+          <a className="sv-discussion" href={lienDiscussion(video.id, "tous", seance)} data-suite-discussion>
+            {PD.ouvrir} ›
+          </a>
         </header>
 
         {enregistrer ? (
@@ -588,6 +593,7 @@ const STYLES_SUITE = `
 .sv-voile{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5)}
 .sv-feuille{width:100%;max-width:520px;max-height:82dvh;overflow:auto;box-sizing:border-box;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:#21101a;color:#FFF4E6;display:flex;flex-direction:column;gap:10px}
 .sv-haut h2{margin:0;font-size:19px;font-weight:900}
+.sv-discussion{display:inline-block;margin-top:6px;font-size:13px;font-weight:800;color:#8db8ff;text-decoration:none}
 .sv-titre-video{margin:2px 0 0;font-size:13px;color:#e3c9d6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sv-doux{margin:0;font-size:14px;color:#e3c9d6}
 .sv-fort{margin:0;font-size:16px;font-weight:900;text-align:center}

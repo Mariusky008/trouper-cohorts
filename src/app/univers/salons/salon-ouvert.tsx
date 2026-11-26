@@ -57,6 +57,8 @@ import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import { PHRASES_MOTS as PMOTS, type MotDeQuelquun } from "@/lib/direct/mots-video";
 import { SuiteDeLaVideo } from "@/app/collection/suite-de-la-video";
+import { accordDonne, donnerAccord } from "@/app/collection/discussion-video";
+import { PHRASES_DISCUSSION as PDV, lienDiscussion } from "@/lib/direct/discussion-video";
 import { CarteDuJeu, FeuilleAccord, FeuilleDefi, PancarteDeJeu, voteAffiche } from "./jeux";
 import { etapeDuJeu, PHRASES_JEUX as PJ, type JeuVu } from "@/lib/direct/jeux-salon";
 import {
@@ -304,6 +306,8 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [caches, setCaches] = useState<string[]>(o.caches);
   const [anims, setAnims] = useState<Anime[]>([]);
   const [texte, setTexte] = useState("");
+  // 🌍 (discussions des vidéos, lot A2) ce que je viens d'écrire au salon : le laisser sous la vidéo (dix secondes)
+  const [sousVideo, setSousVideo] = useState<{ texte: string; video: string; accord?: boolean; fait?: boolean } | null>(null);
   const [refus, setRefus] = useState("");
   const [note, setNote] = useState(
     seance ? (seance.hote && o.presents.length < 2 ? P.seuls : P.bienvenue) : salon.plein ? P.plein(salon.nom.replace(/^\S+\s/, "").replace(/ · \d+$/, "").replace(/^Le /, "").toLowerCase()) : P.bienvenue,
@@ -862,7 +866,30 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       return;
     }
     setRefus("");
-    if (await envoyer({ sorte: "texte", texte: t })) setTexte("");
+    if (await envoyer({ sorte: "texte", texte: t })) {
+      setTexte("");
+      // (🌍 dans un salon ouvert, pendant une vidéo : « Le laisser sous la vidéo », dix secondes)
+      const vid = prive ? null : videoQuiPasse();
+      if (vid) {
+        const x = { texte: t, video: vid };
+        setSousVideo(x);
+        window.setTimeout(() => setSousVideo((y) => (y && y.texte === x.texte && !y.accord && !y.fait ? null : y)), 10_000);
+      }
+    }
+  }
+  async function laisserSousLaVideo(avecAccord: boolean) {
+    const x = sousVideo;
+    if (!x) return;
+    if (!avecAccord && !accordDonne()) return setSousVideo({ ...x, accord: true });
+    const r = await fetch("/api/direct/discussion-video", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "publier", id: x.video, texte: x.texte, accord: true, salon: salon.id }) }).catch(() => null);
+    const j = ((await r?.json().catch(() => null)) ?? {}) as { error?: string };
+    if (!r?.ok) {
+      setSousVideo(null);
+      return dire(String(j.error || "Ça n’a pas marché. Réessaie."));
+    }
+    donnerAccord();
+    setSousVideo({ ...x, accord: false, fait: true });
+    window.setTimeout(() => setSousVideo((y) => (y?.fait ? null : y)), 6000);
   }
 
   async function ouvrirConversation() {
@@ -1608,6 +1635,34 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             <button type="button" className="so-bouton petit doux" data-lancer-defi-barre disabled={Boolean(jeu)} onClick={() => setLancerDefi({})}>
               {PJ.defi}
             </button>
+          </div>
+        )}
+        {sousVideo && (
+          <div className="so-sous-video" data-sous-video>
+            {sousVideo.fait ? (
+              <>
+                <span>{PDV.publie}</span>
+                <a href={lienDiscussion(sousVideo.video, "tous")} data-voir-discussion>
+                  {PDV.voirDiscussion}
+                </a>
+              </>
+            ) : sousVideo.accord ? (
+              <>
+                <span>{PDV.accord}</span>
+                <span className="so-sous-boutons">
+                  <button type="button" className="so-bouton petit doux" onClick={() => setSousVideo(null)}>
+                    {PDV.annuler}
+                  </button>
+                  <button type="button" className="so-bouton petit" data-sous-video-publier onClick={() => void laisserSousLaVideo(true)}>
+                    {PDV.publier}
+                  </button>
+                </span>
+              </>
+            ) : (
+              <button type="button" className="so-bouton petit doux" data-laisser-sous-video onClick={() => void laisserSousLaVideo(false)}>
+                {PDV.sousLaVideo} <small>{PDV.sousLaVideoSous}</small>
+              </button>
+            )}
           </div>
         )}
         <form className="so-ecrire" onSubmit={(e) => void ecrire(e)}>
@@ -2829,6 +2884,10 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-reagir small{font-size:12px;opacity:.65;width:100%;text-align:center}
 .so-refus{margin:0;padding:8px 12px;border-radius:12px;background:rgba(255,80,110,.18);color:#ffc4d2;font-size:13.5px}
 .so-ecrire{display:flex;gap:8px}
+.so-sous-video{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:8px 10px;border-radius:14px;background:rgba(79,143,240,.16);font-size:13px;line-height:1.4}
+.so-sous-video button small{display:block;font-weight:600;opacity:.75;font-size:11.5px}
+.so-sous-video a{color:#8db8ff;font-weight:800}
+.so-sous-boutons{display:flex;gap:8px;align-self:flex-end}
 .so-ecrire input{flex:1;min-width:0;border:0;border-radius:999px;padding:11px 14px;font:inherit;font-size:15px;background:rgba(255,255,255,.1);color:#FFF4E6}
 .so-ecrire input::placeholder{color:rgba(255,244,230,.55)}
 .so-regles{margin:0;font-size:11.5px;opacity:.6;text-align:center}

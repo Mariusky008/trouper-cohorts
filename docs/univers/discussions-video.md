@@ -38,7 +38,7 @@ messagerie bruyante.
 | --- | --- | --- |
 | A0 | La conception et les maquettes | ✅ validée le 26 novembre 2026 |
 | A1 | L'écran Discussion vidéo, en lecture ; la fiche vidéo ; les entrées | ✅ fait |
-| A2 | Écrire : le mot écrit 🌍, répondre, « Lu par… », « 🌍 Le laisser sous la vidéo » | à faire |
+| A2 | Écrire : le mot écrit 🌍, répondre, « Lu par… », « 🌍 Le laisser sous la vidéo » | ✅ fait |
 | A3 | Suivre : les trois niveaux, les niveaux de départ, le ⋯ | à faire |
 | A4 | Activité et la cloche 🛎️ ; « Pendant ton absence » y passe | à faire |
 | A5 | Les notifications sur le téléphone (la matrice, la règle de bruit, les interrupteurs) | à faire |
@@ -71,3 +71,32 @@ messagerie bruyante.
   partie de la télé mais où l'on a réagi ; jamais un compte) et `scripts/navigateur/discussion-video.mjs` (sur un iPhone :
   « ▶ Revoir la vidéo », « 👯 Mes proches · 1 », « Sam · à 0:08 », « 🌍 Tous · 1 », le mot d'Inès ; une vidéo jamais
   croisée ; rien ne déborde).
+
+## A2, dans le code
+
+- **✍️ Écrire sous la vidéo** (🌍, dans l'écran de la discussion) : le champ dit qui lira (« 🌍 Lu par tous ceux qui la
+  regardent », ou les 15-17 ans) ; 90 signes ; la modération des salons ouverts (`refusDuMessage` : liens, numéros,
+  réseaux, questions personnelles, mots interdits, alcool) ; un toutes les trois secondes, trente par personne et par
+  vidéo ; quelqu'un d'exclu des salons ne publie pas. **La première fois, l'accord** : « Tous ceux qui regardent cette
+  vidéo verront ta figurine et ce mot. Tu pourras l'effacer quand tu veux. » (retenu sur le téléphone,
+  `clikme-accord-ecrit-v1` ; le serveur exige `accord: true` à chaque fois). Le bouton dit « Publier ».
+- **↩ Répondre** à un mot écrit ou à un mot dit (`mot:<q>`) : la réponse se place juste après (`filDeTous`). Une réponse
+  dont le mot a été effacé reste, seule.
+- **Effacer** le sien (partout, tout de suite) ; **Signaler** celui d'un autre : il ne passe plus chez moi, caché pour
+  tous à trois personnes différentes, copié pour l'administrateur avec les signalements des salons (`motif: "ecrit"`,
+  `salon: "ecrit:<vidéo>"`). Gardé 30 jours.
+- **🌍 Le laisser sous la vidéo** (salon ouvert, pas une séance entre proches) : après avoir écrit au salon pendant une
+  vidéo, un bouton reste dix secondes au-dessus du champ ; l'accord la première fois ; puis « ✓ Ton mot est sous la
+  vidéo. » et « 💬 Voir la discussion ». Le mot dit d'où il vient (« vu dans ⚽ Le salon du foot ») seulement si l'on y est
+  assis.
+- **La suite de la vidéo** (la feuille de fin) a « 💬 Toute la discussion › », qui ouvre 🌍 (avec la séance, s'il y en a
+  une).
+- **Rangement** : `decouvrir/ecrits/<tranche>/<vidéo>/<ms>-<q>-<x>.json` = { id, h, q, prenom, texte, le, repond?, de? } ;
+  `decouvrir/ecrits-signales/<tranche>/<vidéo>/<id>/<q>.json`.
+- **La route** : `POST /api/direct/discussion-video` `{ action: "publier", id, texte, repond?, accord, salon?, seance? }`
+  → `{ ecrit }` (400 `refus`, 403 `age`, 429) ; `{ action: "effacer", id, ecrit }` ; `{ action: "signaler", id, ecrit }`
+  → `{ cache }`. `GET` rend aussi `ecrits`.
+- **Les essais** : la suite de `essai-discussion-video-route.mjs` (l'accord, un lien, 90 signes, trois secondes ; Inès
+  répond à Léa ; Léa répond au mot dit d'Inès ; depuis un salon ; Jade à part ; signaler, trois fois, l'administrateur ;
+  effacer) et de `navigateur/discussion-video.mjs` (l'accord, « Publier », répondre à Inès, le fil, un lien refusé,
+  effacer).
