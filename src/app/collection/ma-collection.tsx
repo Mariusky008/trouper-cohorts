@@ -609,7 +609,7 @@ button.mc-moi{position:relative;display:inline-flex;align-items:center;gap:7px;m
 button.mc-moi.pris{background:linear-gradient(135deg,rgba(255,46,154,.32),rgba(242,196,107,.22))}
 button.mc-moi img,button.mc-moi > span{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:#FF2E9A;font-size:16px}
 .mc-droite{display:flex;align-items:center;gap:8px;min-width:0}
-@media (max-width:359px){.mc-feuille-proteger .cn-proteger{padding:2px 0 4px;border:0;background:none}
+.mc-feuille-proteger .cn-proteger{padding:2px 0 4px;border:0;background:none}
 .mc-feuille-proteger .cn-proteger > b{padding-right:40px;font-size:19px}
 .mc-onglets{padding:14px 16px 0}
 .mc-onglet{animation:mc-entre .35s cubic-bezier(.2,.9,.3,1)}
