@@ -19,7 +19,9 @@
 // répondu » sonne ; la suite attend la vague (deux heures) ; puis « 💬 … nouveaux mots » ; l'interrupteur « Les discussions
 // que je suis » coupé : rien ; Jade (15-17 ans) l'a éteint d'office ; la nuit (22 h à 9 h) : rien. (Lot A6) 👥 Les Footeux :
 // le cercle d'un groupe (venu du groupe, même vide), ses membres seulement ; Sam y écrit sans accord ; rien sous 🌍 ;
-// la ligne 👥 d'Activité ; une réponse ; 🔕 ; effacer le sien ; quitter le groupe.
+// la ligne 👥 d'Activité ; une réponse ; 🔕 ; effacer le sien ; quitter le groupe. (Lot A7) 🙈 Léa ne veut plus voir
+// Inès : ses mots disparaissent chez elle (pas chez Sam), même liste que les salons, rien dans Activité, et « revoir » ;
+// 🚩 signaler un mot du groupe.
 // Jamais un compte, jamais le mot « exemple ».
 import crypto from "node:crypto";
 import { recus, telephone } from "./navigateur/commun.mjs";
@@ -327,6 +329,28 @@ ok((await ecrire(INES, { action: "effacer", id: V, groupe: GID, ecrit: g2.ecrit?
 ok((await ecrire(INES, { action: "effacer", id: V, groupe: GID, ecrit: g1.ecrit?.id })).statut === 400, "… pas celui de Sam");
 await fetch(`${STOCK}/figurines-clients`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefixes: [`groupes/membres/${GID}/${INES.q}.json`] }) });
 ok(((await ouvrirG(INES)).discussion?.groupes ?? []).length === 0, "Inès a quitté le groupe : son cercle n'est plus là");
+
+// ═══ (A7) 🙈 NE PLUS VOIR, 🚩 SIGNALER AU GROUPE ═══
+const motsDInes = (x) => x.discussion?.ecrits?.filter((e) => e.prenom === "Inès").length + (x.discussion?.tous?.mots ?? []).filter((m) => m.prenom === "Inès").length;
+ok(motsDInes(await ouvrir(LEA, V)) > 0, "Léa voit les mots d'Inès");
+ok((await ecrire(LEA, { action: "ne-plus-voir", id: V, q: LEA.q })).statut === 400, "ne plus se voir soi-même : 400");
+ok((await ecrire(LEA, { action: "ne-plus-voir", id: V, q: INES.q })).ok === true, "Léa : 🙈 Ne plus voir Inès");
+ok(motsDInes(await ouvrir(LEA, V)) === 0, "… plus aucun mot d'Inès chez elle (dits ou écrits)");
+ok(motsDInes(await ouvrir(SAM, V)) > 0, "… Sam les voit toujours");
+ok((await lire(`${LEA.id}/salons-caches.json`))?.qs?.includes(INES.q), "… la même liste que dans les salons");
+await poster(LEA, "activite", { action: "lu" });
+await pause();
+await ecrire(INES, { action: "publier", id: V, texte: "Tu es là Léa ?", accord: true });
+ok(!((await activite(LEA)).lignes ?? []).some((x) => x.cle === CLE && x.neuf), "Inès reparle : rien dans l'Activité de Léa");
+ok((await ecrire(LEA, { action: "ne-plus-voir", id: V, q: INES.q, revoir: true })).ok === true && motsDInes(await ouvrir(LEA, V)) > 0, "… et « revoir » la fait revenir");
+ok((await ecrire(NOE, { action: "signaler", id: V, groupe: GID, ecrit: g1.ecrit?.id })).statut === 403, "🚩 au groupe : Noé n'en est pas (403)");
+ok((await ecrire(SAM, { action: "signaler", id: V, groupe: GID, ecrit: g1.ecrit?.id })).statut === 400, "… pas son propre mot");
+ok((await ecrire(LEA, { action: "signaler", id: V, groupe: GID, ecrit: g1.ecrit?.id })).ok === true, "Léa signale le mot de Sam au groupe");
+ok(!((await ouvrirG(LEA)).discussion?.groupes?.[0]?.ecrits ?? []).some((e) => e.id === g1.ecrit?.id), "… il ne passe plus chez elle");
+ok(((await ouvrirG(SAM)).discussion?.groupes?.[0]?.ecrits ?? []).some((e) => e.id === g1.ecrit?.id), "… Sam le voit toujours (le sien)");
+const sigG = await fetch(`${STOCK}/list/figurines-clients`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prefix: `decouvrir/signalements/${SAM.q}`, limit: 20 }) }).then((r) => r.json()).catch(() => []);
+const fichesG = await Promise.all((Array.isArray(sigG) ? sigG : []).map((f) => lire(`decouvrir/signalements/${SAM.q}/${f.name}`)));
+ok(fichesG.some((x) => x?.motif === "ecrit-groupe" && x.ecrit === `groupes/videos/${GID}/${V}/${g1.ecrit?.id}.json`), "… l'administrateur le voit, avec de quoi l'effacer");
 
 // ═══ JAMAIS UN COMPTE, JAMAIS LE MOT « EXEMPLE » ═══
 const tout = JSON.stringify(tous);

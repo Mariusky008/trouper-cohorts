@@ -28,6 +28,8 @@ type FicheEcrit = { id?: string; h?: string; q?: string; prenom?: string; texte?
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const ID_ECRIT = /^\d{13}-[A-Za-z0-9_-]{4,16}-[0-9a-f]{6}$/;
 const dossierVideoGroupe = (gid: string, video: string) => `groupes/videos/${gid}/${video}`;
+/** 🚩 (lot A7) `groupes/videos-signales/<groupe>/<vidéo>/<id>/<q de qui signale>.json` */
+const dossierSignalesGroupe = (gid: string, video: string) => `groupes/videos-signales/${gid}/${video}`;
 const msDe = (id: string) => Number(id.slice(0, 13)) || 0;
 
 async function lister(supabase: Supabase, dossier: string, limite = 1000): Promise<string[]> {
@@ -47,8 +49,12 @@ const nomDuGroupe = async (supabase: Supabase, gid: string) => s((await lireJson
 async function lesEcritsDuGroupe(supabase: Supabase, moi: Habitant, gid: string, video: string): Promise<EcritVu[]> {
   const dossier = dossierVideoGroupe(gid, video);
   const noms = (await lister(supabase, dossier)).map((n) => n.replace(/\.json$/, "")).slice(-ECRITS_VIDEO.lusMax);
-  const fiches = (await Promise.all(noms.map((id) => lireJson<FicheEcrit>(supabase, `${dossier}/${id}.json`).catch(() => ({}) as FicheEcrit)))).filter((f) => s(f.texte) && s(f.q));
   const mienQ = qui8(moi.id);
+  // (🚩 lot A7 : un mot que j'ai signalé ne passe plus chez moi ; à trois, chez personne)
+  const signales = new Set<string>();
+  const parMot = await Promise.all(noms.map((id) => lister(supabase, `${dossierSignalesGroupe(gid, video)}/${id}`, 10).catch(() => [] as string[])));
+  noms.forEach((id, k) => (parMot[k].length >= ECRITS_VIDEO.seuilSignalements || parMot[k].includes(`${mienQ}.json`)) && signales.add(id));
+  const fiches = (await Promise.all(noms.filter((id) => !signales.has(id) || id.split("-")[1] === mienQ).map((id) => lireJson<FicheEcrit>(supabase, `${dossier}/${id}.json`).catch(() => ({}) as FicheEcrit)))).filter((f) => s(f.texte) && s(f.q));
   const prenoms = new Map(fiches.map((f) => [s(f.id), s(f.prenom)]));
   const figurines = new Map<string, { src: string } | null>();
   for (const f of fiches.slice(-ECRITS_VIDEO.figurinesMax)) if (!figurines.has(s(f.h))) figurines.set(s(f.h), null);
@@ -160,4 +166,32 @@ export async function suivreAuGroupe(supabase: Supabase, moi: Habitant, v: Video
   if (!gid || !(await estMembre(supabase, gid, qui8(moi.id)))) return { error: "Ce groupe n’est pas le tien.", statut: 403 };
   await ecrireSuivi(supabase, moi.id, { [`${gid}:${v.id}`]: { niveau: p.niveau, titre: v.titre } });
   return { niveau: p.niveau };
+}
+
+/** 🚩 (lot A7) Signaler un mot du groupe : il ne passe plus chez moi ; à trois membres, chez personne ; l'administrateur le voit. */
+export async function signalerAuGroupe(supabase: Supabase, moi: Habitant, video: string, p: { groupe?: unknown; ecrit?: unknown }): Promise<Resultat<{ ok?: true; cache?: boolean }>> {
+  const gid = idGroupeValide(p.groupe);
+  const q = qui8(moi.id);
+  const id = s(p.ecrit);
+  if (!gid || !(await estMembre(supabase, gid, q))) return { error: "Ce groupe n’est pas le tien.", statut: 403 };
+  if (!ID_ECRIT.test(id) || id.split("-")[1] === q) return { error: "Quel mot ?", statut: 400 };
+  const chemin = `${dossierVideoGroupe(gid, video)}/${id}.json`;
+  const f = await lireJson<FicheEcrit>(supabase, chemin).catch(() => ({}) as FicheEcrit);
+  if (!s(f.texte)) return { error: "Ce mot n’est plus là.", statut: 404 };
+  const maintenant = Date.now();
+  await ecrireJson(supabase, `${dossierSignalesGroupe(gid, video)}/${id}/${q}.json`, { le: maintenant });
+  // (pour l'administrateur, avec les autres : `/admin/humain/salons`)
+  await ecrireJson(supabase, `decouvrir/signalements/${s(f.q)}/${maintenant}-${q}.json`, {
+    le: maintenant,
+    motif: "ecrit-groupe",
+    salon: `groupe:${await nomDuGroupe(supabase, gid)}:${video}`,
+    q: s(f.q),
+    h: s(f.h),
+    prenom: s(f.prenom),
+    auteur: { q, h: moi.id },
+    texte: s(f.texte),
+    ecrit: chemin,
+  });
+  const par = await lister(supabase, `${dossierSignalesGroupe(gid, video)}/${id}`, 10);
+  return { ok: true, cache: par.length >= ECRITS_VIDEO.seuilSignalements };
 }

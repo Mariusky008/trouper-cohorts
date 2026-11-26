@@ -62,7 +62,12 @@ export function ModerationSalons() {
           <b>{x.prenom || x.q}</b> <small style={{ color: "#666" }}>· {quand(x.le)} · {x.salon}</small>
           <p style={{ margin: "6px 0" }}>🚩 {x.motif}</p>
           {x.texte && <p style={{ margin: "6px 0", color: "#444" }}>« {x.texte} »</p>}
-          {exclure(x.q, x.prenom)}
+          {exclure(x.q, x.prenom)}{" "}
+          {x.ecrit && (
+            <button type="button" style={bouton} data-effacer-ecrit={x.ecrit} onClick={() => void agir({ action: "effacer-ecrit", ecrit: x.ecrit }, "Ce mot est effacé de sous la vidéo.")}>
+              🗑️ Effacer ce mot
+            </button>
+          )}
         </div>
       ))}
       <h2 style={{ fontSize: 19, marginTop: 24 }}>Exclus en ce moment ({etat.exclus.length})</h2>

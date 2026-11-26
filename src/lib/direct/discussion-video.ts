@@ -196,6 +196,11 @@ export const PHRASES_DISCUSSION = {
   effacer: "Effacer",
   efface: "✓ Ton mot est effacé, partout.",
   signaler: "Signaler",
+  /** 📼 (lot A7) la vidéo a quitté YouTube : la discussion reste */
+  indisponible: "Cette vidéo n’est plus sur YouTube. Ce qui s’en est dit reste ici.",
+  /** 🙈 (lot A7) ne plus voir quelqu'un (la même liste que dans les salons) */
+  nePlusVoir: "🙈 Ne plus voir",
+  nePlusVu: (prenom: string) => `${prenom} ne passera plus chez toi, ici comme dans les salons.`,
   signale: "Merci : ce mot ne passera plus chez toi, et on va le regarder.",
   refus: (r: string) => `Ton mot ne part pas : ${r}.`,
   vuDans: (nom: string) => `vu dans ${nom}`,
