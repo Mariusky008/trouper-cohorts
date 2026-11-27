@@ -27,8 +27,8 @@ pression d'être là en direct.
 | Lot | Contenu | État |
 | --- | --- | --- |
 | T0 | Maquette | ✅ validée le 27 novembre 2026 |
-| T1 | Noter la séance : chaque réaction et chaque mot, avec la vidéo et sa seconde ; lire les séances | en cours |
-| T2 | Le salon en rattrapage (la vidéo, les marques sur la barre, les souvenirs qui prennent la scène, les mots à leur seconde) | |
+| T1 | Noter la séance : chaque réaction et chaque mot, avec la vidéo et sa seconde ; lire les séances | ✅ fait (#326) |
+| T2 | Le salon en rattrapage (la vidéo, les marques sur la barre, les souvenirs qui prennent la scène, les mots à leur seconde) | ✅ fait |
 | T3 | Réagir en décalé : les six émotions, « Ajouter à la séance », « ⏪ vu en rattrapage » | |
 | T4 | Ce que le groupe voit : la discussion, le journal, la notification douce, mes réactions quand ils revoient | |
 | T5 | Les entrées : la carte de l'essai, Absent / Plus tard, le journal, Activité 🛎️ | |
@@ -50,3 +50,18 @@ pression d'être là en direct.
 - **La route** `GET /api/direct/rattrapage?de=<groupe|proposition>` → `{ seances }` ; `?seance=<clé>` → `{ seance }`
   (ses vidéos, ses traces, les figurines ; 410 après sept jours). Jamais un compte.
 - Essai : `scripts/essai-rattrapage-route.mjs`.
+
+## T2, dans le code
+
+- **L'écran** : `/univers/rattrapage?seance=<clé>` (`app/univers/rattrapage/page.tsx`, `app/collection/rattrapage.tsx`).
+  En haut « ⏪ Rattrapage », le nom de la séance et son heure (« Hier · 21 h ») ; la vidéo dans le lecteur de YouTube
+  (s'il ne se charge pas, un simple cadre) ; plusieurs vidéos : des onglets.
+- **La barre** : les marques des réactions (deux trop proches n'en font qu'une, sinon on ne pourrait pas les toucher) ;
+  toucher une marque emmène la vidéo trois secondes avant.
+- **Les fauteuils** : ceux qui étaient là en « souvenir » (pâlis), moi « Toi · en rattrapage » (allumé en rose), les
+  absents grisés (les membres du groupe, ou ceux qui avaient leur place à l'essai ; la route les donne : `absents`, `moi`).
+- **Le grand moment** : le lecteur dit sa seconde quatre fois par seconde ; quand elle passe celle d'une réaction, la
+  figurine de celui qui l'a faite prend la scène (`GrandMoment`, comme au salon : la file, ×2 ×3, 🫶 côte à côte). Un saut
+  (une marque touchée, un retour en arrière) ne rejoue rien.
+- **Ce qui s'est dit** arrive à sa seconde, jamais avant (« 🔒 La suite arrive à sa seconde, pas avant. »).
+- Essai : `scripts/navigateur/rattrapage.mjs` (un faux lecteur YouTube dont on règle la seconde).
