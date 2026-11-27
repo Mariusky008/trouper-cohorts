@@ -6,14 +6,15 @@
  * (changer est instantané) — qui penche (12° au plus : au-delà, on verrait le cou) et se tourne un peu, comme dans un
  * miroir. `hauteur` : de la tête au sol, en points. 🙂 (22 novembre 2026) Sans expression du moment (`e`), l'expression
  * de son humeur du jour (`v.humeur`), si elle est prête ; sinon sa tête habituelle. 🗣️ (25 novembre 2026) `bouche` : sa voix
- * est forte — sa tête « bouche ouverte » (`v.parle`, `lib/direct/bouche.ts`), si elle est prête.
+ * est forte — sa tête « bouche ouverte » (`v.parle`, `lib/direct/bouche.ts`), si elle est prête. 🎆 (27 novembre 2026, les
+ * grands moments) `teinte` : son visage prend la couleur de l'émotion (posée sur sa tête seulement, découpée par elle).
  */
 import type { CSSProperties } from "react";
 import { EXPRESSIONS_FIGURINE, type ExpressionFigurine, type FigurineVivante } from "@/lib/direct/expressions-figurine";
 
 const borne = (v: number, a: number) => Math.max(-a, Math.min(a, v));
 
-export function FigurineVivanteVue({ v, hauteur, e, roulis = 0, lacet = 0, bouche = false }: { v: FigurineVivante; hauteur: number; e: ExpressionFigurine | null; roulis?: number; lacet?: number; bouche?: boolean }) {
+export function FigurineVivanteVue({ v, hauteur, e, roulis = 0, lacet = 0, bouche = false, teinte }: { v: FigurineVivante; hauteur: number; e: ExpressionFigurine | null; roulis?: number; lacet?: number; bouche?: boolean; teinte?: string }) {
   const w = hauteur * v.ratio;
   const ouverte = bouche && Boolean(v.parle);
   const choisie = e && v.expressions[e] ? e : v.humeur && v.expressions[v.humeur] ? v.humeur : null;
@@ -39,9 +40,22 @@ export function FigurineVivanteVue({ v, hauteur, e, roulis = 0, lacet = 0, bouch
           // eslint-disable-next-line @next/next/no-img-element
           <img src={v.parle} alt="" draggable={false} data-tete="parle" className={ouverte ? "vue" : ""} />
         )}
+        {teinte && <Teinte src={(vue && v.expressions[vue]) || (ouverte && v.parle) || v.tete.src} couleur={teinte} />}
       </span>
       <style>{STYLES_VIVANTE}</style>
     </span>
+  );
+}
+
+/** 🎆 La couleur de l'émotion sur son visage : un halo au milieu de sa tête, découpé par sa tête (rien autour). */
+export function Teinte({ src, couleur }: { src: string; couleur: string }) {
+  const masque = `url("${src}")`;
+  return (
+    <span
+      className="fv-teinte"
+      data-teinte
+      style={{ position: "absolute", inset: 0, pointerEvents: "none", mixBlendMode: "multiply", background: `radial-gradient(ellipse 48% 44% at 50% 58%, ${couleur}, transparent 78%)`, WebkitMaskImage: masque, maskImage: masque, WebkitMaskSize: "100% 100%", maskSize: "100% 100%", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat" }}
+    />
   );
 }
 

@@ -568,8 +568,9 @@ export async function poserMaTete(supabase: Supabase, moi: Habitant, salon: unkn
 }
 /** 📷 La figurine vivante de quelqu'un de la séance (ses calques et ses cinq têtes), pour copier sa tête ; sinon `null`. */
 export async function vivanteDeLaSeance(supabase: Supabase, moi: Habitant, salon: unknown, q: unknown): Promise<Resultat<{ vivante?: FigurineVivante | null }>> {
+  // (🎆 27 novembre 2026, les grands moments : dans un salon ouvert aussi — sa tête de l'émotion, quand il réagit)
   const r = await sonSalon(supabase, moi, salon);
-  if (r.error || !r.seance || !r.m || !r.id) return { error: r.error ?? "Dans une séance seulement.", statut: r.statut ?? 400 };
+  if (r.error || !r.m || !r.id) return { error: r.error ?? "Ce salon n’existe pas.", statut: r.statut ?? 400 };
   const x = s(q);
   if (!/^[A-Za-z0-9_-]{4,16}$/.test(x)) return { error: "Qui ?", statut: 400 };
   const f = await lirePresent(supabase, r.m, r.id, x);
