@@ -3,7 +3,7 @@
 //
 // La tribune du stade est validée (son décor, ses huit emplacements). Léa entre dans le salon du foot : le gradin (son
 // image carrée couvre la bande, posée sur son sol, toutes les têtes visibles), sa figurine devant, au milieu (« Toi »),
-// les sept autres places qui brillent, « Tu ouvres le salon : les places qui brillent attendent les suivants. ». Sam entre
+// les sept autres places qui brillent. Sam entre
 // (par la route) : il s'assoit à côté d'elle, six places brillent, la phrase s'en va ; le toucher : sa fiche, 👋 vole.
 // Sur le téléphone de Sam : c'est LUI qui est devant, au milieu (Léa à côté). Sur un ordinateur : le gradin entier, ses
 // côtés dans sa vignette floue. L'administrateur : les onze lieux sur la page des salons, la tribune « Dans les salons »,
@@ -145,7 +145,7 @@ ok(moi && Math.abs(moi.x - (gx + 0.375 * image.width)) < 3 && Math.abs(moi.bas -
 ok((await lea.locator(".so-libre").count()) === 7, `les sept autres places brillent (${await lea.locator(".so-libre").count()})`);
 const libre = await lea.locator('.so-libre[data-libre="4"]').boundingBox();
 ok(libre && Math.abs(libre.x + libre.width / 2 - piece.x - (gx + 0.4 * image.width)) < 3 && Math.abs(libre.y + libre.height / 2 - piece.y - (gy + 0.6 * image.height)) < 3, "… chacune sur son tapis (la première du fond, à sa place)");
-ok(/Tu ouvres le salon : les places qui brillent attendent les suivants\./.test(await texte(lea.locator("[data-seul-salon]"))), "« Tu ouvres le salon : les places qui brillent attendent les suivants. »");
+ok((await lea.locator("[data-seul-salon]").count()) === 0 && !/Tu ouvres le salon/.test(await texte(lea.locator(".so"))), "plus de « Tu ouvres le salon… » (retirée le 27/11)");
 ok(/1 ici · 7 places libres · 8 places/.test(await texte(lea.locator("[data-places]"))), "« 1 ici · 7 places libres · 8 places »");
 await lea.waitForTimeout(300);
 await lea.screenshot({ path: `${D}/salons-gradins-1-seule.png` });
@@ -158,7 +158,7 @@ ok(await attendre(lea, async () => (await lea.locator(".so-fig").count()) === 2)
 ok(await posees(lea), "🚪 … après son entrée");
 const sam = await placeDe(lea, ".so-fig:not([data-moi])");
 ok(sam && Math.abs(sam.x - (gx + 0.625 * image.width)) < 3 && Math.abs(sam.bas - (gy + 0.9 * image.height)) < 3, `… devant, à côté d'elle (${Math.round(sam?.x)} pt)`);
-ok(await attendre(lea, async () => (await lea.locator(".so-libre").count()) === 6 && (await lea.locator("[data-seul-salon]").count()) === 0), "six places brillent ; la phrase s'en va");
+ok(await attendre(lea, async () => (await lea.locator(".so-libre").count()) === 6), "six places brillent");
 await lea.waitForTimeout(300);
 await lea.screenshot({ path: `${D}/salons-gradins-2-avec-sam.png` });
 // (toucher Sam, dans le gradin : sa fiche, un geste qui vole jusqu'à lui)

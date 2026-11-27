@@ -1824,11 +1824,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           ) : (
             indice && ici.length > 1 && <p className="so-indice">{P.indice}</p>
           )}
-          {!prive && ici.length === 1 && (
-            <p className="so-indice" data-seul-salon>
-              {P.seulSalon}
-            </p>
-          )}
+          {/* (27/11, le propriétaire : « tu ouvres le salon… » ne sert à rien et prend de la place — retirée) */}
         </div>
       </div>
 
@@ -3395,7 +3391,6 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-libre{0%,100%{opacity:.55}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.so-libre,.so-son span{animation:none;opacity:.8}}
 .so-souvenir{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px;background:rgba(255,154,60,.92);color:#2b1b12;font-weight:800}
-.so-indice[data-seul-salon]{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px}
 .so-indice{position:absolute;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12.5px;white-space:nowrap;z-index:950}
 @keyframes so-entre{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes so-pop{0%{opacity:0;transform:translate(-50%,8px) scale(.5)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px) scale(1)}}
