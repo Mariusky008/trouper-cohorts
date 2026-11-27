@@ -53,7 +53,7 @@ export const PHRASES_MOMENT = {
   titre: "Envoie ta réaction",
   sousTitre: (minute: string) => `Ton ami voit ta figurine réagir à ${minute}, et peut revoir le moment.`,
   image: "Image",
-  videoCourte: "Vidéo 4 s",
+  videoCourte: "Vidéo",
   prepare: "Je prépare ton image…",
   rate: "L’image n’a pas pu se faire. Réessaie.",
   whatsapp: "WhatsApp",
@@ -72,6 +72,8 @@ export const PHRASES_MOMENT = {
   texte: (minute: string) => `J’ai réagi à ${minute} 👉`,
   /** sur l'image et sur la page */
   aReagi: (prenom: string, minute: string) => `${prenom} a réagi à ${minute}`,
+  /** la fin de la vidéo de ma réaction */
+  etToi: "Et toi, tu réagis comment ?",
   regarde: "Regarde le moment avec ta figurine",
   voirYouTube: (minute: string) => `▶ Voir à ${minute} sur YouTube`,
   reagis: "✨ Réagis avec ta figurine",

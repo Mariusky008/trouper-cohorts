@@ -10,6 +10,7 @@
 // : quatre motifs, « Merci, c'est signalé ». 💬 : la conversation (avant ton arrivée, depuis). « 🙈 Ne plus voir » :
 // Sam s'efface. Sur un ordinateur : la télé et la pièce, centrées. Rien ne déborde, jamais le mot « exemple », aucune
 // erreur.
+import { writeFileSync } from "node:fs";
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { poserPiece } from "../piece-en-hauteur.mjs";
@@ -221,9 +222,19 @@ await lea.screenshot({ path: `${D}/salons-ouverts-3b-envoyer-moment.png` });
 // (la vidéo de 4 secondes : le téléphone la fait tout seul pendant qu'on regarde l'image)
 await lea.locator("[data-video]").waitFor({ timeout: 30000 });
 const typeVideo = (await lea.locator("[data-video]").getAttribute("data-video")) ?? "";
-ok(/^video\/(mp4|webm)$/.test(typeVideo) && (await lea.locator("[data-video-prepare]").count()) === 0, `… « Vidéo 4 s » est prête (${typeVideo})`);
+ok(/^video\/(mp4|webm)$/.test(typeVideo) && (await lea.locator("[data-video-prepare]").count()) === 0, `… « Vidéo » est prête (${typeVideo})`);
 await lea.locator("[data-format=\"video\"]").click();
 ok(await attendre(lea, async () => (await lea.locator("[data-apercu-video]").count()) === 1, 3000), "… un toucher : l'aperçu devient la vidéo");
+// (la vidéo elle-même, gardée avec les captures : ce qu'on enverra sur TikTok)
+const video64 = await lea.locator("[data-apercu-video]").evaluate(async (v) => {
+  const b = await (await fetch(v.src)).blob();
+  const o = new Uint8Array(await b.arrayBuffer());
+  let x = "";
+  for (let i = 0; i < o.length; i += 0x8000) x += String.fromCharCode(...o.subarray(i, i + 0x8000));
+  return btoa(x);
+});
+writeFileSync(`${D}/salons-ouverts-video-reaction.${typeVideo === "video/mp4" ? "mp4" : "webm"}`, Buffer.from(video64, "base64"));
+ok(video64.length > 20000, `… la vidéo pèse ${Math.round((video64.length * 3) / 4 / 1000)} Ko`);
 await lea.screenshot({ path: `${D}/salons-ouverts-3b-envoyer-video.png` });
 // (l'ami qui reçoit le lien : un autre téléphone, sans ClikMe)
 const ami = await lea.context().browser().newContext({ viewport: { width: 390, height: 844 } });

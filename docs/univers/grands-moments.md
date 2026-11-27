@@ -94,3 +94,16 @@ la scène n'était pas compris. À la place :
   pour un fichier (un ordinateur) : WhatsApp envoie le lien, les autres enregistrent le fichier et disent quoi en faire.
 - **L'aperçu du lien** (WhatsApp, iMessage…) : `/api/direct/moment/<id>/apercu`, 1200 × 630 en JPEG (~30 Ko). L'image
   story (plus d'un mégaoctet) n'était pas affichée par WhatsApp, qui ne gardait que le texte.
+
+## 6. La vidéo de ma réaction, en montage (27 novembre, V1)
+
+marius trouvait la vidéo de 4 s presque pareille que l'image. Choisi : un vrai montage, puis sa voix (V2, maquette d'abord).
+V1 (`video-du-moment.ts`, `MONTAGE`) dure 5 s :
+
+1. **Le moment arrive** (0 à 1,6 s) : la télé en grand, qui s'approche, et le compteur qui monte (0:26… 0:27… 0:28…). Ma
+   figurine est assise, sage, en bas.
+2. **Le flash** (1,6 s) : l'écran blanchit et tout tremble. La télé recule en haut, ma figurine explose à l'écran (rayons,
+   aura, son geste), sa bulle claque, et les émojis et les confettis jaillissent.
+3. **La fin** (4,2 s) : « Et toi, tu réagis comment ? » et l'adresse du moment.
+
+Toujours sans son dans V1. V2 : 3 s de sa vraie voix (« 🎙 Dis-le »), posées au moment du flash.
