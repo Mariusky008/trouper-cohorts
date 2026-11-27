@@ -16,6 +16,8 @@ import { eclatsDuMoment, type Moment } from "@/lib/direct/grands-moments";
 
 // (la lettre de BD de la bulle : servie par le site, pas par Google)
 const bangers = Bangers({ weight: "400", subsets: ["latin"], display: "swap" });
+/** la police de la bulle (la vidéo du moment la reprend) */
+export const POLICE_BULLE = bangers.style.fontFamily;
 
 const CONFETTIS = ["#FF2E9A", "#FFC23D", "#4FD1FF", "#7CFF6B", "#FFFFFF", "#A78BFF"];
 

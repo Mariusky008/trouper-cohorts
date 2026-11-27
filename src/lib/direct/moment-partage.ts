@@ -52,6 +52,11 @@ export const PHRASES_MOMENT = {
   enregistrer: "⬇️ Enregistrer l’image",
   copier: "🔗 Copier le lien",
   copie: "Lien copié ✓",
+  /** la vidéo de 4 secondes (lot R5) */
+  video: "🎬 Envoyer la vidéo",
+  videoPrepare: "🎬 Je fais ta vidéo…",
+  enregistrerVideo: "⬇️ Enregistrer la vidéo",
+  aideVideo: "Pour TikTok et les Reels : la vidéo de 4 secondes.",
   /** le texte qui part avec l'image */
   texte: (minute: string) => `J’ai réagi à ${minute} 👉`,
   /** sur l'image et sur la page */
