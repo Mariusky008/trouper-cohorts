@@ -78,7 +78,8 @@ export function momentDeReaction(cle: string | undefined): Moment | null {
 
 /** Le grand moment d'une réaction à la seconde d'une vidéo (les souvenirs des proches, ma télé du jour) ; 😴 bof : `null`. */
 export function momentDeSorte(sorte: string | undefined): Moment | null {
-  return sorte === "rire" ? MOMENTS.rire : sorte === "coeur" ? MOMENTS.coeur : sorte === "oh" || sorte === "peur" ? MOMENTS.choc : null;
+  // (🛋️ « salon toujours rempli » : les réactions d'un salon ouvert, rejouées à leur seconde — 😠 😢 👏 aussi)
+  return sorte === "rire" ? MOMENTS.rire : sorte === "coeur" ? MOMENTS.coeur : sorte === "oh" || sorte === "peur" ? MOMENTS.choc : momentDeReaction(sorte);
 }
 
 export const GRAND_MOMENT = {

@@ -170,6 +170,17 @@ export type MessageSalon = { id: string; de: string; prenom: string; le: number;
   n?: number;
   /** 📺 (27 novembre 2026) une réaction dans un salon ouvert : la vidéo et sa seconde (chacun sa vidéo, à son rythme) */
   ou?: { video: string; t: number } };
+/** 🛋️ (maquette « Salon toujours rempli », validée le 27/11) ceux qui ont vu la vidéo avant moi, assis dans mon salon. */
+export const SPECTATEURS_AVANT = {
+  /** cinq fauteuils au plus (un reste toujours libre, pour inviter) */
+  places: 5,
+  /** les sept derniers jours */
+  jours: 7,
+  /** les fiches lues (les plus récentes) */
+  lus: 40,
+  /** réactions gardées par personne et par vidéo */
+  reactions: 80,
+} as const;
 /** Un salon, sur l'accueil de Découvrir. */
 export type CarteSalon = { theme: IdTheme; e: string; nom: string; presents: number; salons: number; mien: boolean; decor: { src: string; flou: string } | null; teles?: number };
 /**
@@ -333,6 +344,8 @@ export const PHRASES_SALONS = {
   placePriseCorps: "Il est devant ta télé : viens regarder avec lui.",
   placePerimee: "Ce lien a déjà servi, ou il a plus de six heures : demande-en un autre.",
   aRegarde: "l’a vue",
+  /** 🛋️ (« salon toujours rempli ») quand il l'a vue, sous sa figurine */
+  ilYaVu: (ms: number) => (ms < 3600_000 ? `il y a ${Math.max(1, Math.round(ms / 60_000))} min` : ms < 86_400_000 ? `il y a ${Math.round(ms / 3600_000)} h` : ms < 2 * 86_400_000 ? "hier" : `il y a ${Math.floor(ms / 86_400_000)} j`),
   partiA: (t: number) => `😴 parti à ${minuteVideo(t)}`,
   pasDeTele: "La télé du salon s’allume avec la sélection du jour.",
   ecrire: "Écris au salon",
@@ -351,6 +364,8 @@ export const PHRASES_SALONS = {
   signale: "🚩 Merci, c’est signalé. Au troisième signalement en une heure, la personne quitte les salons ouverts pendant 24 h.",
   exclu: "Tu ne peux plus entrer dans les salons ouverts pour l’instant (des signalements). Reviens demain.",
   sortir: "‹",
+  /** 🛋️ (« salon toujours rempli ») ceux qui sont là, et ceux qui l'ont vue avant */
+  icEtAvant: (n: number, avant: number) => `${n} ici · ${avant} l’${avant > 1 ? "ont" : "a"} vue`,
   places: (n: number, total: number = PLACES_SALON) => `${n} ici · ${total - n > 0 ? `${total - n} place${total - n > 1 ? "s" : ""} libre${total - n > 1 ? "s" : ""}` : "complet"} · ${total} places`,
   indice: "Touche une figurine : son prénom, un coucou, un bravo…",
   // 🎭 (section 27) seul dans un gradin

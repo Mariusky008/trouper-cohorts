@@ -4,6 +4,8 @@
 // GET ?accueil=1                               → { cartes, age?, invitations?, demandes? } : les salons, ses passions
 //                                                d'abord (`age` : dis d'abord si tu as 18 ans) ; ce qui l'attend
 // GET ?salon=<id>&depuis=<ms>&connus=<q,q>     → { pouls } : qui est là, ce qui s'est dit depuis ; il redit qu'il est là
+// GET ?avant=<vidéo>&salon=<id>               → { avant } : 🛋️ ceux qui l'ont vue avant moi (5 au plus, leurs réactions)
+// GET ?reapparaitre=1 ; POST { action: "reapparaitre", oui } → { oui } : « Ma figurine peut réapparaître dans les salons »
 // GET ?conversation=<id>                       → { messages } : les 48 dernières heures
 // POST { action: "age", adulte }               → { adulte } : 18 ans ou plus (un « non » ne se retourne pas)
 // POST { action: "entrer", theme }             → { ouverture } : le salon le plus rempli qui a une place
@@ -69,6 +71,9 @@ import {
   ecrireAuSalon,
   entrerAuSalon,
   entrerAuGroupe,
+  reapparaitDansLesSalons,
+  reglerReapparaitre,
+  spectateursAvant,
   entrerChez,
   etagereDuSalon,
   garderMoment,
@@ -126,6 +131,12 @@ export async function GET(request: Request) {
     const v = await vivanteDeLaSeance(supabase, moi, u.get("salon"), u.get("vivante"));
     return NextResponse.json(v.error ? { error: v.error } : { ok: true, vivante: v.vivante ?? null }, { status: v.error ? (v.statut ?? 400) : 200, headers: sansCache });
   }
+  // (🛋️ « salon toujours rempli » : ceux qui ont vu cette vidéo avant moi ; ⚙️ mon réglage)
+  if (u.get("avant")) {
+    const r = await spectateursAvant(supabase, moi, u.get("salon"), u.get("avant"));
+    return NextResponse.json(r.error ? { error: r.error } : { ok: true, avant: r.avant ?? [] }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+  }
+  if (u.get("reapparaitre")) return NextResponse.json({ ok: true, oui: await reapparaitDansLesSalons(supabase, moi.id) }, { headers: sansCache });
   if (u.get("mes-defis")) return NextResponse.json({ ok: true, points: await mesPointsDeDefis(supabase, moi).catch(() => 0) }, { headers: sansCache });
   const r = await poulsDuSalon(supabase, moi, u.get("salon"), u.get("depuis"), u.get("connus"));
   return NextResponse.json(r.error ? { error: r.error } : { ok: true, pouls: r.pouls }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
@@ -140,6 +151,7 @@ export async function POST(request: Request) {
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   const repondre = (r: { error?: string; statut?: number }, ok: Record<string, unknown> = {}, aussi: Record<string, unknown> = {}) =>
     NextResponse.json(r.error ? { error: r.error, ...aussi } : { ok: true, ...ok }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });
+  if (p.action === "reapparaitre") return NextResponse.json({ ok: true, ...(await reglerReapparaitre(supabase, moi, p.oui)) }, { headers: sansCache });
   if (p.action === "age") {
     const r = await direSesDixHuitAns(supabase, moi.id, p.adulte);
     return repondre(r, { adulte: r.adulte });

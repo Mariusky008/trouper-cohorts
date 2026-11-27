@@ -73,6 +73,7 @@ import {
   PLACES_DU_SALON,
   PLACES_SEANCE,
   REACTIONS_SALON,
+  SPECTATEURS_AVANT,
   SIGNE_MS,
   TEXTE_SALON_MAX,
   positionSeance,
@@ -447,7 +448,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // assis aux places libres (sans prendre la dernière : on peut toujours inviter), ils rejouent leurs réactions à leur
   // seconde ; et ma télé du jour apprend — les vidéos vues, mes réactions gardées pour mes amis
   // (🎞️ 21 novembre 2026 : chez un proche aussi — sur la vidéo que je regarde, l'hôte compris s'il l'a vue)
-  const idVideo = prive ? regarde?.video.id : undefined;
+  // (🛋️ « salon toujours rempli », 27/11 : dans un salon ouvert, ma vidéo à moi — ceux qui l'ont vue avant moi s'assoient)
+  const [maVideo, setMaVideo] = useState<string | undefined>(undefined);
+  const idVideo = prive ? regarde?.video.id : aMonRythme ? maVideo : undefined;
   const [fantomes, setFantomes] = useState<ProcheDevantVideo[]>([]);
   // 🎙️ (lot 2 de « Laisser un mot avec ma figurine », `decouvrir.md` section 38) LA VIDÉO D'AVANT : la télé continue pour
   // tout le monde ; une carte « La suite de la vidéo » reste là, un toucher l'ouvre (ses mots, laisser le mien)
@@ -572,11 +575,20 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     // (ma télé du jour n'apprend que chez moi : chez un proche, la vidéo n'est pas forcément à ma télé)
     vuJusqua.current = seance?.hote && idVideo && regarde ? { id: idVideo, duree: regarde.video.duree, t: 0 } : null;
     void Promise.resolve()
-      .then(() => (idVideo ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}&seance=${encodeURIComponent(salon.id)}`, { cache: "no-store" }).then((r) => r.json()) : { proches: [] }))
-      .then((j: { proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean }) => {
+      .then(() =>
+        !idVideo
+          ? { proches: [] }
+          : prive
+            ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}&seance=${encodeURIComponent(salon.id)}`, { cache: "no-store" }).then((r) => r.json())
+            : // (🛋️ un salon ouvert : ceux qui l'ont vue avant moi, et leurs vraies réactions — rien d'inventé)
+              fetch(`${ROUTE}?avant=${encodeURIComponent(idVideo)}&salon=${encodeURIComponent(salon.id)}`, { cache: "no-store" })
+                .then((r) => r.json())
+                .then((j: { avant?: ProcheDevantVideo[] }) => ({ proches: [], avant: j.avant ?? [] })),
+      )
+      .then((j: { proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean; avant?: ProcheDevantVideo[] }) => {
         if (fini) return;
         setDevant(j.proches ?? []);
-        setFantomes((j.proches ?? []).filter((p) => p.figurine));
+        setFantomes((j.avant ?? j.proches ?? []).filter((p) => p.figurine));
         setMiennes(j.miennes ?? []);
         setDejaVue(Boolean(j.vue));
         loin.current = 0;
@@ -594,9 +606,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     let avant = -1;
     let n = 0;
     const id = window.setInterval(() => {
-      const s = teleRef.current;
-      if (!s || s.video.id !== idVideo) return;
-      const t = positionSeance(s, Date.now() + (decalage.current ?? 0));
+      let t: number;
+      if (prive) {
+        const s = teleRef.current;
+        if (!s || s.video.id !== idVideo) return;
+        t = positionSeance(s, Date.now() + (decalage.current ?? 0));
+      } else {
+        // (🛋️ un salon ouvert : où en est MA vidéo)
+        const x = maTeleEnCours?.() ?? null;
+        if (!x || o.tele.videos[x.i]?.id !== idVideo) return;
+        t = x.t;
+      }
       // (📷 le lot V2 : leurs vraies têtes, à la seconde — une figurine vivante fait l'expression au lieu d'un émoji)
       const vivantes = fantomes.filter((f) => f.vivante);
       if (vivantes.length) {
@@ -612,12 +632,14 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               const qui = gm ? cleDuSouvenir.current(f.cle) : null;
               if (gm && qui && lancerMoment.current({ id: `${f.cle}-${r.t}-${r.le}`, cle: qui, m: gm, texte: r.texte ?? null, le: Date.now() })) continue;
               const k = ++n;
-              setPopsF((l) => [...l, { id: k, cle: f.cle, e: sorteVideo(r.sorte)?.e ?? "🙂", ...(r.texte ? { texte: r.texte } : {}) }]);
+              setPopsF((l) => [...l, { id: k, cle: f.cle, e: sorteVideo(r.sorte)?.e ?? REACTIONS_SALON.find((x) => x.cle === r.sorte)?.e ?? "🙂", ...(r.texte ? { texte: r.texte } : {}) }]);
               window.setTimeout(() => setPopsF((l) => l.filter((x) => x.id !== k)), r.texte ? 3200 : 1700);
             }
       avant = t;
     }, 400);
     return () => window.clearInterval(id);
+    // (le salon ne change pas de sorte, ni de sélection, une fois entré)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idVideo, fantomes]);
   const teleRef = useRef(regarde);
   useEffect(() => {
@@ -1382,9 +1404,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const nomDe = (x: string) => x.trim().toLowerCase();
   const enVrai = new Set(ici.filter((p) => p.q !== o.moi).map((p) => nomDe(p.prenom)));
   const souvenirDe = new Map(aPart ? fantomes.filter((f) => enVrai.has(nomDe(f.prenom))).map((f) => [nomDe(f.prenom), f] as const) : []);
+  const ilsSontLa = new Set(ici.map((p) => p.q));
   const assisF = fantomes
-    .filter((f) => !enVrai.has(nomDe(f.prenom)))
-    .slice(0, Math.max(0, toutesLibres.length - 1))
+    .filter((f) => !enVrai.has(nomDe(f.prenom)) && !ilsSontLa.has(f.cle))
+    // (🛋️ un salon ouvert : cinq au plus, et toujours un fauteuil libre pour inviter)
+    .slice(0, Math.max(0, Math.min(prive ? Infinity : SPECTATEURS_AVANT.places, toutesLibres.length - 1)))
     .map((f, i) => ({ f, g: toutesLibres[i].g }));
   const libres = toutesLibres.slice(assisF.length);
   // (🎆 un proche en souvenir : sa vedette — assis en souvenir, ou sur sa propre figurine s'il est là)
@@ -1405,7 +1429,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         </a>
         <div className="so-titre">
           <b data-nom>{salon.nom}</b>
-          <small data-places>{P.places(ici.length, nPlaces)}</small>
+          <small data-places>{!prive && assisF.length ? P.icEtAvant(ici.length, assisF.length) : P.places(ici.length, nPlaces)}</small>
         </div>
         {seance?.hote && (
           <button type="button" className="so-rond so-inviter" aria-label={P.inviterTitre} data-inviter onClick={() => setInviter(true)}>
@@ -1465,7 +1489,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             morceau={musique && platine?.enCours ? { id: platine.enCours.video.id, titre: platine.enCours.video.titre, duree: platine.enCours.video.duree, depart: platine.enCours.depart, n: platine.n } : null}
             onCourant={musique ? setRadioTitre : undefined}
             onFinie={musique ? undefined : finieAuSalon}
-            {...(aMonRythme ? { aMonRythme: `so-ma-tele:${salon.theme ?? salon.id}` } : {})}
+            {...(aMonRythme ? { aMonRythme: `so-ma-tele:${salon.theme ?? salon.id}`, onVideo: setMaVideo } : {})}
           />
         )}
         {musique && (
@@ -1691,7 +1715,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     f.figurine && <img src={f.figurine.src} srcSet={f.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} />
                   )}
                   <small>
-                    {f.prenom} · {P.aRegarde}
+                    {f.prenom} · {prive ? P.aRegarde : <span className="so-quand">{P.ilYaVu(Date.now() - f.vu)}</span>}
                   </small>
                   {pops.map((p) =>
                     p.texte ? (
@@ -2676,6 +2700,7 @@ function TeleDuSalon({
   onCourant,
   onFinie,
   aMonRythme,
+  onVideo,
 }: {
   videos: VideoSalon[];
   decalage: React.RefObject<number>;
@@ -2685,6 +2710,8 @@ function TeleDuSalon({
   onFinie?: (v: { id: string; titre: string }) => void;
   /** 📺 (27 novembre 2026) ma télé à moi : la sélection depuis le début, à mon rythme — la clé où je la retrouve */
   aMonRythme?: string;
+  /** (🛋️ à mon rythme) la vidéo qui passe à ma télé vient de changer */
+  onVideo?: (id: string) => void;
 }) {
   // (🔊 21 novembre 2026 : la télé du salon part toute seule à l'arrivée, en silence ; un toucher met le son)
   const [son, setSon] = useState(false);
@@ -2770,6 +2797,9 @@ function TeleDuSalon({
   useEffect(() => {
     onCourant?.(pos?.titre ?? "");
   }, [pos?.titre, onCourant]);
+  useEffect(() => {
+    if (pos?.id) onVideo?.(pos.id);
+  }, [pos?.id, onVideo]);
   // (🎙️ lot 2 : une vidéo regardée un moment vient de finir — sa suite, en carte)
   const avantSuite = useRef<{ id: string; titre: string; depuis: number } | null>(null);
   useEffect(() => {
@@ -3301,6 +3331,7 @@ const STYLES = `
 .so-jour{position:relative;display:block;flex:none}
 .so-jour img{position:absolute;left:0;top:0;width:100%;height:100%}
 .so-jour img.so-jour-tete,.so-jour img.so-jour-parle{filter:none}
+.so-quand{color:#f6b54b}
 .so-fig small{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.6);white-space:nowrap;max-width:110%;overflow:hidden;text-overflow:ellipsis}
 .so-fig.moi small{background:#FF2E9A;color:#2a0f1f}
 .so-fig.fantome{cursor:default;pointer-events:none}

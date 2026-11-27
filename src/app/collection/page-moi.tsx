@@ -20,6 +20,7 @@
  * prénom, sa figurine du mois (elle est dans « Ma figurine » ; hors de l'univers, elle reste ici), les raccourcis vers le studio des mèmes (le propriétaire,
  * le même jour : « les retirer de la page » ; leurs écrans restent).
  */
+import { ReapparaitreDansLesSalons } from "./reapparaitre";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { EtatMaFigurine } from "@/lib/direct/ma-figurine";
@@ -241,6 +242,7 @@ export function PageMoi({
         <Groupe titre={PHRASES_MOI.groupes.absent} cle="absent">
           <MaFigurineParle />
           <RangeSansDemander />
+          <ReapparaitreDansLesSalons />
         </Groupe>
       )}
 
