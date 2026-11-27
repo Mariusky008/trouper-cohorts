@@ -145,7 +145,7 @@ const sam = p.locator(`[data-proche-assis="${SAM.cle}"]`);
 await seconde(4.6);
 await p.waitForTimeout(400);
 await seconde(5.2);
-ok(await attendre(async () => (await sam.locator("img.td-proche.a-rit").count()) === 1, 2000), "à 5 s : Sam rit");
+ok(await attendre(async () => (await p.locator(`[data-grand-moment="rire"] [data-vedette="${SAM.cle}"]`).count()) === 1, 2000), "à 5 s : Sam rit (son grand moment)");
 await p.waitForTimeout(400);
 await seconde(7.8);
 await p.waitForTimeout(400);
@@ -195,7 +195,7 @@ ok(!(await reactionsDeLea()).some((r) => /:oh$/.test(r)), "… sans 😮 compris
 await seconde(4.6);
 await p.waitForTimeout(400);
 await seconde(5.2);
-ok(await attendre(async () => (await sam.locator("img.td-proche.a-rit").count()) === 1, 2000), "… et à 5 s, Sam rit de nouveau");
+ok(await attendre(async () => (await p.locator(`[data-grand-moment="rire"] [data-vedette="${SAM.cle}"]`).count()) === 1, 2000), "… et à 5 s, Sam rit de nouveau");
 // ═══ 🎙️ ELLE LAISSE UN VOCAL À 20 S : LA VIDÉO L'ATTEND PENDANT QU'ELLE PARLE ═══
 await p.waitForTimeout(500);
 await seconde(20);

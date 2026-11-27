@@ -592,7 +592,7 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   const presents = await presentsFrais(supabase, m, sid, maintenant);
   if (!presents.some((x) => x.nom === q)) return { error: "Tu n’es plus dans ce salon : rentre d’abord.", statut: 409 };
   const sorte = p.sorte === "reaction" || p.sorte === "geste" ? p.sorte : "texte";
-  let corps: Pick<MessageSalon, "sorte" | "texte" | "cle" | "a">;
+  let corps: Pick<MessageSalon, "sorte" | "texte" | "cle" | "a" | "n">;
   if (sorte === "texte") {
     const texte = s(p.texte).replace(/\s+/g, " ");
     // (dans une séance, entre proches : comme leur conversation — seulement pas vide, 90 signes au plus)
@@ -603,7 +603,9 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
     // (🎵 le lot M1 : dans le salon de la musique, 🔥 🎶 💃 aussi)
     const x = reactionDe(p.cle) ?? (!r.seance && estSalonMusique(salonDe(sid)?.theme) ? reactionMusiqueDe(p.cle) : undefined);
     if (!x) return { error: "Quelle réaction ?", statut: 400 };
-    corps = { sorte, cle: x.cle };
+    // (🎆 les grands moments, lot R2 : ×2 ×3 — la même émotion touchée encore, vite ; le téléphone regroupe les touchers)
+    const n = Math.round(Number(p.n));
+    corps = { sorte, cle: x.cle, ...(n >= 2 && n <= 3 ? { n } : {}) };
   } else {
     const x = gesteDe(p.cle);
     const a = s(p.a);

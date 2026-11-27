@@ -201,6 +201,11 @@ await lea.locator('[data-reagir] [data-r="rire"]').click();
 ok(await attendre(lea, async () => (await lea.locator('[data-grand-moment="rire"]').count()) === 1, 4000), "🎆 😂 : son grand moment — sa figurine prend la scène");
 ok((await lea.locator(`.so-fig.vedette[data-moi]`).count()) === 1 && (await lea.locator(`.so-piece.so-en-moment`).count()) === 1, "… sa place se vide, la pièce s'assombrit autour d'elle");
 ok(/Allez les bleus/.test(await texte(lea.locator("[data-bulle-moment]"))), "… sa bulle : ce qu'elle vient d'écrire");
+await lea.locator('[data-reagir] [data-r="rire"]').click();
+ok(await attendre(lea, async () => (await lea.locator('[data-grand-moment="rire"][data-niveau="2"] [data-fois="2"]').count()) === 1, 2000), "🎆 touchée encore, vite : ×2 (elle grandit, la pièce tremble)");
+await lea.waitForTimeout(2200);
+const noteEncore = await texte(lea.locator("[data-note]"));
+ok(!/Doucement/.test(noteEncore), `… sans « Doucement » : les touchers sont regroupés (${noteEncore})`);
 await lea.screenshot({ path: `${D}/salons-ouverts-3-bulles.png` });
 
 // ═══ TOUCHER SAM : SA FICHE, UN GESTE, SIGNALER ═══

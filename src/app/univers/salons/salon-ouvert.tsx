@@ -51,7 +51,7 @@ import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/dire
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { FigurineVivanteVue, Teinte } from "@/app/univers/visage/figurine-vivante";
 import { GrandMoment } from "@/app/univers/salons/grand-moment";
-import { GRAND_MOMENT, momentDeReaction, motDuMoment, type Moment } from "@/lib/direct/grands-moments";
+import { GRAND_MOMENT, momentDeReaction, momentDeSorte, motDuMoment, type Moment } from "@/lib/direct/grands-moments";
 import { Pancarte } from "@/app/collection/pancarte";
 import { Ornements } from "@/app/collection/ornements";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
@@ -266,6 +266,9 @@ export function SalonOuvert({ theme, chez, place, video, groupe, initial }: { th
 
 // ─── le salon ─────────────────────────────────────────────────────────────────────────────────────
 type Anime = { id: string; q: string; sorte: "bulle" | "pop" | "vol"; texte: string; a?: string; fin: number };
+/** 🎆 Le grand moment en scène : son émotion, son niveau (×2 ×3), ses vedettes (deux au même moment) et leurs bulles. */
+type MomentScene = { id: string; m: Moment; debut: number; fin: number; niveau: number; vedettes: { cle: string; mot: string }[] };
+type DemandeMoment = { id: string; cle: string; m: Moment; texte?: string | null; le: number; n?: number };
 
 function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: () => void; onExclu: () => void }) {
   const salon = o.salon;
@@ -309,10 +312,71 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [anims, setAnims] = useState<Anime[]>([]);
   // 🎆 (27 novembre 2026, `docs/univers/grands-moments.md`) LE GRAND MOMENT : la figurine qui réagit prend la scène, une à la
   // fois (3 s) ; ce qu'on a écrit juste avant devient sa bulle
-  const [moment, setMoment] = useState<{ id: string; q: string; m: Moment; mot: string; fin: number } | null>(null);
-  const momentRef = useRef<{ fin: number } | null>(null);
+  // (lot R2 : la file d'attente quand la scène est prise — sur place en attendant ; ×2 ×3 ; 🫶 deux au même moment). Une
+  // vedette : la clé d'un présent, ou « f:<clé> » d'un proche assis en souvenir.
+  const [moment, setMoment] = useState<MomentScene | null>(null);
+  const momentRef = useRef<MomentScene | null>(null);
+  const fileMoments = useRef<DemandeMoment[]>([]);
+  const minuteurMoment = useRef(0);
+  const [surPlace, setSurPlace] = useState<Record<string, string>>({});
   const ecritsAvant = useRef(new Map<string, { t: string; le: number }>());
+  // (mes réactions jouées tout de suite chez moi ; ×2 ×3 : les touchers regroupés, un message toutes les 1,6 s au plus)
+  const mesLocales = useRef(new Map<string, number>());
+  const dernierEnvoi = useRef(0);
+  const envoiReaction = useRef<Promise<unknown>>(Promise.resolve());
+  const encore = useRef<{ cle: string; n: number; minuteur: number } | null>(null);
+  const lancerMoment = useRef((x: DemandeMoment): boolean => {
+    const poser = (s: MomentScene | null) => {
+      momentRef.current = s;
+      setMoment(s);
+      window.clearTimeout(minuteurMoment.current);
+      if (s) minuteurMoment.current = window.setTimeout(suivant, Math.max(50, s.fin - Date.now()));
+    };
+    const commencer = (d: DemandeMoment) => {
+      const maintenant = Date.now();
+      poser({ id: d.id, m: d.m, debut: maintenant, fin: maintenant + GRAND_MOMENT.ms, niveau: 1, vedettes: [{ cle: d.cle, mot: motDuMoment(d.m, d.id, d.texte) }] });
+      if (!d.cle.startsWith("f:")) demanderVivante.current(d.cle);
+    };
+    function suivant() {
+      let n: DemandeMoment | undefined;
+      while ((n = fileMoments.current.shift())) if (Date.now() - n.le < GRAND_MOMENT.fraicheur) break;
+      if (n) commencer(n);
+      else poser(null);
+    }
+    const c = momentRef.current;
+    const maintenant = Date.now();
+    if (!c || c.fin <= maintenant) {
+      commencer(x);
+      return true;
+    }
+    const sienne = c.vedettes.some((v) => v.cle === x.cle);
+    // (×2 ×3 : la même émotion, encore, pendant son moment)
+    if (sienne && c.m.cle === x.m.cle) {
+      // (le niveau que dit le message — son propre écho ne change rien)
+      const niveau = Math.min(GRAND_MOMENT.niveauMax, Math.max(c.niveau, x.n ?? 1));
+      if (niveau === c.niveau) return true;
+      poser({ ...c, niveau, fin: Math.min(maintenant + GRAND_MOMENT.ms, Math.max(c.fin, maintenant) + GRAND_MOMENT.encore), vedettes: c.vedettes.map((v) => (v.cle === x.cle && !x.texte && niveau > c.niveau ? { ...v, mot: motDuMoment(x.m, x.id) } : v)) });
+      return true;
+    }
+    // (une autre émotion pendant son propre moment : elle la remplace)
+    if (sienne && c.vedettes.length === 1) {
+      commencer(x);
+      return true;
+    }
+    // (🫶 la même émotion, au même moment : côte à côte)
+    if (!sienne && c.m.cle === x.m.cle && c.vedettes.length === 1 && maintenant - c.debut < GRAND_MOMENT.ensemble) {
+      poser({ ...c, fin: Math.max(c.fin, maintenant + GRAND_MOMENT.ms * 0.8), vedettes: [...c.vedettes, { cle: x.cle, mot: motDuMoment(x.m, x.id, x.texte) }] });
+      if (!x.cle.startsWith("f:")) demanderVivante.current(x.cle);
+      return true;
+    }
+    // (la scène est prise : son tour juste après — en attendant, sur place, sa couleur autour de lui)
+    if (!sienne && fileMoments.current.length < GRAND_MOMENT.file && !fileMoments.current.some((f) => f.cle === x.cle)) fileMoments.current.push({ ...x, le: maintenant });
+    setSurPlace((s) => ({ ...s, [x.cle]: x.m.couleur }));
+    window.setTimeout(() => setSurPlace((s) => (s[x.cle] === x.m.couleur ? Object.fromEntries(Object.entries(s).filter(([k]) => k !== x.cle)) : s)), GRAND_MOMENT.surPlace);
+    return false;
+  });
   const demanderVivante = useRef((q: string) => void q);
+  const cleDuSouvenir = useRef((c: string): string | null => (c ? null : null));
   const [texte, setTexte] = useState("");
   // 🌍 (discussions des vidéos, lot A2) ce que je viens d'écrire au salon : le laisser sous la vidéo (dix secondes)
   const [sousVideo, setSousVideo] = useState<{ texte: string; video: string; accord?: boolean; fait?: boolean } | null>(null);
@@ -506,6 +570,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         for (const f of fantomes)
           for (const r of f.reactions)
             if (r.t > avant && r.t <= t && !(r.visage && f.vivante)) {
+              // (🎆 lot R2 : son grand moment, à sa seconde — s'il prend la scène, pas de petit émoji en plus)
+              const gm = r.visage ? null : momentDeSorte(r.sorte);
+              const qui = gm ? cleDuSouvenir.current(f.cle) : null;
+              if (gm && qui && lancerMoment.current({ id: `${f.cle}-${r.t}-${r.le}`, cle: qui, m: gm, texte: r.texte ?? null, le: Date.now() })) continue;
               const k = ++n;
               setPopsF((l) => [...l, { id: k, cle: f.cle, e: sorteVideo(r.sorte)?.e ?? "🙂", ...(r.texte ? { texte: r.texte } : {}) }]);
               window.setTimeout(() => setPopsF((l) => l.filter((x) => x.id !== k)), r.texte ? 3200 : 1700);
@@ -661,15 +729,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     if (m.sorte === "texte" && m.texte) ecritsAvant.current.set(m.de, { t: m.texte, le: Date.now() });
     // (🎆 une réaction : son grand moment, si la scène est libre — sinon, comme avant, elle saute au-dessus de sa tête)
     const gm = m.sorte === "reaction" ? momentDeReaction(m.cle) : null;
-    if (gm && !(momentRef.current && momentRef.current.fin > Date.now())) {
+    if (gm) {
       const avant = ecritsAvant.current.get(m.de);
       const ecrit = avant && Date.now() - avant.le < GRAND_MOMENT.texteAvant ? avant.t : null;
-      const x = { id: m.id, q: m.de, m: gm, mot: motDuMoment(gm, m.id, ecrit), fin: Date.now() + GRAND_MOMENT.ms };
-      momentRef.current = x;
-      setMoment(x);
-      demanderVivante.current(m.de);
-      window.setTimeout(() => setMoment((c) => (c?.id === x.id ? null : c)), GRAND_MOMENT.ms);
-      return;
+      // (ma propre réaction, déjà jouée tout de suite sur mon téléphone : son écho ne la rejoue pas)
+      const locale = m.de === moiRef.current ? mesLocales.current.get(m.cle ?? "") : undefined;
+      if (locale && Date.now() - locale < 6000) return;
+      if (lancerMoment.current({ id: m.id, cle: m.de, m: gm, texte: ecrit, le: Date.now(), n: m.n })) return;
     }
     const fin = Date.now() + (m.sorte === "texte" ? BULLE_MS : 2200);
     const e = m.sorte === "reaction" ? (REACTIONS_SALON.find((r) => r.cle === m.cle)?.e ?? REACTIONS_MUSIQUE.find((r) => r.cle === m.cle)?.e) : m.sorte === "geste" ? GESTES_SALON.find((g) => g.cle === m.cle)?.e : "";
@@ -872,10 +938,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   }
 
   // ─── ✍️ écrire, réagir, un geste ───
-  async function envoyer(corps: Record<string, unknown>) {
-    setOccupe(true);
+  async function envoyer(corps: Record<string, unknown>, sansAttendre = false) {
+    // (🎆 une réaction : les boutons restent touchables pendant l'envoi — ×2 ×3 se touchent vite)
+    if (!sansAttendre) setOccupe(true);
     const r = await poster({ action: "ecrire", salon: salon.id, ...corps });
-    setOccupe(false);
+    if (!sansAttendre) setOccupe(false);
     if (!r.ok) {
       if (r.j.refus) setRefus(String(r.j.error));
       else dire(String(r.j.error || "Ça n’a pas marché. Réessaie."));
@@ -1205,6 +1272,13 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   posRef.current = ou;
   /** 🎆 Sa figurine en grand, pour son grand moment : la tête de l'émotion, son visage coloré (vivante) ; sinon sa tête du jour. */
   const figureDuMoment = (q: string, h: number, m: Moment) => {
+    if (q.startsWith("f:")) {
+      const f = fantomes.find((x) => `f:${x.cle}` === q);
+      if (f?.vivante) return <FigurineVivanteVue v={f.vivante} hauteur={h} e={m.tete} teinte={m.teinte} />;
+      // eslint-disable-next-line @next/next/no-img-element
+      if (f?.figurine) return <img src={f.figurine.src} srcSet={f.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} style={{ height: h }} />;
+      return <span style={{ fontSize: Math.round(h * 0.45) }}>{m.e}</span>;
+    }
     const p = presents.find((x) => x.q === q);
     const v = (q === o.moi ? vivante : null) ?? vivantesDe[q] ?? null;
     if (v) return <FigurineVivanteVue v={v} hauteur={h} e={m.tete} teinte={m.teinte} />;
@@ -1227,6 +1301,15 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     .slice(0, Math.max(0, toutesLibres.length - 1))
     .map((f, i) => ({ f, g: toutesLibres[i].g }));
   const libres = toutesLibres.slice(assisF.length);
+  // (🎆 un proche en souvenir : sa vedette — assis en souvenir, ou sur sa propre figurine s'il est là)
+  cleDuSouvenir.current = (c: string) => (assisF.some((x) => x.f.cle === c) ? `f:${c}` : (ici.find((p) => souvenirDe.get(nomDe(p.prenom))?.cle === c)?.q ?? null));
+  /** 🎆 Où est la vedette, dans la pièce. */
+  const placeDe = (cle: string) => {
+    if (!cle.startsWith("f:")) return ou(cle);
+    const a = assisF.find((x) => `f:${x.f.cle}` === cle);
+    return a ? { x: gx + a.g.x * lG, y: gy + a.g.y * hG, h: a.g.hauteur * hG } : null;
+  };
+  const enVedette = (cle: string) => Boolean(moment?.vedettes.some((v) => v.cle === cle));
 
   return (
     <main className={`so${prive ? " so-seance" : ""}`} data-salon={salon.id} data-maison={salon.maison} data-presents={ici.length} data-hote={seance?.hote ? "1" : undefined}>
@@ -1393,7 +1476,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               const entree = entrees.includes(p.q);
               const signe = !moi && !cache && !souvenir && p.arrive > moiArrive && Date.now() + decalage.current - p.arrive < SIGNE_MS && !signes.includes(p.q);
               // (🎆 le grand moment de quelqu'un : sa place se vide, les autres se tournent vers le centre)
-              const vedette = moment?.q === p.q;
+              const vedette = enVedette(p.q);
               const tourne = moment && !vedette ? (x.x < L / 2 ? "d" : "g") : regards[p.q];
               return (
                 <span key={p.q} className="so-fig-et">
@@ -1422,7 +1505,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   )}
                 <button
                   type="button"
-                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}${entree ? " entre" : ""}${eclats.includes(p.q) ? " eclat" : ""}${tourne ? ` regarde-${tourne}` : ""}${vedette ? " vedette" : ""}`}
+                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}${entree ? " entre" : ""}${eclats.includes(p.q) ? " eclat" : ""}${tourne ? ` regarde-${tourne}` : ""}${vedette ? " vedette" : ""}${surPlace[p.q] ? " sur-place" : ""}`}
                   data-q={p.q}
                   data-entre={entree ? "1" : undefined}
                   data-eclat={eclats.includes(p.q) ? "1" : undefined}
@@ -1432,7 +1515,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   data-moi={moi ? "1" : undefined}
                   data-souvenir={souvenir ? souvenir.cle : undefined}
                   data-en-direct={enDirect ? (tetes[p.q] ?? "neutre") : undefined}
-                  style={{ left: x.x, bottom: H - x.y, height: x.h, zIndex: Math.round(x.y), ...(entree ? { ["--ex" as string]: `${-Math.round(x.x + x.h)}px`, ["--ey" as string]: `${Math.max(0, Math.round(H - x.y - 2))}px` } : {}) } as React.CSSProperties}
+                  style={{ left: x.x, bottom: H - x.y, height: x.h, zIndex: Math.round(x.y), ...(surPlace[p.q] ? { ["--c" as string]: surPlace[p.q] } : {}), ...(entree ? { ["--ex" as string]: `${-Math.round(x.x + x.h)}px`, ["--ey" as string]: `${Math.max(0, Math.round(H - x.y - 2))}px` } : {}) } as React.CSSProperties}
                   aria-label={moi ? "Ta figurine" : p.prenom}
                   onClick={() => {
                     setIndice(false);
@@ -1508,7 +1591,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               const h = g.hauteur * hG;
               const pops = popsF.filter((p) => p.cle === f.cle);
               return (
-                <span key={f.cle} className="so-fig fantome" data-fantome={f.cle} style={{ left: x, bottom: H - y, height: h, zIndex: Math.round(y) }}>
+                <span
+                  key={f.cle}
+                  className={`so-fig fantome${enVedette(`f:${f.cle}`) ? " vedette" : ""}${surPlace[`f:${f.cle}`] ? " sur-place" : ""}`}
+                  data-fantome={f.cle}
+                  style={{ left: x, bottom: H - y, height: h, zIndex: Math.round(y), ...(surPlace[`f:${f.cle}`] ? { ["--c" as string]: surPlace[`f:${f.cle}`] } : {}) } as React.CSSProperties}
+                >
                   {f.vivante ? (
                     <FigurineVivanteVue v={f.vivante} hauteur={h} e={exprF[f.cle] ?? null} />
                   ) : (
@@ -1571,8 +1659,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           {L > 0 &&
             moment &&
             (() => {
-              const de = ou(moment.q);
-              return de ? <GrandMoment key={moment.id} id={moment.id} m={moment.m} mot={moment.mot} de={de} L={L} H={H} figure={(h) => figureDuMoment(moment.q, h, moment.m)} /> : null;
+              const vedettes = moment.vedettes.flatMap((v) => {
+                const de = placeDe(v.cle);
+                return de ? [{ cle: v.cle, mot: v.mot, de, figure: (h: number) => figureDuMoment(v.cle, h, moment.m) }] : [];
+              });
+              return vedettes.length ? <GrandMoment key={moment.id} id={moment.id} m={moment.m} vedettes={vedettes} niveau={moment.niveau} ensemble={vedettes.length > 1 ? PR.ensembleMoment : undefined} L={L} H={H} /> : null;
             })()}
           {/* (🔴 la pastille de la maquette — visible tant qu'elle marche, un toucher l'arrête — est désormais le bouton de la
               caméra, en bas : le 22 novembre 2026, le propriétaire, « on peut la supprimer, elle est en doublon ») */}
@@ -1646,9 +1737,42 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 // (✨ 22 novembre 2026, le propriétaire : « quand je clique, j'ai l'impression que rien ne se produit » — elle
                 // part du bouton, vole jusqu'à ma figurine et y éclate, tout de suite)
                 jaillir(r.e, ev.currentTarget);
+                const local: MessageSalon = { id: `local-${Date.now()}`, de: o.moi, prenom: "", le: Date.now(), sorte: "reaction", cle: r.cle };
+                const gm = momentDeReaction(r.cle);
+                if (gm) {
+                  // (🎆 mon grand moment, tout de suite chez moi ; touchée encore pendant mon moment : ×2, ×3)
+                  const c = momentRef.current;
+                  const n = c && c.fin > Date.now() && c.m.cle === gm.cle && c.vedettes.some((v) => v.cle === o.moi) ? Math.min(GRAND_MOMENT.niveauMax, c.niveau + 1) : 1;
+                  const avant = ecritsAvant.current.get(o.moi);
+                  const ecrit = n === 1 && avant && Date.now() - avant.le < GRAND_MOMENT.texteAvant ? avant.t : null;
+                  const joue = lancerMoment.current({ id: local.id, cle: o.moi, m: gm, texte: ecrit, le: Date.now(), n });
+                  if (joue) mesLocales.current.set(r.cle, Date.now());
+                  else if (aPart) jouer(local);
+                  if (!aPart) {
+                    // (le serveur compte une seconde et demie entre deux messages : on attend la réponse du précédent)
+                    const partir = (corps: Record<string, unknown>) => {
+                      envoiReaction.current = envoyer(corps, true).finally(() => (dernierEnvoi.current = Date.now()));
+                    };
+                    if (n === 1) partir({ sorte: "reaction", cle: r.cle });
+                    else {
+                      // (regroupés : seul le dernier niveau part, dès que le serveur l'accepte)
+                      window.clearTimeout(encore.current?.minuteur);
+                      const x = { cle: r.cle, n, minuteur: 0 };
+                      encore.current = x;
+                      void envoiReaction.current.then(() => {
+                        if (encore.current !== x) return;
+                        x.minuteur = window.setTimeout(() => {
+                          if (encore.current !== x) return;
+                          encore.current = null;
+                          partir({ sorte: "reaction", cle: r.cle, n });
+                        }, Math.max(0, 1600 - (Date.now() - dernierEnvoi.current)));
+                      });
+                    }
+                  }
+                }
                 // (🎞️ seul sur ma vidéo gardée : la réaction saute sur ma figurine, sans partir au salon — les autres
                 // regardent autre chose ; elle reste sur la vidéo, et ils la verront en la regardant)
-                if (aPart) jouer({ id: `local-${Date.now()}`, de: o.moi, prenom: "", le: Date.now(), sorte: "reaction", cle: r.cle });
+                else if (aPart) jouer(local);
                 else void envoyer({ sorte: "reaction", cle: r.cle });
                 // (⭐ le lot B : ma réaction reste sur la vidéo, à sa seconde — mes amis la verront ; 🎞️ chez un proche aussi)
                 const s = regarde;
@@ -2982,6 +3106,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-fig.regarde-g{rotate:-7deg}
 .so-piece.so-en-moment .so-fig:not(.vedette){filter:brightness(.45) saturate(.7);transition:filter .3s,opacity .4s,rotate .3s ease}
 .so-fig.vedette{opacity:0}
+.so-piece.so-en-moment .so-fig.sur-place:not(.vedette),.so-fig.sur-place{filter:drop-shadow(0 0 8px var(--c)) drop-shadow(0 0 18px var(--c));scale:1.08;transition:filter .2s,scale .2s}
 .so-jour-teinte{position:absolute;pointer-events:none}
 .so-fig.regarde-d{rotate:7deg}
 .so-fig.eclat .pcte{animation:so-eclat 1.6s ease both}
