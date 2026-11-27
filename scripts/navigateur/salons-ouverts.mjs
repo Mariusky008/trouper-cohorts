@@ -219,7 +219,6 @@ const pageMoment = await ami.newPage();
 await pageMoment.goto(new URL(new URL(lienMoment).pathname, BASE).href, { waitUntil: "domcontentloaded", timeout: 90000 });
 ok(/Léa a réagi à \d+:\d\d/.test(await texte(pageMoment.locator("h1"))) && (await pageMoment.locator("[data-youtube]").getAttribute("href"))?.includes("youtube.com/watch?v="), `la page du moment : « ${await texte(pageMoment.locator("h1"))} », ▶ Voir sur YouTube`);
 ok(/og:image/.test(await pageMoment.content()), "… et son aperçu (og:image)");
-await ami.close();
 await lea.locator(".so-fermer").click();
 await lea.waitForTimeout(2200);
 const noteEncore = await texte(lea.locator("[data-note]"));
@@ -281,6 +280,24 @@ ok(t2 && piece && champ2 && t2.width <= 681 && piece.y + piece.height <= 862 && 
 await ordi.screenshot({ path: `${D}/salons-ouverts-6-ordinateur.png` });
 ok(!(await deborde(ordi)), "rien ne déborde (ordinateur)");
 await ordi.context().close();
+
+// ═══ L'AMI REVOIT LE MOMENT (à la fin : le salon n'attend pas) ═══
+await pageMoment.bringToFront();
+// (le moment qui se rejoue : la vidéo trois secondes avant, puis sa figurine prend la scène)
+await pageMoment.locator("[data-revoir]").waitFor({ timeout: 30000 });
+ok((await pageMoment.locator("[data-rejouer=\"attente\"] .rm-fig").count()) === 1, "… « ▶ Revoir le moment », sa figurine assise dessous");
+// (la page arrive avant son code : on touche jusqu'à ce que la lecture parte)
+for (let i = 0; i < 40 && (await pageMoment.locator("[data-rejouer=\"attente\"]").count()) === 1; i++) {
+  await pageMoment.locator("[data-revoir]").click().catch(() => {});
+  await pageMoment.waitForTimeout(1500);
+}
+await pageMoment.locator("[data-grand-moment]").waitFor({ timeout: 20000 });
+ok(/Allez les bleus/i.test(await texte(pageMoment.locator("[data-bulle-moment]"))), `… un toucher : à sa seconde, son grand moment rejoue (« ${await texte(pageMoment.locator("[data-bulle-moment]"))} »)`);
+await pageMoment.screenshot({ path: `${D}/salons-ouverts-3c-rejouer.png` });
+await pageMoment.locator("[data-rejouer=\"fini\"]").waitFor({ timeout: 10000 });
+ok(/Léa a réagi à \d+:\d\d/.test(await texte(pageMoment.locator(".rm-legende"))), `… puis « ${await texte(pageMoment.locator(".rm-legende"))} »`);
+ok(await pageMoment.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "… rien ne déborde (la page du moment)");
+await ami.close();
 
 ok(!erreurs.length, `aucune erreur${erreurs.length ? ` : ${erreurs.slice(0, 3).join(" | ")}` : ""}`);
 await b.close();
