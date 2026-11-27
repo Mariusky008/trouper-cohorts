@@ -24,8 +24,9 @@ export const MOMENT_PARTAGE = {
   jours: 30,
   /** vingt images par jour et par personne */
   parJour: 20,
-  /** la pastille reste 8 s après mon grand moment */
-  pastille: 8000,
+  /** (27 novembre 2026, le propriétaire : « je ne vois même pas ma réaction ») la pastille attend la fin de mon grand
+   *  moment, puis reste 6 s */
+  pastille: 6000,
 } as const;
 
 /** Un moment envoyé : qui, quelle vidéo, à quelle seconde, quelle émotion, le mot de sa bulle. */
@@ -45,6 +46,9 @@ export const adresseCourte = (origine: string, id: string) => `${origine.replace
 export const PHRASES_MOMENT = {
   /** la carte sous ma figurine (maquette « Envoyer ma réaction », validée le 27/11) */
   prete: (minute: string) => `Ta réaction à ${minute} est prête`,
+  /** (maquette « Salon et réactions », validée le 27/11) la petite pastille d'une ligne, après mon grand moment */
+  envoyerTa: "Envoyer ta réaction",
+  aLaMinute: (minute: string) => `à ${minute}`,
   envoyerAmi: "Envoyer à un ami",
   titre: "Envoie ta réaction",
   sousTitre: (minute: string) => `Ton ami voit ta figurine réagir à ${minute}, et peut revoir le moment.`,

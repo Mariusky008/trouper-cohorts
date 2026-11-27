@@ -400,6 +400,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // 📸 (lot R3) mon grand moment : la carte « Envoyer à un ami » sous ma figurine — la vidéo et sa seconde, prises à cet instant
   const quandMonMoment = useRef((m: Moment, mot: string) => void [m, mot]);
   const [pastille, setPastille] = useState<{ n: number; demande: DemandeEnvoi; m: Moment } | null>(null);
+  const pastilleMinuteur = useRef(0);
   const [envoi, setEnvoi] = useState<DemandeEnvoi | null>(null);
   const [texte, setTexte] = useState("");
   // 🌍 (discussions des vidéos, lot A2) ce que je viens d'écrire au salon : le laisser sous la vidéo (dix secondes)
@@ -1201,9 +1202,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const x = videoEtSeconde();
     if (!x) return;
     const n = Date.now();
-    setPastille({ n, m, demande: { ...x, t: Math.round(x.t * 10) / 10, e: m.cle, ...(mot ? { mot } : {}) } });
-    window.setTimeout(() => setPastille((p) => (p?.n === n ? null : p)), GRAND_MOMENT.ms + MOMENT_PARTAGE.pastille);
+    const demande = { ...x, t: Math.round(x.t * 10) / 10, e: m.cle, ...(mot ? { mot } : {}) };
+    // (maquette « Salon et réactions », validée le 27/11 : « je ne vois même pas ma réaction ») rien par-dessus pendant
+    // mon grand moment ; la pastille arrive à la fin — tapé vite (×2 ×3) : une seule, à la fin du dernier
+    setPastille(null);
+    window.clearTimeout(pastilleMinuteur.current);
+    pastilleMinuteur.current = window.setTimeout(() => {
+      setPastille({ n, m, demande });
+      pastilleMinuteur.current = window.setTimeout(() => setPastille((p) => (p?.n === n ? null : p)), MOMENT_PARTAGE.pastille);
+    }, GRAND_MOMENT.ms);
   };
+  useEffect(() => () => window.clearTimeout(pastilleMinuteur.current), []);
   /** ⏪ (le rattrapage) La vidéo qui passe à ma télé, et sa seconde. */
   const ouEnEstLaTele = (): { video: string; t: number } | null => {
     const x = videoEtSeconde();
@@ -1715,36 +1724,28 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               });
               return vedettes.length ? <GrandMoment key={moment.id} id={moment.id} m={moment.m} vedettes={vedettes} niveau={moment.niveau} ensemble={vedettes.length > 1 ? PR.ensembleMoment : undefined} L={L} H={H} /> : null;
             })()}
-          {/* 📸 (maquette « Envoyer ma réaction », validée le 27/11) la carte qui monte sous ma figurine : ma réaction, prête à
-              partir ; elle s'efface au bout de huit secondes (la barre rose) */}
+          {/* 📸 (maquette « Salon et réactions », validée le 27/11) après mon grand moment, une petite pastille d'une ligne
+              sous ma figurine : ma réaction, prête à partir ; elle s'efface au bout de six secondes */}
           {pastille && (
-            <div key={pastille.n} className="so-carte-envoi" data-carte-envoi style={{ ["--duree" as string]: `${GRAND_MOMENT.ms + MOMENT_PARTAGE.pastille}ms` } as React.CSSProperties}>
-              <i className="so-carte-pointe" aria-hidden="true" />
-              <div className="so-carte-corps">
-                <span className="so-carte-mini" style={{ ["--c" as string]: pastille.m.couleur } as React.CSSProperties} aria-hidden="true">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={vignetteYouTube(pastille.demande.video.id)} alt="" referrerPolicy="no-referrer" />
-                  <b>{figureDuMoment(o.moi, 46, pastille.m)}</b>
-                </span>
-                <span className="so-carte-texte">
-                  <strong>{PHRASES_MOMENT.prete(minuteDuMoment(pastille.demande.t))}</strong>
-                  <button
-                    type="button"
-                    data-envoyer-ce-moment
-                    onClick={() => {
-                      setEnvoi(pastille.demande);
-                      setPastille(null);
-                    }}
-                  >
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M22 2 11 13" />
-                      <path d="M22 2 15 22l-4-9-9-4z" />
-                    </svg>
-                    {PHRASES_MOMENT.envoyerAmi}
-                  </button>
-                </span>
-                <i className="so-carte-temps" aria-hidden="true" />
-              </div>
+            <div key={pastille.n} className="so-carte-envoi" data-carte-envoi style={{ ["--duree" as string]: `${MOMENT_PARTAGE.pastille}ms`, ["--c" as string]: pastille.m.couleur } as React.CSSProperties}>
+              <button
+                type="button"
+                data-envoyer-ce-moment
+                aria-label={`${PHRASES_MOMENT.envoyerTa} ${PHRASES_MOMENT.aLaMinute(minuteDuMoment(pastille.demande.t))}`}
+                onClick={() => {
+                  setEnvoi(pastille.demande);
+                  setPastille(null);
+                }}
+              >
+                <i aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2 11 13" />
+                    <path d="M22 2 15 22l-4-9-9-4z" />
+                  </svg>
+                </i>
+                {PHRASES_MOMENT.envoyerTa} <small>{PHRASES_MOMENT.aLaMinute(minuteDuMoment(pastille.demande.t))}</small>
+                <span className="so-carte-temps" aria-hidden="true" />
+              </button>
             </div>
           )}
           {/* (🔴 la pastille de la maquette — visible tant qu'elle marche, un toucher l'arrête — est désormais le bouton de la
@@ -3195,18 +3196,12 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-fig.regarde-g{rotate:-7deg}
 .so-piece.so-en-moment .so-fig:not(.vedette){filter:brightness(.45) saturate(.7);transition:filter .3s,opacity .4s,rotate .3s ease}
 .so-fig.vedette{opacity:0}
-.so-carte-envoi{position:absolute;left:12px;right:12px;bottom:12px;z-index:960;display:flex;flex-direction:column;align-items:center;max-width:420px;margin:0 auto;animation:so-carte-monte .45s cubic-bezier(.2,.9,.3,1.2) both}
-.so-carte-pointe{width:0;height:0;border:11px solid transparent;border-bottom:13px solid #FFF4E6;margin-bottom:-1px}
-.so-carte-corps{position:relative;display:flex;gap:12px;align-items:center;width:100%;box-sizing:border-box;padding:11px;border-radius:20px;background:#FFF4E6;color:#1b0a17;box-shadow:0 18px 40px -12px #000;overflow:hidden}
-.so-carte-mini{position:relative;flex:none;display:flex;flex-direction:column;width:52px;height:90px;border-radius:9px;overflow:hidden;background:radial-gradient(90% 60% at 50% 80%,var(--c),#2a1024 75%);box-shadow:0 4px 10px rgba(0,0,0,.25)}
-.so-carte-mini img{width:100%;height:30px;object-fit:cover;flex:none}
-.so-carte-mini b{flex:1;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
-.so-carte-mini b img,.so-carte-mini b canvas{height:46px;width:auto;object-fit:contain}
-.so-carte-texte{display:flex;flex-direction:column;gap:7px;flex:1;min-width:0}
-.so-carte-texte strong{font-size:14.5px;line-height:1.25}
-.so-carte-texte button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:0;border-radius:999px;background:#FF2E9A;color:#fff;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
-.so-carte-temps{position:absolute;left:0;right:0;bottom:0;height:4px;background:#FF2E9A;transform-origin:left;animation:so-carte-temps var(--duree,11s) linear both}
-@keyframes so-carte-monte{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.so-carte-envoi{position:absolute;left:50%;bottom:10px;z-index:960;transform:translateX(-50%);animation:so-carte-monte .35s ease-out both}
+.so-carte-envoi button{position:relative;display:flex;align-items:center;gap:7px;min-height:36px;padding:4px 12px 4px 4px;border:1px solid #ff6fbd;border-radius:999px;background:rgba(43,20,36,.93);color:#FFF4E6;font:inherit;font-weight:800;font-size:13px;white-space:nowrap;cursor:pointer;overflow:hidden;box-shadow:0 8px 20px -8px #000}
+.so-carte-envoi i{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#FF2E9A;color:#fff}
+.so-carte-envoi small{font-size:12px;font-weight:600;color:#d9c3cf}
+.so-carte-temps{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--c,#FF2E9A);transform-origin:left;animation:so-carte-temps var(--duree,6s) linear both}
+@keyframes so-carte-monte{from{transform:translate(-50%,14px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 @keyframes so-carte-temps{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media (prefers-reduced-motion:reduce){.so-carte-envoi{animation:none}.so-carte-temps{animation:none}}
 .so-piece.so-en-moment .so-fig.sur-place:not(.vedette),.so-fig.sur-place{filter:drop-shadow(0 0 8px var(--c)) drop-shadow(0 0 18px var(--c));scale:1.08;transition:filter .2s,scale .2s}
