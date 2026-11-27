@@ -39,6 +39,10 @@ export type LigneActivite = {
   prenoms: string[];
   /** ↩ quelqu'un m'a répondu (le plus récent) */
   reponse?: { prenom: string; texte?: string };
+  /** 🧸 la figurine de la personne (celle qui m'a répondu, sinon la dernière qui a parlé) ; absente : son initiale */
+  figurine?: string;
+  /** (serveur seulement : qui, avant de chercher sa figurine — jamais envoyé) */
+  qui?: string;
   /** la dernière intervention */
   dernier?: { prenom: string; texte?: string };
 };
@@ -61,14 +65,27 @@ export const PHRASES_ACTIVITE = {
   vagueGroupe: (nom: string, n: number) => `👥 ${nom} · ${n} nouveau${n > 1 ? "x" : ""} mot${n > 1 ? "s" : ""}`,
   vague: (n: number, titre: string) => `💬 ${n} nouveau${n > 1 ? "x" : ""} mot${n > 1 ? "s" : ""} sur « ${titre} »`,
   cercle: { proches: "👯 Proches", tous: "🌍 Tous", groupe: "👥" } as Record<CercleDiscussion | "groupe", string>,
-  vide: "Rien de neuf pour l’instant. Quand on te répond, ou qu’on parle d’une vidéo que tu suis, c’est ici.",
+  vide: "Rien de neuf pour l’instant",
+  videSous: "Quand un proche réagit à une vidéo, ou qu’on te répond dans une discussion, ça arrive ici.",
+  videBouton: "Aller voir Découvrir",
   videFiltre: "Rien ici pour l’instant.",
-  chezToi: "🏠 Pendant ton absence, chez toi",
+  chezToi: "Chez toi pendant ton absence",
   chezToiSous: "Qui a frappé, ce qu’on t’a laissé",
+  toutLuCourt: "✓ Tout lu",
+  ouvrir: "Ouvrir ›",
+  /** (27/11/2026, la page revue : une phrase entière par ligne — le prénom, ce qui s'est passé, la vidéo) */
+  quoi: {
+    repondu: "t’a répondu sur",
+    reagi: (n: number) => (n > 1 ? "ont réagi à" : "a réagi à"),
+    ecritDans: (n: number) => (n > 1 ? "ont écrit dans" : "a écrit dans"),
+    ecrit: (n: number) => (n > 1 ? "ont écrit sur" : "a écrit sur"),
+    sur: "sur",
+  },
+  nouveauxSurVignette: (n: number) => `+${n}`,
   erreur: "Ton activité n’a pas pu s’ouvrir. Réessaie dans un instant.",
 };
 
-function listePrenoms(l: string[]): string {
+export function listePrenoms(l: string[]): string {
   if (l.length <= 1) return l[0] ?? "Quelqu’un";
   return `${l.slice(0, -1).join(", ")} et ${l[l.length - 1]}`;
 }

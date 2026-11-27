@@ -11,7 +11,8 @@ import { REVOIR, type VideoARevoir } from "./revoir";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 type Vue = { id: string; titre: string; chaine: string; duree: number; le: number };
-type Boite = { videos?: Record<string, { titre?: string; de?: string[]; n?: number; le?: number }> };
+/** (`dh` : le dernier ami qui a réagi, depuis le 27/11/2026 — pour sa figurine dans Activité) */
+type Boite = { videos?: Record<string, { titre?: string; de?: string[]; n?: number; le?: number; dh?: string }> };
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 const cheminHistorique = (h: string) => `${h}/tele-historique.json`;
 const cheminBoite = (h: string) => `${h}/tele-revoir.json`;
@@ -24,12 +25,12 @@ export async function ajouterAHistorique(supabase: Supabase, h: string, v: { id:
 }
 
 /** (un ami a réagi à une vidéo que j'ai vue : elle va dans ma boîte, avec son prénom) */
-export async function noterARevoir(supabase: Supabase, h: string, v: { id: string; titre: string }, prenom: string): Promise<void> {
+export async function noterARevoir(supabase: Supabase, h: string, v: { id: string; titre: string }, prenom: string, qui?: string): Promise<void> {
   const f = await lireJson<Boite>(supabase, cheminBoite(h)).catch(() => ({}) as Boite);
   const videos = { ...(f.videos ?? {}) };
   const avant = videos[v.id];
   const de = [...new Set([...(avant?.de ?? []), prenom || "Un ami"])].slice(-5);
-  videos[v.id] = { titre: s(v.titre), de, n: (Number(avant?.n) || 0) + 1, le: Date.now() };
+  videos[v.id] = { titre: s(v.titre), de, n: (Number(avant?.n) || 0) + 1, le: Date.now(), ...(qui ? { dh: qui } : {}) };
   const gardees = Object.entries(videos)
     .sort((a, b) => (Number(b[1].le) || 0) - (Number(a[1].le) || 0))
     .slice(0, REVOIR.boite);
@@ -46,10 +47,10 @@ export async function revue(supabase: Supabase, h: string, id: string): Promise<
 }
 
 /** 📼 Ma boîte : les vidéos vues auxquelles des amis ont réagi depuis (la plus récente d'abord). */
-export async function maBoiteARevoir(supabase: Supabase, h: string): Promise<{ id: string; titre: string; de: string[]; n: number; le: number }[]> {
+export async function maBoiteARevoir(supabase: Supabase, h: string): Promise<{ id: string; titre: string; de: string[]; n: number; le: number; dernierH?: string }[]> {
   const f = await lireJson<Boite>(supabase, cheminBoite(h)).catch(() => ({}) as Boite);
   return Object.entries(f.videos ?? {})
-    .map(([id, x]) => ({ id, titre: s(x.titre), de: (x.de ?? []).map(s).filter(Boolean), n: Number(x.n) || 0, le: Number(x.le) || 0 }))
+    .map(([id, x]) => ({ id, titre: s(x.titre), de: (x.de ?? []).map(s).filter(Boolean), n: Number(x.n) || 0, le: Number(x.le) || 0, ...(s(x.dh) ? { dernierH: s(x.dh) } : {}) }))
     .filter((x) => x.titre && x.de.length)
     .sort((a, b) => b.le - a.le);
 }

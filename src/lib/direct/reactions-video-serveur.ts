@@ -142,7 +142,7 @@ export async function noterReaction(
   if (!prevenirLui || !pour || !r.texte) return { ok: true, reaction: r };
   const prenom = await prenomDuProche(supabase, moi.id);
   // (📼 section 31 : dans sa boîte « à revoir »)
-  await noterARevoir(supabase, pour.h, { id: v.id, titre: v.titre }, prenom).catch(() => undefined);
+  await noterARevoir(supabase, pour.h, { id: v.id, titre: v.titre }, prenom, moi.id).catch(() => undefined);
   return {
     ok: true,
     reaction: r,
@@ -211,7 +211,7 @@ export async function apresLaVue(supabase: Supabase, moi: Habitant, video: strin
   if (!v || !eux.length) return;
   const prenom = await prenomDuProche(supabase, moi.id);
   // (📼 section 31 : la vidéo va dans leur boîte « à revoir », avec mon prénom)
-  await Promise.all(eux.map((p) => noterARevoir(supabase, p.h, { id: v.id, titre: v.titre }, prenom).catch(() => undefined)));
+  await Promise.all(eux.map((p) => noterARevoir(supabase, p.h, { id: v.id, titre: v.titre }, prenom, moi.id).catch(() => undefined)));
   const notif: Notif = { titre: PHRASES_REACTIONS.aRegarde(prenom, titreCourt(v.titre)), corps: PHRASES_REACTIONS.revoisLa, url: adresseVideo(v.id), tag: `tele-${v.id}` };
   // (📱 lot A5 : seulement ceux qui la suivent en 🔔 — 🤫 et 🔕 la trouvent dans Activité ; l'interrupteur « Mes proches
   // et mes groupes »)
