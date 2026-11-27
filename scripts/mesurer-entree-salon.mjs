@@ -39,3 +39,19 @@ for (const theme of ["manga", "manga", "foot"]) {
   const r = await page(GENS[0], theme);
   console.log(`Léa entre (${theme}) : ${r.statut}, ${r.ms} ms`, JSON.stringify(await compte()));
 }
+// (et ce que l'ouverture de l'appli demande : la page, puis ses routes, une à une)
+const chrono = async (x, chemin, corps) => {
+  await compte(true);
+  const t = Date.now();
+  const r = await fetch(`${BASE}${chemin}`, corps ? { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify(corps) } : { headers: { cookie: `clikme_habitant=${x.jeton}` } });
+  await r.text();
+  console.log(`${chemin}${corps ? " " + JSON.stringify(corps) : ""} : ${r.status}, ${Date.now() - t} ms`, JSON.stringify(await compte()));
+};
+for (const tour of [1, 2]) {
+  if (tour === 2) console.log("— deuxième fois —");
+  await chrono(GENS[0], "/collection");
+  await chrono(GENS[0], "/api/direct/fil-decouvrir");
+  await chrono(GENS[0], "/api/direct/ma-figurine");
+  await chrono(GENS[0], "/api/direct/activite?compter=1");
+  await chrono(GENS[0], "/api/direct/proches", { action: "la" });
+}
