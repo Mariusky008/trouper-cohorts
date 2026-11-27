@@ -1,7 +1,7 @@
 /**
  * 📸 ENVOYER LE MOMENT (les grands moments, lot R3 ; `docs/univers/grands-moments.md`) : ce qui ne dépend pas du serveur.
  *
- * Juste après mon grand moment, « 📸 Envoyer ce moment » : le serveur fabrique une image au format story (1080 × 1920) —
+ * Juste après mon grand moment, une carte sous ma figurine (« Ta réaction à 2:17 est prête », « Envoyer à un ami » ; maquette validée le 27/11) : le serveur fabrique une image au format story (1080 × 1920) —
  * la miniature officielle de la vidéo (on ne peut pas copier l'image du lecteur YouTube : il est fermé aux autres sites),
  * l'heure exacte (« à 2:47 »), ma figurine qui fait la tête de l'émotion, sa bulle, et l'adresse du moment
  * (`clikme.fr/moment/<id>`). Le téléphone l'envoie (WhatsApp, Instagram, TikTok… par sa feuille de partage), sinon on
@@ -43,20 +43,27 @@ export const cheminDuMoment = (id: string) => `/moment/${id}`;
 export const adresseCourte = (origine: string, id: string) => `${origine.replace(/^https?:\/\/(www\.)?/, "")}${cheminDuMoment(id)}`;
 
 export const PHRASES_MOMENT = {
-  envoyer: "📸 Envoyer ce moment",
-  titre: "Envoyer ce moment",
+  /** la carte sous ma figurine (maquette « Envoyer ma réaction », validée le 27/11) */
+  prete: (minute: string) => `Ta réaction à ${minute} est prête`,
+  envoyerAmi: "Envoyer à un ami",
+  titre: "Envoie ta réaction",
+  sousTitre: (minute: string) => `Ton ami voit ta figurine réagir à ${minute}, et peut revoir le moment.`,
+  image: "Image",
+  videoCourte: "Vidéo 4 s",
   prepare: "Je prépare ton image…",
   rate: "L’image n’a pas pu se faire. Réessaie.",
-  partager: "📤 Envoyer",
-  whatsapp: "💬 WhatsApp",
-  enregistrer: "⬇️ Enregistrer l’image",
-  copier: "🔗 Copier le lien",
+  whatsapp: "WhatsApp",
+  story: "Story",
+  tiktok: "TikTok",
+  autre: "Autre",
+  enregistrer: "Enregistrer",
+  copier: "Copier le lien",
+  /** sans feuille de partage (un ordinateur) : le fichier s'enregistre, et on dit quoi en faire */
+  enregistreImage: "Image enregistrée : ajoute-la à ta story depuis l’appli.",
+  enregistreVideo: "Vidéo enregistrée : ajoute-la depuis l’appli.",
   copie: "Lien copié ✓",
   /** la vidéo de 4 secondes (lot R5) */
-  video: "🎬 Envoyer la vidéo",
-  videoPrepare: "🎬 Je fais ta vidéo…",
-  enregistrerVideo: "⬇️ Enregistrer la vidéo",
-  aideVideo: "Pour TikTok et les Reels : la vidéo de 4 secondes.",
+  videoPrepare: "Je fais ta vidéo…",
   /** le texte qui part avec l'image */
   texte: (minute: string) => `J’ai réagi à ${minute} 👉`,
   /** sur l'image et sur la page */

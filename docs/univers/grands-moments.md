@@ -79,3 +79,18 @@ Une figurine sans expressions prêtes : sa tête du jour (colorée), sinon son i
   bas. Elle se fait pendant qu'on regarde l'image (le partage doit partir d'un toucher), puis « 🎬 Envoyer la vidéo » ;
   sans feuille de partage pour les vidéos, elle s'enregistre. Le téléphone ne sait pas filmer : pas de bouton, l'image
   reste. Jamais de son.
+
+## 5. Envoyer ma réaction (retours du 27 novembre)
+
+Maquette validée : https://claude.ai/artifact/AnQNbCwmVhrcjhMYxojvYA. Le bouton « 📸 Envoyer ce moment » en haut à droite de
+la scène n'était pas compris. À la place :
+
+- **La carte sous ma figurine** (`.so-carte-envoi`, `[data-carte-envoi]`) monte pendant mon grand moment : la petite image
+  de ma réaction (la vignette de la vidéo, ma figurine sur la couleur de l'émotion), « Ta réaction à 2:17 est prête » et
+  « Envoyer à un ami ». Une barre rose montre le temps qui reste (3 s + 8 s), puis elle s'efface.
+- **La feuille « Envoie ta réaction »** : « Image | Vidéo 4 s » (la vidéo se fait pendant qu'on regarde), un grand aperçu,
+  WhatsApp, Story, TikTok, Autre, puis Enregistrer et Copier le lien. Un site ne peut pas ouvrir lui-même la story
+  Instagram ou TikTok : ces boutons ouvrent la feuille de partage du téléphone AVEC le fichier. Sans feuille de partage
+  pour un fichier (un ordinateur) : WhatsApp envoie le lien, les autres enregistrent le fichier et disent quoi en faire.
+- **L'aperçu du lien** (WhatsApp, iMessage…) : `/api/direct/moment/<id>/apercu`, 1200 × 630 en JPEG (~30 Ko). L'image
+  story (plus d'un mégaoctet) n'était pas affichée par WhatsApp, qui ne gardait que le texte.

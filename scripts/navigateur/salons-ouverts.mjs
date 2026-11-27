@@ -204,19 +204,25 @@ ok(/Allez les bleus/.test(await texte(lea.locator("[data-bulle-moment]"))), "…
 await lea.locator('[data-reagir] [data-r="rire"]').click();
 ok(await attendre(lea, async () => (await lea.locator('[data-grand-moment="rire"][data-niveau="2"] [data-fois="2"]').count()) === 1, 2000), "🎆 touchée encore, vite : ×2 (elle grandit, la pièce tremble)");
 // 📸 (lot R3) « Envoyer ce moment » : l'image story de son moment, son adresse
-ok(await attendre(lea, async () => (await lea.locator("[data-envoyer-ce-moment]").count()) === 1, 3000), "📸 « Envoyer ce moment » apparaît après son grand moment");
+ok(await attendre(lea, async () => (await lea.locator("[data-carte-envoi] [data-envoyer-ce-moment]").count()) === 1, 3000), "📸 une carte monte sous sa figurine pendant son grand moment");
+const carte = await texte(lea.locator("[data-carte-envoi]"));
+ok(/Ta réaction à \d+:\d\d est prête/.test(carte) && /Envoyer à un ami/.test(carte) && (await lea.locator("[data-carte-envoi] .so-carte-mini img").count()) >= 1, `… « ${carte} », avec la petite image de sa réaction`);
+await lea.screenshot({ path: `${D}/salons-ouverts-3a-carte-envoi.png` });
 await lea.locator("[data-envoyer-ce-moment]").click();
 ok(await attendre(lea, async () => (await lea.locator("[data-image-moment]").count()) === 1, 20000), `… le serveur fabrique son image (${await texte(lea.locator("[data-envoyer-moment]"))})`);
 const lienMoment = (await lea.locator("[data-lien-moment]").getAttribute("data-lien-moment")) ?? "";
 ok(/\/moment\/[a-z0-9]{10}$/.test(lienMoment), `… et son adresse (${lienMoment})`);
 const imageMoment = await lea.request.get(new URL((await lea.locator("[data-image-moment]").getAttribute("data-image-moment")) ?? "", lienMoment).href);
 ok(imageMoment.ok() && /image\/png/.test(imageMoment.headers()["content-type"] ?? ""), "… l'image (PNG, 1080 × 1920)");
-ok((await lea.locator("[data-partager]").count()) === 1 && (await lea.locator("[data-whatsapp]").count()) === 1 && (await lea.locator("[data-enregistrer]").count()) === 1 && (await lea.locator("[data-copier]").count()) === 1, "… 📤 Envoyer, 💬 WhatsApp, ⬇️ Enregistrer l'image, 🔗 Copier le lien");
+ok(/Envoie ta réaction/.test(await texte(lea.locator("[data-envoyer-moment] h2"))) && (await lea.locator("[data-whatsapp]").count()) === 1 && (await lea.locator("[data-story]").count()) === 1 && (await lea.locator("[data-tiktok]").count()) === 1 && (await lea.locator("[data-partager]").count()) === 1 && (await lea.locator("[data-enregistrer]").count()) === 1 && (await lea.locator("[data-copier]").count()) === 1, "… « Envoie ta réaction » : WhatsApp, Story, TikTok, Autre, Enregistrer, Copier le lien");
 await lea.screenshot({ path: `${D}/salons-ouverts-3b-envoyer-moment.png` });
 // (la vidéo de 4 secondes : le téléphone la fait tout seul pendant qu'on regarde l'image)
 await lea.locator("[data-video]").waitFor({ timeout: 30000 });
 const typeVideo = (await lea.locator("[data-video]").getAttribute("data-video")) ?? "";
-ok(/^video\/(mp4|webm)$/.test(typeVideo) && (await lea.locator("[data-video-prepare]").count()) === 0, `… 🎬 Envoyer la vidéo (4 s, ${typeVideo})`);
+ok(/^video\/(mp4|webm)$/.test(typeVideo) && (await lea.locator("[data-video-prepare]").count()) === 0, `… « Vidéo 4 s » est prête (${typeVideo})`);
+await lea.locator("[data-format=\"video\"]").click();
+ok(await attendre(lea, async () => (await lea.locator("[data-apercu-video]").count()) === 1, 3000), "… un toucher : l'aperçu devient la vidéo");
+await lea.screenshot({ path: `${D}/salons-ouverts-3b-envoyer-video.png` });
 // (l'ami qui reçoit le lien : un autre téléphone, sans ClikMe)
 const ami = await lea.context().browser().newContext({ viewport: { width: 390, height: 844 } });
 const pageMoment = await ami.newPage();
@@ -234,6 +240,8 @@ ok(!/Doucement/.test(noteEncore), `… sans « Doucement » : les touchers sont 
 await lea.screenshot({ path: `${D}/salons-ouverts-3-bulles.png` });
 
 // ═══ TOUCHER SAM : SA FICHE, UN GESTE, SIGNALER ═══
+// (Sam est entré par la route, sans pouls : un ❤️ garde sa place fraîche pendant la longue partie 📸)
+await route(SAM, { action: "ecrire", salon: "foot-1", sorte: "reaction", cle: "coeur" });
 await lea.waitForTimeout(1700);
 await lea.locator(`.so-fig[data-q="${S}"]`).click();
 const fiche = lea.locator(`[data-fiche="${S}"]`);
