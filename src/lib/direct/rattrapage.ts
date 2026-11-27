@@ -96,6 +96,10 @@ export type SeanceARattraper = SeanceResumee & {
   traces: TraceSeance[];
   /** les figurines de ceux qui ont laissé une trace (pour qu'elles prennent la scène) */
   figurines: Record<string, string>;
+  /** ceux qui auraient pu être là et n'y étaient pas (les membres du groupe ; les places de l'essai) — sans moi */
+  absents: PlaceGroupe[];
+  /** moi (ma figurine s'allume dans le salon en rattrapage) */
+  moi: PlaceGroupe;
 };
 
 /** Le temps lisible d'une seconde de vidéo : « 2:15 », « 1:02:05 ». */

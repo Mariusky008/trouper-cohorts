@@ -14,6 +14,7 @@
  */
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { randomBytes } from "node:crypto";
+import type { Habitant } from "./habitant";
 import { SEAU_FIGURINES, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { OUVERT_APRES_MS, OUVERT_AVANT_MS, type PlaceGroupe } from "./groupes";
 import { cleSeanceValide, grandMoment, ouValide, partsDeLaSeance, PHRASES_RATTRAPAGE, RATTRAPAGE_MS, TRACES_MAX, type SeanceARattraper, type SeanceResumee, type TraceSeance, type VideoDeLaSeance } from "./rattrapage";
@@ -221,8 +222,9 @@ export async function seancesPourMoi(supabase: Supabase, h: string, de: unknown,
  * ⏪ Une séance, pour la rattraper : ceux qui étaient là, ses vidéos (celles où l'on a réagi d'abord ; sinon celle qui
  * passait à son heure), ses traces, les figurines.
  */
-export async function laSeanceARattraper(supabase: Supabase, h: string, cleBrute: unknown, maintenant = Date.now()): Promise<Resultat<{ seance?: SeanceARattraper }>> {
+export async function laSeanceARattraper(supabase: Supabase, moiH: Habitant, cleBrute: unknown, maintenant = Date.now()): Promise<Resultat<{ seance?: SeanceARattraper }>> {
   const { qui8 } = await import("./talkie-serveur");
+  const h = moiH.id;
   const cle = cleSeanceValide(cleBrute);
   if (!cle) return { error: PHRASES_RATTRAPAGE.absente, statut: 404 };
   const parts = partsDeLaSeance(cle);
@@ -242,5 +244,19 @@ export async function laSeanceARattraper(supabase: Supabase, h: string, cleBrute
   const figurines: Record<string, string> = {};
   for (const x of s0.la) if (x.src) figurines[x.q] = x.src;
   for (const x of traces) if (x.src && !figurines[x.q]) figurines[x.q] = x.src;
-  return { seance: { ...resume, videos, traces: traces.map(tracePublique), figurines } };
+  // (les absents : les membres du groupe, ou ceux qui avaient leur place à l'essai, qui n'y étaient pas)
+  const proprio = cle.split("/")[0];
+  const { membresDe, idGroupeValide } = await import("./groupes-chemins-serveur");
+  const possibles: PlaceGroupe[] = idGroupeValide(proprio)
+    ? (await membresDe(supabase, proprio).catch(() => [])).map(place)
+    : (await Promise.all((await lister(supabase, `groupes/places/${proprio}`, 20)).map((n) => lireJson<Partial<PlaceGroupe>>(supabase, `groupes/places/${proprio}/${n}`).catch(() => ({}) as Partial<PlaceGroupe>))))
+        .filter((x): x is PlaceGroupe => Boolean(x.q))
+        .map((x) => place({ q: x.q, prenom: s(x.prenom), src: s(x.src) }));
+  const la = new Set(s0.la.map((x) => x.q));
+  const absents = possibles.filter((x) => !la.has(x.q) && x.q !== q).slice(0, 8);
+  const { figurineDeLaMaison } = await import("./ma-maison-serveur");
+  const { prenomDe } = await import("./ma-figurine-serveur");
+  const [maFigurine, monPrenom] = await Promise.all([figurineDeLaMaison(supabase, h).catch(() => null), prenomDe(supabase, moiH).catch(() => "")]);
+  const moi: PlaceGroupe = { q, prenom: monPrenom || "Toi", src: maFigurine?.src ?? figurines[q] ?? "" };
+  return { seance: { ...resume, videos, traces: traces.map(tracePublique), figurines, absents, moi } };
 }

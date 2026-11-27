@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const moi = await habitantCourant(supabase);
   if (!moi) return NextResponse.json({ error: "Crée d’abord ta figurine sur ce téléphone." }, { status: 401, headers: sansCache });
   const u = new URL(request.url).searchParams;
-  const r = u.get("seance") ? await laSeanceARattraper(supabase, moi.id, u.get("seance")) : await seancesPourMoi(supabase, moi.id, u.get("de"));
+  const r = u.get("seance") ? await laSeanceARattraper(supabase, moi, u.get("seance")) : await seancesPourMoi(supabase, moi.id, u.get("de"));
   if (r.error) return NextResponse.json({ error: r.error }, { status: r.statut ?? 400, headers: sansCache });
   return NextResponse.json(r, { headers: sansCache });
 }
