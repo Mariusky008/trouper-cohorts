@@ -109,8 +109,9 @@ séance : une dizaine d'étapes).
 **⚡ Le serveur à côté de la base (27 novembre 2026)** : le propriétaire, « quand je clique sur « Ta place » […] ça prend
 une éternité ». La base Supabase est en Irlande (`eu-west-1`, voir `supabase/.temp/pooler-url`) ; sans réglage, Vercel
 fait tourner les pages à Washington (`iad1`) : chaque aller-retour vers la base traversait l'Atlantique (≈ 75 ms), et
-entrer dans un salon en enchaîne des dizaines. `vercel.json` fixe maintenant `"regions": ["dub1"]` (Dublin, à côté de
-la base, et plus près des téléphones français). **Ne pas l'enlever.**
+entrer dans un salon en enchaîne des dizaines. On l'a d'abord fixé dans `vercel.json` (`"regions": ["dub1"]`,
+#336) ; les mises en ligne ne passant plus ensuite (offre gratuite de Vercel), le réglage est retiré du fichier : la
+région se choisit dans Vercel (Settings › Functions › Function Region : Dublin, `dub1`).
 
 **🟢 Les salons par passion, version B (21 novembre 2026, au soir ; `decouvrir.md`, section 32)** : la maquette B choisie
 par le propriétaire — sur l'accueil de Découvrir, « En direct maintenant » (la vitrine : le salon le plus vivant, sa télé,
