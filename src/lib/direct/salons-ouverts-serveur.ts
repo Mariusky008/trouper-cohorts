@@ -296,48 +296,65 @@ export type OuvertureSalonOuvert = {
 export async function entrerAuSalon(supabase: Supabase, moi: Habitant, theme: unknown): Promise<Resultat<{ ouverture?: OuvertureSalonOuvert; age?: true; figurine?: true; exclu?: true }>> {
   const t = themeDe(theme);
   if (!t) return { error: "Ce salon n’existe pas.", statut: 404 };
-  const m = await maisonDeMoi(supabase, moi.id);
-  if (!m) return { error: PHRASES_SALONS.age, statut: 409, age: true };
-  if (t.adultes && m !== "adultes") return { error: "Le salon des jeunes parents est réservé aux adultes.", statut: 403 };
   const q = qui8(moi.id);
-  if (await exclusion(supabase, q)) return { error: PHRASES_SALONS.exclu, statut: 403, exclu: true };
-  const [figurine, prenom, salons, caches, gradin, videos, profil, double, proches] = await Promise.all([
+  // ⚡ (27 novembre 2026, « quand je clique sur « Ta place » […] ça prend une éternité ») tout ce qui ne dépend de rien part
+  // en même temps : avant, l'âge, l'exclusion, puis le reste, puis le décor, puis le réveil… attendaient chacun le
+  // précédent (17 allers-retours à la file ; 8 maintenant). Les salons du thème et la télé partent dès que l'âge est lu.
+  const maisonP = maisonDeMoi(supabase, moi.id);
+  const salonsP = maisonP.then((m) => (m ? salonsDuTheme(supabase, m, t.id) : []));
+  const videosP = maisonP.then((m) => (m ? videosDuSalon(supabase, t.id, m) : []));
+  const gradinP = gradinDuSalon(supabase, t.id).catch(() => null);
+  // (🖼️ sans gradin validé : la pièce de son décor, cherchée dès qu'on le sait)
+  const decorP = gradinP.then((g) => (g ? null : decorDuSalon(supabase, t.id)));
+  // (😴 où ma figurine dort ailleurs : lu tout de suite, effacé une fois sûr d'entrer)
+  const dortP = lireJson<{ chemin?: string }>(supabase, cheminOuJeDors(moi.id)).catch(() => ({}) as { chemin?: string });
+  const [m, exclu, figurine, prenom, salons, caches, gradin, videos, profil, double, proches] = await Promise.all([
+    maisonP,
+    exclusion(supabase, q),
     figurineDeLaMaison(supabase, moi.id).catch(() => null),
     prenomDe(supabase, moi).catch(() => ""),
-    salonsDuTheme(supabase, m, t.id),
+    salonsP,
     mesCaches(supabase, moi.id),
-    gradinDuSalon(supabase, t.id).catch(() => null),
-    videosDuSalon(supabase, t.id, m),
+    gradinP,
+    videosP,
     sonProfilDeSalon(supabase, moi.id),
     sonDoubleDeSalon(supabase, moi.id),
     prochesDe(supabase, moi.id).catch(() => new Set<string>()),
   ]);
-  // (🎭 son gradin validé ; sinon la pièce de son décor)
-  const decor = gradin ? null : await decorDuSalon(supabase, t.id);
+  if (!m) return { error: PHRASES_SALONS.age, statut: 409, age: true };
+  if (t.adultes && m !== "adultes") return { error: "Le salon des jeunes parents est réservé aux adultes.", statut: 403 };
+  if (exclu) return { error: PHRASES_SALONS.exclu, statut: 403, exclu: true };
   if (!figurine) return { error: PHRASES_SALONS.sansFigurine, statut: 409, figurine: true };
-  // (😴 j'entre : ma figurine endormie ailleurs s'en va)
-  await reveiller(supabase, moi.id);
   // (celui où il est déjà ; sinon le plus rempli qui a une place ; sinon un nouveau)
   const ou = salons.find((x) => x.presents.some((p) => p.nom === q)) ?? [...salons].filter((x) => x.presents.length < PLACES_SALON).sort((a, b) => b.presents.length - a.presents.length || a.n - b.n)[0];
   const n = ou?.n ?? (salons.length ? Math.max(...salons.map((x) => x.n)) + 1 : 1);
   const id = idSalon(t.id, n);
   const autres = (ou?.presents ?? []).filter((p) => p.nom !== q);
-  const fiches = await Promise.all(autres.map((p) => lirePresent(supabase, m, id, p.nom)));
-  const ancienne = ou?.presents.some((p) => p.nom === q) ? await lirePresent(supabase, m, id, q) : null;
-  const prises = new Set(fiches.map((f) => Number(f.place)));
   const maintenant = Date.now();
-  const { place, dorment } = await placeEnEntrant(supabase, m, id, prises, await dormeurs(supabase, m, id, new Set([q, ...autres.map((p) => p.nom)]), maintenant), ancienne ? Number(ancienne.place) : undefined);
+  // (😴 j'entre : ma figurine endormie ailleurs s'en va — en même temps que je lis ceux qui sont là, et ceux qui dorment)
+  const dort = s((await dortP).chemin);
+  const [fiches, ancienne, endormis, decor] = await Promise.all([
+    Promise.all(autres.map((p) => lirePresent(supabase, m, id, p.nom))),
+    ou?.presents.some((p) => p.nom === q) ? lirePresent(supabase, m, id, q) : Promise.resolve(null),
+    dormeurs(supabase, m, id, new Set([q, ...autres.map((p) => p.nom)]), maintenant),
+    decorP,
+    dort ? effacer(supabase, [dort, cheminOuJeDors(moi.id)]) : Promise.resolve(),
+  ]);
+  const prises = new Set(fiches.map((f) => Number(f.place)));
+  const { place, dorment } = await placeEnEntrant(supabase, m, id, prises, endormis, ancienne ? Number(ancienne.place) : undefined);
   const fiche: FichePresent = { q, h: moi.id, prenom: prenom || "Quelqu’un", figurine, place, arrive: ancienne?.arrive ?? maintenant, ecrits: ancienne?.ecrits ?? [], ...profil, ...double };
-  if (!(await ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
-  // (👀 « Ma figurine », lot 2 : ceux qui sont là voient sa figurine, et il les voit — leur journée, et la sienne)
-  await noterVusAuSalon(supabase, { h: moi.id, prenom: fiche.prenom }, fiches);
-  // (en passant : les messages de plus de 48 h s'effacent ; 🏠 « Mes salons » retient celui-ci)
-  void nettoyerMessages(supabase, m, id, maintenant);
-  void noterMonSalon(supabase, moi.id, t.id, maintenant);
-  const [messages, platine] = await Promise.all([
+  // (ma fiche s'écrit pendant qu'on lit les messages et la platine ; 👀 « Ma figurine », lot 2 : ceux qui sont là voient
+  // sa figurine, et il les voit — leur journée, et la sienne)
+  const [ecrit, , messages, platine] = await Promise.all([
+    ecrireJson(supabase, `${dossierPresents(m, id)}/${q}.json`, fiche),
+    noterVusAuSalon(supabase, { h: moi.id, prenom: fiche.prenom }, fiches),
     derniersMessages(supabase, m, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches }),
     estSalonMusique(t.id) ? platineAJour(supabase, m, id, maintenant).catch(() => null) : Promise.resolve(null),
   ]);
+  if (!ecrit) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  // (en passant : les messages de plus de 48 h s'effacent ; 🏠 « Mes salons » retient celui-ci)
+  void nettoyerMessages(supabase, m, id, maintenant);
+  void noterMonSalon(supabase, moi.id, t.id, maintenant);
   return {
     ouverture: {
       salon: { id, theme: t.id, n, nom: nomDuSalon(t.id, n), maison: m, ...(salons.length && !ou ? { plein: true } : {}) },
