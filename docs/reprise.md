@@ -106,6 +106,12 @@ maison 287 ms, Messages 77 ms, retour à Découvrir 62 ms ; la séance d'un touc
 raccourcir les chaînes des routes les plus longues (Messages : 37 allers-retours en 13 étapes ; les salons : 51 ; la
 séance : une dizaine d'étapes).
 
+**⚡ Le serveur à côté de la base (27 novembre 2026)** : le propriétaire, « quand je clique sur « Ta place » […] ça prend
+une éternité ». La base Supabase est en Irlande (`eu-west-1`, voir `supabase/.temp/pooler-url`) ; sans réglage, Vercel
+fait tourner les pages à Washington (`iad1`) : chaque aller-retour vers la base traversait l'Atlantique (≈ 75 ms), et
+entrer dans un salon en enchaîne des dizaines. `vercel.json` fixe maintenant `"regions": ["dub1"]` (Dublin, à côté de
+la base, et plus près des téléphones français). **Ne pas l'enlever.**
+
 **🟢 Les salons par passion, version B (21 novembre 2026, au soir ; `decouvrir.md`, section 32)** : la maquette B choisie
 par le propriétaire — sur l'accueil de Découvrir, « En direct maintenant » (la vitrine : le salon le plus vivant, sa télé,
 les figurines de ceux qui y sont, « Entrer »), puis « Tes passions » et « À découvrir » en rangées qui défilent, une
