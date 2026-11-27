@@ -263,6 +263,16 @@ ok(await attendre(tom, async () => (await tom.locator('#o-decouvrir [data-piece=
 ok(!(await deborde(tom)) && (await sansMotInterdit(tom)), "rien ne déborde, jamais le mot interdit");
 await tom.context().close();
 
+// ═══ SANS FIGURINE SUR CE NAVIGATEUR (27 novembre 2026 : le fil restait noir sur un 401) ═══
+const inconnu = await ouvrir({ jeton: "jeton-fil-decouvrir-ecran-inconnu" });
+await inconnu.goto(`${BASE}/collection?v=${Date.now()}#decouvrir`, { waitUntil: "domcontentloaded" });
+ok(
+  await attendre(inconnu, async () => (await inconnu.locator('#o-decouvrir [data-souci="sans-figurine"]').count()) === 1, 30000),
+  "sans figurine sur ce navigateur : jamais un écran vide, « Ta figurine n’est pas sur ce navigateur »",
+);
+ok(/Retrouver ou créer ma figurine/.test(await texte(inconnu.locator('#o-decouvrir [data-souci="sans-figurine"]'))), "… et le bouton qui mène à « Retrouver ou créer ma figurine »");
+await inconnu.context().close();
+
 await pause(100);
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
 await b.close();

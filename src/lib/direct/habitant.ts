@@ -74,17 +74,29 @@ const CHAMPS =
  * fonction, seules les routes d'action appellent `assurerHabitant`.
  */
 export async function habitantCourant(supabase: Supabase): Promise<Habitant | null> {
+  return (await habitantOuPanne(supabase)).moi;
+}
+
+/**
+ * (27 novembre 2026, « l'application ne semble pas fonctionner » : Découvrir restait noir sur un 401) la même lecture,
+ * qui distingue les deux absences : pas de figurine sur ce navigateur (`panne: false`), ou la base qui n'a pas répondu
+ * alors que le cookie est là (`panne: true`) — l'écran ne dit pas « crée ta figurine » à quelqu'un qui en a une.
+ */
+export async function habitantOuPanne(supabase: Supabase): Promise<{ moi: Habitant | null; panne: boolean }> {
   const jar = await cookies();
   const token = jar.get(COOKIE_HABITANT)?.value?.trim();
-  if (!token) return null;
+  if (!token) return { moi: null, panne: false };
   try {
     const { data, error } = await supabase.from("human_habitants").select(CHAMPS).eq("device_token", token).maybeSingle();
-    if (error) noterCause(`lecture : ${error.message}`);
+    if (error) {
+      noterCause(`lecture : ${error.message}`);
+      return { moi: null, panne: true };
+    }
     const r = data as Record<string, unknown> | null;
-    return r ? lire(r) : null;
+    return { moi: r ? lire(r) : null, panne: false };
   } catch (e) {
     noterCause(`lecture : ${e instanceof Error ? e.message : String(e)}`);
-    return null;
+    return { moi: null, panne: true };
   }
 }
 

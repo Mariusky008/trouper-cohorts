@@ -40,6 +40,19 @@ import { PHRASES_FIL as P, reactionDuFil, titreDeSeance, type BulleFil, type Fil
 
 const ROUTE = "/api/direct/fil-decouvrir";
 const SALONS = "/api/direct/salons-ouverts";
+/**
+ * (27 novembre 2026, « l'application ne semble pas fonctionner » : le fil restait noir quand le serveur répondait 401)
+ * jamais un écran vide : sans figurine sur ce navigateur, on le dit et on mène à « Retrouver ma figurine » ; le serveur
+ * qui ne répond pas, on le dit aussi, et on réessaie.
+ */
+const SOUCIS = {
+  sansFigurineTitre: "Ta figurine n’est pas sur ce navigateur",
+  sansFigurineSous: "Tu l’as déjà sur ton téléphone ? Retrouve-la ici avec ton adresse. Sinon, crée-la en deux minutes.",
+  sansFigurineBouton: "🔎 Retrouver ou créer ma figurine",
+  panneTitre: "Le serveur ne répond pas pour l’instant",
+  panneSous: "On réessaie tout seul toutes les 30 secondes.",
+  panneBouton: "↻ Réessayer maintenant",
+};
 const VISITES = "/api/direct/visites";
 /** La mémoire du fil ne vaut que dix minutes : ce qui était en direct ne l'est plus. */
 const MEMOIRE_MS = 10 * 60_000;
@@ -73,6 +86,8 @@ export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => voi
   const [toast, setToast] = useState("");
   const [indice, setIndice] = useState(false);
   const [version, setVersion] = useState(0);
+  /** ce qui empêche le fil de s'afficher : pas de figurine sur ce navigateur (401), ou le serveur en panne */
+  const [souci, setSouci] = useState<"" | "sans-figurine" | "panne">("");
   const boite = useRef<HTMLDivElement>(null);
   /** les salons où sa figurine est entrée depuis le fil (thème → identifiant), et le dernier « je suis là » */
   const entres = useRef(new Map<string, string>());
@@ -102,15 +117,29 @@ export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => voi
       });
     const charger = () =>
       fetch(ROUTE, { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : null))
+        .then((r) => {
+          if (r.ok) return r.json();
+          if (fini) return null;
+          if (r.status !== 401) setSouci("panne");
+          else {
+            // (pas de figurine ici : ce que ce navigateur gardait du fil ne s'affiche plus)
+            setSouci("sans-figurine");
+            setFil(null);
+            setPieces([]);
+          }
+          return null;
+        })
         .then((j: { fil?: FilVue } | null) => {
           if (fini || !j?.fil) return;
           const f = j.fil;
+          setSouci("");
           setFil(f);
           setPieces((avant) => (avant.length ? fusionner(avant, f.pieces) : f.pieces));
           ecrireMemoire(MEMOIRE_FIL, f);
         })
-        .catch(() => undefined);
+        .catch(() => {
+          if (!fini) setSouci((x) => x || "panne");
+        });
     void charger();
     const t = window.setInterval(() => document.visibilityState === "visible" && void charger(), 30_000);
     return () => {
@@ -334,7 +363,29 @@ export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => voi
   return (
     <div className="fd" data-fil data-pieces={pieces.length}>
       <div className="fd-boite" ref={boite} onPointerDown={surAppui} onPointerUp={surLacher} onPointerCancel={() => (appui.current = null)}>
-        {!fil && <div className="fd-carte fd-attente" aria-hidden="true" />}
+        {souci === "sans-figurine" ? (
+          <section className="fd-carte fd-vide" data-k="souci" data-souci={souci}>
+            <div className="fd-milieu">
+              <h2>{SOUCIS.sansFigurineTitre}</h2>
+              <p>{SOUCIS.sansFigurineSous}</p>
+              <button type="button" className="fd-bouton" onClick={() => (window.location.hash = "figurine")}>
+                {SOUCIS.sansFigurineBouton}
+              </button>
+            </div>
+          </section>
+        ) : !fil && souci === "panne" ? (
+          <section className="fd-carte fd-vide" data-k="souci" data-souci={souci}>
+            <div className="fd-milieu">
+              <h2>{SOUCIS.panneTitre}</h2>
+              <p>{SOUCIS.panneSous}</p>
+              <button type="button" className="fd-bouton" onClick={() => setVersion((v) => v + 1)}>
+                {SOUCIS.panneBouton}
+              </button>
+            </div>
+          </section>
+        ) : (
+          !fil && <div className="fd-carte fd-attente" aria-hidden="true" />
+        )}
         {/* ☀️ « Quoi de neuf ? » (26 novembre 2026) : en haut, comme les stories — il s'en va en glissant vers la première pièce */}
         {fil?.quoiDeNeuf && !fil.age && (
           <QuoiDeNeuf
