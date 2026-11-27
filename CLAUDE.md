@@ -39,6 +39,9 @@ heure, « ＋ Proposer », « Avec mes proches »), lisez d'abord `docs/univers/
 **Si vous travaillez sur les réactions des figurines pendant une vidéo** (les grands moments : la figurine qui prend la
 scène, et envoyer le moment à un ami), lisez d'abord `docs/univers/grands-moments.md`.
 
+**Si vous travaillez sur le rattrapage d'une séance** (revoir une séance de groupe ratée, réagir en décalé, « ⏪ vu en
+rattrapage »), lisez d'abord `docs/univers/rattrapage.md`.
+
 Règles communes :
 
 - On travaille en français.

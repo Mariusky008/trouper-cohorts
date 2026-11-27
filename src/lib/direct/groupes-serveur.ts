@@ -19,7 +19,10 @@ import type { Habitant } from "./habitant";
 import { SEAU_FIGURINES, ecrireJson, lireJson, prenomDe, prochesDe } from "./ma-figurine-serveur";
 import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { figurineDeLaMaison } from "./ma-maison-serveur";
-import { maisonDeMoi, preparerLeRendezVous, presentsDuGroupe } from "./salons-ouverts-serveur";
+import { maisonDeMoi, preparerLeRendezVous, presentsDuGroupe, videosDuSalon } from "./salons-ouverts-serveur";
+import { entrerDansLaSeance } from "./rattrapage-serveur";
+import { themeDe } from "./decouvrir";
+import { cleDeLEssai } from "./rattrapage";
 import { prochainDuGroupe } from "./groupes-vie-serveur";
 import { cheminGroupe, cheminMembre, cheminMiens, dossierInvitationsGroupe, dossierInvites, dossierPassages, estMembre, membresDe, idGroupeValide, themesDuGroupe, dossierAccueils, type FicheMembre } from "./groupes-chemins-serveur";
 import { maTeleDuJour } from "./tele-du-jour-serveur";
@@ -326,14 +329,28 @@ export async function entrer(supabase: Supabase, moi: Habitant, id: unknown): Pr
   const f = v.f;
   const maintenant = Date.now();
   if (!estOuverte(f.quand, maintenant)) return { error: maintenant < f.quand ? "Pas encore : on entre dix minutes avant l’heure." : "Ce rendez-vous est passé.", statut: 409 };
-  if (f.pour === "tous") return { aller: `/univers/salons?theme=${f.theme}` };
   const places = await placesDe(supabase, f.id);
   const hote = f.h === moi.id;
   if (!hote && !places.some((p) => p.h === moi.id)) return { error: "Confirme d’abord ta place.", statut: 403 };
+  // (⏪ le rattrapage, lot T1 : l'essai est noté, et ce que j'y dirai aussi — pour ceux qui le rateront)
+  await noterLEssai(supabase, moi, f, maintenant).catch(() => undefined);
+  if (f.pour === "tous") return { aller: `/univers/salons?theme=${f.theme}` };
   await preparerLeRendezVous(supabase, f.h, { invites: hote ? places.map((p) => p.h) : [moi.id], video: f.video, hoteEntre: hote });
   if (hote) return { aller: "/univers/salons?chez=moi" };
   const cle = await poserProfil(supabase, f.h).catch(() => "");
   return cle ? { aller: `/univers/salons?chez=${encodeURIComponent(cle)}` } : { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+}
+
+/** ⏪ (le rattrapage, lot T1) J'entre dans l'essai : sa télé (le salon de la passion, ou la vidéo choisie entre proches). */
+async function noterLEssai(supabase: Supabase, moi: Habitant, f: FicheProposition, maintenant: number): Promise<void> {
+  const [prenom, figurine, m] = await Promise.all([prenomDe(supabase, moi).catch(() => ""), figurineDeLaMaison(supabase, moi.id).catch(() => null), maisonDeMoi(supabase, moi.id).catch(() => null)]);
+  const t = themeDe(f.theme);
+  const videos = f.pour === "tous" ? (t && m ? await videosDuSalon(supabase, t.id, m).catch(() => [] as VideoSalon[]) : []) : f.video ? [f.video] : [];
+  await entrerDansLaSeance(
+    supabase,
+    { cle: cleDeLEssai(f.id, f.quand), nom: f.nom, e: t?.e ?? "🎬", theme: t?.id, videos, salon: f.pour === "tous" ? `theme:${f.theme}` : `chez:${f.q}`, moi: { q: qui8(moi.id), h: moi.id, prenom: prenom || "Quelqu’un", src: figurine?.src ?? "" } },
+    maintenant,
+  );
 }
 
 /**

@@ -52,6 +52,8 @@ import { jeuDuSalon } from "./jeux-salon-serveur";
 import type { JeuVu } from "./jeux-salon";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
+import { entrerDansLaSeance, noterDansLaSeance } from "./rattrapage-serveur";
+import { cleDuRdv } from "./rattrapage";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
 import {
   AIMES_POUR_ETAGERE,
@@ -405,7 +407,10 @@ export async function entrerAuGroupe(supabase: Supabase, moi: Habitant, groupe: 
   if (!(await ecrireJson(supabase, `${dossierPresents(lieu, id)}/${q}.json`, fiche))) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
   await ecrireJson(supabase, `${dossierPassages(gid)}/${q}.json`, { q, prenom: fiche.prenom, le: maintenant });
   // (📖 lot G7 : à l'heure d'un rendez-vous du groupe, j'y étais — le journal s'en souvient)
-  await noterPresence(supabase, gid, { q, prenom: fiche.prenom, src: figurine.src }, maintenant).catch(() => undefined);
+  const seances = await noterPresence(supabase, gid, { q, prenom: fiche.prenom, src: figurine.src }, maintenant).catch(() => []);
+  // (⏪ le rattrapage, lot T1 : la séance est notée, et ce que j'y dirai aussi, avec la vidéo et sa seconde)
+  for (const x of seances)
+    await entrerDansLaSeance(supabase, { cle: cleDuRdv(gid, x.fois, x.rdv), nom: x.nom, e: x.e, theme: t.id, videos, salon: id, moi: { q, h: moi.id, prenom: fiche.prenom, src: figurine.src } }, maintenant).catch(() => undefined);
   await noterVusAuSalon(supabase, { h: moi.id, prenom: fiche.prenom }, fiches);
   void nettoyerMessages(supabase, lieu, id, maintenant);
   const messages = await derniersMessages(supabase, lieu, id, { depuis: maintenant - CONSERVE_MS, limite: 20, caches });
@@ -624,6 +629,9 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   // du groupe pour cette vidéo — ce qu'on dit dans le salon du groupe y reste)
   const gid = groupeDuSalon(sid);
   if (gid && sorte === "texte" && corps.texte && s(p.video)) await laisserAuGroupe(supabase, moi, gid, s(p.video), corps.texte).catch(() => undefined);
+  // (⏪ le rattrapage, lot T1 : dans une séance — d'un groupe, d'un essai —, la réaction est notée à sa seconde)
+  const ouJeSuis = r.seance ? `chez:${r.seance.qHote}` : gid ? sid : `theme:${salonDe(sid)?.theme ?? ""}`;
+  await noterDansLaSeance(supabase, { q, h: moi.id, prenom: s(f.prenom) }, ouJeSuis, corps, p.ou, maintenant).catch(() => undefined);
   return { message: messagePublic(message) };
 }
 

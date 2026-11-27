@@ -31,8 +31,10 @@ const JOURS_CHOISIES = 7;
 const LIGNES_MAX = 40;
 
 /** 🛋️ J'entre dans le salon du groupe : si c'est l'heure d'un de ses rendez-vous, j'y étais (une fois par séance). */
-export async function noterPresence(supabase: Supabase, gid: string, moi: { q: string; prenom: string; src: string }, maintenant = Date.now()): Promise<void> {
+export async function noterPresence(supabase: Supabase, gid: string, moi: { q: string; prenom: string; src: string }, maintenant = Date.now()): Promise<{ rdv: string; nom: string; e: string; fois: number }[]> {
   const fiches = await lireRdvs(supabase, gid);
+  // (⏪ le rattrapage, lot T1 : les séances en cours, pour y noter ce qui s'y dit)
+  const enCours: { rdv: string; nom: string; e: string; fois: number }[] = [];
   for (const f of fiches) {
     const fois = prochaineFois(f, maintenant);
     if (fois == null || maintenant < fois - OUVERT_AVANT_MS || maintenant >= fois + OUVERT_APRES_MS) continue;
@@ -41,7 +43,9 @@ export async function noterPresence(supabase: Supabase, gid: string, moi: { q: s
     const chemin = `${dossierJournal(gid)}/${fois}-${moi.q}-${f.id.slice(-6)}.json`;
     const deja = await lireJson<Partial<FichePresence>>(supabase, chemin).catch(() => ({}) as Partial<FichePresence>);
     if (deja.q !== moi.q) await ecrireJson(supabase, chemin, p);
+    enCours.push({ rdv: f.id, nom: f.nom, e: f.e, fois });
   }
+  return enCours;
 }
 
 type FicheGroupeJournal = { nom?: string; q?: string; prenom?: string; origine?: string; cree?: boolean; le?: number };
