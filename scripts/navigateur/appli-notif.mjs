@@ -168,7 +168,7 @@ const jeton = new URL(safari.url()).searchParams.get("appli");
 ok((await texte(safari, ".ct-feuille")).includes("« Sur l’écran d’accueil »") && (await safari.locator(".ct-feuille .ct-gestes li").count()) === 3, "la page s'est rechargée avec son jeton : les trois gestes (Partager, « Sur l'écran d'accueil », Ajouter)");
 const lien = await safari.locator('link[rel="manifest"]').getAttribute("href");
 const manifeste = await (await fetch(new URL(lien, BASE))).json();
-ok(lien.includes(`appli=${jeton}`) && manifeste.start_url === `/collection?appli=${jeton}` && manifeste.id === "/collection" && manifeste.scope === "/collection" && manifeste.display === "standalone", `le manifeste ouvrira l'appli sur son jeton (${manifeste.start_url})`);
+ok(lien.includes(`appli=${jeton}`) && manifeste.start_url === `/collection?appli=${jeton}` && manifeste.id === "/collection" && manifeste.scope === "/" && manifeste.display === "standalone", `le manifeste ouvrira l'appli sur son jeton (${manifeste.start_url})`);
 ok((await lireStock(`appli/${jeton}.json`))?.h === NINA.id, "le jeton est gardé (24 h, un seul usage)");
 ok((await debordement(safari)) <= 0 && !/exemple/i.test(await texte(safari, ".ct-feuille")), "la feuille ne déborde pas, sans le mot interdit");
 await safari.screenshot({ path: `${D}/appli-1-installer-iphone.png` });

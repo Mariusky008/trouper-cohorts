@@ -733,17 +733,14 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
   const salon = `/univers/salons?theme=${p.theme}`;
   return (
     <section className={`fd-carte fd-salon${vide ? " vide" : ""}`} data-k={k} data-piece="salon" data-theme={p.theme} data-salon={p.id} data-vide={vide ? "1" : undefined}>
-      <span className="fd-etiquette">
-        {vide ? (
-          <>✨ {P.soisLePremier}</>
-        ) : (
-          <>
-            <i className="fd-direct" aria-hidden="true" />
-            {P.enDirect(p.presents.length)}
-          </>
-        )}
-        {p.mien ? ` · ${P.tesPassions}` : ""}
-      </span>
+      {/* (27 novembre 2026, le propriétaire : « Sois le premier · ta passion : à enlever, ça sert à rien » — seul « en direct » reste) */}
+      {!vide && (
+        <span className="fd-etiquette">
+          <i className="fd-direct" aria-hidden="true" />
+          {P.enDirect(p.presents.length)}
+          {p.mien ? ` · ${P.tesPassions}` : ""}
+        </span>
+      )}
       <div className="fd-salle">
         <div className="fd-tele" data-tele>
           {p.video ? (
@@ -875,6 +872,9 @@ ${STYLES_INFOS_VIDEO}
 .fd-carte{position:relative;height:100dvh;box-sizing:border-box;scroll-snap-align:start;scroll-snap-stop:always;display:flex;flex-direction:column;gap:10px;
   padding:calc(64px + env(safe-area-inset-top)) 16px calc(112px + env(safe-area-inset-bottom));overflow:hidden;touch-action:manipulation;-webkit-user-select:none;user-select:none;
   background:radial-gradient(90% 50% at 50% 35%,rgba(255,46,154,.16),transparent 70%),#0B0409}
+/* (27 novembre 2026 : sous « Quoi de neuf ? », la première pièce colle à la rangée — plus de grand vide ; arrêtée dessus,
+   elle se met sous la barre du haut) */
+.qn+.fd-carte{height:calc(100dvh - 60px - env(safe-area-inset-top));padding-top:10px;scroll-margin-top:calc(60px + env(safe-area-inset-top))}
 .fd-salon[data-theme="musique"]{background:radial-gradient(90% 50% at 50% 35%,rgba(122,92,255,.22),transparent 70%),#130A1E}
 .fd-autour{background:radial-gradient(80% 45% at 50% 40%,rgba(242,196,107,.2),transparent 70%),#1E120E}
 .fd-humeur{background:radial-gradient(80% 45% at 50% 40%,rgba(255,122,192,.18),transparent 70%),#1A0C18}

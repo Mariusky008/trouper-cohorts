@@ -112,7 +112,7 @@ export function QuoiDeNeuf({ q, moi, pastille, onHumeur, onRepondre, onCoucou }:
       </div>
       <div className="qn-rang">
         <button type="button" className="qn-carte qn-moi" onClick={onHumeur} data-mon-humeur={q.mienne ? "1" : undefined}>
-          <span className="qn-fig">{moi && <FigurineAssise f={{ ...moi, pancarte: undefined }} hauteur={104} />}</span>
+          <span className="qn-fig">{moi && <FigurineAssise f={{ ...moi, pancarte: undefined }} hauteur={126} />}</span>
           {q.mienne ? (
             <span className="qn-emoji vu" aria-hidden="true">
               {q.mienne.emoji}
@@ -132,7 +132,7 @@ export function QuoiDeNeuf({ q, moi, pastille, onHumeur, onRepondre, onCoucou }:
               </span>
             )}
             <span className="qn-fig">
-              <FigurineAssise f={{ ...c.p.figurine, pancarte: undefined }} hauteur={112} />
+              <FigurineAssise f={{ ...c.p.figurine, pancarte: undefined }} hauteur={136} />
             </span>
             {c.genre === "maison" && <span className="qn-passion">{P.commeToi(c.p.passion.e, c.p.passion.court)}</span>}
             <span className="qn-nom">{c.p.prenom}</span>
@@ -307,11 +307,11 @@ export const STYLES_QUOI_DE_NEUF = `
 .qn{scroll-snap-align:start;padding:calc(64px + env(safe-area-inset-top)) 0 12px;background:#0B0409;border-bottom:1px solid rgba(255,255,255,.08)}
 .qn.sous-pastille{padding-top:calc(104px + env(safe-area-inset-top))}
 .qn-tete{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 16px 8px}
-.qn-tete h2{flex:none;margin:0;font-size:17px;font-weight:900;color:#FFF4E6;white-space:nowrap}
+.qn-tete h2{flex:none;margin:0;font-size:19px;font-weight:900;color:#FFF4E6;white-space:nowrap}
 .qn-tete small{min-width:0;font-size:12.5px;font-weight:700;color:#C9AFC0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qn-rang{display:flex;gap:8px;overflow-x:auto;padding:0 16px;scroll-snap-type:x proximity;scrollbar-width:none;overscroll-behavior-x:contain}
 .qn-rang::-webkit-scrollbar{display:none}
-.qn-carte{position:relative;flex:none;width:100px;height:164px;padding:0;border:0;border-radius:16px;overflow:hidden;scroll-snap-align:start;background:#3A1F30 center/cover no-repeat;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.qn-carte{position:relative;flex:none;width:118px;height:196px;padding:0;border:0;border-radius:16px;overflow:hidden;scroll-snap-align:start;background:#3A1F30 center/cover no-repeat;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .qn-carte:nth-child(3n+2){background-color:#2F3A4B}
 .qn-carte:nth-child(3n){background-color:#4A3B22}
 .qn-moi{background:#22121C;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
