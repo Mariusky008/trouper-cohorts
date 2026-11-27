@@ -54,7 +54,8 @@ import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, ty
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { entrerDansLaSeance, noterDansLaSeance } from "./rattrapage-serveur";
 import { cleDuRdv } from "./rattrapage";
-import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
+import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type MomentFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
+import { momentDeReaction, motDuMoment } from "./grands-moments";
 import {
   AIMES_POUR_ETAGERE,
   CONSERVE_MS,
@@ -458,7 +459,7 @@ async function nettoyerMessages(supabase: Supabase, m: Lieu, id: string, mainten
 }
 
 /** Les messages d'un salon après `depuis` (ms), les plus récents (`limite`), sans ceux de qui il ne veut plus voir. */
-async function derniersMessages(supabase: Supabase, m: Lieu, id: string, o: { depuis: number; limite: number; caches: string[] }): Promise<MessageSalon[]> {
+async function derniersMessages(supabase: Supabase, m: Lieu, id: string, o: { depuis: number; limite: number; caches: string[]; avecH?: true }): Promise<(MessageSalon & { h?: string })[]> {
   const l = await lister(supabase, dossierMessages(m, id), { limite: o.limite, recents: true });
   const caches = new Set(o.caches);
   const noms = l.filter((e) => {
@@ -468,7 +469,7 @@ async function derniersMessages(supabase: Supabase, m: Lieu, id: string, o: { de
   const lus = await Promise.all(noms.map((e) => lireJson<Partial<FicheMessage>>(supabase, `${dossierMessages(m, id)}/${e.nom}`)));
   return lus
     .filter((x) => x.id && x.de)
-    .map(messagePublic)
+    .map((x) => (o.avecH && x.h ? { ...messagePublic(x), h: s(x.h) } : messagePublic(x)))
     .sort((a, b) => a.le - b.le);
 }
 
@@ -870,6 +871,26 @@ function texteDeBulle(x: MessageSalon): string {
   if (x.sorte === "reaction") return (reactionDe(x.cle) ?? reactionMusiqueDe(x.cle))?.e ?? "";
   return gesteDe(x.cle)?.e ?? "";
 }
+/** 🎆 Une vraie réaction passée d'un salon vide, pour son grand moment sur la carte du fil (un proche d'abord). */
+async function momentDuFil(supabase: Supabase, messages: (MessageSalon & { h?: string })[], q: string, proches: Set<string>): Promise<MomentFil | null> {
+  const candidats = messages
+    .filter((msg) => msg.de !== q && msg.sorte === "reaction" && msg.h && momentDeReaction(msg.cle))
+    .sort((a, b) => b.le - a.le);
+  // (un proche d'abord, sinon la plus récente ; une personne, une fois)
+  const ordre = [...candidats.filter((x) => proches.has(x.h!)), ...candidats.filter((x) => !proches.has(x.h!))].filter((x, i, l) => l.findIndex((y) => y.h === x.h) === i).slice(0, 3);
+  let choisi: { msg: (typeof ordre)[number]; src: string } | null = null;
+  for (const msg of ordre) {
+    const src = s((await figurineDeLaMaison(supabase, msg.h!).catch(() => null))?.src);
+    if (src) {
+      choisi = { msg, src };
+      break;
+    }
+  }
+  if (!choisi) return null;
+  const mo = momentDeReaction(choisi.msg.cle)!;
+  return { id: choisi.msg.id, q: choisi.msg.de, prenom: choisi.msg.prenom || "Quelqu’un", cle: mo.cle, mot: motDuMoment(mo, choisi.msg.id), le: choisi.msg.le, src: choisi.src };
+}
+
 /**
  * 🎞️ Les salons du fil : d'abord ceux où il y a quelqu'un d'autre que lui, en ce moment — pour chaque thème, le plus
  * rempli : ses présents (prénom, figurine, place), les bulles des dix dernières minutes (sans ceux qu'il ne veut plus
@@ -888,7 +909,7 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
   const l = await Promise.all(noms.map(async (id) => ({ id, n: salonDe(id)!.n, theme: salonDe(id)!.theme, presents: (await presentsFrais(supabase, m, id, maintenant)).filter((p) => p.nom !== q) })));
   const parTheme = new Map<IdTheme, (typeof l)[number]>();
   for (const x of l) if (x.presents.length && x.presents.length > (parTheme.get(x.theme)?.presents.length ?? 0)) parTheme.set(x.theme, x);
-  const [passions, caches] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), mesCaches(supabase, moi.id)]);
+  const [passions, caches, proches] = await Promise.all([lirePassions(supabase, moi.id).catch(() => null), mesCaches(supabase, moi.id), prochesDe(supabase, moi.id).catch(() => new Set<string>())]);
   const miens = new Set(passions?.passions ?? []);
   const gradinsVus = new Map<IdGradin, Promise<GradinScene | null>>();
   const enDirect = [...parTheme.values()].sort((a, b) => Number(miens.has(b.theme)) - Number(miens.has(a.theme)) || b.presents.length - a.presents.length).slice(0, 8);
@@ -913,7 +934,7 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
         Promise.all(x.presents.slice(0, PLACES_SALON).map((p) => lirePresent(supabase, m, x.id, p.nom))),
         // (en direct : les bulles des dix dernières minutes ; vide : ce qui s'est dit aujourd'hui, dans ses salons)
         vide
-          ? Promise.all(x.ids.slice(0, 3).map((id) => derniersMessages(supabase, m, id, { depuis: maintenant - TRACES_MS, limite: 6, caches }).catch(() => [] as MessageSalon[]))).then((ll) => ll.flat())
+          ? Promise.all(x.ids.slice(0, 3).map((id) => derniersMessages(supabase, m, id, { depuis: maintenant - TRACES_MS, limite: 6, caches, avecH: true }).catch(() => [] as (MessageSalon & { h?: string })[]))).then((ll) => ll.flat())
           : derniersMessages(supabase, m, x.id, { depuis: maintenant - BULLES_FRAICHES_MS, limite: 8, caches }),
         gradinsVus.get(g)!,
         videosDuSalon(supabase, x.theme, m).catch(() => [] as VideoSalon[]),
@@ -921,6 +942,10 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
       ]);
       const pos = videos.length ? positionTele(videos, maintenant) : null;
       const v = platine?.enCours ? platine.enCours.video : pos ? videos[pos.i] : null;
+      // 🎆 (maquette « Salon et réactions », validée le 27/11 : « je préférerais voir une seule réaction d'une personne avec
+      // le nouveau design ») salon vide : UNE vraie réaction de la journée, en grand moment — un proche d'abord, sinon la
+      // plus récente ; sa figurine lue sur sa fiche du salon (sans elle : pas de grand moment, jamais une figurine inventée)
+      const moment = vide ? await momentDuFil(supabase, messages as (MessageSalon & { h?: string })[], q, proches) : null;
       const bulles = messages
         .filter((msg) => msg.de !== q)
         .sort((a, b) => a.le - b.le)
@@ -936,6 +961,7 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
         presents: fiches.filter((f) => f.q).map((f) => ({ q: s(f.q), prenom: s(f.prenom) || "Quelqu’un", src: s(f.figurine?.src), place: Number(f.place) || 0, ...(s(f.bonjour).startsWith("/api/direct/bonjour/") ? { bonjour: s(f.bonjour) } : {}) })),
         bulles: vide ? [] : bulles.slice(-4),
         ...(vide ? { traces: bulles.slice(-3) } : {}),
+        ...(moment ? { moment } : {}),
         gradin: gradin ? { src: gradin.image.src, flou: gradin.image.flou, places: gradin.places } : null,
         video: v ? { id: v.id, titre: v.titre, chaine: v.chaine, ...(v.publiee ? { publiee: v.publiee } : {}), ...(typeof v.vues === "number" ? { vues: v.vues } : {}) } : null,
         ...(estSalonMusique(x.theme) ? { morceau: platine?.enCours ? { titre: platine.enCours.video.titre, prenom: platine.enCours.prenom } : null } : {}),

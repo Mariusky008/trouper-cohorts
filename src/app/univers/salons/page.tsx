@@ -13,6 +13,7 @@ import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { salonsOuverts } from "@/lib/direct/interrupteurs-serveur";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { SalonOuvert, type EtatSalonOuvert } from "./salon-ouvert";
+import { ChronoSalon } from "./chrono";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -66,24 +67,41 @@ async function entreeDuServeur(entrer: (supabase: ReturnType<typeof createAdminC
   }
 }
 
-export default async function PageSalonOuvert({ searchParams }: { searchParams: Promise<{ theme?: string; chez?: string; place?: string; video?: string; groupe?: string }> }) {
+export default async function PageSalonOuvert({ searchParams }: { searchParams: Promise<{ theme?: string; chez?: string; place?: string; video?: string; groupe?: string; chrono?: string }> }) {
   if (!(await universPermis())) redirect("/admin");
-  const { theme, chez, place, video, groupe } = await searchParams;
+  const { theme, chez, place, video, groupe, chrono } = await searchParams;
+  // (⏱️ 27 novembre 2026 : `?chrono=1` — où part le temps en entrant, mesuré sur le téléphone, `chrono.tsx`)
+  const mesure = <ChronoSalon demande={chrono} />;
   // (une séance entre proches ne dépend pas de l'interrupteur des salons ouverts ; ➕ `place` : le jeton d'un lien WhatsApp)
   // (📼 `video` : chez moi, « Revoir » une vidéo déjà vue)
   if (chez && /^(moi|[A-Za-z0-9_-]{4,64})$/.test(chez)) {
     const p = place && /^[A-Za-z0-9_-]{12,32}$/.test(place) ? place : undefined;
     const v = chez === "moi" && video && /^[A-Za-z0-9_-]{11}$/.test(video) ? video : undefined;
     const initial = await entreeDuServeur((supabase, moi) => entrerChez(supabase, moi, chez, p, v));
-    return <SalonOuvert chez={chez} place={p} video={v} initial={initial} />;
+    return (
+      <>
+        <SalonOuvert chez={chez} place={p} video={v} initial={initial} />
+        {mesure}
+      </>
+    );
   }
   if (groupe && /^g-[A-Za-z0-9_-]{8,64}$/.test(groupe)) {
     const initial = await entreeDuServeur((supabase, moi) => entrerAuGroupe(supabase, moi, groupe));
-    return <SalonOuvert groupe={groupe} initial={initial} />;
+    return (
+      <>
+        <SalonOuvert groupe={groupe} initial={initial} />
+        {mesure}
+      </>
+    );
   }
   if (!salonsOuverts()) notFound();
   const t = themeDe(theme);
   if (!t) notFound();
   const initial = await entreeDuServeur((supabase, moi) => entrerAuSalon(supabase, moi, t.id));
-  return <SalonOuvert theme={t.id} initial={initial} />;
+  return (
+      <>
+        <SalonOuvert theme={t.id} initial={initial} />
+        {mesure}
+      </>
+    );
 }

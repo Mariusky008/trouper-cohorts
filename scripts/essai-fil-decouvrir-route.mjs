@@ -127,6 +127,7 @@ const cuisine = f1.pieces[3];
 ok(cuisine?.sorte === "salon" && cuisine.mien && cuisine.id === "cuisine-1" && cuisine.presents.length === 0 && cuisine.bulles.length === 0, "la cuisine, sa passion, même sans personne : elle y est seule, et ne s'y voit pas");
 ok(cuisine.traces?.length === 1 && cuisine.traces[0].prenom === "Zoé" && cuisine.traces[0].texte === "Qui a une recette de crêpes ?" && cuisine.traces[0].le > Date.now() - 120_000, "… ce que Zoé y a dit tout à l'heure (qui, quoi, quand)");
 ok(/^[A-Za-z0-9_-]{11}$/.test(cuisine.video?.id ?? ""), "… sa télé passe quand même");
+ok(!cuisine.moment, "… un mot seulement, pas de réaction : pas de grand moment (jamais inventé)");
 const reste = f1.pieces.slice(4);
 ok(reste.every((p) => p.sorte === "salon" && !p.mien && p.presents.length === 0 && /^[a-z]+-1$/.test(p.id) && Boolean(p.gradin || p.video !== undefined)), "… puis tous les autres salons, sans personne, chacun le sien");
 ok(!f1.pieces.some((p) => p.sorte === "salon" && p.traces?.some((t) => t.prenom === "Léa")), "… jamais ses propres bulles dans les traces");

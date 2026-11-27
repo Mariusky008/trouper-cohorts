@@ -35,6 +35,8 @@ export type SilhouetteFil = { tete: string; corps?: { src: string; ratio: number
 export type PresentFil = { q: string; prenom: string; src: string; place: number; /** 🎙️ son bonjour (lot 4 de « Ma figurine ») */ bonjour?: string };
 /** Une bulle qui vient d'être dite dans le salon (un texte, une réaction, un geste). */
 export type BulleFil = { id: string; q: string; prenom: string; texte: string; le: number };
+/** 🎆 Une réaction passée, rejouée en grand moment sur la carte d'un salon vide. */
+export type MomentFil = { id: string; q: string; prenom: string; cle: string; mot: string; le: number; src: string };
 
 /**
  * 🛋️ Un salon : le plus rempli de son thème, s'il y a quelqu'un ; sinon (`presents` vide) son premier salon, avec ce qui
@@ -52,6 +54,9 @@ export type SalonFil = {
   bulles: BulleFil[];
   /** 🪑 personne en ce moment : les dernières bulles de la journée (qui, quoi, quand) */
   traces?: BulleFil[];
+  /** 🎆 (maquette « Salon et réactions », validée le 27/11) personne en ce moment : UNE vraie réaction de la journée, jouée
+   *  en grand moment (un proche d'abord, sinon la plus récente) — sa figurine, l'émotion, le cri ; jamais inventée */
+  moment?: MomentFil;
   /** son gradin validé (l'image carrée, ses places) ; sinon le plan des places sur un fond sombre */
   gradin: { src: string; flou: string; places: PlaceGradin[] } | null;
   /** ce qui passe à sa télé ; sa chaîne, ses vues YouTube, sa mise en ligne (montrées sous la télé) */
