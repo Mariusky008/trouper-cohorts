@@ -73,12 +73,18 @@ vidéo n'est que la raison d'être ensemble : ce qu'on regarde, ce sont les gens
     coucou de la maison ouverte, un de chaque par jour ; répondre répond à tous) ; « Frapper à sa porte », le salon de leur
     passion.
 
-  Toucher à droite : la suivante. L'humeur de ses proches n'est plus une pièce du fil.
+  Toucher à droite : la suivante. L'humeur de ses proches n'est plus une pièce du fil. Depuis le 27 novembre 2026, la
+  rangée est toujours là, au moins avec « Ton humeur » (« Dis à tes proches comment tu vas » quand personne d'autre n'y
+  est) ; et si elle arrive après le fil gardé en mémoire, le fil remonte la montrer (sur un ordinateur, le navigateur
+  restait accroché à la première pièce et la rangée se cachait au-dessus).
 - **Les vidéos se lancent seules** (26 novembre 2026, « comme sur YouTube : quand je scrolle, je vois le début de la
   vidéo avec le son ») : la télé de la pièce à l'écran joue, une seule à la fois dans toute l'appli
   (`app/collection/apercu-video.tsx`, aussi dans les « Propositions de groupes » de Mes groupes). Le son : les navigateurs
   l'interdisent tant qu'on n'a pas touché la page ; avant, « 🔇 Touche pour le son » ; après le premier toucher, chaque
-  vidéo qui démarre a le son ; « 🔊 » le coupe pour les suivantes (on s'en souvient).
+  vidéo qui démarre a le son ; « 🔊 » le coupe pour les suivantes (on s'en souvient). Un iPhone ne donne le son qu'au
+  lecteur qu'on a touché : depuis le 27 novembre 2026, dans le fil et dans la rangée des propositions
+  (`data-apercu-scene`), c'est UN SEUL lecteur qui passe d'une télé à l'autre (posé par-dessus celle qui joue, il change
+  seulement de vidéo), et le son donné une fois reste pour les suivantes.
 - **Sans âge dit** : la question « as-tu 18 ans ou plus ? » d'abord, puis les salons arrivent.
 - **Rien du tout** (les salons fermés par l'interrupteur) : « Personne en direct pour l'instant », avec « 📍 Poser ma
   figurine ». Avec les salons ouverts, cela n'arrive plus : il y a toujours les salons vides.

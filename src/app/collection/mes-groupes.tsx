@@ -195,7 +195,7 @@ export function MesGroupes({ onAttente }: { onAttente?: (n: number) => void }) {
         <>
           {/* (« ＋ Lancer » est parti le 26 novembre 2026 au soir : il faisait la même chose que « ＋ Proposer », juste au-dessus) */}
           <h2 className="mg-rubrique">{PP.rangee}</h2>
-          <div className="mg-rang" data-propositions>
+          <div className="mg-rang" data-propositions data-apercu-scene>
             {propositions.map((p) => (
               <CarteProposition key={p.id} p={p} onGeste={(corps) => void surProposition({ ...corps, id: p.id })} onAutre={() => setAutre(p)} onOuvrir={setOuvert} />
             ))}
@@ -758,6 +758,9 @@ export const STYLES_MES_GROUPES = `
 .mg-ecran.sans{display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(255,46,154,.3),#20111b 70%)}
 .mg-ecran-e{font-size:58px}
 .mg-ecran .av-son{top:auto;bottom:52px}
+.mg-rang[data-apercu-scene]{position:relative}
+.mg-rang .av-scene{border-radius:22px 22px 0 0}
+.mg-ecran>:where(:not(.av)){z-index:2}
 .mg-ecran[data-apercu-joue] .mg-ecran-lire i{opacity:0;transform:scale(.6);transition:opacity .3s ease,transform .3s ease}
 .mg-ecran-ombre{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 34%,transparent 50%,rgba(0,0,0,.85) 100%);pointer-events:none}
 .mg-ecran-lire{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;background:none;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}

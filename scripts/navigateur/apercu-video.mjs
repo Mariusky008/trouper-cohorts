@@ -4,7 +4,9 @@
 //
 // Léa propose deux soirées, chacune avec sa vidéo. Zoé ouvre Mes groupes : la vidéo de la première carte se lance toute
 // seule — une seule dans la page. Le son : « 🔇 Touche pour le son » tant qu'elle n'a pas touché la page ; un toucher,
-// et le son vient. Elle glisse la rangée de côté : la deuxième se lance (avec le son), la première s'arrête et s'en va.
+// et le son vient. Elle glisse la rangée de côté : la deuxième se lance AVEC LE SON sans retoucher (le faux lecteur fait
+// comme un iPhone : le son seulement pendant un toucher, puis ce lecteur le garde — 27 novembre 2026 : c'est le même
+// lecteur qui passe d'une vignette à l'autre), la première s'arrête.
 // « 🔊 » coupe le son, pour les suivantes aussi ; « 🔇 » le remet. « ▶ Voir la vidéo » : les aperçus se taisent. Puis
 // Découvrir : la télé de la pièce à l'écran se lance, avec le son ; elle glisse : la suivante, et Mes groupes s'est tu.
 // Rien ne déborde, jamais le mot interdit, aucune erreur.
@@ -68,10 +70,19 @@ window.YT = { Player: function (el, o) {
   el.replaceWith(f);
   const ev = o.events || {};
   this.mute = () => { moi.muet = true; };
-  this.unMute = () => { moi.muet = false; };
+  // (comme un iPhone : le son, seulement pendant un toucher — puis ce lecteur-là le garde)
+  this.unMute = () => {
+    const ua = navigator.userActivation;
+    if (!moi.permis && !(ua && ua.isActive)) { moi.etat = 2; return; }
+    moi.permis = true;
+    moi.muet = false;
+  };
   this.isMuted = () => moi.muet;
   this.setVolume = () => {};
   this.playVideo = () => { moi.etat = 1; ev.onStateChange && ev.onStateChange({ data: 1 }); };
+  this.pauseVideo = () => { moi.etat = 2; ev.onStateChange && ev.onStateChange({ data: 2 }); };
+  this.seekTo = () => {};
+  this.loadVideoById = (id) => { moi.id = id; moi.videos = (moi.videos || 1) + 1; setTimeout(() => { moi.etat = 1; ev.onStateChange && ev.onStateChange({ data: 1 }); }, 30); };
   this.getPlayerState = () => moi.etat;
   this.destroy = () => { moi.parti = true; f.remove(); };
   setTimeout(() => ev.onReady && ev.onReady({ target: this }), 60);
@@ -97,12 +108,13 @@ const attendre = async (f, ms = 15000) => {
   }
   return false;
 };
-/** les lecteurs encore là (pas partis) */
-const vivants = () => zoe.evaluate(() => (window.__yt ?? []).filter((x) => !x.parti));
+/** les lecteurs qui jouent (pas partis, pas en pause) */
+const vivants = () => zoe.evaluate(() => (window.__yt ?? []).filter((x) => !x.parti && x.etat === 1));
 const seul = async (id, muet) => {
   const l = await vivants();
-  return l.length === 1 && l[0].id === id && l[0].etat === 1 && (muet === undefined || l[0].muet === muet);
+  return l.length === 1 && l[0].id === id && (muet === undefined || l[0].muet === muet);
 };
+const crees = () => zoe.evaluate(() => (window.__yt ?? []).length);
 
 // ═══ MES GROUPES : LA PREMIÈRE CARTE SE LANCE TOUTE SEULE ═══
 await zoe.goto(`${BASE}/collection?v=${Date.now()}#groupes`, { waitUntil: "domcontentloaded" });
@@ -125,7 +137,14 @@ await zoe.screenshot({ path: `${D}/apercu-1-groupes.png` });
 
 // ═══ ELLE GLISSE DE CÔTÉ : LA DEUXIÈME SE LANCE, LA PREMIÈRE S'EN VA ═══
 await rang.evaluate((el) => el.scrollBy({ left: el.querySelector("[data-proposition]").getBoundingClientRect().width + 10 }));
-ok(await attendre(() => seul(ordre[1], false)), "elle glisse de côté : la deuxième se lance, avec le son ; la première s'est arrêtée");
+ok(await attendre(() => seul(ordre[1], false)), "elle glisse de côté : la deuxième se lance, AVEC LE SON, sans retoucher (comme sur un iPhone) ; la première s'est arrêtée");
+ok((await crees()) === 1, "… c'est le même lecteur qui a changé de vidéo (un iPhone garde le son qu'on lui a donné)");
+const place = await zoe.evaluate(() => {
+  const h = document.querySelector("#o-groupes [data-propositions] [data-apercu-hote]")?.getBoundingClientRect();
+  const v = [...document.querySelectorAll("#o-groupes [data-propositions] [data-apercu]")].find((x) => x.closest("[data-apercu-joue]"))?.getBoundingClientRect();
+  return h && v ? Math.abs(h.left - v.left) + Math.abs(h.top - v.top) + Math.abs(h.width - v.width) : 999;
+});
+ok(place < 3, `… posé pile sur la vignette de la deuxième carte (écart ${place})`);
 const deuxieme = rang.locator(`[data-apercu="${ordre[1]}"]`);
 ok(await attendre(async () => (await deuxieme.locator('[data-apercu-son="son"]').count()) === 1), "… « 🔊 »");
 await deuxieme.locator("[data-apercu-son]").click();
@@ -157,8 +176,10 @@ for (let i = 0; i < 6 && !(await aLEcran()); i++) {
   await zoe.waitForTimeout(700);
 }
 const a = await aLEcran();
-ok(a && (await attendre(async () => (await vivants()).length === 1 && (await vivants())[0].etat === 1)), "la télé de la pièce à l'écran se lance — une seule");
-ok(await attendre(async () => (await vivants())[0]?.muet === false), "… avec le son (la page a déjà été touchée)");
+ok(a && (await attendre(async () => (await vivants()).length === 1)), "la télé de la pièce à l'écran se lance — une seule");
+// (une nouvelle page : sur un iPhone, il faut un toucher pour le son — un seul)
+if ((await vivants())[0]?.muet) await zoe.locator(`#o-decouvrir [data-apercu="${a}"] [data-apercu-son]`).click();
+ok(await attendre(async () => (await vivants())[0]?.muet === false), "… avec le son");
 await zoe.screenshot({ path: `${D}/apercu-2-decouvrir.png` });
 const n = await zoe.evaluate(() => window.__yt.length);
 let suivante = "";
@@ -168,7 +189,8 @@ for (let i = 0; i < 6; i++) {
   suivante = await aLEcran();
   if (suivante) break;
 }
-ok(suivante && (await attendre(async () => (await zoe.evaluate((k) => window.__yt.length > k && window.__yt[k - 1].parti, n)) && (await vivants()).length === 1 && (await vivants())[0].etat === 1)), "elle glisse : la télé de la pièce suivante se lance, la précédente s'arrête");
+ok(suivante && (await attendre(async () => (await vivants()).length === 1 && (await vivants())[0].id === suivante)), "elle glisse : la télé de la pièce suivante se lance, la précédente s'arrête");
+ok((await vivants())[0]?.muet === false && (await zoe.evaluate((k) => window.__yt.length === k, n)), "… toujours avec le son, sans retoucher : le même lecteur");
 ok(!(await zoe.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1)), "rien ne déborde");
 ok(!/exemple/i.test(await zoe.evaluate(() => document.body.innerText)), "jamais le mot interdit");
 
