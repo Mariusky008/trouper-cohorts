@@ -25,6 +25,8 @@ const s = (v: unknown) => (v == null ? "" : String(v)).replace(/\s+/g, " ").trim
 const DOSSIER = "moments";
 const cheminFiche = (id: string) => `${DOSSIER}/${id}.json`;
 export const cheminImageMoment = (id: string) => `${DOSSIER}/${id}.png`;
+/** sa figurine seule (la tête de l'émotion), pour la page du moment qui la rejoue */
+export const cheminFigurineMoment = (id: string) => `${DOSSIER}/${id}-figurine.png`;
 const cheminCompte = (h: string) => `${DOSSIER}/par/${h}.json`;
 
 /** La miniature officielle de la vidéo (YouTube), relayée : rien si elle ne vient pas (3 s au plus). */
@@ -160,7 +162,7 @@ export async function creerMoment(supabase: Supabase, moi: Habitant, p: Record<s
   };
   const png = await imageDuMoment({ m, mot: moment.mot, prenom: moment.prenom, video: moment.video, t: moment.t, adresse: adresseCourte(origine, id), fig }).catch(() => null);
   if (!png) return { error: P.rate, statut: 502 };
-  if (!(await deposer(supabase, cheminImageMoment(id), png, "image/png")) || !(await ecrireJson(supabase, cheminFiche(id), { ...moment, h: moi.id }))) return { error: P.rate, statut: 502 };
+  if (!(await deposer(supabase, cheminImageMoment(id), png, "image/png")) || !(await deposer(supabase, cheminFigurineMoment(id), fig.png, "image/png")) || !(await ecrireJson(supabase, cheminFiche(id), { ...moment, h: moi.id }))) return { error: P.rate, statut: 502 };
   await ecrireJson(supabase, cheminCompte(moi.id), { jour, n: n + 1 });
   return { moment, image: `/api/direct/moment/${id}/image`, lien: `${origine}/moment/${id}` };
 }
@@ -173,8 +175,15 @@ export async function lireMoment(supabase: Supabase, id: unknown): Promise<Momen
   return { id, prenom: s(f.prenom), video: { id: s(f.video.id), titre: s(f.video.titre) }, t: Number(f.t) || 0, e: f.e, mot: s(f.mot), le: f.le };
 }
 
-/** Son image (rien : inconnu ou effacé). */
-export async function imageDeMoment(supabase: Supabase, id: unknown): Promise<Buffer | null> {
+/** Son image story, ou sa figurine seule (rien : inconnu ou effacé). */
+export async function imageDeMoment(supabase: Supabase, id: unknown, quoi: "image" | "figurine" = "image"): Promise<Buffer | null> {
   if (!(await lireMoment(supabase, id))) return null;
-  return telecharger(supabase, cheminImageMoment(String(id))).catch(() => null);
+  return telecharger(supabase, quoi === "figurine" ? cheminFigurineMoment(String(id)) : cheminImageMoment(String(id))).catch(() => null);
+}
+
+/** 🎬 (lot R5) La miniature de sa vidéo, relayée (pour la dessiner sur le téléphone) ; rien : inconnu, ou pas de miniature. */
+export async function miniatureDeMoment(supabase: Supabase, id: unknown): Promise<Buffer | null> {
+  const m = await lireMoment(supabase, id);
+  const d = m ? await miniature(m.video.id) : null;
+  return d ? Buffer.from(d.slice(d.indexOf(",") + 1), "base64") : null;
 }
