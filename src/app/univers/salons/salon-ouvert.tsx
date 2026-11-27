@@ -61,6 +61,7 @@ import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import { PHRASES_MOTS as PMOTS, type MotDeQuelquun } from "@/lib/direct/mots-video";
 import { SuiteDeLaVideo } from "@/app/collection/suite-de-la-video";
+import { InfosSousLaVideo, STYLES_INFOS_VIDEO } from "@/app/collection/infos-video";
 import { accordDonne, donnerAccord } from "@/app/collection/discussion-video";
 import { PHRASES_DISCUSSION as PDV, lienDiscussion } from "@/lib/direct/discussion-video";
 import { CarteDuJeu, FeuilleAccord, FeuilleDefi, PancarteDeJeu, voteAffiche } from "./jeux";
@@ -437,6 +438,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [heureJeu, setHeureJeu] = useState(0);
   const boite = useRef<HTMLDivElement>(null);
   const [L, setL] = useState(0);
+  // (🖥️ un ordinateur : la mise en page « au cinéma » — 1000 points de large, comme la règle des styles)
+  const [ordinateur, setOrdinateur] = useState(false);
+  const [hEcran, setHEcran] = useState(0);
   const dernier = useRef(Math.max(0, ...o.messages.map((m) => m.le)));
   const vus = useRef(new Set(o.messages.map((m) => m.id)));
   // (l'heure du serveur : la télé est à la même seconde pour tous, même si l'horloge du téléphone avance)
@@ -694,11 +698,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   useLayoutEffect(() => {
     const el = boite.current;
     if (!el) return;
-    const mesurer = () => setL(el.clientWidth);
+    const mesurer = () => {
+      setL(el.clientWidth);
+      setOrdinateur(window.innerWidth >= 1000);
+      setHEcran(window.innerHeight);
+    };
     mesurer();
     const ro = new ResizeObserver(mesurer);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener("resize", mesurer);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", mesurer);
+    };
   }, []);
 
   const dire = useCallback((t: string, ms = 3600) => {
@@ -1332,12 +1344,15 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   }
 
   // ─── la mise en page : la télé en 16/9, la pièce dessous ───
-  // (sur un ordinateur, la télé ne dépasse pas 680 points : la pièce et ses figurines tiennent dans l'écran)
-  const lTele = Math.min(L, 680);
+  // (sur un téléphone ou une tablette, la télé ne dépasse pas 680 points : la pièce et ses figurines tiennent dans l'écran)
+  // (🖥️ maquette « Salon sur ordinateur », validée le 27/11 : sur un ordinateur, la vidéo au centre, grande — jusqu'à
+  // 800 points, autant que la hauteur de l'écran le permet avec la salle dessous et la barre des réactions)
+  // (la salle dessous : 300 points ; le haut et les infos : 110 ; la barre : 100)
+  const lTele = Math.min(L, ordinateur ? Math.max(640, Math.min(800, Math.round(((hEcran - 510) * 16) / 9))) : 680);
   // (📱 22 novembre 2026, le propriétaire : « je ne vois pas les boutons du bas, il faut que je scrolle — beaucoup d'espace
   // perdu au-dessus des figurines » : sur un téléphone, la pièce de la séance prend ce qui reste de l'écran, sous la télé,
   // au-dessus des boutons — entre 130 points et sa hauteur d'avant)
-  const H0 = Math.round(Math.min(Math.max(L * 0.82, 260), 400));
+  const H0 = ordinateur ? 300 : Math.round(Math.min(Math.max(L * 0.82, 260), 400));
   const H = prive && hauteurLibre !== null ? Math.round(Math.min(H0, Math.max(130, hauteurLibre))) : H0;
   // 🎭 (21 novembre 2026, le propriétaire : « comme la photo 2 ») TOUJOURS LE GRADIN — plus jamais la pièce : le décor
   // validé de sa passion (l'image carrée posée sur son sol, assez petite pour que toutes les têtes se voient ; sur un
@@ -2934,8 +2949,10 @@ function TeleDuSalon({
     setSon(true);
   };
   const prochaine = entracte ? videos[entracte.k] : undefined;
+  const enCours = aMonRythme && pos && !entracte ? videos.find((x) => x.id === pos.id) : undefined;
   return (
     <>
+      <div className="so-tele-et" style={{ width: largeur || "100%" }}>
       <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={pos?.id ?? ""} data-son={son ? "1" : "0"} data-morceau={morceau ? morceau.id : undefined} data-pause={enPause ? "1" : undefined}>
         {!pos ? (
           <p className="so-tele-vide">{P.pasDeTele}</p>
@@ -2969,6 +2986,13 @@ function TeleDuSalon({
           <button type="button" className={entracte ? "fort" : undefined} data-ma-suivante onClick={suivante}>
             {entracte ? P.lancerMaintenant : P.videoSuivante}
           </button>
+        </div>
+      )}
+      </div>
+      {/* (🎞️ comme YouTube : le titre, la chaîne, les vraies vues, l'ancienneté — sous la vidéo, jamais dessus) */}
+      {enCours && (
+        <div className="so-infos-tele" style={{ width: largeur || "100%" }}>
+          <InfosSousLaVideo v={enCours} />
         </div>
       )}
     </>
@@ -3217,6 +3241,7 @@ const ENTRE_DEUX_APRES_S = 2;
 const SUITE_APRES_MS = 20_000;
 
 const STYLES = `
+${STYLES_INFOS_VIDEO}
 .so-suite{position:fixed;left:16px;right:16px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:30;margin:0 auto;max-width:488px;display:flex;align-items:stretch;gap:6px;border-radius:18px;padding:6px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .so-suite-ouvrir{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;border-radius:14px;padding:8px 12px;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);color:#2a0f1f;font:inherit;text-align:left;cursor:pointer}
 .so-suite-ouvrir b{font-size:15px;font-weight:900}
@@ -3491,11 +3516,25 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-conv p.moi b{color:#ff8fc8}
 .so-conv .vide{opacity:.55}
 .so-groupe{margin:12px 0 6px!important;font-size:12px!important;font-weight:900;text-transform:uppercase;letter-spacing:.04em;opacity:.6}
+.so-tele-et{position:relative;margin:0 auto}
+.so-infos-tele{margin:10px auto 0;box-sizing:border-box;padding:0 12px}
+/* 🖥️ (maquette « Salon sur ordinateur », validée le 27/11) plus de colonne à droite : la vidéo au centre, la salle dessous
+   comme des rangs de cinéma, et une seule barre flottante en bas — les réactions, les jeux, « Écris au salon » */
 @media (min-width:1000px){
-.so:not(.so-centre){max-width:1140px;display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"haut haut" "scene bas";column-gap:22px;padding-left:16px;padding-right:16px}
-.so-haut{grid-area:haut}
-.so-scene{grid-area:scene;border-radius:18px;overflow:hidden}
-.so-bas{grid-area:bas;align-self:start;position:sticky;top:16px;padding:6px 0 0;margin:0;max-width:none;min-width:0}
+.so:not(.so-centre){max-width:960px;padding-left:16px;padding-right:16px;padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+.so:not(.so-centre) .so-haut{padding-left:12px;padding-right:12px}
+.so:not(.so-centre) .so-scene{border-radius:18px;overflow:hidden}
+.so-tele{border-radius:16px;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 20px 60px rgba(255,46,154,.18)}
+.so-tele-et .so-commandes{position:absolute;right:14px;bottom:14px;width:auto!important;margin:0;padding:0;z-index:4}
+.so-tele-et .so-commandes button{background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.so-infos-tele{padding:0 2px}
+.so:not(.so-centre) .so-bas{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;margin:0;padding:8px;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;border-radius:30px;background:rgba(30,14,22,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 0 0 1px rgba(255,255,255,.1),0 14px 40px rgba(0,0,0,.5)}
+.so:not(.so-centre) .so-bas>*:not(.so-reagir):not(.so-jeux):not(.so-ecrire){order:-1;flex-basis:100%}
+.so:not(.so-centre) .so-bas>.so-info,.so:not(.so-centre) .so-bas>.so-regles,.so:not(.so-centre) .so-reagir>span,.so:not(.so-centre) .so-reagir>small{display:none}
+.so:not(.so-centre) .so-reagir{flex-wrap:nowrap}
+.so:not(.so-centre) .so-jeux{margin:0;padding:0 6px;border-left:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.15)}
+.so:not(.so-centre) .so-jeux .so-bouton{white-space:nowrap}
+.so:not(.so-centre) .so-ecrire{width:300px}
 }
 @media (prefers-reduced-motion: reduce){.so-pop,.so-vol,.so-bulle{animation:none!important}}
 .so-platine{box-sizing:border-box;width:calc(100% - 24px);margin:6px auto 4px;padding:8px 10px;border-radius:16px;background:linear-gradient(135deg,rgba(242,196,107,.18),rgba(255,46,154,.12));box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.45);display:flex;flex-direction:column;gap:6px}
