@@ -78,11 +78,14 @@ export function nomDuSalon(theme: IdTheme, n = 1): string {
 }
 
 // ─── ce qu'on y fait ───
+// (🎆 27 novembre 2026, les grands moments, `lib/direct/grands-moments.ts` : six émotions, chacune son grand moment ;
+// 😠 et 😢 arrivent — les têtes de la colère et de la tristesse existent déjà ; 😮 « Oh ! » s'en va, 😱 la remplace)
 export const REACTIONS_SALON = [
   { cle: "rire", e: "😂", nom: "Rire" },
   { cle: "coeur", e: "❤️", nom: "J’adore" },
-  { cle: "oh", e: "😮", nom: "Oh !" },
-  { cle: "surprise", e: "😱", nom: "Surprise" },
+  { cle: "surprise", e: "😱", nom: "Le choc" },
+  { cle: "fache", e: "😠", nom: "La colère" },
+  { cle: "triste", e: "😢", nom: "La tristesse" },
   { cle: "bravo", e: "👏", nom: "Bravo" },
 ] as const;
 export type CleReaction = (typeof REACTIONS_SALON)[number]["cle"];

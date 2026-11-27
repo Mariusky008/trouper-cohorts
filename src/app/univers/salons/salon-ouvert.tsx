@@ -49,7 +49,9 @@ import { BoutonMicro, type FinMicro } from "@/app/salon/micro";
 import type { FigurineVivante } from "@/lib/direct/expressions-figurine";
 import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/direct/visage-essai";
 import { useMaTete } from "@/app/univers/visage/ma-tete";
-import { FigurineVivanteVue } from "@/app/univers/visage/figurine-vivante";
+import { FigurineVivanteVue, Teinte } from "@/app/univers/visage/figurine-vivante";
+import { GrandMoment } from "@/app/univers/salons/grand-moment";
+import { GRAND_MOMENT, momentDeReaction, motDuMoment, type Moment } from "@/lib/direct/grands-moments";
 import { Pancarte } from "@/app/collection/pancarte";
 import { Ornements } from "@/app/collection/ornements";
 import { PLAN_GRADIN, PLAN_SEANCE, type PlaceGradin } from "@/lib/direct/salons-gradins";
@@ -167,7 +169,7 @@ const expressionA = (reactions: readonly ReactionVideo[], t: number): Expression
 /** (les réactions du salon, en sortes de ma télé du jour : 😱 « Oh non ! », 👏 « J'adore ») */
 /** (la ligne du temps : une couleur par proche, comme dans ma télé du jour) */
 const COULEURS = ["#FF2E9A", "#F2C46B", "#45d483", "#7fb2ff", "#c38bff", "#ff8a5c"];
-const SORTE_DE_REACTION: Record<CleReaction, SorteVideo> = { rire: "rire", coeur: "coeur", oh: "oh", surprise: "peur", bravo: "coeur" };
+const SORTE_DE_REACTION: Record<CleReaction, SorteVideo> = { rire: "rire", coeur: "coeur", surprise: "peur", fache: "peur", triste: "peur", bravo: "coeur" };
 const poster = (corps: Record<string, unknown>) =>
   fetch(ROUTE, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) })
     .then(async (r) => ({ ok: r.ok, statut: r.status, j: (await r.json().catch(() => ({}))) as Record<string, unknown> }))
@@ -305,6 +307,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [messages, setMessages] = useState<MessageSalon[]>(o.messages);
   const [caches, setCaches] = useState<string[]>(o.caches);
   const [anims, setAnims] = useState<Anime[]>([]);
+  // 🎆 (27 novembre 2026, `docs/univers/grands-moments.md`) LE GRAND MOMENT : la figurine qui réagit prend la scène, une à la
+  // fois (3 s) ; ce qu'on a écrit juste avant devient sa bulle
+  const [moment, setMoment] = useState<{ id: string; q: string; m: Moment; mot: string; fin: number } | null>(null);
+  const momentRef = useRef<{ fin: number } | null>(null);
+  const ecritsAvant = useRef(new Map<string, { t: string; le: number }>());
+  const demanderVivante = useRef((q: string) => void q);
   const [texte, setTexte] = useState("");
   // 🌍 (discussions des vidéos, lot A2) ce que je viens d'écrire au salon : le laisser sous la vidéo (dix secondes)
   const [sousVideo, setSousVideo] = useState<{ texte: string; video: string; accord?: boolean; fait?: boolean } | null>(null);
@@ -433,6 +441,23 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [tetes, setTetes] = useState<Record<string, ExpressionVisage | null>>({});
   const [vivantesDe, setVivantesDe] = useState<Record<string, FigurineVivante | null>>({});
   const vivantesDemandees = useRef(new Set<string>());
+  // (🎆 les grands moments : la figurine vivante de chacun ici, demandée une fois — sa tête de l'émotion, prête d'avance)
+  useEffect(() => {
+    for (const x of presents) demanderVivante.current(x.q);
+  }, [presents]);
+  demanderVivante.current = (q: string) => {
+    if (vivantesDemandees.current.has(q)) return;
+    vivantesDemandees.current.add(q);
+    void fetch(`${ROUTE}?salon=${encodeURIComponent(salon.id)}&vivante=${encodeURIComponent(q)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { vivante?: FigurineVivante | null }) => {
+        const v = j.vivante ?? null;
+        setVivantesDe((x) => ({ ...x, [q]: v }));
+        // (ses têtes, chargées d'avance : la bonne apparaît tout de suite)
+        if (v) for (const src of Object.values(v.expressions)) if (src) new Image().src = src;
+      })
+      .catch(() => vivantesDemandees.current.delete(q));
+  };
   const vuJusqua = useRef<{ id: string; duree: number; t: number } | null>(null);
   useEffect(() => {
     let fini = false;
@@ -633,6 +658,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // ─── ce qui se passe dans la pièce : une bulle, une réaction qui saute, un geste qui vole ───
   const jouer = useCallback((m: MessageSalon) => {
     if (etatRef.current.caches.includes(m.de)) return;
+    if (m.sorte === "texte" && m.texte) ecritsAvant.current.set(m.de, { t: m.texte, le: Date.now() });
+    // (🎆 une réaction : son grand moment, si la scène est libre — sinon, comme avant, elle saute au-dessus de sa tête)
+    const gm = m.sorte === "reaction" ? momentDeReaction(m.cle) : null;
+    if (gm && !(momentRef.current && momentRef.current.fin > Date.now())) {
+      const avant = ecritsAvant.current.get(m.de);
+      const ecrit = avant && Date.now() - avant.le < GRAND_MOMENT.texteAvant ? avant.t : null;
+      const x = { id: m.id, q: m.de, m: gm, mot: motDuMoment(gm, m.id, ecrit), fin: Date.now() + GRAND_MOMENT.ms };
+      momentRef.current = x;
+      setMoment(x);
+      demanderVivante.current(m.de);
+      window.setTimeout(() => setMoment((c) => (c?.id === x.id ? null : c)), GRAND_MOMENT.ms);
+      return;
+    }
     const fin = Date.now() + (m.sorte === "texte" ? BULLE_MS : 2200);
     const e = m.sorte === "reaction" ? (REACTIONS_SALON.find((r) => r.cle === m.cle)?.e ?? REACTIONS_MUSIQUE.find((r) => r.cle === m.cle)?.e) : m.sorte === "geste" ? GESTES_SALON.find((g) => g.cle === m.cle)?.e : "";
     // (🎵 💃 sa figurine danse, 🎶 elle chante — quelques secondes, chez tout le monde)
@@ -717,14 +755,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       }
       // (👀 la tête de chacun, en ce moment ; sa figurine vivante, demandée une fois)
       setTetes(p.tetes ?? {});
-      for (const q of Object.keys(p.tetes ?? {}))
-        if (!vivantesDemandees.current.has(q)) {
-          vivantesDemandees.current.add(q);
-          void fetch(`${ROUTE}?salon=${encodeURIComponent(salon.id)}&vivante=${encodeURIComponent(q)}`, { cache: "no-store" })
-            .then((r) => r.json())
-            .then((j: { vivante?: FigurineVivante | null }) => setVivantesDe((x) => ({ ...x, [q]: j.vivante ?? null })))
-            .catch(() => vivantesDemandees.current.delete(q));
-        }
+      for (const q of Object.keys(p.tetes ?? {})) demanderVivante.current(q);
     };
     const id = window.setInterval(() => void battre(), POULS_MS);
     // (quitter la page : sa place se libère tout de suite — pas au simple remontage de l'écran)
@@ -1172,6 +1203,16 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     return g ? { x: gx + g.x * lG, y: gy + g.y * hG, h: g.hauteur * hG } : null;
   };
   posRef.current = ou;
+  /** 🎆 Sa figurine en grand, pour son grand moment : la tête de l'émotion, son visage coloré (vivante) ; sinon sa tête du jour. */
+  const figureDuMoment = (q: string, h: number, m: Moment) => {
+    const p = presents.find((x) => x.q === q);
+    const v = (q === o.moi ? vivante : null) ?? vivantesDe[q] ?? null;
+    if (v) return <FigurineVivanteVue v={v} hauteur={h} e={m.tete} teinte={m.teinte} />;
+    if (p?.tete) return <SaTeteDuJour p={p} tete={p.tete} hauteur={h} teinte={m.teinte} />;
+    // eslint-disable-next-line @next/next/no-img-element
+    if (p?.figurine) return <img src={p.figurine.src} srcSet={p.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} style={{ height: h }} />;
+    return <span style={{ fontSize: Math.round(h * 0.45) }}>{m.e}</span>;
+  };
   // (🎭 les places libres : elles brillent doucement ; ⭐ chez moi, mes amis qui l'ont vue s'y assoient d'abord — la
   // dernière reste libre, pour inviter)
   const vues = new Set([...places.values(), ...[...dodo.values()].map((x) => x.k)].map(vue));
@@ -1309,7 +1350,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             <i aria-label={PR.toutVoir}>›</i>
           </button>
         ) : null}
-        <div className="so-piece" style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-gradin={gradin?.id ?? "plan"}>
+        <div className={`so-piece${moment ? " so-moment" : ""}`} style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-gradin={gradin?.id ?? "plan"}>
           {gradin && (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1351,6 +1392,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               // (👋 lot F3 : il vient d'arriver, après moi — un toucher pour lui faire signe, une fois)
               const entree = entrees.includes(p.q);
               const signe = !moi && !cache && !souvenir && p.arrive > moiArrive && Date.now() + decalage.current - p.arrive < SIGNE_MS && !signes.includes(p.q);
+              // (🎆 le grand moment de quelqu'un : sa place se vide, les autres se tournent vers le centre)
+              const vedette = moment?.q === p.q;
+              const tourne = moment && !vedette ? (x.x < L / 2 ? "d" : "g") : regards[p.q];
               return (
                 <span key={p.q} className="so-fig-et">
                   {sons.includes(p.q) && p.bonjour && (
@@ -1378,7 +1422,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                   )}
                 <button
                   type="button"
-                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}${entree ? " entre" : ""}${eclats.includes(p.q) ? " eclat" : ""}${regards[p.q] ? ` regarde-${regards[p.q]}` : ""}`}
+                  className={`so-fig${moi ? " moi" : ""}${cache ? " cache" : ""}${souvenir ? " souvenir" : ""}${dansent[p.q] ? ` ${dansent[p.q]}` : ""}${musique && platine?.enCours?.q === p.q ? " choix" : ""}${entree ? " entre" : ""}${eclats.includes(p.q) ? " eclat" : ""}${tourne ? ` regarde-${tourne}` : ""}${vedette ? " vedette" : ""}`}
                   data-q={p.q}
                   data-entre={entree ? "1" : undefined}
                   data-eclat={eclats.includes(p.q) ? "1" : undefined}
@@ -1524,6 +1568,12 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                 </span>
               );
             })}
+          {L > 0 &&
+            moment &&
+            (() => {
+              const de = ou(moment.q);
+              return de ? <GrandMoment key={moment.id} id={moment.id} m={moment.m} mot={moment.mot} de={de} L={L} H={H} figure={(h) => figureDuMoment(moment.q, h, moment.m)} /> : null;
+            })()}
           {/* (🔴 la pastille de la maquette — visible tant qu'elle marche, un toucher l'arrête — est désormais le bouton de la
               caméra, en bas : le 22 novembre 2026, le propriétaire, « on peut la supprimer, elle est en doublon ») */}
           {souvenir ? (
@@ -2692,7 +2742,7 @@ function VivanteQuiParle({ v, hauteur, e, bonjour }: { v: FigurineVivante; haute
  * ✨ (« Ma figurine ») Sa tête du jour, posée sur son corps sans sa tête — la même que partout. 🗣️ Pendant son bonjour, sa
  * tête « bouche ouverte » (chargée d'avance) passe devant quand sa voix est forte.
  */
-function SaTeteDuJour({ p, tete, hauteur, muette }: { p: PresentSalon; tete: NonNullable<PresentSalon["tete"]>; hauteur: number; muette?: boolean }) {
+function SaTeteDuJour({ p, tete, hauteur, muette, teinte }: { p: PresentSalon; tete: NonNullable<PresentSalon["tete"]>; hauteur: number; muette?: boolean; teinte?: string }) {
   const bouche = useBoucheDuBonjour(tete.parle ? p.bonjour : null);
   const pose = { left: `${tete.boite[0] * 100}%`, top: `${tete.boite[1] * 100}%`, width: `${tete.boite[2] * 100}%`, height: `${tete.boite[3] * 100}%` };
   return (
@@ -2704,6 +2754,12 @@ function SaTeteDuJour({ p, tete, hauteur, muette }: { p: PresentSalon; tete: Non
       {tete.parle && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="so-jour-parle" src={tete.parle} alt="" draggable={false} data-tete-parle style={{ ...pose, ...(bouche ? {} : { visibility: "hidden" }) }} />
+      )}
+      {/* (🎆 son grand moment : la couleur de l'émotion sur sa tête du jour) */}
+      {teinte && (
+        <span className="so-jour-teinte" style={pose}>
+          <Teinte src={tete.src} couleur={teinte} />
+        </span>
       )}
       {/* (🔥🎧❤️ « Elle change toute seule » : ce qu'elle porte, par-dessus — sans étiquettes, c'est petit ici) */}
       <Ornements o={p.ornements ? { ...p.ornements, boite: tete.boite } : null} etiquettes={false} />
@@ -2879,6 +2935,8 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-bas{padding:12px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
 .so-info{margin:0;font-size:12.5px;opacity:.75;text-align:center}
 .so-reagir button.so-jeu-rond{background:rgba(255,159,67,.22);width:36px;height:36px;font-size:18px}
+.so-seance .so-reagir{gap:4px}
+.so-seance .so-reagir button{width:36px;height:36px;font-size:18px}
 .so-reagir button.so-jeu-rond:disabled{opacity:.4}
 .so-defier{display:block;width:100%;margin:0 0 10px;background:linear-gradient(135deg,#ffb36b,#FF9F43);color:#2b1600}
 .so-jeux{display:flex;justify-content:center;gap:8px;margin:2px 0 8px}
@@ -2922,6 +2980,9 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-entree{0%{translate:var(--ex) var(--ey)}62%{translate:0 var(--ey)}88%{translate:0 -6px}100%{translate:0 0}}
 @keyframes so-pas{from{rotate:-4deg}to{rotate:4deg}}
 .so-fig.regarde-g{rotate:-7deg}
+.so-piece.so-moment .so-fig:not(.vedette){filter:brightness(.45) saturate(.7);transition:filter .3s,opacity .4s,rotate .3s ease}
+.so-fig.vedette{opacity:0}
+.so-jour-teinte{position:absolute;pointer-events:none}
 .so-fig.regarde-d{rotate:7deg}
 .so-fig.eclat .pcte{animation:so-eclat 1.6s ease both}
 @keyframes so-eclat{0%{scale:1;filter:none}20%{scale:1.22;filter:drop-shadow(0 0 10px rgba(255,210,122,.95))}70%{scale:1.05;filter:drop-shadow(0 0 6px rgba(255,210,122,.6))}100%{scale:1;filter:none}}

@@ -36,6 +36,9 @@ les cercles 👯 Mes proches / 👥 Mon groupe / 🌍 Tous, le suivi, Activité 
 **Si vous travaillez sur « Mes groupes »** (l'onglet qui a remplacé Autour : retrouver ses proches et ses groupes à une
 heure, « ＋ Proposer », « Avec mes proches »), lisez d'abord `docs/univers/mes-groupes.md`.
 
+**Si vous travaillez sur les réactions des figurines pendant une vidéo** (les grands moments : la figurine qui prend la
+scène, et envoyer le moment à un ami), lisez d'abord `docs/univers/grands-moments.md`.
+
 Règles communes :
 
 - On travaille en français.
