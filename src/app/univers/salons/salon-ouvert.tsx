@@ -1350,7 +1350,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             <i aria-label={PR.toutVoir}>›</i>
           </button>
         ) : null}
-        <div className={`so-piece${moment ? " so-moment" : ""}`} style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-gradin={gradin?.id ?? "plan"}>
+        <div className={`so-piece${moment ? " so-en-moment" : ""}`} style={{ height: H, ...(gradin ? { backgroundImage: `url(${gradin.image.flou})` } : {}) }} data-gradin={gradin?.id ?? "plan"}>
           {gradin && (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2980,7 +2980,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-entree{0%{translate:var(--ex) var(--ey)}62%{translate:0 var(--ey)}88%{translate:0 -6px}100%{translate:0 0}}
 @keyframes so-pas{from{rotate:-4deg}to{rotate:4deg}}
 .so-fig.regarde-g{rotate:-7deg}
-.so-piece.so-moment .so-fig:not(.vedette){filter:brightness(.45) saturate(.7);transition:filter .3s,opacity .4s,rotate .3s ease}
+.so-piece.so-en-moment .so-fig:not(.vedette){filter:brightness(.45) saturate(.7);transition:filter .3s,opacity .4s,rotate .3s ease}
 .so-fig.vedette{opacity:0}
 .so-jour-teinte{position:absolute;pointer-events:none}
 .so-fig.regarde-d{rotate:7deg}
