@@ -24,6 +24,8 @@
  * pièce à gauche, le salon et ses boutons à droite.
  */
 import { DitBonjour, useBonjour } from "./bonjour";
+import { GrandMoment } from "@/app/univers/salons/grand-moment";
+import { MOMENTS, type CleMoment } from "@/lib/direct/grands-moments";
 import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { OngletVisible } from "./guide";
 import { FigurineAssise } from "./autour";
@@ -37,7 +39,7 @@ import { InfosSousLaVideo, STYLES_INFOS_VIDEO } from "@/app/collection/infos-vid
 import { GESTES_SALON, PLACES_SALON, REACTIONS_SALON, type MessageSalon, type PresentSalon } from "@/lib/direct/salons-ouverts";
 import { REACTIONS_MUSIQUE } from "@/lib/direct/platine";
 import { PHRASES_PROPOSITIONS as PP, quandLisible, type PropositionGroupe } from "@/lib/direct/groupes";
-import { PHRASES_FIL as P, reactionDuFil, titreDeSeance, type BulleFil, type FilVue, type MaisonFil, type PieceFil, type SalonFil, type SeanceFil } from "@/lib/direct/fil-decouvrir";
+import { PHRASES_FIL as P, reactionDuFil, titreDeSeance, type BulleFil, type FilVue, type MomentFil, type MaisonFil, type PieceFil, type SalonFil, type SeanceFil } from "@/lib/direct/fil-decouvrir";
 
 const ROUTE = "/api/direct/fil-decouvrir";
 const SALONS = "/api/direct/salons-ouverts";
@@ -710,6 +712,46 @@ const partir = (e: React.MouseEvent<HTMLElement>) => {
  * un fauteuil vide) ; la sienne brille (« Ta place » : la toucher, c'est s'asseoir) ; leurs dernières bulles, ou, sans
  * personne, ce qui s'y est dit aujourd'hui. En bas : « M'asseoir », « Inviter ».
  */
+/** 🎆 Une vraie réaction de la journée, rejouée en grand moment sur la carte d'un salon vide : qui, et quand. */
+function MomentDuFil({ mo, maintenant }: { mo: MomentFil; maintenant: number }) {
+  const boite = useRef<HTMLDivElement>(null);
+  const [taille, setTaille] = useState<{ L: number; H: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = boite.current;
+    if (!el) return;
+    const lire = () => setTaille((t) => (t && t.L === el.clientWidth && t.H === el.clientHeight ? t : { L: el.clientWidth, H: el.clientHeight }));
+    lire();
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(lire) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, []);
+  const m = MOMENTS[mo.cle as CleMoment];
+  return (
+    <div ref={boite} className="fd-moment" data-moment-fil={mo.cle} data-q={mo.q}>
+      {m && taille && taille.L > 0 && taille.H > 0 && (
+        <GrandMoment
+          id={mo.id}
+          m={m}
+          L={taille.L}
+          H={taille.H}
+          vedettes={[
+            {
+              cle: mo.q,
+              mot: mo.mot,
+              de: { x: taille.L / 2, y: taille.H - 4, h: taille.H * 0.4 },
+              // eslint-disable-next-line @next/next/no-img-element
+              figure: (h: number) => <img src={mo.src} alt="" draggable={false} style={{ height: h, width: "auto" }} />,
+            },
+          ]}
+        />
+      )}
+      <span className="fd-moment-qui" data-moment-qui>
+        {mo.prenom} · {P.ilYa(maintenant - mo.le)}
+      </span>
+    </div>
+  );
+}
+
 function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil; moi: string; reaction: Reaction | null; onInviter: () => void }) {
   const [bonjourVu, toucherBonjour] = useBonjour();
   const plan: readonly PlaceGradin[] = p.gradin?.places.length ? p.gradin.places : PLAN_GRADIN;
@@ -785,9 +827,13 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
                   </span>
                 );
               })}
-            {traces.length > 0 && (
+            {/* 🎆 (maquette « Salon et réactions », validée le 27/11) une seule vraie réaction, en grand moment ; sans elle, la
+                dernière bulle seulement (plus de pile) */}
+            {p.moment ? (
+              <MomentDuFil key={p.moment.id} mo={p.moment} maintenant={maintenant} />
+            ) : traces.length > 0 && (
               <div className="fd-traces" data-traces>
-                {traces.map((t) => (
+                {traces.slice(-1).map((t) => (
                   <span key={t.id} className="fd-trace" data-trace>
                     <small>
                       {t.prenom} · {P.ilYa(maintenant - t.le)}
@@ -910,6 +956,8 @@ ${STYLES_INFOS_VIDEO}
 .fd-bulle{position:absolute;bottom:calc(100% - 6px);left:50%;transform:translateX(-50%);z-index:2;max-width:170px;padding:6px 10px;border-radius:14px;background:#fff;color:#1A0D14;font-size:12.5px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   box-shadow:0 6px 16px rgba(0,0,0,.35);opacity:0;animation:fd-bulle 5s ease-in-out infinite}
 .fd-salon.vide .fd-gradin-img{opacity:.82}
+.fd-moment{position:absolute;inset:0;z-index:2;pointer-events:none}
+.fd-moment-qui{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);z-index:960;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.66);color:#fff;font-size:11.5px;font-weight:800;white-space:nowrap}
 .fd-traces{position:absolute;left:50%;top:14%;z-index:1;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:7px;width:max-content;max-width:92%}
 .fd-trace{display:flex;flex-direction:column;align-items:flex-start;max-width:230px;padding:6px 11px 7px;border-radius:14px 14px 14px 4px;background:rgba(255,255,255,.9);color:#1A0D14;font-size:13px;font-weight:800;line-height:1.25;
   box-shadow:0 6px 16px rgba(0,0,0,.35)}
