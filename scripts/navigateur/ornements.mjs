@@ -2,7 +2,7 @@
 // « oui ok si c'est pas trop coûteux ») — sur un iPhone, contre le faux Supabase et le faux moteur d'image.
 //
 // Léa vient depuis huit jours de suite, va surtout au salon de la musique, et Sam lui a offert une surprise. Chez elle,
-// sa figurine porte toute seule son auréole (au-dessus de sa tête), le casque de la musique (sur sa tête), le cœur de
+// sa figurine porte toute seule son auréole (au-dessus de sa tête), le cœur de
 // Sam, et deux étiquettes : « 🔥 8 » et « 🎁 offert par Sam ». Son double du jour dit pourquoi, en trois lignes. Sam,
 // en visite, la voit pareille. Rien ne déborde, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
@@ -161,10 +161,10 @@ const orn = chez.locator(".mmc-fig .orn");
 // ═══ CHEZ ELLE : CE QU'ELLE PORTE TOUTE SEULE ═══
 ok(await attendre(lea, async () => (await orn.count()) === 1, 30000), "chez elle : sa figurine porte ses détails");
 const dit = (await orn.getAttribute("data-ornements")) ?? "";
-ok(/aureole/.test(dit) && /musique/.test(dit) && /coeur/.test(dit), `… l'auréole, la musique, le cœur (${dit})`);
-const [fig, tete, aureole, casque, coeurB] = await Promise.all([chez.locator(".mmc-fig").boundingBox(), chez.locator(".mmc-fig .mmc-fig-tete").boundingBox(), orn.locator("[data-aureole]").boundingBox(), orn.locator('[data-accessoire="casque"]').boundingBox(), orn.locator("[data-coeur]").boundingBox()]);
+ok(/aureole/.test(dit) && !/musique/.test(dit) && /coeur/.test(dit), `… l'auréole, le cœur, plus de casque (${dit})`);
+const [fig, tete, aureole, casque, coeurB] = await Promise.all([chez.locator(".mmc-fig").boundingBox(), chez.locator(".mmc-fig .mmc-fig-tete").boundingBox(), orn.locator("[data-aureole]").boundingBox(), orn.locator("[data-accessoire]").count(), orn.locator("[data-coeur]").boundingBox()]);
 ok(aureole && tete && aureole.y + aureole.height <= tete.y + tete.height * 0.1 && Math.abs(aureole.x + aureole.width / 2 - (tete.x + tete.width / 2)) < 4, `😇 l'auréole, au-dessus de sa tête (${Math.round(aureole?.y + aureole?.height)} / ${Math.round(tete?.y)} pt)`);
-ok(casque && tete && Math.abs(casque.x - tete.x) < 2 && Math.abs(casque.width - tete.width) < 2, "🎧 le casque, posé sur sa tête");
+ok(casque === 0, "🎧 plus de casque posé sur sa tête (retiré le 27 novembre)");
 ok(coeurB && tete && fig && coeurB.y > tete.y + tete.height * 0.9 && coeurB.y + coeurB.height < fig.y + fig.height, "❤️ le cœur, sur sa poitrine");
 ok(/🔥 8/.test(await texte(orn.locator(".orn-serie"))) && (await texte(orn.locator(".orn-souvenir"))) === "🎁 offert par Sam", `les étiquettes : « 🔥 8 », « 🎁 offert par Sam »`);
 await lea.waitForTimeout(500);
@@ -173,11 +173,11 @@ await lea.screenshot({ path: `${D}/ornements-1-maison.png` });
 // ═══ SON DOUBLE DU JOUR DIT POURQUOI ═══
 await chez.locator('[data-geste="ma-figurine"]').click();
 const md = lea.locator("[data-mon-double]");
-ok(await attendre(lea, async () => (await md.locator(".md-fig .orn [data-accessoire='casque']").count()) === 1), "« Mon double du jour » : la même, avec son casque");
+ok(await attendre(lea, async () => (await md.locator(".md-fig .orn [data-coeur]").count()) === 1 && (await md.locator(".md-fig .orn [data-accessoire]").count()) === 0), "« Mon double du jour » : la même, sans casque");
 const liste = md.locator("[data-ornements-liste]");
 ok(await attendre(lea, async () => /Ce qu’elle porte toute seule/.test(await texte(md))), "« ✨ Ce qu'elle porte toute seule »");
 ok(/7 jours de suite/.test(await texte(liste.locator('[data-ligne-orn="serie"]'))) && /depuis 8 jours de suite/.test(await texte(liste.locator('[data-ligne-orn="serie"]'))), `🔥 « Son auréole : 7 jours de suite » — « Tu viens depuis 8 jours de suite… » (${await texte(liste.locator('[data-ligne-orn="serie"]'))})`);
-ok(/Le casque de la musique/.test(await texte(liste.locator('[data-ligne-orn="passion"]'))) && /passion du moment : musique/.test(await texte(liste.locator('[data-ligne-orn="passion"]'))), "🎧 « Le casque de la musique — Ta passion du moment : musique »");
+ok((await liste.locator('[data-ligne-orn="passion"]').count()) === 0, "🎧 plus de ligne « Le casque de la musique »");
 ok(/offert par Sam/.test(await texte(liste.locator('[data-ligne-orn="coeur"]'))) && /Une surprise de Sam, ouverte/.test(await texte(liste.locator('[data-ligne-orn="coeur"]'))), "❤️ « offert par Sam — Une surprise de Sam, ouverte »");
 ok(!(await lea.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "rien ne déborde");
 await lea.screenshot({ path: `${D}/ornements-2-double.png` });
@@ -189,7 +189,7 @@ await sam.goto(`${BASE}/univers/chez/${LEA.cle}?piece=1`, { waitUntil: "domconte
 const visite = sam.locator(".mmc-visite .mmc-scene");
 const frapper = visite.locator('[data-geste="frapper"]');
 if (await attendre(sam, async () => (await frapper.count()) === 1, 15000)) await frapper.click();
-ok(await attendre(sam, async () => (await visite.locator(".mmc-fig .orn [data-accessoire='casque']").count()) === 1 && (await texte(visite.locator(".mmc-fig .orn-souvenir"))) === "🎁 offert par Sam", 20000), "Sam, chez Léa : le casque, l'auréole, « 🎁 offert par Sam »");
+ok(await attendre(sam, async () => (await visite.locator(".mmc-fig .orn [data-accessoire]").count()) === 0 && (await texte(visite.locator(".mmc-fig .orn-souvenir"))) === "🎁 offert par Sam", 20000), "Sam, chez Léa : l'auréole, « 🎁 offert par Sam », sans casque");
 await sam.waitForTimeout(400);
 await sam.screenshot({ path: `${D}/ornements-3-visite.png` });
 
