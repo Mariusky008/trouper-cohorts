@@ -110,10 +110,14 @@ vraies données (`lib/direct/ornements.ts`, `ornements-serveur.ts`, l'écran `ap
 |---|---|---|
 | 🔥 sa flamme, « 🔥 5 » | ses jours de suite sur ClikMe (`presence.json`, noté à l'ouverture de l'appli, déjà compté pour la figurine du mois) | à partir de 2 jours ; un jour manqué, elle repart (tant qu'il n'est pas encore venu aujourd'hui, celle d'hier compte encore) |
 | 😇 son auréole dorée, au-dessus de sa tête | la même série | à partir de 7 jours de suite |
-| 🎧 l'accessoire de sa passion du moment | le salon ouvert où il va le plus ces trente derniers jours (`mes-salons.json`), sinon sa première passion (`passions.json`) | il change quand sa passion du moment change |
+| ~~🎧 l'accessoire de sa passion du moment~~ (retiré le 27 novembre 2026, voir plus bas) | le salon ouvert où il va le plus ces trente derniers jours (`mes-salons.json`), sinon sa première passion (`passions.json`) | il change quand sa passion du moment change |
 | ❤️ un petit cœur sur sa poitrine, « 🎁 offert par Sam » ou « ❤️ vu avec Sam » | son dernier souvenir avec un proche : une surprise ouverte (`deciderSouvenir`), une vidéo vue ensemble (`poserSouvenirCommun`) — rangé dans `<habitant>/coeur.json` (le prénom, jamais le compte) | quinze jours |
 
-**Les accessoires** (`ACCESSOIRES`) : sur sa tête, 🎧 le casque (musique), 🎮 le casque à micro (jeux vidéo), 👨‍🍳 la
+**Retirés le 27 novembre 2026** : marius les a trouvés « terriblement mauvais » (dessin et placement), et on ne pouvait pas les
+enlever. `ACCESSOIRES_PORTES = false` (`lib/direct/ornements.ts`) : plus rien n'est posé sur sa figurine, ni écrit sous
+elle. Les remettre seulement s'ils deviennent optionnels et bien dessinés, maquette validée par marius d'abord.
+
+**Les accessoires (en sommeil)** (`ACCESSOIRES`) : sur sa tête, 🎧 le casque (musique), 🎮 le casque à micro (jeux vidéo), 👨‍🍳 la
 toque (cuisine), 🐾 des oreilles (animaux), 👑 une couronne (mode), 🍥 un bandeau (manga) ; à son cou, ⚽ l'écharpe
 (foot) ; sinon un badge épinglé : 🍿 séries, ⭐ télé-réalité, 😂 humour, 📚 révisions, 👶 jeunes parents.
 

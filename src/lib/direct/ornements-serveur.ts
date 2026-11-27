@@ -17,7 +17,7 @@ import { ecrireJson, lireJson, lireLigne } from "./ma-figurine-serveur";
 import { calquesDeFigurine } from "./calques-figurine-serveur";
 import { themeDe, type IdTheme } from "./decouvrir";
 import type { Zone } from "./pieces-duo";
-import { COEUR_JOURS, PASSION_JOURS, aDesOrnements, accessoireDe, serieDeJours, type CoeurSouvenir, type Ornements } from "./ornements";
+import { ACCESSOIRES_PORTES, COEUR_JOURS, PASSION_JOURS, aDesOrnements, accessoireDe, serieDeJours, type CoeurSouvenir, type Ornements } from "./ornements";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
@@ -65,7 +65,10 @@ export async function ornementsDe(supabase: Supabase, h: string, o: { boite?: Zo
     o.boite ? Promise.resolve(null) : calquesDeFigurine(supabase, h, { fabriquer: false }).catch(() => null),
   ]);
   const serie = serieDeJours((Array.isArray(presence.jours) ? presence.jours : []).map(s), jourParis());
-  const accessoire = accessoireDe(theme);
+  // 🎧 L'accessoire de sa passion n'est plus porté (marius, 27 novembre 2026 : mal dessiné, mal placé, et on ne pouvait
+  // pas l'enlever). On garde le calcul de sa passion du moment pour le jour où des accessoires reviendront — choisis par
+  // lui, et bien dessinés (maquette d'abord) : `ACCESSOIRES_PORTES`.
+  const accessoire = ACCESSOIRES_PORTES ? accessoireDe(theme) : null;
   const frais = maintenant - (Date.parse(s(coeur.le)) || 0) < COEUR_JOURS * JOUR_MS;
   const c: CoeurSouvenir | null = frais && s(coeur.prenom) && (coeur.sorte === "surprise" || coeur.sorte === "ensemble") ? { prenom: s(coeur.prenom), sorte: coeur.sorte } : null;
   const boite = o.boite ?? (Array.isArray(calques?.tete?.boite) ? (calques!.tete.boite as Zone) : null);
