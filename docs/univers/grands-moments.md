@@ -67,6 +67,9 @@ Une figurine sans expressions prêtes : sa tête du jour (colorée), sinon son i
 - **R3 — l'image du moment** (story 1080 × 1920, faite par le serveur comme « Ma figurine du jour ») et « 📸 Envoyer ce
   moment » (8 s après son grand moment, et dans « 💬 Ce qui s'est dit ») ; feuille de partage du téléphone, sinon
   enregistrer l'image et copier le lien.
-- **R4 — la page du moment** (`clikme.fr/m/…`) : l'aperçu dans WhatsApp, la vidéo trois secondes avant, la figurine qui
-  rejoue, « Réagis avec ta figurine ».
+- **R4 — la page du moment** (`clikme.fr/moment/…`) : l'aperçu dans WhatsApp, la vidéo trois secondes avant, la figurine qui
+  rejoue, « Réagis avec ta figurine ». Fait : `src/app/moment/[id]/rejouer.tsx` — la miniature (relayée par
+  `/api/direct/moment/<id>/miniature`) et « ▶ Revoir le moment » ; un toucher, la vidéo repart trois secondes avant, avec
+  le son ; à la seconde de la réaction, la figurine (`/figurine`, gardée à part) prend la scène (le même `GrandMoment`).
+  YouTube ne répond pas, ou tarde (6 s de plus) : la miniature reste et le moment se joue quand même.
 - **R5 — la vidéo de 4 secondes** pour TikTok et les Reels.

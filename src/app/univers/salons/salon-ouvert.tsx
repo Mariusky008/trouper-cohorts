@@ -51,6 +51,8 @@ import { PHRASES_VISAGE as PV, emojiDe, type ExpressionVisage } from "@/lib/dire
 import { useMaTete } from "@/app/univers/visage/ma-tete";
 import { FigurineVivanteVue, Teinte } from "@/app/univers/visage/figurine-vivante";
 import { GrandMoment } from "@/app/univers/salons/grand-moment";
+import { EnvoyerMoment, type DemandeEnvoi } from "@/app/univers/salons/envoyer-moment";
+import { MOMENT_PARTAGE, PHRASES_MOMENT } from "@/lib/direct/moment-partage";
 import { GRAND_MOMENT, momentDeReaction, momentDeSorte, motDuMoment, type Moment } from "@/lib/direct/grands-moments";
 import { Pancarte } from "@/app/collection/pancarte";
 import { Ornements } from "@/app/collection/ornements";
@@ -334,8 +336,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     };
     const commencer = (d: DemandeMoment) => {
       const maintenant = Date.now();
-      poser({ id: d.id, m: d.m, debut: maintenant, fin: maintenant + GRAND_MOMENT.ms, niveau: 1, vedettes: [{ cle: d.cle, mot: motDuMoment(d.m, d.id, d.texte) }] });
+      const mot = motDuMoment(d.m, d.id, d.texte);
+      poser({ id: d.id, m: d.m, debut: maintenant, fin: maintenant + GRAND_MOMENT.ms, niveau: 1, vedettes: [{ cle: d.cle, mot }] });
       if (!d.cle.startsWith("f:")) demanderVivante.current(d.cle);
+      if (d.cle === moiRef.current) quandMonMoment.current(d.m, d.texte ?? "");
     };
     function suivant() {
       let n: DemandeMoment | undefined;
@@ -377,6 +381,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   });
   const demanderVivante = useRef((q: string) => void q);
   const cleDuSouvenir = useRef((c: string): string | null => (c ? null : null));
+  // 📸 (lot R3) mon grand moment : « Envoyer ce moment » — la vidéo et sa seconde, prises à cet instant
+  const quandMonMoment = useRef((m: Moment, mot: string) => void [m, mot]);
+  const [pastille, setPastille] = useState<{ n: number; demande: DemandeEnvoi } | null>(null);
+  const [envoi, setEnvoi] = useState<DemandeEnvoi | null>(null);
   const [texte, setTexte] = useState("");
   // 🌍 (discussions des vidéos, lot A2) ce que je viens d'écrire au salon : le laisser sous la vidéo (dix secondes)
   const [sousVideo, setSousVideo] = useState<{ texte: string; video: string; accord?: boolean; fait?: boolean } | null>(null);
@@ -1161,16 +1169,29 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const t = window.setInterval(tic, 500);
     return () => window.clearInterval(t);
   }, [jeu, decalage]);
-  /** ⏪ (le rattrapage) La vidéo qui passe à ma télé, et sa seconde. */
-  const ouEnEstLaTele = (): { video: string; t: number } | null => {
+  /** 📸 La vidéo qui passe et sa seconde, à cet instant (la platine du salon de la musique d'abord). */
+  const videoEtSeconde = (): { video: { id: string; titre: string }; t: number } | null => {
     const ms = Date.now() + (decalage.current ?? 0);
     if (prive) {
       const s = aPart ?? tele;
-      return s ? { video: s.video.id, t: Math.round(positionSeance(s, ms) * 10) / 10 } : null;
+      return s ? { video: { id: s.video.id, titre: s.video.titre }, t: positionSeance(s, ms) } : null;
     }
+    if (musique && platine?.enCours) return { video: { id: platine.enCours.video.id, titre: platine.enCours.video.titre }, t: Math.max(0, (ms - platine.enCours.depart) / 1000) };
     const pos = positionTele(o.tele.videos, ms);
-    const v = pos ? o.tele.videos[pos.i] : null;
-    return v && pos ? { video: v.id, t: pos.t } : null;
+    const v = pos ? o.tele.videos[pos.i] : undefined;
+    return v && pos ? { video: { id: v.id, titre: v.titre }, t: pos.t } : null;
+  };
+  quandMonMoment.current = (m: Moment, mot: string) => {
+    const x = videoEtSeconde();
+    if (!x) return;
+    const n = Date.now();
+    setPastille({ n, demande: { ...x, t: Math.round(x.t * 10) / 10, e: m.cle, ...(mot ? { mot } : {}) } });
+    window.setTimeout(() => setPastille((p) => (p?.n === n ? null : p)), GRAND_MOMENT.ms + MOMENT_PARTAGE.pastille);
+  };
+  /** ⏪ (le rattrapage) La vidéo qui passe à ma télé, et sa seconde. */
+  const ouEnEstLaTele = (): { video: string; t: number } | null => {
+    const x = videoEtSeconde();
+    return x ? { video: x.video.id, t: Math.round(x.t * 10) / 10 } : null;
   };
   /** 🎯 Les secondes qui restent à la vidéo qui passe (0 : on ne sait pas). */
   const resteVideo = (): number => {
@@ -1678,6 +1699,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               });
               return vedettes.length ? <GrandMoment key={moment.id} id={moment.id} m={moment.m} vedettes={vedettes} niveau={moment.niveau} ensemble={vedettes.length > 1 ? PR.ensembleMoment : undefined} L={L} H={H} /> : null;
             })()}
+          {pastille && (
+            <button
+              type="button"
+              className="so-pastille-moment"
+              data-envoyer-ce-moment
+              onClick={() => {
+                setEnvoi(pastille.demande);
+                setPastille(null);
+              }}
+            >
+              {PHRASES_MOMENT.envoyer}
+            </button>
+          )}
           {/* (🔴 la pastille de la maquette — visible tant qu'elle marche, un toucher l'arrête — est désormais le bouton de la
               caméra, en bas : le 22 novembre 2026, le propriétaire, « on peut la supprimer, elle est en doublon ») */}
           {souvenir ? (
@@ -1892,6 +1926,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         </Feuille>
       )}
 
+      {envoi && (
+        <Feuille onFermer={() => setEnvoi(null)}>
+          <EnvoyerMoment demande={envoi} />
+        </Feuille>
+      )}
       {fiche && (
         <Feuille onFermer={() => setFiche(null)}>
           <div className={`so-fiche${fiche.pancarte ? " a-pancarte" : ""}${fiche.ornements?.coeur ? " a-coeur" : ""}`} data-fiche={fiche.q}>
@@ -3119,6 +3158,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-fig.regarde-g{rotate:-7deg}
 .so-piece.so-en-moment .so-fig:not(.vedette){filter:brightness(.45) saturate(.7);transition:filter .3s,opacity .4s,rotate .3s ease}
 .so-fig.vedette{opacity:0}
+.so-pastille-moment{position:absolute;right:10px;top:10px;z-index:960;border:0;border-radius:999px;padding:8px 14px;background:#fff;color:#1b0a17;font:inherit;font-weight:800;font-size:13.5px;box-shadow:0 10px 24px -8px rgba(0,0,0,.7);cursor:pointer;animation:so-entre .3s ease-out}
 .so-piece.so-en-moment .so-fig.sur-place:not(.vedette),.so-fig.sur-place{filter:drop-shadow(0 0 8px var(--c)) drop-shadow(0 0 18px var(--c));scale:1.08;transition:filter .2s,scale .2s}
 .so-jour-teinte{position:absolute;pointer-events:none}
 .so-fig.regarde-d{rotate:7deg}
