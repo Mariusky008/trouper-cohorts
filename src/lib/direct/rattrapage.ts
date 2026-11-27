@@ -126,8 +126,19 @@ export function grandMoment(traces: readonly TraceSeance[]): { cle: string; vide
   return l[0] ? { cle: l[0].cle, video: l[0].video, t: l[0].t, qui: [...l[0].qui] } : undefined;
 }
 
+/** (lot T3) Réagir en décalé : pas plus d'une réaction ou d'un mot toutes les secondes et demie, douze par minute. */
+export const ECART_RATTRAPAGE_MS = 1500;
+export const PAR_MINUTE_RATTRAPAGE = 12;
+
 export const PHRASES_RATTRAPAGE = {
   absente: "Cette séance n’existe plus.",
+  quelleReaction: "Quelle réaction ?",
+  pasCetteVideo: "Cette vidéo n’est pas celle de la séance.",
+  doucement: "Doucement 🙂 Un à la fois.",
+  vide: "Écris quelque chose d’abord.",
+  refus: (pourquoi: string) => `Ça ne passe pas : ${pourquoi}.`,
+  ajoute: (e: string, t: string) => `Ton ${e} est ajouté à la séance, à ${t}. Le groupe le verra.`,
+  ajouteMot: (t: string) => `Ton mot est ajouté à la séance, à ${t}. Le groupe le verra.`,
   pasLa: "Cette séance est celle d’un groupe.",
   passee: "Cette séance date de plus de sept jours.",
 } as const;

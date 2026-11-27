@@ -12,9 +12,9 @@
  * `/univers/rattrapage?seance=<clé>`. Pensé pour le téléphone.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { aLaSeconde, type SeanceARattraper, type TraceSeance } from "@/lib/direct/rattrapage";
+import { aLaSeconde, PHRASES_RATTRAPAGE as PR, type SeanceARattraper, type TraceSeance } from "@/lib/direct/rattrapage";
 import { GRAND_MOMENT, momentDeReaction, motDuMoment, type Moment } from "@/lib/direct/grands-moments";
-import { REACTIONS_SALON } from "@/lib/direct/salons-ouverts";
+import { REACTIONS_SALON, TEXTE_SALON_MAX } from "@/lib/direct/salons-ouverts";
 import { vignetteYouTube } from "@/lib/direct/tele";
 import { chargerYouTube } from "@/app/univers/tele-duo";
 import { GrandMoment } from "@/app/univers/salons/grand-moment";
@@ -34,6 +34,10 @@ export const PHRASES_RATTRAPAGE_ECRAN = {
   chargement: "La séance arrive…",
   ensemble: "🫶 Au même moment",
   aller: (t: string) => `Aller à ${t}`,
+  reagir: "Réagir à ce moment",
+  tonMot: "Ton mot",
+  ecrire: "Écris au groupe…",
+  ajouter: "Ajouter à la séance",
 } as const;
 const P = PHRASES_RATTRAPAGE_ECRAN;
 
@@ -76,6 +80,10 @@ export function RattrapageEcran() {
   const scene = useRef<HTMLDivElement>(null);
   const avant = useRef(0);
   const [L, setL] = useState(358);
+  // (lot T3 : réagir en décalé)
+  const [texte, setTexte] = useState("");
+  const [occupe, setOccupe] = useState(false);
+  const [dit, setDit] = useState<{ texte: string; ok: boolean } | null>(null);
 
   // ─── la séance ───
   useEffect(() => {
@@ -192,6 +200,40 @@ export function RattrapageEcran() {
   useEffect(() => {
     avance.current = quandLaVideoAvance;
   }, [quandLaVideoAvance]);
+
+  // ─── ⏪ (lot T3) réagir en décalé : à la seconde où j'en suis ───
+  async function ajouter(corps: { sorte: "reaction"; cle: string } | { sorte: "texte"; texte: string }): Promise<boolean> {
+    if (!seance || !video || occupe) return false;
+    const ou = { video: video.id, t: Math.round(t * 10) / 10 };
+    setOccupe(true);
+    const r = await fetch("/api/direct/rattrapage", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "reagir", seance: seance.cle, ...corps, ou }) }).catch(() => null);
+    const j = ((await r?.json().catch(() => null)) ?? {}) as { trace?: TraceSeance; error?: string };
+    setOccupe(false);
+    if (!r?.ok || !j.trace) {
+      setDit({ texte: j.error || "Ça n’a pas marché. Réessaie.", ok: false });
+      return false;
+    }
+    const x = j.trace;
+    setSeance((s) => (s ? { ...s, traces: [...s.traces, x], figurines: s.figurines[x.q] || !s.moi.src ? s.figurines : { ...s.figurines, [x.q]: s.moi.src } } : s));
+    setDit({ texte: x.sorte === "reaction" ? PR.ajoute(emojiDe(x.cle), aLaSeconde(x.t)) : PR.ajouteMot(aLaSeconde(x.t)), ok: true });
+    // (ma figurine prend la scène ; la même émotion qu'un souvenir qui joue encore : côte à côte, 🫶)
+    const m = x.sorte === "reaction" ? momentDeReaction(x.cle) : null;
+    if (m) {
+      const mot = motDuMoment(m, x.id);
+      if (moment && moment.m.cle === m.cle && moment.qui.length === 1 && moment.qui[0].q !== x.q) setMoment({ ...moment, qui: [...moment.qui, { q: x.q, mot }] });
+      else if (!enScene.current) {
+        enScene.current = true;
+        setMoment({ id: x.id, m, qui: [{ q: x.q, mot }], niveau: 1 });
+      } else if (file.current.length < GRAND_MOMENT.file) file.current.push({ id: x.id, m, qui: [{ q: x.q, mot }], niveau: 1 });
+    }
+    return true;
+  }
+  async function envoyerTexte(ev: React.FormEvent) {
+    ev.preventDefault();
+    const x = texte.trim();
+    if (!x) return;
+    if (await ajouter({ sorte: "texte", texte: x })) setTexte("");
+  }
 
   const aller = (x: number) => {
     avant.current = Math.max(0, x - 3);
@@ -324,6 +366,28 @@ export function RattrapageEcran() {
         ))}
         {reste > 0 && <p className="rt-gris">{P.suite}</p>}
       </section>
+      <div className="rt-reagir" role="group" aria-label={P.reagir}>
+        {REACTIONS_SALON.map((r) => (
+          <button key={r.cle} type="button" className="rt-emo" aria-label={r.nom} data-reagir={r.cle} disabled={occupe || !video} onClick={() => void ajouter({ sorte: "reaction", cle: r.cle })}>
+            {r.e}
+          </button>
+        ))}
+      </div>
+      <form className="rt-ecrire" onSubmit={envoyerTexte}>
+        <label className="rt-cache" htmlFor="rt-mot">
+          {P.tonMot}
+        </label>
+        <input id="rt-mot" value={texte} maxLength={TEXTE_SALON_MAX} placeholder={P.ecrire} onChange={(e) => setTexte(e.target.value)} autoComplete="off" />
+        <button type="submit" disabled={occupe || !texte.trim() || !video}>
+          {P.ajouter}
+        </button>
+      </form>
+      {dit && (
+        <p className={`rt-dit-ok${dit.ok ? "" : " non"}`} role="status" data-ajoute={dit.ok ? "1" : "0"}>
+          {dit.ok ? "✓ " : ""}
+          {dit.texte}
+        </p>
+      )}
       <style>{STYLES}</style>
     </div>
   );
@@ -379,4 +443,15 @@ const STYLES = `
 .rt-bulle{background:#261b16;border-radius:16px;padding:7px 11px;font-size:14px;line-height:1.35;max-width:85%;overflow-wrap:anywhere}
 .rt-trace.mien .rt-bulle{background:#3a1a2c}
 .rt-lien{color:#cdb8a4}
+.rt-reagir{display:flex;justify-content:space-between;gap:6px}
+.rt-emo{width:48px;height:48px;border-radius:999px;background:#261b16;border:1px solid rgba(255,196,140,.14);font-size:22px;padding:0;cursor:pointer;transition:transform .12s}
+.rt-emo:active{transform:scale(.92)}
+.rt-emo:disabled{opacity:.5}
+.rt-ecrire{display:flex;gap:8px;align-items:center}
+.rt-ecrire input{flex:1;min-width:0;height:48px;box-sizing:border-box;border-radius:999px;border:1px solid rgba(255,196,140,.14);background:#1c1411;color:#fff4e6;padding:0 16px;font-size:16px}
+.rt-ecrire button{flex:none;height:48px;padding:0 16px;border:0;border-radius:999px;background:#ff2e9a;color:#fff;font-weight:800;font-size:14px;box-shadow:0 10px 28px rgba(255,46,154,.38)}
+.rt-ecrire button:disabled{opacity:.55;box-shadow:none}
+.rt-cache{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.rt-dit-ok{margin:0;padding:10px 14px;border-radius:18px;background:#1c1411;border:1px solid rgba(255,196,140,.14);font-size:13.5px;line-height:1.35}
+.rt-dit-ok.non{color:#f6b54b}
 `;

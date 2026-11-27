@@ -29,7 +29,7 @@ pression d'être là en direct.
 | T0 | Maquette | ✅ validée le 27 novembre 2026 |
 | T1 | Noter la séance : chaque réaction et chaque mot, avec la vidéo et sa seconde ; lire les séances | ✅ fait (#326) |
 | T2 | Le salon en rattrapage (la vidéo, les marques sur la barre, les souvenirs qui prennent la scène, les mots à leur seconde) | ✅ fait |
-| T3 | Réagir en décalé : les six émotions, « Ajouter à la séance », « ⏪ vu en rattrapage » | |
+| T3 | Réagir en décalé : les six émotions, « Ajouter à la séance », « ⏪ vu en rattrapage » | ✅ fait |
 | T4 | Ce que le groupe voit : la discussion, le journal, la notification douce, mes réactions quand ils revoient | |
 | T5 | Les entrées : la carte de l'essai, Absent / Plus tard, le journal, Activité 🛎️ | |
 
@@ -65,3 +65,15 @@ pression d'être là en direct.
   (une marque touchée, un retour en arrière) ne rejoue rien.
 - **Ce qui s'est dit** arrive à sa seconde, jamais avant (« 🔒 La suite arrive à sa seconde, pas avant. »).
 - Essai : `scripts/navigateur/rattrapage.mjs` (un faux lecteur YouTube dont on règle la seconde).
+
+## T3, dans le code
+
+- **Sous le salon en rattrapage** : les six émotions des grands moments et « Écris au groupe… » avec « Ajouter à la
+  séance ». La réaction ou le mot se pose à la seconde où j'en suis dans la vidéo ; « ✓ Ton 😂 est ajouté à la séance, à
+  2:15. Le groupe le verra. » ; dans le fil : « Toi · à 2:15 · ⏪ vu en rattrapage » ; ma figurine prend la scène (et si
+  un souvenir joue la même émotion à ce moment : 🫶 côte à côte).
+- **La route** : `POST /api/direct/rattrapage { action: "reagir", seance, sorte, cle?, texte?, ou }` → `{ trace }`
+  (`reagirEnDecale`) : ceux qui peuvent rattraper la séance, pendant ses sept jours ; la vidéo doit être celle de la
+  séance ; un mot passe la modération des salons (90 signes) ; une à la fois (1,5 s, douze par minute :
+  `groupes/seance-rattrapage/<q>.json`). La trace porte `rattrapage: true` et ma figurine (`src`) : la liste des séances
+  dit « rattrapée par … », et ceux qui la revoient voient ma figurine réagir.
