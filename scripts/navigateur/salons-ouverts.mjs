@@ -222,7 +222,11 @@ const ami = await lea.context().browser().newContext({ viewport: { width: 390, h
 const pageMoment = await ami.newPage();
 await pageMoment.goto(new URL(new URL(lienMoment).pathname, BASE).href, { waitUntil: "domcontentloaded", timeout: 90000 });
 ok(/Léa a réagi à \d+:\d\d/.test(await texte(pageMoment.locator("h1"))) && (await pageMoment.locator("[data-youtube]").getAttribute("href"))?.includes("youtube.com/watch?v="), `la page du moment : « ${await texte(pageMoment.locator("h1"))} », ▶ Voir sur YouTube`);
-ok(/og:image/.test(await pageMoment.content()), "… et son aperçu (og:image)");
+const ogImage = (await pageMoment.locator('meta[property="og:image"]').first().getAttribute("content")) ?? "";
+const apercu = ogImage ? await pageMoment.request.get(new URL(new URL(ogImage).pathname, BASE).href) : null;
+const tailleApercu = apercu?.ok() ? (await apercu.body()).length : 0;
+// (WhatsApp ne montre pas une image de plus de ~600 Ko : il ne gardait que le texte)
+ok(/\/apercu$/.test(ogImage) && /image\/jpeg/.test(apercu?.headers()["content-type"] ?? "") && tailleApercu > 5000 && tailleApercu < 300000, `… et son aperçu (og:image en JPEG, ${Math.round(tailleApercu / 1000)} Ko)`);
 await lea.locator(".so-fermer").click();
 await lea.waitForTimeout(2200);
 const noteEncore = await texte(lea.locator("[data-note]"));

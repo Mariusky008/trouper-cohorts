@@ -181,6 +181,24 @@ export async function imageDeMoment(supabase: Supabase, id: unknown, quoi: "imag
   return telecharger(supabase, quoi === "figurine" ? cheminFigurineMoment(String(id)) : cheminImageMoment(String(id))).catch(() => null);
 }
 
+/**
+ * 🔗 L'aperçu du lien (WhatsApp, Messenger, iMessage…) : 1200 × 630 en JPEG, moins de 300 Ko. WhatsApp n'affiche pas
+ * l'image story (1080 × 1920, plus d'un mégaoctet) : il ne gardait que le texte. Ici, l'image story entière au centre,
+ * sur elle-même agrandie et floutée.
+ */
+export async function apercuDeMoment(supabase: Supabase, id: unknown): Promise<Buffer | null> {
+  const png = await imageDeMoment(supabase, id);
+  if (!png) return null;
+  const [L, H] = [APERCU.largeur, APERCU.hauteur];
+  const fond = await sharp(png).resize(L, H, { fit: "cover" }).blur(28).modulate({ brightness: 0.55 }).toBuffer();
+  const story = await sharp(png).resize({ height: H - 40 }).toBuffer();
+  return sharp(fond)
+    .composite([{ input: story, gravity: "center" }])
+    .jpeg({ quality: 82, mozjpeg: true })
+    .toBuffer();
+}
+export const APERCU = { largeur: 1200, hauteur: 630 } as const;
+
 /** 🎬 (lot R5) La miniature de sa vidéo, relayée (pour la dessiner sur le téléphone) ; rien : inconnu, ou pas de miniature. */
 export async function miniatureDeMoment(supabase: Supabase, id: unknown): Promise<Buffer | null> {
   const m = await lireMoment(supabase, id);

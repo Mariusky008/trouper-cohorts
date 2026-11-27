@@ -7,8 +7,8 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lireMoment } from "@/lib/direct/moment-partage-serveur";
-import { MOMENT_PARTAGE as MP, PHRASES_MOMENT as P, lienYouTubeDuMoment, minuteDuMoment } from "@/lib/direct/moment-partage";
+import { APERCU, lireMoment } from "@/lib/direct/moment-partage-serveur";
+import { PHRASES_MOMENT as P, lienYouTubeDuMoment, minuteDuMoment } from "@/lib/direct/moment-partage";
 import { MOMENTS } from "@/lib/direct/grands-moments";
 import { RejouerLeMoment } from "./rejouer";
 
@@ -27,7 +27,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const m = await charger(id);
   const titre = m ? `${MOMENTS[m.e].e} ${P.aReagi(m.prenom, minuteDuMoment(m.t))}` : "Un moment ClikMe";
   const description = m ? (m.video.titre ? `« ${m.mot} » — ${m.video.titre}` : `« ${m.mot} »`) : P.efface;
-  const images = m ? [{ url: `/api/direct/moment/${encodeURIComponent(id)}/image`, width: MP.largeur, height: MP.hauteur, type: "image/png", alt: titre }] : [];
+  // (l'aperçu du lien : 1200 × 630 en JPEG — WhatsApp n'affiche pas une image story de plus d'un mégaoctet)
+  const images = m ? [{ url: `/api/direct/moment/${encodeURIComponent(id)}/apercu`, width: APERCU.largeur, height: APERCU.hauteur, type: "image/jpeg", alt: titre }] : [];
   return {
     title: titre,
     description,
