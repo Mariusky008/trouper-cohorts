@@ -6,6 +6,7 @@
 // ⚡ (25 novembre 2026) on y entre côté serveur : la page arrive avec le salon prêt (`entreeDuServeur`).
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { apercuDeLaPlace, entrerAuGroupe, entrerAuSalon, entrerChez, type OuvertureSalonOuvert } from "@/lib/direct/salons-ouverts-serveur";
 import { habitantOuPanne, type Habitant } from "@/lib/direct/habitant";
@@ -13,7 +14,7 @@ import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { salonsOuverts } from "@/lib/direct/interrupteurs-serveur";
 import { themeDe } from "@/lib/direct/decouvrir";
 import { SalonOuvert, type EtatSalonOuvert } from "./salon-ouvert";
-import { ChronoSalon } from "./chrono";
+import { ChronoSalon, type VueServeur } from "./chrono";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -42,15 +43,51 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 type Entree = { ouverture?: OuvertureSalonOuvert; age?: true; figurine?: true; exclu?: true; error?: string };
 
 /**
+ * ⏱️ (27 novembre 2026, le chrono : « page 2,3 s ») où part le temps côté serveur : le démarrage à froid, le temps de
+ * l'entrée, le nombre de demandes à la base, leur durée moyenne et la plus lente — montrés dans la bande du chrono.
+ */
+const DEMARRE = Date.now();
+/** (une fonction qui vient de démarrer : la première demande après un temps sans visite) */
+const estFroid = () => Date.now() - DEMARRE < 15_000;
+type Chrono = { debut: number; habitant: number; n: number; cumul: number; lente: { ms: number; quoi: string }; fetch: typeof fetch };
+function nouveauChrono(): Chrono {
+  const c: Chrono = {
+    debut: Date.now(),
+    habitant: 0,
+    n: 0,
+    cumul: 0,
+    lente: { ms: 0, quoi: "" },
+    fetch: async (entree, init) => {
+      const t = Date.now();
+      try {
+        return await fetch(entree, init);
+      } finally {
+        const d = Date.now() - t;
+        c.n += 1;
+        c.cumul += d;
+        if (d > c.lente.ms) {
+          const u = typeof entree === "string" ? entree : entree instanceof URL ? entree.href : entree.url;
+          c.lente = { ms: d, quoi: new URL(u).pathname.replace(/^\/(storage|rest)\/v1\/(object\/)?/, "").replace(/[0-9a-f-]{36}/g, "…").slice(0, 60) };
+        }
+      }
+    },
+  };
+  return c;
+}
+const vueDuChrono = (c: Chrono | undefined, froid: boolean): VueServeur | undefined =>
+  c ? { total: Date.now() - c.debut, habitant: c.habitant, n: c.n, moyenne: c.n ? Math.round(c.cumul / c.n) : 0, lente: c.lente, froid } : undefined;
+
+/**
  * ⚡ (25 novembre 2026, le propriétaire : « quand on clique sur M'asseoir, j'ai d'abord un écran complètement inutile qui
  * stipule le thème […] et qui fait perdre du temps pour rien ») on entre ici, avant d'envoyer la page : elle arrive avec
  * le salon prêt (sa place prise). Ce que répondent les actions `entrer` et `entrer-chez` de la route, en état de l'écran ;
  * une panne → rien (l'écran entre lui-même, comme avant).
  */
-async function entreeDuServeur(entrer: (supabase: ReturnType<typeof createAdminClient>, moi: Habitant) => Promise<Entree>): Promise<EtatSalonOuvert | undefined> {
+async function entreeDuServeur(entrer: (supabase: ReturnType<typeof createAdminClient>, moi: Habitant) => Promise<Entree>, chrono?: Chrono): Promise<EtatSalonOuvert | undefined> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClient(chrono ? { fetch: chrono.fetch } : undefined);
     const { moi, panne } = await habitantOuPanne(supabase);
+    if (chrono) chrono.habitant = Date.now() - chrono.debut;
     // (27 novembre 2026 : la base qui ne répond pas n'est pas une figurine absente — l'écran réessaie lui-même)
     if (panne) return undefined;
     // (➕ sans compte ni figurine — arrivé par le lien WhatsApp d'une place libre : sa figurine d'abord)
@@ -71,37 +108,40 @@ export default async function PageSalonOuvert({ searchParams }: { searchParams: 
   if (!(await universPermis())) redirect("/admin");
   const { theme, chez, place, video, groupe, chrono } = await searchParams;
   // (⏱️ 27 novembre 2026 : `?chrono=1` — où part le temps en entrant, mesuré sur le téléphone, `chrono.tsx`)
-  const mesure = <ChronoSalon demande={chrono} />;
+  // (le chrono côté serveur seulement quand on le demande : `?chrono=1`, ou le cookie posé par la bande)
+  const froid = estFroid();
+  const c = chrono === "1" || (await cookies()).get("clikme-chrono")?.value === "1" ? nouveauChrono() : undefined;
+  const mesure = (fin: Chrono | undefined) => <ChronoSalon demande={chrono} serveur={vueDuChrono(fin, froid)} />;
   // (une séance entre proches ne dépend pas de l'interrupteur des salons ouverts ; ➕ `place` : le jeton d'un lien WhatsApp)
   // (📼 `video` : chez moi, « Revoir » une vidéo déjà vue)
   if (chez && /^(moi|[A-Za-z0-9_-]{4,64})$/.test(chez)) {
     const p = place && /^[A-Za-z0-9_-]{12,32}$/.test(place) ? place : undefined;
     const v = chez === "moi" && video && /^[A-Za-z0-9_-]{11}$/.test(video) ? video : undefined;
-    const initial = await entreeDuServeur((supabase, moi) => entrerChez(supabase, moi, chez, p, v));
+    const initial = await entreeDuServeur((supabase, moi) => entrerChez(supabase, moi, chez, p, v), c);
     return (
       <>
         <SalonOuvert chez={chez} place={p} video={v} initial={initial} />
-        {mesure}
+        {mesure(c)}
       </>
     );
   }
   if (groupe && /^g-[A-Za-z0-9_-]{8,64}$/.test(groupe)) {
-    const initial = await entreeDuServeur((supabase, moi) => entrerAuGroupe(supabase, moi, groupe));
+    const initial = await entreeDuServeur((supabase, moi) => entrerAuGroupe(supabase, moi, groupe), c);
     return (
       <>
         <SalonOuvert groupe={groupe} initial={initial} />
-        {mesure}
+        {mesure(c)}
       </>
     );
   }
   if (!salonsOuverts()) notFound();
   const t = themeDe(theme);
   if (!t) notFound();
-  const initial = await entreeDuServeur((supabase, moi) => entrerAuSalon(supabase, moi, t.id));
+  const initial = await entreeDuServeur((supabase, moi) => entrerAuSalon(supabase, moi, t.id), c);
   return (
       <>
         <SalonOuvert theme={t.id} initial={initial} />
-        {mesure}
+        {mesure(c)}
       </>
     );
 }
