@@ -117,11 +117,19 @@ async function prochesDansLesSalons(supabase: Supabase, moi: Habitant, salons: S
 /** 🎞️ Le fil : ses pièces, dans l'ordre (`ordreDuFil`, lot F4), et sa figurine. */
 export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<FilVue> {
   const ouverts = salonsOuverts();
-  const [mienne, prenom, figurine, direct, autour, humeurs, invitations, demandes, maisons, surprise, seances] = await Promise.all([
+  // ⚡ (27 novembre 2026, « tout prend trop de temps à s'ouvrir ») ce qui attendait la fin de tout le reste — la proposition
+  // de ses groupes (après ses passions), ses proches dans les salons (après les salons) — part avec le reste.
+  const directP = ouverts ? salonsEnDirect(supabase, moi).catch((): Awaited<ReturnType<typeof salonsEnDirect>> => ({ salons: [] })) : Promise.resolve<Awaited<ReturnType<typeof salonsEnDirect>>>({ salons: [] });
+  const prochainP = lirePassions(supabase, moi.id)
+    .catch(() => null)
+    .then((p) => prochaineDuFil(supabase, moi, (p?.passions ?? []).map(String)))
+    .catch(() => null);
+  const prochesP = directP.then((d) => prochesDansLesSalons(supabase, moi, d.salons)).catch(() => new Set<string>());
+  const [mienne, prenom, figurine, direct, autour, humeurs, invitations, demandes, maisons, surprise, seances, prochaine, proches] = await Promise.all([
     humeurDuJour(supabase, moi.id).catch(() => null),
     prenomDe(supabase, moi).catch(() => ""),
     silhouetteDuFil(supabase, moi.id),
-    ouverts ? salonsEnDirect(supabase, moi).catch((): Awaited<ReturnType<typeof salonsEnDirect>> => ({ salons: [] })) : Promise.resolve<Awaited<ReturnType<typeof salonsEnDirect>>>({ salons: [] }),
+    directP,
     poseesAutour(supabase, moi).catch(() => [] as AutourFil[]),
     humeursDesProches(supabase, moi, QUOI_DE_NEUF_MAX).catch(() => [] as ProcheHumeurFil[]),
     mesInvitations(supabase, moi).catch(() => []),
@@ -129,12 +137,11 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
     maisonsOuvertes(supabase, moi).catch(() => [] as MaisonFil[]),
     surpriseDeVisite(supabase, moi).catch(() => undefined),
     seancesDesProches(supabase, moi).catch(() => [] as SeanceFil[]),
+    prochainP,
+    prochesP,
   ]);
   // (📣 Mes groupes, lot G2 : une proposition « On se retrouve ? », ses passions d'abord)
-  const passionsDeMoi = ((await lirePassions(supabase, moi.id).catch(() => null))?.passions ?? []).map(String);
-  const prochaine = await prochaineDuFil(supabase, moi, passionsDeMoi).catch(() => null);
   const rdv: PieceFil[] = prochaine ? [{ sorte: "rdv", proposition: prochaine }] : [];
-  const proches = await prochesDansLesSalons(supabase, moi, direct.salons).catch(() => new Set<string>());
   const vivants = direct.salons
     .filter((x) => x.presents.length)
     .map((x): SalonFil => {
