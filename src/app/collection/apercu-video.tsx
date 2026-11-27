@@ -50,7 +50,18 @@ type Lecteur = {
   isMuted?: () => boolean;
   setVolume?: (v: number) => void;
   getPlayerState?: () => number;
+  unloadModule?: (m: string) => void;
 };
+/** (maquette « Salon et réactions », validée le 27/11 : « la vidéo sans texte par-dessus ») muette, YouTube pose ses
+ *  sous-titres d'office : on les retire dès qu'elle joue. */
+function sansSousTitres(l: Lecteur | null | undefined) {
+  try {
+    l?.unloadModule?.("captions");
+    l?.unloadModule?.("cc");
+  } catch {
+    /* (rien) */
+  }
+}
 
 // ═══ QUI JOUE : UN SEUL APERÇU DANS TOUTE L'APPLI ═══
 type Inscrit = { ratio: number; allumer: (oui: boolean) => void };
@@ -348,6 +359,7 @@ function allumerDansScene(el: HTMLElement, slot: Element, id: string, r: Rappels
             onStateChange: (e: { data?: number }) => {
               if (!s.slot || !s.rappels) return;
               if (e.data === 1) {
+                sansSousTitres(s.lecteur);
                 s.hote.classList.add("joue");
                 s.rappels.joue(true);
               }
@@ -465,7 +477,10 @@ export function ApercuVideo({ id, className }: { id: string; className?: string 
             onStateChange: (e: { data?: number }) => {
               if (fini) return;
               // (elle joue : l'image du dessous s'efface)
-              if (e.data === 1) parent?.setAttribute("data-apercu-joue", "");
+              if (e.data === 1) {
+                sansSousTitres(lecteur);
+                parent?.setAttribute("data-apercu-joue", "");
+              }
             },
             // (elle refuse d'être lue hors de YouTube, ou elle est partie : la vignette reste, simplement)
             onError: () => {

@@ -77,8 +77,9 @@ export async function details(ids: string[], o: { min?: number; max?: number } =
         snippet?: { title?: string; channelTitle?: string; channelId?: string; publishedAt?: string; liveBroadcastContent?: string };
         contentDetails?: { duration?: string; contentRating?: { ytRating?: string } };
         status?: { embeddable?: boolean; privacyStatus?: string };
+        statistics?: { viewCount?: string };
       }[];
-    }>("videos", { part: "snippet,contentDetails,status", id: ids.slice(i, i + 50).join(",") });
+    }>("videos", { part: "snippet,contentDetails,status,statistics", id: ids.slice(i, i + 50).join(",") });
     for (const v of j.items ?? []) {
       const titre = s(v.snippet?.title);
       const duree = dureeIso(v.contentDetails?.duration);
@@ -87,7 +88,8 @@ export async function details(ids: string[], o: { min?: number; max?: number } =
       if (v.contentDetails?.contentRating?.ytRating === "ytAgeRestricted") continue;
       if (duree < min || duree > max || !titre || MOTS_EXCLUS.test(titre)) continue;
       const chaineId = s(v.snippet?.channelId);
-      l.push({ id: v.id, titre: titre.slice(0, 140), chaine: s(v.snippet?.channelTitle).slice(0, 80), duree, publiee: s(v.snippet?.publishedAt), ...(/^UC[\w-]{22}$/.test(chaineId) ? { chaineId } : {}) });
+      const vues = Number(v.statistics?.viewCount);
+      l.push({ id: v.id, titre: titre.slice(0, 140), chaine: s(v.snippet?.channelTitle).slice(0, 80), duree, publiee: s(v.snippet?.publishedAt), ...(Number.isFinite(vues) && vues >= 0 && v.statistics?.viewCount ? { vues: Math.round(vues) } : {}), ...(/^UC[\w-]{22}$/.test(chaineId) ? { chaineId } : {}) });
     }
   }
   return l;

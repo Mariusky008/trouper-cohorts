@@ -256,7 +256,7 @@ export async function videosDuSalon(supabase: Supabase, theme: IdTheme, m: Maiso
   const jeunes = m === "jeunes" && !themeDe(theme)?.adultes;
   const jour = jourParis();
   const sel = (await lireSelection(supabase, jour, theme, jeunes).catch(() => null)) ?? (await lireSelection(supabase, jourAvant(jour, 1), theme, jeunes).catch(() => null));
-  return (sel?.videos ?? []).map((v) => ({ id: v.id, titre: v.titre, chaine: v.chaine, duree: v.duree }));
+  return (sel?.videos ?? []).map((v) => ({ id: v.id, titre: v.titre, chaine: v.chaine, duree: v.duree, ...(v.publiee ? { publiee: v.publiee } : {}), ...(typeof v.vues === "number" ? { vues: v.vues } : {}) }));
 }
 
 // ─── 🚪 entrer ───
@@ -937,7 +937,7 @@ export async function salonsEnDirect(supabase: Supabase, moi: Habitant, maintena
         bulles: vide ? [] : bulles.slice(-4),
         ...(vide ? { traces: bulles.slice(-3) } : {}),
         gradin: gradin ? { src: gradin.image.src, flou: gradin.image.flou, places: gradin.places } : null,
-        video: v ? { id: v.id, titre: v.titre } : null,
+        video: v ? { id: v.id, titre: v.titre, chaine: v.chaine, ...(v.publiee ? { publiee: v.publiee } : {}), ...(typeof v.vues === "number" ? { vues: v.vues } : {}) } : null,
         ...(estSalonMusique(x.theme) ? { morceau: platine?.enCours ? { titre: platine.enCours.video.titre, prenom: platine.enCours.prenom } : null } : {}),
       };
     }),

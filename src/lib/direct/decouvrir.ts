@@ -73,6 +73,8 @@ export type VideoDuJour = {
   /** en secondes */
   duree: number;
   publiee: string;
+  /** (27 novembre 2026) ses vues sur YouTube, lues la nuit avec la sélection (absentes : on ne les montre pas) */
+  vues?: number;
   /** l'identifiant de sa chaîne (`UC…` ; « 📺 Suivre cette chaîne », le lot D8) */
   chaineId?: string;
   /** ajoutée à la main par l'administrateur */
