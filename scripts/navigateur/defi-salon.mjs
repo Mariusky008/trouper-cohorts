@@ -124,7 +124,9 @@ const attendre = async (f, ms = 15000) => {
   return false;
 };
 await lea.goto(`${BASE}/univers/salons?theme=foot`, { waitUntil: "domcontentloaded" });
-ok(await attendre(async () => (await lea.locator(`.so-fig[data-q="${qSam}"]`).count()) === 1 && (await lea.locator(`.so-fig[data-q="${qTom}"]`).count()) === 1, 30000), "Léa entre : Sam et Tom sont là");
+// (assis ET visibles : tant que l'image de sa figurine n'est pas arrivée, il n'y a rien à toucher)
+const assis = async (q) => ((await lea.locator(`.so-fig[data-q="${q}"]`).boundingBox()) ?? { width: 0 }).width > 0;
+ok(await attendre(async () => (await assis(qSam)) && (await assis(qTom)), 30000), "Léa entre : Sam et Tom sont là");
 const qLea = await lea.locator(".so-fig[data-moi]").getAttribute("data-q");
 const chemin = `decouvrir/salons/adultes/${salon}/jeu.json`;
 const avancer = async (o) => json(chemin, { ...(await lire(chemin)), ...o });

@@ -203,6 +203,24 @@ ok((await lea.locator(`.so-fig.vedette[data-moi]`).count()) === 1 && (await lea.
 ok(/Allez les bleus/.test(await texte(lea.locator("[data-bulle-moment]"))), "… sa bulle : ce qu'elle vient d'écrire");
 await lea.locator('[data-reagir] [data-r="rire"]').click();
 ok(await attendre(lea, async () => (await lea.locator('[data-grand-moment="rire"][data-niveau="2"] [data-fois="2"]').count()) === 1, 2000), "🎆 touchée encore, vite : ×2 (elle grandit, la pièce tremble)");
+// 📸 (lot R3) « Envoyer ce moment » : l'image story de son moment, son adresse
+ok(await attendre(lea, async () => (await lea.locator("[data-envoyer-ce-moment]").count()) === 1, 3000), "📸 « Envoyer ce moment » apparaît après son grand moment");
+await lea.locator("[data-envoyer-ce-moment]").click();
+ok(await attendre(lea, async () => (await lea.locator("[data-image-moment]").count()) === 1, 20000), `… le serveur fabrique son image (${await texte(lea.locator("[data-envoyer-moment]"))})`);
+const lienMoment = (await lea.locator("[data-lien-moment]").getAttribute("data-lien-moment")) ?? "";
+ok(/\/moment\/[a-z0-9]{10}$/.test(lienMoment), `… et son adresse (${lienMoment})`);
+const imageMoment = await lea.request.get(new URL((await lea.locator("[data-image-moment]").getAttribute("data-image-moment")) ?? "", lienMoment).href);
+ok(imageMoment.ok() && /image\/png/.test(imageMoment.headers()["content-type"] ?? ""), "… l'image (PNG, 1080 × 1920)");
+ok((await lea.locator("[data-partager]").count()) === 1 && (await lea.locator("[data-whatsapp]").count()) === 1 && (await lea.locator("[data-enregistrer]").count()) === 1 && (await lea.locator("[data-copier]").count()) === 1, "… 📤 Envoyer, 💬 WhatsApp, ⬇️ Enregistrer l'image, 🔗 Copier le lien");
+await lea.screenshot({ path: `${D}/salons-ouverts-3b-envoyer-moment.png` });
+// (l'ami qui reçoit le lien : un autre téléphone, sans ClikMe)
+const ami = await lea.context().browser().newContext({ viewport: { width: 390, height: 844 } });
+const pageMoment = await ami.newPage();
+await pageMoment.goto(new URL(new URL(lienMoment).pathname, BASE).href, { waitUntil: "domcontentloaded", timeout: 90000 });
+ok(/Léa a réagi à \d+:\d\d/.test(await texte(pageMoment.locator("h1"))) && (await pageMoment.locator("[data-youtube]").getAttribute("href"))?.includes("youtube.com/watch?v="), `la page du moment : « ${await texte(pageMoment.locator("h1"))} », ▶ Voir sur YouTube`);
+ok(/og:image/.test(await pageMoment.content()), "… et son aperçu (og:image)");
+await ami.close();
+await lea.locator(".so-fermer").click();
 await lea.waitForTimeout(2200);
 const noteEncore = await texte(lea.locator("[data-note]"));
 ok(!/Doucement/.test(noteEncore), `… sans « Doucement » : les touchers sont regroupés (${noteEncore})`);
@@ -237,6 +255,8 @@ ok(!(await deborde(lea)), "rien ne déborde (iPhone)");
 ok(!/exemple/i.test(await lea.evaluate(() => document.body.innerText)), "jamais le mot « exemple »");
 
 // ═══ 🟢 ZOÉ, PENDANT CE TEMPS : LA VITRINE EN DIRECT ═══
+// (Sam est entré par la route, sans pouls : un ❤️ garde sa place fraîche — l'essai est plus long depuis 📸)
+await route(SAM, { action: "ecrire", salon: "foot-1", sorte: "reaction", cle: "coeur" });
 const zoe2 = await ouvrir(ZOE);
 await zoe2.goto(`${BASE}/collection?v=${Date.now()}#salons`, { waitUntil: "domcontentloaded" });
 await fermerPablito(zoe2, "#o-salons");
