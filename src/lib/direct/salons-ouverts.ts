@@ -177,7 +177,36 @@ export type CarteSalon = { theme: IdTheme; e: string; nom: string; presents: num
  */
 export type VitrineSalon = { theme: IdTheme; e: string; nom: string; presents: number; video?: { id: string; titre: string }; figurines: string[] };
 /** La télé du salon : la sélection du jour du thème, en boucle, à la même seconde pour tous. */
-export type VideoSalon = { id: string; titre: string; chaine: string; duree: number };
+export type VideoSalon = { id: string; titre: string; chaine: string; duree: number; publiee?: string; vues?: number };
+/** 🎞️ (maquette « Salon et réactions », validée le 27/11) ce qu'on montre sous la vidéo, comme YouTube */
+export type InfosVideo = { id: string; titre: string; chaine?: string; publiee?: string; vues?: number };
+
+/** « 812 vues », « 15 k vues », « 1,2 M de vues » (comme YouTube) — rien sans le vrai chiffre. */
+export function vuesYouTube(n: number | undefined): string {
+  if (n == null || !Number.isFinite(n) || n < 0) return "";
+  const virgule = (x: number) => (x < 10 ? (Math.floor(x * 10) / 10).toString().replace(".", ",") : String(Math.floor(x)));
+  if (n < 1000) return `${n} vue${n > 1 ? "s" : ""}`;
+  if (n < 1_000_000) return `${virgule(n / 1000)} k vues`;
+  if (n < 1_000_000_000) return `${virgule(n / 1_000_000)} M de vues`;
+  return `${virgule(n / 1_000_000_000)} Md de vues`;
+}
+
+/** « il y a 10 j », « il y a 3 h », « hier » : depuis sa mise en ligne. */
+export function depuisLaMiseEnLigne(iso: string | undefined, maintenant = Date.now()): string {
+  const d = maintenant - Date.parse(iso ?? "");
+  if (!Number.isFinite(d) || d < 0) return "";
+  const h = Math.floor(d / 3_600_000);
+  if (h < 1) return "à l’instant";
+  if (h < 24) return `il y a ${h} h`;
+  const j = Math.floor(h / 24);
+  if (j === 1) return "hier";
+  if (j < 31) return `il y a ${j} j`;
+  const m = Math.floor(j / 30.4);
+  return m < 12 ? `il y a ${m} mois` : `il y a ${Math.floor(m / 12)} an${m >= 24 ? "s" : ""}`;
+}
+
+/** La ligne sous le titre : « Chaîne · 15 k vues · il y a 10 j » (ce qu'on sait seulement). */
+export const ligneInfosVideo = (v: InfosVideo, maintenant = Date.now()) => [v.chaine, vuesYouTube(v.vues), depuisLaMiseEnLigne(v.publiee, maintenant)].filter(Boolean).join(" · ");
 
 // ─── 🛡️ la modération de ce qu'on écrit ───
 const aPlat = (t: string) =>

@@ -33,6 +33,7 @@ import { ApercuVideo } from "./apercu-video";
 import { QuoiDeNeuf } from "./quoi-de-neuf";
 import { ouvrirHumeurDuJour } from "./rituel";
 import { PLAN_GRADIN, type PlaceGradin } from "@/lib/direct/salons-gradins";
+import { InfosSousLaVideo, STYLES_INFOS_VIDEO } from "@/app/collection/infos-video";
 import { GESTES_SALON, PLACES_SALON, REACTIONS_SALON, type MessageSalon, type PresentSalon } from "@/lib/direct/salons-ouverts";
 import { REACTIONS_MUSIQUE } from "@/lib/direct/platine";
 import { PHRASES_PROPOSITIONS as PP, quandLisible, type PropositionGroupe } from "@/lib/direct/groupes";
@@ -595,8 +596,8 @@ function PieceSeance({ k, p, onRejoindre }: { k: string; p: SeanceFil; onRejoind
         ) : (
           <span className="fd-neige" aria-hidden="true" />
         )}
-        <span className="fd-tele-titre">{p.video?.titre ?? ""}</span>
       </div>
+      {p.video ? <InfosSousLaVideo v={p.video} /> : null}
       <div className="fd-scene">
         <div className="fd-seance-piece" style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>
           {p.presents.map((x, i) => (
@@ -754,8 +755,13 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
           ) : (
             <span className="fd-neige" aria-hidden="true" />
           )}
-          <span className="fd-tele-titre">{musique ? (p.morceau ? P.choix(p.morceau.prenom) : P.radio) : p.video?.titre ?? ""}</span>
         </div>
+        {/* 🎞️ (maquette « Salon et réactions », validée le 27/11) plus rien sur l'image : le titre, la chaîne, les vues dessous */}
+        {musique ? (
+          <InfosSousLaVideo v={p.video ?? { id: "radio", titre: P.radio }} sous={p.morceau ? P.choix(p.morceau.prenom) : P.radio} />
+        ) : p.video ? (
+          <InfosSousLaVideo v={p.video} />
+        ) : null}
         <div className="fd-scene">
           <div className="fd-gradin" style={p.gradin ? { backgroundImage: `url(${p.gradin.flou})` } : undefined} data-gradin={p.gradin ? "1" : "plan"}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -862,6 +868,7 @@ function PieceSalon({ k, p, moi, reaction, onInviter }: { k: string; p: SalonFil
 }
 
 export const STYLES_FIL = `
+${STYLES_INFOS_VIDEO}
 .fd{position:relative}
 .fd-boite{position:fixed;inset:0;z-index:1;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:#0B0409}
 .fd-boite::-webkit-scrollbar{display:none}
@@ -889,7 +896,6 @@ export const STYLES_FIL = `
 .fd-tele{position:relative;flex:none;width:100%;max-width:520px;align-self:center;aspect-ratio:16/9;max-height:26dvh;border-radius:16px;overflow:hidden;background:#140A12;box-shadow:inset 0 0 0 5px #1E1420}
 .fd-tele img{width:100%;height:100%;object-fit:cover;display:block}
 .fd-neige{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 2px,transparent 2px 4px)}
-.fd-tele-titre{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:16px 12px 8px;background:linear-gradient(transparent,rgba(0,0,0,.78));font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fd-scene{flex:1 1 auto;min-height:0;display:flex;justify-content:center;align-items:flex-end}
 .fd-gradin{position:relative;height:100%;max-height:100%;aspect-ratio:1/1;max-width:100%;border-radius:18px;overflow:visible;background:radial-gradient(70% 60% at 50% 70%,rgba(255,255,255,.06),transparent 70%);background-size:cover;background-position:center}
 .fd-gradin-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:18px}

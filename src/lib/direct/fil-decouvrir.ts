@@ -25,6 +25,7 @@ import type { Ornements } from "./ornements";
 import type { PlaceGradin } from "./salons-gradins";
 import type { FigurinePosee } from "./autour";
 import type { Zone } from "./pieces-duo";
+import type { InfosVideo } from "./salons-ouverts";
 
 /** Une figurine telle que le fil la montre : assise (son corps sans sa tête, la tête qu'elle fait), sinon d'une image. */
 /** (✨ « Ma figurine » : `pancarte`, la phrase qu'elle porte partout) */
@@ -53,8 +54,8 @@ export type SalonFil = {
   traces?: BulleFil[];
   /** son gradin validé (l'image carrée, ses places) ; sinon le plan des places sur un fond sombre */
   gradin: { src: string; flou: string; places: PlaceGradin[] } | null;
-  /** ce qui passe à sa télé, à la même seconde pour tous */
-  video: { id: string; titre: string } | null;
+  /** ce qui passe à sa télé ; sa chaîne, ses vues YouTube, sa mise en ligne (montrées sous la télé) */
+  video: InfosVideo | null;
   /** 🧭 (lot F4) ses proches qui y sont en ce moment (leur prénom) : le salon vient en premier dans son fil */
   proches?: string[];
   /** 🎵 le salon de la musique : le morceau proposé qui passe, et qui l'a choisi (sans : la radio du salon) */

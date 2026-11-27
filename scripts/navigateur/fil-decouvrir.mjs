@@ -195,7 +195,7 @@ await lea.screenshot({ path: `${D}/fil-4-autour.png` });
 await glisser(lea);
 const musique = lea.locator('#o-decouvrir [data-piece="salon"][data-theme="musique"]');
 ok(await attendre(lea, async () => (await courante(lea)) === "s:musique"), "puis le salon de la musique");
-ok(/La radio du salon/.test(await texte(musique.locator(".fd-tele-titre"))) && (await texte(musique.locator("[data-asseoir]"))) === "Entrer danser" && (await musique.locator(".fd-fig.danse").count()) === 1, "… la radio du salon, Zoé qui danse, « Entrer danser »");
+ok(/La radio du salon/.test(await texte(musique.locator("[data-infos-video]"))) && (await texte(musique.locator("[data-asseoir]"))) === "Entrer danser" && (await musique.locator(".fd-fig.danse").count()) === 1, "… la radio du salon, Zoé qui danse, « Entrer danser »");
 await lea.screenshot({ path: `${D}/fil-5-musique.png` });
 
 // ═══ LA CUISINE, SA PASSION, SANS PERSONNE : « SOIS LE PREMIER » ═══
