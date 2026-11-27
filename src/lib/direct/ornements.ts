@@ -20,6 +20,12 @@ import type { Zone } from "./pieces-duo";
 export type SorteAccessoire = "casque" | "casque-micro" | "toque" | "oreilles" | "couronne" | "bandeau" | "echarpe" | "badge";
 export type Accessoire = { theme: IdTheme; sorte: SorteAccessoire; e: string; nom: string };
 
+/**
+ * 🎧 Les accessoires ne sont plus posés sur sa figurine (marius, 27 novembre 2026 : « terriblement mauvais », mal placés,
+ * et impossibles à enlever). Les remettre seulement s'ils deviennent optionnels et bien dessinés, maquette validée d'abord.
+ */
+export const ACCESSOIRES_PORTES = false;
+
 /** L'accessoire de chaque passion. */
 export const ACCESSOIRES: Record<IdTheme, Omit<Accessoire, "theme">> = {
   musique: { sorte: "casque", e: "🎧", nom: "Le casque de la musique" },

@@ -118,16 +118,16 @@ ok(Boolean(etat), "Léa a ses expressions (et ses calques : la boîte de sa têt
 const presence = await lire(`${LEA.id}/presence.json`);
 ok(presence?.jours?.includes(jour), "aujourd'hui compte (elle a ouvert l'appli)");
 
-// ═══ LÉA : 🔥 8 JOURS, 😇 L'AURÉOLE, 🎧 LE CASQUE ═══
+// ═══ LÉA : 🔥 8 JOURS, 😇 L'AURÉOLE, ET PLUS DE CASQUE (retiré le 27 novembre) ═══
 const d0 = await double(LEA);
 const o0 = d0.double?.ornements;
 ok(o0?.serie === 8, `sa série : 8 jours de suite (${o0?.serie})`);
-ok(o0?.accessoire?.theme === "musique" && o0.accessoire.sorte === "casque" && /casque/i.test(o0.accessoire.nom), "sa passion du moment, la musique (le salon où elle va le plus) : le casque");
+ok(o0 && !o0.accessoire, "sa passion du moment, la musique : plus d'accessoire posé sur elle");
 ok(Array.isArray(o0?.boite) && o0.boite.length === 4 && o0.boite.every((v) => v >= 0 && v <= 1) && JSON.stringify(o0.boite) === JSON.stringify(d0.double.corps?.boite), "… posé dans la boîte de sa tête (la même que celle de son corps)");
 ok(!o0?.coeur, "pas encore de cœur");
 const m0 = await maison();
-ok(m0?.double?.ornements?.serie === 8 && m0.double.ornements.accessoire?.sorte === "casque", "sa maison : pareil");
-ok((await filMoi())?.figurine?.ornements?.accessoire?.sorte === "casque", "le fil (« Toi ») : pareil");
+ok(m0?.double?.ornements?.serie === 8 && !m0.double.ornements.accessoire, "sa maison : pareil");
+ok((await filMoi())?.figurine?.ornements?.serie === 8 && !(await filMoi())?.figurine?.ornements?.accessoire, "le fil (« Toi ») : pareil");
 
 // ═══ SAM LUI LAISSE UNE SURPRISE ; ELLE L'OUVRE ═══
 const cleLea = cleProfil(LEA.id);
@@ -145,7 +145,7 @@ const o1 = (await double(LEA)).double?.ornements;
 ok(o1?.coeur?.prenom === "Sam" && o1.coeur.sorte === "surprise", "son double : le cœur « offert par Sam »");
 ok((await maison())?.double?.ornements?.coeur?.prenom === "Sam", "sa maison : le cœur");
 const v1 = garder(await appel(SAM, `/api/direct/ma-piece?chez=${cleLea}`)).visite;
-ok(v1?.maison?.double?.ornements?.coeur?.prenom === "Sam" && v1.maison.double.ornements.serie === 8 && v1.maison.double.ornements.accessoire?.sorte === "casque", "chez Léa, Sam la voit pareille : le cœur, la série, le casque");
+ok(v1?.maison?.double?.ornements?.coeur?.prenom === "Sam" && v1.maison.double.ornements.serie === 8 && !v1.maison.double.ornements.accessoire, "chez Léa, Sam la voit pareille : le cœur, la série, sans casque");
 ok((await filMoi())?.figurine?.ornements?.coeur?.prenom === "Sam", "le fil (« Toi ») : le cœur");
 
 // ═══ HUGO : RIEN ═══
@@ -156,20 +156,20 @@ ok(dh.statut === 200 && dh.double?.ornements === undefined, "Hugo : un jour aujo
 ok(garder(await appel(LEA, "/api/direct/salons-ouverts", { action: "entrer", theme: "musique" })).statut === 200, "Léa entre au salon de la musique");
 const e2 = garder(await appel(HUGO, "/api/direct/salons-ouverts", { action: "entrer", theme: "musique" }));
 const elle = e2.ouverture?.presents?.find((p) => p.prenom === "Léa");
-ok(elle?.ornements?.accessoire?.sorte === "casque" && elle.ornements.coeur?.prenom === "Sam" && elle.ornements.serie === 8, "Hugo l'y voit avec son casque, son cœur, sa série");
+ok(elle && !elle.ornements?.accessoire && elle.ornements?.coeur?.prenom === "Sam" && elle.ornements.serie === 8, "Hugo l'y voit avec son cœur, sa série, sans casque");
 ok(!JSON.stringify(e2).includes(LEA.id) && !JSON.stringify(e2).includes(SAM.id), "… jamais un compte");
-ok((await double(HUGO)).double?.ornements?.accessoire?.sorte === "casque", "… et Hugo, qui vient d'y entrer : le casque (sa passion du moment)");
+ok(!(await double(HUGO)).double?.ornements?.accessoire, "… et Hugo, qui vient d'y entrer : pas de casque non plus");
 
 // ═══ SAM : UN JOUR, LE FOOT ═══
 const os = (await double(SAM)).double?.ornements;
-ok(os?.serie === 1 && os.accessoire?.theme === "foot" && os.accessoire.sorte === "echarpe", `Sam : un seul jour (pas de flamme à l'écran), sa passion déclarée, le foot — l'écharpe ; le salon d'il y a quarante jours ne compte plus (${os?.accessoire?.theme})`);
+ok(os === undefined, `Sam : un seul jour (pas de flamme à l'écran), sa passion déclarée, le foot — pas d'écharpe : rien sur lui (${JSON.stringify(os)})`);
 
 // ═══ UN CŒUR DE PLUS DE QUINZE JOURS ; UN JOUR MANQUÉ ═══
 await json(`${LEA.id}/coeur.json`, { prenom: "Sam", sorte: "surprise", le: new Date(Date.now() - 16 * JOUR).toISOString() });
 await json(`${LEA.id}/presence.json`, { jours: [jour, ...[3, 4, 5].map((n) => jourDe(Date.now() - n * JOUR))] });
 const o2 = (await double(LEA)).double?.ornements;
 ok(!o2?.coeur, "seize jours après : le cœur s'en va");
-ok(o2?.serie === 1, `un jour manqué (hier) : la série repart (${o2?.serie})`);
+ok(o2 === undefined, `un jour manqué (hier) : la série repart à 1 (pas de flamme), et sans casque ni cœur, plus rien sur elle (${JSON.stringify(o2)})`);
 
 ok(!/exemple/i.test(JSON.stringify(tous)), "jamais le mot « exemple »");
 console.log(echecs ? `\n${echecs} échec(s)` : "\nelle change toute seule ✓");

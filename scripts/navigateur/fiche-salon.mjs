@@ -169,7 +169,7 @@ ok((await grande.getAttribute("data-figurine-fiche")) === "calques", "✨ sa fig
 ok((await grande.locator(".so-jour-tete").getAttribute("src")) === etat?.tetes?.rire, "… la tête qu'il a choisie pour aujourd'hui (il rit)");
 ok((await texte(grande.locator("[data-pancarte]"))) === PANCARTE, `… sa pancarte au-dessus : « ${PANCARTE} »`);
 const orn = (await grande.locator("[data-ornements]").getAttribute("data-ornements").catch(() => "")) ?? "";
-ok(/aureole/.test(orn) && /foot/.test(orn) && /coeur/.test(orn), `… ce qu'il porte toute seule : l'auréole, l'écharpe du foot, le cœur (${orn})`);
+ok(/aureole/.test(orn) && !/foot/.test(orn) && /coeur/.test(orn) && (await grande.locator("[data-accessoire]").count()) === 0, `… ce qu'il porte toute seule : l'auréole, le cœur, plus d'écharpe (${orn})`);
 ok(/🔥\s*8/.test(await texte(grande.locator(".orn-serie"))) && /offert par Léa/.test(await texte(grande.locator(".orn-souvenir"))), "… et leurs étiquettes : « 🔥 8 », « 🎁 offert par Léa »");
 ok((await grande.locator(".so-halo").count()) === 1, "… le halo de Ma maison");
 const boite = await grande.boundingBox();
