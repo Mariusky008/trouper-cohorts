@@ -18,6 +18,7 @@
  *
  * FICHIER SERVEUR.
  */
+import { allegerImage, enPngSiBesoin } from "./stockage-leger-serveur";
 import { createHash, randomBytes } from "crypto";
 import sharp from "sharp";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -77,7 +78,9 @@ const MESSAGES_PAR_JOUR = 30;
 export async function deposer(supabase: Supabase, chemin: string, octets: Buffer, type: string): Promise<boolean> {
   // (un fichier redéposé : son adresse signée d'avant est oubliée — le téléphone verra le nouveau)
   oublierAdresse(chemin);
-  const envoyer = () => supabase.storage.from(SEAU_FIGURINES).upload(chemin, octets, { contentType: type, upsert: true });
+  // (🪶 27 novembre 2026, le seau plein : un PNG lourd est rangé en WebP, sous le même nom — `stockage-leger-serveur.ts`)
+  const leger = await allegerImage(octets, type);
+  const envoyer = () => supabase.storage.from(SEAU_FIGURINES).upload(chemin, leger.octets, { contentType: leger.type, upsert: true });
   let { error } = await envoyer();
   if (error && /bucket/i.test(error.message)) {
     // le seau n'existe pas encore (la migration le crée aussi) : on le crée, privé
@@ -128,7 +131,8 @@ const empreinte = (b: Buffer | string) => createHash("sha1").update(b).digest("h
 
 export async function telecharger(supabase: Supabase, chemin: string): Promise<Buffer | null> {
   const { data, error } = await supabase.storage.from(SEAU_FIGURINES).download(chemin);
-  return error || !data ? null : Buffer.from(await data.arrayBuffer());
+  // (🪶 un `….png` rangé en WebP redevient un PNG pour le serveur)
+  return error || !data ? null : enPngSiBesoin(chemin, Buffer.from(await data.arrayBuffer()));
 }
 
 /** Ce fichier est-il dans ce dossier du seau ? (sans le télécharger) */

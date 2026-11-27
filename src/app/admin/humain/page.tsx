@@ -90,6 +90,7 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/salons", label: "🛋️ Découvrir : les salons ouverts (modération)" },
         { href: "/admin/humain/visage", label: "📷 L’essai du visage : ta figurine fait ta tête" },
         { href: "/admin/humain/remise-a-zero", label: "🧹 Remettre l’appli à zéro (effacer tous les comptes de l’appli)" },
+        { href: "/admin/humain/stockage", label: "🪶 Alléger le stockage (les images PNG rangées en WebP)" },
         { href: "/univers", label: "Univers : « Mon univers », l’accueil (essai — mène à l’étape où j’en suis)" },
         { href: "/univers/figurine", label: "Univers : la nouvelle figurine (essai)" },
         { href: "/univers/conversation", label: "Univers : la conversation avec Pablito (essai)" },
