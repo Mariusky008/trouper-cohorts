@@ -34,6 +34,7 @@ export const PHRASES_QUOI_DE_NEUF = {
   titre: "Quoi de neuf ?",
   sousProches: "Les humeurs du jour de tes proches",
   sousDecouvrir: "Ils aiment ce que tu aimes",
+  sousSeul: "Dis à tes proches comment tu vas",
   tonHumeur: "Ton humeur",
   aujourdhui: (nom: string) => `${nom} aujourd’hui`,
   commeToi: (e: string, court: string) => `${e} ${court.charAt(0).toUpperCase()}${court.slice(1)}, comme toi`,
@@ -107,7 +108,7 @@ export function QuoiDeNeuf({ q, moi, pastille, onHumeur, onRepondre, onCoucou }:
     <section className={`qn${pastille ? " sous-pastille" : ""}`} data-quoi-de-neuf aria-label={P.titre}>
       <div className="qn-tete">
         <h2>{P.titre}</h2>
-        <small>{q.proches.length ? P.sousProches : P.sousDecouvrir}</small>
+        <small>{q.proches.length ? P.sousProches : q.decouvrir.length ? P.sousDecouvrir : P.sousSeul}</small>
       </div>
       <div className="qn-rang">
         <button type="button" className="qn-carte qn-moi" onClick={onHumeur} data-mon-humeur={q.mienne ? "1" : undefined}>

@@ -150,15 +150,15 @@ export async function filDecouvrir(supabase: Supabase, moi: Habitant): Promise<F
   // (☀️ 26 novembre 2026 : l'humeur du jour de ses proches a quitté le fil pour « Quoi de neuf ? », en haut — sans proche
   // qui l'a dite, ce sont les maisons ouvertes de ceux qui partagent une de ses passions)
   const h = humeurDe(mienne);
-  const quoiDeNeuf: QuoiDeNeufFil | undefined =
-    humeurs.length || maisons.length ? { mienne: h ? { emoji: h.emoji, nom: h.court } : null, proches: humeurs, decouvrir: humeurs.length ? [] : maisons.slice(0, QUOI_DE_NEUF_MAX) } : undefined;
+  // (27 novembre 2026 : toujours là, au moins « Ton humeur » — sans lui, d'un appareil à l'autre on ne le voyait pas)
+  const quoiDeNeuf: QuoiDeNeufFil = { mienne: h ? { emoji: h.emoji, nom: h.court } : null, proches: humeurs, decouvrir: humeurs.length ? [] : maisons.slice(0, QUOI_DE_NEUF_MAX) };
   const groupes: PieceFil[][] = [seances, avecProches, passions, rdv, maisons, autour, autres, vides];
   const inv = invitations[0];
   return {
     moi: { prenom: prenom || "Toi", figurine },
     ...(direct.age ? { age: true as const } : {}),
     pieces: ordreDuFil(groupes),
-    ...(quoiDeNeuf ? { quoiDeNeuf } : {}),
+    quoiDeNeuf,
     ...(inv ? { invitation: { cle: inv.cle, prenom: inv.prenom } } : {}),
     ...(demandes.length ? { demandes: demandes.length } : {}),
     ...(surprise ? { surprise } : {}),

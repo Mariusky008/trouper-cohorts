@@ -24,7 +24,7 @@
  * pièce à gauche, le salon et ses boutons à droite.
  */
 import { DitBonjour, useBonjour } from "./bonjour";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { OngletVisible } from "./guide";
 import { FigurineAssise } from "./autour";
 import { MEMOIRE_FIL, ecrireMemoire, lireMemoire } from "./memoire-locale";
@@ -169,6 +169,26 @@ export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => voi
       /* rien */
     }
   }, []);
+
+  // ☀️ « Quoi de neuf ? » arrive après le fil gardé en mémoire (qui n'en avait pas) : le navigateur reste accroché à la
+  // première pièce, et la rangée se cache au-dessus (27 novembre 2026, sur un ordinateur) — on remonte la montrer, tant
+  // qu'on n'a pas glissé plus loin que la première pièce
+  const avaitQdn = useRef(false);
+  const qdnLa = Boolean(fil?.quoiDeNeuf && !fil.age);
+  useLayoutEffect(() => {
+    const b = boite.current;
+    if (qdnLa && !avaitQdn.current && b) {
+      const premiere = b.querySelector<HTMLElement>("[data-k]");
+      const enHaut = () => b.scrollTo({ top: 0 });
+      if (!premiere || b.scrollTop <= premiere.offsetTop + 8) {
+        enHaut();
+        requestAnimationFrame(() => {
+          if (premiere && b.scrollTop > 0 && b.scrollTop <= premiere.offsetTop + 8) enHaut();
+        });
+      }
+    }
+    avaitQdn.current = qdnLa;
+  }, [qdnLa]);
 
   // la pièce qu'on regarde : celle qui remplit l'écran
   useEffect(() => {
@@ -362,7 +382,7 @@ export function FilDecouvrir({ onAutour, onConversation }: { onAutour: () => voi
   const vide = fil && !fil.age && !pieces.length;
   return (
     <div className="fd" data-fil data-pieces={pieces.length}>
-      <div className="fd-boite" ref={boite} onPointerDown={surAppui} onPointerUp={surLacher} onPointerCancel={() => (appui.current = null)}>
+      <div className="fd-boite" data-apercu-scene ref={boite} onPointerDown={surAppui} onPointerUp={surLacher} onPointerCancel={() => (appui.current = null)}>
         {souci === "sans-figurine" ? (
           <section className="fd-carte fd-vide" data-k="souci" data-souci={souci}>
             <div className="fd-milieu">
@@ -869,7 +889,7 @@ export const STYLES_FIL = `
 .fd-tele{position:relative;flex:none;width:100%;max-width:520px;align-self:center;aspect-ratio:16/9;max-height:26dvh;border-radius:16px;overflow:hidden;background:#140A12;box-shadow:inset 0 0 0 5px #1E1420}
 .fd-tele img{width:100%;height:100%;object-fit:cover;display:block}
 .fd-neige{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 2px,transparent 2px 4px)}
-.fd-tele-titre{position:absolute;left:0;right:0;bottom:0;padding:16px 12px 8px;background:linear-gradient(transparent,rgba(0,0,0,.78));font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fd-tele-titre{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:16px 12px 8px;background:linear-gradient(transparent,rgba(0,0,0,.78));font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fd-scene{flex:1 1 auto;min-height:0;display:flex;justify-content:center;align-items:flex-end}
 .fd-gradin{position:relative;height:100%;max-height:100%;aspect-ratio:1/1;max-width:100%;border-radius:18px;overflow:visible;background:radial-gradient(70% 60% at 50% 70%,rgba(255,255,255,.06),transparent 70%);background-size:cover;background-position:center}
 .fd-gradin-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:18px}
