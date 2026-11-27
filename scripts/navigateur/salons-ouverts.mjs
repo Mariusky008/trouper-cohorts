@@ -204,9 +204,11 @@ ok(/Allez les bleus/.test(await texte(lea.locator("[data-bulle-moment]"))), "…
 await lea.locator('[data-reagir] [data-r="rire"]').click();
 ok(await attendre(lea, async () => (await lea.locator('[data-grand-moment="rire"][data-niveau="2"] [data-fois="2"]').count()) === 1, 2000), "🎆 touchée encore, vite : ×2 (elle grandit, la pièce tremble)");
 // 📸 (lot R3) « Envoyer ce moment » : l'image story de son moment, son adresse
-ok(await attendre(lea, async () => (await lea.locator("[data-carte-envoi] [data-envoyer-ce-moment]").count()) === 1, 3000), "📸 une carte monte sous sa figurine pendant son grand moment");
+// (maquette « Salon et réactions », validée le 27/11) rien par-dessus pendant son grand moment ; la pastille après
+ok((await lea.locator("[data-carte-envoi]").count()) === 0, "📸 pendant son grand moment, rien ne cache sa réaction");
+ok(await attendre(lea, async () => (await lea.locator("[data-carte-envoi] [data-envoyer-ce-moment]").count()) === 1, 6000), "📸 à la fin de son grand moment, une petite pastille sous sa figurine");
 const carte = await texte(lea.locator("[data-carte-envoi]"));
-ok(/Ta réaction à \d+:\d\d est prête/.test(carte) && /Envoyer à un ami/.test(carte) && (await lea.locator("[data-carte-envoi] .so-carte-mini img").count()) >= 1, `… « ${carte} », avec la petite image de sa réaction`);
+ok(/Envoyer ta réaction/.test(carte) && /à \d+:\d\d/.test(carte), `… « ${carte} »`);
 await lea.screenshot({ path: `${D}/salons-ouverts-3a-carte-envoi.png` });
 await lea.locator("[data-envoyer-ce-moment]").click();
 ok(await attendre(lea, async () => (await lea.locator("[data-image-moment]").count()) === 1, 20000), `… le serveur fabrique son image (${await texte(lea.locator("[data-envoyer-moment]"))})`);
