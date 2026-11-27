@@ -949,7 +949,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   async function envoyer(corps: Record<string, unknown>, sansAttendre = false) {
     // (🎆 une réaction : les boutons restent touchables pendant l'envoi — ×2 ×3 se touchent vite)
     if (!sansAttendre) setOccupe(true);
-    const r = await poster({ action: "ecrire", salon: salon.id, ...corps });
+    // (⏪ le rattrapage, lot T1 : où en est la vidéo — une séance garde chaque réaction à sa seconde)
+    const ou = corps.sorte === "reaction" || corps.sorte === "texte" ? ouEnEstLaTele() : null;
+    const r = await poster({ action: "ecrire", salon: salon.id, ...corps, ...(ou ? { ou } : {}) });
     if (!sansAttendre) setOccupe(false);
     if (!r.ok) {
       if (r.j.refus) setRefus(String(r.j.error));
@@ -1185,6 +1187,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     const n = Date.now();
     setPastille({ n, demande: { ...x, t: Math.round(x.t * 10) / 10, e: m.cle, ...(mot ? { mot } : {}) } });
     window.setTimeout(() => setPastille((p) => (p?.n === n ? null : p)), GRAND_MOMENT.ms + MOMENT_PARTAGE.pastille);
+  };
+  /** ⏪ (le rattrapage) La vidéo qui passe à ma télé, et sa seconde. */
+  const ouEnEstLaTele = (): { video: string; t: number } | null => {
+    const x = videoEtSeconde();
+    return x ? { video: x.video.id, t: Math.round(x.t * 10) / 10 } : null;
   };
   /** 🎯 Les secondes qui restent à la vidéo qui passe (0 : on ne sait pas). */
   const resteVideo = (): number => {
