@@ -213,6 +213,10 @@ const imageMoment = await lea.request.get(new URL((await lea.locator("[data-imag
 ok(imageMoment.ok() && /image\/png/.test(imageMoment.headers()["content-type"] ?? ""), "… l'image (PNG, 1080 × 1920)");
 ok((await lea.locator("[data-partager]").count()) === 1 && (await lea.locator("[data-whatsapp]").count()) === 1 && (await lea.locator("[data-enregistrer]").count()) === 1 && (await lea.locator("[data-copier]").count()) === 1, "… 📤 Envoyer, 💬 WhatsApp, ⬇️ Enregistrer l'image, 🔗 Copier le lien");
 await lea.screenshot({ path: `${D}/salons-ouverts-3b-envoyer-moment.png` });
+// (la vidéo de 4 secondes : le téléphone la fait tout seul pendant qu'on regarde l'image)
+await lea.locator("[data-video]").waitFor({ timeout: 30000 });
+const typeVideo = (await lea.locator("[data-video]").getAttribute("data-video")) ?? "";
+ok(/^video\/(mp4|webm)$/.test(typeVideo) && (await lea.locator("[data-video-prepare]").count()) === 0, `… 🎬 Envoyer la vidéo (4 s, ${typeVideo})`);
 // (l'ami qui reçoit le lien : un autre téléphone, sans ClikMe)
 const ami = await lea.context().browser().newContext({ viewport: { width: 390, height: 844 } });
 const pageMoment = await ami.newPage();

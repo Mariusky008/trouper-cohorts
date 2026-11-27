@@ -72,4 +72,10 @@ Une figurine sans expressions prêtes : sa tête du jour (colorée), sinon son i
   `/api/direct/moment/<id>/miniature`) et « ▶ Revoir le moment » ; un toucher, la vidéo repart trois secondes avant, avec
   le son ; à la seconde de la réaction, la figurine (`/figurine`, gardée à part) prend la scène (le même `GrandMoment`).
   YouTube ne répond pas, ou tarde (6 s de plus) : la miniature reste et le moment se joue quand même.
-- **R5 — la vidéo de 4 secondes** pour TikTok et les Reels.
+- **R5 — la vidéo de 4 secondes** pour TikTok et les Reels. Fait : `src/app/univers/salons/video-du-moment.ts` — le
+  téléphone la fabrique lui-même (aucun coût serveur) : un canevas 720 × 1280 filmé par `captureStream` + `MediaRecorder`,
+  en MP4 s'il sait (iPhone, Chrome récent), sinon WebM. La miniature et « à 2:47 », la figurine qui surgit à 0,6 s et
+  grandit (aura, rayons, son geste), la bulle à 1 s, les émojis et les confettis, « Léa a réagi à… » et l'adresse en
+  bas. Elle se fait pendant qu'on regarde l'image (le partage doit partir d'un toucher), puis « 🎬 Envoyer la vidéo » ;
+  sans feuille de partage pour les vidéos, elle s'enregistre. Le téléphone ne sait pas filmer : pas de bouton, l'image
+  reste. Jamais de son.
