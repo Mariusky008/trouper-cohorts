@@ -320,7 +320,6 @@ export const PHRASES_SALONS = {
   bienvenue: "Tu t’assois. Ici, on ne voit que ton prénom et ta figurine.",
   plein: (nom: string) => `Le premier ${nom} est complet : tu t’assois dans le suivant.`,
   regles: "Relu avant d’apparaître · ni vocal ni photo ici · on ne voit que ton prénom et ta figurine",
-  tele: "📺 La sélection du jour : ta vidéo commence quand tu arrives",
   /** 📺 (27 novembre 2026) ma télé à mon rythme : pause, suivante, l'entracte entre deux vidéos */
   videoSuivante: "⏭ Vidéo suivante",
   lancerMaintenant: "⏭ Lancer maintenant",

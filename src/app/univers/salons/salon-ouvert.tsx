@@ -1831,9 +1831,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       <section className="so-bas" ref={bas}>
         {jeu && heureJeu > 0 && etapeDuJeu(jeu, heureJeu) !== "fini" && <CarteDuJeu jeu={jeu} moi={o.moi} ms={heureJeu} presents={ici} onVoter={(v) => void voter(v)} onPasMaintenant={() => void pasMaintenant()} onTemoigner={(v) => void temoigner(v)} />}
         {/* (22 novembre 2026, le propriétaire : « supprime cette phrase : Tu mènes la télé… » — l'hôte n'a plus de phrase) */}
-        {!seance?.hote && (
+        {/* (27/11, le propriétaire : « la sélection du jour… » ne sert à rien dans un salon de thème — retirée) */}
+        {!seance?.hote && (seance || musique) && (
           <p className="so-info" data-info>
-            {seance ? (aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : musique ? PM.info : P.tele}
+            {seance ? (aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : PM.info}
           </p>
         )}
         {aPart && tele?.video.id === aPart.video.id && (
