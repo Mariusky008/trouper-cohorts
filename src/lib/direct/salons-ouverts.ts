@@ -167,7 +167,9 @@ export type MonSalon = { theme: IdTheme; e: string; nom: string };
 /** Un message du salon : un texte (une bulle), une réaction, ou un geste à quelqu'un (`a`). */
 export type MessageSalon = { id: string; de: string; prenom: string; le: number; sorte: "texte" | "reaction" | "geste"; texte?: string; cle?: string; a?: string;
   /** 🎆 (les grands moments, lot R2) une réaction touchée encore, vite : ×2, ×3 */
-  n?: number };
+  n?: number;
+  /** 📺 (27 novembre 2026) une réaction dans un salon ouvert : la vidéo et sa seconde (chacun sa vidéo, à son rythme) */
+  ou?: { video: string; t: number } };
 /** Un salon, sur l'accueil de Découvrir. */
 export type CarteSalon = { theme: IdTheme; e: string; nom: string; presents: number; salons: number; mien: boolean; decor: { src: string; flou: string } | null; teles?: number };
 /**
@@ -307,7 +309,15 @@ export const PHRASES_SALONS = {
   bienvenue: "Tu t’assois. Ici, on ne voit que ton prénom et ta figurine.",
   plein: (nom: string) => `Le premier ${nom} est complet : tu t’assois dans le suivant.`,
   regles: "Relu avant d’apparaître · ni vocal ni photo ici · on ne voit que ton prénom et ta figurine",
-  tele: "📺 La sélection du jour, la même seconde pour tout le salon",
+  tele: "📺 La sélection du jour : ta vidéo commence quand tu arrives",
+  /** 📺 (27 novembre 2026) ma télé à mon rythme : pause, suivante, l'entracte entre deux vidéos */
+  videoSuivante: "⏭ Vidéo suivante",
+  lancerMaintenant: "⏭ Lancer maintenant",
+  enPause: "⏸ En pause",
+  cestFini: "C’est fini",
+  aSuivre: (titre: string) => `À suivre : « ${titre} »`,
+  dansN: (n: number) => `dans ${n} s`,
+  enAttente: "Quand tu veux",
   allumer: "▶ Allumer la télé du salon",
   /** 🔊 (21 novembre 2026) la vidéo part toute seule, en silence : un toucher sur l'image met le son */
   son: "🔊 Touche pour le son",

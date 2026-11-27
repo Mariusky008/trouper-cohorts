@@ -69,6 +69,8 @@ window.YT = { Player: function (el, o) {
   var self = this;
   self.loadVideoById = function (x) { d.dataset.yt = x.videoId || x; };
   self.playVideo = function () { d.dataset.joue = "1"; };
+  self.pauseVideo = function () { d.dataset.joue = "0"; };
+  window.__ytSalon = o;
   self.mute = function () { d.dataset.muet = "1"; };
   self.unMute = function () { d.dataset.muet = ""; };
   self.setVolume = function () {};
@@ -179,6 +181,20 @@ ok(/Touche pour le son/.test(await texte(lea.locator("[data-son-bouton]"))), "«
 await lea.screenshot({ path: `${D}/salons-ouverts-2-entree.png` });
 await lea.locator("[data-son-bouton]").click();
 ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-muet")) === "" && (await lea.locator(".so-tele").getAttribute("data-son")) === "1" && !/Touche pour le son/.test(await texte(lea.locator(".so-tele")))), "un toucher : le son (l'étiquette s'en va)");
+
+// ═══ 📺 (27 novembre 2026) SA VIDÉO, À SON RYTHME : PAUSE, ENTRACTE, SUIVANTE ═══
+ok(Number(await lea.locator(".faux-yt").getAttribute("data-debut")) === 0, "sa vidéo commence au début, quand elle arrive (pas à la seconde des autres)");
+await lea.locator("[data-ma-pause]").click();
+ok(await attendre(lea, async () => (await lea.locator('.so-tele[data-pause="1"]').count()) === 1 && (await lea.locator(".faux-yt").getAttribute("data-joue")) === "0"), "⏸ Pause : sa vidéo s'arrête, pour elle seule");
+await lea.locator("[data-ma-pause]").click();
+ok(await attendre(lea, async () => (await lea.locator('.so-tele[data-pause="1"]').count()) === 0 && (await lea.locator(".faux-yt").getAttribute("data-joue")) === "1"), "▶ Reprendre");
+await lea.evaluate(() => window.__ytSalon.events.onStateChange({ data: 0 }));
+ok(await attendre(lea, async () => (await lea.locator("[data-entracte]").count()) === 1, 3000), "finie : l'entracte (on voit que c'en est une autre)");
+const entracte = await texte(lea.locator("[data-entracte]"));
+const prochaineId = await lea.locator("[data-entracte]").getAttribute("data-entracte");
+ok(/C’est fini/.test(entracte) && /À suivre : « /.test(entracte) && /dans \d s/.test(entracte), `« ${entracte} »`);
+await lea.locator("[data-ma-suivante]").click();
+ok(await attendre(lea, async () => (await lea.locator("[data-entracte]").count()) === 0 && (await lea.locator(".faux-yt").getAttribute("data-yt")) === prochaineId), "⏭ Lancer maintenant : la suivante part");
 
 // ═══ SAM ENTRE, IL ÉCRIT ═══
 const s = await route(SAM, { action: "entrer", theme: "foot" });

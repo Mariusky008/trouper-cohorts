@@ -53,7 +53,7 @@ import type { JeuVu } from "./jeux-salon";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { entrerDansLaSeance, noterDansLaSeance } from "./rattrapage-serveur";
-import { cleDuRdv } from "./rattrapage";
+import { cleDuRdv, ouValide } from "./rattrapage";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type MomentFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
 import { momentDeReaction, motDuMoment } from "./grands-moments";
 import {
@@ -615,7 +615,7 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   const presents = await presentsFrais(supabase, m, sid, maintenant);
   if (!presents.some((x) => x.nom === q)) return { error: "Tu n’es plus dans ce salon : rentre d’abord.", statut: 409 };
   const sorte = p.sorte === "reaction" || p.sorte === "geste" ? p.sorte : "texte";
-  let corps: Pick<MessageSalon, "sorte" | "texte" | "cle" | "a" | "n">;
+  let corps: Pick<MessageSalon, "sorte" | "texte" | "cle" | "a" | "n" | "ou">;
   if (sorte === "texte") {
     const texte = s(p.texte).replace(/\s+/g, " ");
     // (dans une séance, entre proches : comme leur conversation — seulement pas vide, 90 signes au plus)
@@ -628,7 +628,10 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
     if (!x) return { error: "Quelle réaction ?", statut: 400 };
     // (🎆 les grands moments, lot R2 : ×2 ×3 — la même émotion touchée encore, vite ; le téléphone regroupe les touchers)
     const n = Math.round(Number(p.n));
-    corps = { sorte, cle: x.cle, ...(n >= 2 && n <= 3 ? { n } : {}) };
+    // (📺 27 novembre 2026 : dans un salon ouvert, chacun sa vidéo — sa réaction porte la vidéo et sa seconde ; les autres
+    // la voient quand ils en sont là)
+    const o = r.seance ? null : ouValide(p.ou);
+    corps = { sorte, cle: x.cle, ...(n >= 2 && n <= 3 ? { n } : {}), ...(o ? { ou: o } : {}) };
   } else {
     const x = gesteDe(p.cle);
     const a = s(p.a);
