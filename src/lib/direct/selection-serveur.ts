@@ -167,6 +167,32 @@ export async function retirerVideo(supabase: Supabase, jour: string, theme: unkn
   return { ok: true };
 }
 
+/**
+ * 🚫 (27 novembre 2026, le propriétaire : « le salon du foot ne fonctionne pas, peut-être faut-il des droits ») Une vidéo
+ * que YouTube refuse de lire hors de YouTube (ses ayants droit l'interdisent : l'API la dit pourtant « lisible ailleurs »),
+ * signalée par le lecteur de quelqu'un : elle quitte toutes les télés du jour, et ne revient plus. Seulement une vidéo
+ * de la sélection du jour.
+ */
+export async function videoRefusee(supabase: Supabase, jour: string, id: unknown): Promise<{ ok?: true; retiree?: boolean; error?: string; statut?: number }> {
+  const v = s(id);
+  if (!/^[\w-]{11}$/.test(v)) return { error: "Demande incomplète.", statut: 400 };
+  let trouvee = false;
+  await Promise.all(
+    THEMES_DECOUVRIR.flatMap((x) =>
+      variantes(x.id).map(async (jeunes) => {
+        const sel = await lireSelection(supabase, jour, x.id, jeunes);
+        if (!sel?.videos.some((w) => w.id === v)) return;
+        trouvee = true;
+        await ecrireJson(supabase, cheminSelection(jour, x.id, jeunes), { ...sel, videos: sel.videos.filter((w) => w.id !== v) });
+      }),
+    ),
+  );
+  if (!trouvee) return { ok: true, retiree: false };
+  const deja = await retirees(supabase);
+  if (!deja.has(v)) await ecrireJson(supabase, CHEMIN_RETIREES, { ids: [...deja, v].slice(-2000), le: new Date().toISOString() });
+  return { ok: true, retiree: true };
+}
+
 /** ➕ L'administrateur ajoute une vidéo par son lien, en tête du thème (pour les adultes, et pour les 15-17 ans). */
 export async function ajouterVideo(supabase: Supabase, jour: string, theme: unknown, lien: unknown): Promise<{ video?: VideoDuJour; error?: string; statut?: number }> {
   const t = themeDe(theme);

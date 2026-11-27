@@ -194,6 +194,18 @@ ok((await vivants())[0]?.muet === false && (await zoe.evaluate((k) => window.__y
 ok(!(await zoe.evaluate(() => document.scrollingElement.scrollWidth > window.innerWidth + 1)), "rien ne déborde");
 ok(!/exemple/i.test(await zoe.evaluate(() => document.body.innerText)), "jamais le mot interdit");
 
+// ═══ 🚫 UNE VIDÉO QUE YOUTUBE REFUSE ICI (27/11 : « le salon du foot ne fonctionne pas ») : ELLE QUITTE LES TÉLÉS DU JOUR ═══
+const avant = (await appel(ZOE, "/api/direct/tele-du-jour")).tele?.videos ?? [];
+const refusee = avant[0]?.id;
+const r1 = await appel(ZOE, "/api/direct/video-refusee", { id: refusee });
+ok(r1.statut === 200 && r1.retiree === true, "le lecteur dit « refusée ici » (101, 150) : elle est retirée");
+const apres = (await appel(ZOE, "/api/direct/tele-du-jour")).tele?.videos ?? [];
+ok(refusee && !apres.some((v) => v.id === refusee), "… elle n'est plus dans les télés du jour");
+const r2 = await appel(ZOE, "/api/direct/video-refusee", { id: "zzzzzzzzzzz" });
+ok(r2.statut === 200 && r2.retiree === false, "une vidéo qui n'est pas du jour : rien ne bouge");
+const r3 = await fetch(`${BASE}/api/direct/video-refusee`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: apres[0]?.id }) });
+ok(r3.status === 401, "sans être de ClikMe : refusé");
+
 await zoe.waitForTimeout(100);
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
 await b.close();
