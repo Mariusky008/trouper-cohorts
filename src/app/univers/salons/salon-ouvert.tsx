@@ -3243,7 +3243,7 @@ ${STYLES_INFOS_VIDEO}
 .so-suite-ouvrir b{font-size:15px;font-weight:900}
 .so-suite-ouvrir span{max-width:100%;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .so-suite-fermer{flex:none;width:44px;border:0;border-radius:14px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
-.so{min-height:100dvh;max-width:820px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 0 calc(16px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;overflow-x:hidden;position:relative}
+.so{min-height:100dvh;max-width:820px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 0 calc(32px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;overflow-x:hidden;position:relative}
 .so-centre{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 20px;text-align:center}
 .so-tele-attente{width:100%;aspect-ratio:16/9}
 .so-grand{font-size:22px;font-weight:900;margin:0}
@@ -3395,7 +3395,9 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-entre{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes so-pop{0%{opacity:0;transform:translate(-50%,8px) scale(.5)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px) scale(1)}}
 @keyframes so-vol{0%{opacity:0;transform:translate(-50%,0) scale(.6)}15%{opacity:1}100%{opacity:1;transform:translate(calc(-50% + var(--dx)),var(--dy)) scale(1.1)}}
-.so-bas{padding:12px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
+.so-bas{padding:8px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
+/* (📱 27/11, le propriétaire : les émojis remontent, juste sous la salle, loin de la bande du bas) */
+.so:not(.so-seance) .so-bas>.so-reagir{order:-1}
 .so-info{margin:0;font-size:12.5px;opacity:.75;text-align:center}
 .so-reagir button.so-jeu-rond{background:rgba(255,159,67,.22);width:36px;height:36px;font-size:18px}
 .so-seance .so-reagir{gap:4px}
@@ -3527,6 +3529,7 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so:not(.so-centre) .so-bas>*:not(.so-reagir):not(.so-jeux):not(.so-ecrire){order:-1;flex-basis:100%}
 .so:not(.so-centre) .so-bas>.so-info,.so:not(.so-centre) .so-bas>.so-regles,.so:not(.so-centre) .so-reagir>span,.so:not(.so-centre) .so-reagir>small{display:none}
 .so:not(.so-centre) .so-reagir{flex-wrap:nowrap}
+.so:not(.so-centre) .so-bas>.so-reagir{order:0}
 .so:not(.so-centre) .so-jeux{margin:0;padding:0 6px;border-left:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.15)}
 .so:not(.so-centre) .so-jeux .so-bouton{white-space:nowrap}
 .so:not(.so-centre) .so-ecrire{width:300px}
