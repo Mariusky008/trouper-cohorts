@@ -169,7 +169,7 @@ await json(`${LEA.id}/coeur.json`, { prenom: "Sam", sorte: "surprise", le: new D
 await json(`${LEA.id}/presence.json`, { jours: [jour, ...[3, 4, 5].map((n) => jourDe(Date.now() - n * JOUR))] });
 const o2 = (await double(LEA)).double?.ornements;
 ok(!o2?.coeur, "seize jours après : le cœur s'en va");
-ok(o2?.serie === 1, `un jour manqué (hier) : la série repart (${o2?.serie})`);
+ok(o2 === undefined, `un jour manqué (hier) : la série repart à 1 (pas de flamme), et sans casque ni cœur, plus rien sur elle (${JSON.stringify(o2)})`);
 
 ok(!/exemple/i.test(JSON.stringify(tous)), "jamais le mot « exemple »");
 console.log(echecs ? `\n${echecs} échec(s)` : "\nelle change toute seule ✓");
