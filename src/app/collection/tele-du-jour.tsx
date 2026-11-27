@@ -53,6 +53,8 @@ import { InviterSurLaVideo } from "./carnet-proches";
 import { RangeeRevoir } from "./revoir";
 import { PHRASES_DISCUSSION as PD, lienDiscussion } from "@/lib/direct/discussion-video";
 import { SuiteDeLaVideo } from "./suite-de-la-video";
+import { GrandMoment } from "@/app/univers/salons/grand-moment";
+import { GRAND_MOMENT, momentDeSorte, motDuMoment, type Moment } from "@/lib/direct/grands-moments";
 import { PHRASES_SALONS as PS, nomDuSalon, type CarteSalon, type DemandeProche, type InvitationTele, type VitrineSalon } from "@/lib/direct/salons-ouverts";
 import type { UniversPublic } from "@/lib/direct/visites";
 import {
@@ -519,6 +521,11 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
   // ⭐ JAMAIS SEUL : mes proches qui ont vu cette vidéo, leurs réactions à la seconde ; ce qui joue sur les figurines
   const [devant, setDevant] = useState<ProcheDevantVideo[]>([]);
   const [anims, setAnims] = useState<Record<string, { a: string; e: string; n: number; texte?: string }>>({});
+  // 🎆 (27 novembre 2026, les grands moments, lot R2) celui qui réagit — moi, ou un proche assis à côté — prend la scène
+  const [moment, setMoment] = useState<{ id: string; qui: string; m: Moment; mot: string; niveau: number; fin: number } | null>(null);
+  const momentRef = useRef<typeof moment>(null);
+  const minuteurMoment = useRef(0);
+  const vedettePossible = useRef((qui: string): boolean => qui === "moi");
   // (deuxième partie : les miennes, déjà vue, la réponse à un proche, « 💬 Ce qui s'est dit », écrire à la seconde)
   const [miennes, setMiennes] = useState<ReactionVideo[]>([]);
   const [dejaVue, setDejaVue] = useState(false);
@@ -735,6 +742,25 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
     const s = sorteVideo(sorte);
     if (!s) return;
     const n = ++compte.current;
+    // (🎆 son grand moment, si la scène est libre — ou la sienne : la même émotion encore, ×2 ×3 ; des mots restent une
+    // bulle à côté de sa tête : c'est une conversation, on y répond)
+    const gm = texte ? null : momentDeSorte(sorte);
+    const c = momentRef.current;
+    const maintenant = Date.now();
+    if (gm && vedettePossible.current(qui) && (!c || c.fin <= maintenant || c.qui === qui)) {
+      const encore = c && c.fin > maintenant && c.qui === qui && c.m.cle === gm.cle;
+      const x = encore
+        ? { ...c, niveau: Math.min(GRAND_MOMENT.niveauMax, c.niveau + 1), fin: Math.min(maintenant + GRAND_MOMENT.ms, c.fin + GRAND_MOMENT.encore), mot: motDuMoment(gm, `${qui}-${n}`) }
+        : { id: `${qui}-${n}`, qui, m: gm, mot: motDuMoment(gm, `${qui}-${n}`), niveau: 1, fin: maintenant + GRAND_MOMENT.ms };
+      momentRef.current = x;
+      setMoment(x);
+      window.clearTimeout(minuteurMoment.current);
+      minuteurMoment.current = window.setTimeout(() => {
+        momentRef.current = null;
+        setMoment(null);
+      }, x.fin - maintenant);
+      return;
+    }
     setAnims((a) => ({ ...a, [qui]: { a: ANIMATION_VIDEO[sorte], e: s.e, n, ...(texte ? { texte } : {}) } }));
     window.setTimeout(() => setAnims((a) => (a[qui]?.n === n ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== qui)) : a)), texte ? 2800 : 1600);
   }
@@ -1061,6 +1087,7 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
   // (ma figurine, et à côté d'elle les trois proches qui s'assoient : à gauche, à droite, un peu au fond)
   const mienne = scene ? { x: tx + scene.centre.x * lPano, y: ty + scene.centre.y * hPano, h: scene.centre.hauteur * hPano } : { x: L / 2, y: hPiece * 0.96, h: hPiece * 0.82 };
   const { assis, bord } = placerLesProches(devant);
+  vedettePossible.current = (qui: string) => qui === "moi" || assis.some((p) => p.cle === qui);
   const AUTOUR = [
     { dx: -0.3, dy: 0, k: 0.94 },
     { dx: 0.3, dy: 0, k: 0.94 },
@@ -1145,7 +1172,7 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
       {inviter && v && createPortal(<InviterSurLaVideo video={{ id: v.id, titre: v.titre }} position={() => Math.max(0, lireT())} onFermer={() => setInviter(false)} />, document.body)}
 
       <div className="td-scene" ref={boite} style={{ height: (enPiece ? 0 : hEcran) + hPiece }}>
-        <div className="td-piece" style={{ top: enPiece ? 0 : hEcran, height: hPiece }} data-piece={scene?.piece ?? ""} data-gestes={peutReagir ? "1" : undefined} {...gestes}>
+        <div className={`td-piece${moment ? " td-en-moment" : ""}`} style={{ top: enPiece ? 0 : hEcran, height: hPiece }} data-piece={scene?.piece ?? ""} data-gestes={peutReagir ? "1" : undefined} {...gestes}>
           {scene && (
             // eslint-disable-next-line @next/next/no-img-element
             <img className="td-pano" src={scene.panorama.src} srcSet={scene.panorama.srcset} sizes={`${Math.round(lPano)}px`} alt="" style={{ width: lPano, height: hPano, transform: `translate(${tx}px, ${ty}px)`, backgroundImage: `url(${scene.panorama.flou})` }} />
@@ -1158,7 +1185,7 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
                 <span key={p.cle} className="td-place" data-proche-assis={p.cle}>
                   {p.figurine ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img className={`td-proche${anim(p.cle)}`} src={p.figurine.src} srcSet={p.figurine.srcset} sizes="200px" alt={p.prenom} style={{ height: o.h, left: o.x, top: o.y, zIndex: k === 2 ? 1 : 2 }} />
+                    <img className={`td-proche${anim(p.cle)}${moment?.qui === p.cle ? " vedette" : ""}`} src={p.figurine.src} srcSet={p.figurine.srcset} sizes="200px" alt={p.prenom} style={{ height: o.h, left: o.x, top: o.y, zIndex: k === 2 ? 1 : 2 }} />
                   ) : (
                     <span className={`td-proche td-proche-rond${anim(p.cle)}`} style={{ height: o.h * 0.42, width: o.h * 0.42, left: o.x, top: o.y, fontSize: o.h * 0.2 }}>
                       {p.prenom.slice(0, 1)}
@@ -1176,7 +1203,7 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
           {tele.figurine && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              className={`td-figurine${scene ? "" : " seule"}${anim("moi")}`}
+              className={`td-figurine${scene ? "" : " seule"}${anim("moi")}${moment?.qui === "moi" ? " vedette" : ""}`}
               src={tele.figurine.src}
               srcSet={tele.figurine.srcset}
               sizes="240px"
@@ -1185,6 +1212,33 @@ function Television({ tele, cls, allumer: tout = false, depart, onRetour }: { te
             />
           )}
           {pop("moi", mienne.x + mienne.h * 0.36, mienne.y - mienne.h * 0.62)}
+          {L > 0 &&
+            moment &&
+            (() => {
+              const k = assis.findIndex((p) => p.cle === moment.qui);
+              const de = moment.qui === "moi" ? mienne : k >= 0 ? ouEst(k) : null;
+              const fig = moment.qui === "moi" ? tele.figurine : k >= 0 ? assis[k].figurine : null;
+              if (!de || !fig) return null;
+              return (
+                <GrandMoment
+                  key={moment.id}
+                  id={moment.id}
+                  m={moment.m}
+                  niveau={moment.niveau}
+                  L={L}
+                  H={hPiece}
+                  vedettes={[
+                    {
+                      cle: moment.qui,
+                      mot: moment.mot,
+                      de,
+                      // eslint-disable-next-line @next/next/no-img-element
+                      figure: (h) => <img src={fig.src} srcSet={fig.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} style={{ height: h }} />,
+                    },
+                  ]}
+                />
+              );
+            })()}
           {bord.length > 0 && (
             <div className="td-bord" data-bord>
               {bord.map((p) => (
@@ -1565,6 +1619,8 @@ const STYLES = `
 .td-figurine{position:absolute;transform:translate(-50%,-100%);max-width:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45))}
 .td-piece[data-gestes]{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:pointer}
 .td-proche{position:absolute;transform:translate(-50%,-100%);max-width:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45));pointer-events:none}
+.td-piece .vedette{opacity:0}
+.td-en-moment .td-proche:not(.vedette),.td-en-moment .td-figurine:not(.vedette){filter:brightness(.45) saturate(.7);transition:filter .3s}
 .td-proche-rond{display:grid;place-items:center;border-radius:50%;background:#5a2c48;box-shadow:0 0 0 2px rgba(255,255,255,.7);font-weight:900;color:#fff}
 .td-qui{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;padding:2px 8px;border-radius:10px;background:rgba(24,7,20,.62);font-size:11px;font-weight:800;line-height:1.25;white-space:nowrap;pointer-events:none}
 .td-qui em{font-style:normal;font-weight:600;font-size:10px;opacity:.8}

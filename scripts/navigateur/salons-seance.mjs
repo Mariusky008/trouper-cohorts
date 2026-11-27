@@ -151,7 +151,7 @@ const v0 = await lea.locator(".so-tele").getAttribute("data-tele");
 ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-yt")) === v0 && (await lea.locator(".faux-yt").getAttribute("data-muet")) === "1") && (await lea.locator("[data-allumer]").count()) === 0, `sa télé du jour part toute seule, en silence (${v0})`);
 ok(v0 === vSam, "… la première de sa télé du jour, celle que Sam a déjà vue");
 ok(await attendre(lea, async () => /Sam · l’a vue/.test(await texte(lea.locator(`[data-fantome="${SAM.cle}"]`)))), "⭐ Sam, qui l'a déjà vue, est assis à côté d'elle (« Sam · l'a vue »)");
-ok(await attendre(lea, async () => (await lea.locator(`[data-pop-fantome="${SAM.cle}"]`).count()) >= 1, 8000), "… et à 2 s, il rit (sa réaction, à sa seconde)");
+ok(await attendre(lea, async () => (await lea.locator(`[data-pop-fantome="${SAM.cle}"], [data-vedette="f:${SAM.cle}"]`).count()) >= 1, 8000), "… et à 2 s, il rit (sa réaction, à sa seconde : son grand moment)");
 ok((await lea.locator('.so-piece[data-gradin="plan"]').count()) === 1 && (await lea.locator("button.so-place-libre").count()) === 2, "… quatre places, comme un salon : elle, Sam en souvenir, deux libres « ＋ » à toucher");
 await lea.locator("[data-son-bouton]").click();
 ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-muet")) === ""), "un toucher : le son");

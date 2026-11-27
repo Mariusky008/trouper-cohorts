@@ -41,7 +41,21 @@ Gemini : figurine grossie au centre, visage coloré, flammes et aura, bulle, ém
 
 Une figurine sans expressions prêtes : sa tête du jour (colorée), sinon son image.
 
-## 3. Les lots
+## 3. La salle qui vit (lot R2, fait)
+
+- **Une vedette à la fois** : la scène prise, on attend son tour (trois au plus, 6 s au plus) ; en attendant, sur place,
+  sa couleur autour de lui (2,2 s) et son émoji au-dessus de sa tête.
+- **×2 ×3** : la même émotion touchée encore pendant son moment — elle grandit, sa bulle aussi, d'autres émojis
+  jaillissent, la pièce tremble (trois fois à ×3), 1,6 s de plus. Chez moi, tout de suite ; pour les autres, le téléphone
+  regroupe les touchers (un message toutes les 1,6 s au plus, après la réponse du précédent — le serveur en compte 1,5) :
+  la réaction porte `n` (2 ou 3).
+- **🫶 Au même moment** : la même émotion à 1,8 s d'écart, deux figurines côte à côte au centre.
+- **Les souvenirs des proches** (la séance) : leur réaction rejouée à sa seconde prend la scène aussi (assis en
+  souvenir : la vedette « f:<clé> » ; sur sa propre figurine s'il est là).
+- **Ma télé du jour** : ma figurine ou celle d'un proche assis à côté prend la scène (😂 ❤️ 😮 😱 ; 😴 reste petit). Des
+  mots restent une bulle à côté de sa tête : on y répond.
+
+## 4. Les lots
 
 - **R1 — le grand moment** (salon ouvert et séance) : `GrandMoment` (`app/univers/salons/grand-moment.tsx`), une vedette
   à la fois (si la scène est prise, la réaction saute au-dessus de sa tête comme avant), la teinte du visage

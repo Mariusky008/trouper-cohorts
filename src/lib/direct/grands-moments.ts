@@ -76,9 +76,24 @@ export function momentDeReaction(cle: string | undefined): Moment | null {
   }
 }
 
+/** Le grand moment d'une réaction à la seconde d'une vidéo (les souvenirs des proches, ma télé du jour) ; 😴 bof : `null`. */
+export function momentDeSorte(sorte: string | undefined): Moment | null {
+  return sorte === "rire" ? MOMENTS.rire : sorte === "coeur" ? MOMENTS.coeur : sorte === "oh" || sorte === "peur" ? MOMENTS.choc : null;
+}
+
 export const GRAND_MOMENT = {
   /** la figurine reste au centre 3 secondes */
   ms: 3000,
+  /** (lot R2) ×2 ×3 : la même émotion touchée encore pendant son moment — 1,6 s de plus à chaque fois, jusqu'à ×3 */
+  encore: 1600,
+  niveauMax: 3,
+  /** 🫶 deux qui réagissent pareil à 1,8 s d'écart (comme « Au même moment ») montent ensemble */
+  ensemble: 1800,
+  /** la scène est prise : on attend son tour (trois au plus), s'il n'est pas trop tard (6 s) */
+  file: 3,
+  fraicheur: 6000,
+  /** pendant qu'on attend : sur place, sa couleur autour de lui (2,2 s) */
+  surPlace: 2200,
   /** ce qu'elle a écrit juste avant (5 s au plus) devient sa bulle, à la place du cri */
   texteAvant: 5000,
   /** la bulle : 40 signes au plus (au-delà, coupé d'un « … ») */

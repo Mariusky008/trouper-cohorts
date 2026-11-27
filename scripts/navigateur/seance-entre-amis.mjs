@@ -149,7 +149,7 @@ ok((await sam.locator(".so-tele").getAttribute("data-tele")) === V.id && (await 
 ok(/Ta vidéo, à ton rythme/.test(await texte(sam.locator("[data-info]"))) && (await sam.locator('[data-commandes="seul"] [data-rejoindre]').count()) === 1, "« Ta vidéo, à ton rythme » ; « 👀 Rejoindre Léa »");
 const figLea = sam.locator(`.so-fig[data-q="${qui8(LEA.id)}"]`);
 ok(await attendre(sam, async () => /Léa · l’a vue/.test(await texte(figLea)), 8000), "la figurine de Léa, à côté de lui : « Léa · l'a vue » (un souvenir)");
-ok(await attendre(sam, async () => (await figLea.locator("[data-pop-fantome]").count()) >= 1, 15000), "… et à 0:08, elle rit (sa réaction à cette vidéo, rejouée)");
+ok(await attendre(sam, async () => (await figLea.locator("[data-pop-fantome]").count()) + (await sam.locator(`[data-vedette="${qui8(LEA.id)}"]`).count()) >= 1, 15000), "… et à 0:08, elle rit (sa réaction à cette vidéo, rejouée : son grand moment)");
 await sam.screenshot({ path: `${D}/seance-entre-amis-1-sa-video.png` });
 await sam.locator('[data-commandes="seul"] [data-pause="pause"]').click();
 ok(await attendre(sam, async () => (await sam.locator(".faux-yt").getAttribute("data-pause")) === "1", 3000), "sa pause à lui : sa vidéo s'arrête…");

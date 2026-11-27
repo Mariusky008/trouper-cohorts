@@ -136,8 +136,8 @@ ok(await attendre(async () => (await p.evaluate(() => Boolean(window.__lecteur))
 await seconde(4.6);
 await p.waitForTimeout(400);
 await seconde(5.2);
-ok(await attendre(async () => (await sam.locator("img.td-proche.a-rit").count()) === 1, 2000), "à 5 s : la figurine de Sam rit");
-ok((await sam.locator(".td-pop").innerText().catch(() => "")) === "😂", "… et son 😂 jaillit");
+ok(await attendre(async () => (await p.locator(`[data-grand-moment="rire"] [data-vedette="${SAM.cle}"]`).count()) === 1, 2000), "à 5 s : la figurine de Sam rit — son grand moment, au centre");
+ok((await sam.locator("img.td-proche.vedette").count()) === 1, "… sa place se vide le temps de son moment");
 await p.screenshot({ path: `${D}/tele-ensemble-1-sam-rit.png` });
 
 // ═══ UN SAUT EN AVANT NE REJOUE RIEN ; REVENIR EN ARRIÈRE : 😮 ═══
@@ -149,7 +149,7 @@ await seconde(7.5);
 ok(await attendre(async () => (await reactionsDeLea()).includes("7.5:oh:implicite"), 4000), "revenir en arrière : 😮 noté à 7,5 s (ce que l'appli comprend seule)");
 await p.waitForTimeout(300);
 await seconde(8.2);
-ok(await attendre(async () => (await sam.locator("img.td-proche.a-saute").count()) === 1, 2000), "puis à 8 s, le 😮 de Sam (un sursaut)");
+ok(await attendre(async () => (await p.locator(`[data-grand-moment="choc"] [data-vedette="${SAM.cle}"]`).count()) === 1, 2000), "puis à 8 s, le 😮 de Sam (son grand moment : le choc)");
 
 // ═══ ELLE RÉAGIT : AU MÊME MOMENT QUE SAM ═══
 await seconde(12.5);

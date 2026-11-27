@@ -236,6 +236,8 @@ export const seconde = (t: number) => {
 };
 
 export const PHRASES_REACTIONS = {
+  /** 🎆 (les grands moments, lot R2) deux qui réagissent pareil au même moment, côte à côte */
+  ensembleMoment: "🫶 Au même moment",
   reagis: "Réagis :",
   note: (e: string, t: number, qui: string[]) => `${e} noté à ${seconde(t)} : ${qui.length === 1 ? `${qui[0]} le verra` : qui.length ? `${qui.slice(0, 2).join(" et ")} le verront` : "tes proches le verront"} à cette seconde`,
   ensemble: (prenom: string) => `🫶 En même temps que ${prenom} !`,

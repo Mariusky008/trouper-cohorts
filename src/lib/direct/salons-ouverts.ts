@@ -165,7 +165,9 @@ export const DEMANDES_PAR_JOUR = 10;
 /** 🏠 (lot D5) « Mes salons » : les salons que je fréquente, en fanions dans ma pièce. */
 export type MonSalon = { theme: IdTheme; e: string; nom: string };
 /** Un message du salon : un texte (une bulle), une réaction, ou un geste à quelqu'un (`a`). */
-export type MessageSalon = { id: string; de: string; prenom: string; le: number; sorte: "texte" | "reaction" | "geste"; texte?: string; cle?: string; a?: string };
+export type MessageSalon = { id: string; de: string; prenom: string; le: number; sorte: "texte" | "reaction" | "geste"; texte?: string; cle?: string; a?: string;
+  /** 🎆 (les grands moments, lot R2) une réaction touchée encore, vite : ×2, ×3 */
+  n?: number };
 /** Un salon, sur l'accueil de Découvrir. */
 export type CarteSalon = { theme: IdTheme; e: string; nom: string; presents: number; salons: number; mien: boolean; decor: { src: string; flou: string } | null; teles?: number };
 /**
