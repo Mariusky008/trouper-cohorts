@@ -6,7 +6,7 @@
 // l'écran : sa figurine réagit (« 😂 », « Les 2 te voient »), elle s'assoit dans le gradin — et Sam la voit pour de vrai.
 // Elle glisse : l'humeur de ses proches (Sam, triste) ; sa figurine a quitté le salon. « Répondre à Sam » : Messages. Puis
 // la figurine de Hugo au Petit Bistrot, son mot du jour en grand ; puis le salon de la musique (la radio) ; puis les salons
-// sans personne, la cuisine d'abord (sa passion) : « Sois le premier », ce que Zoé y a dit tout à l'heure ; elle touche
+// sans personne, la cuisine d'abord (sa passion) : ce que Zoé y a dit tout à l'heure ; elle touche
 // deux fois : « Les suivants te verront », elle s'y assoit pour de vrai. « Tous les salons » : l'ancienne page (sa télé
 // du jour) ; « ‹ Le fil » : retour. Le lien d'une vidéo à revoir (`?tele=`) ouvre
 // « Tous les salons », comme les anciens liens (`#voeu`…) ; `#jour` (le mème du jour, parti) ouvre « Créer ». Tom, sans
@@ -202,7 +202,7 @@ await lea.screenshot({ path: `${D}/fil-5-musique.png` });
 await glisser(lea);
 const cuisine = lea.locator('#o-decouvrir [data-piece="salon"][data-theme="cuisine"]');
 ok(await attendre(lea, async () => (await courante(lea)) === "s:cuisine"), "puis le salon de la cuisine, sa passion, même sans personne");
-ok(/Sois le premier · ta passion/.test(await texte(cuisine.locator(".fd-etiquette"))) && (await cuisine.locator(".fd-direct").count()) === 0 && (await cuisine.locator(".fd-fig").count()) === 0, "« ✨ Sois le premier · ta passion » : personne n'est montré assis");
+ok((await cuisine.locator(".fd-etiquette").count()) === 0 && !/Sois le premier/.test(await texte(cuisine)) && (await cuisine.locator(".fd-fig").count()) === 0, "plus de « Sois le premier · ta passion » (27/11) : personne n'est montré assis");
 ok(/Zoé · il y a 1 min/.test(await texte(cuisine.locator("[data-trace]"))) && /Qui a une recette de crêpes \?/.test(await texte(cuisine.locator("[data-trace]"))), `… ce que Zoé y a dit tout à l'heure (« ${await texte(cuisine.locator("[data-trace]"))} »)`);
 ok(/Zoé y était aujourd’hui\. Assieds-toi : les suivants te verront\./.test(await texte(cuisine.locator("[data-sous]"))) && (await cuisine.locator("[data-asseoir]").getAttribute("href")) === "/univers/salons?theme=cuisine", "… « Zoé y était aujourd'hui. Assieds-toi : les suivants te verront. », « M'asseoir »");
 ok(/i\.ytimg\.com/.test((await cuisine.locator("[data-tele] img").getAttribute("src")) ?? ""), "… sa télé passe quand même");

@@ -18,7 +18,10 @@ export async function GET(request: Request) {
     description: "Ta figurine, ta maison, et tes proches qui te parlent.",
     id: "/collection",
     start_url: jetonValide(jeton) ? `/collection?appli=${jeton}` : "/collection",
-    scope: "/collection",
+    // (27 novembre 2026 : « /collection » seulement, un salon, une maison — `/univers/…` — s'ouvraient dans une fenêtre de
+    // Safari par-dessus l'appli, sans ses cookies : on n'y était plus reconnu, et l'âge était redemandé. Tout le site,
+    // désormais. Pour un iPhone, il faut reposer l'appli sur l'écran d'accueil pour que ça compte.)
+    scope: "/",
     display: "standalone",
     // (la couleur de l'appli : c'est elle que le téléphone montre au lancement, avant le premier écran)
     background_color: "#12060F",
