@@ -195,6 +195,11 @@ export function SalonOuvert({ theme, chez, place, video, groupe, initial }: { th
   // d'écran du thème, plus d'aller-retour. Sans `initial` (une panne côté serveur), l'écran entre lui-même, comme avant.
   const [etat, setEtat] = useState<Etat>(initial ?? { etat: "chargement" });
   const dejaEntre = useRef(Boolean(initial));
+  // (sa figurine s'est déjà assise dans ce salon : un « dehors » qui suit ne lui demandera jamais de la créer)
+  const dejaAssis = useRef(initial?.etat === "pret");
+  useEffect(() => {
+    if (etat.etat === "pret") dejaAssis.current = true;
+  }, [etat]);
   // (le salon lit l'heure, l'écran et le stockage du téléphone : il se monte une fois la page reprise par le téléphone —
   // d'ici là, la même pièce, vide : la télé noire, le titre du salon)
   const monte = useSyncExternalStore(rien, () => true, () => false);
@@ -204,6 +209,10 @@ export function SalonOuvert({ theme, chez, place, video, groupe, initial }: { th
     const r = await poster(chez ? { action: "entrer-chez", chez, ...(place ? { place } : {}), ...(video ? { video } : {}) } : groupe ? { action: "entrer-groupe", groupe } : { action: "entrer", theme });
     if (r.ok && r.j.ouverture) return setEtat({ etat: "pret", o: r.j.ouverture as OuvertureSalonOuvert });
     if (r.j.age) return setEtat({ etat: "age" });
+    // (27 novembre 2026, le propriétaire : « Pour entrer, il te faut ta figurine » au retour d'« Envoyer… », alors qu'il en a
+    // une) la base qui n'a pas répondu, ou une figurine déjà assise ici tout à l'heure : ce n'est pas une figurine qui
+    // manque — on le dit, et on propose de réessayer
+    if (r.j.panne || ((r.j.figurine || r.statut === 401) && dejaAssis.current)) return setEtat({ etat: "erreur", message: String(r.j.panne ? r.j.error : P.panne) });
     // (➕ sans compte ni figurine — quelqu'un qui arrive par le lien WhatsApp d'une place libre : sa figurine d'abord)
     if (r.j.figurine || r.statut === 401) return setEtat({ etat: "sans-figurine" });
     if (r.j.exclu) return setEtat({ etat: "exclu" });
@@ -260,7 +269,14 @@ export function SalonOuvert({ theme, chez, place, video, groupe, initial }: { th
         </p>
       )}
       {etat.etat === "exclu" && <p data-exclu>{P.exclu}</p>}
-      {etat.etat === "erreur" && <p className="so-erreur">{etat.message}</p>}
+      {etat.etat === "erreur" && (
+        <>
+          <p className="so-erreur">{etat.message}</p>
+          <button type="button" className="so-bouton" data-reessayer onClick={() => void entrer()}>
+            {P.reessayer}
+          </button>
+        </>
+      )}
       <style>{STYLES}</style>
     </main>
   );
@@ -2171,7 +2187,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         />
       )}
       {inviter && <Inviter onFermer={() => setInviter(false)} dire={dire} chez={seance && !seance.hote ? { salon: salon.id, cle: seance.cle, prenom: seance.prenom, libres: libres.length } : undefined} />}
-      {suiteDe && !suiteOuverte && (
+      {/* (27 novembre 2026 : « les messages se superposent ») la carte d'envoi de ma réaction passe d'abord ; « La suite de la
+          vidéo » revient juste après */}
+      {suiteDe && !suiteOuverte && !pastille && !envoi && (
         <div className="so-suite" data-carte-suite={suiteDe.id}>
           <button type="button" className="so-suite-ouvrir" onClick={() => setSuiteOuverte(true)} data-ouvrir-suite>
             <b>{PMOTS.carte}</b>

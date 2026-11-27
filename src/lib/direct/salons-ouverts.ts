@@ -272,6 +272,9 @@ export const PHRASES_SALONS = {
   adulte: "J’ai 18 ans ou plus",
   jeune: "J’ai entre 15 et 17 ans",
   sansFigurine: "Pour entrer, il te faut ta figurine assise dans son fauteuil.",
+  /** (27 novembre 2026) sa figurine était là tout à l'heure : le salon n'a pas répondu, ce n'est pas elle qui manque */
+  panne: "Le salon ne répond pas pour l’instant. Ta figurine t’attend : réessaie dans un instant.",
+  reessayer: "Réessayer",
   bienvenue: "Tu t’assois. Ici, on ne voit que ton prénom et ta figurine.",
   plein: (nom: string) => `Le premier ${nom} est complet : tu t’assois dans le suivant.`,
   regles: "Relu avant d’apparaître · ni vocal ni photo ici · on ne voit que ton prénom et ta figurine",
