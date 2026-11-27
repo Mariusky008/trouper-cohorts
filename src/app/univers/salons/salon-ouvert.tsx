@@ -61,6 +61,7 @@ import type { Zone } from "@/lib/direct/pieces-duo";
 import { PHRASES_PLATINE as PM, REACTIONS_MUSIQUE, estSalonMusique, type PlatineVue } from "@/lib/direct/platine";
 import { PHRASES_MOTS as PMOTS, type MotDeQuelquun } from "@/lib/direct/mots-video";
 import { SuiteDeLaVideo } from "@/app/collection/suite-de-la-video";
+import { InfosSousLaVideo, STYLES_INFOS_VIDEO } from "@/app/collection/infos-video";
 import { accordDonne, donnerAccord } from "@/app/collection/discussion-video";
 import { PHRASES_DISCUSSION as PDV, lienDiscussion } from "@/lib/direct/discussion-video";
 import { CarteDuJeu, FeuilleAccord, FeuilleDefi, PancarteDeJeu, voteAffiche } from "./jeux";
@@ -73,6 +74,7 @@ import {
   PLACES_DU_SALON,
   PLACES_SEANCE,
   REACTIONS_SALON,
+  SPECTATEURS_AVANT,
   SIGNE_MS,
   TEXTE_SALON_MAX,
   positionSeance,
@@ -179,6 +181,13 @@ const poster = (corps: Record<string, unknown>) =>
 
 /** 😴 (26 novembre 2026) ce que la télé du salon montre en ce moment : où j'en suis si je pars avant la fin */
 let teleEnCours: (() => { t: number; duree: number } | null) | null = null;
+/**
+ * 📺 (27 novembre 2026, le propriétaire : « il ne faut surtout pas que la vidéo soit dépendante des gens qui sont dans le
+ * salon, la vidéo commence quand la personne arrive ») MA TÉLÉ, DANS UN SALON OUVERT : la sélection du jour depuis le
+ * début, à mon rythme (⏸ pause, ⏭ suivante, cinq secondes d'entracte entre deux) ; où j'en suis : la vidéo et sa
+ * seconde (`null` : rien ne passe, ou l'entracte).
+ */
+let maTeleEnCours: (() => { i: number; t: number } | null) | null = null;
 /** Sortir : sa place se libère tout de suite (sinon, d'elle-même en 2 min 30) ; parti avant la fin, sa figurine dort. */
 function sortir(salon: string) {
   try {
@@ -296,6 +305,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // 🎵 (le lot M1, `decouvrir.md` section 36) LE SALON DE LA MUSIQUE : sa platine — le morceau proposé qui passe, la file ;
   // sans rien de proposé, la radio du salon (la sélection du jour) ; on réagit en musique (💃 sa figurine danse)
   const musique = !prive && estSalonMusique(salon.theme);
+  // 📺 (27 novembre 2026) un salon ouvert d'un thème : chacun sa vidéo, qui commence quand il arrive (pas la musique, qui
+  // passe la platine du salon ; pas le salon d'un groupe, où l'on se retrouve à une heure)
+  const aMonRythme = !prive && !musique && !salon.id.startsWith("groupe-");
+  /** Ce qui passe à ma télé (la vidéo de la sélection, sa seconde) : la mienne, ou celle du salon, à la même seconde. */
+  const ouEnEst = (ms: number): { i: number; t: number } | null => (aMonRythme ? (maTeleEnCours?.() ?? null) : positionTele(o.tele.videos, ms));
   const [platine, setPlatine] = useState<PlatineVue | null>(o.tele.platine ?? null);
   const [proposerMorceau, setProposerMorceau] = useState(false);
   const [cetait, setCetait] = useState<{ q: string; prenom: string } | null>(null);
@@ -424,6 +438,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const [heureJeu, setHeureJeu] = useState(0);
   const boite = useRef<HTMLDivElement>(null);
   const [L, setL] = useState(0);
+  // (🖥️ un ordinateur : la mise en page « au cinéma » — 1000 points de large, comme la règle des styles)
+  const [ordinateur, setOrdinateur] = useState(false);
+  const [hEcran, setHEcran] = useState(0);
   const dernier = useRef(Math.max(0, ...o.messages.map((m) => m.le)));
   const vus = useRef(new Set(o.messages.map((m) => m.id)));
   // (l'heure du serveur : la télé est à la même seconde pour tous, même si l'horloge du téléphone avance)
@@ -435,7 +452,9 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   // assis aux places libres (sans prendre la dernière : on peut toujours inviter), ils rejouent leurs réactions à leur
   // seconde ; et ma télé du jour apprend — les vidéos vues, mes réactions gardées pour mes amis
   // (🎞️ 21 novembre 2026 : chez un proche aussi — sur la vidéo que je regarde, l'hôte compris s'il l'a vue)
-  const idVideo = prive ? regarde?.video.id : undefined;
+  // (🛋️ « salon toujours rempli », 27/11 : dans un salon ouvert, ma vidéo à moi — ceux qui l'ont vue avant moi s'assoient)
+  const [maVideo, setMaVideo] = useState<string | undefined>(undefined);
+  const idVideo = prive ? regarde?.video.id : aMonRythme ? maVideo : undefined;
   const [fantomes, setFantomes] = useState<ProcheDevantVideo[]>([]);
   // 🎙️ (lot 2 de « Laisser un mot avec ma figurine », `decouvrir.md` section 38) LA VIDÉO D'AVANT : la télé continue pour
   // tout le monde ; une carte « La suite de la vidéo » reste là, un toucher l'ouvre (ses mots, laisser le mien)
@@ -560,11 +579,20 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     // (ma télé du jour n'apprend que chez moi : chez un proche, la vidéo n'est pas forcément à ma télé)
     vuJusqua.current = seance?.hote && idVideo && regarde ? { id: idVideo, duree: regarde.video.duree, t: 0 } : null;
     void Promise.resolve()
-      .then(() => (idVideo ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}&seance=${encodeURIComponent(salon.id)}`, { cache: "no-store" }).then((r) => r.json()) : { proches: [] }))
-      .then((j: { proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean }) => {
+      .then(() =>
+        !idVideo
+          ? { proches: [] }
+          : prive
+            ? fetch(`/api/direct/tele-du-jour?reactions=${encodeURIComponent(idVideo)}&seance=${encodeURIComponent(salon.id)}`, { cache: "no-store" }).then((r) => r.json())
+            : // (🛋️ un salon ouvert : ceux qui l'ont vue avant moi, et leurs vraies réactions — rien d'inventé)
+              fetch(`${ROUTE}?avant=${encodeURIComponent(idVideo)}&salon=${encodeURIComponent(salon.id)}`, { cache: "no-store" })
+                .then((r) => r.json())
+                .then((j: { avant?: ProcheDevantVideo[] }) => ({ proches: [], avant: j.avant ?? [] })),
+      )
+      .then((j: { proches?: ProcheDevantVideo[]; miennes?: ReactionVideo[]; vue?: boolean; avant?: ProcheDevantVideo[] }) => {
         if (fini) return;
         setDevant(j.proches ?? []);
-        setFantomes((j.proches ?? []).filter((p) => p.figurine));
+        setFantomes((j.avant ?? j.proches ?? []).filter((p) => p.figurine));
         setMiennes(j.miennes ?? []);
         setDejaVue(Boolean(j.vue));
         loin.current = 0;
@@ -582,9 +610,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     let avant = -1;
     let n = 0;
     const id = window.setInterval(() => {
-      const s = teleRef.current;
-      if (!s || s.video.id !== idVideo) return;
-      const t = positionSeance(s, Date.now() + (decalage.current ?? 0));
+      let t: number;
+      if (prive) {
+        const s = teleRef.current;
+        if (!s || s.video.id !== idVideo) return;
+        t = positionSeance(s, Date.now() + (decalage.current ?? 0));
+      } else {
+        // (🛋️ un salon ouvert : où en est MA vidéo)
+        const x = maTeleEnCours?.() ?? null;
+        if (!x || o.tele.videos[x.i]?.id !== idVideo) return;
+        t = x.t;
+      }
       // (📷 le lot V2 : leurs vraies têtes, à la seconde — une figurine vivante fait l'expression au lieu d'un émoji)
       const vivantes = fantomes.filter((f) => f.vivante);
       if (vivantes.length) {
@@ -600,12 +636,14 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
               const qui = gm ? cleDuSouvenir.current(f.cle) : null;
               if (gm && qui && lancerMoment.current({ id: `${f.cle}-${r.t}-${r.le}`, cle: qui, m: gm, texte: r.texte ?? null, le: Date.now() })) continue;
               const k = ++n;
-              setPopsF((l) => [...l, { id: k, cle: f.cle, e: sorteVideo(r.sorte)?.e ?? "🙂", ...(r.texte ? { texte: r.texte } : {}) }]);
+              setPopsF((l) => [...l, { id: k, cle: f.cle, e: sorteVideo(r.sorte)?.e ?? REACTIONS_SALON.find((x) => x.cle === r.sorte)?.e ?? "🙂", ...(r.texte ? { texte: r.texte } : {}) }]);
               window.setTimeout(() => setPopsF((l) => l.filter((x) => x.id !== k)), r.texte ? 3200 : 1700);
             }
       avant = t;
     }, 400);
     return () => window.clearInterval(id);
+    // (le salon ne change pas de sorte, ni de sélection, une fois entré)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idVideo, fantomes]);
   const teleRef = useRef(regarde);
   useEffect(() => {
@@ -660,11 +698,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   useLayoutEffect(() => {
     const el = boite.current;
     if (!el) return;
-    const mesurer = () => setL(el.clientWidth);
+    const mesurer = () => {
+      setL(el.clientWidth);
+      setOrdinateur(window.innerWidth >= 1000);
+      setHEcran(window.innerHeight);
+    };
     mesurer();
     const ro = new ResizeObserver(mesurer);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener("resize", mesurer);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", mesurer);
+    };
   }, []);
 
   const dire = useCallback((t: string, ms = 3600) => {
@@ -753,7 +799,19 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
     if (etatRef.current.caches.includes(m.de)) return;
     if (m.sorte === "texte" && m.texte) ecritsAvant.current.set(m.de, { t: m.texte, le: Date.now() });
     // (🎆 une réaction : son grand moment, si la scène est libre — sinon, comme avant, elle saute au-dessus de sa tête)
-    const gm = m.sorte === "reaction" ? momentDeReaction(m.cle) : null;
+    let gm = m.sorte === "reaction" ? momentDeReaction(m.cle) : null;
+    // 📺 (27 novembre 2026 : chacun sa vidéo) la réaction d'un autre, à la seconde où il en était : je la vois quand j'en
+    // suis là (en grand) ; déjà passée, ou une autre vidéo que la mienne : sur place, en petit
+    if (aMonRythme && m.sorte === "reaction" && m.ou && m.de !== moiRef.current) {
+      const ici = maTeleEnCours?.() ?? null;
+      const v = ici ? o.tele.videos[ici.i] : undefined;
+      const dans = ici && v && v.id === m.ou.video ? m.ou.t - ici.t : null;
+      if (dans !== null && dans > 0.8 && dans < 1800) {
+        window.setTimeout(() => jouerRef.current(m), Math.min(dans, 30) * 1000);
+        return;
+      }
+      if (dans === null || dans < -3) gm = null;
+    }
     if (gm) {
       const avant = ecritsAvant.current.get(m.de);
       const ecrit = avant && Date.now() - avant.le < GRAND_MOMENT.texteAvant ? avant.t : null;
@@ -778,7 +836,10 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           : { id: m.id, q: m.de, sorte: "pop", texte: e ?? "😂", fin };
     setAnims((l) => [...l.filter((x) => !(x.sorte === "bulle" && a.sorte === "bulle" && x.q === a.q)), a].slice(-24));
     window.setTimeout(() => setAnims((l) => l.filter((x) => x.id !== a.id)), fin - Date.now() + 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const jouerRef = useRef(jouer);
+  jouerRef.current = jouer;
   const recevoir = useCallback(
     (l: MessageSalon[], animer: boolean) => {
       const neufs = l.filter((m) => !vus.current.has(m.id));
@@ -898,7 +959,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       return !t || t.pause !== undefined;
     }
     if (musique && platine?.enCours) return false;
-    const pos = positionTele(o.tele.videos, ms);
+    const pos = ouEnEst(ms);
     if (!pos) return true;
     const duree = o.tele.videos[pos.i]?.duree ?? 0;
     return pos.t < ENTRE_DEUX_APRES_S || duree - pos.t < ENTRE_DEUX_AVANT_S;
@@ -1171,7 +1232,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   /** La vidéo qui passe à ma télé (le jeu porte sur elle). */
   const videoQuiPasse = (): string | null => {
     if (prive) return (aPart ?? tele)?.video.id ?? null;
-    const pos = positionTele(o.tele.videos, Date.now() + (decalage.current ?? 0));
+    const pos = ouEnEst(Date.now() + (decalage.current ?? 0));
     return pos ? (o.tele.videos[pos.i]?.id ?? null) : null;
   };
   // (l'heure du serveur, deux fois par seconde tant qu'un jeu est là : vote, résultat, puis la carte s'en va)
@@ -1194,7 +1255,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       return s ? { video: { id: s.video.id, titre: s.video.titre }, t: positionSeance(s, ms) } : null;
     }
     if (musique && platine?.enCours) return { video: { id: platine.enCours.video.id, titre: platine.enCours.video.titre }, t: Math.max(0, (ms - platine.enCours.depart) / 1000) };
-    const pos = positionTele(o.tele.videos, ms);
+    const pos = ouEnEst(ms);
     const v = pos ? o.tele.videos[pos.i] : undefined;
     return v && pos ? { video: { id: v.id, titre: v.titre }, t: pos.t } : null;
   };
@@ -1225,7 +1286,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
       const s = aPart ?? tele;
       return s && s.video.duree ? Math.max(0, Math.floor(s.video.duree - positionSeance(s, ms))) : 0;
     }
-    const pos = positionTele(o.tele.videos, ms);
+    const pos = ouEnEst(ms);
     return pos ? Math.max(0, Math.floor((o.tele.videos[pos.i]?.duree ?? 0) - pos.t)) : 0;
   };
   async function lancerLeDefi(a: string, texte: string, quand: number | "fin"): Promise<string | null> {
@@ -1283,12 +1344,15 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   }
 
   // ─── la mise en page : la télé en 16/9, la pièce dessous ───
-  // (sur un ordinateur, la télé ne dépasse pas 680 points : la pièce et ses figurines tiennent dans l'écran)
-  const lTele = Math.min(L, 680);
+  // (sur un téléphone ou une tablette, la télé ne dépasse pas 680 points : la pièce et ses figurines tiennent dans l'écran)
+  // (🖥️ maquette « Salon sur ordinateur », validée le 27/11 : sur un ordinateur, la vidéo au centre, grande — jusqu'à
+  // 800 points, autant que la hauteur de l'écran le permet avec la salle dessous et la barre des réactions)
+  // (la salle dessous : 300 points ; le haut et les infos : 110 ; la barre : 100)
+  const lTele = Math.min(L, ordinateur ? Math.max(640, Math.min(800, Math.round(((hEcran - 510) * 16) / 9))) : 680);
   // (📱 22 novembre 2026, le propriétaire : « je ne vois pas les boutons du bas, il faut que je scrolle — beaucoup d'espace
   // perdu au-dessus des figurines » : sur un téléphone, la pièce de la séance prend ce qui reste de l'écran, sous la télé,
   // au-dessus des boutons — entre 130 points et sa hauteur d'avant)
-  const H0 = Math.round(Math.min(Math.max(L * 0.82, 260), 400));
+  const H0 = ordinateur ? 300 : Math.round(Math.min(Math.max(L * 0.82, 260), 400));
   const H = prive && hauteurLibre !== null ? Math.round(Math.min(H0, Math.max(130, hauteurLibre))) : H0;
   // 🎭 (21 novembre 2026, le propriétaire : « comme la photo 2 ») TOUJOURS LE GRADIN — plus jamais la pièce : le décor
   // validé de sa passion (l'image carrée posée sur son sol, assez petite pour que toutes les têtes se voient ; sur un
@@ -1355,9 +1419,11 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
   const nomDe = (x: string) => x.trim().toLowerCase();
   const enVrai = new Set(ici.filter((p) => p.q !== o.moi).map((p) => nomDe(p.prenom)));
   const souvenirDe = new Map(aPart ? fantomes.filter((f) => enVrai.has(nomDe(f.prenom))).map((f) => [nomDe(f.prenom), f] as const) : []);
+  const ilsSontLa = new Set(ici.map((p) => p.q));
   const assisF = fantomes
-    .filter((f) => !enVrai.has(nomDe(f.prenom)))
-    .slice(0, Math.max(0, toutesLibres.length - 1))
+    .filter((f) => !enVrai.has(nomDe(f.prenom)) && !ilsSontLa.has(f.cle))
+    // (🛋️ un salon ouvert : cinq au plus, et toujours un fauteuil libre pour inviter)
+    .slice(0, Math.max(0, Math.min(prive ? Infinity : SPECTATEURS_AVANT.places, toutesLibres.length - 1)))
     .map((f, i) => ({ f, g: toutesLibres[i].g }));
   const libres = toutesLibres.slice(assisF.length);
   // (🎆 un proche en souvenir : sa vedette — assis en souvenir, ou sur sa propre figurine s'il est là)
@@ -1378,7 +1444,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
         </a>
         <div className="so-titre">
           <b data-nom>{salon.nom}</b>
-          <small data-places>{P.places(ici.length, nPlaces)}</small>
+          <small data-places>{!prive && assisF.length ? P.icEtAvant(ici.length, assisF.length) : P.places(ici.length, nPlaces)}</small>
         </div>
         {seance?.hote && (
           <button type="button" className="so-rond so-inviter" aria-label={P.inviterTitre} data-inviter onClick={() => setInviter(true)}>
@@ -1438,6 +1504,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
             morceau={musique && platine?.enCours ? { id: platine.enCours.video.id, titre: platine.enCours.video.titre, duree: platine.enCours.video.duree, depart: platine.enCours.depart, n: platine.n } : null}
             onCourant={musique ? setRadioTitre : undefined}
             onFinie={musique ? undefined : finieAuSalon}
+            {...(aMonRythme ? { aMonRythme: `so-ma-tele:${salon.theme ?? salon.id}`, onVideo: setMaVideo } : {})}
           />
         )}
         {musique && (
@@ -1663,7 +1730,7 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
                     f.figurine && <img src={f.figurine.src} srcSet={f.figurine.srcset} sizes={`${Math.round(h)}px`} alt="" draggable={false} />
                   )}
                   <small>
-                    {f.prenom} · {P.aRegarde}
+                    {f.prenom} · {prive ? P.aRegarde : <span className="so-quand">{P.ilYaVu(Date.now() - f.vu)}</span>}
                   </small>
                   {pops.map((p) =>
                     p.texte ? (
@@ -1757,20 +1824,17 @@ function Salon({ o, onDehors, onExclu }: { o: OuvertureSalonOuvert; onDehors: ()
           ) : (
             indice && ici.length > 1 && <p className="so-indice">{P.indice}</p>
           )}
-          {!prive && ici.length === 1 && (
-            <p className="so-indice" data-seul-salon>
-              {P.seulSalon}
-            </p>
-          )}
+          {/* (27/11, le propriétaire : « tu ouvres le salon… » ne sert à rien et prend de la place — retirée) */}
         </div>
       </div>
 
       <section className="so-bas" ref={bas}>
         {jeu && heureJeu > 0 && etapeDuJeu(jeu, heureJeu) !== "fini" && <CarteDuJeu jeu={jeu} moi={o.moi} ms={heureJeu} presents={ici} onVoter={(v) => void voter(v)} onPasMaintenant={() => void pasMaintenant()} onTemoigner={(v) => void temoigner(v)} />}
         {/* (22 novembre 2026, le propriétaire : « supprime cette phrase : Tu mènes la télé… » — l'hôte n'a plus de phrase) */}
-        {!seance?.hote && (
+        {/* (27/11, le propriétaire : « la sélection du jour… » ne sert à rien dans un salon de thème — retirée) */}
+        {!seance?.hote && (seance || musique) && (
           <p className="so-info" data-info>
-            {seance ? (aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : musique ? PM.info : P.tele}
+            {seance ? (aPart ? P.taVideo(seance.prenom) : gardee && !gardeeFinie ? P.ensemble(seance.prenom) : P.invite(seance.prenom)) : PM.info}
           </p>
         )}
         {aPart && tele?.video.id === aPart.video.id && (
@@ -2647,6 +2711,8 @@ function TeleDuSalon({
   morceau,
   onCourant,
   onFinie,
+  aMonRythme,
+  onVideo,
 }: {
   videos: VideoSalon[];
   decalage: React.RefObject<number>;
@@ -2654,6 +2720,10 @@ function TeleDuSalon({
   morceau?: MorceauTele | null;
   onCourant?: (titre: string) => void;
   onFinie?: (v: { id: string; titre: string }) => void;
+  /** 📺 (27 novembre 2026) ma télé à moi : la sélection depuis le début, à mon rythme — la clé où je la retrouve */
+  aMonRythme?: string;
+  /** (🛋️ à mon rythme) la vidéo qui passe à ma télé vient de changer */
+  onVideo?: (id: string) => void;
 }) {
   // (🔊 21 novembre 2026 : la télé du salon part toute seule à l'arrivée, en silence ; un toucher met le son)
   const [son, setSon] = useState(false);
@@ -2661,9 +2731,24 @@ function TeleDuSalon({
   const hote = useRef<HTMLDivElement>(null);
   const lecteur = useRef<Lecteur | null>(null);
   const morceauRef = useRef<MorceauTele | null>(morceau ?? null);
+  // 📺 (à mon rythme) où j'en suis : la vidéo, l'heure où elle a commencé pour moi, ma pause ; retrouvée en revenant
+  const ma = useRef<MaTele | null>(null);
+  if (aMonRythme && !ma.current) ma.current = maTeleRetrouvee(aMonRythme, videos);
+  const [enPause, setEnPause] = useState(false);
+  const [entracte, setEntracte] = useState<{ k: number; fin: number; arret?: boolean } | null>(null);
+  const [reste, setReste] = useState(0);
   // (🎵 ce qui passe : le morceau proposé tant qu'il n'est pas fini, sinon la radio — la sélection du jour, à sa seconde)
   const maintenant = useCallback((): Courant | null => {
     const ms = Date.now() + (decalage.current ?? 0);
+    const x = ma.current;
+    if (x) {
+      const v = videos[x.i];
+      if (!v) return null;
+      // (le lecteur sait mieux que l'horloge où il en est : un chargement, une coupure)
+      const l = lecteur.current?.getCurrentTime?.();
+      const t = typeof l === "number" && Number.isFinite(l) && l > 0 ? l : ((x.pause ?? Date.now()) - x.depart) / 1000;
+      return { id: v.id, t: Math.max(0, Math.min(t, v.duree || t)), titre: v.titre, duree: v.duree };
+    }
     const m = morceauRef.current;
     if (m) {
       const d = m.duree >= 30 ? m.duree : 210;
@@ -2684,9 +2769,37 @@ function TeleDuSalon({
       teleEnCours = null;
     };
   }, [maintenant]);
+  // 📺 (à mon rythme) le salon sait où j'en suis (mes réactions, à leur seconde) ; rien pendant l'entracte
+  const entracteRef = useRef(entracte);
+  entracteRef.current = entracte;
+  useEffect(() => {
+    if (!aMonRythme) return;
+    maTeleEnCours = () => {
+      const x = ma.current;
+      const c = maintenant();
+      return x && c && !entracteRef.current ? { i: x.i, t: c.t } : null;
+    };
+    // (je reviens plus tard dans la journée : je reprends où j'en étais)
+    const garder = () => {
+      const x = ma.current;
+      const c = maintenant();
+      const k = entracteRef.current ? entracteRef.current.k : x?.i;
+      const v = k === undefined ? undefined : videos[k];
+      if (x && c && v) garderMaTele(aMonRythme, { id: v.id, t: entracteRef.current ? 0 : c.t, i: k!, le: Date.now() });
+    };
+    const minuteur = window.setInterval(garder, 5000);
+    window.addEventListener("pagehide", garder);
+    return () => {
+      garder();
+      window.clearInterval(minuteur);
+      window.removeEventListener("pagehide", garder);
+      maTeleEnCours = null;
+    };
+  }, [aMonRythme, maintenant, videos]);
   // (🎵 un autre morceau, ou la radio qui reprend : la télé change, à la bonne seconde, sans se refaire)
   const cleMorceau = morceau ? `${morceau.n}-${morceau.id}` : "radio";
   useEffect(() => {
+    if (ma.current) return;
     morceauRef.current = morceau ?? null;
     const c = maintenant();
     setPos(c);
@@ -2696,6 +2809,9 @@ function TeleDuSalon({
   useEffect(() => {
     onCourant?.(pos?.titre ?? "");
   }, [pos?.titre, onCourant]);
+  useEffect(() => {
+    if (pos?.id) onVideo?.(pos.id);
+  }, [pos?.id, onVideo]);
   // (🎙️ lot 2 : une vidéo regardée un moment vient de finir — sa suite, en carte)
   const avantSuite = useRef<{ id: string; titre: string; depuis: number } | null>(null);
   useEffect(() => {
@@ -2705,13 +2821,70 @@ function TeleDuSalon({
     // (seulement quand la vidéo change)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pos?.id]);
+
+  // ─── 📺 à mon rythme : la fin, l'entracte, la suivante, la pause ───
+  const lancer = useCallback(
+    (k: number) => {
+      const v = videos[k];
+      if (!v) return;
+      ma.current = { i: k, depart: Date.now(), pause: null };
+      setEntracte(null);
+      setEnPause(false);
+      setPos({ id: v.id, t: 0, titre: v.titre, duree: v.duree });
+      lecteur.current?.loadVideoById?.({ videoId: v.id, startSeconds: 0 });
+    },
+    [videos],
+  );
+  const finie = useCallback(() => {
+    const x = ma.current;
+    if (!x || !videos.length) return;
+    try {
+      lecteur.current?.pauseVideo?.();
+    } catch {
+      /* (rien) */
+    }
+    setEntracte({ k: (x.i + 1) % videos.length, fin: Date.now() + ENTRACTE_MS });
+  }, [videos]);
+  // (le compte à rebours de l'entracte ; arrêté : il attend mon toucher)
+  useEffect(() => {
+    if (!entracte || entracte.arret) return;
+    const tic = () => {
+      const r = Math.max(0, Math.ceil((entracte.fin - Date.now()) / 1000));
+      setReste(r);
+      if (r <= 0) lancer(entracte.k);
+    };
+    tic();
+    const t = window.setInterval(tic, 250);
+    return () => window.clearInterval(t);
+  }, [entracte, lancer]);
+  const pause = () => {
+    const x = ma.current;
+    if (!x) return;
+    if (entracte) return setEntracte({ ...entracte, arret: true });
+    if (x.pause === null) {
+      x.pause = Date.now();
+      lecteur.current?.pauseVideo?.();
+      setEnPause(true);
+    } else {
+      x.depart += Date.now() - x.pause;
+      x.pause = null;
+      lecteur.current?.playVideo?.();
+      setEnPause(false);
+    }
+  };
+  const suivante = () => {
+    const x = ma.current;
+    if (!x || !videos.length) return;
+    lancer(entracte ? entracte.k : (x.i + 1) % videos.length);
+  };
+
   // (le lecteur tout simple : la suivante à la fin de celle-ci)
   useEffect(() => {
-    if (!simple || !pos) return;
+    if (!simple || !pos || enPause || entracte) return;
     const reste = Math.max(2, (pos.duree || 30) - pos.t);
-    const id = window.setTimeout(() => setPos(maintenant()), reste * 1000 + 800);
+    const id = window.setTimeout(() => (ma.current ? finie() : setPos(maintenant())), reste * 1000 + 800);
     return () => window.clearTimeout(id);
-  }, [simple, pos, maintenant]);
+  }, [simple, pos, maintenant, enPause, entracte, finie]);
   // (le lecteur de YouTube : créé à l'arrivée, en silence et sans ses commandes ; il change de vidéo sans se refaire)
   useEffect(() => {
     if (simple) return;
@@ -2728,15 +2901,16 @@ function TeleDuSalon({
           host: "https://www.youtube-nocookie.com",
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, mute: 1, start: Math.floor(p0.t), playsinline: 1, rel: 0, modestbranding: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, origin: window.location.origin },
+          playerVars: { autoplay: 1, mute: 1, start: Math.floor(p0.t), playsinline: 1, rel: 0, modestbranding: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, cc_load_policy: 0, origin: window.location.origin },
           events: {
             onReady: (e: { target?: Lecteur }) => {
               e.target?.mute?.();
               e.target?.playVideo?.();
             },
-            // (finie : la suivante, à sa seconde du moment — la radio, ou le morceau suivant de la file)
+            // (finie : à mon rythme, l'entracte ; sinon la suivante, à sa seconde du moment — la radio, ou la file)
             onStateChange: (e: { data?: number }) => {
               if (fini || e.data !== 0) return;
+              if (ma.current) return finie();
               const p = maintenant();
               if (p) {
                 setPos(p);
@@ -2771,18 +2945,83 @@ function TeleDuSalon({
     l?.playVideo?.();
     setSon(true);
   };
+  const prochaine = entracte ? videos[entracte.k] : undefined;
+  const enCours = aMonRythme && pos && !entracte ? videos.find((x) => x.id === pos.id) : undefined;
   return (
-    <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={pos?.id ?? ""} data-son={son ? "1" : "0"} data-morceau={morceau ? morceau.id : undefined}>
-      {!pos ? (
-        <p className="so-tele-vide">{P.pasDeTele}</p>
-      ) : simple ? (
-        <iframe key={`${pos.id}-${son ? "son" : "muet"}`} className="so-lecteur" data-simple title={pos.titre} src={lecteurYouTube(pos.id, { debut: pos.t, muet: !son, epure: true })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
-      ) : (
-        <div ref={hote} className="so-lecteur" />
+    <>
+      <div className="so-tele-et" style={{ width: largeur || "100%" }}>
+      <div className="so-tele" style={{ width: largeur || "100%", height: Math.round(((largeur || 0) * 9) / 16) }} data-tele={pos?.id ?? ""} data-son={son ? "1" : "0"} data-morceau={morceau ? morceau.id : undefined} data-pause={enPause ? "1" : undefined}>
+        {!pos ? (
+          <p className="so-tele-vide">{P.pasDeTele}</p>
+        ) : simple ? (
+          !enPause && !entracte && <iframe key={`${pos.id}-${son ? "son" : "muet"}`} className="so-lecteur" data-simple title={pos.titre} src={lecteurYouTube(pos.id, { debut: pos.t, muet: !son, epure: true })} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+        ) : (
+          <div ref={hote} className="so-lecteur" />
+        )}
+        {pos && !entracte && <Son actif={son} titre={pos.titre} onSon={mettreLeSon} />}
+        {enPause && !entracte && (
+          <p className="so-en-pause" data-en-pause>
+            {P.enPause}
+          </p>
+        )}
+        {/* (📺 entre deux vidéos : on voit que c'en est une autre) */}
+        {prochaine && entracte && (
+          <div className="so-entracte" data-entracte={prochaine.id}>
+            <small>{P.cestFini}</small>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={vignetteYouTube(prochaine.id)} alt="" referrerPolicy="no-referrer" />
+            <b>{P.aSuivre(prochaine.titre)}</b>
+            <small data-entracte-reste>{entracte.arret ? P.enAttente : P.dansN(reste)}</small>
+          </div>
+        )}
+      </div>
+      {aMonRythme && pos && (
+        <div className="so-commandes" data-commandes style={{ width: largeur || "100%" }}>
+          <button type="button" data-ma-pause={entracte ? (entracte.arret ? "attend" : "entracte") : enPause ? "reprendre" : "pause"} onClick={pause} disabled={Boolean(entracte?.arret)}>
+            {enPause && !entracte ? P.reprendre : P.pause}
+          </button>
+          <button type="button" className={entracte ? "fort" : undefined} data-ma-suivante onClick={suivante}>
+            {entracte ? P.lancerMaintenant : P.videoSuivante}
+          </button>
+        </div>
       )}
-      {pos && <Son actif={son} titre={pos.titre} onSon={mettreLeSon} />}
-    </div>
+      </div>
+      {/* (🎞️ comme YouTube : le titre, la chaîne, les vraies vues, l'ancienneté — sous la vidéo, jamais dessus) */}
+      {enCours && (
+        <div className="so-infos-tele" style={{ width: largeur || "100%" }}>
+          <InfosSousLaVideo v={enCours} />
+        </div>
+      )}
+    </>
   );
+}
+
+/** 📺 Ma télé à mon rythme : la vidéo (son rang dans la sélection), l'heure où elle a commencé pour moi, ma pause. */
+type MaTele = { i: number; depart: number; pause: number | null };
+const ENTRACTE_MS = 5000;
+/** Où j'en étais aujourd'hui dans ce salon (la même vidéo, pas trop près de sa fin) ; sinon, la sélection depuis le début. */
+function maTeleRetrouvee(cle: string, videos: VideoSalon[]): MaTele {
+  try {
+    if (typeof window === "undefined") throw new Error("serveur");
+    const x = JSON.parse(window.localStorage.getItem(cle) ?? "null") as { id?: string; t?: number; i?: number; le?: number } | null;
+    if (x && Number(x.le) > Date.now() - 6 * 3600_000) {
+      const i = videos.findIndex((v) => v.id === x.id);
+      if (i >= 0) {
+        const t = Math.max(0, Number(x.t) || 0);
+        return { i, depart: Date.now() - (t < (videos[i].duree || 0) - 8 ? t : 0) * 1000, pause: null };
+      }
+    }
+  } catch {
+    /* (rien de gardé) */
+  }
+  return { i: 0, depart: Date.now(), pause: null };
+}
+function garderMaTele(cle: string, x: { id: string; t: number; i: number; le: number }) {
+  try {
+    window.localStorage.setItem(cle, JSON.stringify(x));
+  } catch {
+    /* (tant pis : je reprendrai au début) */
+  }
 }
 
 /**
@@ -2999,12 +3238,13 @@ const ENTRE_DEUX_APRES_S = 2;
 const SUITE_APRES_MS = 20_000;
 
 const STYLES = `
+${STYLES_INFOS_VIDEO}
 .so-suite{position:fixed;left:16px;right:16px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:30;margin:0 auto;max-width:488px;display:flex;align-items:stretch;gap:6px;border-radius:18px;padding:6px;background:#2b1424;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .so-suite-ouvrir{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;border-radius:14px;padding:8px 12px;background:linear-gradient(135deg,#ff6fbd,#FF2E9A 55%,#ff5a7a);color:#2a0f1f;font:inherit;text-align:left;cursor:pointer}
 .so-suite-ouvrir b{font-size:15px;font-weight:900}
 .so-suite-ouvrir span{max-width:100%;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .so-suite-fermer{flex:none;width:44px;border:0;border-radius:14px;background:rgba(255,255,255,.1);color:#FFF4E6;font:inherit;font-size:16px;font-weight:900;cursor:pointer}
-.so{min-height:100dvh;max-width:820px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 0 calc(16px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;overflow-x:hidden;position:relative}
+.so{min-height:100dvh;max-width:820px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 0 calc(32px + env(safe-area-inset-bottom));background:radial-gradient(130% 55% at 50% 0%,#3a1430 0%,#160711 62%);color:#FFF4E6;font-family:var(--font-clikme),Poppins,system-ui,-apple-system,sans-serif;overflow-x:hidden;position:relative}
 .so-centre{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 20px;text-align:center}
 .so-tele-attente{width:100%;aspect-ratio:16/9}
 .so-grand{font-size:22px;font-weight:900;margin:0}
@@ -3082,6 +3322,16 @@ const STYLES = `
 .so-titre small{font-size:12.5px;opacity:.75}
 .so-scene{position:relative;width:100%}
 .so-tele{position:relative;margin:0 auto;background:#000;overflow:hidden}
+.so-commandes{display:flex;gap:8px;margin:8px auto 0;box-sizing:border-box;padding:0 12px}
+.so-commandes button{flex:1;min-height:40px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(255,255,255,.08);color:#FFF4E6;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
+.so-commandes button.fort{background:#FF2E9A;border-color:#FF2E9A;color:#fff}
+.so-commandes button:disabled{opacity:.45;cursor:default}
+.so-commandes button:focus-visible{outline:3px solid #F5A23A;outline-offset:2px}
+.so-en-pause{position:absolute;inset:0;z-index:3;margin:0;display:grid;place-items:center;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:15px;pointer-events:none}
+.so-entracte{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 16px;background:#0e070c;color:#FFF4E6;text-align:center}
+.so-entracte img{width:min(42%,200px);aspect-ratio:16/9;object-fit:cover;border-radius:10px}
+.so-entracte b{font-size:14px;line-height:1.3;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.so-entracte small{font-size:12.5px;color:#c9b3bf;font-weight:700}
 .so-lecteur,.so-lecteur iframe{width:100%;height:100%;border:0;display:block}
 .so-son{position:absolute;inset:0;z-index:2;display:flex;align-items:flex-end;justify-content:center;padding:0 0 12px;border:0;background:transparent;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .so-son span{padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.62);font-weight:800;font-size:13.5px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:so-son 2.4s ease-in-out infinite}
@@ -3103,6 +3353,7 @@ const STYLES = `
 .so-jour{position:relative;display:block;flex:none}
 .so-jour img{position:absolute;left:0;top:0;width:100%;height:100%}
 .so-jour img.so-jour-tete,.so-jour img.so-jour-parle{filter:none}
+.so-quand{color:#f6b54b}
 .so-fig small{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.6);white-space:nowrap;max-width:110%;overflow:hidden;text-overflow:ellipsis}
 .so-fig.moi small{background:#FF2E9A;color:#2a0f1f}
 .so-fig.fantome{cursor:default;pointer-events:none}
@@ -3141,12 +3392,13 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 @keyframes so-libre{0%,100%{opacity:.55}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.so-libre,.so-son span{animation:none;opacity:.8}}
 .so-souvenir{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px;background:rgba(255,154,60,.92);color:#2b1b12;font-weight:800}
-.so-indice[data-seul-salon]{white-space:normal;width:max-content;max-width:calc(100% - 40px);text-align:center;line-height:1.35;border-radius:14px}
 .so-indice{position:absolute;left:50%;top:10px;transform:translateX(-50%);margin:0;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.55);font-size:12.5px;white-space:nowrap;z-index:950}
 @keyframes so-entre{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes so-pop{0%{opacity:0;transform:translate(-50%,8px) scale(.5)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px) scale(1)}}
 @keyframes so-vol{0%{opacity:0;transform:translate(-50%,0) scale(.6)}15%{opacity:1}100%{opacity:1;transform:translate(calc(-50% + var(--dx)),var(--dy)) scale(1.1)}}
-.so-bas{padding:12px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
+.so-bas{padding:8px 14px 0;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto}
+/* (📱 27/11, le propriétaire : les émojis remontent, juste sous la salle, loin de la bande du bas) */
+.so:not(.so-seance) .so-bas>.so-reagir{order:-1}
 .so-info{margin:0;font-size:12.5px;opacity:.75;text-align:center}
 .so-reagir button.so-jeu-rond{background:rgba(255,159,67,.22);width:36px;height:36px;font-size:18px}
 .so-seance .so-reagir{gap:4px}
@@ -3262,11 +3514,26 @@ button.so-bulle.aimee{box-shadow:0 0 0 2px #FF2E9A,0 6px 16px -6px rgba(0,0,0,.6
 .so-conv p.moi b{color:#ff8fc8}
 .so-conv .vide{opacity:.55}
 .so-groupe{margin:12px 0 6px!important;font-size:12px!important;font-weight:900;text-transform:uppercase;letter-spacing:.04em;opacity:.6}
+.so-tele-et{position:relative;margin:0 auto}
+.so-infos-tele{margin:10px auto 0;box-sizing:border-box;padding:0 12px}
+/* 🖥️ (maquette « Salon sur ordinateur », validée le 27/11) plus de colonne à droite : la vidéo au centre, la salle dessous
+   comme des rangs de cinéma, et une seule barre flottante en bas — les réactions, les jeux, « Écris au salon » */
 @media (min-width:1000px){
-.so:not(.so-centre){max-width:1140px;display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"haut haut" "scene bas";column-gap:22px;padding-left:16px;padding-right:16px}
-.so-haut{grid-area:haut}
-.so-scene{grid-area:scene;border-radius:18px;overflow:hidden}
-.so-bas{grid-area:bas;align-self:start;position:sticky;top:16px;padding:6px 0 0;margin:0;max-width:none;min-width:0}
+.so:not(.so-centre){max-width:960px;padding-left:16px;padding-right:16px;padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+.so:not(.so-centre) .so-haut{padding-left:12px;padding-right:12px}
+.so:not(.so-centre) .so-scene{border-radius:18px;overflow:hidden}
+.so-tele{border-radius:16px;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 20px 60px rgba(255,46,154,.18)}
+.so-tele-et .so-commandes{position:absolute;right:14px;bottom:14px;width:auto!important;margin:0;padding:0;z-index:4}
+.so-tele-et .so-commandes button{background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.so-infos-tele{padding:0 2px}
+.so:not(.so-centre) .so-bas{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;margin:0;padding:8px;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;border-radius:30px;background:rgba(30,14,22,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 0 0 1px rgba(255,255,255,.1),0 14px 40px rgba(0,0,0,.5)}
+.so:not(.so-centre) .so-bas>*:not(.so-reagir):not(.so-jeux):not(.so-ecrire){order:-1;flex-basis:100%}
+.so:not(.so-centre) .so-bas>.so-info,.so:not(.so-centre) .so-bas>.so-regles,.so:not(.so-centre) .so-reagir>span,.so:not(.so-centre) .so-reagir>small{display:none}
+.so:not(.so-centre) .so-reagir{flex-wrap:nowrap}
+.so:not(.so-centre) .so-bas>.so-reagir{order:0}
+.so:not(.so-centre) .so-jeux{margin:0;padding:0 6px;border-left:1px solid rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.15)}
+.so:not(.so-centre) .so-jeux .so-bouton{white-space:nowrap}
+.so:not(.so-centre) .so-ecrire{width:300px}
 }
 @media (prefers-reduced-motion: reduce){.so-pop,.so-vol,.so-bulle{animation:none!important}}
 .so-platine{box-sizing:border-box;width:calc(100% - 24px);margin:6px auto 4px;padding:8px 10px;border-radius:16px;background:linear-gradient(135deg,rgba(242,196,107,.18),rgba(255,46,154,.12));box-shadow:inset 0 0 0 1.5px rgba(242,196,107,.45);display:flex;flex-direction:column;gap:6px}

@@ -69,6 +69,8 @@ window.YT = { Player: function (el, o) {
   var self = this;
   self.loadVideoById = function (x) { d.dataset.yt = x.videoId || x; };
   self.playVideo = function () { d.dataset.joue = "1"; };
+  self.pauseVideo = function () { d.dataset.joue = "0"; };
+  window.__ytSalon = o;
   self.mute = function () { d.dataset.muet = "1"; };
   self.unMute = function () { d.dataset.muet = ""; };
   self.setVolume = function () {};
@@ -179,6 +181,20 @@ ok(/Touche pour le son/.test(await texte(lea.locator("[data-son-bouton]"))), "«
 await lea.screenshot({ path: `${D}/salons-ouverts-2-entree.png` });
 await lea.locator("[data-son-bouton]").click();
 ok(await attendre(lea, async () => (await lea.locator(".faux-yt").getAttribute("data-muet")) === "" && (await lea.locator(".so-tele").getAttribute("data-son")) === "1" && !/Touche pour le son/.test(await texte(lea.locator(".so-tele")))), "un toucher : le son (l'étiquette s'en va)");
+
+// ═══ 📺 (27 novembre 2026) SA VIDÉO, À SON RYTHME : PAUSE, ENTRACTE, SUIVANTE ═══
+ok(Number(await lea.locator(".faux-yt").getAttribute("data-debut")) === 0, "sa vidéo commence au début, quand elle arrive (pas à la seconde des autres)");
+await lea.locator("[data-ma-pause]").click();
+ok(await attendre(lea, async () => (await lea.locator('.so-tele[data-pause="1"]').count()) === 1 && (await lea.locator(".faux-yt").getAttribute("data-joue")) === "0"), "⏸ Pause : sa vidéo s'arrête, pour elle seule");
+await lea.locator("[data-ma-pause]").click();
+ok(await attendre(lea, async () => (await lea.locator('.so-tele[data-pause="1"]').count()) === 0 && (await lea.locator(".faux-yt").getAttribute("data-joue")) === "1"), "▶ Reprendre");
+await lea.evaluate(() => window.__ytSalon.events.onStateChange({ data: 0 }));
+ok(await attendre(lea, async () => (await lea.locator("[data-entracte]").count()) === 1, 3000), "finie : l'entracte (on voit que c'en est une autre)");
+const entracte = await texte(lea.locator("[data-entracte]"));
+const prochaineId = await lea.locator("[data-entracte]").getAttribute("data-entracte");
+ok(/C’est fini/.test(entracte) && /À suivre : « /.test(entracte) && /dans \d s/.test(entracte), `« ${entracte} »`);
+await lea.locator("[data-ma-suivante]").click();
+ok(await attendre(lea, async () => (await lea.locator("[data-entracte]").count()) === 0 && (await lea.locator(".faux-yt").getAttribute("data-yt")) === prochaineId), "⏭ Lancer maintenant : la suivante part");
 
 // ═══ SAM ENTRE, IL ÉCRIT ═══
 const s = await route(SAM, { action: "entrer", theme: "foot" });
@@ -305,7 +321,12 @@ await ordi.waitForTimeout(600);
 const t2 = await ordi.locator(".so-tele").boundingBox();
 const piece = await ordi.locator(".so-piece").boundingBox();
 const champ2 = await ordi.locator(".so-ecrire input").boundingBox();
-ok(t2 && piece && champ2 && t2.width <= 681 && piece.y + piece.height <= 862 && champ2.x > piece.x + piece.width, `la télé (${Math.round(t2?.width ?? 0)} points) et la pièce tiennent dans l'écran ; écrire, à côté`);
+const barre = await ordi.locator(".so-bas").boundingBox();
+const emo = await ordi.locator(".so-reagir button[data-r]").first().boundingBox();
+// (🖥️ maquette « Salon sur ordinateur », 27/11 : plus de colonne à droite — la vidéo au centre, la salle dessous, une
+// seule barre en bas, centrée : les réactions, les jeux et « Écris au salon » sur la même ligne)
+ok(t2 && piece && t2.width >= 639 && t2.width <= 801 && Math.abs(t2.x + t2.width / 2 - 640) < 30 && piece.y >= t2.y + t2.height && piece.y + piece.height <= 862, `la télé (${Math.round(t2?.width ?? 0)} points) au centre, la salle dessous, dans l'écran`);
+ok(barre && champ2 && emo && Math.abs(barre.x + barre.width / 2 - 640) < 4 && barre.y + barre.height <= 860 && barre.height < 80 && Math.abs(champ2.y + champ2.height / 2 - (emo.y + emo.height / 2)) < 10, "une seule barre en bas, centrée : les réactions et « Écris au salon » sur la même ligne");
 await ordi.screenshot({ path: `${D}/salons-ouverts-6-ordinateur.png` });
 ok(!(await deborde(ordi)), "rien ne déborde (ordinateur)");
 await ordi.context().close();

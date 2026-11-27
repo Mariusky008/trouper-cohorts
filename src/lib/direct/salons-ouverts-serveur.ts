@@ -27,6 +27,7 @@ import { jourAvant, jourParis } from "@/lib/jour-paris";
 import { SEAU_FIGURINES, ajouterProche, ecrireJson, lireJson, prenomDe, prochesDe, telecharger } from "./ma-figurine-serveur";
 import { hDeCle, poserProfil, qui8, seParlent } from "./talkie-serveur";
 import { sesDixHuitAns } from "./majorite-serveur";
+import type { ProcheDevantVideo, ReactionVideo } from "./reactions-video";
 import { cheminMesSalons, figurineDeLaMaison, teteDeLaMaison, lireSaPiece, sceneDeLaMaison, vignetteDeLaPiece, visibiliteDeLaMaison } from "./ma-maison-serveur";
 import { gradinDuSalon } from "./salons-gradins-serveur";
 import { gradinDuTheme, type GradinScene, type IdGradin } from "./salons-gradins";
@@ -53,7 +54,7 @@ import type { JeuVu } from "./jeux-salon";
 import { PHRASES_PLATINE, estSalonMusique, reactionMusiqueDe, vueDeLaPlatine, type PlatineVue } from "./platine";
 import { aimer as aimerMorceau, morceauPropose, platineAJour, proposer as proposerMorceau, retirer as retirerMorceau } from "./platine-serveur";
 import { entrerDansLaSeance, noterDansLaSeance } from "./rattrapage-serveur";
-import { cleDuRdv } from "./rattrapage";
+import { cleDuRdv, ouValide } from "./rattrapage";
 import { BULLES_FRAICHES_MS, PHRASES_FIL, TRACES_MS, type BulleFil, type MomentFil, type SalonFil, type SeanceFil } from "./fil-decouvrir";
 import { momentDeReaction, motDuMoment } from "./grands-moments";
 import {
@@ -73,6 +74,7 @@ import {
   PRESENCE_MS,
   REDIRE_MS,
   SALONS,
+  SPECTATEURS_AVANT,
   SIGNALEMENTS_FENETRE_MS,
   SIGNALEMENTS_SEUIL,
   TEXTE_SALON_MAX,
@@ -615,7 +617,7 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   const presents = await presentsFrais(supabase, m, sid, maintenant);
   if (!presents.some((x) => x.nom === q)) return { error: "Tu n’es plus dans ce salon : rentre d’abord.", statut: 409 };
   const sorte = p.sorte === "reaction" || p.sorte === "geste" ? p.sorte : "texte";
-  let corps: Pick<MessageSalon, "sorte" | "texte" | "cle" | "a" | "n">;
+  let corps: Pick<MessageSalon, "sorte" | "texte" | "cle" | "a" | "n" | "ou">;
   if (sorte === "texte") {
     const texte = s(p.texte).replace(/\s+/g, " ");
     // (dans une séance, entre proches : comme leur conversation — seulement pas vide, 90 signes au plus)
@@ -628,7 +630,10 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
     if (!x) return { error: "Quelle réaction ?", statut: 400 };
     // (🎆 les grands moments, lot R2 : ×2 ×3 — la même émotion touchée encore, vite ; le téléphone regroupe les touchers)
     const n = Math.round(Number(p.n));
-    corps = { sorte, cle: x.cle, ...(n >= 2 && n <= 3 ? { n } : {}) };
+    // (📺 27 novembre 2026 : dans un salon ouvert, chacun sa vidéo — sa réaction porte la vidéo et sa seconde ; les autres
+    // la voient quand ils en sont là)
+    const o = r.seance ? null : ouValide(p.ou);
+    corps = { sorte, cle: x.cle, ...(n >= 2 && n <= 3 ? { n } : {}), ...(o ? { ou: o } : {}) };
   } else {
     const x = gesteDe(p.cle);
     const a = s(p.a);
@@ -650,7 +655,82 @@ export async function ecrireAuSalon(supabase: Supabase, moi: Habitant, p: Record
   // (⏪ le rattrapage, lot T1 : dans une séance — d'un groupe, d'un essai —, la réaction est notée à sa seconde)
   const ouJeSuis = r.seance ? `chez:${r.seance.qHote}` : gid ? sid : `theme:${salonDe(sid)?.theme ?? ""}`;
   await noterDansLaSeance(supabase, { q, h: moi.id, prenom: s(f.prenom) }, ouJeSuis, corps, p.ou, maintenant).catch(() => undefined);
+  // (🛋️ « salon toujours rempli » : dans un salon ouvert, ma réaction à sa seconde — ceux qui viendront après moi sur
+  // cette vidéo me verront réagir)
+  if (!r.seance && !gid && corps.sorte === "reaction" && corps.ou && corps.cle) await noterVuAuSalon(supabase, m, corps.ou, { q, h: moi.id, prenom: s(f.prenom) }, corps.cle, corps.n, maintenant).catch(() => undefined);
   return { message: messagePublic(message) };
+}
+
+// ─── 🛋️ (maquette « Salon toujours rempli », validée le 27/11) CEUX QUI L'ONT VUE AVANT MOI ───
+// `decouvrir/salons-vus/<maison>/<vidéo>/<q>.json` = { h, prenom, vu, reactions } : leurs vraies réactions dans un salon
+// ouvert, à leur seconde ; jamais montré ailleurs que dans les salons de la même maison (les 15-17 ans entre eux).
+const cheminVus = (m: Lieu, video: string, q: string) => `decouvrir/salons-vus/${m}/${video}/${q}.json`;
+const cheminReapparaitre = (h: string) => `${h}/salons-reapparaitre.json`;
+type FicheVue = { h?: string; prenom?: string; vu?: number; reactions?: { t?: number; sorte?: string; le?: number; n?: number }[] };
+
+/** « Ma figurine peut réapparaître dans les salons » (allumé d'office). */
+export async function reapparaitDansLesSalons(supabase: Supabase, h: string): Promise<boolean> {
+  const x = await lireJson<{ non?: boolean }>(supabase, cheminReapparaitre(h)).catch(() => ({}) as { non?: boolean });
+  return x.non !== true;
+}
+export async function reglerReapparaitre(supabase: Supabase, moi: Habitant, oui: unknown): Promise<{ oui: boolean }> {
+  const v = oui !== false;
+  await ecrireJson(supabase, cheminReapparaitre(moi.id), { non: !v });
+  return { oui: v };
+}
+
+async function noterVuAuSalon(supabase: Supabase, m: Lieu, ou: { video: string; t: number }, moi: { q: string; h: string; prenom: string }, cle: string, n: number | undefined, maintenant: number): Promise<void> {
+  if (!(await reapparaitDansLesSalons(supabase, moi.h))) return;
+  const chemin = cheminVus(m, ou.video, moi.q);
+  const f = await lireJson<FicheVue>(supabase, chemin).catch(() => ({}) as FicheVue);
+  const avant = Array.isArray(f.reactions) ? f.reactions : [];
+  // (une autre fois, plus tard : la nouvelle séance remplace l'ancienne — on rejoue une seule façon de l'avoir vue)
+  const garder = Number(f.vu) > maintenant - 6 * 3600_000 ? avant : [];
+  const reactions = [...garder, { t: ou.t, sorte: cle, le: maintenant, ...(n ? { n } : {}) }].slice(-SPECTATEURS_AVANT.reactions);
+  await ecrireJson(supabase, chemin, { h: moi.h, prenom: moi.prenom, vu: maintenant, reactions });
+}
+
+/**
+ * Ceux qui ont vu cette vidéo avant moi dans un salon ouvert (cinq au plus) : mes proches d'abord, puis ceux qui ont le
+ * plus réagi, puis les plus récents — les sept derniers jours, au moins une réaction, pas moi, pas ceux que je ne veux
+ * plus voir, pas ceux qui sont dans le salon en ce moment ; leur figurine, leurs réactions à leur seconde.
+ */
+export async function spectateursAvant(supabase: Supabase, moi: Habitant, salon: unknown, video: unknown, maintenant = Date.now()): Promise<Resultat<{ avant?: ProcheDevantVideo[] }>> {
+  const r = await sonSalon(supabase, moi, salon);
+  if (r.error || !r.m || !r.id) return { error: r.error, statut: r.statut };
+  if (r.seance || groupeDuSalon(r.id)) return { avant: [] };
+  const id = s(video);
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return { error: "Quelle vidéo ?", statut: 400 };
+  const q = qui8(moi.id);
+  const [noms, caches, proches, presents] = await Promise.all([
+    lister(supabase, `decouvrir/salons-vus/${r.m}/${id}`, { limite: SPECTATEURS_AVANT.lus, recents: true }),
+    mesCaches(supabase, moi.id),
+    prochesDe(supabase, moi.id).catch(() => new Set<string>()),
+    presentsFrais(supabase, r.m, r.id, maintenant),
+  ]);
+  const exclus = new Set([q, ...caches, ...presents.map((p) => p.nom)]);
+  const fiches = await Promise.all(
+    noms
+      .map((e) => e.nom.replace(/\.json$/, ""))
+      .filter((x) => !exclus.has(x))
+      .map(async (x) => ({ q: x, f: await lireJson<FicheVue>(supabase, `decouvrir/salons-vus/${r.m}/${id}/${x}.json`).catch(() => ({}) as FicheVue) })),
+  );
+  const ok = fiches.filter(({ f }) => s(f.h) && Number(f.vu) > maintenant - SPECTATEURS_AVANT.jours * 86_400_000 && Array.isArray(f.reactions) && f.reactions.length > 0);
+  ok.sort((a, b) => Number(proches.has(s(b.f.h))) - Number(proches.has(s(a.f.h))) || (b.f.reactions?.length ?? 0) - (a.f.reactions?.length ?? 0) || Number(b.f.vu) - Number(a.f.vu));
+  const avant: ProcheDevantVideo[] = [];
+  for (const { q: x, f } of ok) {
+    if (avant.length >= SPECTATEURS_AVANT.places) break;
+    const h = s(f.h);
+    if (!(await reapparaitDansLesSalons(supabase, h))) continue;
+    const figurine = await figurineDeLaMaison(supabase, h).catch(() => null);
+    if (!figurine) continue;
+    const reactions = (f.reactions ?? [])
+      .map((y) => ({ t: Number(y.t), sorte: s(y.sorte) as ReactionVideo["sorte"], source: "rangee" as const, le: Number(y.le) || 0 }))
+      .filter((y) => Number.isFinite(y.t) && y.t >= 0 && y.sorte)
+      .sort((a, b) => a.t - b.t);
+    avant.push({ cle: x, prenom: s(f.prenom) || "Quelqu’un", figurine, vu: Number(f.vu) || 0, reactions });
+  }
+  return { avant };
 }
 
 /** (👥 lot A6) La vidéo est bien à la télé du salon du groupe : le mot va dans le cercle du groupe. */

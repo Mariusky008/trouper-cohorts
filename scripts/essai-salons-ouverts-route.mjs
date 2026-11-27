@@ -206,5 +206,20 @@ for (let i = 0; i < 20 && reste; i++) {
 }
 ok(!reste, "un message de plus de 48 h : effacé");
 
+// ═══ 🛋️ (27 novembre 2026) LE SALON TOUJOURS REMPLI : CEUX QUI L'ONT VUE AVANT ═══
+const EVA = AUTRES[4];
+const VID = "abcDEF12345";
+const sEva = (await entrer(EVA)).ouverture?.salon?.id;
+const rv = await poster(EVA, { action: "ecrire", salon: sEva, sorte: "reaction", cle: "fache", ou: { video: VID, t: 42.3 } });
+ok(rv.statut === 200 && rv.message?.ou?.video === VID && rv.message.ou.t === 42.3, "📺 chacun sa vidéo : sa réaction porte la vidéo et sa seconde");
+await poster(EVA, { action: "sortir", salon: sEva });
+const sSam = (await entrer(SAM)).ouverture?.salon?.id;
+const av = await appel(SAM, `${ROUTE}?avant=${VID}&salon=${sSam}`);
+ok(av.avant?.length === 1 && av.avant[0].prenom === "Éva" && av.avant[0].reactions?.[0]?.t === 42.3 && av.avant[0].reactions[0].sorte === "fache" && /\/api\/direct\/salon\/fichier\//.test(av.avant[0].figurine?.src ?? ""), `🛋️ Sam, sur la même vidéo : Éva l'a vue avant lui — sa figurine, sa réaction à sa seconde (${JSON.stringify(av.avant?.map((x) => x.prenom))})`);
+ok(!JSON.stringify(av).includes(EVA.id), "… jamais son compte");
+ok(((await appel(SAM, `${ROUTE}?avant=zzzZZZ99999&salon=${sSam}`)).avant ?? [1]).length === 0, "… une vidéo que personne n'a vue : personne (rien d'inventé)");
+ok((await appel(EVA, `${ROUTE}?reapparaitre=1`)).oui === true, "« Ma figurine peut réapparaître dans les salons » : allumé d'office");
+ok((await poster(EVA, { action: "reapparaitre", oui: false })).oui === false && ((await appel(SAM, `${ROUTE}?avant=${VID}&salon=${sSam}`)).avant ?? [1]).length === 0, "… éteint : plus personne ne la revoit");
+
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nLes salons ouverts tiennent ✓");
 process.exit(echecs ? 1 : 0);
