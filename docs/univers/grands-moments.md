@@ -67,6 +67,6 @@ Une figurine sans expressions prêtes : sa tête du jour (colorée), sinon son i
 - **R3 — l'image du moment** (story 1080 × 1920, faite par le serveur comme « Ma figurine du jour ») et « 📸 Envoyer ce
   moment » (8 s après son grand moment, et dans « 💬 Ce qui s'est dit ») ; feuille de partage du téléphone, sinon
   enregistrer l'image et copier le lien.
-- **R4 — la page du moment** (`clikme.fr/m/…`) : l'aperçu dans WhatsApp, la vidéo trois secondes avant, la figurine qui
+- **R4 — la page du moment** (`clikme.fr/moment/…`) : l'aperçu dans WhatsApp, la vidéo trois secondes avant, la figurine qui
   rejoue, « Réagis avec ta figurine ».
 - **R5 — la vidéo de 4 secondes** pour TikTok et les Reels.
