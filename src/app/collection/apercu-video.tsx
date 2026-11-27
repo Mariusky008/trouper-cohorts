@@ -25,7 +25,7 @@
  * Le lecteur ne prend jamais le doigt : on glisse par-dessus comme sur la vignette (le fil, les rangées de côté).
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { chargerYouTube } from "@/app/univers/tele-duo";
+import { chargerYouTube, signalerVideoRefusee } from "@/app/univers/tele-duo";
 
 export const PHRASES_APERCU = {
   pourLeSon: "Touche pour le son",
@@ -372,7 +372,8 @@ function allumerDansScene(el: HTMLElement, slot: Element, id: string, r: Rappels
                   /* (rien) */
                 }
             },
-            onError: () => {
+            onError: (e: { data?: number }) => {
+              signalerVideoRefusee(s.id, e?.data);
               if (!s.slot || !s.rappels) return;
               s.hote.classList.remove("joue");
               s.rappels.joue(false);
@@ -483,7 +484,8 @@ export function ApercuVideo({ id, className }: { id: string; className?: string 
               }
             },
             // (elle refuse d'être lue hors de YouTube, ou elle est partie : la vignette reste, simplement)
-            onError: () => {
+            onError: (e: { data?: number }) => {
+              signalerVideoRefusee(id, e?.data);
               if (fini) return;
               setEtat("rien");
               parent?.removeAttribute("data-apercu-joue");

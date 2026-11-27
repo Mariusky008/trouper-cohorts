@@ -41,6 +41,17 @@ type FenetreYT = Window & { YT?: EspaceYT; onYouTubeIframeAPIReady?: () => void 
 
 let chargement: Promise<EspaceYT> | null = null;
 /** Le lecteur de YouTube, chargé une fois (au premier allumage) — 📺 ma télé du jour s'en sert aussi (`tele-du-jour.tsx`). */
+/**
+ * 🚫 (27 novembre 2026) YouTube refuse de lire cette vidéo ici — 101, 150 : ses ayants droit l'interdisent hors de
+ * YouTube ; 100 : partie. On le dit au serveur : elle quitte les télés du jour (une fois par page et par vidéo).
+ */
+const signalees = new Set<string>();
+export function signalerVideoRefusee(id: string, code: unknown) {
+  if (![100, 101, 150].includes(Number(code)) || !/^[\w-]{11}$/.test(id) || signalees.has(id)) return;
+  signalees.add(id);
+  void fetch("/api/direct/video-refusee", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }), keepalive: true }).catch(() => undefined);
+}
+
 export function chargerYouTube(): Promise<EspaceYT> {
   const w = window as FenetreYT;
   if (w.YT?.Player) return Promise.resolve(w.YT);
@@ -266,7 +277,8 @@ export function TeleDuo({
               }
             },
             // (101, 150 : elle refuse d'être lue hors de YouTube ; 100 : partie ; 2, 5 : illisible ici)
-            onError: () => {
+            onError: (e: { data?: number }) => {
+              signalerVideoRefusee(video.id, e?.data);
               if (fini) return;
               const r = [...refusees, video.id];
               const suivant = secoursApres(secours, r);
