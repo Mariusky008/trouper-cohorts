@@ -57,7 +57,7 @@
 import { lancerJeu, mesPointsDeDefis, pasMaintenantAuDefi, temoignerAuDefi, voterAuJeu } from "@/lib/direct/jeux-salon-serveur";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { habitantCourant } from "@/lib/direct/habitant";
+import { habitantOuPanne } from "@/lib/direct/habitant";
 import { direSesDixHuitAns } from "@/lib/direct/majorite-serveur";
 import { salonsOuverts } from "@/lib/direct/interrupteurs-serveur";
 import {
@@ -94,6 +94,9 @@ export const dynamic = "force-dynamic";
 
 const sansCache = { "cache-control": "private, no-store" };
 const SANS_COMPTE = { error: "Crée d’abord ta figurine sur ce téléphone." };
+// (27 novembre 2026, le propriétaire : « Pour entrer, il te faut ta figurine » alors qu'il en a une) la base qui n'a pas
+// répondu n'est pas une figurine absente : 503, et l'écran propose de réessayer
+const PANNE = { error: "Le salon ne répond pas pour l’instant. Réessaie dans un instant.", panne: true };
 const FERMES = { error: "Les salons ouverts sont fermés pour l’instant." };
 // (les séances entre proches ne passent pas par l'interrupteur des salons ouverts)
 const SEANCE = new Set(["entrer-chez", "entrer-groupe", "tele", "inviter", "inviter-video", "place", "pas-maintenant", "rejoindre", "laisser-demande"]);
@@ -105,7 +108,8 @@ export async function GET(request: Request) {
   const ouverts = salonsOuverts();
   if (!ouverts && !u.get("accueil") && !enSeance(u.get("salon") ?? u.get("conversation"))) return NextResponse.json(FERMES, { status: 404, headers: sansCache });
   const supabase = createAdminClient();
-  const moi = await habitantCourant(supabase);
+  const { moi, panne } = await habitantOuPanne(supabase);
+  if (panne) return NextResponse.json(PANNE, { status: 503, headers: sansCache });
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   // (salons fermés : l'accueil ne montre plus que les invitations devant la télé d'un proche)
   if (u.get("accueil")) return NextResponse.json({ ok: true, ...(ouverts ? await accueilDesSalons(supabase, moi) : { cartes: [], invitations: await mesInvitations(supabase, moi).catch(() => []) }) }, { headers: sansCache });
@@ -131,7 +135,8 @@ export async function POST(request: Request) {
   const p = ((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   if (!salonsOuverts() && !SEANCE.has(String(p.action)) && !enSeance(p.salon)) return NextResponse.json(FERMES, { status: 404, headers: sansCache });
   const supabase = createAdminClient();
-  const moi = await habitantCourant(supabase);
+  const { moi, panne } = await habitantOuPanne(supabase);
+  if (panne) return NextResponse.json(PANNE, { status: 503, headers: sansCache });
   if (!moi) return NextResponse.json(SANS_COMPTE, { status: 401, headers: sansCache });
   const repondre = (r: { error?: string; statut?: number }, ok: Record<string, unknown> = {}, aussi: Record<string, unknown> = {}) =>
     NextResponse.json(r.error ? { error: r.error, ...aussi } : { ok: true, ...ok }, { status: r.error ? (r.statut ?? 400) : 200, headers: sansCache });

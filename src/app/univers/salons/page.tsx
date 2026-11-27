@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { apercuDeLaPlace, entrerAuGroupe, entrerAuSalon, entrerChez, type OuvertureSalonOuvert } from "@/lib/direct/salons-ouverts-serveur";
-import { habitantCourant, type Habitant } from "@/lib/direct/habitant";
+import { habitantOuPanne, type Habitant } from "@/lib/direct/habitant";
 import { universPermis } from "@/lib/direct/univers-pour-tous";
 import { salonsOuverts } from "@/lib/direct/interrupteurs-serveur";
 import { themeDe } from "@/lib/direct/decouvrir";
@@ -49,7 +49,9 @@ type Entree = { ouverture?: OuvertureSalonOuvert; age?: true; figurine?: true; e
 async function entreeDuServeur(entrer: (supabase: ReturnType<typeof createAdminClient>, moi: Habitant) => Promise<Entree>): Promise<EtatSalonOuvert | undefined> {
   try {
     const supabase = createAdminClient();
-    const moi = await habitantCourant(supabase);
+    const { moi, panne } = await habitantOuPanne(supabase);
+    // (27 novembre 2026 : la base qui ne répond pas n'est pas une figurine absente — l'écran réessaie lui-même)
+    if (panne) return undefined;
     // (➕ sans compte ni figurine — arrivé par le lien WhatsApp d'une place libre : sa figurine d'abord)
     if (!moi) return { etat: "sans-figurine" };
     const r = await entrer(supabase, moi);
