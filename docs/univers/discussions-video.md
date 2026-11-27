@@ -130,6 +130,13 @@ messagerie bruyante.
   réponses directes en haut ; « Nouveau » puis « Déjà vu » ; les filtres Tout · ↩ Réponses · 👯 Proches · 🌍 Tous ;
   « Tout marquer lu ». En bas, « 🏠 Pendant ton absence, chez toi » ouvre la feuille de Ma maison
   (`/collection?absence=1#maison`) : Ma maison garde son bouton.
+- **L'écran revu (27 novembre 2026)**, maquette validée https://claude.ai/artifact/Nk8H4Huct2t4yned3KTp79 : une phrase
+  entière par ligne (« Marius a réagi à « … » », « Inès t'a répondu sur « … » »), la figurine de la personne (son
+  initiale sinon) avec la pastille du cercle, ce qui a été dit en bulle, une vignette de 96 px (168 px sur ordinateur)
+  avec « +2 » ; « Chez toi pendant ton absence » en carte dorée en haut ; les filtres comptent leurs lignes et sont
+  cachés s'ils sont vides ; d'un bord à l'autre sur téléphone, deux colonnes sur ordinateur (dès 900 px). La figurine :
+  les fiches d'événement gardent `h` (qui a parlé) et la boîte « à revoir » garde `dh` (le dernier ami) ; les lignes plus
+  anciennes montrent l'initiale.
 - **La cloche 🛎️** : en haut de l'appli (`ma-collection.tsx`, l'univers allumé), avec le vrai nombre de discussions où
   il y a du nouveau ; relue en arrivant, en revenant sur la page, et toutes les cinq minutes.
 - **La route** : `GET /api/direct/activite` → { lignes, nouveau } ; `?compter=1` → { nouveau } ; `POST { action: "lu" }`.

@@ -16,6 +16,7 @@ import { randomBytes } from "node:crypto";
 import { SEAU_FIGURINES, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { qui8 } from "./talkie-serveur";
 import { maBoiteARevoir } from "./revoir-serveur";
+import { figurineDeLaMaison } from "./ma-maison-serveur";
 import { dossierSuiveurs, tousMesSuivis, type Suivi } from "./suivis-video-serveur";
 import { cercleValide, lienDiscussion, type CercleDiscussion, type NiveauSuivi } from "./discussion-video";
 import { prevenirUnHabitantAppli } from "./appli-collection-serveur";
@@ -24,7 +25,8 @@ import { titreCourt } from "./reactions-video";
 import { ACTIVITE, PHRASES_ACTIVITE, type ActiviteVue, type LigneActivite, type SorteEvenement } from "./activite";
 
 type Supabase = ReturnType<typeof createAdminClient>;
-type FicheEvenement = { prenom?: string; titre?: string; texte?: string; vocal?: boolean; groupe?: string };
+/** (`h` : qui a parlé, depuis le 27/11/2026 — pour sa figurine ; les fiches plus anciennes n'ont que le prénom) */
+type FicheEvenement = { h?: string; prenom?: string; titre?: string; texte?: string; vocal?: boolean; groupe?: string };
 /** (👥 lot A6 : `cercle` « groupe », et son id) */
 type Evenement = { nom: string; le: number; cercle: CercleDiscussion | "groupe"; groupe?: string; video: string; q: string; sorte: SorteEvenement };
 /** Le morceau du nom qui dit la discussion : « proches », « tous », ou l'id du groupe. */
@@ -82,7 +84,7 @@ export async function prevenirLaDiscussion(
     if (h && h !== auteur && (x.niveau === "prevenir" || x.niveau === "discret") && !pour.has(h)) pour.set(h, "n");
   }
   const le = Date.now();
-  const fiche: FicheEvenement = { prenom: o.prenom, titre: o.titre, ...(o.texte ? { texte: o.texte } : {}), ...(o.vocal ? { vocal: true } : {}), ...(o.groupe ? { groupe: o.groupe.nom } : {}) };
+  const fiche: FicheEvenement = { h: auteur, prenom: o.prenom, titre: o.titre, ...(o.texte ? { texte: o.texte } : {}), ...(o.vocal ? { vocal: true } : {}), ...(o.groupe ? { groupe: o.groupe.nom } : {}) };
   const ou = { cercle: o.cercle, ...(o.groupe ? { groupe: o.groupe.id } : {}) };
   await Promise.all(
     [...pour].map(([h, sorte]) => ecrireJson(supabase, `${dossierActivite(h)}/${le}.${segment(ou)}.${o.video}.${q}.${sorte}.${randomBytes(2).toString("hex")}.json`, fiche).catch(() => false)),
@@ -187,7 +189,7 @@ export async function monActivite(supabase: Supabase, h: string, o: { compter?: 
   for (const x of boite) {
     const { lu, suivi } = luDe("proches", x.id);
     if (suivi?.niveau === "non" || groupes.has(`proches:${x.id}`)) continue;
-    lignes.push({ cle: `proches:${x.id}`, cercle: "proches", video: x.id, titre: x.titre, le: x.le, neuf: x.le > lu, nouveaux: x.le > lu ? x.n : 0, prenoms: x.de.slice(-3).reverse() });
+    lignes.push({ cle: `proches:${x.id}`, cercle: "proches", video: x.id, titre: x.titre, le: x.le, neuf: x.le > lu, nouveaux: x.le > lu ? x.n : 0, prenoms: x.de.slice(-3).reverse(), ...(x.dernierH ? { qui: x.dernierH } : {}) });
   }
   const nouveau = lignes.filter((x) => x.neuf).length;
   if (o.compter) return { lignes: [], nouveau };
@@ -216,11 +218,23 @@ export async function monActivite(supabase: Supabase, h: string, o: { compter?: 
         const f = fiches.get(rep.nom);
         x.reponse = { prenom: s(f?.prenom) || "Quelqu’un", ...(texteDe(f) ? { texte: texteDe(f) } : {}) };
       }
+      // (sa figurine : celui qui m'a répondu, sinon le dernier qui a parlé)
+      const qui = s((rep ? fiches.get(rep.nom) : dernier)?.h);
+      if (qui) x.qui = qui;
       if (!x.titre) x.titre = s(dernier?.titre) || s(lus.map(([, f]) => s(f.titre)).find(Boolean));
       if (x.groupe) x.groupe.nom = s(lus.map(([, f]) => s(f.groupe)).find(Boolean)) || "Ton groupe";
     }),
   );
-  return { lignes: montrees.filter((x) => x.titre), nouveau };
+  // (🧸 27/11/2026 : la figurine de la personne, une fois par personne ; sans figurine, l'écran montre son initiale)
+  const gardees = montrees.filter((x) => x.titre);
+  const qui = [...new Set(gardees.map((x) => s(x.qui)).filter(Boolean))];
+  const figurines = new Map(await Promise.all(qui.map(async (q) => [q, s((await figurineDeLaMaison(supabase, q).catch(() => null))?.src)] as const)));
+  for (const x of gardees) {
+    const src = x.qui ? figurines.get(x.qui) : "";
+    delete x.qui;
+    if (src) x.figurine = src;
+  }
+  return { lignes: gardees, nouveau };
 }
 
 /** ✓ Tout marquer lu. */
