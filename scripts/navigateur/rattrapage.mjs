@@ -160,6 +160,20 @@ ok(await attendre(async () => (await p.locator('.gm[data-grand-moment="rire"]').
 ok((await p.locator(".gm .gm-bulle").count()) > 0, `sa bulle : « ${await texte(p.locator(".gm .gm-bulle").first())} »`);
 await p.screenshot({ path: `${process.env.ESSAI_CAPTURES ?? "/tmp"}/rattrapage-moment.png` }).catch(() => null);
 
+// (lot T3) Zoé réagit à son tour, puis écrit
+await seconde(140);
+await p.waitForTimeout(400);
+await p.locator('.rt-emo[data-reagir="bravo"]').click();
+ok(await attendre(async () => /Ton 👏 est ajouté à la séance, à 2:20/.test(await texte(p.locator(".rt-dit-ok")))), "Zoé touche 👏 : « Ton 👏 est ajouté à la séance, à 2:20. Le groupe le verra. »");
+ok(await attendre(async () => /Toi · à 2:20 · ⏪ vu en rattrapage/.test(await texte(p.locator(".rt-trace.mien")))), "sa réaction, « ⏪ vu en rattrapage »");
+ok(await attendre(async () => (await p.locator('.gm [data-vedette]').count()) > 0), "sa figurine prend la scène");
+await p.waitForTimeout(1700);
+await p.locator("#rt-mot").fill("Non mais le plongeon");
+await p.locator(".rt-ecrire button[type=submit]").click();
+ok(await attendre(async () => /Ton mot est ajouté à la séance/.test(await texte(p.locator(".rt-dit-ok")))), "elle écrit : « Ton mot est ajouté à la séance »");
+ok(await attendre(async () => /Non mais le plongeon/.test(await texte(p.locator(".rt-dit")))), "… et son mot est dans le fil");
+await p.screenshot({ path: `${process.env.ESSAI_CAPTURES ?? "/tmp"}/rattrapage-reagir.png` }).catch(() => null);
+
 await p.locator(".rt-marque").first().click();
 ok(await attendre(async () => Number(await p.locator(".faux-yt").getAttribute("data-va")) === 132), "toucher une marque : la vidéo y va (trois secondes avant)");
 

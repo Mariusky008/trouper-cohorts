@@ -17,7 +17,7 @@ import { randomBytes } from "node:crypto";
 import type { Habitant } from "./habitant";
 import { SEAU_FIGURINES, ecrireJson, lireJson } from "./ma-figurine-serveur";
 import { OUVERT_APRES_MS, OUVERT_AVANT_MS, type PlaceGroupe } from "./groupes";
-import { cleSeanceValide, grandMoment, ouValide, partsDeLaSeance, PHRASES_RATTRAPAGE, RATTRAPAGE_MS, TRACES_MAX, type SeanceARattraper, type SeanceResumee, type TraceSeance, type VideoDeLaSeance } from "./rattrapage";
+import { cleSeanceValide, ECART_RATTRAPAGE_MS, PAR_MINUTE_RATTRAPAGE, grandMoment, ouValide, partsDeLaSeance, PHRASES_RATTRAPAGE, RATTRAPAGE_MS, TRACES_MAX, type SeanceARattraper, type SeanceResumee, type TraceSeance, type VideoDeLaSeance } from "./rattrapage";
 import { positionTele } from "./salons-ouverts";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -259,4 +259,51 @@ export async function laSeanceARattraper(supabase: Supabase, moiH: Habitant, cle
   const [maFigurine, monPrenom] = await Promise.all([figurineDeLaMaison(supabase, h).catch(() => null), prenomDe(supabase, moiH).catch(() => "")]);
   const moi: PlaceGroupe = { q, prenom: monPrenom || "Toi", src: maFigurine?.src ?? figurines[q] ?? "" };
   return { seance: { ...resume, videos, traces: traces.map(tracePublique), figurines, absents, moi } };
+}
+
+const cheminRythme = (q: string) => `groupes/seance-rattrapage/${q}.json`;
+
+/**
+ * ⏪ (lot T3) Réagir en décalé : une réaction (les six émotions) ou un mot (90 signes, la modération des salons), posé à
+ * la seconde où j'en suis dans la vidéo — « ⏪ vu en rattrapage ». Ceux qui peuvent rattraper la séance seulement, et
+ * pendant ses sept jours.
+ */
+export async function reagirEnDecale(supabase: Supabase, moiH: Habitant, p: Record<string, unknown>, maintenant = Date.now()): Promise<Resultat<{ trace?: TraceSeance; refus?: string }>> {
+  const { qui8 } = await import("./talkie-serveur");
+  const { reactionDe, refusDuMessage, TEXTE_SALON_MAX } = await import("./salons-ouverts");
+  const cle = cleSeanceValide(p.seance);
+  if (!cle) return { error: PHRASES_RATTRAPAGE.absente, statut: 404 };
+  const q = qui8(moiH.id);
+  if (!(await peutRattraper(supabase, cle.split("/")[0], q))) return { error: PHRASES_RATTRAPAGE.pasLa, statut: 403 };
+  if (maintenant - partsDeLaSeance(cle).quand > RATTRAPAGE_MS) return { error: PHRASES_RATTRAPAGE.passee, statut: 410 };
+  const s0 = await lireLaSeance(supabase, cle);
+  if (!s0) return { error: PHRASES_RATTRAPAGE.absente, statut: 404 };
+  const o = ouValide(p.ou);
+  if (!o) return { error: PHRASES_RATTRAPAGE.pasCetteVideo, statut: 400 };
+  // (la vidéo : une de la télé de la séance, ou une où quelqu'un a déjà réagi)
+  if (!s0.fiche.videos.some((v) => v.id === o.video) && !(await tracesDeLaSeance(supabase, cle)).some((x) => x.video === o.video)) return { error: PHRASES_RATTRAPAGE.pasCetteVideo, statut: 400 };
+  let corps: { sorte: string; cle?: string; n?: number; texte?: string };
+  if (p.sorte === "texte") {
+    const texte = s(p.texte).replace(/\s+/g, " ");
+    if (!texte) return { error: PHRASES_RATTRAPAGE.vide, statut: 400 };
+    const refus = refusDuMessage(texte);
+    if (refus) return { error: PHRASES_RATTRAPAGE.refus(refus), statut: 400, refus };
+    corps = { sorte: "texte", texte: [...texte].slice(0, TEXTE_SALON_MAX).join("") };
+  } else {
+    const x = reactionDe(p.cle);
+    if (!x) return { error: PHRASES_RATTRAPAGE.quelleReaction, statut: 400 };
+    const n = Math.round(Number(p.n));
+    corps = { sorte: "reaction", cle: x.cle, ...(n >= 2 && n <= 3 ? { n } : {}) };
+  }
+  // (le rythme : une à la fois)
+  const r = await lireJson<{ ecrits?: number[] }>(supabase, cheminRythme(q)).catch(() => ({}) as { ecrits?: number[] });
+  const ecrits = (Array.isArray(r.ecrits) ? r.ecrits : []).filter((x) => maintenant - x < 60_000);
+  if (ecrits.length >= PAR_MINUTE_RATTRAPAGE || (ecrits.length && maintenant - Math.max(...ecrits) < ECART_RATTRAPAGE_MS)) return { error: PHRASES_RATTRAPAGE.doucement, statut: 429 };
+  await ecrireJson(supabase, cheminRythme(q), { ecrits: [...ecrits, maintenant] });
+  const { prenomDe } = await import("./ma-figurine-serveur");
+  const { figurineDeLaMaison } = await import("./ma-maison-serveur");
+  const [prenom, figurine] = await Promise.all([prenomDe(supabase, moiH).catch(() => ""), figurineDeLaMaison(supabase, moiH.id).catch(() => null)]);
+  const trace = await ecrireTrace(supabase, cle, { q, h: moiH.id, prenom: prenom || "Quelqu’un", src: figurine?.src ?? "" }, corps, o, maintenant, true);
+  if (!trace) return { error: "Ça n’a pas marché. Réessaie.", statut: 502 };
+  return { trace: tracePublique(trace) };
 }

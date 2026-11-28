@@ -118,6 +118,27 @@ ok(!JSON.stringify(d).includes(SAM.id), "jamais un compte");
 ok((await rattrapage(TOM, `seance=${encodeURIComponent(S?.cle ?? "")}`)).statut === 403, "Tom ne la rejoue pas");
 ok((await rattrapage(ZOE, "seance=n-importe-quoi")).statut === 404, "une clé inventée : 404");
 
+// ═══ (lot T3) ZOÉ RÉAGIT EN DÉCALÉ ═══
+const reagir = (x, corps) => appel(x, R, { action: "reagir", seance: S?.cle, ...corps });
+const z1 = await reagir(ZOE, { sorte: "reaction", cle: "rire", ou: { video: V, t: 136 } });
+ok(z1.statut === 200 && z1.trace?.rattrapage === true && z1.trace.t === 136, "Zoé : 😂 à 2:16, « ⏪ vu en rattrapage »");
+ok((await reagir(ZOE, { sorte: "reaction", cle: "coeur", ou: { video: V, t: 140 } })).statut === 429, "… trop vite : « Doucement »");
+await new Promise((f) => setTimeout(f, 1600));
+const z2 = await reagir(ZOE, { sorte: "texte", texte: "Non mais le plongeon", ou: { video: V, t: 137 } });
+ok(z2.statut === 200 && z2.trace?.texte === "Non mais le plongeon", "Zoé écrit à 2:17");
+await new Promise((f) => setTimeout(f, 1600));
+const zr = await reagir(ZOE, { sorte: "texte", texte: "va voir https://site.fr", ou: { video: V, t: 140 } });
+ok(zr.statut === 400 && zr.refus, `un lien ne passe pas (« ${zr.error} »)`);
+await new Promise((f) => setTimeout(f, 1600));
+ok((await reagir(ZOE, { sorte: "reaction", cle: "rire", ou: { video: "AAAAAAAAAAA", t: 10 } })).statut === 400, "une autre vidéo : non");
+ok((await reagir(ZOE, { sorte: "reaction", cle: "pouet", ou: { video: V, t: 10 } })).statut === 400, "une réaction inconnue : non");
+ok((await reagir(TOM, { sorte: "reaction", cle: "rire", ou: { video: V, t: 10 } })).statut === 403, "Tom (pas du groupe) : non");
+const l2 = (await rattrapage(LEA, `de=${encodeURIComponent(GID)}`)).seances?.[0];
+ok(l2?.rattrapee?.map((x) => x.prenom).join(",") === "Zoé" && l2.rattrapee[0].src, "la séance : Zoé l'a rattrapée (avec sa figurine)");
+ok(l2?.moment?.qui?.length === 2, "le grand moment reste celui de la séance (Léa et Sam)");
+const d2 = (await rattrapage(SAM, `seance=${encodeURIComponent(S?.cle ?? "")}`)).seance;
+ok(d2?.traces?.filter((x) => x.rattrapage).length === 2 && d2.figurines && Object.keys(d2.figurines).length === 3, "quand Sam la revoit : les deux traces de Zoé, et sa figurine");
+
 // (hors séance : dans le salon du groupe, sans rendez-vous à l'heure, rien n'est noté)
 await salon(LEA, { action: "sortir", salon: SALON });
 
