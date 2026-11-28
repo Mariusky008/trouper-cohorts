@@ -81,8 +81,9 @@ setTimeout(function () { window.onYouTubeIframeAPIReady && window.onYouTubeIfram
 `;
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
-// (🎙 « Dis-le » : un faux micro — ses bips —, permis seulement là où l'essai l'accorde)
-const b = await lancer({ args: ["--use-fake-device-for-media-stream"] });
+// (🎙 « Dis-le » : un faux micro — ses bips —, accepté d'office comme dans les autres essais du micro ; la caméra du salon ne
+// s'allume que dans une séance, et seulement si on l'a demandée)
+const b = await lancer({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
 const erreurs = [];
 const ouvrir = async (x, o = {}) => {
   const ctx = await b.newContext(o.ordinateur ? { viewport: { width: 1280, height: 860 }, deviceScaleFactor: 1 } : { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, userAgent: IPHONE, isMobile: true, hasTouch: true });
@@ -257,7 +258,7 @@ await lea.screenshot({ path: `${D}/salons-ouverts-3b-envoyer-video.png` });
 await lea.context().grantPermissions(["microphone"], { origin: BASE });
 ok((await texte(lea.locator("[data-dis-le]"))) === "🎙 Dis-le" && /3 s de ta voix, au moment où ta figurine explose/.test(await texte(lea.locator(".em-voix small"))), "🎙 côté « Vidéo » : « Dis-le », « 3 s de ta voix, au moment où ta figurine explose »");
 await lea.locator("[data-dis-le]").click();
-ok(await attendre(lea, async () => /Parle ! [123] s/.test(await texte(lea.locator("[data-dis-le-micro]"))), 5000), "… un toucher : le micro écoute (« Parle ! 3 s », « ■ C'est dit »)");
+ok(await attendre(lea, async () => /Parle ! [123] s/.test(await texte(lea.locator("[data-dis-le-micro]"))), 5000), `… un toucher : le micro écoute (« Parle ! 3 s », « ■ C'est dit »)${(await lea.locator("[data-note-voix]").count()) ? ` — ${await texte(lea.locator("[data-note-voix]"))}` : ""}`);
 ok(await attendre(lea, async () => (await lea.locator("[data-voix-prepare]").count()) === 1, 6000), "… au bout de 3 s, il s'arrête tout seul : « Ta voix entre dans la vidéo… »");
 ok(await attendre(lea, async () => (await lea.locator("[data-apercu-video][data-avec-voix]").count()) === 1, 30000), "… la vidéo refaite, avec sa voix");
 const son = await lea.locator("[data-apercu-video]").evaluate(async (v) => {
@@ -276,7 +277,7 @@ const son = await lea.locator("[data-apercu-video]").evaluate(async (v) => {
 });
 ok(!son.erreur && son.avant < 0.01 && son.apres > 0.02, `… sa voix est dans la vidéo, au moment du flash : rien avant (${son.avant ?? son.erreur}), sa voix après 1,6 s (${son.apres})`);
 ok((await texte(lea.locator("[data-avec-ta-voix]"))) === "Avec ta voix ✓" && (await lea.locator("[data-reecouter]").count()) === 1 && (await lea.locator("[data-recommencer]").count()) === 1 && (await lea.locator("[data-sans-voix]").count()) === 1, "… « Avec ta voix ✓ » : Réécouter, Recommencer, Sans ma voix");
-await lea.locator("[data-reecouter]").click();
+await lea.locator("[data-reecouter]").click({ timeout: 5000 }).catch(() => undefined);
 ok(await attendre(lea, async () => lea.locator("[data-apercu-video]").evaluate((v) => !v.muted && !v.paused && !v.loop), 4000), "… « ▶ Réécouter » : la vidéo repart du début, avec le son");
 const voix64 = await lea.locator("[data-apercu-video]").evaluate(async (v) => {
   const b = await (await fetch(v.src)).blob();
@@ -287,7 +288,7 @@ const voix64 = await lea.locator("[data-apercu-video]").evaluate(async (v) => {
 });
 writeFileSync(`${D}/salons-ouverts-video-reaction-voix.${voix64.type.startsWith("video/mp4") ? "mp4" : "webm"}`, Buffer.from(voix64.x, "base64"));
 await lea.screenshot({ path: `${D}/salons-ouverts-3c-dis-le.png` });
-await lea.locator("[data-sans-voix]").click();
+await lea.locator("[data-sans-voix]").click({ timeout: 5000 }).catch(() => undefined);
 ok(await attendre(lea, async () => (await lea.locator("[data-apercu-video]:not([data-avec-voix])").count()) === 1 && (await lea.locator("[data-dis-le]").count()) === 1, 4000), "… « Sans ma voix » : la vidéo muette revient, et « Dis-le »");
 // (l'ami qui reçoit le lien : un autre téléphone, sans ClikMe)
 const ami = await lea.context().browser().newContext({ viewport: { width: 390, height: 844 } });
