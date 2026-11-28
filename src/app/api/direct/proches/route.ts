@@ -1,6 +1,6 @@
 // 🎙️ LE TALKIE-WALKIE DES FIGURINES — l'onglet « Proches » (`lib/direct/talkie.ts`, `talkie-serveur.ts`).
 //
-// GET                                   → { proches, presence, cle } : ses proches, vivants (sa figurine, « Là
+// GET                                   → { proches, presence, cle, supprimes? } : ses proches, vivants (sa figurine, « Là
 //                                          maintenant », ses non-lus, la dernière chose dite) ; s'il se montre « là » ;
 //                                          sa clé (son lien : `/collection?proche=<clé>`)
 // GET ?presence=1                       → { presence } (« Moi »)
@@ -75,6 +75,7 @@
 import { etagerePeinteOuverte, peindreEtagere } from "@/lib/direct/etagere-peinte-serveur";
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { avisDeComptesSupprimes } from "@/lib/direct/supprimer-compte-serveur";
 import { habitantCourant } from "@/lib/direct/habitant";
 import {
   changerProche,
@@ -169,13 +170,14 @@ export async function GET(request: Request) {
     }
     return NextResponse.json({ ok: true, fil: { ...r.fil, ecrire: ecritOuvert(), photos: photosOuvertes(), videos: videosOuvertes(), fichiers: fichiersOuverts() } }, { headers: sansCache });
   }
-  const [vivants, presence, cle] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi)]);
+  const [vivants, presence, cle, supprimes] = await Promise.all([mesProchesVivants(supabase, moi), maPresence(supabase, moi), maCle(supabase, moi), avisDeComptesSupprimes(supabase, moi.id).catch(() => [])]);
   // 📚 la ligne de chacun, ce que l'étagère en dit (lot E2 : un rappel du jour, un souvenir pas encore vu, une relance)
   const lignes = await lignesEtagere(supabase, moi, vivants.filter((p) => p.lien === "proches").map((p) => p.cle)).catch(() => ({}) as Record<string, never>);
   const proches = vivants.map((p) => (lignes[p.cle] ? { ...p, etagere: lignes[p.cle] } : p));
   // 📌 à l'ouverture de « Chez moi » : leurs figurines lisent les échanges qui se sont posés (six au plus, après la réponse)
   after(() => noterMesConversations(supabase, moi).catch(() => 0));
-  return NextResponse.json({ ok: true, proches, presence, cle }, { headers: sansCache });
+  // (🗑️ l'audit du 28/11, lot 5 : « <prénom> a supprimé son compte », les sept derniers jours)
+  return NextResponse.json({ ok: true, proches, presence, cle, ...(supprimes.length ? { supprimes } : {}) }, { headers: sansCache });
 }
 
 export async function POST(request: Request) {

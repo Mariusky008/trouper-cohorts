@@ -113,7 +113,9 @@ const sansSon = (m: MessageFil) => m.genre === "ecrit" || m.genre === "photo" ||
 const mmss = (s: number) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, "0")}`;
 
 // ─── l'onglet ─────────────────────────────────────────────────────────────────────────────────────
-type Donnees = { proches: ProcheVivant[]; presence: boolean; cle: string };
+/** 🗑️ (l'audit du 28/11, lot 5) ce que voient ses proches quand quelqu'un supprime son compte. */
+export const PHRASE_COMPTE_SUPPRIME = (prenom: string) => `${prenom} a supprimé son compte : votre conversation n’existe plus.`;
+type Donnees = { proches: ProcheVivant[]; presence: boolean; cle: string; supprimes?: { prenom: string; le: string }[] };
 type Invitation = { cle: string; prenom: string; image: string; proche: boolean };
 
 export function Proches({
@@ -196,7 +198,7 @@ export function Proches({
       const j = (await r.json().catch(() => ({}))) as Partial<Donnees> & Reponse;
       if (!r.ok) throw new Error(j.error || "Tes proches ne se sont pas chargés. Réessaie.");
       const proches = Array.isArray(j.proches) ? j.proches : [];
-      setDonnees({ proches, presence: j.presence !== false, cle: j.cle ?? "" });
+      setDonnees({ proches, presence: j.presence !== false, cle: j.cle ?? "", ...(Array.isArray(j.supprimes) && j.supprimes.length ? { supprimes: j.supprimes } : {}) });
       ecrireMemoire(MEMOIRE_PROCHES, { proches, presence: j.presence !== false, cle: j.cle ?? "" });
       onNonLus(proches.reduce((n, p) => n + (p.nonLus || 0), 0));
       setErreur("");
@@ -552,6 +554,13 @@ export function Proches({
                 ＋ Nouveau
               </button>
             </div>
+            {/* 🗑️ (l'audit du 28/11, lot 5) un proche a supprimé son compte : leur conversation n'existe plus, une ligne le dit
+                sept jours */}
+            {donnees?.supprimes?.map((x) => (
+              <p key={`${x.prenom}-${x.le}`} className="cm-supprime" data-compte-supprime>
+                {PHRASE_COMPTE_SUPPRIME(x.prenom)}
+              </p>
+            ))}
             <ul className="cm-liste" aria-label="Mes conversations">
               {liste.map(({ p, e }, i) => (
                 <li key={p.cle} data-cle={p.cle}>
@@ -2648,6 +2657,7 @@ export const STYLES_PROCHES = `
 .pr{display:flex;flex-direction:column;gap:14px}
 .pr-tete h2{margin:0;font-size:28px;font-weight:900;line-height:1.15;letter-spacing:-.02em}
 .pr-tete p{margin:3px 0 0;font-size:13.5px;color:#CDB4C0}
+.cm-supprime{margin:0 0 6px;padding:9px 14px;border-radius:14px;background:rgba(255,255,255,.04);color:#CDB4C0;font-size:13px;font-style:italic}
 .pr-vide{display:flex;flex-direction:column;align-items:center;gap:8px;padding:22px 18px;border-radius:24px;background:rgba(255,255,255,.05);text-align:center}
 .pr-vide b{font-size:17px;font-weight:900}
 .pr-vide p{margin:0;font-size:13.5px;line-height:1.45;color:#D9C3CB}

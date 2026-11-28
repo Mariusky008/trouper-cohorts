@@ -7,9 +7,10 @@
 //
 // GET    → l'export complet, en JSON lisible.
 // DELETE → suppression réelle et immédiate.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { habitantCourant, COOKIE_HABITANT } from "@/lib/direct/habitant";
+import { balayerLesComptesSupprimes, supprimerLeCompte } from "@/lib/direct/supprimer-compte-serveur";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -85,9 +86,11 @@ export async function DELETE() {
 
   try {
     // Suppression RÉELLE, pas un marquage. « Tout supprimer » ne peut pas vouloir
-    // dire « caché mais gardé » — les gardées et les suivis partent en cascade.
-    const { error } = await supabase.from("human_habitants").delete().eq("id", habitant.id);
-    if (error) throw new Error(error.message);
+    // dire « caché mais gardé » — (l'audit du 28/11, lot 5) la même suppression que
+    // « Supprimer mon compte » de ClikMe : sa figurine, ses fichiers, ses proches, ses
+    // lignes ; le reste part en cascade, et le balayage des espaces partagés suit.
+    await supprimerLeCompte(supabase, habitant);
+    after(() => balayerLesComptesSupprimes(supabase, { fin: Date.now() + 45_000, seul: habitant.id }).catch(() => undefined));
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }

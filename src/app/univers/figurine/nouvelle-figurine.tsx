@@ -478,7 +478,9 @@ function Validee({ etat, piece, place, onRefaire }: { etat: EtatNouvelleFigurine
 
 const STYLES = `
 .nf{min-height:100dvh;margin:0;padding:22px 16px 40px;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif;color:#3a2412;
-  background:radial-gradient(120% 70% at 30% 0%,#fff3dc 0%,#f6d9a8 45%,#e7b77a 100%);display:flex;flex-direction:column;align-items:center;gap:14px;overflow-x:hidden}
+  background:radial-gradient(120% 70% at 30% 0%,#fff3dc 0%,#f6d9a8 45%,#e7b77a 100%);display:flex;flex-direction:column;align-items:center;gap:14px;overflow-x:hidden;overflow-x:clip}
+/* (l'audit, en production sur un iPhone SE de 568 pt : « overflow-x: hidden » faisait de la page son propre conteneur de
+   défilement, et le bouton collé ne collait jamais ; « clip » coupe sans défiler, et « Choisis ta pièce » reste en vue) */
 .nf section{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
 .nf h1,.nf-titre{margin:4px 0 0;font-size:28px;font-weight:800;letter-spacing:-.01em}
 .nf-doux{margin:0;color:#6b4a2b;line-height:1.45}
