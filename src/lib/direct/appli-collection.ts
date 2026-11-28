@@ -174,6 +174,21 @@ function enOctets(b64: string): Uint8Array<ArrayBuffer> {
   return o;
 }
 
+/**
+ * 📡 (l'audit du 28/11, lot 5b) L'APPLI INSTALLÉE (lancée depuis l'écran d'accueil) : son service worker, dès le
+ * lancement — sans réseau, il montre « Pas de connexion » au lieu de l'écran d'erreur du téléphone. Dans un onglet, rien
+ * ne change (il ne s'installe qu'avec les notifications, comme avant).
+ */
+export function preparerHorsLigne(): void {
+  try {
+    if (!("serviceWorker" in navigator)) return;
+    const installee = window.matchMedia?.("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (installee) void navigator.serviceWorker.register(SW, { scope: PORTEE }).catch(() => undefined);
+  } catch {
+    /* (rien : l'appli marche sans) */
+  }
+}
+
 /** Le service worker de `/collection`, une fois actif. */
 async function travailleur(): Promise<ServiceWorkerRegistration> {
   const reg = await navigator.serviceWorker.register(SW, { scope: PORTEE });

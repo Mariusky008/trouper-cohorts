@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Confidentialité · ClikMe",
+  title: "Confidentialité",
   description: "Ce que ClikMe garde, pourquoi, combien de temps, avec qui, et comment tout effacer.",
   alternates: { canonical: "/collection/confidentialite" },
 };

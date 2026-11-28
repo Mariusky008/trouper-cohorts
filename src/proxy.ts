@@ -27,6 +27,10 @@ export default async function proxy(request: NextRequest) {
   const entrantes = new Headers(request.headers);
   entrantes.delete("x-popey-auth-user-id");
   entrantes.delete("x-middleware-request-x-popey-auth-user-id");
+  // (l'audit UX du 28/11, lot 5b) le chemin demandé, pour la page 404 : celle de l'appli ClikMe sous `/collection` et
+  // `/univers`, celle des commerçants ailleurs (`app/not-found.tsx`). Posé ici, jamais repris du client ; il ne choisit
+  // qu'un décor.
+  entrantes.set("x-clikme-chemin", pathname.slice(0, 200));
   const sansIdentite = () => NextResponse.next({ request: { headers: entrantes } });
 
   const isStaticAssetRequest = /\.[a-z0-9]+$/i.test(pathname);

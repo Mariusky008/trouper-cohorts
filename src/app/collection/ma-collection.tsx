@@ -40,6 +40,7 @@ import { STYLES_TROIS_RENDUS } from "./trois-rendus";
 import { OngletVisible } from "./guide";
 import { STYLES_PERSONNAGE } from "./personnage";
 import { PageMoi, STYLES_PAGE_MOI } from "./page-moi";
+import { BandeauHorsLigne } from "./hors-ligne";
 import { ProtegerFigurine, STYLES_CONNAITRE } from "./connaitre";
 import { STYLES_FIGURINE_DU_MOIS } from "./figurine-du-mois";
 import { MesMemes, STYLES_MES_MEMES } from "./mes-memes";
@@ -372,6 +373,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   const bienvenue = charge && Boolean(etat) && etat?.etape !== "prete" && etat?.etape !== "fabrication" && !souvenir.bienvenue;
   return (
     <main className="mc" data-charge={charge ? "" : undefined}>
+      {/* 📡 (l'audit du 28/11, lot 5b) pas de connexion : l'appli le dit */}
+      <BandeauHorsLigne />
       <header className="mc-barre">
         {/* LE LOGO RAMÈNE AU FIL DE DÉCOUVRIR, l'accueil (26 novembre 2026 : la visite de Pablito, désuète, est partie) */}
         <button type="button" className="mc-logo" aria-label="ClikMe : l’accueil" onClick={() => aller("decouvrir", undefined, false, true)}>

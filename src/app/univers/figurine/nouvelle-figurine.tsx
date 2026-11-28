@@ -128,7 +128,7 @@ export function NouvelleFigurine({ piece = "", place }: { piece?: string; place?
           photoDAvant={etat.photoDAvant}
           villeADonner={etat.villeADonner}
           prenomConnu={etat.prenom}
-          onEnvoyer={(photo, ville, prenom) => faire({ action: "selfie", photo, moi: true, age: true, ...(ville ? { ville } : {}), ...(prenom ? { prenom } : {}) })}
+          onEnvoyer={(photo, ville, prenom, adulte) => faire({ action: "selfie", photo, moi: true, age: true, adulte, ...(ville ? { ville } : {}), ...(prenom ? { prenom } : {}) })}
         />
       ) : etape === "fabrication" ? (
         <Atelier key={etat.propositions[0]?.id} demande={etat.propositions[0]?.demande} />
@@ -162,7 +162,7 @@ function Selfie({
   villeADonner?: { suggestions: { slug: string; nom: string }[] };
   /** (son prénom déjà connu : le champ est rempli d'avance, il le corrige s'il veut) */
   prenomConnu?: string;
-  onEnvoyer: (photo: string, ville?: string, prenom?: string) => void;
+  onEnvoyer: (photo: string, ville?: string, prenom?: string, adulte?: boolean) => void;
 }) {
   const [photo, setPhoto] = useState("");
   // ✍️ son prénom, toujours demandé (20 novembre 2026) : ses proches le verront partout ; connu, il est déjà écrit
@@ -172,7 +172,8 @@ function Selfie({
   // 🖼️ sa photo d'avant (celle de sa figurine d'aujourd'hui) : reprise telle quelle, sans nouveau selfie
   const [dAvant, setDAvant] = useState(false);
   const [moi, setMoi] = useState(false);
-  const [age, setAge] = useState(false);
+  // (🔞 l'audit du 28/11, lot 5b : UNE seule question d'âge — 15 à 17 ans, ou 18 ans et plus ; Découvrir ne la repose plus)
+  const [age, setAge] = useState<"" | "jeune" | "adulte">("");
   const [lecture, setLecture] = useState("");
   async function choisir(f: File | undefined) {
     if (!f) return;
@@ -193,7 +194,7 @@ function Selfie({
     !prenomOk ? "ton prénom" : "",
     !villeOk ? "ta ville" : "",
     !moi ? "« C’est bien moi »" : "",
-    !age ? "« J’ai 15 ans ou plus »" : "",
+    !age ? "ton âge" : "",
   ].filter(Boolean);
   const montree = dAvant ? photoDAvant : photo;
   return (
@@ -247,10 +248,17 @@ function Selfie({
       <label className="nf-case">
         <input type="checkbox" name="moi" checked={moi} onChange={(e) => setMoi(e.target.checked)} /> C’est bien moi
       </label>
-      <label className="nf-case">
-        <input type="checkbox" name="age" checked={age} onChange={(e) => setAge(e.target.checked)} /> J’ai 15 ans ou plus
-      </label>
-      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined, prenomValide(prenom) || undefined)}>
+      <fieldset className="nf-age" data-age>
+        <legend>Ton âge</legend>
+        <label className="nf-case">
+          <input type="radio" name="age" value="jeune" checked={age === "jeune"} onChange={() => setAge("jeune")} /> J’ai 15 à 17 ans
+        </label>
+        <label className="nf-case">
+          <input type="radio" name="age" value="adulte" checked={age === "adulte"} onChange={() => setAge("adulte")} /> J’ai 18 ans ou plus
+        </label>
+        <small>ClikMe est ouvert à partir de 15 ans.</small>
+      </fieldset>
+      <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined, prenomValide(prenom) || undefined, age === "adulte")}>
         {occupe ? "…" : "Créer ma figurine"}
       </button>
       {!occupe && branche && manque.length > 0 && (
@@ -481,6 +489,9 @@ const STYLES = `
   background:radial-gradient(120% 70% at 30% 0%,#fff3dc 0%,#f6d9a8 45%,#e7b77a 100%);display:flex;flex-direction:column;align-items:center;gap:14px;overflow-x:hidden;overflow-x:clip}
 /* (l'audit, en production sur un iPhone SE de 568 pt : « overflow-x: hidden » faisait de la page son propre conteneur de
    défilement, et le bouton collé ne collait jamais ; « clip » coupe sans défiler, et « Choisis ta pièce » reste en vue) */
+.nf-age{display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;padding:6px 0 0;border:0}
+.nf-age legend{padding:0;font-weight:800;font-size:14px;color:#5a3a1e}
+.nf-age small{font-size:12px;color:#7a5a3a}
 .nf section{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
 .nf h1,.nf-titre{margin:4px 0 0;font-size:28px;font-weight:800;letter-spacing:-.01em}
 .nf-doux{margin:0;color:#6b4a2b;line-height:1.45}
