@@ -52,12 +52,14 @@ ok((await texte(".nf-selfie h1")) === "Créons ta figurine !", `« Créons ta fi
 const creer = p.locator(".nf-selfie .nf-bouton");
 ok(await creer.isDisabled(), "« Créer ma figurine » attend sa photo et ses deux cases");
 // (l'audit du 28/11 : le bouton grisé dit ce qui manque)
-ok(/^Il manque : ton selfie, ton prénom, ta ville, « C’est bien moi », « J’ai 15 ans ou plus »\.$/.test(await texte("[data-manque]")), `… et dit ce qui manque (« ${await texte("[data-manque]")} »)`);
+ok(/^Il manque : ton selfie, ton prénom, ta ville, « C’est bien moi », ton âge\.$/.test(await texte("[data-manque]")), `… et dit ce qui manque (« ${await texte("[data-manque]")} »)`);
+// (🔞 l'audit du 28/11, lot 5b : une seule question d'âge — 15 à 17 ans, ou 18 ans et plus)
+ok((await p.locator('.nf-selfie [data-age] input[name="age"]').count()) === 2 && /J’ai 15 à 17 ans/.test(await texte("[data-age]")) && /J’ai 18 ans ou plus/.test(await texte("[data-age]")), "« Ton âge » : « J’ai 15 à 17 ans » ou « J’ai 18 ans ou plus »");
 await p.locator('.nf-selfie input[name="photo"]').setInputFiles("public/direct/double/content.webp");
 await p.waitForSelector(".nf-photo.prise img", { timeout: 10000 }).catch(() => null);
 await p.locator('.nf-selfie input[name="moi"]').check();
-ok(await creer.isDisabled(), "sans « J'ai 15 ans ou plus » : toujours pas");
-await p.locator('.nf-selfie input[name="age"]').check();
+ok(await creer.isDisabled(), "sans son âge : toujours pas");
+await p.locator('.nf-selfie input[name="age"][value="adulte"]').check();
 ok(await creer.isDisabled() && (await p.locator('.nf-selfie input[name="ville"]').count()) === 1, "🏙️ sans sa ville (pas encore de compte) : toujours pas");
 await p.locator('.nf-selfie input[name="ville"]').fill("Bordeaux");
 // ✍️ son prénom (le 19 novembre 2026 : « à aucun moment à l'inscription on me demande mon prénom »)
@@ -77,6 +79,9 @@ const premiere = await p.locator(".nf-decouverte").getAttribute("data-propositio
 const jeton = (await ctx.cookies()).find((c) => c.name === "clikme_habitant")?.value;
 const compte = jeton ? (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=prenom,ville_slug`)).json())[0] : null;
 ok(compte?.prenom === "Camille" && compte.ville_slug === "bordeaux", `son prénom et sa ville, rangés sur son compte (${compte?.prenom}, ${compte?.ville_slug})`);
+const idCamille = jeton ? (await (await fetch(`${F}/human_habitants?device_token=eq.${jeton}&select=id`)).json())[0]?.id : null;
+const majeur = idCamille ? await (await fetch(`${F.replace("/rest/v1", "/storage/v1/object")}/figurines-clients/${idCamille}/majeur.json`)).json().catch(() => ({})) : {};
+ok(majeur.adulte === true && Boolean(majeur.le), `« J’ai 18 ans ou plus » : ses 18 ans rangés, une fois pour toutes (${JSON.stringify(majeur)})`);
 await p.screenshot({ path: `${D}/nouvelle-figurine-3-decouverte.png` });
 
 // ═══ UNE RETOUCHE ═══

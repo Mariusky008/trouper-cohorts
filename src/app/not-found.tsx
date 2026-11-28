@@ -25,6 +25,8 @@
 // aussi la meilleure des deux expériences.
 import Link from "next/link";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { PageIntrouvable } from "@/app/collection/page-introuvable";
 import { MARQUE } from "@/lib/marque";
 
 export const metadata: Metadata = {
@@ -32,7 +34,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function NonTrouve() {
+export default async function NonTrouve() {
+  // (l'audit UX du 28/11, lot 5b) dans l'appli ClikMe (`/collection`, `/univers`) : sa page introuvable à elle, dans son
+  // décor — le chemin vient du proxy (`x-clikme-chemin`). Le code reste 404.
+  const chemin = (await headers()).get("x-clikme-chemin") ?? "";
+  if (/^\/(collection|univers)(\/|$)/.test(chemin)) return <PageIntrouvable />;
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 px-6 text-center">
       <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Erreur 404</p>

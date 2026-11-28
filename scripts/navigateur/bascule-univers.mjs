@@ -364,8 +364,8 @@ ok((await p.locator(".nf-lien", { hasText: "Reprendre ma photo d’avant" }).cou
 await p.locator(".nf-lien", { hasText: "Reprendre ma photo d’avant" }).click();
 ok((await p.locator(".nf-photo img").count()) === 1 && (await p.locator(".nf-selfie .nf-bouton").isDisabled()), "sa photo d'avant s'affiche ; les deux cases restent à cocher");
 await p.locator('.nf-case input[name="moi"]').check();
-await p.locator('.nf-case input[name="age"]').check();
-ok(!(await p.locator(".nf-selfie .nf-bouton").isDisabled()), "« C’est bien moi » et « 15 ans ou plus » cochés : « Créer ma figurine »");
+await p.locator('.nf-case input[name="age"][value="adulte"]').check();
+ok(!(await p.locator(".nf-selfie .nf-bouton").isDisabled()), "« C’est bien moi » coché, « J’ai 18 ans ou plus » choisi : « Créer ma figurine »");
 await p.screenshot({ path: `${D}/bascule-4-photo-d-avant.png` });
 await p.locator(".nf-selfie .nf-bouton").click();
 await p.waitForSelector(".nf-selfie", { state: "detached", timeout: 20000 }).catch(() => null);

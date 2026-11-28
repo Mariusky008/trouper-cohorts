@@ -357,6 +357,13 @@ export function Proches({
   // ─── ce qui sert aux deux écrans : lui parler par WhatsApp, le message prêt, la conversation, le lien d'un proche ───
   const portails = (
     <>
+      {/* ✓ (l'audit du 28/11, lot 5b : « Ajouter un proche » fermait sa feuille et copiait le lien sans rien dire) le lien
+          copié se dit, par-dessus la page */}
+      {copie && (
+        <p className="pr-copie" role="status" data-lien-copie>
+          ✓ Lien copié : colle-le dans WhatsApp ou un SMS
+        </p>
+      )}
       {/* 📲 il lui parle (par WhatsApp) : l'écran de toujours ; son message devient un lien */}
       {whatsapp &&
         createPortal(
@@ -2657,6 +2664,8 @@ export const STYLES_PROCHES = `
 .pr{display:flex;flex-direction:column;gap:14px}
 .pr-tete h2{margin:0;font-size:28px;font-weight:900;line-height:1.15;letter-spacing:-.02em}
 .pr-tete p{margin:3px 0 0;font-size:13.5px;color:#CDB4C0}
+.pr-copie{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));z-index:60;transform:translateX(-50%);max-width:calc(100% - 32px);margin:0;padding:11px 18px;border-radius:999px;background:#FFF4E6;color:#22091B;font-weight:800;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.45);animation:pr-copie .25s ease-out}
+@keyframes pr-copie{from{opacity:0;transform:translate(-50%,8px)}}
 .cm-supprime{margin:0 0 6px;padding:9px 14px;border-radius:14px;background:rgba(255,255,255,.04);color:#CDB4C0;font-size:13px;font-style:italic}
 .pr-vide{display:flex;flex-direction:column;align-items:center;gap:8px;padding:22px 18px;border-radius:24px;background:rgba(255,255,255,.05);text-align:center}
 .pr-vide b{font-size:17px;font-weight:900}

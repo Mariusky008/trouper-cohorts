@@ -214,6 +214,10 @@ export const STYLES_CONNAITRE = `
 .cn-ligne{display:flex;gap:8px;min-width:0}
 .cn-ligne input{flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#FFF4E6;font:inherit;font-size:16px}
 .cn-ligne .mp-bouton{flex:none}
+/* (l'audit du 28/11, lot 5b : l'adresse, coupée à côté du bouton — elle prend toute la ligne, le bouton dessous) */
+.cn-ligne:has(input[type="email"]){flex-wrap:wrap}
+.cn-ligne input[type="email"]{flex-basis:100%}
+.cn-ligne input[type="email"] + .mp-bouton{flex:1 1 100%;min-height:48px}
 .cn-merci{font-size:12.5px;color:#BFF7E2}
 .cn-lien,.cn-retrouver-lien{align-self:flex-start;border:0;background:none;padding:0;color:#A8C8F0;font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
 .cn-retrouver-lien{align-self:center;margin:6px auto 0}

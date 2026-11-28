@@ -25,6 +25,7 @@ import { decrireTraits } from "./figurine-pro-serveur";
 import type { Habitant } from "./habitant";
 import { universValide } from "./ma-figurine";
 import { confirmerSonAge, deposer, ecrireJson, lireJson, lireLigne, signer, telecharger } from "./ma-figurine-serveur";
+import { direSesDixHuitAns } from "./majorite-serveur";
 import { parleDAlcool } from "./meme-surprise";
 import { demanderUneImage } from "./moteur-images-serveur";
 import { motInterdit } from "./mots-interdits";
@@ -187,7 +188,7 @@ export function selfieRecevable(photo: unknown, moi: unknown, age: unknown): { e
 }
 
 /** 📸 Son selfie, et ses deux cases : sa première proposition est demandée. */
-export async function envoyerSelfie(supabase: Supabase, habitant: Habitant, photo: unknown, moi: unknown, age: unknown): Promise<{ id?: string; error?: string; statut?: number }> {
+export async function envoyerSelfie(supabase: Supabase, habitant: Habitant, photo: unknown, moi: unknown, age: unknown, adulte?: unknown): Promise<{ id?: string; error?: string; statut?: number }> {
   const refus = selfieRecevable(photo, moi, age);
   if (refus) return refus;
   // (« Reprendre ma photo d'avant » : celle de sa figurine d'aujourd'hui)
@@ -204,6 +205,8 @@ export async function envoyerSelfie(supabase: Supabase, habitant: Habitant, phot
   const selfie = cheminSelfie(h, randomBytes(6).toString("hex"));
   if (!(await deposer(supabase, selfie, jpeg, "image/jpeg"))) return { error: "Ton selfie n’a pas pu être rangé. Réessaie.", statut: 502 };
   await confirmerSonAge(supabase, h);
+  // (🔞 l'audit du 28/11, lot 5b : ses 18 ans dits ici, une fois — les salons, Découvrir et les pièces ne les redemandent plus)
+  if (typeof adulte === "boolean") await direSesDixHuitAns(supabase, h, adulte).catch(() => undefined);
   // (un nouveau selfie : un nouveau brouillon — les propositions d'avant restent rangées, et le compte du jour aussi)
   const avant = await lireBrouillon(supabase, h);
   await ecrireBrouillon(supabase, h, { selfie, accord_le: new Date().toISOString(), propositions: [], jour: avant.jour, faites: avant.faites });

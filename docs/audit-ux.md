@@ -41,8 +41,8 @@ sous réserve » tant qu'il n'est pas vérifié en production, sur les principau
 
 | Lot | Contenu | État |
 | --- | --- | --- |
-| 1 | La fin de l'inscription sans accroc (sections 4 et 5, PR #352) | validé sous réserve : à vérifier en production, sur trois appareils (section 9) |
-| 5 | La confiance : se déconnecter, supprimer son compte (vraiment : ses données et ses images), la confidentialité (section 10) ; puis (lot 5b) « Lien copié ✓ », le champ e-mail, une seule question d'âge, l'inscription dans le design de l'appli, la 404 de l'appli | 5a en cours (section 10) ; 5b ensuite |
+| 1 | La fin de l'inscription sans accroc (sections 4 et 5, PR #352) | ✅ fait, vérifié en production sur un iPhone SE et un Pixel 7 (section 11) |
+| 5 | La confiance : se déconnecter, supprimer son compte (vraiment : ses données et ses images), la confidentialité (section 10) ; puis (lot 5b) « Lien copié ✓ », le champ e-mail, une seule question d'âge, l'inscription dans le design de l'appli, la 404 de l'appli | ✅ 5a fait (section 10, PR #353) ; 5b en cours (section 12) |
 | 3 | Le fil et les salons vides : un problème d'activité, pas d'affichage (section 7) ; puis la place aux figurines, plus rien de coupé ni posé sur la scène, « Quoi de neuf ? » masqué quand il est vide, un squelette de chargement | maquette à faire valider |
 | 4 | Le salon : aucune interaction cachée — la barre de réactions visible dès l'arrivée ; « Touche pour le son » / « Pause » sur ordinateur ; l'image du moment préparée pendant le grand moment (section 8 : 12 s d'attente côté serveur) | |
 | 2 | La bienvenue, conçue autour de la vraie promesse de ClikMe (section 7) : deux bulles, le bouton dès la première seconde, « J'ai déjà une figurine » | le texte du propriétaire (« Ici, tes vidéos préférées deviennent des moments à partager ! … »), une démonstration animée pendant la deuxième bulle, trois cartes ; maquette : https://claude.ai/artifact/R67u7nGnvyLxxAi42EuXmB ; la voix à enregistrer par lui |
@@ -308,4 +308,32 @@ sur un Pixel 7 de 412 × 839 ; « Ma figurine peut réapparaître dans les salon
 **Le bouton coupé sur le petit écran** : le bouton « collé » ne collait jamais, parce que la page
 (`overflow-x: hidden`) était devenue son propre conteneur de défilement. `overflow-x: clip` coupe sans défiler
 (`nouvelle-figurine.tsx`) ; vérifié en production en l'injectant dans la page : le bouton reste entre 504 et 556 pt.
-Le lot 1 sera « fait » quand ce correctif sera en ligne et revérifié sur l'iPhone SE.
+En ligne avec le lot 5 (#353), revérifié sur l'iPhone SE, sans rien injecter : le bouton entre 504 et 556 pt sur 568. **Le lot 1 est fait.**
+
+## 12. Le lot 5b : les petits riens de la confiance
+
+- **« Lien copié » se voit** : « ＋ Nouveau », « Ajouter un proche » fermait sa feuille et copiait le lien sans rien dire
+  (le « Lien copié ✓ » s'affichait dans la feuille fermée). Maintenant : « ✓ Lien copié : colle-le dans WhatsApp ou un
+  SMS », par-dessus la page (`proches.tsx`).
+- **Le champ e-mail** de « Ne perds jamais ta figurine » : coupé à côté de son bouton, il prend toute la largeur, le
+  bouton dessous (`connaitre.tsx`).
+- **Une seule question d'âge** : à l'inscription, « Ton âge » — « J'ai 15 à 17 ans » ou « J'ai 18 ans ou plus » (« ClikMe
+  est ouvert à partir de 15 ans ») — au lieu de la case « J'ai 15 ans ou plus », puis « Avant d'entrer dans les salons :
+  as-tu 18 ans ou plus ? » dans Découvrir. Ses 18 ans sont rangés dès l'inscription (`direSesDixHuitAns`,
+  `nouvelle-figurine-serveur.ts`) : les salons, les discussions et les pièces ne les redemandent plus. (Un « 15 à 17 ans »
+  ne devient pas « 18 ans » d'un toucher, comme avant.)
+- **La page introuvable de l'appli** : une adresse inconnue sous `/collection` ou `/univers` montrait la page 404 des
+  commerçants (fond blanc, « l'annonce que vous cherchiez »). Elle a maintenant celle de ClikMe, « Cette page n'existe
+  pas », « Revenir à ClikMe » (`page-introuvable.tsx`) ; le code reste 404. Le proxy pose le chemin demandé
+  (`x-clikme-chemin`, jamais repris du client), et la page 404 du site choisit son décor (`app/not-found.tsx`).
+- **Pas de connexion** :
+  - dans l'appli, quand le réseau tombe : « 📡 Pas de connexion : ClikMe reprend dès qu'elle revient. », en haut ; il part
+    quand le réseau revient (`hors-ligne.tsx`) ;
+  - l'appli installée (lancée depuis l'écran d'accueil) pose son service worker dès le lancement ; sans réseau, il montre
+    « 📡 Pas de connexion » et « Réessayer » au lieu de l'écran d'erreur du téléphone (`collection-sw.js` : il ne met
+    toujours rien en cache, il ne prend que l'ouverture d'une page, et seulement quand le réseau ne répond pas).
+- **Reste, avec le lot 2** : l'inscription dans le design de l'appli (aujourd'hui crème et orange, l'appli prune et rose) —
+  une maquette à faire valider, en même temps que la nouvelle bienvenue.
+- **Les essais** : `navigateur/confiance.mjs` (la page introuvable, le bandeau, l'écran hors ligne et « Réessayer »,
+  « ✓ Lien copié », l'adresse sur toute la largeur) ; `navigateur/nouvelle-figurine.mjs` (« Ton âge », « Il manque : …
+  ton âge », ses 18 ans rangés) ; `navigateur/bascule-univers.mjs`.

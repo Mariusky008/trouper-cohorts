@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         const { error } = await supabase.from("human_habitants").update({ prenom }).eq("id", moi.id);
         if (error) console.error("[nouvelle-figurine] prénom non rangé :", error.message);
       }
-      const r = await envoyerSelfie(supabase, moi, p.photo, p.moi, p.age);
+      const r = await envoyerSelfie(supabase, moi, p.photo, p.moi, p.age, p.adulte);
       const id = r.id;
       if (id) after(() => fabriquerProposition(supabase, moi.id, id, avant));
       return repondre(r, { id });
