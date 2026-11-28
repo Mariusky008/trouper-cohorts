@@ -92,12 +92,22 @@ const apercu = p.locator('.mmc-apercu[aria-label="Le hangar"]');
 ok(await attendre(async () => (await apercu.locator("img").evaluate((i) => i.complete && i.naturalWidth > 0)) === true), "un toucher : le hangar en grand");
 await p.screenshot({ path: `${D}/ma-maison-2-apercu.png` });
 await apercu.locator('[data-geste="installer"]').click();
-// (🚪 lot F2 du fil : « Qui peut venir voir ta pièce ? » — elle l'ouvre à ceux de son âge qui aiment ce qu'elle aime)
+// (💬 l'audit du 28/11 : juste après son premier choix, la dernière étape de l'inscription, « Tes proches » — plus « Qui
+// peut venir voir ta pièce ? », qui attend la première chose mise chez elle)
+const etape = p.locator("[data-etape-proches]");
 const porte = p.locator("[data-question-porte]");
-ok(await attendre(async () => (await porte.count()) === 1 && /Qui peut venir voir ta pièce/.test(await porte.innerText())), "juste après son premier choix : « 🚪 Qui peut venir voir ta pièce ? »");
-await p.screenshot({ path: `${D}/ma-maison-2b-qui-peut-venir.png` });
-await porte.locator('[data-porte="passions"]').click();
-ok(await attendre(async () => (await porte.count()) === 0), "« 🧭 Aussi ceux qui aiment ce que j’aime » : c’est noté (son âge est déjà connu, rien de plus à demander)");
+ok(await attendre(async () => (await etape.count()) === 1 && /Étape 4 sur 4/.test(await etape.innerText()) && /Dernière étape : tes proches/.test(await etape.innerText())), "juste après son premier choix : « Étape 4 sur 4 · 💬 Dernière étape : tes proches »");
+ok((await porte.count()) === 0, "… et pas « Qui peut venir voir ta pièce ? » (ses proches seulement, d'office)");
+const wa = decodeURIComponent((await etape.locator("[data-inviter-whatsapp]").getAttribute("href")) ?? "");
+ok(/^https:\/\/api\.whatsapp\.com\/send\?text=/.test(wa) && /\/collection\?proche=[^#\s]+#proches/.test(wa), `« 📲 Inviter sur WhatsApp » : son lien de proche (${wa.slice(0, 80)}…)`);
+await p.screenshot({ path: `${D}/ma-maison-2b-tes-proches.png` });
+await ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: BASE });
+await etape.locator("[data-copier-lien]").click();
+ok(await attendre(async () => /✓ Lien copié/.test(await etape.locator("[data-copier-lien]").innerText())), "« 🔗 Copier mon lien » : « ✓ Lien copié »");
+ok(/proche=/.test(await p.evaluate(() => navigator.clipboard.readText()).catch(() => "")), "… le lien est bien dans le presse-papiers");
+ok(/C’est bon/.test(await etape.locator("[data-plus-tard]").innerText()), "… « Plus tard » devient « C’est bon »");
+await etape.locator("[data-plus-tard]").click();
+ok(await attendre(async () => (await etape.count()) === 0), "« C’est bon » : l'étape s'en va, on est chez soi");
 
 // ─── chez soi ───
 const scene = p.locator('.mmc-scene[data-piece="hangar"]');
@@ -160,6 +170,26 @@ ok((await scene.locator(".mmc-fig").getAttribute("data-saute")) !== avant, "sa f
 ok(await attendre(async () => (await p.locator("[data-mon-double]").count()) === 1), "… et ouvre « Mon double du jour »");
 await p.locator("[data-mon-double] [data-retour-maison]").click();
 ok(await attendre(async () => (await p.locator("[data-mon-double]").count()) === 0), "« ‹ Ma maison » : on revient chez soi");
+
+// ─── 🚪 la première chose chez elle : « Qui peut venir voir ta pièce ? » (l'audit du 28/11) ───
+await scene.locator('[data-geste="ajouter"]').click();
+const ajouter = p.locator("[data-ajouter]");
+await ajouter.locator('[data-quoi="livre"]').click();
+await ajouter.locator('[data-champ="titre"]').fill("Le Petit Prince");
+await ajouter.locator("[data-mettre]").click();
+ok(await attendre(async () => (await porte.count()) === 1 && /Ta pièce commence à se remplir/.test(await porte.innerText()) && /Qui peut venir voir ta pièce/.test(await porte.innerText())), "sa première chose chez elle : « Ta pièce commence à se remplir. » « 🚪 Qui peut venir voir ta pièce ? »");
+ok(/sur l’étagère/.test(await scene.locator("[data-fait]").innerText().catch(() => "")), "… son livre est bien mis chez elle (« ✓ C’est chez toi, sur l’étagère »)");
+await p.screenshot({ path: `${D}/ma-maison-4b-qui-peut-venir.png` });
+await porte.locator('[data-porte="passions"]').click();
+ok(await attendre(async () => (await porte.count()) === 0), "« 🧭 Aussi ceux qui aiment ce que j’aime » : c’est noté (son âge est déjà connu, rien de plus à demander)");
+await p.waitForTimeout(2800);
+await scene.locator('[data-geste="ajouter"]').click();
+await ajouter.locator('[data-quoi="livre"]').click();
+await ajouter.locator('[data-champ="titre"]').fill("Le Lion");
+await ajouter.locator("[data-mettre]").click();
+ok(await attendre(async () => /sur l’étagère/.test(await scene.locator("[data-fait]").innerText())), "la deuxième chose : chez elle…");
+await p.waitForTimeout(800);
+ok((await porte.count()) === 0, "… sans redemander qui peut venir (une seule fois)");
 
 // ─── ⚙️ changer de pièce ───
 await scene.locator('[data-geste="reglages"]').click();

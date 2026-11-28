@@ -109,8 +109,10 @@ export async function monRituel(supabase: Supabase, moi: Habitant): Promise<Etat
         }),
     )
   ).filter((m): m is MotRecu => Boolean(m));
-  const attente = Boolean(humeur) && Date.now() - (Number(fiche.attente) || 0) < ATTENTE_MS;
-  return { jour, humeur, mots, ecrits, attente, parle, proches: [...miens].filter((h) => h !== moi.id).length, fins, finsAttente, aPreparer };
+  const proches = [...miens].filter((h) => h !== moi.id).length;
+  // (sans un seul proche, personne n'écrit : jamais « les figurines de tes proches t'écrivent un mot… » — l'audit du 28/11)
+  const attente = proches > 0 && Boolean(humeur) && Date.now() - (Number(fiche.attente) || 0) < ATTENTE_MS;
+  return { jour, humeur, mots, ecrits, attente, parle, proches, fins, finsAttente, aPreparer };
 }
 
 /** Ce que sa figurine a écrit en son nom aujourd'hui (les marques, puis le mot lui-même, chez celui qui l'a reçu). */

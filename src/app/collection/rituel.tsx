@@ -21,7 +21,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Feuille } from "./ma-figurine";
 import { jourParis } from "@/lib/jour-paris";
 import type { Sentiment } from "@/lib/direct/ma-figurine";
-import { HUMEURS, humeurDe, type EtatRituel, type FinVue, type MotEcrit, type MotRecu, type RituelAvec } from "@/lib/direct/rituel";
+import { CLE_INSCRIT_LE, HUMEURS, humeurDe, type EtatRituel, type FinVue, type MotEcrit, type MotRecu, type RituelAvec } from "@/lib/direct/rituel";
 import type { FigurineVue } from "@/lib/direct/talkie";
 import type { ReponseHumeur } from "@/lib/direct/humeur-reponse";
 import { ReponseDeMaFigurine } from "./humeur-reponse";
@@ -43,6 +43,8 @@ const message = (e: unknown) => (e instanceof Error && e.message ? e.message : "
 
 // ─── ce que ce téléphone retient ────────────────────────────────────────────────────────────────
 const CLE_PASSEE = "clikme-humeur-passee";
+/** La feuille du matin attend un instant que la page soit posée (ce qui doit passer devant se montre d'abord). */
+const REPIT_MS = 1200;
 const CLE_OUVERTS = "clikme-mots-ouverts";
 function lire(cle: string): string {
   try {
@@ -295,7 +297,8 @@ function ChoixHumeur({ choisie, onChoisi, petit = false }: { choisie: Sentiment 
 // ─── la feuille du matin ──────────────────────────────────────────────────────────────────────────
 /**
  * ☀️ « COMMENT TU TE SENS AUJOURD'HUI ? » — à la première ouverture du jour (`actif` : sa figurine est prête, et rien
- * d'autre n'est ouvert par-dessus). Puis les mots des figurines arrivent, dans la même feuille.
+ * d'autre n'est ouvert par-dessus). Puis les mots des figurines arrivent, dans la même feuille. (l'audit du 28/11) Si
+ * quelque chose passe devant pendant qu'elle est ouverte (sa maison qui s'installe), elle se cache et revient après.
  */
 /** ☀️ (« Quoi de neuf ? », 26 novembre 2026) La carte « Ton humeur » ouvre la feuille « Ton humeur du jour ». */
 const EVENEMENT_HUMEUR = "clikme-humeur-du-jour";
@@ -304,24 +307,28 @@ export const ouvrirHumeurDuJour = () => window.dispatchEvent(new Event(EVENEMENT
 export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondre: (cle: string) => void }) {
   const r = useRituel();
   const [ouverte, setOuverte] = useState(false);
-  const [vue, setVue] = useState(false);
   const [erreur, setErreur] = useState("");
   const [envoi, setEnvoi] = useState(false);
   useAttente(ouverte && Boolean(r?.attente || r?.finsAttente));
   const fig = useMaFigurine(ouverte ? (r?.reponse?.humeur ?? null) : null);
 
+  // (l'audit du 28/11 : chaque fois que la voie se libère, après un instant de répit — ce qui doit passer devant, sa
+  // maison qui s'installe, a le temps de se montrer. Elle ne revient ni après « Pas maintenant », ni son humeur dite)
   useEffect(() => {
-    if (!actif || vue) return;
+    if (!actif) return;
     let fini = false;
-    void chargerRituel().then((x) => {
-      if (fini || !x) return;
-      setVue(true);
-      if (!x.humeur && lire(CLE_PASSEE) !== x.jour) setOuverte(true);
-    });
+    const t = window.setTimeout(() => {
+      void chargerRituel().then((x) => {
+        if (fini || !x) return;
+        // (le jour de l'inscription, elle ne s'ouvre pas d'elle-même : la carte « Ton humeur » reste là)
+        if (!x.humeur && lire(CLE_PASSEE) !== x.jour && lire(CLE_INSCRIT_LE) !== x.jour) setOuverte(true);
+      });
+    }, REPIT_MS);
     return () => {
       fini = true;
+      window.clearTimeout(t);
     };
-  }, [actif, vue]);
+  }, [actif]);
 
   // (la carte « Ton humeur » de « Quoi de neuf ? » : la feuille s'ouvre, même passée ce matin)
   useEffect(() => {
@@ -351,7 +358,7 @@ export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondr
 
   if (!r) return null;
   return (
-    <Feuille ouverte={ouverte} onFermer={passer} titre="Ton humeur du jour" className="rt-feuille">
+    <Feuille ouverte={ouverte && actif} onFermer={passer} titre="Ton humeur du jour" className="rt-feuille">
       <div className="rt-matin" data-humeur={r.humeur ?? ""}>
         {/* 🌙 ce que sa figurine et celles de ses proches se sont dit cette nuit */}
         <LesMotsDeLaFin fins={r.fins} onRepondre={(cle) => (setOuverte(false), onRepondre(cle))} />

@@ -165,7 +165,10 @@ proche. **Désormais** :
    il n'interdit pas. Un toucher montre la pièce en grand (on peut la faire glisser) ; « Je m'installe ici » ;
 3. **on arrive chez soi**, tout de suite : la figurine au centre, la pièce vide, et une phrase : « Ta maison se remplit
    toute seule avec ce que tu gardes dans tes conversations. Tu peux aussi y mettre ce que tu veux : ＋ » ;
-4. le premier proche (inchangé).
+4. le premier proche : depuis l'audit du 28 novembre 2026, une vraie dernière étape, juste après « Je m'installe ici » :
+   « Étape 4 sur 4 · 💬 Dernière étape : tes proches » — son lien de proche, « 📲 Inviter sur WhatsApp », « 🔗 Copier mon
+   lien » (« ✓ Lien copié »), « Plus tard » (`DerniereEtapeProches`, `ajouter-chez-moi.tsx` ; `docs/audit-ux.md`,
+   section 5). Ce jour-là, l'humeur du jour ne s'ouvre pas d'elle-même.
 
 - **Pablito** accueille toujours (son texte), mais ne fabrique plus la pièce.
 - **Ceux qui ont déjà un univers généré** le gardent ; une carte « Choisis ta pièce » leur est proposée une fois, dans

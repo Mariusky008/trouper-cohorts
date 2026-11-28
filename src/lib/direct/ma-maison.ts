@@ -84,9 +84,26 @@ export const bulleDuCoucou = (c: { geste?: GesteCoucou; e?: string }) => {
   return `${g.cle === "allez" && c.e ? c.e : g.e} ${g.bulle}`;
 };
 
-/** 🚪👋 (lot F2) Les mots des maisons ouvertes : la question à l'inscription, le coucou. */
+/**
+ * 💬 (l'audit du 28 novembre 2026) LA DERNIÈRE ÉTAPE DE L'INSCRIPTION, « TES PROCHES » : celle que le chemin annonçait
+ * (« Ton selfie › Ta figurine › Ta pièce › Tes proches »), juste après « Je m'installe ici ».
+ */
+export const PHRASES_TES_PROCHES = {
+  etape: "Étape 4 sur 4",
+  titre: "💬 Dernière étape : tes proches",
+  chapo: "Ta figurine est chez elle. Invite un proche : vos figurines se parleront, et vous regarderez des vidéos ensemble.",
+  whatsapp: "📲 Inviter sur WhatsApp",
+  copier: "🔗 Copier mon lien",
+  copie: "✓ Lien copié",
+  plusTard: "Plus tard",
+  cestBon: "C’est bon",
+} as const;
+
+/** 🚪👋 (lot F2) Les mots des maisons ouvertes : la question (à la première chose mise chez soi), le coucou. */
 export const PHRASES_PORTE = {
   titre: "Qui peut venir voir ta pièce ?",
+  /** (l'audit du 28/11) la question vient avec la première chose qu'on met chez soi, plus à l'inscription */
+  apresAjout: "Ta pièce commence à se remplir.",
   chapo: "Tu pourras changer d’avis quand tu veux, dans Ma maison (🚪).",
   proches: "👯 Mes proches seulement",
   prochesDit: "Seuls tes proches entrent.",
@@ -110,6 +127,8 @@ export type MaMaisonVue = {
   vuLe?: number;
   /** 🚪 (lot M4) qui peut entrer chez moi ; j'ai déclaré 18 ans ou plus (pour l'ouvrir à tous) ; ma clé (mon lien) */
   visibilite?: VisibiliteMaison;
+  /** (l'audit du 28/11) il a déjà répondu à « Qui peut venir voir ta pièce ? » (sinon : ses proches seulement, d'office) */
+  porteChoisie?: boolean;
   /** 👋 (lot F2) ceux qui m'ont fait coucou et attendent ma réponse : leur figurine apparaît dans ma pièce */
   coucous?: CoucouVu[];
   adulte?: boolean;

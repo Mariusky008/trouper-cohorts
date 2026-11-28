@@ -26,6 +26,7 @@ import {
   PHRASES_BAS,
   PHRASES_CADEAU,
   PHRASES_PORTE,
+  PHRASES_TES_PROCHES,
   PHRASES_VISITE,
   VISIBILITES_MAISON,
   type MaMaisonVue,
@@ -37,6 +38,7 @@ import { PHRASES_FIL } from "@/lib/direct/fil-decouvrir";
 import { MOT_SOUVENIR_MAX, OBJETS_SOUVENIR } from "@/lib/direct/visites";
 import { LIEN_REGARDER_MAX, PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import { vignetteYouTube } from "@/lib/direct/tele";
+import { PHRASES_CARNET, lienDeProche, lienWhatsApp } from "@/lib/direct/carnet-proches";
 
 const ROUTE = "/api/direct/ma-piece";
 type Reponse = { ok?: boolean; id?: string; maison?: MaMaisonVue; error?: string; age?: boolean };
@@ -237,7 +239,7 @@ function AgeDeLaPorte({ enCours, onAge }: { enCours: boolean; onAge: (majeur: bo
  * pièce : ses proches seulement, ou aussi ceux de son âge qui partagent une de ses passions. Il change d'avis dans Ma
  * maison (🚪 « Qui peut entrer »).
  */
-export function QuestionPorte({ onFini }: { onFini: (m?: MaMaisonVue) => void }) {
+export function QuestionPorte({ onFini, apresAjout = false }: { onFini: (m?: MaMaisonVue) => void; apresAjout?: boolean }) {
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
   const [age, setAge] = useState(false);
@@ -256,7 +258,7 @@ export function QuestionPorte({ onFini }: { onFini: (m?: MaMaisonVue) => void })
         <div className="acm-tete">
           <b>🚪 {PHRASES_PORTE.titre}</b>
         </div>
-        <p className="acm-chapo">{PHRASES_PORTE.chapo}</p>
+        <p className="acm-chapo">{apresAjout ? `${PHRASES_PORTE.apresAjout} ${PHRASES_PORTE.chapo}` : PHRASES_PORTE.chapo}</p>
         {age ? (
           <AgeDeLaPorte enCours={enCours} onAge={(m) => void choisir("passions", m)} />
         ) : (
@@ -276,6 +278,58 @@ export function QuestionPorte({ onFini }: { onFini: (m?: MaMaisonVue) => void })
             {erreur}
           </p>
         )}
+      </div>
+      <style>{STYLES_AJOUTER}</style>
+    </div>
+  );
+}
+
+/**
+ * 💬 (l'audit du 28 novembre 2026) LA DERNIÈRE ÉTAPE DE L'INSCRIPTION, « TES PROCHES » — juste après « Je m'installe ici » :
+ * son lien de proche, à envoyer sur WhatsApp ou à copier (« ✓ Lien copié »), ou « Plus tard ». `cle` : sa clé (son lien) ;
+ * sans elle, on mène au carnet de « Messages ».
+ */
+export function DerniereEtapeProches({ cle, onFini }: { cle?: string; onFini: () => void }) {
+  const [copie, setCopie] = useState(false);
+  const [fait, setFait] = useState(false);
+  const lien = cle && typeof window !== "undefined" ? lienDeProche(window.location.origin, cle) : "";
+  async function copier() {
+    if (!lien) return;
+    try {
+      await navigator.clipboard.writeText(`${PHRASES_CARNET.texteLien} ${lien}`);
+      setCopie(true);
+      setFait(true);
+      window.setTimeout(() => setCopie(false), 2500);
+    } catch {
+      window.prompt("Ton lien :", lien);
+      setFait(true);
+    }
+  }
+  return (
+    <div className="acm" role="dialog" aria-modal="true" aria-label={PHRASES_TES_PROCHES.titre} data-etape-proches>
+      <div className="acm-feuille">
+        <small className="acm-etape">{PHRASES_TES_PROCHES.etape}</small>
+        <div className="acm-tete">
+          <b>{PHRASES_TES_PROCHES.titre}</b>
+        </div>
+        <p className="acm-chapo">{PHRASES_TES_PROCHES.chapo}</p>
+        {lien ? (
+          <>
+            <a className="acm-principal acm-lien" href={lienWhatsApp(PHRASES_CARNET.texteLien, lien)} target="_blank" rel="noopener noreferrer" data-inviter-whatsapp onClick={() => setFait(true)}>
+              {PHRASES_TES_PROCHES.whatsapp}
+            </a>
+            <button type="button" className="acm-secondaire" data-copier-lien onClick={() => void copier()}>
+              {copie ? PHRASES_TES_PROCHES.copie : PHRASES_TES_PROCHES.copier}
+            </button>
+          </>
+        ) : (
+          <a className="acm-principal acm-lien" href="/collection#proches" data-inviter-carnet onClick={onFini}>
+            {PHRASES_TES_PROCHES.whatsapp}
+          </a>
+        )}
+        <button type="button" className="acm-plus-tard" data-plus-tard onClick={onFini}>
+          {fait ? PHRASES_TES_PROCHES.cestBon : PHRASES_TES_PROCHES.plusTard}
+        </button>
       </div>
       <style>{STYLES_AJOUTER}</style>
     </div>
@@ -677,6 +731,8 @@ const STYLES_AJOUTER = `
 .acm-quoi small{font-weight:600;color:#c9b29c}
 .acm-champ{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #5a4232;border-radius:12px;background:#170f0a;color:#FFF4E6;font:inherit;font-size:16px}
 .acm-apercu{max-width:100%;max-height:34svh;align-self:center;border-radius:8px;object-fit:contain}
+.acm-etape{color:#ffd27a;font-size:12.5px;font-weight:800;letter-spacing:.02em}
+.acm-plus-tard{align-self:center;min-height:40px;padding:0 14px;border:0;background:none;color:#c9b29c;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
 .acm-principal{padding:13px;border:0;border-radius:999px;background:linear-gradient(135deg,#ff9a3c,#ff5e62);color:#fff;font:inherit;font-weight:900;font-size:16px;cursor:pointer}
 .acm-principal.danger{background:#c0392b}
 .acm-principal:disabled{opacity:.6}

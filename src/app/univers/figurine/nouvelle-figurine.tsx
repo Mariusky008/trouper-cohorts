@@ -23,6 +23,8 @@ import { IDEES_RETOUCHE, VILLE_MAX, villeEcrite, type EtatNouvelleFigurine, type
 import { RETOUCHE_FIGURINE_MAX } from "@/lib/direct/perso-consignes";
 import { PRENOM_MAX, prenomValide } from "@/lib/direct/ma-figurine";
 import { TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
+import { CLE_INSCRIT_LE } from "@/lib/direct/rituel";
+import { jourParis } from "@/lib/jour-paris";
 
 const ROUTE = "/api/direct/nouvelle-figurine";
 
@@ -35,6 +37,19 @@ async function demander<T>(corps: Record<string, unknown>): Promise<T> {
   return j;
 }
 const message = (e: unknown) => (e instanceof Error && e.message ? e.message : "Ça n’a pas marché. Réessaie.");
+
+/**
+ * 🧭 (l'audit du 28 novembre 2026) Le jour de sa première figurine validée (« C'est moi ! »), sur ce téléphone : ce
+ * jour-là, l'humeur du jour ne s'ouvre pas d'elle-même (`rituel.tsx`) — l'inscription s'arrête à « Tes proches ». Le
+ * premier jour gardé : refaire sa figurine plus tard ne le change pas.
+ */
+function noterLeJourDeLInscription() {
+  try {
+    if (!window.localStorage.getItem(CLE_INSCRIT_LE)) window.localStorage.setItem(CLE_INSCRIT_LE, jourParis());
+  } catch {
+    /* (sans stockage : l'humeur s'ouvrira, comme avant) */
+  }
+}
 
 /** La photo, réduite dans le téléphone (1 024 pixels au plus) avant de partir. */
 async function photoReduite(f: File): Promise<string> {
@@ -92,6 +107,7 @@ export function NouvelleFigurine({ piece = "", place }: { piece?: string; place?
     try {
       await demander(corps);
       if (corps.action === "selfie") setRefaireDepuisLeDebut(false);
+      if (corps.action === "valider") noterLeJourDeLInscription();
       await charger();
     } catch (e) {
       setErreur(message(e));
@@ -171,6 +187,14 @@ function Selfie({
   const villeOk = !villeADonner || villeEcrite(ville) !== "";
   const prenomOk = prenomValide(prenom) !== "";
   const pret = (Boolean(photo) || dAvant) && moi && age && villeOk && prenomOk && !occupe && branche;
+  // (l'audit du 28/11 : le bouton grisé disait seulement « non » — il dit maintenant ce qui manque)
+  const manque = [
+    !photo && !dAvant ? "ton selfie" : "",
+    !prenomOk ? "ton prénom" : "",
+    !villeOk ? "ta ville" : "",
+    !moi ? "« C’est bien moi »" : "",
+    !age ? "« J’ai 15 ans ou plus »" : "",
+  ].filter(Boolean);
   const montree = dAvant ? photoDAvant : photo;
   return (
     <section className="nf-selfie" aria-label="Ton selfie">
@@ -229,6 +253,11 @@ function Selfie({
       <button type="button" className="nf-bouton" disabled={!pret} onClick={() => onEnvoyer(dAvant ? "avant" : photo, villeADonner ? villeEcrite(ville) : undefined, prenomValide(prenom) || undefined)}>
         {occupe ? "…" : "Créer ma figurine"}
       </button>
+      {!occupe && branche && manque.length > 0 && (
+        <p className="nf-manque" data-manque aria-live="polite">
+          Il manque : {manque.join(", ")}.
+        </p>
+      )}
       {!branche && <p className="nf-doux">Le moteur d’image n’est pas branché ici.</p>}
       <p className="nf-petit">Ta photo sert à sculpter ta figurine. Elle reste privée.</p>
     </section>
@@ -454,6 +483,10 @@ const STYLES = `
 .nf h1,.nf-titre{margin:4px 0 0;font-size:28px;font-weight:800;letter-spacing:-.01em}
 .nf-doux{margin:0;color:#6b4a2b;line-height:1.45}
 .nf-petit{margin:0;font-size:13px;color:#7d5a37}
+.nf-manque{margin:-4px 0 0;font-size:13.5px;font-weight:700;color:#8a4b1c}
+/* (l'audit du 28/11) « 🏠 Choisis ta pièce » reste en bas de l'écran, sans avoir à défiler sous la figurine */
+.nf-validee .nf-vers{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));z-index:3;box-shadow:0 10px 26px rgba(58,36,18,.45)}
+.nf-validee .nf-scene{max-height:58dvh}
 .nf-centre{margin:40vh 0 0}
 .nf-erreur{margin:0;max-width:440px;padding:10px 12px;border-radius:12px;background:#fde3dc;color:#8a1c14}
 .nf-photo{position:relative;width:200px;height:200px;border-radius:50%;background:#fff8ec;border:3px dashed #c98c4a;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:20px;font-weight:700;color:#8a5a2b;cursor:pointer}
