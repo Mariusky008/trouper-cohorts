@@ -334,6 +334,8 @@ En ligne avec le lot 5 (#353), revérifié sur l'iPhone SE, sans rien injecter :
     toujours rien en cache, il ne prend que l'ouverture d'une page, et seulement quand le réseau ne répond pas).
 - **Reste, avec le lot 2** : l'inscription dans le design de l'appli (aujourd'hui crème et orange, l'appli prune et rose) —
   une maquette à faire valider, en même temps que la nouvelle bienvenue.
-- **Les essais** : `navigateur/confiance.mjs` (la page introuvable, le bandeau, l'écran hors ligne et « Réessayer »,
-  « ✓ Lien copié », l'adresse sur toute la largeur) ; `navigateur/nouvelle-figurine.mjs` (« Ton âge », « Il manque : …
+- **Les essais** : `navigateur/confiance.mjs` (la page introuvable, le bandeau, le service worker qui tient la page et
+  laisse passer l'appli, « ✓ Lien copié », l'adresse sur toute la largeur) ; `essai-hors-ligne-sw.mjs` (le service
+  worker lui-même, réseau en panne : « Pas de connexion » et « Réessayer » ; réseau qui répond : la vraie page ; le reste,
+  pas touché — hors navigateur, parce que la coupure simulée par Playwright ne s'applique pas toujours à ses requêtes) ; `navigateur/nouvelle-figurine.mjs` (« Ton âge », « Il manque : …
   ton âge », ses 18 ans rangés) ; `navigateur/bascule-univers.mjs`.

@@ -3,7 +3,8 @@
 //
 // Une adresse inconnue de l'appli (`/collection/…`, `/univers/…`) : la page introuvable de ClikMe (code 404), plus
 // celle des commerçants — qui reste ailleurs. Le réseau coupé : « 📡 Pas de connexion… », qui part quand il revient.
-// L'appli installée, sans réseau : son écran « Pas de connexion » et « Réessayer » (le service worker). « ＋ Nouveau »,
+// L'appli installée : son service worker tient la page et laisse passer l'appli (son écran « Pas de connexion » :
+// `essai-hors-ligne-sw.mjs`). « ＋ Nouveau »,
 // « Ajouter un proche » : « ✓ Lien copié… » se voit, la feuille fermée. « Ne perds jamais ta figurine » : l'adresse sur
 // toute la largeur, le bouton dessous. Ni débordement, ni erreur, ni le mot « exemple ».
 import sharp from "sharp";
@@ -106,8 +107,10 @@ const bouton = await p.locator(".mc-feuille-proteger.ouverte .cn-ligne .mp-bouto
 ok(c && c.width > 300 && bouton && bouton.y >= c.y + c.height - 1, `… l'adresse sur toute la largeur (${Math.round(c?.width ?? 0)} pt), le bouton dessous`);
 await p.screenshot({ path: `${D}/confiance-4-adresse.png` });
 
-// ═══ L'APPLI INSTALLÉE, SANS RÉSEAU : SON ÉCRAN « PAS DE CONNEXION » ═══
-// (le service worker de l'appli, posé comme l'appli installée le pose au lancement)
+// ═══ L'APPLI INSTALLÉE : SON SERVICE WORKER TIENT LA PAGE, ET LAISSE PASSER L'APPLI ═══
+// (posé comme l'appli installée le pose au lancement. Son écran « Pas de connexion », réseau en panne, est vérifié par
+// `essai-hors-ligne-sw.mjs` : la coupure simulée par Playwright ne s'applique pas toujours aux requêtes d'un service
+// worker, selon la version de Chromium — en CI, la page arrivait quand même)
 await p.goto(`${BASE}/collection`, { waitUntil: "networkidle" });
 await p.evaluate(async () => {
   await navigator.serviceWorker.register("/collection-sw.js", { scope: "/collection" });
@@ -115,14 +118,9 @@ await p.evaluate(async () => {
 });
 await p.reload({ waitUntil: "networkidle" });
 ok(await attendre(async () => p.evaluate(() => Boolean(navigator.serviceWorker.controller)), 8000), "le service worker de l'appli tient la page");
-await ctx.setOffline(true);
-await p.goto(`${BASE}/collection?v=2`, { waitUntil: "domcontentloaded" }).catch(() => null);
-ok(await attendre(async () => (await p.locator("body[data-hors-ligne]").count()) === 1 && /Pas de connexion/.test(await p.locator("h1").innerText()), 8000), "sans réseau : « 📡 Pas de connexion », sur l'écran de l'appli");
-ok((await p.locator("body[data-hors-ligne] button:has-text('Réessayer')").count()) === 1, "… et « Réessayer »");
-await p.screenshot({ path: `${D}/confiance-5-hors-ligne.png` });
-await ctx.setOffline(false);
-await p.locator("body[data-hors-ligne] button").click();
-ok(await attendre(async () => (await p.locator("body[data-hors-ligne]").count()) === 0 && (await p.locator("main.mc").count()) === 1, 15000), "« Réessayer », le réseau revenu : l'appli");
+await p.goto(`${BASE}/collection?v=2`, { waitUntil: "networkidle" });
+ok((await p.locator("main.mc").count()) === 1 && (await p.locator("body[data-hors-ligne]").count()) === 0, "le réseau qui répond : l'appli, telle quelle, à travers lui");
+await p.screenshot({ path: `${D}/confiance-5-appli-installee.png` });
 
 ok(erreurs.length === 0, `aucune erreur dans la page${erreurs.length ? ` (${erreurs.slice(0, 3).join(" | ")})` : ""}`);
 await b.close();
