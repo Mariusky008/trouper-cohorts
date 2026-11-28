@@ -156,8 +156,13 @@ export async function figurineDeLaMaison(supabase: Supabase, h: string): Promise
 /** 🚪 (lot M4) qui peut entrer chez lui (`<habitant>/ma-piece/visibilite.json`) : ses proches, d'office. */
 export const cheminVisibiliteMaison = (h: string) => `${dossierMaison(h)}/visibilite.json`;
 export async function visibiliteDeLaMaison(supabase: Supabase, h: string): Promise<VisibiliteMaison> {
+  return (await porteDeLaMaison(supabase, h)).v;
+}
+/** 🚪 Sa visibilité, et s'il l'a déjà choisie (l'audit du 28/11 : la question vient avec la première chose mise chez lui). */
+export async function porteDeLaMaison(supabase: Supabase, h: string): Promise<{ v: VisibiliteMaison; choisie: boolean }> {
   const v = (await lireJson<{ v?: string }>(supabase, cheminVisibiliteMaison(h)).catch(() => ({}) as { v?: string })).v;
-  return (VISIBILITES_DE_MAISON as readonly string[]).includes(s(v)) ? (v as VisibiliteMaison) : "proches";
+  const ok = (VISIBILITES_DE_MAISON as readonly string[]).includes(s(v));
+  return { v: ok ? (v as VisibiliteMaison) : "proches", choisie: ok };
 }
 /** Il a déclaré 18 ans ou plus (`<habitant>/adulte.json`, le lot 6 des visites). */
 const aDitSesDixHuitAns = async (supabase: Supabase, h: string) => Boolean(s((await lireJson<{ le?: string }>(supabase, `${h}/adulte.json`).catch(() => ({}) as { le?: string })).le));
@@ -262,12 +267,12 @@ export async function propositionsDeRegarder(supabase: Supabase, h: string): Pro
 
 export async function maMaison(supabase: Supabase, h: string, maintenant = new Date()): Promise<MaMaisonVue> {
   const piece = await lireSaPiece(supabase, h);
-  const [scene, figurine, objets, vu, visibilite, adulte, cle] = await Promise.all([
+  const [scene, figurine, objets, vu, porte, adulte, cle] = await Promise.all([
     piece ? sceneDeLaMaison(supabase, piece, maintenant).catch(() => null) : Promise.resolve(null),
     figurineDeLaMaison(supabase, h).catch(() => null),
     piece ? objetsDeMaMaison(supabase, h).catch(() => []) : Promise.resolve([]),
     lireJson<{ le?: number }>(supabase, cheminVu(h)).catch(() => ({}) as { le?: number }),
-    visibiliteDeLaMaison(supabase, h),
+    porteDeLaMaison(supabase, h),
     aDitSesDixHuitAns(supabase, h),
     poserProfil(supabase, h).catch(() => ""),
   ]);
@@ -287,7 +292,7 @@ export async function maMaison(supabase: Supabase, h: string, maintenant = new D
     // (👀 « Ma figurine », lot 2 : sa journée, racontée par sa figurine)
     saJournee(supabase, h).catch(() => null),
   ]);
-  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}), ...(regarder.length ? { regarder } : {}), ...(aRevoir.length ? { aRevoir: aRevoir.slice(0, 5).map((x) => ({ id: x.id, titre: x.titre, de: x.de })) } : {}), ...(journee ? { journee } : {}) };
+  return { piece, scene, figurine, contenu: placerChezMoi(objets, scene.emplacements?.cadres.length ?? 0), vuLe, visibilite: porte.v, porteChoisie: porte.choisie, adulte, ...(cle ? { cle } : {}), ...vie, ...(question ? { question } : {}), ...(salons.length ? { salons } : {}), ...(regarder.length ? { regarder } : {}), ...(aRevoir.length ? { aRevoir: aRevoir.slice(0, 5).map((x) => ({ id: x.id, titre: x.titre, de: x.de })) } : {}), ...(journee ? { journee } : {}) };
 }
 
 /** ✨ (lot M2) Il est venu chez lui (après l'arrivée) : ce qu'il a gardé jusqu'ici ne s'annoncera plus. */

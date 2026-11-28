@@ -16,6 +16,12 @@
 import { SENTIMENTS, type Sentiment } from "./ma-figurine";
 import type { ReponseHumeur } from "./humeur-reponse";
 
+/**
+ * 🧭 (l'audit du 28 novembre 2026) Ce téléphone retient le jour de sa première figurine validée (« 2026-11-28 ») : ce
+ * jour-là, l'humeur ne s'ouvre pas d'elle-même — l'inscription s'arrête à « Tes proches ». Elle viendra le lendemain.
+ */
+export const CLE_INSCRIT_LE = "clikme-inscrit-le";
+
 /** Les humeurs qu'on peut choisir : ses visages, et « la tête dans les mains ». Les plus gaies d'abord. */
 export const HUMEURS: readonly Sentiment[] = ["joie", "rire", "euphorie", "amour", "grimace", "tete", "tristesse", "colere"];
 export const humeurValide = (x: unknown): Sentiment | null => (typeof x === "string" && (HUMEURS as readonly string[]).includes(x) ? (x as Sentiment) : null);

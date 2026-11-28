@@ -46,7 +46,7 @@ import {
   type PieceAuCatalogue,
 } from "@/lib/direct/ma-maison";
 import { createPortal } from "react-dom";
-import { AjouterChezMoi, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuestionPorte, QuiPeutEntrer, RegarderADeux, type LigneAbsence } from "./ajouter-chez-moi";
+import { AjouterChezMoi, DerniereEtapeProches, EnleverDeChezMoi, LaisserUneSurprise, PendantTonAbsence, QuestionPorte, QuiPeutEntrer, RegarderADeux, type LigneAbsence } from "./ajouter-chez-moi";
 import { PHRASES_REGARDER } from "@/lib/direct/regarder-a-deux";
 import { PHRASES_CARNET } from "@/lib/direct/carnet-proches";
 import { CarnetDesProches } from "./carnet-proches";
@@ -1440,8 +1440,8 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
       fini = true;
     };
   }, [ouvert, catalogue]);
-  // 🚪 (lot F2 du fil) « Qui peut venir voir ta pièce ? » — juste après le premier choix de sa pièce (l'inscription)
-  const [porte, setPorte] = useState(false);
+  // 💬 (l'audit du 28/11) juste après le premier choix de sa pièce : la dernière étape de l'inscription, « Tes proches »
+  const [invite, setInvite] = useState(false);
   async function choisir(p: PieceAuCatalogue): Promise<string | null> {
     const premiere = !maison?.scene;
     const r = await lire(ROUTE, { action: "choisir", piece: p.cle });
@@ -1449,14 +1449,26 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
     setMaison(r.maison);
     setCatalogue(null);
     setChoix(false);
-    if (premiere) setPorte(true);
+    if (premiere) setInvite(true);
     return null;
   }
-  // 🧭 (la maison pas encore lue, sa première pièce à choisir, la question de la porte : elle s'installe)
+  // 🚪 (lot F2 du fil, déplacé par l'audit du 28/11) « Qui peut venir voir ta pièce ? » : plus à l'inscription (ses proches
+  // seulement, d'office), mais quand sa pièce reçoit sa première chose — s'il n'a jamais répondu. C'est là qu'elle a un sens.
+  const [porte, setPorte] = useState(false);
+  const total = useRef(0);
   useEffect(() => {
-    poserInstallation(Boolean(actif && !erreur && (!maison || sansPiece || porte)));
+    total.current = maison?.contenu?.total ?? 0;
+  }, [maison]);
+  const surMaison = useCallback((m: MaMaisonVue) => {
+    if (!m.porteChoisie && total.current === 0 && (m.contenu?.total ?? 0) > 0) setPorte(true);
+    total.current = m.contenu?.total ?? 0;
+    setMaison(m);
+  }, []);
+  // 🧭 (la maison pas encore lue, sa première pièce à choisir, « Tes proches », la question de la porte : elle s'installe)
+  useEffect(() => {
+    poserInstallation(Boolean(actif && !erreur && (!maison || sansPiece || invite || porte)));
     return () => poserInstallation(false);
-  }, [actif, erreur, maison, sansPiece, porte]);
+  }, [actif, erreur, maison, sansPiece, invite, porte]);
   return (
     <div className={`mmc${plein ? " plein" : ""}`}>
       {erreur ? (
@@ -1466,13 +1478,15 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
       ) : maison.scene ? (
         <>
           {/* (la phrase de l'arrivée, une maison encore vide : dans la pièce, avec « Touche les objets ») */}
-          <Piece maison={{ ...maison, scene: maison.scene }} phrase={!maison.contenu?.total ? MAISON_VIDE : undefined} onReglages={() => setChoix(true)} onMaison={setMaison} />
+          <Piece maison={{ ...maison, scene: maison.scene }} phrase={!maison.contenu?.total ? MAISON_VIDE : undefined} onReglages={() => setChoix(true)} onMaison={surMaison} />
         </>
       ) : null}
       {ouvert && maison && <Choix catalogue={catalogue} actuelle={maison.scene ? maison.piece : null} onChoisir={choisir} onFermer={maison.scene ? () => setChoix(false) : onRenoncer} />}
+      {invite && createPortal(<DerniereEtapeProches cle={maison?.cle} onFini={() => setInvite(false)} />, document.body)}
       {porte &&
         createPortal(
           <QuestionPorte
+            apresAjout
             onFini={(m) => {
               setPorte(false);
               if (m) setMaison(m);

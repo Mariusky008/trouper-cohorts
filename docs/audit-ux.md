@@ -37,15 +37,16 @@ sans erreur.
 
 | Lot | Contenu | État |
 | --- | --- | --- |
-| 1 | La fin de l'inscription sans accroc (section 4) | ✅ fait |
-| 2 | La bienvenue en deux bulles, sur le produit d'aujourd'hui ; le bouton visible dès la première seconde ; « J'ai déjà une figurine » | à décider avec le propriétaire (maquette) |
+| 1 | La fin de l'inscription sans accroc (sections 4 et 5, PR #352) | ✅ fait |
+| 2 | La bienvenue en deux bulles, sur le produit d'aujourd'hui ; le bouton visible dès la première seconde ; « J'ai déjà une figurine » | validé par le propriétaire (« ok ») : à faire après le lot 1 |
 | 3 | Les cartes du fil : la place aux figurines, plus rien de coupé ni posé sur la scène ; « Quoi de neuf ? » masqué quand il est vide ; un squelette de chargement ; les salons avec du monde d'abord | |
 | 4 | Le salon : la barre de réactions visible dès l'arrivée ; le chevauchement « Touche pour le son » / « Pause » sur ordinateur ; l'image du moment préparée pendant le grand moment | |
 | 5 | La confiance : se déconnecter, supprimer son compte, « Lien copié ✓ », le champ e-mail, une seule question d'âge, l'inscription dans le design de l'appli, la confidentialité, la 404 de l'appli | |
 
-Restent à trancher par le propriétaire (des décisions à lui, pas des bugs) : repousser l'humeur du jour après la première
-visite ; « Mes proches seulement » par défaut sans poser « Qui peut venir voir ta pièce ? » (décidé au lot F2 du fil) ;
-une vraie étape « Inviter un proche » à la fin de l'inscription (annoncée par le chemin « Tes proches », jamais venue).
+Trois décisions restaient au propriétaire (pas des bugs) : repousser l'humeur du jour après la première visite ; « Mes
+proches seulement » par défaut sans poser « Qui peut venir voir ta pièce ? » ; une vraie étape « Inviter un proche » à la
+fin de l'inscription. Il les a confiées (« fais ce que tu penses qui est le mieux ») : elles sont tranchées et faites au
+lot 1 (section 5).
 
 ## 4. Le lot 1 : la fin de l'inscription sans accroc (fait)
 
@@ -67,3 +68,31 @@ une vraie étape « Inviter un proche » à la fin de l'inscription (annoncée p
     venir », seule ; puis l'humeur ; « Joie » arrive à l'humeur ; jamais « t'écrivent un mot » sans proche. Sur l'ancien
     code, il échoue là où était le bug (la feuille de l'humeur ouverte sous le choix de la pièce).
   - `navigateur/nouvelle-figurine.mjs` : « Il manque : … », puis plus rien quand tout est rempli.
+
+## 5. Le lot 1, suite : les trois décisions de l'inscription (confiées par le propriétaire)
+
+- **Pas d'humeur du jour le jour de l'inscription.** Ce téléphone retient le jour de sa première figurine validée
+  (`CLE_INSCRIT_LE` = `clikme-inscrit-le`, posé à « C'est moi ! », `nouvelle-figurine.tsx` ; le premier jour gardé :
+  refaire sa figurine ne le change pas). Ce jour-là, la feuille « Comment tu te sens aujourd'hui ? » ne s'ouvre pas
+  d'elle-même (`rituel.tsx`) ; la carte « Ton humeur » de « Quoi de neuf ? » l'ouvre toujours. Elle viendra le
+  lendemain, au bon moment : quand il y a une raison de revenir.
+- **« Qui peut venir voir ta pièce ? » quitte l'inscription.** D'office, ses proches seulement. La question vient quand
+  sa pièce reçoit sa première chose (de 0 à 1), précédée de « Ta pièce commence à se remplir. », et seulement s'il n'a
+  jamais répondu (`porteChoisie` dans `MaMaisonVue`, `porteDeLaMaison`, `ma-maison-serveur.ts` ; `QuestionPorte
+  apresAjout`, `maison-catalogue.tsx`). À l'inscription, la pièce est vide : on ne demande pas qui peut venir voir rien.
+- **Une vraie dernière étape « Tes proches ».** Le chemin de la bienvenue l'annonçait (« Ton selfie › Ta figurine › Ta
+  pièce › Tes proches »), elle n'était jamais venue. Juste après « Je m'installe ici » : « Étape 4 sur 4 · 💬 Dernière
+  étape : tes proches », son lien de proche (celui du carnet), « 📲 Inviter sur WhatsApp », « 🔗 Copier mon lien » (qui
+  dit « ✓ Lien copié »), « Plus tard » (qui devient « C'est bon » une fois le lien parti) — `DerniereEtapeProches`,
+  `ajouter-chez-moi.tsx` ; `PHRASES_TES_PROCHES`, `ma-maison.ts`. Pendant cette étape, l'humeur attend aussi
+  (`useMaisonQuiSInstalle`).
+- **L'ordre, désormais** : la figurine, « 🏠 Choisis ta pièce », « Je m'installe ici », « Tes proches » — et c'est tout
+  pour le premier jour.
+- **Les essais** :
+  - `navigateur/choisis-ta-piece.mjs` : Léa et Marc, « Tes proches » après le premier choix, sans « Qui peut venir » ;
+    Zoé, « Tes proches » seule (l'humeur attend derrière) ; le jour de l'inscription, pas d'humeur après « Plus tard » ;
+    un autre jour, l'humeur s'ouvre, sa maison installée, et « Joie » arrive bien à l'humeur.
+  - `navigateur/ma-maison-catalogue.mjs` : « Étape 4 sur 4 », le lien WhatsApp (avec `proche=`), « ✓ Lien copié » (le
+    lien bien dans le presse-papiers), « C'est bon » ; puis sa première chose (un livre) : « Ta pièce commence à se
+    remplir. » « Qui peut venir voir ta pièce ? » ; la deuxième : plus de question.
+  - `navigateur/nouvelle-figurine.mjs` : « C'est moi ! » retient le jour de l'inscription sur ce téléphone.

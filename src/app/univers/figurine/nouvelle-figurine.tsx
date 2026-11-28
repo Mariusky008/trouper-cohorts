@@ -23,6 +23,8 @@ import { IDEES_RETOUCHE, VILLE_MAX, villeEcrite, type EtatNouvelleFigurine, type
 import { RETOUCHE_FIGURINE_MAX } from "@/lib/direct/perso-consignes";
 import { PRENOM_MAX, prenomValide } from "@/lib/direct/ma-figurine";
 import { TEXTES_PIECE } from "@/lib/direct/choisis-ta-piece";
+import { CLE_INSCRIT_LE } from "@/lib/direct/rituel";
+import { jourParis } from "@/lib/jour-paris";
 
 const ROUTE = "/api/direct/nouvelle-figurine";
 
@@ -35,6 +37,19 @@ async function demander<T>(corps: Record<string, unknown>): Promise<T> {
   return j;
 }
 const message = (e: unknown) => (e instanceof Error && e.message ? e.message : "Ça n’a pas marché. Réessaie.");
+
+/**
+ * 🧭 (l'audit du 28 novembre 2026) Le jour de sa première figurine validée (« C'est moi ! »), sur ce téléphone : ce
+ * jour-là, l'humeur du jour ne s'ouvre pas d'elle-même (`rituel.tsx`) — l'inscription s'arrête à « Tes proches ». Le
+ * premier jour gardé : refaire sa figurine plus tard ne le change pas.
+ */
+function noterLeJourDeLInscription() {
+  try {
+    if (!window.localStorage.getItem(CLE_INSCRIT_LE)) window.localStorage.setItem(CLE_INSCRIT_LE, jourParis());
+  } catch {
+    /* (sans stockage : l'humeur s'ouvrira, comme avant) */
+  }
+}
 
 /** La photo, réduite dans le téléphone (1 024 pixels au plus) avant de partir. */
 async function photoReduite(f: File): Promise<string> {
@@ -92,6 +107,7 @@ export function NouvelleFigurine({ piece = "", place }: { piece?: string; place?
     try {
       await demander(corps);
       if (corps.action === "selfie") setRefaireDepuisLeDebut(false);
+      if (corps.action === "valider") noterLeJourDeLInscription();
       await charger();
     } catch (e) {
       setErreur(message(e));

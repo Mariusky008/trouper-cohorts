@@ -145,10 +145,13 @@ ok((await p.locator(".mmc-fermer").count()) === 0, "… sans ✕ (il faut choisi
 ok((await p.locator(".mmc-carte[data-piece]").first().getAttribute("data-piece")) === "hangar", "… le hangar d’abord (16 ans)");
 await p.locator('.mmc-carte[data-piece="hangar"]').click();
 await p.locator('button[data-geste="installer"]').click();
-// (🚪 lot F2 du fil : juste après son premier choix, « Qui peut venir voir ta pièce ? »)
-ok(await attendre(p, async () => (await p.locator("[data-question-porte]").count()) === 1 && (await p.locator("[data-question-porte] [data-porte]").count()) === 2), "« 🚪 Qui peut venir voir ta pièce ? » : ses proches seulement, ou aussi ceux qui aiment ce qu’elle aime");
-await p.locator('[data-question-porte] [data-porte="proches"]').click();
-ok(await attendre(p, async () => (await p.locator("[data-question-porte]").count()) === 0), "… « 👯 Mes proches seulement » : la question s’en va");
+// (💬 l'audit du 28/11 : juste après son premier choix, la dernière étape, « Tes proches » ; « Qui peut venir voir ta
+// pièce ? » attend la première chose mise chez elle — d'ici là, ses proches seulement)
+ok(await attendre(p, async () => (await p.locator("[data-etape-proches]").count()) === 1 && /Étape 4 sur 4/.test(await p.locator("[data-etape-proches]").innerText())), "« Je m’installe ici » : « Étape 4 sur 4 · 💬 Dernière étape : tes proches »");
+ok((await p.locator("[data-question-porte]").count()) === 0, "… sans « Qui peut venir voir ta pièce ? » (plus à l’inscription)");
+await p.screenshot({ path: `${D}/choisis-ta-piece-3a-tes-proches.png` });
+await p.locator("[data-etape-proches] [data-plus-tard]").click();
+ok(await attendre(p, async () => (await p.locator("[data-etape-proches]").count()) === 0), "… « Plus tard » : l’étape s’en va");
 ok(await attendre(p, async () => (await p.locator(".mmc-fig img").count()) === 1 && (await choix.count()) === 0), "« Je m’installe ici » : chez elle, sa figurine au centre");
 await p.screenshot({ path: `${D}/choisis-ta-piece-3-chez-elle.png` });
 await propre(p, "chez elle");
@@ -175,7 +178,7 @@ ok(await attendre(q, async () => (await lien.count()) === 1 && (await q.locator(
 await lien.click();
 await q.locator('.mmc-carte[data-piece="salon"]').click();
 await q.locator('button[data-geste="installer"]').click();
-await q.locator('[data-question-porte] [data-porte="proches"]').click({ timeout: 15000 });
+await q.locator("[data-etape-proches] [data-plus-tard]").click({ timeout: 15000 });
 ok(await attendre(q, async () => (await q.locator(".mmc-fig img").count()) === 1 && (await q.locator(".mmc-choix").count()) === 0), "le salon : sa pièce");
 await q.reload({ waitUntil: "networkidle" });
 ok(await attendre(q, async () => (await q.locator(".mmc-fig img").count()) === 1 && (await q.locator("[data-carte-piece]").count()) === 0), "rechargé : sa pièce, plus de carte");
@@ -228,9 +231,21 @@ ok((await humeurZ.count()) === 0, "pendant « Choisis ta pièce » : pas de feui
 await z.locator("#o-maison .mmc-carte[data-piece]").first().click();
 await z.locator('#o-maison .mmc-apercu [data-geste="installer"]').click();
 
-ok(await attendre(z, async () => (await z.locator("[data-question-porte]").count()) === 1, 15000) && (await humeurZ.count()) === 0, "« Je m'installe ici » : « Qui peut venir voir ta pièce ? », seule");
-await z.locator('[data-question-porte] [data-porte="proches"]').click({ timeout: 15000 });
-ok(await attendre(z, async () => (await humeurZ.count()) === 1 && /Comment tu te sens aujourd’hui/.test(await humeurZ.innerText()), 15000), "… puis seulement l'humeur du jour, une fois sa maison installée");
+ok(await attendre(z, async () => (await z.locator("[data-etape-proches]").count()) === 1, 15000) && (await humeurZ.count()) === 0 && (await z.locator("[data-question-porte]").count()) === 0, "« Je m'installe ici » : « Tes proches », seule");
+await z.waitForTimeout(2000);
+ok((await humeurZ.count()) === 0, "… et l'humeur attend toujours, derrière");
+// (🧭 l'audit du 28/11 : le jour de l'inscription — « C'est moi ! » ce matin, ce téléphone l'a retenu —, l'humeur ne
+// s'ouvre pas d'elle-même : l'inscription s'arrête à « Tes proches »)
+const aujourdhui = await z.evaluate(() => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" }));
+await z.evaluate((j) => window.localStorage.setItem("clikme-inscrit-le", j), aujourdhui);
+await z.locator("[data-etape-proches] [data-plus-tard]").click({ timeout: 15000 });
+ok(await attendre(z, async () => (await z.locator("[data-etape-proches]").count()) === 0), "« Plus tard » : l'étape s'en va");
+await z.waitForTimeout(3500);
+ok((await humeurZ.count()) === 0, "le jour de l'inscription : l'humeur ne s'ouvre pas d'elle-même");
+// (le lendemain — ici : un téléphone qui a fait sa figurine un autre jour —, elle s'ouvre, sa maison installée)
+await z.evaluate(() => window.localStorage.setItem("clikme-inscrit-le", "2026-01-01"));
+await z.reload({ waitUntil: "networkidle" });
+ok(await attendre(z, async () => (await humeurZ.count()) === 1 && /Comment tu te sens aujourd’hui/.test(await humeurZ.innerText()), 20000), "un autre jour : l'humeur du jour s'ouvre, sa maison installée");
 await humeurZ.locator('button:has-text("Joie")').click();
 ok(await attendre(z, async () => /Ton humeur/.test(await humeurZ.innerText()), 10000), "… « Joie » : un toucher, qui arrive bien à l'humeur");
 const apresJoie = await humeurZ.innerText();

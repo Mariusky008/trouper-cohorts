@@ -98,6 +98,9 @@ await p.screenshot({ path: `${D}/nouvelle-figurine-5-retouchee.png` });
 await p.locator(".nf-gestes .nf-bouton").first().click();
 await p.waitForSelector(".nf-validee", { timeout: 30000 }).catch(() => null);
 ok((await texte(".nf-validee .nf-titre")) === "Ta figurine est prête !", "« C'est moi ! » : « Ta figurine est prête ! »");
+// (🧭 l'audit du 28/11 : ce téléphone retient le jour de l'inscription — ce jour-là, l'humeur ne s'ouvre pas d'elle-même)
+const inscrit = await p.evaluate(() => [window.localStorage.getItem("clikme-inscrit-le"), new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Paris" })]);
+ok(inscrit[0] === inscrit[1], `… ce téléphone retient le jour de l'inscription (${inscrit[0]})`);
 await p.waitForSelector(".nf-poses img", { timeout: 60000 }).catch(() => null);
 ok((await p.locator(".nf-poses img").count()) === 1 && (await p.locator(".nf-parler").count()) === 1, "sa pose debout arrive ; « Fais-la parler »");
 await p.locator(".nf-parler").click();

@@ -21,7 +21,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Feuille } from "./ma-figurine";
 import { jourParis } from "@/lib/jour-paris";
 import type { Sentiment } from "@/lib/direct/ma-figurine";
-import { HUMEURS, humeurDe, type EtatRituel, type FinVue, type MotEcrit, type MotRecu, type RituelAvec } from "@/lib/direct/rituel";
+import { CLE_INSCRIT_LE, HUMEURS, humeurDe, type EtatRituel, type FinVue, type MotEcrit, type MotRecu, type RituelAvec } from "@/lib/direct/rituel";
 import type { FigurineVue } from "@/lib/direct/talkie";
 import type { ReponseHumeur } from "@/lib/direct/humeur-reponse";
 import { ReponseDeMaFigurine } from "./humeur-reponse";
@@ -320,7 +320,8 @@ export function HumeurDuMatin({ actif, onRepondre }: { actif: boolean; onRepondr
     const t = window.setTimeout(() => {
       void chargerRituel().then((x) => {
         if (fini || !x) return;
-        if (!x.humeur && lire(CLE_PASSEE) !== x.jour) setOuverte(true);
+        // (le jour de l'inscription, elle ne s'ouvre pas d'elle-même : la carte « Ton humeur » reste là)
+        if (!x.humeur && lire(CLE_PASSEE) !== x.jour && lire(CLE_INSCRIT_LE) !== x.jour) setOuverte(true);
       });
     }, REPIT_MS);
     return () => {

@@ -159,9 +159,13 @@ pièce entre alors dans le fil de ceux qui :
 « Tout le monde » (adultes seulement, le lien) comprend ce choix-là. Ils voient seulement ce qu'il a ajouté lui-même,
 jamais ce qui vient de ses conversations, et ne peuvent pas lui laisser de surprise (réservé aux proches, comme avant).
 
-**À l'inscription**, juste après le premier choix de sa pièce, la feuille « 🚪 Qui peut venir voir ta pièce ? » : « 👯
-Mes proches seulement » ou « 🧭 Aussi ceux qui aiment ce que j'aime » (`QuestionPorte`, `ajouter-chez-moi.tsx`). Il
-change d'avis dans Ma maison, 🚪 « Qui peut entrer » : c'est l'interrupteur.
+**À la première chose mise chez soi** (depuis l'audit du 28 novembre 2026 ; avant : à l'inscription, juste après le
+premier choix de sa pièce), la feuille « 🚪 Qui peut venir voir ta pièce ? », précédée de « Ta pièce commence à se
+remplir. » : « 👯 Mes proches seulement » ou « 🧭 Aussi ceux qui aiment ce que j'aime » (`QuestionPorte apresAjout`,
+`ajouter-chez-moi.tsx`). Une seule fois, et seulement s'il n'a jamais répondu (`porteChoisie`, `porteDeLaMaison`) ;
+d'ici là, ses proches seulement, d'office. Il change d'avis dans Ma maison, 🚪 « Qui peut entrer » : c'est
+l'interrupteur. Pourquoi ce déplacement : à l'inscription, la pièce est vide, la question n'avait pas de sens (voir
+`docs/audit-ux.md`, section 5).
 
 **Dans le fil**, une pièce « maison » (`MaisonFil`) : sa pièce, sa figurine, « ⚽ Foot et sport, comme toi », « Chez Zoé ».
 
