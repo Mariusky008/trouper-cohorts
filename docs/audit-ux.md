@@ -42,8 +42,8 @@ sous réserve » tant qu'il n'est pas vérifié en production, sur les principau
 | Lot | Contenu | État |
 | --- | --- | --- |
 | 1 | La fin de l'inscription sans accroc (sections 4 et 5, PR #352) | ✅ fait, vérifié en production sur un iPhone SE et un Pixel 7 (section 11) |
-| 5 | La confiance : se déconnecter, supprimer son compte (vraiment : ses données et ses images), la confidentialité (section 10) ; puis (lot 5b) « Lien copié ✓ », le champ e-mail, une seule question d'âge, l'inscription dans le design de l'appli, la 404 de l'appli | ✅ 5a fait (section 10, PR #353) ; 5b en cours (section 12) |
-| 3 | Le fil et les salons vides : un problème d'activité, pas d'affichage (section 7) ; puis la place aux figurines, plus rien de coupé ni posé sur la scène, « Quoi de neuf ? » masqué quand il est vide, un squelette de chargement | maquette à faire valider |
+| 5 | La confiance : se déconnecter, supprimer son compte (vraiment : ses données et ses images), la confidentialité (section 10) ; puis (lot 5b) « Lien copié ✓ », le champ e-mail, une seule question d'âge, l'inscription dans le design de l'appli, la 404 de l'appli | ✅ 5a fait (section 10, PR #353) ; ✅ 5b fait (section 12, PR #354), sauf l'inscription dans le design de l'appli, avec le lot 2 |
+| 3 | Le fil et les salons vides : un problème d'activité, pas d'affichage (section 7) ; puis la place aux figurines, plus rien de coupé ni posé sur la scène, « Quoi de neuf ? » masqué quand il est vide, un squelette de chargement | remplacé par le nouveau fil de Découvrir (section 13) : maquette validée le 28 novembre 2026, lots F1 à F3 |
 | 4 | Le salon : aucune interaction cachée — la barre de réactions visible dès l'arrivée ; « Touche pour le son » / « Pause » sur ordinateur ; l'image du moment préparée pendant le grand moment (section 8 : 12 s d'attente côté serveur) | |
 | 2 | La bienvenue, conçue autour de la vraie promesse de ClikMe (section 7) : deux bulles, le bouton dès la première seconde, « J'ai déjà une figurine » | le texte du propriétaire (« Ici, tes vidéos préférées deviennent des moments à partager ! … »), une démonstration animée pendant la deuxième bulle, trois cartes ; maquette : https://claude.ai/artifact/R67u7nGnvyLxxAi42EuXmB ; la voix à enregistrer par lui |
 
@@ -182,7 +182,7 @@ Depuis la France, chaque requête serait plus rapide d'environ 70 à 90 ms. Les 
 
 **Ce qu'il faudrait faire, par ordre d'effet** :
 
-1. **Le réveil** (10,2 s → environ 1,5 s) : garder les fonctions de l'accueil éveillées (un appel toutes les cinq minutes),
+1. **Le réveil** (10,2 s → environ 1,5 s ; la première moitié faite, section 13) : garder les fonctions de l'accueil éveillées (un appel toutes les cinq minutes),
    et ne lancer au premier écran que ce qu'il montre (le fil d'abord ; l'activité, les groupes, la pièce, la télé du jour
    ensuite).
 2. **L'image du moment** (8,8 s → moins de 2 s) : la fabriquer dès le « 😂 », pendant le grand moment (le lot 4), faire les
@@ -339,3 +339,55 @@ En ligne avec le lot 5 (#353), revérifié sur l'iPhone SE, sans rien injecter :
   worker lui-même, réseau en panne : « Pas de connexion » et « Réessayer » ; réseau qui répond : la vraie page ; le reste,
   pas touché — hors navigateur, parce que la coupure simulée par Playwright ne s'applique pas toujours à ses requêtes) ; `navigateur/nouvelle-figurine.mjs` (« Ton âge », « Il manque : …
   ton âge », ses 18 ans rangés) ; `navigateur/bascule-univers.mjs`.
+
+## 13. La suite décidée le 28 novembre 2026 au soir : le réveil, puis le nouveau fil
+
+**Le nouveau fil de Découvrir remplace le lot 3.** Le propriétaire n'aimait pas devoir entrer dans un salon puis en
+ressortir, et trouvait la vidéo trop petite face aux figurines. La maquette du nouveau fil
+(https://claude.ai/artifact/Pv2122zaPma4XMHEM6uprL) répond aux deux, et aux salons vides :
+- on fait défiler les vidéos du jour, tous thèmes mélangés, avec un filtre par thème en haut ;
+- chaque vidéo est son propre salon : en grand, avec les réactions et les mots des autres à leur seconde ;
+- la salle se déplie d'un toucher.
+
+**La règle de présence**, proposée par le propriétaire :
+- on entre dans la salle en la dépliant, en réagissant ou en écrivant ; replier la salle ne fait pas sortir ;
+- on sort en glissant à une autre vidéo (après quelques secondes), ou quand l'appli passe en arrière-plan ;
+- ceux qui regardent sans entrer sont comptés, sans nom ni figurine : « 🔴 12 en direct », « 9 autres regardent, sans
+  entrer » ;
+- dans une salle qu'on a quittée, il ne reste que ses réactions et ses mots, rejoués à leur seconde (si « Ma figurine
+  peut réapparaître » est allumé), jamais sa figurine assise.
+
+**Ses cinq choix** (« Oui pour les cinq ») :
+- les salons par thème sont remplacés par le fil ; on garde la séance entre proches et Mes groupes ;
+- les vidéos partent sans le son, et une fois activé, le son reste pour la visite (à vérifier sur un vrai iPhone) ;
+- la vidéo en pleine largeur par défaut, « ⤢ Plus grand » (recadrée en 4:5) au choix ;
+- l'ordre : ce que ses proches ont aimé, puis ses passions, puis le plus regardé du jour, mélangés ;
+- les vidéos en hauteur (Shorts) prennent tout l'écran.
+
+**L'ordre de travail** : avant toute chose, deux petites choses indépendantes du fil : le réveil du serveur, et l'essai
+YouTube. Puis le fil en trois lots :
+- F1, les vidéos : le premier écran ne charge que le fil, le reste ensuite ;
+- F2, la présence ;
+- F3, la mesure : sans nom, pour chaque vidéo vue, qui déplie, qui réagit, qui écrit.
+
+Il sera d'abord visible pour le propriétaire et les comptes de test. Ensuite viendront la bienvenue (lot 2, sa
+démonstration montrera le nouveau fil), le salon (lot 4), puis la phase 2 et l'audit de la fidélisation, sur l'appli
+telle qu'elle sera.
+
+**Le réveil** (la section 8, point 1, sa première moitié). Toutes les cinq minutes, `.github/workflows/clikme-reveil.yml`
+appelle une fois chaque route du premier écran. L'offre gratuite de Vercel n'accepte qu'une tâche par jour : c'est donc
+GitHub qui appelle, comme pour les rappels de Mes groupes.
+- **Les appels** partent sans cookie. Chaque route répond tout de suite qu'il n'y a pas de figurine sur ce téléphone,
+  sans rien lire ni écrire pour personne. Seul compte le démarrage de sa fonction.
+- **La réserve** : GitHub ne garantit pas l'heure exacte, et un passage peut arriver avec quelques minutes de retard.
+- **La mesure à froid** sera refaite en production après la fusion, au début du prochain audit.
+- **L'autre moitié** (ne charger au premier écran que ce qu'il montre) se fera avec le lot F1.
+- **L'essai** `essai-reveil-route.mjs` lit la liste dans le fichier du travail, et fait les mêmes appels. Il vérifie que
+  personne n'est reconnu, que rien n'est écrit dans la base, qu'aucun appel ne tombe en erreur, et que tous répondent en
+  moins de 5 s.
+
+**L'essai YouTube**. Le 28 novembre 2026, en CI, `navigateur/discussion-video.mjs` a échoué sur un message du lecteur
+YouTube, chargé depuis Internet : « Permissions policy violation: compute-pressure is not allowed in this document. »
+L'appli ne se sert jamais de cette permission. `duLecteurYouTube` (dans `navigateur/commun.mjs`) reconnaît les messages
+du lecteur, à l'adresse de leur script ou à leur texte, et l'essai ne les compte plus comme des erreurs de l'appli. Les
+autres essais qui comptent les erreurs de la console peuvent s'en servir, si le message revient chez eux.

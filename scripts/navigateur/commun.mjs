@@ -27,6 +27,19 @@ export async function statsMessagesDuJour(jour, lire) {
 export const D = process.env.ESSAI_CAPTURES ?? path.join(os.tmpdir(), "clikme-captures");
 fs.mkdirSync(D, { recursive: true });
 
+/**
+ * 📺 Un message de la console qui vient du lecteur YouTube, pas de l'appli : sa page ou ses scripts (youtube.com,
+ * youtube-nocookie.com, ytimg.com, googlevideo.com), ou un texte qui le nomme. Le lecteur est chargé depuis Internet,
+ * et ses messages changent sans prévenir. Le 28 novembre 2026, en CI, il a écrit « Permissions policy violation:
+ * compute-pressure is not allowed in this document. », sans adresse. Ce message est reconnu à son texte : l'appli ne
+ * se sert jamais de cette permission (aucun `PressureObserver` dans `src/` ni `public/`), donc il ne peut venir que
+ * d'un cadre tiers. Les erreurs de l'appli, elles, restent comptées.
+ */
+export const duLecteurYouTube = (m) =>
+  /(^|\.)(youtube(-nocookie)?\.com|ytimg\.com|googlevideo\.com)\//.test(String(m.location?.()?.url ?? "").replace(/^https?:\/\//, "")) ||
+  /youtube|ytimg/i.test(m.text()) ||
+  /Permissions policy violation: compute-pressure/i.test(m.text());
+
 const pw = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const { chromium } = pw.default ?? pw;
 /** `options` : ce qu'un essai ajoute au lancement (`args`, un faux micro…). */

@@ -1,0 +1,39 @@
+# ⏰ Le réveil de l'appli. Audit UX du 28 novembre 2026, `docs/audit-ux.md`, sections 8 et 13.
+#
+# Serveur endormi, le premier écran mettait 10,2 s à s'afficher : ses appels réveillent chacun une fonction froide,
+# avec 1 à 3,5 s d'attente chacun. Réveillé, il s'affiche en 1,4 s.
+#
+# Toutes les cinq minutes, ce travail appelle donc une fois chaque route que le premier écran demande, pour que leurs
+# fonctions restent chaudes.
+# - Les appels partent sans cookie : chaque route répond tout de suite « pas de figurine sur ce téléphone » (401, 403,
+#   ou 404 quand les salons sont fermés), sans rien lire ni écrire pour personne. Seul le démarrage de la fonction compte.
+# - Vercel (offre gratuite) n'accepte qu'une tâche planifiée par jour : c'est donc GitHub qui appelle, comme pour les
+#   rappels de Mes groupes (`clikme-groupes-rappels.yml`).
+# - GitHub ne garantit pas l'heure exacte : un passage peut arriver avec quelques minutes de retard.
+name: ClikMe — le réveil
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: clikme-reveil
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  reveil:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Réveiller les routes du premier écran
+        env:
+          SITE: ${{ vars.CLIKME_URL || 'https://www.clikme.fr' }}
+        run: |
+          # (la même liste que le premier écran de /collection : la mesure de la section 8)
+          for r in ma-figurine "ma-figurine?reactions=1" "ma-figurine?mois=1" rituel "activite?compter=1" proches fil-decouvrir tele-du-jour "salons-ouverts?accueil=1" mes-groupes ma-piece; do
+            curl -s -o /dev/null --max-time 30 -A "clikme-reveil" -w "%{http_code} %{time_total}s /api/direct/$r\n" "$SITE/api/direct/$r" &
+          done
+          wait
