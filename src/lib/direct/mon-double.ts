@@ -48,6 +48,8 @@ export type MonDoubleVue = {
   ornements?: Ornements;
   /** 🎙️ son bonjour, avec sa voix (lot 4) */
   bonjour?: BonjourVu;
+  /** 🗣️ sa tête « bouche ouverte » (découpée comme les autres) : la vidéo de sa réaction la fait parler (« 🎙 Dis-le ») */
+  parle?: string;
 };
 
 /** Ce que les autres voient de mon double, partout : ma pancarte (rien s'il n'y en a pas). */

@@ -43,6 +43,17 @@ export const cheminDuMoment = (id: string) => `/moment/${id}`;
 /** L'adresse courte, écrite sur l'image (Instagram et TikTok gardent l'image, pas le lien). */
 export const adresseCourte = (origine: string, id: string) => `${origine.replace(/^https?:\/\/(www\.)?/, "")}${cheminDuMoment(id)}`;
 
+/**
+ * 🎙 « DIS-LE » (la vidéo de ma réaction, V2 ; validé par le propriétaire le 28 novembre 2026) : trois secondes de ma
+ * vraie voix, au micro, posées au moment du flash. Rien ne part au serveur : le téléphone fait la vidéo.
+ */
+export const VOIX_MOMENT = {
+  /** trois secondes au plus */
+  max: 3,
+  /** en dessous, c'est un toucher sans rien dire : on recommence */
+  min: 0.5,
+} as const;
+
 export const PHRASES_MOMENT = {
   /** la carte sous ma figurine (maquette « Envoyer ma réaction », validée le 27/11) */
   prete: (minute: string) => `Ta réaction à ${minute} est prête`,
@@ -81,6 +92,19 @@ export const PHRASES_MOMENT = {
   aide: "Instagram et TikTok gardent l’image : l’adresse est écrite dessus.",
   trop: "Vingt images par jour : reviens demain 🙂",
   sansFigurine: "Il faut d’abord ta figurine.",
+  /** 🎙 « Dis-le » (V2) : sa voix dans la vidéo */
+  disLe: "🎙 Dis-le",
+  disLeSous: "3 s de ta voix, au moment où ta figurine explose",
+  parle: "Parle !",
+  cestDit: "■ C’est dit",
+  voixPrepare: "Ta voix entre dans la vidéo…",
+  avecTaVoix: "Avec ta voix ✓",
+  reecouter: "▶ Réécouter",
+  recommencer: "↺ Recommencer",
+  sansVoix: "Sans ma voix",
+  voixRefus: "Le micro n’a pas répondu : autorise-le pour dire ta réaction.",
+  voixCourte: "Je n’ai rien entendu : recommence, et parle tout de suite.",
+  voixMuette: "Ton téléphone ne sait pas mettre le son dans la vidéo : elle reste muette.",
 } as const;
 
 export const minuteDuMoment = (t: number) => minuteVideo(t);

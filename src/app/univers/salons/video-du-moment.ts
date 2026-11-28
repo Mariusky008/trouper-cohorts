@@ -8,22 +8,62 @@
  *    les émojis et les confettis jaillissent ;
  * 3. la fin : « Et toi, tu réagis comment ? » et l'adresse du moment. Le canevas est filmé (`captureStream` + `MediaRecorder`) :
  * en MP4 quand le téléphone sait le faire (iPhone, Chrome récent), sinon en WebM. Il ne sait pas : pas de vidéo, l'image
- * reste. Jamais de son ajouté.
+ * reste.
+ *
+ * 🎙 « Dis-le » (V2, validé le 28/11) : sans rien, la vidéo est muette. Avec sa voix (trois secondes, enregistrées au micro
+ * dans la feuille), elle part au moment du flash, quand sa figurine explose, et sa bouche la suit (sa figurine bouche
+ * ouverte, `?bouche=1` ; sans elle, sa figurine bat sur sa voix). Rien ne part au serveur : sa voix n'est que dans la
+ * vidéo qu'il envoie lui-même. Le téléphone ne sait pas mettre le son : la vidéo reste muette (`avecVoix: false`).
+ * Jamais de voix de synthèse, jamais de bruitage.
  */
 import { eclatsDuMoment, type Moment } from "@/lib/direct/grands-moments";
-import { MOMENT_PARTAGE as MP, PHRASES_MOMENT as P, adresseCourte, minuteDuMoment, type MomentPartage } from "@/lib/direct/moment-partage";
+import { MOMENT_PARTAGE as MP, PHRASES_MOMENT as P, VOIX_MOMENT, adresseCourte, minuteDuMoment, type MomentPartage } from "@/lib/direct/moment-partage";
+import { boucheOuverte, enveloppeDe } from "@/lib/direct/bouche";
 
 export const VIDEO_MOMENT = { largeur: 720, hauteur: 1280, ms: 5000, ips: 30, debit: 3_000_000 } as const;
 /** le montage (en secondes) : le compteur monte jusqu'au flash, ma figurine explose, puis « Et toi ? » */
 export const MONTAGE = { arrive: 1.6, fin: 4.2 } as const;
 
 const FORMATS = ["video/mp4;codecs=avc1.42E01E", "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+/** 🎙 avec sa voix : l'image et le son — H.264 d'abord (ce que TikTok, Instagram et WhatsApp lisent partout), avec de l'AAC
+ *  (l'iPhone, Chrome), sinon de l'Opus (un Chromium sans AAC : sans ça, « video/mp4 » seul y donnerait du VP9) */
+const FORMATS_SON = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4;codecs=avc1,mp4a.40.2", "video/mp4;codecs=avc1.42E01E,opus", "video/mp4;codecs=avc1,opus", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
 
-/** Le format que ce téléphone sait filmer ("" : il ne sait pas). */
-export function formatVideo(): string {
+/** Le format que ce téléphone sait filmer ("" : il ne sait pas) ; `son` : avec sa voix. */
+export function formatVideo(son = false): string {
   if (typeof window === "undefined" || typeof MediaRecorder === "undefined" || typeof HTMLCanvasElement === "undefined") return "";
   if (typeof (HTMLCanvasElement.prototype as { captureStream?: unknown }).captureStream !== "function") return "";
-  return FORMATS.find((f) => MediaRecorder.isTypeSupported?.(f)) ?? "";
+  return (son ? FORMATS_SON : FORMATS).find((f) => MediaRecorder.isTypeSupported?.(f)) ?? "";
+}
+
+/**
+ * 🎙 Sa voix, prête à entrer dans la vidéo. `ctx` : le son du téléphone, réveillé dans le toucher « Dis-le » (sinon
+ * l'iPhone le garde endormi) ; `son` : ce qu'il a dit au micro.
+ */
+export type VoixDuMoment = { son: Blob; ctx: AudioContext };
+type VoixPrete = { piste: MediaStreamTrack; lancer: (dans: number) => void; enveloppe: number[]; duree: number };
+
+/** Sa voix décodée, en piste de son pour la vidéo, et son volume (la bouche) ; `null` : le téléphone ne sait pas. */
+async function voixPrete(v: VoixDuMoment): Promise<VoixPrete | null> {
+  const { ctx, son } = v;
+  if (typeof ctx.createMediaStreamDestination !== "function") return null;
+  try {
+    if (ctx.state === "suspended") await ctx.resume().catch(() => undefined);
+    const tampon = await ctx.decodeAudioData(await son.arrayBuffer());
+    const sortie = ctx.createMediaStreamDestination();
+    const piste = sortie.stream.getAudioTracks()[0];
+    if (!piste) return null;
+    const duree = Math.min(tampon.duration, VOIX_MOMENT.max);
+    const lancer = (dans: number) => {
+      const lecture = ctx.createBufferSource();
+      lecture.buffer = tampon;
+      lecture.connect(sortie);
+      lecture.start(ctx.currentTime + dans, 0, duree);
+    };
+    return { piste, lancer, enveloppe: enveloppeDe(tampon.getChannelData(0), tampon.sampleRate), duree };
+  } catch {
+    return null;
+  }
 }
 
 const image = (src: string) =>
@@ -72,11 +112,19 @@ function lignes(c: CanvasRenderingContext2D, texte: string, max: number): string
   return out;
 }
 
-/** Fabrique la vidéo du moment. `null` : le téléphone ne sait pas, ou une image manque. */
-export async function fabriquerVideoDuMoment({ moment, m, police }: { moment: MomentPartage; m: Moment; police: string }): Promise<File | null> {
-  const format = formatVideo();
+/**
+ * Fabrique la vidéo du moment ; `voix` : 🎙 avec sa voix, posée au flash. `null` : le téléphone ne sait pas filmer, ou une
+ * image manque ; `avecVoix: false` : demandée, sa voix n'a pas pu y entrer (la vidéo est muette).
+ */
+export async function fabriquerVideoDuMoment({ moment, m, police, voix }: { moment: MomentPartage; m: Moment; police: string; voix?: VoixDuMoment }): Promise<{ fichier: File; avecVoix: boolean } | null> {
+  const dite = voix && formatVideo(true) ? await voixPrete(voix) : null;
+  const format = formatVideo(Boolean(dite));
   if (!format) return null;
-  const [mini, fig] = await Promise.all([image(`/api/direct/moment/${moment.id}/miniature`), image(`/api/direct/moment/${moment.id}/figurine`)]);
+  const [mini, fig, figParle] = await Promise.all([
+    image(`/api/direct/moment/${moment.id}/miniature`),
+    image(`/api/direct/moment/${moment.id}/figurine`),
+    dite ? image(`/api/direct/moment/${moment.id}/figurine?bouche=1`) : Promise.resolve(null),
+  ]);
   if (!fig) return null;
   try {
     await document.fonts?.load(`64px ${police}`);
@@ -213,6 +261,12 @@ export async function fabriquerVideoDuMoment({ moment, m, police }: { moment: Mo
     let rot = 0;
     let kx = 1;
     let ky = 1;
+    // 🎙 sa voix, à partir du flash : sa bouche s'ouvre quand elle est forte (sans tête qui parle, elle bat dessus)
+    const parle = Boolean(dite && apres >= 0 && apres <= dite.duree && boucheOuverte(dite.enveloppe, apres));
+    if (parle && !figParle) {
+      ky = 1.04;
+      kx = 0.985;
+    }
     const g = apres - 0.55;
     if (g > 0) {
       if (m.geste === "sautille") {
@@ -235,7 +289,7 @@ export async function fabriquerVideoDuMoment({ moment, m, police }: { moment: Mo
       c.shadowColor = m.couleur;
       c.shadowBlur = 34;
     } else c.globalAlpha = 0.8;
-    c.drawImage(fig, -l / 2, -hAuj, l, hAuj);
+    c.drawImage(parle && figParle ? figParle : fig, -l / 2, -hAuj, l, hAuj);
     c.restore();
     c.globalAlpha = 1;
 
@@ -358,23 +412,26 @@ export async function fabriquerVideoDuMoment({ moment, m, police }: { moment: Mo
   };
 
   dessiner(0);
-  const flux = (toile as HTMLCanvasElement & { captureStream: (ips?: number) => MediaStream }).captureStream(ips);
-  const enreg = new MediaRecorder(flux, { mimeType: format, videoBitsPerSecond: debit });
+  const filmee = (toile as HTMLCanvasElement & { captureStream: (ips?: number) => MediaStream }).captureStream(ips);
+  // (🎙 sa voix : une piste de son à côté de l'image)
+  const flux = dite ? new MediaStream([...filmee.getVideoTracks(), dite.piste]) : filmee;
+  const enreg = new MediaRecorder(flux, { mimeType: format, videoBitsPerSecond: debit, ...(dite ? { audioBitsPerSecond: 96_000 } : {}) });
   const morceaux: Blob[] = [];
   enreg.ondataavailable = (x) => x.data.size && morceaux.push(x.data);
   const fin = new Promise<void>((ok) => (enreg.onstop = () => ok()));
   enreg.start(250);
   const debut = performance.now();
+  dite?.lancer(arrive);
   await new Promise<void>((ok) => {
-    const image = () => {
+    const tour = () => {
       const t = performance.now() - debut;
       dessiner(Math.min(t, ms));
       if (t >= ms) return ok();
       // (l'onglet caché ne dessine plus d'images : on avance quand même)
-      if (document.hidden) window.setTimeout(image, 1000 / ips);
-      else requestAnimationFrame(image);
+      if (document.hidden) window.setTimeout(tour, 1000 / ips);
+      else requestAnimationFrame(tour);
     };
-    requestAnimationFrame(image);
+    requestAnimationFrame(tour);
   });
   enreg.stop();
   flux.getTracks().forEach((x) => x.stop());
@@ -382,5 +439,5 @@ export async function fabriquerVideoDuMoment({ moment, m, police }: { moment: Mo
   if (!morceaux.length) return null;
   const type = format.split(";")[0];
   const blob = new Blob(morceaux, { type });
-  return new File([blob], `clikme-moment.${type === "video/mp4" ? "mp4" : "webm"}`, { type });
+  return { fichier: new File([blob], `clikme-moment.${type === "video/mp4" ? "mp4" : "webm"}`, { type }), avecVoix: Boolean(dite) };
 }
