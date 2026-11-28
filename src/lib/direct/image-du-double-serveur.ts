@@ -46,6 +46,7 @@ export async function vueDuDouble(supabase: Supabase, h: string): Promise<MonDou
     pret: double.pret,
     ...(ornements ? { ornements } : {}),
     ...(bonjour ? { bonjour } : {}),
+    ...(memeDecoupe && expr!.etat.tetes.parle ? { parle: expr!.etat.tetes.parle } : {}),
   };
 }
 
@@ -66,10 +67,11 @@ async function octets(supabase: Supabase, src: string | undefined, origine: stri
 }
 
 /** Sa figurine du jour, en une seule image PNG (rien : pas de figurine). */
-export async function figurineDuJourEnImage(supabase: Supabase, d: MonDoubleVue, origine: string): Promise<{ png: Buffer; largeur: number; hauteur: number } | null> {
+export async function figurineDuJourEnImage(supabase: Supabase, d: MonDoubleVue, origine: string, o: { tete?: string } = {}): Promise<{ png: Buffer; largeur: number; hauteur: number } | null> {
   const e = teteDuDouble(d);
   if (d.corps) {
-    const tete = (e && d.tetes.find((t) => t.cle === e)?.src) || d.habituelle;
+    // (`o.tete` : une autre tête posée à la place — 🗣️ sa bouche ouverte, pour la vidéo de sa réaction)
+    const tete = o.tete || (e && d.tetes.find((t) => t.cle === e)?.src) || d.habituelle;
     const [corps, t] = await Promise.all([octets(supabase, d.corps.src, origine), octets(supabase, tete, origine)]);
     if (corps) {
       try {

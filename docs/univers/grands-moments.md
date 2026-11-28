@@ -106,4 +106,38 @@ V1 (`video-du-moment.ts`, `MONTAGE`) dure 5 s :
    aura, son geste), sa bulle claque, et les émojis et les confettis jaillissent.
 3. **La fin** (4,2 s) : « Et toi, tu réagis comment ? » et l'adresse du moment.
 
-Toujours sans son dans V1. V2 : 3 s de sa vraie voix (« 🎙 Dis-le »), posées au moment du flash.
+Toujours sans son dans V1. V2 : 3 s de sa vraie voix (« 🎙 Dis-le »), posées au moment du flash (section 7).
+
+## 7. 🎙 « Dis-le » : sa voix dans la vidéo de sa réaction (V2, validé le 28 novembre)
+
+Le propriétaire a validé le plan le 28 novembre 2026 (« validé » ; l'écran 4 de la maquette des grands moments n'était
+pas lisible depuis la session qui l'a codé : le plan suivait cette doc).
+
+- **Où** : dans la feuille « Envoie ta réaction », côté « Vidéo », sous l'aperçu : « 🎙 Dis-le », et dessous « 3 s de ta
+  voix, au moment où ta figurine explose ».
+- **Le micro** : un toucher, et il écoute (« Parle ! 3 s », le compte qui descend, « ■ C'est dit » pour finir avant) ; au
+  bout de 3 s, il s'arrête tout seul (`VOIX_MOMENT`, `lib/direct/moment-partage.ts` : 3 s au plus, 0,5 s au moins —
+  sinon « Je n'ai rien entendu : recommence »). Micro refusé : « Le micro n'a pas répondu : autorise-le… ».
+- **La vidéo refaite** (« Ta voix entre dans la vidéo… », 5 s : le téléphone la filme en temps réel) : sa voix part au
+  flash (1,6 s), quand sa figurine explose. Puis « Avec ta voix ✓ », « ▶ Réécouter » (du début, avec le son),
+  « ↺ Recommencer », « Sans ma voix » (la vidéo muette revient). C'est elle qui part dans WhatsApp, Story, TikTok, Autre
+  et Enregistrer.
+- **Sa bouche suit sa voix** : à la création du moment, le serveur garde aussi sa figurine bouche ouverte (sa tête qui
+  parle posée sur son corps, `moments/<id>-parle.png` ; `/api/direct/moment/<id>/figurine?bouche=1`). Dans la vidéo, elle
+  passe devant quand sa voix est forte (`boucheOuverte`, `lib/direct/bouche.ts`), comme pour le bonjour. Sans tête qui
+  parle (404) : sa figurine bat sur sa voix.
+- **Rien ne part au serveur** : la vidéo est fabriquée par le téléphone ; sa voix n'est que dans la vidéo qu'il envoie
+  lui-même. Jamais de voix de synthèse, jamais de bruitage.
+- **Le format** : H.264 d'abord (ce que TikTok, Instagram et WhatsApp lisent partout), avec de l'AAC (iPhone, Chrome),
+  sinon de l'Opus ; sinon WebM. Le téléphone ne sait pas mettre le son dans la vidéo : « Ton téléphone ne sait pas mettre
+  le son dans la vidéo : elle reste muette. »
+- **L'iPhone** : le son du téléphone est réveillé dans le toucher « Dis-le » lui-même (sinon Safari le garde endormi, et
+  la vidéo serait muette).
+- **Le code** : `app/univers/salons/envoyer-moment.tsx` (le micro, la réécoute), `video-du-moment.ts` (`VoixDuMoment`, la
+  piste de son, la bouche), `lib/direct/moment-partage-serveur.tsx` (`cheminParleMoment`), `image-du-double-serveur.ts`
+  (`parle`, la tête posée à la place).
+- **Les essais** :
+  - `navigateur/salons-ouverts.mjs` : le faux micro du navigateur (ses bips) ; « Dis-le », « Parle ! », l'arrêt à 3 s ;
+    la vidéo refaite, et son son décodé : rien avant 1,4 s, sa voix après 1,6 s ; Réécouter (le son), Sans ma voix ;
+  - `essai-expressions-figurine-route.mjs` : un moment de Léa garde sa figurine bouche ouverte (la même taille, sa tête
+    qui parle) ; un moment inconnu : 404.

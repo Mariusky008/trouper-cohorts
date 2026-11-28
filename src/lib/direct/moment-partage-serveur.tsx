@@ -27,6 +27,8 @@ const cheminFiche = (id: string) => `${DOSSIER}/${id}.json`;
 export const cheminImageMoment = (id: string) => `${DOSSIER}/${id}.png`;
 /** sa figurine seule (la tête de l'émotion), pour la page du moment qui la rejoue */
 export const cheminFigurineMoment = (id: string) => `${DOSSIER}/${id}-figurine.png`;
+/** 🎙 la même, bouche ouverte (sa tête qui parle) : dans la vidéo de sa réaction, sa bouche suit sa voix (« Dis-le ») */
+export const cheminParleMoment = (id: string) => `${DOSSIER}/${id}-parle.png`;
 const cheminCompte = (h: string) => `${DOSSIER}/par/${h}.json`;
 
 /** La miniature officielle de la vidéo (YouTube), relayée : rien si elle ne vient pas (3 s au plus). */
@@ -160,8 +162,13 @@ export async function creerMoment(supabase: Supabase, moi: Habitant, p: Record<s
     mot: motDuMoment(m, id, ecrit || null),
     le: Date.now(),
   };
-  const png = await imageDuMoment({ m, mot: moment.mot, prenom: moment.prenom, video: moment.video, t: moment.t, adresse: adresseCourte(origine, id), fig }).catch(() => null);
+  // (🎙 sa figurine bouche ouverte, s'il a sa tête qui parle : la vidéo de sa réaction la fait parler avec sa voix)
+  const [png, parle] = await Promise.all([
+    imageDuMoment({ m, mot: moment.mot, prenom: moment.prenom, video: moment.video, t: moment.t, adresse: adresseCourte(origine, id), fig }).catch(() => null),
+    d.corps && d.parle ? figurineDuJourEnImage(supabase, d, origine, { tete: d.parle }).catch(() => null) : Promise.resolve(null),
+  ]);
   if (!png) return { error: P.rate, statut: 502 };
+  if (parle) await deposer(supabase, cheminParleMoment(id), parle.png, "image/png");
   if (!(await deposer(supabase, cheminImageMoment(id), png, "image/png")) || !(await deposer(supabase, cheminFigurineMoment(id), fig.png, "image/png")) || !(await ecrireJson(supabase, cheminFiche(id), { ...moment, h: moi.id }))) return { error: P.rate, statut: 502 };
   await ecrireJson(supabase, cheminCompte(moi.id), { jour, n: n + 1 });
   return { moment, image: `/api/direct/moment/${id}/image`, lien: `${origine}/moment/${id}` };
@@ -175,10 +182,11 @@ export async function lireMoment(supabase: Supabase, id: unknown): Promise<Momen
   return { id, prenom: s(f.prenom), video: { id: s(f.video.id), titre: s(f.video.titre) }, t: Number(f.t) || 0, e: f.e, mot: s(f.mot), le: f.le };
 }
 
-/** Son image story, ou sa figurine seule (rien : inconnu ou effacé). */
-export async function imageDeMoment(supabase: Supabase, id: unknown, quoi: "image" | "figurine" = "image"): Promise<Buffer | null> {
+/** Son image story, sa figurine seule, ou 🎙 sa figurine bouche ouverte (rien : inconnu, effacé, ou pas de tête qui parle). */
+export async function imageDeMoment(supabase: Supabase, id: unknown, quoi: "image" | "figurine" | "parle" = "image"): Promise<Buffer | null> {
   if (!(await lireMoment(supabase, id))) return null;
-  return telecharger(supabase, quoi === "figurine" ? cheminFigurineMoment(String(id)) : cheminImageMoment(String(id))).catch(() => null);
+  const chemin = quoi === "figurine" ? cheminFigurineMoment(String(id)) : quoi === "parle" ? cheminParleMoment(String(id)) : cheminImageMoment(String(id));
+  return telecharger(supabase, chemin).catch(() => null);
 }
 
 /**

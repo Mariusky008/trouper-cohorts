@@ -8,7 +8,8 @@
 // publiés à adresse stable. Rouverte : rien n'est refait. Faite avant le 25 novembre (sept têtes) : seule sa bouche
 // ouverte se fait (une demande). Une tête perdue : redécoupée sans le moteur. Une nouvelle image
 // de sa figurine : de nouvelles expressions. Zoé, un passage raté il y a dix minutes : rien avant la demi-heure, même en
-// ouvrant l'appli ; il y a une heure : la nuit la rattrape (Max et Léa, rien à faire). La page de l'administrateur : les
+// ouvrant l'appli ; il y a une heure : la nuit la rattrape (Max et Léa, rien à faire). 🎙 Un moment envoyé par
+// Léa garde aussi sa figurine bouche ouverte (la vidéo de sa réaction, « Dis-le »). La page de l'administrateur : les
 // comptes et les dernières, « Rattraper maintenant » ; sans session d'administrateur, refusé.
 //
 //   node scripts/faux-supabase.mjs
@@ -145,6 +146,33 @@ let n1 = (await expressionsIA()).length;
 await ouvrirAppli(LEA);
 await pause(2500);
 ok((await expressionsIA()).length === n1 && (await etatDe(LEA, K1))?.le === e1?.le, "rouverte : rien n'est refait");
+
+// ═══ 🎙 « DIS-LE » : UN MOMENT ENVOYÉ GARDE AUSSI SA FIGURINE BOUCHE OUVERTE (la vidéo de sa réaction la fait parler) ═══
+const momentDe = async (x) => {
+  const r = await fetch(`${BASE}/api/direct/moment`, { method: "POST", headers: { "content-type": "application/json", cookie: `clikme_habitant=${x.jeton}` }, body: JSON.stringify({ video: "dQw4w9WgXcQ", titre: "Le but de la soirée", t: 42, e: "rire" }) });
+  return { statut: r.status, ...((await r.json().catch(() => ({}))) ?? {}) };
+};
+// (le faux moteur rend la même image pour chaque tête, et un fichier publié porte le nom de son contenu : sa tête du rire
+// et sa tête qui parle sont le même fichier. Pour la reconnaître, sa tête qui parle devient un carré rouge, à part)
+const nomParle = (e1?.tetes?.parle ?? "").split("/").pop();
+const avantParle = nomParle ? await octets(`salon/fichiers/${nomParle}`) : null;
+const tailleParle = avantParle ? await sharp(avantParle).metadata() : {};
+const ROUGE = `${"ab".repeat(16)}-${tailleParle.width ?? 1}.webp`;
+if (tailleParle.width) {
+  await deposer(`salon/fichiers/${ROUGE}`, await sharp({ create: { width: tailleParle.width, height: tailleParle.height, channels: 4, background: { r: 230, g: 20, b: 20, alpha: 1 } } }).webp().toBuffer(), "image/webp");
+  await json(`${LEA.id}/calques/${K1}-expressions.json`, { ...(await etatDe(LEA, K1)), tetes: { ...e1.tetes, parle: `/api/direct/salon/fichier/${ROUGE}` } });
+}
+const mLea = await momentDe(LEA);
+ok(mLea.statut === 200 && /^[a-z0-9]{10}$/.test(mLea.moment?.id ?? ""), `Léa envoie son moment (${mLea.statut})`);
+const [figLea, parleLea] = await Promise.all(
+  ["", "?bouche=1"].map(async (q) => {
+    const r = await fetch(`${BASE}/api/direct/moment/${mLea.moment?.id}/figurine${q}`);
+    return r.ok ? Buffer.from(await r.arrayBuffer()) : null;
+  }),
+);
+const [mFig, mParle] = await Promise.all([figLea ? sharp(figLea).metadata() : {}, parleLea ? sharp(parleLea).metadata() : {}]);
+ok(Boolean(figLea && parleLea) && !figLea.equals(parleLea) && mFig.width === mParle.width && mFig.height === mParle.height, `🎙 sa figurine bouche ouverte (?bouche=1) : la même figurine, de la même taille, avec sa tête qui parle (${mParle.width} × ${mParle.height} ; ${figLea?.length} et ${parleLea?.length} octets ; ${mFig.width} × ${mFig.height})`);
+ok((await fetch(`${BASE}/api/direct/moment/0000000000/figurine?bouche=1`)).status === 404, "… un moment inconnu : 404");
 
 // ═══ 🗣️ FAITE AVANT LE 25 NOVEMBRE (SEPT TÊTES) : SEULE SA BOUCHE OUVERTE SE FAIT ═══
 const sansBouche = Object.fromEntries(Object.entries(e1?.tetes ?? {}).filter(([e]) => e !== "parle"));
