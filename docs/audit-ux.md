@@ -42,10 +42,10 @@ sous réserve » tant qu'il n'est pas vérifié en production, sur les principau
 | Lot | Contenu | État |
 | --- | --- | --- |
 | 1 | La fin de l'inscription sans accroc (sections 4 et 5, PR #352) | validé sous réserve : à vérifier en production, sur trois appareils (section 9) |
-| 5 | La confiance : se déconnecter, supprimer son compte (vraiment : ses données et ses images), la confidentialité ; puis « Lien copié ✓ », le champ e-mail, une seule question d'âge, l'inscription dans le design de l'appli, la 404 de l'appli | le prochain : une obligation (le droit à l'effacement), pas une finition |
+| 5 | La confiance : se déconnecter, supprimer son compte (vraiment : ses données et ses images), la confidentialité (section 10) ; puis (lot 5b) « Lien copié ✓ », le champ e-mail, une seule question d'âge, l'inscription dans le design de l'appli, la 404 de l'appli | 5a en cours (section 10) ; 5b ensuite |
 | 3 | Le fil et les salons vides : un problème d'activité, pas d'affichage (section 7) ; puis la place aux figurines, plus rien de coupé ni posé sur la scène, « Quoi de neuf ? » masqué quand il est vide, un squelette de chargement | maquette à faire valider |
 | 4 | Le salon : aucune interaction cachée — la barre de réactions visible dès l'arrivée ; « Touche pour le son » / « Pause » sur ordinateur ; l'image du moment préparée pendant le grand moment (section 8 : 12 s d'attente côté serveur) | |
-| 2 | La bienvenue, conçue autour de la vraie promesse de ClikMe (section 7) : deux bulles, le bouton dès la première seconde, « J'ai déjà une figurine » | validé dans le principe ; le texte à enregistrer par le propriétaire |
+| 2 | La bienvenue, conçue autour de la vraie promesse de ClikMe (section 7) : deux bulles, le bouton dès la première seconde, « J'ai déjà une figurine » | le texte du propriétaire (« Ici, tes vidéos préférées deviennent des moments à partager ! … »), une démonstration animée pendant la deuxième bulle, trois cartes ; maquette : https://claude.ai/artifact/R67u7nGnvyLxxAi42EuXmB ; la voix à enregistrer par lui |
 
 Trois décisions restaient au propriétaire (pas des bugs) : repousser l'humeur du jour après la première visite ; « Mes
 proches seulement » par défaut sans poser « Qui peut venir voir ta pièce ? » ; une vraie étape « Inviter un proche » à la
@@ -239,5 +239,73 @@ fait : ce sera son premier essai.
 
 **Ce qui entre dans cet audit, et ce qui n'y entre pas** : il porte sur ce qui existe dans l'appli. Les vidéos du jour
 (la sélection des salons, « Ma télé du jour », « Ma vidéo du jour » des groupes), les discussions attachées aux vidéos et
-« Mes groupes » y entrent. Les « familles ClikMe », sous ce nom, n'existent ni dans le code ni dans la doc : elles en
-sont exclues tant qu'elles ne sont pas développées (à confirmer par le propriétaire : sont-ce les groupes ?).
+« Mes groupes » y entrent. Les « familles ClikMe » aussi : le propriétaire, le 28 novembre 2026, « Les familles c'est
+mes groupes ».
+
+## 10. Le lot 5 : se déconnecter, supprimer son compte, la confidentialité
+
+Le propriétaire, le 28 novembre 2026, sur les choix proposés : « Oui, ces choix me vont, commence le lot 5 ».
+
+- **« Mon compte »**, dans la page Moi (`mon-compte.tsx`, `page-moi.tsx`) : « 🛡️ Confidentialité », « 🚪 Se
+  déconnecter », « 🗑️ Supprimer mon compte ».
+- **Se déconnecter** (`POST /api/direct/mon-compte { action: "deconnecter" }`) : ce téléphone oublie sa figurine (le
+  cookie, et tout ce qu'il retenait de ClikMe, `clikme-…`), puis l'accueil.
+  - Figurine sauvegardée (une adresse prouvée) : « Pour revenir, touche « J'ai déjà une figurine » : on t'enverra un
+    code à h…@… ».
+  - Pas sauvegardée : « Ta figurine n'est pas sauvegardée. Sans adresse e-mail, tu ne pourras plus la retrouver… » ;
+    « 🔒 Sauvegarder d'abord » (dans la même feuille), ou « Me déconnecter quand même ».
+- **Supprimer mon compte** (`POST /api/direct/mon-compte { action: "supprimer", confirme: true }`,
+  `supprimer-compte-serveur.ts`) : ce qui part, « C'est définitif », la case « Je comprends que c'est définitif » (le
+  bouton reste grisé sans elle), puis « Ton compte est supprimé. Merci d'être passé par ClikMe. » et l'accueil. Définitif
+  et immédiat, en deux temps :
+  1. **tout de suite** : il quitte les listes de ses proches (dans les deux sens), qui gardent sept jours « Léa a supprimé
+     son compte : votre conversation n'existe plus. » en haut de leurs conversations ; leurs conversations (les messages
+     des deux) ; son lien de proche ; son dossier (selfie, figurine, maison, humeur…) ; sa maison privée ; ses lignes dans
+     la base, puis son compte (le reste part en cascade) ;
+  2. **le balayage** des espaces partagés, juste après la réponse, puis chaque nuit à 3 h 20 UTC jusqu'au bout
+     (`/api/cron/comptes-supprimes`) : tout fichier dont le nom le désigne (son identifiant, sa clé de profil, sa marque
+     courte) — ses mots et écrits sous les vidéos, ses passages dans les salons (« toujours rempli » ne le rassoit plus),
+     ses places dans les groupes, ses figurines posées « Autour »… — et ses moments partagés (la fiche lue). Les dossiers
+     des autres habitants ne sont pas parcourus. Un témoin sans donnée personnelle (`comptes-supprimes/<id>.json`) garde
+     où le balayage en est, et part à la fin.
+  - L'ancien « Tout supprimer » du Direct (`DELETE /api/direct/donnees`) fait désormais la même suppression complète (il
+    n'effaçait que la ligne du compte).
+- **La confidentialité** (`/collection/confidentialite`) : la seule politique en ligne (`/legal/privacy`) était celle de
+  Popey Academy (février 2026), sans un mot des selfies, des figurines ni des mineurs. La page ClikMe dit, sans jargon,
+  ce qui est gardé, pourquoi, qui le voit (dont les services : Vercel, Supabase, OpenAI et Google Gemini, ElevenLabs,
+  Resend, YouTube), combien de temps, les plus jeunes, les droits et comment tout effacer. **Texte légal : relu et validé
+  par le propriétaire avant la fusion** (le responsable et l'adresse de contact viennent des mentions légales).
+- **Les essais** :
+  - `essai-mon-compte-route.mjs` : sans la case, rien ; « Se déconnecter » (le cookie part, le compte reste) ; la
+    suppression (son dossier, son lien, leur conversation, ses lignes ; Hugo ne l'a plus, dans aucun sens, et voit
+    l'avis ; ses fichiers et ceux de Zoé restent) ; le balayage (ses mots, écrits, passage au salon, place de groupe,
+    figurine posée, moments — tout ce qui est à Zoé reste ; le témoin part).
+  - `navigateur/mon-compte.mjs` : « Mon compte » dans Moi ; Léa (pas sauvegardée) prévenue, « Sauvegarder d'abord »,
+    « Annuler » ; Hugo (sauvegardée) se déconnecte (cookie et `clikme-…` partis, l'accueil, son compte gardé) ; Zoé
+    supprime son compte (le bouton grisé sans la case ; « Ton compte est supprimé » ; plus de compte ni de figurine ;
+    l'accueil) ; la page « Confidentialité ».
+- **Restent pour le lot 5b** (une PR à part) : « Lien copié ✓ » partout, le champ e-mail coupé, une seule question
+  d'âge, l'inscription dans le design de l'appli, la page 404 de l'appli, un écran hors ligne.
+
+## 11. Le lot 1, vérifié en production (28 novembre 2026, 12 h 45)
+
+Deux vraies inscriptions, avec deux nouveaux comptes de test (« Testeuse » sur un iPhone SE de 320 × 568, « Testine »
+sur un Pixel 7 de 412 × 839 ; « Ma figurine peut réapparaître dans les salons » coupé sur les deux). Script :
+`e32-lot1.mjs` (outils de l'audit, hors du dépôt).
+
+| Ce qui est vérifié | iPhone SE | Pixel 7 |
+| --- | --- | --- |
+| Plus de « Il manque » une fois tout rempli | ✅ | ✅ |
+| La figurine sculptée | ✅ 39 s | ✅ 38 s |
+| « 🏠 Choisis ta pièce » visible sans défiler | ❌ coupé (555 pt sur 568) → corrigé ici | ✅ |
+| Le jour de l'inscription retenu | ✅ | ✅ |
+| Pas de feuille de l'humeur sous « Choisis ta pièce » | ✅ | ✅ |
+| « Je m'installe ici » visible sans défiler | ✅ | ✅ |
+| « Tes proches » seule, ses trois boutons à l'écran, le lien WhatsApp, « ✓ Lien copié » | ✅ | ✅ |
+| Pas d'humeur d'elle-même le jour de l'inscription | ✅ | ✅ |
+| Rien ne déborde, aucune erreur | ✅ | ✅ |
+
+**Le bouton coupé sur le petit écran** : le bouton « collé » ne collait jamais, parce que la page
+(`overflow-x: hidden`) était devenue son propre conteneur de défilement. `overflow-x: clip` coupe sans défiler
+(`nouvelle-figurine.tsx`) ; vérifié en production en l'injectant dans la page : le bouton reste entre 504 et 556 pt.
+Le lot 1 sera « fait » quand ce correctif sera en ligne et revérifié sur l'iPhone SE.

@@ -35,6 +35,7 @@ import { RangeSansDemander } from "./etagere";
 import { MonTelephone } from "./mon-telephone";
 import { CeQueTaFigurineSait } from "./connaitre";
 import { MaFigurineDuMois } from "./figurine-du-mois";
+import { FeuilleDeconnexion, FeuilleSuppression, PHRASES_COMPTE, STYLES_MON_COMPTE } from "./mon-compte";
 
 /** Les mots de la page. */
 export const PHRASES_MOI = {
@@ -118,6 +119,8 @@ export function PageMoi({
   // 🚪 sa pièce et qui peut y venir (Ma maison allumée seulement)
   const [piece, setPiece] = useState<MaMaisonVue | null>(null);
   const [porte, setPorte] = useState(false);
+  // 👤 (l'audit du 28/11, lot 5) se déconnecter, supprimer son compte
+  const [compte, setCompte] = useState<"" | "deconnecter" | "supprimer">("");
 
   useEffect(() => {
     if (vue !== "page") return;
@@ -258,6 +261,25 @@ export function PageMoi({
         </Groupe>
       )}
 
+      {/* 👤 (l'audit du 28/11, lot 5) MON COMPTE : la confidentialité, se déconnecter, supprimer son compte */}
+      {etat?.compte && (
+        <Groupe titre={PHRASES_COMPTE.groupe} cle="compte">
+          <div className="pm-liste">
+            <Ligne ico="🛡️" titre={PHRASES_COMPTE.confidentialite} dit={PHRASES_COMPTE.confidentialiteDit} href="/collection/confidentialite" data="confidentialite" />
+            <Ligne ico="🚪" titre={PHRASES_COMPTE.deconnecter} dit={PHRASES_COMPTE.deconnecterDit} onClick={() => setCompte("deconnecter")} data="deconnecter" />
+            <Ligne ico="🗑️" titre={PHRASES_COMPTE.supprimer} dit={PHRASES_COMPTE.supprimerDit} onClick={() => setCompte("supprimer")} data="supprimer" />
+          </div>
+        </Groupe>
+      )}
+      {etat?.compte &&
+        createPortal(
+          <>
+            <FeuilleDeconnexion ouverte={compte === "deconnecter"} onFermer={() => setCompte("")} protegee={etat.protegee} />
+            <FeuilleSuppression ouverte={compte === "supprimer"} onFermer={() => setCompte("")} />
+          </>,
+          document.body,
+        )}
+
       {double &&
         createPortal(
           <MonDouble retour={PHRASES_MOI.retour} onFermer={() => setDouble(false)} onChange={() => undefined} />,
@@ -280,7 +302,8 @@ export function PageMoi({
   );
 }
 
-export const STYLES_PAGE_MOI = `
+export const STYLES_PAGE_MOI = STYLES_MON_COMPTE + `
+.pm-ligne[data-ligne="supprimer"] b{color:#FF9B9B}
 .pm{display:flex;flex-direction:column;gap:18px;padding-bottom:12px}
 .pm-qui{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding-top:6px}
 .pm-fig{display:grid;place-items:center;width:120px;height:120px;border-radius:50%;overflow:hidden;background:radial-gradient(70% 60% at 50% 40%,#FF9AD0,#C2367F 62%,#5E1240);box-shadow:0 0 0 3px rgba(255,46,154,.35),0 0 40px -6px rgba(255,46,154,.7);font-size:58px}
