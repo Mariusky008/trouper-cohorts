@@ -13,7 +13,7 @@
 // signalé ; une vidéo partie de YouTube : la discussion reste, sans « ▶ Revoir ».
 import crypto from "node:crypto";
 import sharp from "sharp";
-import { BASE, D, F, lancer } from "./commun.mjs";
+import { BASE, D, F, duLecteurYouTube, lancer } from "./commun.mjs";
 import { lancerSecondeApp } from "../seconde-app.mjs";
 
 const STOCK = F.replace("/rest/v1", "/storage/v1/object");
@@ -70,7 +70,8 @@ await ctx.addCookies([{ name: "clikme_habitant", value: LEA.jeton, url: BASE }, 
 await ctx.route(/^https:\/\/i\.ytimg\.com\//, (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
 const p = await ctx.newPage();
 p.on("pageerror", (e) => erreurs.push(String(e)));
-p.on("console", (m) => m.type() === "error" && !/Failed to load resource/i.test(m.text()) && erreurs.push(m.text()));
+// (les messages du lecteur YouTube ne sont pas des erreurs de l'appli : `duLecteurYouTube`, dans commun.mjs)
+p.on("console", (m) => m.type() === "error" && !/Failed to load resource/i.test(m.text()) && !duLecteurYouTube(m) && erreurs.push(m.text()));
 const attendre = async (f, ms = 15000) => {
   const fin = Date.now() + ms;
   while (Date.now() < fin) {
