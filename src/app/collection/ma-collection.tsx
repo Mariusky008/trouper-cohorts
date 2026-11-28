@@ -56,6 +56,7 @@ import { STYLES_CHEZ_MOI } from "./chez-moi";
 import { STYLES_MEME_POUR } from "./meme-pour";
 import { MEMOIRE_ETAT, MEMOIRE_FIL, MEMOIRE_GROUPES, MEMOIRE_MAISON, MEMOIRE_PROCHES, MEMOIRE_SALONS, MEMOIRE_TELE, ecrireMemoire, lireMemoire, poserProprietaire, prechauffer } from "./memoire-locale";
 import { HumeurDuMatin, STYLES_RITUEL, ouvrirConversation } from "./rituel";
+import { useMaisonQuiSInstalle } from "./maison-catalogue";
 import { STYLES_HUMEUR_REPONSE } from "./humeur-reponse";
 import { STYLES_VIVANT } from "./conversation-vivante";
 import { STYLES_ETAGERE } from "./etagere";
@@ -165,6 +166,8 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
   // 🔒 « NE PERDS JAMAIS TA FIGURINE » (7 novembre 2026, l'avis d'un ami) : une ligne de la page sous son prénom (le cadenas doré du haut, parti le 26 novembre 2026),
   // tant que son adresse ne la protège pas ; il ouvre une feuille (null : jamais ouverte, rien n'y est encore monté)
   const [proteger, setProteger] = useState<boolean | null>(null);
+  // 🧭 (l'audit du 28/11) sa maison s'installe (sa première pièce, « Qui peut venir ») : l'humeur attend son tour
+  const maisonSInstalle = useMaisonQuiSInstalle();
   // 🎙️ ses messages non lus (la pastille de « Proches »)
   const [nonLus, setNonLus] = useState(0);
   // 🎁🚪 (« Chez moi ») ses cadeaux et ses visites à découvrir, en plus de ses messages (la pastille du bouton du milieu)
@@ -504,7 +507,7 @@ export function MaCollection({ villes = [], qui = "", univers = false, maison = 
       {/* ☀️ LE RITUEL DU JOUR (lot R) : « Comment tu te sens aujourd'hui ? », à la première ouverture du jour — jamais
           par-dessus la bienvenue ou une autre feuille */}
       <HumeurDuMatin
-        actif={Boolean(charge && compte && prete && !bienvenue && !proteger)}
+        actif={Boolean(charge && compte && prete && !bienvenue && !proteger && !maisonSInstalle)}
         onRepondre={(cle) => {
           aller("proches", undefined, false, true);
           ouvrirConversation(cle);

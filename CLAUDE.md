@@ -42,6 +42,10 @@ scène, et envoyer le moment à un ami), lisez d'abord `docs/univers/grands-mome
 **Si vous travaillez sur le rattrapage d'une séance** (revoir une séance de groupe ratée, réagir en décalé, « ⏪ vu en
 rattrapage »), lisez d'abord `docs/univers/rattrapage.md`.
 
+**Si vous corrigez ce qu'a trouvé l'audit UX du 28 novembre 2026** (la fin de l'inscription, la bienvenue, les cartes du
+fil, la barre de réactions du salon, se déconnecter et supprimer son compte…), lisez d'abord `docs/audit-ux.md` : le
+rapport, les cinq priorités et l'état de leurs lots.
+
 Règles communes :
 
 - On travaille en français.

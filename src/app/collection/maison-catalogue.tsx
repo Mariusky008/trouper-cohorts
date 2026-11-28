@@ -16,7 +16,7 @@
  * Rien n'est généré à l'ouverture : des images à adresse stable (gardées par le téléphone), la vignette floue d'abord ;
  * on n'anime que `transform` et `opacity` (`ma-maison.md`, section 9).
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { MEMOIRE_MAISON, ecrireMemoire, lireMemoire } from "./memoire-locale";
 import {
   EMPLACEMENTS_MAISON,
@@ -1381,6 +1381,30 @@ function Choix({ catalogue, actuelle, onChoisir, onFermer }: { catalogue: Catalo
 }
 
 /**
+ * 🧭 (l'audit du 28 novembre 2026) LA MAISON S'INSTALLE : le choix de sa première pièce, puis « Qui peut venir voir ta
+ * pièce ? ». Pendant ce temps, rien d'autre ne s'ouvre par-dessus (la feuille de l'humeur attend son tour) : avant, elle
+ * s'ouvrait dès l'arrivée, le choix de la pièce se posait sur elle, et un toucher sur « Joie » partait dans une pièce
+ * qu'on ne voyait pas.
+ */
+let installation = false;
+const abonnesInstallation = new Set<() => void>();
+function poserInstallation(v: boolean) {
+  if (installation === v) return;
+  installation = v;
+  abonnesInstallation.forEach((f) => f());
+}
+export function useMaisonQuiSInstalle(): boolean {
+  return useSyncExternalStore(
+    (f) => {
+      abonnesInstallation.add(f);
+      return () => void abonnesInstallation.delete(f);
+    },
+    () => installation,
+    () => false,
+  );
+}
+
+/**
  * 🏠 « Ma maison » : sa pièce (ou le choix de sa pièce). `plein` : toute la hauteur de l'écran (l'adresse d'essai).
  * `onRenoncer` : sans pièce, le choix se ferme (qui garde son univers d'avant, le lot M3) ; sinon il reste ouvert.
  */
@@ -1428,6 +1452,11 @@ export function MaisonDuCatalogue({ actif, plein = false, onRenoncer }: { actif:
     if (premiere) setPorte(true);
     return null;
   }
+  // 🧭 (la maison pas encore lue, sa première pièce à choisir, la question de la porte : elle s'installe)
+  useEffect(() => {
+    poserInstallation(Boolean(actif && !erreur && (!maison || sansPiece || porte)));
+    return () => poserInstallation(false);
+  }, [actif, erreur, maison, sansPiece, porte]);
   return (
     <div className={`mmc${plein ? " plein" : ""}`}>
       {erreur ? (

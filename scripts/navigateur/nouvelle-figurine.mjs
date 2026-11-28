@@ -51,6 +51,8 @@ const ici = `${new URL(p.url()).pathname} — ${(await p.evaluate(() => document
 ok((await texte(".nf-selfie h1")) === "Créons ta figurine !", `« Créons ta figurine ! »${(await p.locator(".nf-selfie").count()) ? "" : ` (${ici})`}`);
 const creer = p.locator(".nf-selfie .nf-bouton");
 ok(await creer.isDisabled(), "« Créer ma figurine » attend sa photo et ses deux cases");
+// (l'audit du 28/11 : le bouton grisé dit ce qui manque)
+ok(/^Il manque : ton selfie, ton prénom, ta ville, « C’est bien moi », « J’ai 15 ans ou plus »\.$/.test(await texte("[data-manque]")), `… et dit ce qui manque (« ${await texte("[data-manque]")} »)`);
 await p.locator('.nf-selfie input[name="photo"]').setInputFiles("public/direct/double/content.webp");
 await p.waitForSelector(".nf-photo.prise img", { timeout: 10000 }).catch(() => null);
 await p.locator('.nf-selfie input[name="moi"]').check();
@@ -63,6 +65,7 @@ const champPrenom = p.locator('.nf-selfie input[name="prenom"]');
 ok((await creer.isDisabled()) && (await champPrenom.count()) === 1 && (await champPrenom.getAttribute("autocomplete")) === "given-name", "✍️ sans son prénom : toujours pas");
 await champPrenom.fill("Camille");
 ok(!(await creer.isDisabled()) && (await debordement()) <= 0 && (await sansMotInterdit()), "sa photo, son prénom, sa ville, ses deux cases : « Créer ma figurine » (rien ne déborde)");
+ok((await p.locator("[data-manque]").count()) === 0, "… et plus rien ne manque");
 await p.screenshot({ path: `${D}/nouvelle-figurine-1-selfie.png` });
 await creer.click();
 // (l'atelier : le faux moteur est rapide, il peut passer en un éclair)

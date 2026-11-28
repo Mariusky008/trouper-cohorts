@@ -59,6 +59,9 @@ for (const x of [LEA, MARC, ZOE]) {
 await json(`${LEA.id}/majeur.json`, { le: maintenant, age: 16, adulte: false });
 await json(`${MARC.id}/majeur.json`, { le: maintenant, age: 40, adulte: true });
 await json(`${ZOE.id}/majeur.json`, { le: maintenant, age: 30, adulte: true });
+// (Zoé : sa figurine prête, comme après une vraie inscription — la feuille de l'humeur du jour peut s'ouvrir pour elle)
+await deposer(`${ZOE.id}/neutre.webp`, assise, "image/png");
+await semer("clik_ma_figurine", [{ habitant_id: ZOE.id, prenom: ZOE.prenom, photo: `${ZOE.id}/photo.jpg`, accord_le: maintenant, neutre: `${ZOE.id}/neutre.webp`, parle: `${ZOE.id}/neutre.webp`, prete_le: maintenant }]);
 // (Marc : son univers fabriqué avant, par la conversation avec Pablito)
 const M1 = `${MARC.id}/monde/v1`;
 await deposer(`${M1}/decor.png`, fs.readFileSync("public/direct/atelier-bijoux.jpg"), "image/jpeg");
@@ -188,23 +191,52 @@ await ctxZ.addCookies([
   { name: "sb-127-auth-token", value: `base64-${b64(session)}`, url: ALLUME },
   { name: "clikme_habitant", value: ZOE.jeton, url: ALLUME },
 ]);
+// (☀️ les téléphones d'essai ont d'office « passé » l'humeur du jour, à chaque page — `commun.mjs` ; celui de Zoé, non : on
+// vérifie qu'elle attend que sa maison soit installée, et qu'elle ne s'ouvre jamais sous le choix de la pièce)
+await ctxZ.addInitScript(() => {
+  try {
+    window.localStorage.removeItem("clikme-humeur-passee");
+  } catch {
+    /* rien */
+  }
+});
 const z = await ctxZ.newPage();
 z.on("pageerror", (e) => erreurs.push(String(e)));
+
 await z.goto(`${ALLUME}/univers/figurine`, { waitUntil: "networkidle" });
 const suiteZ = z.locator('a[data-suite="piece"]');
 ok(await attendre(z, async () => (await suiteZ.count()) === 1), "allumé, sans « ?piece=1 » : après « C’est moi ! », « 🏠 Choisis ta pièce »");
 ok((await suiteZ.getAttribute("href")) === "/collection#maison" && (await z.locator('a[href="/univers/conversation"]').count()) === 0, `… qui mène à l’onglet « Ma maison » (${await suiteZ.getAttribute("href")}), plus à Pablito`);
+// (l'audit du 28/11 : le bouton se voit sans faire défiler sous la figurine)
+const boutonZ = await suiteZ.boundingBox();
+ok(boutonZ && boutonZ.y >= 0 && boutonZ.y + boutonZ.height <= 844, `… et se voit sans faire défiler (${Math.round(boutonZ?.y ?? -1)} pt, l'écran en fait 844)`);
 await z.goto(`${ALLUME}/univers/conversation`, { waitUntil: "networkidle" });
 ok(await attendre(z, async () => new URL(z.url()).pathname === "/collection" && new URL(z.url()).hash === "#maison"), `la conversation avec Pablito renvoie au choix de sa pièce (${z.url().replace(ALLUME, "")})`);
 // (ce téléphone d'essai n'a jamais vu la bienvenue de Pablito : on la passe, comme on l'a passée avant de faire sa figurine)
 if (await attendre(z, async () => (await z.locator(".bv .tu-passer").count()) === 1, 8000)) await z.locator(".bv .tu-passer").click();
+
 ok(await attendre(z, async () => (await z.locator("#o-maison .mmc-choix").count()) === 1, 30000), "l’onglet « Ma maison » s’ouvre sur « Choisis ta pièce »");
-await z.waitForTimeout(800);
+await z.waitForTimeout(1500);
 await z.screenshot({ path: `${D}/choisis-ta-piece-6-allume.png` });
+// (🧭 l'audit du 28/11 : la feuille de l'humeur s'ouvrait dessous, et un toucher sur « Joie » partait dans le choix de la
+// pièce, invisible. Elle attend maintenant que sa maison soit installée : la pièce, puis la porte)
+const humeurZ = z.locator(".rt-feuille.ouverte");
+
+ok((await humeurZ.count()) === 0, "pendant « Choisis ta pièce » : pas de feuille de l'humeur, ni dessus ni dessous");
+
 // (🎨 `ma-maison.md`, section 23 : dans l'onglet aussi, l'en-tête, la pièce en carte et les trois grands boutons)
 await z.locator("#o-maison .mmc-carte[data-piece]").first().click();
 await z.locator('#o-maison .mmc-apercu [data-geste="installer"]').click();
+
+ok(await attendre(z, async () => (await z.locator("[data-question-porte]").count()) === 1, 15000) && (await humeurZ.count()) === 0, "« Je m'installe ici » : « Qui peut venir voir ta pièce ? », seule");
 await z.locator('[data-question-porte] [data-porte="proches"]').click({ timeout: 15000 });
+ok(await attendre(z, async () => (await humeurZ.count()) === 1 && /Comment tu te sens aujourd’hui/.test(await humeurZ.innerText()), 15000), "… puis seulement l'humeur du jour, une fois sa maison installée");
+await humeurZ.locator('button:has-text("Joie")').click();
+ok(await attendre(z, async () => /Ton humeur/.test(await humeurZ.innerText()), 10000), "… « Joie » : un toucher, qui arrive bien à l'humeur");
+const apresJoie = await humeurZ.innerText();
+ok(!apresJoie.includes("t’écrivent un mot") && apresJoie.includes("Quand tu auras des proches sur ClikMe"), "sans un seul proche : jamais « les figurines de tes proches t'écrivent un mot… »");
+await humeurZ.locator('button:has-text("C’est parti")').click();
+await attendre(z, async () => (await humeurZ.count()) === 0, 5000);
 ok(await attendre(z, async () => (await z.locator("#o-maison .mmc-gros-bouton").count()) === 4 && /Ma maison/.test(await z.locator("#o-maison .mmc-entete").innerText())), "installée : dans l'onglet, « Ma maison », la pièce en carte, les quatre grands boutons (📍 Autour, depuis « Mes groupes »)");
 const cadreZ = await z.locator("#o-maison .mmc-cadre").boundingBox();
 ok(cadreZ && cadreZ.height > 300 && cadreZ.width > 300, `… une vraie carte (${Math.round(cadreZ?.width)} × ${Math.round(cadreZ?.height)} pt)`);
