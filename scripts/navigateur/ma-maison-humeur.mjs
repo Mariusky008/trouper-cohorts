@@ -162,7 +162,12 @@ ok(await attendre(lea, async () => (await figJour.count()) === 1), "chez elle : 
 const [teteSrc, corpsSrc] = await Promise.all([figJour.locator("img.mmc-fig-tete").getAttribute("src"), figJour.locator("img:not(.mmc-fig-tete)").getAttribute("src")]);
 ok(teteSrc === etat?.tetes?.triste && ADRESSE.test(corpsSrc ?? ""), "… l'expression triste, posée sur son corps sans sa tête");
 ok(await attendre(lea, async () => (await charge(lea, await figJour.locator("img.mmc-fig-tete").elementHandle())) && (await charge(lea, await figJour.locator("img:not(.mmc-fig-tete)").elementHandle()))), "… les deux images se chargent");
-const [bf, bt] = await Promise.all([figJour.boundingBox(), figJour.locator("img.mmc-fig-tete").boundingBox()]);
+// (28/11) les deux boîtes d'un seul coup, dans la même image : la figurine saute en arrivant (0,5 s) puis respire, et deux
+// mesures séparées tombaient sur deux moments du saut (la tête « au-dessus » de sa figurine de 1,7 px)
+const [bf, bt] = await figJour.evaluate((f) => {
+  const r = (e) => { const b = e?.getBoundingClientRect(); return b ? { x: b.x, y: b.y, width: b.width, height: b.height } : null; };
+  return [r(f), r(f.querySelector("img.mmc-fig-tete"))];
+});
 ok(bf && bt && bt.width > 10 && bt.y >= bf.y - 1 && bt.y + bt.height < bf.y + bf.height * 0.75 && Math.abs(bt.x + bt.width / 2 - (bf.x + bf.width / 2)) < bf.width * 0.2, `… la tête en haut de sa figurine, au milieu (${JSON.stringify({ bf, bt })})`);
 ok((await chez.locator(".mmc-medaillon img.du-jour").getAttribute("src")) === etat?.tetes?.triste, "… le médaillon de l'en-tête aussi");
 ok(/😢/.test(await chez.locator("[data-humeur]").innerText()), "… et son humeur, écrite à côté");
